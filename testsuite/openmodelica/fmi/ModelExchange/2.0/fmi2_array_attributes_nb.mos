@@ -1,5 +1,6 @@
 // name: fmi2_array_attributes_nb
 // keywords: FMI 2.0 export array nominal scalarized NewBackend
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf fmi2_array_attributes_nb.fmu fmi2_array_attributes_nb.fmutmp/ fmi2_array_attributes_nb.dims fmi2_array_attributes_nb.log fmi2_array_attributes_nb_info.json index.html
 //

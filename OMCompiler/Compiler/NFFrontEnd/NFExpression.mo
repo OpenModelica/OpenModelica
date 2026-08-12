@@ -5622,7 +5622,9 @@ public
             (outExp, expanded) := ExpandExp.expand(exp);
           end if;
 
-          if expanded then
+          // The ARRAY case above is what consumes the expansion; recursing on
+          // anything else would not terminate.
+          if expanded and isArray(outExp) then
             outExp := promote2(outExp, true, dims, types);
           else
             outExp := CALL(Call.makeTypedCall(

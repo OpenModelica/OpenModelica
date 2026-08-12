@@ -21,6 +21,9 @@ pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
         alarm: true,
         // No regex engine in wasm; the model's own filter is resolved at codegen.
         variable_filter: false,
+        // Ipopt has no wasm build (MUMPS is Fortran), so `method="optimization"`
+        // reports "Ipopt is needed but not available." here.
+        optimization: false,
     }
 }
 
@@ -89,6 +92,7 @@ pub(crate) mod klu {
         pub fn klu_refactor(ap: *mut i32, ai: *mut i32, ax: *mut f64, symbolic: *mut c_void, numeric: *mut c_void, common: *mut Common) -> i32;
         pub fn klu_rgrowth(ap: *mut i32, ai: *mut i32, ax: *mut f64, symbolic: *mut c_void, numeric: *mut c_void, common: *mut Common) -> i32;
         pub fn klu_solve(symbolic: *mut c_void, numeric: *mut c_void, ldim: i32, nrhs: i32, b: *mut f64, common: *mut Common) -> i32;
+        pub fn klu_tsolve(symbolic: *mut c_void, numeric: *mut c_void, ldim: i32, nrhs: i32, b: *mut f64, common: *mut Common) -> i32;
         pub fn klu_free_symbolic(symbolic: *mut *mut c_void, common: *mut Common) -> i32;
         pub fn klu_free_numeric(numeric: *mut *mut c_void, common: *mut Common) -> i32;
     }
@@ -114,16 +118,23 @@ pub(crate) mod klu {
         }
     }
 
-    /// C's `DATA_KLU` (`linearSolverKlu.c`): the symbolic analysis is done once per
-    /// system and reused, the numeric factorization refactored per solve. The
-    /// pattern is copied in because the caller's arrays live in a block that is
-    /// freed between solves; the values are only read, so they stay in place.
+    /// C's `DATA_KLU` (`linearSolverKlu.c`): symbolic analysis once per system,
+    /// numeric factorization refactored per solve.
+    ///
+    /// KLU gets `Aᵀ` and a transpose solve, as in C. Factorizing `A` instead holds
+    /// `rgrowth` under the 1e-3 threshold on a MultiBody chain, so the pivots are
+    /// rechosen every solve and `functionODE` stops being a function of the states
+    /// alone — which quietly ruins any finite-difference Jacobian taken through it.
     pub struct Solver {
         common: Common,
         symbolic: *mut c_void,
         numeric: *mut c_void,
+        /// CSC of `Aᵀ` (= CSR of `A`).
         ap: Vec<i32>,
         ai: Vec<i32>,
+        /// Where each `ap`/`ai` entry reads from in the caller's CSC-of-`A` values.
+        perm: Vec<u32>,
+        axt: Vec<f64>,
     }
 
     /// Below this reciprocal pivot growth the reused pivots are no longer good
@@ -131,13 +142,35 @@ pub(crate) mod klu {
     const MIN_RGROWTH: f64 = 1e-3;
 
     impl Solver {
+        /// `colptr`/`rowidx` are the caller's CSC of `A`; the transpose is built here.
         pub fn new(n: usize, colptr: &[i32], rowidx: &[i32]) -> Option<Solver> {
+            let nnz = *colptr.get(n)? as usize;
+            let mut ap = alloc::vec![0i32; n + 1];
+            for &r in &rowidx[..nnz] {
+                ap[r as usize + 1] += 1;
+            }
+            for r in 0..n {
+                ap[r + 1] += ap[r];
+            }
+            let mut fill: Vec<i32> = ap[..n].to_vec();
+            let mut ai = alloc::vec![0i32; nnz];
+            let mut perm = alloc::vec![0u32; nnz];
+            for c in 0..n {
+                for k in colptr[c] as usize..colptr[c + 1] as usize {
+                    let slot = &mut fill[rowidx[k] as usize];
+                    ai[*slot as usize] = c as i32;
+                    perm[*slot as usize] = k as u32;
+                    *slot += 1;
+                }
+            }
             let mut s = Solver {
                 common: Common::defaults()?,
                 symbolic: core::ptr::null_mut(),
                 numeric: core::ptr::null_mut(),
-                ap: colptr.to_vec(),
-                ai: rowidx.to_vec(),
+                ap,
+                ai,
+                perm,
+                axt: alloc::vec![0.0f64; nnz],
             };
             s.symbolic = unsafe {
                 klu_analyze(n as i32, s.ap.as_mut_ptr(), s.ai.as_mut_ptr(), &mut s.common)
@@ -145,10 +178,14 @@ pub(crate) mod klu {
             (!s.symbolic.is_null()).then_some(s)
         }
 
-        /// Factorize with `values` (in the pattern's order) and solve `A x = b` in
-        /// place. `false` if the matrix is singular or a KLU call failed.
+        /// Factorize with `values` (the caller's CSC-of-`A` order) and solve
+        /// `A x = b` in place. `false` if the matrix is singular or a KLU call failed.
         pub fn solve(&mut self, values: *const f64, b: *mut f64, n: usize) -> bool {
-            let ax = values as *mut f64;
+            let src = unsafe { core::slice::from_raw_parts(values, self.perm.len()) };
+            for (dst, &k) in self.axt.iter_mut().zip(&self.perm) {
+                *dst = src[k as usize];
+            }
+            let ax = self.axt.as_mut_ptr();
             let (ap, ai) = (self.ap.as_mut_ptr(), self.ai.as_mut_ptr());
             if !self.numeric.is_null() {
                 let ok = unsafe {
@@ -166,7 +203,7 @@ pub(crate) mod klu {
             if self.numeric.is_null() || self.common.status != 0 {
                 return false;
             }
-            unsafe { klu_solve(self.symbolic, self.numeric, n as i32, 1, b, &mut self.common) != 0 }
+            unsafe { klu_tsolve(self.symbolic, self.numeric, n as i32, 1, b, &mut self.common) != 0 }
         }
     }
 
@@ -311,11 +348,9 @@ pub(crate) mod kinsol {
     const KIN_LSOLVE_FAIL: c_int = -12;
     const KIN_REPTD_SYSFUNC_ERR: c_int = -15;
 
-    /// C's `newtonFTol`/`newtonXTol`, `maxStepFactor` and `FTOL_WITH_LESS_ACCURACY`
-    /// defaults, and `RETRY_MAX`.
-    const FNORMTOL: f64 = 1.0e-12;
-    const SCSTEPTOL: f64 = 1.0e-12;
-    const MAXSTEPFACTOR: f64 = 1.0e12;
+    /// C's `FTOL_WITH_LESS_ACCURACY` and `RETRY_MAX`; the stopping tolerances and
+    /// the step factor are C's `newtonFTol`/`newtonXTol`/`maxStepFactor`, which
+    /// `crate::solvers` holds because `-newtonFTol` and friends move them.
     const FTOL_LESS_ACCURACY: f64 = 1.0e-6;
     const RETRY_MAX: i32 = 5;
 
@@ -425,7 +460,7 @@ pub(crate) mod kinsol {
                 n,
                 nnz,
                 strategy: KIN_LINESEARCH,
-                maxstepfactor: MAXSTEPFACTOR,
+                maxstepfactor: crate::solvers::max_step_factor(),
                 numeric_jac: false,
             };
             if s.kin.is_null()
@@ -446,8 +481,8 @@ pub(crate) mod kinsol {
                 {
                     return None;
                 }
-                KINSetFuncNormTol(s.kin, FNORMTOL);
-                KINSetScaledStepTol(s.kin, SCSTEPTOL);
+                KINSetFuncNormTol(s.kin, crate::solvers::newton_ftol());
+                KINSetScaledStepTol(s.kin, crate::solvers::newton_xtol());
                 KINSetNumMaxIters(s.kin, 100 * n as c_long);
                 KINSetNoInitSetup(s.kin, 0);
             }
@@ -583,8 +618,8 @@ pub(crate) mod kinsol {
             }
             if reset_tol {
                 unsafe {
-                    KINSetFuncNormTol(self.kin, FNORMTOL);
-                    KINSetScaledStepTol(self.kin, SCSTEPTOL);
+                    KINSetFuncNormTol(self.kin, crate::solvers::newton_ftol());
+                    KINSetScaledStepTol(self.kin, crate::solvers::newton_xtol());
                 }
             }
             if success {

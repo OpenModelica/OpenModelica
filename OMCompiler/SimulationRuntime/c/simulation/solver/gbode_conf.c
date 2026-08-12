@@ -106,6 +106,7 @@ enum GB_METHOD getGB_method(enum _FLAG flag)
       case RK_SIRK3_2_3L2SA:
       case RK_SIRK3_2_4L3SA:
       case RK_SIRK3_2_5L3SA:
+      case RK_SIRK4_3_LAGUERRE:
       case RK_SIRK4_3_5L3SA:
       case RK_SIRK5_4_5L3SA:
       case RK_SIRK4_3_6L4SA:

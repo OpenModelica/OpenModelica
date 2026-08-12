@@ -170,11 +170,10 @@ pub fn stringFindString(r#str: ArcStr, searchStr: ArcStr) -> ArcStr {
     }
 }
 
-/// POSIX `regex(3)` wrapper, a faithful port of `OpenModelica_regexImpl`
-/// (SimulationRuntime/c/util/utility.c): it FFIs straight to the same
-/// `regcomp`/`regexec` the C runtime uses, so BRE/ERE syntax and POSIX
-/// leftmost-longest matching behave identically (rather than reimplementing a
-/// regex engine).
+/// POSIX `regex(3)` wrapper, a port of `OpenModelica_regexImpl`
+/// (SimulationRuntime/c/util/utility.c) over the `regex` crate. The crate is
+/// leftmost-first where POSIX is leftmost-longest; that only shows in which of
+/// several alternatives a *capture* takes, which OMC's patterns do not depend on.
 ///
 /// Returns `(nmatch, matches)` where `matches` always has `maxMatches` elements:
 /// the captured substrings (full match at index 0, then each participating
@@ -183,7 +182,6 @@ pub fn stringFindString(r#str: ArcStr, searchStr: ArcStr) -> ArcStr {
 /// is empty and `nmatch` is 1 on match, 0 otherwise. On a compile error
 /// `nmatch` is 0 and (for `maxMatches > 0`) the error message is the first
 /// element.
-#[cfg(any(target_arch = "wasm32", target_os = "windows"))]
 pub fn regex(
     str: ArcStr,
     re: ArcStr,
@@ -191,11 +189,6 @@ pub fn regex(
     extended: bool,
     ignoreCase: bool,
 ) -> (i32, Arc<List<ArcStr>>) {
-    // POSIX regcomp/regexec are libc-only; on wasm and Windows we run the `regex`
-    // instead. POSIX ERE maps almost directly onto its syntax; POSIX BRE has the
-    // grouping/quantifier metacharacter conventions reversed, so translate first.
-    use regex::RegexBuilder;
-
     fn list_forward(items: Vec<ArcStr>) -> Arc<List<ArcStr>> {
         let mut res = metamodelica::nil();
         for it in items.into_iter().rev() {
@@ -207,12 +200,8 @@ pub fn regex(
     let maxn = maxMatches.max(0) as usize;
     let pattern = posix_to_rust(re.as_str(), extended);
 
-    // The C runtime passes no REG_NEWLINE, so `.` matches newline too and `^`/`$`
-    // anchor the whole subject (multi_line stays off).
-    let compiled = RegexBuilder::new(&pattern)
-        .case_insensitive(ignoreCase)
-        .dot_matches_new_line(true)
-        .build();
+    let mut builder = regex_builder(&pattern);
+    let compiled = builder.case_insensitive(ignoreCase).build();
 
     let re_c = match compiled {
         Ok(c) => c,
@@ -274,7 +263,6 @@ pub fn regex(
 /// Backreferences (`\1`…) aren't supported by the crate and don't occur in OMC's
 /// patterns; a literal backslash inside a bracket expression (POSIX-literal, but
 /// an escape to the crate) likewise doesn't occur and is left as-is.
-#[cfg(any(target_arch = "wasm32", target_os = "windows"))]
 fn posix_to_rust(re: &str, extended: bool) -> String {
     let mut out = String::with_capacity(re.len() + 8);
     let mut chars = re.chars().peekable();
@@ -335,155 +323,36 @@ fn posix_to_rust(re: &str, extended: bool) -> String {
     out
 }
 
+/// The builder every pattern is compiled with, already translated by
+/// [`posix_to_rust`]. The C runtime passes no `REG_NEWLINE`, so `.` matches
+/// newline too and `^`/`$` anchor the whole subject (`multi_line` stays off).
+/// POSIX bounds a pattern only by memory, so the crate's fixed 10 MB/2 MB
+/// budgets scale with it instead — both are too small for a pattern naming every
+/// variable of a large model, the DFA cache disastrously so.
+fn regex_builder(pattern: &str) -> regex::RegexBuilder {
+    let budget = pattern.len().saturating_mul(512);
+    let mut b = regex::RegexBuilder::new(pattern);
+    b.dot_matches_new_line(true).size_limit(budget.max(10 << 20)).dfa_size_limit(budget.max(2 << 20));
+    b
+}
+
 /// A compiled POSIX ERE, so one pattern can be tested against many strings
-/// ([`regex`] compiles per call). Same backends, so a match means what it does in
-/// the C runtime: libc `regcomp`/`regexec`, the `regex` crate on wasm/Windows.
+/// ([`regex`] compiles per call).
 pub struct Regex {
-    #[cfg(any(target_arch = "wasm32", target_os = "windows"))]
     re: regex::Regex,
-    #[cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))]
-    preg: Box<libc::regex_t>,
 }
 
 impl Regex {
     /// No captures (`REG_NOSUB`); the error is the backend's own message.
     pub fn new(re: &str) -> Result<Self, String> {
-        #[cfg(any(target_arch = "wasm32", target_os = "windows"))]
-        {
-            regex::RegexBuilder::new(&posix_to_rust(re, true))
-                .dot_matches_new_line(true)
-                .build()
-                .map(|re| Regex { re })
-                .map_err(|e| e.to_string())
-        }
-        #[cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))]
-        {
-            let c_re = std::ffi::CString::new(re.as_bytes()).map_err(|e| e.to_string())?;
-            let mut preg: Box<libc::regex_t> = Box::new(unsafe { std::mem::zeroed() });
-            let rc = unsafe {
-                libc::regcomp(&mut *preg, c_re.as_ptr(), libc::REG_EXTENDED | libc::REG_NOSUB)
-            };
-            if rc != 0 {
-                let mut buf = vec![0 as core::ffi::c_char; 2048];
-                unsafe { libc::regerror(rc, &*preg, buf.as_mut_ptr(), buf.len()) };
-                let msg = unsafe { std::ffi::CStr::from_ptr(buf.as_ptr()) }.to_string_lossy().into_owned();
-                unsafe { libc::regfree(&mut *preg) };
-                return Err(msg);
-            }
-            Ok(Regex { preg })
-        }
+        regex_builder(&posix_to_rust(re, true))
+            .build()
+            .map(|re| Regex { re })
+            .map_err(|e| e.to_string())
     }
 
     pub fn is_match(&self, s: &str) -> bool {
-        #[cfg(any(target_arch = "wasm32", target_os = "windows"))]
-        {
-            self.re.is_match(s)
-        }
-        #[cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))]
-        {
-            // regexec takes no NUL; OMC's subjects have none.
-            match std::ffi::CString::new(s.as_bytes()) {
-                Ok(c) => unsafe { libc::regexec(&*self.preg, c.as_ptr(), 0, core::ptr::null_mut(), 0) == 0 },
-                Err(_) => false,
-            }
-        }
-    }
-}
-
-#[cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))]
-impl Drop for Regex {
-    fn drop(&mut self) {
-        unsafe { libc::regfree(&mut *self.preg) };
-    }
-}
-
-#[cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))]
-pub fn regex(
-    str: ArcStr,
-    re: ArcStr,
-    maxMatches: i32,
-    extended: bool,
-    ignoreCase: bool,
-) -> (i32, Arc<List<ArcStr>>) {
-    use std::ffi::CString;
-
-    fn list_forward(items: Vec<ArcStr>) -> Arc<List<ArcStr>> {
-        let mut res = metamodelica::nil();
-        for it in items.into_iter().rev() {
-            res = metamodelica::cons(it, res);
-        }
-        res
-    }
-
-    let maxn = maxMatches.max(0) as usize;
-    let flags = (if extended { libc::REG_EXTENDED } else { 0 })
-        | (if ignoreCase { libc::REG_ICASE } else { 0 })
-        | (if maxn != 0 { 0 } else { libc::REG_NOSUB });
-
-    // POSIX strings are NUL-terminated; a NUL in the pattern/subject can't be
-    // represented. OMC's patterns and subjects never contain NUL, so treat that
-    // as a non-match (mirrors the C, which would simply see a truncated string).
-    let (c_re, c_str) = match (CString::new(re.as_bytes()), CString::new(str.as_bytes())) {
-        (Ok(a), Ok(b)) => (a, b),
-        _ => {
-            let items = vec![literal!(""); maxn];
-            return (0, list_forward(items));
-        }
-    };
-
-    unsafe {
-        let mut preg: libc::regex_t = std::mem::zeroed();
-        let rc = libc::regcomp(&mut preg, c_re.as_ptr(), flags);
-        if rc != 0 {
-            // Compile failure. With no capture slots there is nothing to report;
-            // otherwise the first slot carries the error message (regerror), the
-            // rest are empty — exactly as OpenModelica_regexImpl does.
-            if maxn == 0 {
-                return (0, metamodelica::nil());
-            }
-            let mut buf = vec![0 as core::ffi::c_char; 2048];
-            libc::regerror(rc, &preg, buf.as_mut_ptr(), buf.len());
-            let msg = std::ffi::CStr::from_ptr(buf.as_ptr()).to_string_lossy().into_owned();
-            let mut items: Vec<ArcStr> = Vec::with_capacity(maxn);
-            items.push(ArcStr::from(format!("Failed to compile regular expression: {re} with error: {msg}")));
-            for _ in 1..maxn {
-                items.push(literal!(""));
-            }
-            // regcomp leaves nothing to free on failure, but freeing a
-            // zero-initialised regex_t is safe and matches the C path.
-            libc::regfree(&mut preg);
-            return (0, list_forward(items));
-        }
-
-        let mut pmatch: Vec<libc::regmatch_t> = vec![std::mem::zeroed(); maxn.max(1)];
-        let res = libc::regexec(&preg, c_str.as_ptr(), maxn, pmatch.as_mut_ptr(), 0);
-        libc::regfree(&mut preg);
-
-        let bytes = str.as_bytes();
-        let mut nmatch = 0i32;
-        let matches = if maxn == 0 {
-            if res == 0 {
-                nmatch = 1;
-            }
-            metamodelica::nil()
-        } else {
-            let mut items: Vec<ArcStr> = Vec::with_capacity(maxn);
-            for m in pmatch.iter().take(maxn) {
-                // Pack only participating groups (rm_so != -1), like the C.
-                if res == 0 && (m.rm_so as i64) != -1 {
-                    let so = m.rm_so as usize;
-                    let eo = m.rm_eo as usize;
-                    let sub = std::str::from_utf8(&bytes[so..eo]).unwrap_or("");
-                    items.push(ArcStr::from(sub));
-                    nmatch += 1;
-                }
-            }
-            while items.len() < maxn {
-                items.push(literal!(""));
-            }
-            list_forward(items)
-        };
-        (nmatch, matches)
+        self.re.is_match(s)
     }
 }
 

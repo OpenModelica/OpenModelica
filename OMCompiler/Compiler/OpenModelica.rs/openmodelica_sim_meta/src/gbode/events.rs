@@ -5,7 +5,7 @@
 
 use super::{Gbode, Ode, MINIMAL_STEP_SIZE};
 use crate::driver::Result;
-use crate::gbode::math::{abs, ceil, ln};
+use crate::gbode::math::abs;
 
 impl Gbode {
     fn zc_at(&mut self, ode: &mut Ode, t: f64) -> Result<()> {
@@ -38,7 +38,7 @@ impl Gbode {
     /// bracket, so the event is not missed).
     fn find_root(&mut self, ode: &mut Ode, mut a: f64, mut b: f64) -> Result<f64> {
         let ttol = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE * abs(b - a);
-        let mut n = 1 + ceil(ln(abs(b - a) / ttol) / ln(2.0)) as i64;
+        let mut n = crate::driver::bisection_iterations(b - a, ttol);
         self.zc_backup.copy_from_slice(&self.zc);
         while abs(b - a) > MINIMAL_STEP_SIZE && n > 0 {
             n -= 1;

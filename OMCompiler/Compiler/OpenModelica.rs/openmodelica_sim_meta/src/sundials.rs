@@ -314,6 +314,8 @@ pub const IDA_TOO_MUCH_WORK: c_int = -1;
 const IDA_NORMAL: c_int = 1;
 const IDA_ONE_STEP: c_int = 2;
 const IDA_SUCCESS: c_int = 0;
+/// `IDACalcIC`'s `icopt`: solve for the algebraic components of `y` and all of `y'`.
+const IDA_YA_YDP_INIT: c_int = 1;
 const IDA_TSTOP_RETURN: c_int = 1;
 const IDA_ROOT_RETURN: c_int = 2;
 const CSC_MAT: c_int = 0;
@@ -345,6 +347,16 @@ unsafe extern "C" {
     fn IDAGetNumJacEvals(mem: *mut c_void, n: *mut c_long) -> c_int;
     fn IDAGetNumErrTestFails(mem: *mut c_void, n: *mut c_long) -> c_int;
     fn IDAGetNumNonlinSolvConvFails(mem: *mut c_void, n: *mut c_long) -> c_int;
+    // `--daeMode`: mark the algebraic unknowns and solve for consistent values.
+    fn IDASetId(mem: *mut c_void, id: NVector) -> c_int;
+    fn IDASetSuppressAlg(mem: *mut c_void, suppressalg: c_int) -> c_int;
+    fn IDACalcIC(mem: *mut c_void, icopt: c_int, tout1: f64) -> c_int;
+    fn IDAGetConsistentIC(mem: *mut c_void, yy0: NVector, yp0: NVector) -> c_int;
+    fn IDAGetActualInitStep(mem: *mut c_void, hinused: *mut f64) -> c_int;
+    fn IDASetLineSearchOffIC(mem: *mut c_void, lsoff: c_int) -> c_int;
+    fn IDASetMaxNumStepsIC(mem: *mut c_void, maxnh: c_int) -> c_int;
+    fn IDASetMaxNumJacsIC(mem: *mut c_void, maxnj: c_int) -> c_int;
+    fn IDASetMaxNumItersIC(mem: *mut c_void, maxnit: c_int) -> c_int;
 
     fn N_VCloneVectorArray(count: c_int, w: NVector) -> *mut NVector;
     fn N_VDestroyVectorArray(vs: *mut NVector, count: c_int);
@@ -407,6 +419,8 @@ pub struct Ida {
     /// Run totals; the `IDAGet*` counters restart with every `IDAReInit`.
     past: Counters,
     sens: Option<Sens>,
+    /// Kept so [`set_user_data`](Ida::set_user_data) can re-arm it.
+    jac_fn: Option<IdaJacFn>,
 }
 
 /// IDAS forward sensitivity state (`-idaSensitivity`). `p` is what IDAS perturbs
@@ -477,6 +491,7 @@ impl Ida {
                 roots: vec![0; n_roots.max(1)],
                 past: Counters::default(),
                 sens: None,
+                jac_fn: jac,
             }
         };
         ida.y_mut().copy_from_slice(y0);
@@ -513,6 +528,54 @@ impl Ida {
     /// The IDA memory block, for the `IDAGet*` a callback needs.
     pub fn mem(&self) -> *mut c_void {
         self.mem
+    }
+
+    /// `--daeMode`: which unknowns are differential (`1`) and which algebraic (`0`),
+    /// so `IDACalcIC` can solve for the latter and (with `suppress_alg`) the local
+    /// error test can leave them out.
+    pub fn set_id(&mut self, id: &[f64], suppress_alg: bool) -> bool {
+        let v = unsafe { N_VNew_Serial(self.n as SunIndex) };
+        if v.is_null() {
+            return false;
+        }
+        unsafe {
+            core::ptr::copy_nonoverlapping(id.as_ptr(), N_VGetArrayPointer(v), self.n);
+            let ok = (!suppress_alg || IDASetSuppressAlg(self.mem, 1) == IDA_SUCCESS)
+                && IDASetId(self.mem, v) == IDA_SUCCESS;
+            // IDA keeps its own copy of `id`.
+            N_VDestroy(v);
+            ok
+        }
+    }
+
+    /// The step IDA would take first; `IDACalcIC` needs a nonzero one.
+    pub fn actual_init_step(&self) -> f64 {
+        let mut h = 0.0;
+        unsafe { IDAGetActualInitStep(self.mem, &mut h) };
+        h
+    }
+
+    pub fn set_init_step(&mut self, h: f64) -> bool {
+        unsafe { IDASetInitStep(self.mem, h) == IDA_SUCCESS }
+    }
+
+    /// `IDACalcIC(IDA_YA_YDP_INIT)`: solve for the algebraic unknowns and every
+    /// derivative, `tout1` giving the direction. Raised iteration limits as in
+    /// `ida_event_update`; `line_search` off is C's retry.
+    pub fn calc_ic(&mut self, tout1: f64, line_search: bool) -> bool {
+        unsafe {
+            let lim = (2 * self.n * 10) as c_int;
+            IDASetMaxNumStepsIC(self.mem, lim);
+            IDASetMaxNumJacsIC(self.mem, lim);
+            IDASetMaxNumItersIC(self.mem, lim);
+            IDASetLineSearchOffIC(self.mem, !line_search as c_int);
+            IDACalcIC(self.mem, IDA_YA_YDP_INIT, tout1) == IDA_SUCCESS
+        }
+    }
+
+    /// Read what [`calc_ic`](Ida::calc_ic) settled on back into `y`/`yp`.
+    pub fn consistent_ic(&mut self) -> bool {
+        unsafe { IDAGetConsistentIC(self.mem, self.y, self.yp) == IDA_SUCCESS }
     }
 
     /// Start forward sensitivity analysis over `p0`, the differentiated
@@ -606,8 +669,18 @@ impl Ida {
     /// Rebind the pointer handed to the `res`/`root`/`jac` callbacks. The
     /// driver's context lives on the stack of one `advance`, so it is set per
     /// chunk.
+    /// Bind the callbacks' context, re-arming the Jacobian with it: the linear solver
+    /// caches `user_data` as its `J_data` in `IDASetJacFn` (and in `idaLsInitialize`,
+    /// which only runs on the first solve after an `IDAReInit`), so a plain
+    /// `IDASetUserData` would leave the Jacobian callback on the previous context.
     pub fn set_user_data(&mut self, user_data: *mut c_void) -> bool {
-        unsafe { IDASetUserData(self.mem, user_data) == IDA_SUCCESS }
+        unsafe {
+            IDASetUserData(self.mem, user_data) == IDA_SUCCESS
+                && match self.jac_fn {
+                    Some(f) => IDASetJacFn(self.mem, Some(f)) == IDA_SUCCESS,
+                    None => true,
+                }
+        }
     }
 
     /// Integrate to `tout`, stopping early on a root. `t` is updated to where the

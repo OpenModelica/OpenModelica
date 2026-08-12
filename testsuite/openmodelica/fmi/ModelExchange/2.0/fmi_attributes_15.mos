@@ -1,5 +1,6 @@
 // name: fmi_attributes_15.mos
 // keywords: FMI 2.0 export
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf fmi_attributes_15.fmu fmi_attributes_15.log fmi_attributes_15_tmp.xml fmi_attributes_15.fmutmp/
 

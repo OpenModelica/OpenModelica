@@ -2,6 +2,7 @@
 // depends: test.json
 // status: correct
 // cflags: -d=-newInst
+// suite: metamodelica
 
 setCommandLineOptions("-g=MetaModelica -d=gen,rml,noevalfunc");
 echo(false);

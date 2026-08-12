@@ -2,8 +2,8 @@
 // keywords: ExternalObject
 // status:   correct
 // cflags: -d=newInst
-// setup_command: gcc -c -o ExternalCFuncInputOnly.o ExternalCFuncInputOnly.c
-// teardown_command: rm -rf ExternalCFuncInputOnly_*
+// setup_command: $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o ExternalCFuncInputOnly$OMC_EXTLIB_EXT ExternalCFuncInputOnly.c $OMC_EXTLIB_LIBS
+// teardown_command: rm -rf ExternalCFuncInputOnly_* ExternalCFuncInputOnly$OMC_EXTLIB_EXT
 // depends: ExternalCFuncInputOnly.c
 // depends: ExternalCFuncInputOnly.h
 //

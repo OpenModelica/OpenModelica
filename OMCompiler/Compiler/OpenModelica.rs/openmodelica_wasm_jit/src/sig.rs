@@ -151,6 +151,15 @@ pub struct FnSig {
     pub results: Vec<SigTy>,
 }
 
+/// The calling convention of an external function's `extArgs`.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ExtLang {
+    /// `external "C"` / `external "builtin"`: scalars by value, arrays row-major.
+    C,
+    /// `external "FORTRAN 77"`: every argument by reference, arrays column-major.
+    Fortran77,
+}
+
 /// The C-call shape of a general external "C" import. `args` is the C argument
 /// list in `extArgs` order, each flagged as an `_Out_` pointer or not; `ret` is
 /// the C return-value type (`None` for a `void` function). The corresponding wasm
@@ -159,10 +168,13 @@ pub struct FnSig {
 /// string outputs — the C return value first (if any), then each `_Out_` scalar/
 /// string pointer's written value — as multi-value results. Array outputs are
 /// filled in place (native) or copied back by the host (web), so they are NOT
-/// results. The host trampoline owns all pointer marshalling.
+/// results. The host trampoline owns all pointer marshalling, including the
+/// by-reference/column-major conversions `lang == Fortran77` asks for.
 #[derive(Clone)]
 pub struct ExtCallSig {
+    /// The linker symbol; already `_`-suffixed for [`ExtLang::Fortran77`].
     pub name: String,
+    pub lang: ExtLang,
     pub args: Vec<(SigTy, bool)>,
     pub ret: Option<SigTy>,
 }
@@ -189,3 +201,45 @@ impl ExtCallSig {
         FnSig { params: self.wasm_params(), results: self.wasm_results() }
     }
 }
+
+// ─────────────────────────── record objects ───────────────────────────
+
+/// 8 bytes for a `Real`, 4 for everything else (an `Integer`/`Boolean`, a handle).
+pub fn field_size(t: &SigTy) -> u32 {
+    if matches!(t, SigTy::Real) { 8 } else { 4 }
+}
+
+fn align_up(n: u32, a: u32) -> u32 {
+    (n + a - 1) & !(a - 1)
+}
+
+/// The byte layout of a record object's payload, which must agree with
+/// `rec_data_off` in the runtime. `data_off` is the offset from the object base to
+/// the first field (after the refcount, `nheap` and the inline release table),
+/// `field_off[i]` field `i`'s offset within the field data, `heap` the
+/// `(elem_kind, field_off)` of each heap field.
+pub struct RecordLayout {
+    pub data_off: u32,
+    pub size: u32,
+    pub field_off: Vec<u32>,
+    pub heap: Vec<(u32, u32)>,
+}
+
+pub fn record_layout(fields: &[(ArcStr, SigTy)]) -> RecordLayout {
+    let nheap = fields.iter().filter(|(_, t)| t.is_heap()).count() as u32;
+    let data_off = align_up(8 + nheap * 8, 8);
+    let mut off = 0u32;
+    let mut field_off = Vec::with_capacity(fields.len());
+    let mut heap = Vec::new();
+    for (_, t) in fields {
+        let sz = field_size(t);
+        off = align_up(off, sz);
+        field_off.push(off);
+        if t.is_heap() {
+            heap.push((t.elem_kind(), off));
+        }
+        off += sz;
+    }
+    RecordLayout { data_off, size: data_off + align_up(off, 8), field_off, heap }
+}
+

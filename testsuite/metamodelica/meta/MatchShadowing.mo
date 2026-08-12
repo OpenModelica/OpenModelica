@@ -1,6 +1,7 @@
 // name: MatchShadowing
 // status: incorrect
 // cflags: +g=MetaModelica -d=-newInst
+// suite: metamodelica
 
 model MatchShadowing
 
@@ -21,7 +22,7 @@ end MatchShadowing;
 
 // Result:
 // Error processing file: MatchShadowing.mo
-// [metamodelica/meta/MatchShadowing.mo:13:7-13:13:writable] Error: Local variable 'x' shadows another variable.
+// [metamodelica/meta/MatchShadowing.mo:14:7-14:13:writable] Error: Local variable 'x' shadows another variable.
 // Error: Error occurred while flattening model MatchShadowing
 //
 // # Error encountered! Exiting...

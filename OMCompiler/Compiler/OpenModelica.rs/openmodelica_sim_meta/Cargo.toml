@@ -15,6 +15,9 @@ default = ["std"]
 # in-wasm runtime builds `no_std` (`default-features = false`), where the solver
 # math routes through `libm` and daskr is `no_std` too.
 std = ["daskr/std"]
+# Compile the CVODE/IDA driver paths without linking an archive: the symbols stay
+# undefined and become wasm imports the FMI3 adapter resolves at FMU-link time.
+sundials_extern = []
 
 [dependencies]
 # The DAE solver for the DASSL driver. no_std-capable; the host pulls its `std`

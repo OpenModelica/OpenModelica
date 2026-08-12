@@ -410,11 +410,14 @@ pub fn dgefa(a: &mut [f64], lda: i32, n: i32, ipvt: &mut [i32], info: &mut i32) 
                     a[idx(l, j)] = a[idx(k, j)];
                     a[idx(k, j)] = tj;
                 }
-                // daxpy(n-k, tj, col k, col j) — same array, disjoint columns.
-                let xoff = idx(k + 1, k);
-                let yoff = idx(k + 1, j);
-                for ii in 0..(n - k) as usize {
-                    a[yoff + ii] += tj * a[xoff + ii];
+                // daxpy(n-k, tj, col k, col j) — same array, disjoint columns; its
+                // `da == 0` early-out keeps a banded matrix O(n·b²), not O(n³).
+                if tj != 0.0 {
+                    let xoff = idx(k + 1, k);
+                    let yoff = idx(k + 1, j);
+                    for ii in 0..(n - k) as usize {
+                        a[yoff + ii] += tj * a[xoff + ii];
+                    }
                 }
             }
         }
@@ -547,10 +550,12 @@ pub fn dgbfa(
                         abd[idx(l, j)] = abd[idx(mm, j)];
                         abd[idx(mm, j)] = tj;
                     }
-                    let xoff = idx(m + 1, k);
-                    let yoff = idx(mm + 1, j);
-                    for ii in 0..lm as usize {
-                        abd[yoff + ii] += tj * abd[xoff + ii];
+                    if tj != 0.0 {
+                        let xoff = idx(m + 1, k);
+                        let yoff = idx(mm + 1, j);
+                        for ii in 0..lm as usize {
+                            abd[yoff + ii] += tj * abd[xoff + ii];
+                        }
                     }
                 }
             }

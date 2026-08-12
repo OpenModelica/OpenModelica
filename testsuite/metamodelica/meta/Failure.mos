@@ -2,6 +2,7 @@
 // keywords: Failure
 // status:   correct
 // cflags: -d=-newInst
+// suite: metamodelica
 //
 // Failure Testing
 //

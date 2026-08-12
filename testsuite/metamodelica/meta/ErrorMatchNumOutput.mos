@@ -1,6 +1,7 @@
 // name: ErrorMatchNumOutput
 // cflags: +g=MetaModelica -d=-newInst
 // status: correct
+// suite: metamodelica
 //
 // Tests the error message for imbalanced number of actual/expected output in
 // match expressions.

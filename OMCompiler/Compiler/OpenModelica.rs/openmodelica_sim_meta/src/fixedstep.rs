@@ -155,7 +155,7 @@ impl FixedStep {
     fn find_root(&mut self, ode: &mut Ode, mut a: f64, mut b: f64) -> Result<f64> {
         let n = self.n_states;
         let ttol = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE * abs(b - a);
-        let mut iters = 1 + ceil(ln(abs(b - a) / ttol) / ln(2.0)) as i64;
+        let mut iters = crate::driver::bisection_iterations(b - a, ttol);
         self.zc_backup.copy_from_slice(&self.zc);
         let mut mid = vec![0.0; n];
         while abs(b - a) > MINIMAL_STEP_SIZE && iters > 0 {
@@ -255,4 +255,4 @@ fn no_root_finding() -> bool {
     crate::simflags::with_flags(|f| f.no_root_finding)
 }
 
-use libm::{ceil, fabs as abs, log as ln};
+use libm::fabs as abs;

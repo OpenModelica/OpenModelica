@@ -597,7 +597,7 @@ SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, u
  *
  * Complexity: O(nnz + max(nRows, nCols))
  */
-SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc,
+SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc,
                            unsigned int nRows,
                            unsigned int nCols)
 {
@@ -694,6 +694,8 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
  * Two columns may share a color only if they have no non-zero row in common.
  * Uses ColPack's partial distance-two column coloring when available, with
  * a greedy C-only fallback.
+ * The fallback uses the existing cscToCsr helper to build the row→columns map, then
+ * assigns the smallest available color to each column in order.
  *
  * Needed for the resizable analytic Jacobian path: the C sparsity pattern
  * is built at runtime from WHOLEDIM loops that over-approximate array
@@ -720,7 +722,7 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
   }
 #endif
 
-  SPARSE_PATTERN* csr = csc_to_csr(sp, nRows, nCols);
+  SPARSE_PATTERN* csr = cscToCsr(sp, nRows, nCols);
   if (!csr) {
     /* Fallback: trivial one-column-per-color coloring. */
     for (unsigned int c = 0; c < nCols; c++) sp->colorCols[c] = c + 1;
