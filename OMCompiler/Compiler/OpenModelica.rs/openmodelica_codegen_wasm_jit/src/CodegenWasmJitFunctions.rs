@@ -129,7 +129,7 @@ fn unknown_variable(name: &str) -> &'static str {
 // driver so the emitted layout and the driver's readback cannot drift). Its
 // wasm-encoder `ValType` mapping is host-only, so it lives here as an extension
 // trait rather than an inherent method.
-pub(crate) use openmodelica_sim_meta::WTy;
+pub(crate) use openmodelica_sim_meta::{Neg, WTy};
 use openmodelica_sim_meta::clock_field;
 pub(crate) use openmodelica_wasm_jit::sig::{ExtCallSig, ExtLang, FnSig, SigTy, WTyVal};
 
@@ -1522,7 +1522,7 @@ pub(crate) struct SimSlot {
     pub(crate) wty: WTy,
     /// Alias negation: the cref is a negated alias of the variable at `off`, so
     /// a read negates and a write is rejected (aliases are never assigned).
-    pub(crate) negate: bool,
+    pub(crate) negate: Neg,
     /// The slot holds a reference-counted heap handle (a String). A read retains;
     /// an assignment releases the previous handle before storing the new (owned)
     /// one. Scalar Real/Integer/Boolean slots are not heap.
@@ -1892,7 +1892,7 @@ impl<'a> FnCtx<'a> {
             }
             // C's `postExp`: `<var> = $START.<var>`, but not for a String, whose slot
             // holds a reference-counted handle.
-            if let Some(slot) = var.filter(|s| !s.negate && !s.heap) {
+            if let Some(slot) = var.filter(|s| s.negate == Neg::None && !s.heap) {
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::LocalGet(raw));
                 match slot.wty {
@@ -5500,17 +5500,20 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
     match slot.wty {
         WTy::F64 => {
             ctx.emit(we::Instruction::F64Load(mem_arg(slot.off, 3)));
-            if slot.negate {
+            if slot.negate != Neg::None {
                 ctx.emit(we::Instruction::F64Neg);
             }
         }
         WTy::I32 => {
             ctx.emit(we::Instruction::I32Load(mem_arg(slot.off, 2)));
-            if slot.negate {
-                // Integer negate; a Boolean negated alias uses `!` but is stored
-                // as 0/1 — handled when Boolean aliases are added.
-                ctx.emit(we::Instruction::I32Const(0));
-                ctx.emit(we::Instruction::I32Sub);
+            match slot.negate {
+                Neg::None => {}
+                Neg::Arith => {
+                    ctx.emit(we::Instruction::I32Const(0));
+                    ctx.emit(we::Instruction::I32Sub);
+                }
+                // A Boolean is stored as 0/1, so `!v` is `v == 0`.
+                Neg::Not => ctx.emit(we::Instruction::I32Eqz),
             }
         }
     }
@@ -5646,7 +5649,7 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
             return Err("CodegenWasmJit: simulation assignment to unknown variable")
         }
     };
-    if slot.negate {
+    if slot.negate != Neg::None {
         return Err("CodegenWasmJit: assignment to negated alias");
     }
     let data = ctx.sim()?.data_local;
@@ -5711,7 +5714,7 @@ pub(crate) fn sim_const_store(
         }
     }
     let Some(slot) = sim.vars.get(&sim_cref_key(cref)?) else { return Ok(None) };
-    if slot.negate || slot.heap {
+    if slot.negate != Neg::None || slot.heap {
         return Ok(None);
     }
     let bytes = match (const_num(exp), slot.wty) {

@@ -25,5 +25,7 @@ sundials_extern = []
 daskr = { path = "../daskr", default-features = false }
 # no_std `sqrt` for the colored-FD Jacobian; unused under `std` (inherent method).
 libm = "0.2"
+# The `.mat` serializer `MetaKind` projects onto (`MetaKind::mat`).
+openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
 
 [lib]

@@ -13,6 +13,7 @@ ChatteringEventsTest1.mos \
 ChatteringEventsTest2.mos \
 CheckEvents.mos \
 cseOutsideNoEvent.mos \
+DelayZeroCrossing.mos \
 discreteRelations.mos \
 EventDelay.mos \
 EventIteration.mos \
