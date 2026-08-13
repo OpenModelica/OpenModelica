@@ -264,6 +264,7 @@ openmodelica_sim_meta/src/optimization/ipopt_out.rs
 openmodelica_sim_meta/src/optimization/mod.rs
 openmodelica_sim_meta/src/optimization/model.rs
 openmodelica_sim_meta/src/optimization/setup.rs
+openmodelica_sim_meta/src/qss.rs
 openmodelica_sim_meta/src/simflags.rs
 openmodelica_sim_meta/src/sundials.rs
 openmodelica_sim_meta/src/sync.rs

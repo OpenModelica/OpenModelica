@@ -463,6 +463,12 @@ pub trait Driver {
     fn advance(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel, budget_ms: f64) -> Result<Advance>;
     fn take_rows(&mut self) -> Vec<f64>;
     fn fill_stats(&mut self, model: &SimModel, stats: &mut SolveStats);
+    /// The time C's `finishSimulation` emits its terminal row at
+    /// (`localData[0]->timeValue`). `None` ⇒ the last emitted row's time, where
+    /// every driver that follows the output grid leaves it.
+    fn terminal_time(&self) -> Option<f64> {
+        None
+    }
 }
 
 // Wall-clock (ms) for the chunk budget. wasm has no `Instant`, so the host injects
@@ -514,10 +520,10 @@ fn env_var(_name: &str) -> Option<String> {
 }
 
 /// `+inf` (one-shot) keeps `now_ms` off the hot path via `is_finite` short-circuit.
-fn deadline_from(budget_ms: f64) -> f64 {
+pub(crate) fn deadline_from(budget_ms: f64) -> f64 {
     if budget_ms.is_finite() { now_ms() + budget_ms } else { f64::INFINITY }
 }
-fn past_deadline(deadline: f64) -> bool {
+pub(crate) fn past_deadline(deadline: f64) -> bool {
     deadline.is_finite() && now_ms() >= deadline
 }
 
@@ -565,7 +571,7 @@ fn arm_alarm() {
     });
 }
 
-fn check_alarm() -> Result<()> {
+pub(crate) fn check_alarm() -> Result<()> {
     match past_deadline(alarm_store::get()) {
         true => Err(ALARM_ABORT_ERR),
         false => Ok(()),
@@ -581,7 +587,7 @@ static CANCEL_HOOK: AtomicUsize = AtomicUsize::new(0);
 pub fn set_cancel_hook(f: fn() -> bool) {
     CANCEL_HOOK.store(f as usize, Ordering::Relaxed);
 }
-fn cancel_requested() -> bool {
+pub(crate) fn cancel_requested() -> bool {
     let p = CANCEL_HOOK.load(Ordering::Relaxed);
     if p == 0 {
         return false;
@@ -705,7 +711,7 @@ pub(crate) fn write_i32(e: &mut dyn SimEngine, addr: u32, v: i32) -> Result<()> 
 /// Error out if a nonlinear system raised the `nls_fail` flag during the last
 /// equation call in a context that cannot back off (initialisation, an output
 /// point, the Euler loop). The DASSL residual handles this recoverably instead.
-fn check_nls(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub(crate) fn check_nls(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     let failed = read_i32(e, sim_data + layout.nls_fail_off)?;
     if failed != 0 {
         init_report::set_failed_system(failed - 1);
@@ -1959,7 +1965,7 @@ pub(crate) fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32,
 /// `SimData` flag during the last step (C's `checkSimulationTerminated`), or
 /// `-steadyState` is satisfied. Every driver asks after each output row, so both
 /// C stop conditions are served in one place. The first observation reports it.
-fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bool> {
+pub(crate) fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<bool> {
     if read_i32(e, sim_data + layout.terminate_off)? == 0 {
         return steady_state_reached(e, sim_data, layout);
     }
@@ -2028,7 +2034,7 @@ fn steady_state_reached(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
 /// C's `function_storeDelayed` + `function_storeSpatialDistribution`, the tail of
 /// `updateContinuousSystem`: the operators with an internal history record the point
 /// the model was last evaluated at. A model without any skips it entirely.
-fn store_operators(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub(crate) fn store_operators(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if !layout.has_history_ops {
         return Ok(());
     }
@@ -2054,7 +2060,7 @@ fn store_operators_at(
     store_operators(e, sim_data, layout)
 }
 
-fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub(crate) fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ALGEBRAIC);
     }
@@ -2110,15 +2116,18 @@ fn emit_row(
 }
 
 /// C's `finishSimulation`: a discrete update with `terminal()` true and one more
-/// row at the same time, so a `when terminal()` body reaches the result file.
+/// row at the same time, so a `when terminal()` body reaches the result file. `at`
+/// overrides that time for a driver whose last row is older than `stopTime`
+/// ([`Driver::terminal_time`]).
 pub fn emit_terminal_row(
     e: &mut dyn SimEngine,
     rows: &mut Vec<f64>,
     sim_data: u32,
     layout: &SimLayout,
     n_reals: u32,
+    at: Option<f64>,
 ) -> Result<()> {
-    let Some(time) = rows.len().checked_sub(n_reals as usize).map(|i| rows[i]) else {
+    let Some(time) = rows.len().checked_sub(n_reals as usize).map(|i| at.unwrap_or(rows[i])) else {
         return Ok(());
     };
     if no_event_emit() {
@@ -2141,7 +2150,7 @@ pub fn emit_terminal_row(
 /// The initial result row. C emits it straight after `initializeModel` with no
 /// re-evaluation: `SimData` is already consistent, and re-running the equations
 /// would repeat any side effect they have (`Streams.print`).
-fn emit_initial_row(
+pub(crate) fn emit_initial_row(
     e: &mut dyn SimEngine,
     rows: &mut Vec<f64>,
     sim_data: u32,
@@ -2893,6 +2902,7 @@ pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
         Some(crate::simflags::Solver::RungeKutta) => "rungekutta",
         Some(crate::simflags::Solver::SymSolver) => "symSolver",
         Some(crate::simflags::Solver::SymSolverSsc) => "symSolverSsc",
+        Some(crate::simflags::Solver::Qss) => "qss",
         Some(crate::simflags::Solver::Optimization) => "optimization",
         _ => method,
     }
@@ -2901,7 +2911,7 @@ pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
 /// Whether this build's `SolverCore` can serve `method`. `dassljac` is dassl
 /// with a symbolic Jacobian and `""` the dassl default.
 fn check_method(method: &str) -> bool {
-    matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "rungekutta" | "gbode" | "")
+    matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "rungekutta" | "gbode" | "qss" | "")
         || (matches!(method, "cvode" | "ida") && cfg!(sundials))
         // `optimize()`; `drive` handles it before the integrators, and reports
         // C's "Ipopt is needed but not available." when it was not linked.
@@ -2997,6 +3007,18 @@ pub fn make_driver(
              Colored numerical Jacobian will be used.",
         );
     }
+    // C's `solver_main` runs QSS from its own branch: it has no event handling and
+    // no output grid, so it never reaches the standard solver interface. With no
+    // states there is nothing to quantize, and C's `simulation_runtime.cpp` has
+    // already swapped in euler ("since it does nothing").
+    let mut method = method;
+    if method == "qss" {
+        if layout.n_states > 0 {
+            return Ok((Box::new(crate::qss::Qss::new(e, model, sim_data)?), "qss"));
+        }
+        omclog::info(omclog::SOLVER, false, "No states present, continuing without ODE solver.");
+        method = "euler";
+    }
     // DAE mode always takes the `SolverCore` path: the consistent-restart its
     // discrete update needs lives there.
     // A clocked partition is an event source too, and only `EventsDriver` has the
@@ -3031,10 +3053,10 @@ pub fn make_driver(
 /// so this is only reached by a `method=` the model was compiled with.
 const UNSUPPORTED_METHOD: &str = if cfg!(sundials) {
     "CodegenWasmJit: unsupported integration method (supported: `dassl`, `cvode`, `ida`, `gbode`, \
-     `euler`, `rungekutta`)"
+     `euler`, `rungekutta`, `qss`)"
 } else {
     "CodegenWasmJit: unsupported integration method (supported: `dassl`, `gbode`, `euler`, \
-     `rungekutta`)"
+     `rungekutta`, `qss`)"
 };
 
 /// Free external objects (so repeated runs don't leak) and read back parameter
@@ -3117,7 +3139,7 @@ pub fn drive(
                 }
                 driver.fill_stats(model, &mut stats);
                 let mut rows = driver.take_rows();
-                emit_terminal_row(e, &mut rows, sim_data, layout, n_reals)?;
+                emit_terminal_row(e, &mut rows, sim_data, layout, n_reals, driver.terminal_time())?;
                 return Ok(rows);
             }
             label = "optimization";
@@ -3140,7 +3162,7 @@ pub fn drive(
             label = "euler-wasm";
             set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
             let mut rows = run_wasm(e, sim_data, n_reals, n_rows, model, start, stop, &mut stats)?;
-            emit_terminal_row(e, &mut rows, sim_data, layout, n_reals)?;
+            emit_terminal_row(e, &mut rows, sim_data, layout, n_reals, None)?;
             return Ok(rows);
         }
         // enrich_trap: a trap in init/integration is usually a failed model assert().
@@ -3162,7 +3184,7 @@ pub fn drive(
         }
         driver.fill_stats(model, &mut stats);
         let mut rows = driver.take_rows();
-        emit_terminal_row(e, &mut rows, sim_data, layout, n_reals)?;
+        emit_terminal_row(e, &mut rows, sim_data, layout, n_reals, driver.terminal_time())?;
         Ok(rows)
     })();
     let _ = bench;
@@ -5424,6 +5446,11 @@ impl CsDriver {
         daskr::auxiliary::xsetf(0);
         let layout = &model.layout;
         let method = resolve_solver_method(&model.method, layout.dae_mode())?;
+        // QSS runs a whole simulation of its own; C's `solver_main_step` throws
+        // "Unhandled case" for it rather than stepping it.
+        if method == "qss" {
+            return Err("CodegenWasmJit: method=\"qss\" cannot step to a communication point");
+        }
         store_relations(e, sim_data, layout)?;
         let samp = Samples::load(e, sim_data, layout)?;
         let mut sync = crate::sync::Sync::new(e, model, sim_data)?;

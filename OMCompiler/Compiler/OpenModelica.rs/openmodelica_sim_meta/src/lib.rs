@@ -33,6 +33,7 @@ pub mod omclog;
 #[cfg(feature = "std")]
 pub(crate) mod extinput;
 pub mod optimization;
+pub(crate) mod qss;
 pub mod simflags;
 pub mod sync;
 #[cfg(sundials)]

@@ -366,12 +366,14 @@ fn finish(s: &mut Session) {
     s.stats = SolveStats::default();
     s.driver.fill_stats(&s.model, &mut s.stats);
     s.rows = s.driver.take_rows();
+    let at = s.driver.terminal_time();
     let _ = driver::emit_terminal_row(
         &mut s.engine,
         &mut s.rows,
         s.sim_data,
         &s.model.layout,
         s.n_reals,
+        at,
     );
     if let Ok(Some(f)) = openmodelica_sim_meta::linearize::linearize(&mut s.engine, &s.model, s.sim_data) {
         s.lin.extend_from_slice(f.name.as_bytes());
