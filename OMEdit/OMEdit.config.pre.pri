@@ -65,14 +65,12 @@ rust_omc {
 }
 
 win32 {
-  _cxx = $$(CXX)
-  contains(_cxx, clang++) {
+  equals(QMAKE_CXX, clang++) {
     message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
     QMAKE_CFLAGS -= -fno-keep-inline-dllexport
     QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
     QMAKE_CXXFLAGS_EXCEPTIONS_ON -= -mthreads
   } else {
-    # -Wno-clobbered is not recognized by clang
     QMAKE_CXXFLAGS += -Wno-clobbered
   }
 
