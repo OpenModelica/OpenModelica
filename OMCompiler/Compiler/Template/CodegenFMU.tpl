@@ -1847,10 +1847,13 @@ template importFMUModelDescription(FmiImport fmi)
 ::=
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
+  /* FMI 1.0 and 2.0 share the records and are both dumped by the "1.0" case; FMI 3.0
+     has records of its own. */
+  let mdVersion = if isFMIVersion30(fmiInfo.fmiVersion) then "3.0" else "1.0"
   <<
   model <%fmiInfo.fmiModelIdentifier%>_Input_Output_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
-    <%dumpFMUModelDescriptionVariablesList("1.0", fmiModelVariablesList, fmiTypeDefinitionsList, generateInputConnectors, generateOutputConnectors)%>
+    <%dumpFMUModelDescriptionVariablesList(mdVersion, fmiModelVariablesList, fmiTypeDefinitionsList, generateInputConnectors, generateOutputConnectors)%>
   end <%fmiInfo.fmiModelIdentifier%>_Input_Output_FMU;
   >>
 end importFMUModelDescription;
@@ -1895,6 +1898,43 @@ case "1.0" then
   case ENUMERATIONVARIABLE(__) then
     let isInputOrOutput = if boolOr(stringEq(causality, "input"), stringEq(causality, "output")) then true
     if isInputOrOutput then
+    <<
+    <%dumpFMUModelDescriptionInputOutputVariable(name, causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
+    >>
+  end match
+case "3.0" then
+  /* The FMI 3.0 records, which carry the same baseType as the older ones -- Real for
+     both float types, Integer for all eight integer types -- so the connector a
+     variable becomes is chosen exactly as above. Binary and Clock have no Modelica
+     type and are left out, as are arrays, which a connector cannot carry. */
+  match fmiModelVariable
+  case FMI3REALVARIABLE(__) then
+    let emitConnector = if boolAnd(boolOr(stringEq(causality, "input"), stringEq(causality, "output")), listEmpty(dimensions)) then true
+    if emitConnector then
+    <<
+    <%dumpFMUModelDescriptionInputOutputVariable(name, causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
+    >>
+  case FMI3INTEGERVARIABLE(__) then
+    let emitConnector = if boolAnd(boolOr(stringEq(causality, "input"), stringEq(causality, "output")), listEmpty(dimensions)) then true
+    if emitConnector then
+    <<
+    <%dumpFMUModelDescriptionInputOutputVariable(name, causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
+    >>
+  case FMI3BOOLEANVARIABLE(__) then
+    let emitConnector = if boolAnd(boolOr(stringEq(causality, "input"), stringEq(causality, "output")), listEmpty(dimensions)) then true
+    if emitConnector then
+    <<
+    <%dumpFMUModelDescriptionInputOutputVariable(name, causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
+    >>
+  case FMI3STRINGVARIABLE(__) then
+    let emitConnector = if boolAnd(boolOr(stringEq(causality, "input"), stringEq(causality, "output")), listEmpty(dimensions)) then true
+    if emitConnector then
+    <<
+    <%dumpFMUModelDescriptionInputOutputVariable(name, causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
+    >>
+  case FMI3ENUMERATIONVARIABLE(__) then
+    let emitConnector = if boolAnd(boolOr(stringEq(causality, "input"), stringEq(causality, "output")), listEmpty(dimensions)) then true
+    if emitConnector then
     <<
     <%dumpFMUModelDescriptionInputOutputVariable(name, causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
     >>
