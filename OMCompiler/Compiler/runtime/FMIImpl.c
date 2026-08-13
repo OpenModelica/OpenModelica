@@ -292,8 +292,12 @@ const char* getFMI3ModelVariableCausality(fmi3_import_variable_t* variable)
     case fmi3_causality_enu_parameter:
     case fmi3_causality_enu_structural_parameter:
       return "parameter";
-    case fmi3_causality_enu_calculated_parameter:
+    /* FMI 3.0 requires the independent variable to be declared, which FMI 2.0 did not.
+       It is named so that the wrapper can leave it out: it is Modelica's own time, and
+       declaring it would clash with the built-in. */
     case fmi3_causality_enu_independent:
+      return "independent";
+    case fmi3_causality_enu_calculated_parameter:
     case fmi3_causality_enu_local:
     case fmi3_causality_enu_unknown:
     default:
