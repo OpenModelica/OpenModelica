@@ -1772,8 +1772,8 @@ void ElementParameters::setUpDialog()
         }
         Label *pModifierLabel = new Label(pModifier->getName());
         mModifierLabelsVector.append(pModifierLabel);
-        QString modifierValue = pModifier->toString(true, true, false, true);
-        if (!modifierValue.startsWith("(")) {
+        QString modifierValue = pModifier->toString(true, true);
+        if (!modifierValue.isEmpty() && !modifierValue.startsWith("(")) {
           modifierValue = QLatin1String("=") % modifierValue;
         }
         QLineEdit *pModifierValueTextBox = new QLineEdit(modifierValue);

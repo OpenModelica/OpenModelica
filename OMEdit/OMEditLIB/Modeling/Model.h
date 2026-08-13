@@ -503,7 +503,7 @@ private:
     const QString &getType() const {return mType;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
     bool isValueDefined() const {return mValueDefined;}
-    QString toString(bool skipTopLevel = false, bool includeComment = false, bool onlyType = false, bool elementPropertiesDialog = false) const;
+    QString toString(bool skipTopLevel = false, bool includeComment = false, bool onlyType = false, bool skipDisplayUnit = false) const;
     static Modifier *mergeModifiersIntoOne(QVector<const Modifier *> extendsModifiers, Model *pParentModel);
     static void mergeModifiers(Modifier *pModifier1, const Modifier *pModifier2);
     Modifier *getModifier(const QString &modifier) const;
