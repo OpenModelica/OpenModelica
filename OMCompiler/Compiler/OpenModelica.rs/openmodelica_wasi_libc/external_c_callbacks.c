@@ -30,11 +30,21 @@
  * from the runtime; in a host-free wasm FMU there is no host, so the PIC
  * dylink side module carries them itself. Because the FMU is one shared linear
  * memory, an allocated string is a plain pointer the model reads directly — no
- * marshalling. Errors abort (fatal); the FMI master sees the resulting trap. */
+ * marshalling. They report through the runtime, as
+ * `SimulationRuntime/c/util/ModelicaUtilities.c` does: an FMU has no stdout, and
+ * its simulation log is the FMI logger. An error ends the run (C's MMC_THROW). */
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+
+/* openmodelica_codegen_wasm_jit_runtime. */
+void rt_ext_error(const char* msg) __attribute__((noreturn));
+void rt_ext_message(const char* msg);
+void rt_ext_warning(const char* msg);
+
+/* C's SIZE_LOG_BUFFER, and the same truncation. */
+#define LOG_BUFFER 2048
 
 char* ModelicaAllocateString(size_t len) {
     char* p = (char*) malloc(len + 1);
@@ -46,15 +56,20 @@ char* ModelicaAllocateStringWithErrorReturn(size_t len) {
     return ModelicaAllocateString(len);
 }
 
+static void report(void (*to)(const char*), const char* fmt, va_list ap) {
+    char buf[LOG_BUFFER];
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    to(buf);
+}
+
 void ModelicaError(const char* string) {
-    fputs(string, stderr);
-    fputc('\n', stderr);
-    abort();
+    rt_ext_error(string);
 }
 
 void ModelicaVFormatError(const char* fmt, va_list ap) {
-    vfprintf(stderr, fmt, ap);
-    abort();
+    char buf[LOG_BUFFER];
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    rt_ext_error(buf);
 }
 
 void ModelicaFormatError(const char* fmt, ...) {
@@ -65,11 +80,11 @@ void ModelicaFormatError(const char* fmt, ...) {
 }
 
 void ModelicaMessage(const char* string) {
-    fputs(string, stderr);
+    rt_ext_message(string);
 }
 
 void ModelicaVFormatMessage(const char* fmt, va_list ap) {
-    vfprintf(stderr, fmt, ap);
+    report(rt_ext_message, fmt, ap);
 }
 
 void ModelicaFormatMessage(const char* fmt, ...) {
@@ -80,11 +95,11 @@ void ModelicaFormatMessage(const char* fmt, ...) {
 }
 
 void ModelicaWarning(const char* string) {
-    fputs(string, stderr);
+    rt_ext_warning(string);
 }
 
 void ModelicaVFormatWarning(const char* fmt, va_list ap) {
-    vfprintf(stderr, fmt, ap);
+    report(rt_ext_warning, fmt, ap);
 }
 
 void ModelicaFormatWarning(const char* fmt, ...) {
