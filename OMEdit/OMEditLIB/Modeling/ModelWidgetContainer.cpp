@@ -4864,6 +4864,11 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
   if (isVisualizationView() || (mpModelWidget->getLibraryTreeItem()->isModelica() && mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
     return;
   }
+  /* Only handle the double click event for the left mouse button. */
+  if (event->button() != Qt::LeftButton) {
+    QGraphicsView::mouseDoubleClickEvent(event);
+    return;
+  }
   const bool removeLastAddedPoint = true;
   // if double clicking on an empty space, show a searchable quick insert menu.
   if (!itemAt(event->pos())) {
