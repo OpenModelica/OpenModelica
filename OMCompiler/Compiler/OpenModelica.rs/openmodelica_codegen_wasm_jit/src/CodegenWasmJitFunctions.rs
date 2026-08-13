@@ -260,13 +260,14 @@ fn builtin_index(name: &str) -> Option<u32> {
 /// `rt_*` indices are unaffected), just before the generated functions. The host
 /// closures live in `runtime::add_host_builtins`.
 ///
-/// `rt_assert(msg, file, sline, scol, eline, ecol, isReadOnly, cond) -> shouldTrap`
+/// `rt_assert(msg, file, sline, scol, eline, ecol, isReadOnly, cond, initial) -> shouldTrap`
 /// records the failed assertion and answers whether the generated code must trap:
 /// it need not while the driver has asserts suppressed (C's `noThrowAsserts`).
 /// `cond` is the dumped condition, or 0 for a model/runtime error, which is never
 /// suppressed; it comes last so callers that already pushed the message append.
+/// `initial` is C's `initial()` at the assert site, for the message header.
 ///
-/// `rt_assert_warning(cond, msg, file, sline, scol, eline, ecol, isReadOnly)`
+/// `rt_assert_warning(cond, msg, file, sline, scol, eline, ecol, isReadOnly, initial)`
 /// records a *non-fatal* (AssertionLevel.warning) violation — the string handles
 /// (dumped condition, message, file) plus source position — for the driver to
 /// format as a `LOG_ASSERT` warning after the step. The generated code continues
@@ -291,12 +292,12 @@ fn builtin_index(name: &str) -> Option<u32> {
 pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
     (
         "rt_assert",
-        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
         &[WTy::I32],
     ),
     (
         "rt_assert_warning",
-        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
         &[],
     ),
     ("rt_print", &[WTy::I32], &[]),
@@ -3909,6 +3910,7 @@ fn emit_assert(
         ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
         ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
         ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
+        emit_initial_flag(ctx);
         ctx.emit(we::Instruction::Call(env_extra_index("rt_assert_warning")?));
         ctx.emit(we::Instruction::End);
         return Ok(());
@@ -3929,6 +3931,7 @@ fn emit_assert(
     } else {
         emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition, for the report
     }
+    emit_initial_flag(ctx);
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     // Trap unless the driver took it (suppressed during the event search).
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
@@ -3960,10 +3963,22 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
         ctx.emit(we::Instruction::I32Const(0)); // line/col start+end, isReadOnly
     }
     ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
+    emit_initial_flag(ctx);
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     ctx.emit(we::Instruction::Drop);
     ctx.emit(we::Instruction::Unreachable);
     Ok(())
+}
+
+/// 0 outside a simulation: C's `FUNCTION_CONTEXT` arm prints no header at all.
+fn emit_initial_flag(ctx: &mut FnCtx) {
+    match ctx.sim.as_ref().map(|s| (s.data_local, s.initial_off)) {
+        Some((data, off)) => {
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+        }
+        None => ctx.emit(we::Instruction::I32Const(0)),
+    }
 }
 
 /// The dumped source form of `e`, for embedding in an assertion message.
@@ -8023,6 +8038,7 @@ fn emit_runtime_error(ctx: &mut FnCtx, msg: &str) -> Result<()> {
         ctx.emit(we::Instruction::I32Const(0)); // file handle (null) + zeroed line/col
     }
     ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
+    emit_initial_flag(ctx);
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     ctx.emit(we::Instruction::Drop);
     ctx.emit(we::Instruction::Unreachable);
