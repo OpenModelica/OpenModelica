@@ -2369,8 +2369,7 @@ pub(crate) struct SimVarMap {
     pub(crate) vars: Arc<HashMap<String, SimSlot>>,
     starts: Arc<HashMap<String, Option<Arc<DAE::Exp>>>>,
     /// State cref key -> its start-value slot; when present, `$START.<key>` reads the
-    /// slot instead of the inline expression. Empty when building
-    /// `functionInitStartValues` (it fills the slots, so must not read them).
+    /// slot instead of the inline expression.
     start_slots: Arc<HashMap<String, u32>>,
     /// Finalized array-variable groups (base cref key -> contiguous slot range).
     array_groups: Arc<HashMap<String, ArrayGroup>>,
@@ -3729,7 +3728,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let mut max_defaults: Vec<(u32, f64)> = Vec::new();
     for (i, sv) in lst(&vars.stateVars).take(n_states as usize).enumerate() {
         let off = layout.state_max_off + (i as u32) * 8;
-        max_defaults.push((off, const_value(&sv.maxValue).unwrap_or(f64::INFINITY)));
+        max_defaults.push((off, const_value(&sv.maxValue).unwrap_or(f64::MAX)));
         if let Ok(k) = sim_cref_key(&sv.name) {
             attr_targets.entry(k).or_default().max_offs.push(off);
         }
@@ -3885,12 +3884,15 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         .chain(real_alg_vars(vars))
         .collect();
     bodies.push(build_init_start_values_fn(&all_reals, &layout, &var_map, &by_name, &mut literals)?);
-    // A start bound to a parameter arrives as a `$START.<var>` equation instead of
-    // an expression on the variable; `functionUpdateBoundVariableAttributes` runs
-    // it after the pass above and overwrites the slot, as C's does.
+    // A start or nominal bound to a parameter arrives as an attribute equation;
+    // `functionUpdateBoundVariableAttributes` fills these slots from those.
     for (i, sv) in all_reals.iter().enumerate() {
+        let nom_off = layout.real_nominal_off(i as u32);
+        nominal_defaults.push((nom_off, literal_value(&sv.nominalValue).unwrap_or(1.0)));
         if let Ok(k) = sim_cref_key(&sv.name) {
-            attr_targets.entry(k).or_default().start_offs.push(layout.real_start_off(i as u32));
+            let t = attr_targets.entry(k).or_default();
+            t.start_offs.push(layout.real_start_off(i as u32));
+            t.raw_nom_offs.push(nom_off);
         }
     }
     // The integrator loop calls `functionCheckAsserts`, whose index is only known
@@ -4931,7 +4933,7 @@ fn soti_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_meta::SotiVa
     };
     let mut reals = Vec::new();
     for sv in lst(&vars.stateVars).chain(lst(&vars.derivativeVars)).chain(real_alg_vars(vars)) {
-        reals.push((named(sv)?, const_real(&sv.nominalValue).unwrap_or(1.0)));
+        reals.push(named(sv)?);
     }
     let mut ints = Vec::new();
     for sv in lst(&vars.intAlgVars) {
@@ -5643,11 +5645,11 @@ fn build_equations_synchronous_fn(
 }
 
 /// Build `functionInitStartValues(SimData*)`: every real variable's `start`
-/// attribute slot from its start expression, in real-variable index order — C's
-/// `_init.xml` values plus the `updateBoundVariableAttributes` ones in one pass.
-/// The driver copies the slots over the live region afterwards (C's
-/// `setAllVarsToStart`), so `-iif`/`-override` land in between.
-/// Empty `start_slots` so start expressions compile inline.
+/// attribute slot, in real-variable index order — the values C's `_init.xml`
+/// carries. The driver copies the slots over the live region afterwards (C's
+/// `setAllVarsToStart`), so `-iif`/`-override` land in between. Literals only, as
+/// in C's `SerializeInitXML.expString`: evaluating a parameter-bound start here
+/// would put it on the wrong side of the `pre`-value snapshot.
 fn build_init_start_values_fn(
     reals: &[&SimCodeVar::SimVar],
     layout: &SimLayout,
@@ -5655,14 +5657,13 @@ fn build_init_start_values_fn(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let sim = SimCtx { start_slots: Arc::default(), ..sim_ctx(var_map) };
-    let mut ctx = FnCtx::new_sim(sim, by_name, literals);
-    let pairs: Vec<(Option<Arc<DAE::Exp>>, u32)> = reals
+    let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
+    let starts: Vec<(f64, u32)> = reals
         .iter()
         .enumerate()
-        .map(|(i, sv)| (sv.initialValue.clone(), layout.real_start_off(i as u32)))
+        .map(|(i, sv)| (literal_value(&sv.initialValue).unwrap_or(0.0), layout.real_start_off(i as u32)))
         .collect();
-    ctx.emit_init_start_values(&pairs)?;
+    ctx.emit_init_start_values(&starts)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -5690,6 +5691,23 @@ fn bound_attr_equations(
         }
     }
     out
+}
+
+/// What C's `_init.xml` records for an attribute, i.e. what
+/// `SerializeInitXML.expString` serializes: a literal, and nothing else.
+fn literal_value(exp: &Option<Arc<DAE::Exp>>) -> Option<f64> {
+    fn eval(e: &DAE::Exp) -> Option<f64> {
+        use DAE::Exp as E;
+        match e {
+            E::ICONST { integer } => Some(*integer as f64),
+            E::RCONST { real } => Some(real.into_inner()),
+            E::BCONST { bool } => Some(*bool as u8 as f64),
+            E::ENUM_LITERAL { index, .. } => Some(*index as f64),
+            E::REDUCTION { expr, .. } => eval(expr),
+            _ => None,
+        }
+    }
+    exp.as_deref().and_then(eval)
 }
 
 /// Build `functionUpdateBoundVariableAttributes(SimData*)`. An attribute bound to a
@@ -6302,7 +6320,7 @@ fn collect_nls_jobs(
                     let (nom, lo, hi) = key
                         .as_ref()
                         .and_then(|k| nominal_of.get(k).copied())
-                        .unwrap_or((1.0, f64::NEG_INFINITY, f64::INFINITY));
+                        .unwrap_or((1.0, -f64::MAX, f64::MAX));
                     if let Some(k) = key {
                         attr_targets.entry(k).or_default().nls.push(nominals.len() as u32);
                     }
@@ -6351,8 +6369,8 @@ fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, (f64, f6
     for sv in all {
         if let Ok(key) = sim_cref_key(&sv.name) {
             let nom = const_value(&sv.nominalValue).map(|v| v.abs()).filter(|v| *v > 0.0).unwrap_or(1.0);
-            let lo = const_value(&sv.minValue).unwrap_or(f64::NEG_INFINITY);
-            let hi = const_value(&sv.maxValue).unwrap_or(f64::INFINITY);
+            let lo = const_value(&sv.minValue).unwrap_or(-f64::MAX);
+            let hi = const_value(&sv.maxValue).unwrap_or(f64::MAX);
             map.entry(key).or_insert((nom, lo, hi));
         }
     }

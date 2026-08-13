@@ -1459,7 +1459,7 @@ pub(crate) const NLS_PAT_GLOBAL: u32 = 3;
 pub(crate) const NLS_BOUNDS_GLOBAL: u32 = 4;
 
 /// A variable attribute the solvers read back at run time.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Attr {
     Nominal,
     Min,
@@ -1478,14 +1478,11 @@ pub(crate) struct AttrTargets {
     pub(crate) nom_offs: Vec<u32>,
     /// A state's `SimData` `max` slot, which the numeric linearization reads.
     pub(crate) max_offs: Vec<u32>,
-    /// The optimizer's per-real-variable attribute slots (C's
-    /// `realVarsData[i].attribute`, which it reads for every state, input and
-    /// constrained variable). Unlike the two above these take the value as it is:
-    /// no `fmax(|nominal|, 1e-32)` clamp, since the optimizer applies its own
-    /// heuristic.
-    pub(crate) opt_min_offs: Vec<u32>,
-    pub(crate) opt_max_offs: Vec<u32>,
-    pub(crate) opt_nom_offs: Vec<u32>,
+    /// C's `realVarsData[i].attribute` as declared (`Layout::real_nom_off` and the
+    /// optimizer's arrays): verbatim, without the `fmax(|nominal|, 1e-32)` clamp.
+    pub(crate) raw_min_offs: Vec<u32>,
+    pub(crate) raw_max_offs: Vec<u32>,
+    pub(crate) raw_nom_offs: Vec<u32>,
     pub(crate) start_offs: Vec<u32>,
 }
 
@@ -1879,14 +1876,13 @@ impl<'a> FnCtx<'a> {
                     self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
                 }
             }
-            // The optimizer's attribute arrays take the value verbatim.
-            let opt_offs: &[u32] = match attr {
-                Attr::Min => &targets.opt_min_offs,
-                Attr::Max => &targets.opt_max_offs,
-                Attr::Nominal => &targets.opt_nom_offs,
+            let raw_offs: &[u32] = match attr {
+                Attr::Min => &targets.raw_min_offs,
+                Attr::Max => &targets.raw_max_offs,
+                Attr::Nominal => &targets.raw_nom_offs,
                 Attr::Start => &targets.start_offs,
             };
-            for off in opt_offs {
+            for off in raw_offs {
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::LocalGet(raw));
                 self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
@@ -1940,22 +1936,13 @@ impl<'a> FnCtx<'a> {
         Ok(())
     }
 
-    /// Store each real variable's `start` expression (`0.0` when it has none) in
-    /// its start attribute slot at `off`.
-    pub(crate) fn emit_init_start_values(
-        &mut self,
-        starts: &[(Option<Arc<DAE::Exp>>, u32)],
-    ) -> Result<()> {
+    /// Store each real variable's declared `start` value in its start attribute
+    /// slot at `off`.
+    pub(crate) fn emit_init_start_values(&mut self, starts: &[(f64, u32)]) -> Result<()> {
         let data = self.sim()?.data_local;
-        for (exp, off) in starts {
+        for (value, off) in starts {
             self.emit(we::Instruction::LocalGet(data));
-            match exp {
-                Some(e) => {
-                    let w = compile_exp(self, e)?;
-                    coerce(self, w, WTy::F64);
-                }
-                None => self.emit(we::Instruction::F64Const(0.0f64.into())),
-            }
+            self.emit(we::Instruction::F64Const((*value).into()));
             self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
         }
         Ok(())
@@ -5552,13 +5539,25 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
     }
     // `$START.x := expr` in the initial system: the C target sets `x`'s start
     // attribute *and* the live value `realVars[x] = start` (see the
-    // `$START.<cref>`-LHS pattern in `_06inz`). The numeric effect is `x := expr`,
-    // so redirect the assignment to the underlying variable's live slot. (Reads of
-    // `$START.x` still resolve to the start attribute via `compile_sim_cref_read`,
-    // which is consistent — the start expression equals the assigned value.)
+    // `$START.<cref>`-LHS pattern in `_06inz`), so write both: the slot is what a
+    // solver reads for its initial guess and what `LOG_SOTI` prints.
     if let DAE::ComponentRef::CREF_QUAL { ident, componentRef, .. } = cref {
         if ident.as_str() == "$START" {
-            return compile_sim_cref_assign(ctx, componentRef, rhs);
+            let start_off = sim_cref_key(componentRef)
+                .ok()
+                .and_then(|k| ctx.sim().ok()?.start_slots.get(&k).copied());
+            let Some(off) = start_off else {
+                return compile_sim_cref_assign(ctx, componentRef, rhs);
+            };
+            let data = ctx.sim()?.data_local;
+            let w = rhs.push(ctx)?;
+            coerce(ctx, w, WTy::F64);
+            let tmp = ctx.alloc_temp(WTy::F64);
+            ctx.emit(we::Instruction::LocalSet(tmp));
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::LocalGet(tmp));
+            ctx.emit(we::Instruction::F64Store(mem_arg(off, 3)));
+            return compile_sim_cref_assign(ctx, componentRef, RhsSource::Temp { local: tmp, wty: WTy::F64 });
         }
         // `$PRE.x := e` targets x's pre-slot when one is registered; otherwise
         // (no pre-slot, e.g. a parameter) fall back to the live slot.

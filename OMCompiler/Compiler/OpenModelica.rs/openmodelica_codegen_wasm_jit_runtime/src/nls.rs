@@ -325,6 +325,8 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32) 
         }
         if abs_max < f64::EPSILON {
             rank = i;
+            crate::omclog::debug_int(crate::omclog::NLS_V, "rank = ", rank as i32);
+            crate::omclog::debug_int(crate::omclog::NLS_V, "position = ", *pos);
             break;
         }
         ind_row.swap(i, p_row);
@@ -360,8 +362,15 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32) 
         }
     }
     x[ind_col[n]] = 1.0;
+    if crate::omclog::active(crate::omclog::NLS_V) {
+        let as_i32 = |v: &[usize]| v.iter().map(|i| *i as i32).collect::<alloc::vec::Vec<i32>>();
+        crate::omclog::debug_vector_int(crate::omclog::NLS_V, "indRow:", &as_i32(&ind_row));
+        crate::omclog::debug_vector_int(crate::omclog::NLS_V, "indCol:", &as_i32(&ind_col));
+        crate::omclog::debug_vector_double(crate::omclog::NLS_V, "vector x (solution):", x);
+    }
     if *pos < 0 {
         *pos = ind_col[n] as i32;
+        crate::omclog::debug_int(crate::omclog::NLS_V, "position of largest value = ", *pos);
     }
     0
 }
@@ -1048,7 +1057,7 @@ fn hybrd_c(
             hybrd_res_scaling(n, &fjacobian, &mut res_scaling);
             let mut scaled = vec![0.0f64; n];
             for i in 0..n {
-                scaled[i] = fvec[i] / res_scaling[i];
+                scaled[i] = fvec[i] * (1.0 / res_scaling[i]);
             }
             (enorm(&fvec), enorm(&scaled))
         };
@@ -1559,6 +1568,8 @@ struct HomotopyTrace {
     time: f64,
     /// C's `discreteCall`: "System values" rather than "System extrapolation".
     discrete: bool,
+    /// C's `simulationInfo->initial`, which its warnings name instead of a time.
+    initial: bool,
 }
 
 /// C's `solveHomotopy` header block, which opens the `LOG_NLS_V` block
@@ -1584,6 +1595,62 @@ fn log_homotopy_enter(t: &HomotopyTrace, n: usize, x: &[f64], nominal: &[f64], x
     let mut scaling = xscaling.to_vec();
     scaling.push(1.0);
     omclog::debug_vector_double(omclog::NLS_V, "Scaling values", &scaling);
+}
+
+/// `newtonAlgorithm`'s block rule and its two verdicts, verbatim.
+const BAR: &str = "******************************************************";
+const NO_CONVERGE: &str = "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!";
+const UPS: &str = "UPS! MUST HANDLE A PROBLEM (Newton method), time : ";
+
+/// C's `printUnknowns`. Its `nom` column is `xScaling`, not the `nominal` attribute.
+fn log_nls_status(t: &HomotopyTrace, x: &[f64], xscaling: &[f64], bounds: &[f64]) {
+    use crate::omclog;
+    if !omclog::active(omclog::NLS_V) {
+        return;
+    }
+    let names = var_names(t.eq_index);
+    omclog::info(omclog::NLS_V, true, "nls status");
+    omclog::info(omclog::NLS_V, false, "variables");
+    for i in 0..x.len() {
+        omclog::info(
+            omclog::NLS_V,
+            false,
+            &alloc::format!(
+                "{}{}\t\t nom = {}\t\t min = {}\t\t max = {}",
+                var_label(names, i),
+                omclog::g(x[i], 16, 8),
+                omclog::g(xscaling[i], 16, 8),
+                omclog::g(bounds[2 * i], 16, 8),
+                omclog::g(bounds[2 * i + 1], 16, 8)
+            ),
+        );
+    }
+    omclog::close(omclog::NLS_V);
+}
+
+/// C's `printNewtonStep`: the full Newton step and the iterate it leads to.
+fn log_newton_step(t: &HomotopyTrace, x1: &[f64], step: &[f64], x: &[f64]) {
+    use crate::omclog;
+    if !omclog::active(omclog::NLS_V) {
+        return;
+    }
+    let names = var_names(t.eq_index);
+    omclog::info(omclog::NLS_V, true, "newton step");
+    omclog::info(omclog::NLS_V, false, "variables");
+    for i in 0..x.len() {
+        omclog::info(
+            omclog::NLS_V,
+            false,
+            &alloc::format!(
+                "{}{}\t\t step = {}\t\t old = {}",
+                var_label(names, i),
+                omclog::g(x1[i], 16, 8),
+                omclog::g(step[i], 16, 8),
+                omclog::g(x[i], 16, 8)
+            ),
+        );
+    }
+    omclog::close(omclog::NLS_V);
 }
 
 /// C's `solveHomotopy` entry phase and its `newtonAlgorithm`
@@ -1669,7 +1736,9 @@ fn newton_c(
                 }
                 x[col] = saved + h;
                 eval(x, rp);
-                let inv = xscaling[col] / h;
+                // C's `1./delta_hh * xScaling[i]`: `xScaling[i]/delta_hh` rounds
+                // differently, and `1/h` magnifies that into the quotient.
+                let inv = 1.0 / h * xscaling[col];
                 for i in 0..n {
                     jac[col * n + i] = (rp[i] - fvec[i]) * inv;
                 }
@@ -1736,11 +1805,25 @@ fn newton_c(
     let mut error_f_sqrd = nsq(&fvec);
     let mut error_f_sqrd_scaled = scaled_sq(n, &fvec, res_scaling);
 
+    let max_iter = 100 * n as i32;
+    if let Some(t) = trace {
+        crate::omclog::debug_string(crate::omclog::NLS_V, BAR);
+        crate::omclog::debug_int(crate::omclog::NLS_V, "NEWTON SOLVER STARTED! equation number: ", t.eq_index as i32);
+        crate::omclog::debug_int(crate::omclog::NLS_V, "maximum number of function evaluation: ", max_iter);
+        log_nls_status(t, &x[..n], &xscaling, bounds);
+    }
     let mut iter = 0i32;
     let mut neg_steps = 0i32;
     let mut small_steps = 0i32;
     loop {
         stat_inc(STAT_NLS_ITER);
+        if let Some(t) = trace {
+            crate::omclog::debug_int(crate::omclog::NLS_V, "Iteration:", iter + 1);
+            for i in 0..n {
+                x1[i] = x[i] + step[i];
+            }
+            log_newton_step(t, &x1, &step, x);
+        }
         let grad_f = -2.0 * error_f_sqrd;
         let grad_f_scaled = -2.0 * error_f_sqrd_scaled;
 
@@ -1755,6 +1838,9 @@ fn newton_c(
             if !assert_hit() {
                 break;
             }
+            if trace.is_some() {
+                crate::omclog::debug_double(crate::omclog::NLS_V, "Assert of Newton step: lambda1 =", lambda1);
+            }
             lambda1 *= 0.655;
             if lambda1 <= LAMBDA_MIN_C {
                 break;
@@ -1762,10 +1848,21 @@ fn newton_c(
         }
         if lambda1 < LAMBDA_MIN_C {
             stat_inc(STAT_NEWTON_LAMBDA);
+            if let Some(t) = trace {
+                crate::omclog::debug_double(crate::omclog::NLS_V, UPS, t.time);
+            }
             return (false, false);
         }
         let error_f1_sqrd = nsq(&fvec);
         let error_f1_sqrd_scaled = scaled_sq(n, &fvec, res_scaling);
+        if trace.is_some() {
+            let d = |m: &str, v: f64| crate::omclog::debug_double(crate::omclog::NLS_V, m, v);
+            d("Need to damp, grad_f = ", grad_f);
+            d("Need to damp, error_f = ", libm::sqrt(error_f_sqrd));
+            d("Need to damp this!! lambda1 = ", lambda1);
+            d("Need to damp, error_f1 = ", libm::sqrt(error_f1_sqrd));
+            d("Need to damp, forced error = ", error_f_sqrd + ALPHA * lambda1 * grad_f);
+        }
 
         // Numerical-Recipes damping: quadratic then cubic model of ‖f‖².
         if error_f1_sqrd > error_f_sqrd + ALPHA * lambda1 * grad_f
@@ -1776,11 +1873,17 @@ fn newton_c(
             let lambda2 = (-lambda1 * lambda1 * grad_f
                 / (2.0 * (error_f1_sqrd - error_f_sqrd - lambda1 * grad_f)))
                 .max(LAMBDA_MIN_C);
+            if trace.is_some() {
+                crate::omclog::debug_double(crate::omclog::NLS_V, "Need to damp this!! lambda2 = ", lambda2);
+            }
             for i in 0..n {
                 x1[i] = x[i] + lambda2 * step[i];
             }
             eval(&x1, &mut fvec);
             let error_f2_sqrd = nsq(&fvec);
+            if trace.is_some() {
+                crate::omclog::debug_double(crate::omclog::NLS_V, "Need to damp, error_f2 = ", libm::sqrt(error_f2_sqrd));
+            }
             if error_f1_sqrd > error_f_sqrd + ALPHA * lambda2 * grad_f
                 && error_f_sqrd > 1e-12
                 && error_f_sqrd_scaled > 1e-12
@@ -1804,11 +1907,27 @@ fn newton_c(
                     }
                 }
                 lam = lam.max(LAMBDA_MIN_C);
+                if trace.is_some() {
+                    crate::omclog::debug_double(crate::omclog::NLS_V, "Need to damp this!! lambda = ", lam);
+                }
                 for i in 0..n {
                     x1[i] = x[i] + lam * step[i];
                 }
                 eval(&x1, &mut fvec);
+                if trace.is_some() {
+                    crate::omclog::debug_double(crate::omclog::NLS_V, "Need to damp, error_f1 = ", libm::sqrt(nsq(&fvec)));
+                }
             }
+        }
+
+        if trace.is_some() {
+            crate::omclog::debug_vector_double(crate::omclog::NLS_V, "function values:", &fvec);
+            let mut scaled = vec![0.0f64; n];
+            for i in 0..n {
+                let d = res_scaling[i].abs();
+                scaled[i] = if d > 0.0 { fvec[i] / d } else { fvec[i] };
+            }
+            crate::omclog::debug_vector_double(crate::omclog::NLS_V, "scaled function values:", &scaled);
         }
 
         // Error measures (C uses the FULL Newton step ‖dy0‖ for delta_x).
@@ -1823,8 +1942,21 @@ fn newton_c(
         error_f_sqrd = nsq(&fvec);
         error_f_sqrd_scaled = scaled_sq(n, &fvec, res_scaling);
         neg_steps += (error_f_sqrd > 10.0 * error_f_old) as i32;
+        if trace.is_some() {
+            let d = |m: &str, v: f64| crate::omclog::debug_double(crate::omclog::NLS_V, m, v);
+            crate::omclog::debug_string(crate::omclog::NLS_V, "error measurements:");
+            d("delta_x        =", libm::sqrt(delta_x_sqrd));
+            d("delta_x_scaled =", libm::sqrt(delta_x_sqrd_scaled));
+            d("newtonXTol          =", libm::sqrt(xtol_sq));
+            d("error_f        =", libm::sqrt(error_f_sqrd));
+            d("error_f_scaled =", libm::sqrt(error_f_sqrd_scaled));
+            d("newtonFTol          =", libm::sqrt(ftol_sq));
+        }
         if neg_steps > 20 {
             stat_inc(STAT_NEWTON_NEGSTEP);
+            if trace.is_some() {
+                crate::omclog::debug_int(crate::omclog::NLS_V, "UPS! Something happened, NegativeSteps = ", neg_steps);
+            }
             return (false, false);
         }
         // C's issue #6419: on success keep the previous `x` when the new residual is no
@@ -1834,15 +1966,38 @@ fn newton_c(
         let f_ok = error_f_sqrd < ftol_sq || error_f_sqrd_scaled < ftol_sq;
         let x_ok = delta_x_sqrd_scaled < xtol_sq || delta_x_sqrd < xtol_sq;
         if f_ok && x_ok {
-            if !last_was_good {
+            if last_was_good {
+                if trace.is_some() {
+                    crate::omclog::debug_string(
+                        crate::omclog::NLS_V,
+                        "Note: newton solver rejected last x because previous was as good",
+                    );
+                }
+            } else {
                 x.copy_from_slice(&x1);
             }
             return (true, !last_was_good);
         }
         iter += 1;
         // C's `maxNumberOfIterations = size*100`.
-        if iter > 100 * n as i32 {
+        if iter > max_iter {
             stat_inc(STAT_NEWTON_MAXITER);
+            if let Some(t) = trace {
+                let when = if t.initial {
+                    alloc::string::String::from("at initialization")
+                } else {
+                    alloc::format!("at time {:.6}", t.time)
+                };
+                crate::omclog::warning(
+                    crate::omclog::NLS_V,
+                    false,
+                    &alloc::format!(
+                        "Homotopy solver Newton iteration: Maximum number of iterations reached {when}, but no root found."
+                    ),
+                );
+                crate::omclog::debug_string(crate::omclog::NLS_V, NO_CONVERGE);
+                crate::omclog::debug_string(crate::omclog::NLS_V, BAR);
+            }
             return (false, false);
         }
         small_steps += (delta_x_sqrd < xtol_sq * 1e4 || delta_x_sqrd_scaled < xtol_sq * 1e4) as i32;
@@ -1851,12 +2006,28 @@ fn newton_c(
             if !less_accurate {
                 stat_inc(STAT_NEWTON_STUCK);
             }
+            if let Some(t) = trace {
+                if less_accurate {
+                    crate::omclog::debug_string(
+                        crate::omclog::NLS_V,
+                        "NEWTON SOLVER DID CONVERGE TO A SOLUTION WITH LESS ACCURACY!!!",
+                    );
+                    log_nls_status(t, &x[..n], &xscaling, bounds);
+                } else {
+                    crate::omclog::debug_string(crate::omclog::NLS_V, "Warning: newton solver gets stuck!!!");
+                    crate::omclog::debug_string(crate::omclog::NLS_V, NO_CONVERGE);
+                }
+                crate::omclog::debug_string(crate::omclog::NLS_V, BAR);
+            }
             return (less_accurate, false);
         }
 
         x.copy_from_slice(&x1);
         if !form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval) {
             stat_inc(STAT_NEWTON_JAC);
+            if trace.is_some() {
+                crate::omclog::debug_string(crate::omclog::NLS_V, "UPS! assert when calculating Jacobian!!!");
+            }
             return (false, false);
         }
         row_scaling(n, &jac, res_scaling);
@@ -1865,6 +2036,12 @@ fn newton_c(
         step.copy_from_slice(&fvec);
         if !lu_solve(&jac, &mut step, n) {
             stat_inc(STAT_NEWTON_SINGULAR);
+            if trace.is_some() {
+                crate::omclog::debug_string(crate::omclog::NLS_V, "Linear lapack solver failed!!!");
+                crate::omclog::debug_string(crate::omclog::NLS_V, BAR);
+                crate::omclog::debug_string(crate::omclog::NLS_V, NO_CONVERGE);
+                crate::omclog::debug_string(crate::omclog::NLS_V, BAR);
+            }
             return (false, false);
         }
         for (s, sc) in step.iter_mut().zip(xscaling.iter()) {
@@ -1874,18 +2051,11 @@ fn newton_c(
 }
 
 /// The Newton step at the start point; failing it is what makes the point
-/// "irregular". C always runs `solveSystemWithTotalPivotSearch`, but an LU decides
-/// the same way wherever it succeeds (a nonsingular system has one solution) and
-/// skips the O(n²)-per-column pivot search, so the total pivot is kept only for the
-/// rank-deficient-but-consistent case it exists for. Step comes back unscaled.
+/// "irregular". C's `solveHomotopy` entry phase reaches for
+/// `solveSystemWithTotalPivotSearch` rather than the LAPACK solve its iterations
+/// use: a rank-deficient-but-consistent start point is regular there. Step comes
+/// back unscaled.
 fn total_pivot_step(n: usize, jac: &[f64], fvec: &[f64], xscaling: &[f64], step: &mut [f64]) -> bool {
-    step.copy_from_slice(fvec);
-    if lu_solve(jac, step, n) {
-        for (s, sc) in step.iter_mut().zip(xscaling.iter()) {
-            *s = -*s * sc;
-        }
-        return true;
-    }
     let mut aug = vec![0.0f64; n * (n + 1)];
     aug[..n * n].copy_from_slice(jac);
     aug[n * n..].copy_from_slice(fvec);
@@ -2675,7 +2845,8 @@ pub extern "C" fn rt_solve_nls(
             if homotopy_solver {
                 // C's `discreteCall` covers the initial system too, so it is not
                 // `discrete_call` (which is only about holding relations).
-                let t = HomotopyTrace { eq_index, time, discrete: saved_rel_fresh != 0 };
+                let t =
+                    HomotopyTrace { eq_index, time, discrete: saved_rel_fresh != 0, initial: saved_rel_fresh == 2 };
                 (converged, settled) = newton_c(
                     n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
                     has_jac, Some(&t),
@@ -2759,7 +2930,9 @@ pub extern "C" fn rt_solve_nls(
             break converged;
         }
         unsafe { store_u32(rel_fresh_addr, 1) };
+        let uncounted = n_feval.get();
         eval(&x, &mut scratch);
+        n_feval.set(uncounted);
         settled = true;
         if (0..n_rel).all(|i| unsafe { load_u32(rel_addr + i * 4) } == rel_backup[i as usize]) {
             break converged;
@@ -2772,9 +2945,12 @@ pub extern "C" fn rt_solve_nls(
         // `hybrd_c`'s rung may have left the flag held.
         unsafe { store_u32(rel_fresh_addr, 1) };
     }
-    // Leave the slots + torn variables at the solution.
+    // Leave the slots + torn variables at the solution. C leaves them wherever its
+    // last trial step put them, so this has no counterpart in its feval count.
     if converged && !settled {
+        let uncounted = n_feval.get();
         eval(&x, &mut scratch);
+        n_feval.set(uncounted);
     }
     for i in 0..n {
         unsafe { store_f64(scale_addr + (i * 8) as u32, res_scaling[i]) };
@@ -2796,7 +2972,9 @@ pub extern "C" fn rt_solve_nls(
         if saved_rel_fresh != 2 {
             unsafe { store_u32(rel_fresh_addr, 0) };
         }
+        let uncounted = n_feval.get();
         eval(&warm, &mut scratch);
+        n_feval.set(uncounted);
         // C's equation index, +1 so nonzero still means "failed". First-writer-wins:
         // C throws out of the equation list at the first failure, never reporting a
         // later one.
