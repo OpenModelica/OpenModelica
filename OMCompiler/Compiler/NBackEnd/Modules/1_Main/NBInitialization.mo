@@ -1105,7 +1105,8 @@ public
           result := exp;
           if not BVariable.isParamOrConst(var_ptr) and
              not BVariable.isIterator(var_ptr) and
-             not BVariable.isDummyVariable(var_ptr)
+             not BVariable.isDummyVariable(var_ptr) and
+             not BVariable.isStart(var_ptr)
           then
             start_opt := BVariable.getVarStart(var_ptr);
             if isSome(start_opt) then
