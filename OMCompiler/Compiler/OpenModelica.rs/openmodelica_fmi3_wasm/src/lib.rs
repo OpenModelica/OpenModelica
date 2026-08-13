@@ -1023,6 +1023,9 @@ impl GuestModelExchangeInstance for Instance {
         logging_on: bool,
     ) -> Option<ModelExchangeInstance> {
         init_logging(instance_name, logging_on);
+        // What `OpenModelica_fmuLoadResource` resolves against: the loader preopens
+        // the FMU's `resources/` as this component's root, not the host path.
+        openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
         let st = new_state()?;
         Some(ModelExchangeInstance::new(Instance { st: RefCell::new(st) }))
     }
@@ -1129,6 +1132,9 @@ impl GuestCoSimulationInstance for Instance {
         _required_intermediate_variables: Vec<u32>,
     ) -> Option<CoSimulationInstance> {
         init_logging(instance_name, logging_on);
+        // What `OpenModelica_fmuLoadResource` resolves against: the loader preopens
+        // the FMU's `resources/` as this component's root, not the host path.
+        openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
         let mut st = new_state()?;
         st.event_mode = event_mode_used;
         Some(CoSimulationInstance::new(Instance { st: RefCell::new(st) }))

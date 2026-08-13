@@ -126,6 +126,7 @@ fn define_external_imports(
     let ext_rt = dl::ExtRt {
         str_new: wt(rt_inst.get_typed_func(&mut *store, "rt_str_new"))?,
         str_data: wt(rt_inst.get_typed_func(&mut *store, "rt_str_data"))?,
+        release: wt(rt_inst.get_typed_func(&mut *store, "rt_release"))?,
         alloc: wt(rt_inst.get_typed_func(&mut *store, "rt_alloc"))?,
         free: wt(rt_inst.get_typed_func(&mut *store, "rt_free"))?,
         record_new: wt(rt_inst.get_typed_func(&mut *store, "rt_record_new"))?,
@@ -265,6 +266,12 @@ pub(super) fn load_and_execute(
         .ok_or_else(|| "CodegenWasmJit: runtime has no `memory` export")?;
     // `print(s)` in an evaluated function, onto the same stdout a simulation uses.
     define_print_import(&mut linker, memory)?;
+    openmodelica_wasm_jit::host::define_uri_import(
+        &mut linker,
+        memory,
+        wt(rt_inst.get_typed_func(&mut store, "rt_str_new"))?,
+        wt(rt_inst.get_typed_func(&mut store, "rt_str_data"))?,
+    )?;
     define_external_imports(&mut store, &mut linker, rt_inst, memory, &sig).inspect_err(|e| {
         crate::CodegenWasmJit::record_error(format!(
             "CodegenWasmJit: cannot bind the external \"C\" functions of `{file_name}`: {e}"

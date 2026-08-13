@@ -393,6 +393,7 @@ fn define_external_imports(
 ) -> Result<()> {
     let rt_str_new = rt.str_new.clone();
     let rt_str_data = rt.str_data.clone();
+    let rt_release = rt.release.clone();
     registry_reset();
     sim_driver::clear_runtime_error();
     openmodelica_util::dynload::install_modelica_message_interception(
@@ -424,11 +425,14 @@ fn define_external_imports(
         let sig = sig.clone();
         let rt_str_new = rt_str_new.clone();
         let rt_str_data = rt_str_data.clone();
+        let rt_release = rt_release.clone();
         let nls = nls.clone();
         wt(linker.func_new("ext", &name, functype, move |mut caller, args, rets| {
             // Safety: `addr` resolves `sig.name`; the `Cif` matches the validated sig.
-            unsafe { call_external(addr, &sig, &mut caller, memory, &rt_str_new, &rt_str_data, &nls, args, rets) }
-                .map_err(|e| wasmtime::Error::msg(format!("{e}")))
+            unsafe {
+                call_external(addr, &sig, &mut caller, memory, &rt_str_new, &rt_str_data, &rt_release, &nls, args, rets)
+            }
+            .map_err(|e| wasmtime::Error::msg(format!("{e}")))
         }))?;
     }
     Ok(())
@@ -503,7 +507,8 @@ fn zero_results(
 /// passed to C. The wasm results are the C return value (if any) then each output
 /// cell's written value, in order — scalars directly, external-object pointers via
 /// the registry, and `char*` outputs copied into a fresh in-wasm String
-/// (`rt_str_new`+`rt_str_data`). The whole call is bracketed by
+/// (`rt_str_new`+`rt_str_data`). A `String[…]` output array is written back
+/// element by element (C's `unpack_string_array`). The whole call is bracketed by
 /// `sim_external_begin/end` so any `ModelicaAllocateString` uses our arena.
 ///
 /// A `FORTRAN 77` external takes every argument by reference and its arrays
@@ -515,6 +520,7 @@ unsafe fn call_external(
     memory: wasmtime::Memory,
     rt_str_new: &wasmtime::TypedFunc<u32, u32>,
     rt_str_data: &wasmtime::TypedFunc<u32, u32>,
+    rt_release: &wasmtime::TypedFunc<u32, ()>,
     nls: &NlsHooks,
     args: &[wasmtime::Val],
     rets: &mut [wasmtime::Val],
@@ -547,6 +553,8 @@ unsafe fn call_external(
     let mut cstrings: Vec<std::ffi::CString> = Vec::new();
     // `const char**` argument vectors, kept alive alongside the strings they point at.
     let mut str_arrays: Vec<Vec<*const std::os::raw::c_char>> = Vec::new();
+    // Output `String[…]`: (index into `str_arrays`, wasm element-area offset).
+    let mut str_out_arrays: Vec<(usize, usize)> = Vec::new();
     let mut types: Vec<Type> = Vec::with_capacity(sig.args.len());
     // One 8-byte native cell per `_Out_` pointer arg (fits int/double/pointer),
     // in output order; the C call writes through the pointer we pass.
@@ -625,22 +633,29 @@ unsafe fn call_external(
                     let base = off + data_off;
                     // Only scalar elements are already a native array. A `String[:]`
                     // is in-wasm handles, not the `const char**` C declares, so it
-                    // is rebuilt; anything else has no C form at all.
+                    // is rebuilt (C's `data_of_string_c89_array`); anything else has
+                    // no C form at all.
                     if let SigTy::Str = &**elem {
-                        if *is_out {
-                            return Err("CodegenWasmJit: external \"C\" : a String output array is not marshalled");
-                        }
                         let n = dims.iter().product::<usize>();
                         let mut ptrs: Vec<*const std::os::raw::c_char> = Vec::with_capacity(n);
                         for k in 0..n {
                             let h = u32::from_le_bytes(mem[base + k * 4..base + k * 4 + 4].try_into().unwrap()) as usize;
-                            let len = u32::from_le_bytes(mem[h + 4..h + 8].try_into().unwrap()) as usize;
-                            let cs = std::ffi::CString::new(&mem[h + 8..h + 8 + len])
+                            // Never filled (a fresh output array): C sees "".
+                            let bytes: &[u8] = if h == 0 {
+                                &[]
+                            } else {
+                                let len = u32::from_le_bytes(mem[h + 4..h + 8].try_into().unwrap()) as usize;
+                                &mem[h + 8..h + 8 + len]
+                            };
+                            let cs = std::ffi::CString::new(bytes)
                                 .map_err(|_| "external \"C\" : string argument has an interior NUL")?;
                             ptrs.push(cs.as_ptr());
                             cstrings.push(cs);
                         }
                         slots.push(Slot::P(ptrs.as_mut_ptr() as *mut c_void));
+                        if *is_out {
+                            str_out_arrays.push((str_arrays.len(), base));
+                        }
                         str_arrays.push(ptrs);
                         types.push(Type::pointer());
                         continue;
@@ -694,7 +709,6 @@ unsafe fn call_external(
     let ok = openmodelica_error::ErrorExt::catch_runtime_error(|| unsafe {
         ffi_call(cif_ptr, Some(target), rvalue_ptr, avalue_ptr);
     });
-    drop(cstrings); // char* input copies stay alive across the call
     if ok.is_err() {
         openmodelica_modelica_utilities::sim_external_end();
         // A `ModelicaError` recorded its message in the Error buffer and unwound
@@ -723,6 +737,29 @@ unsafe fn call_external(
             }
         }
     }
+
+    // C's `unpack_string_array`. An element the callee did not write still points
+    // at our own input copy, so `cstrings` outlives this.
+    for (k, base) in &str_out_arrays {
+        for (i, cptr) in str_arrays[*k].iter().enumerate() {
+            let bytes: &[u8] =
+                if cptr.is_null() { &[] } else { unsafe { std::ffi::CStr::from_ptr(*cptr) }.to_bytes() };
+            let soff = wt(rt_str_new.call(&mut *caller, bytes.len() as u32))?;
+            let doff = wt(rt_str_data.call(&mut *caller, soff))? as usize;
+            let slot = base + i * 4;
+            let old = {
+                let mem = memory.data_mut(&mut *caller);
+                mem[doff..doff + bytes.len()].copy_from_slice(bytes);
+                let old = u32::from_le_bytes(mem[slot..slot + 4].try_into().unwrap());
+                mem[slot..slot + 4].copy_from_slice(&soff.to_le_bytes());
+                old
+            };
+            if old != 0 {
+                wt(rt_release.call(&mut *caller, old))?;
+            }
+        }
+    }
+    drop(cstrings);
 
     // Build an in-wasm String from a native `char*` (NUL-terminated), returning its
     // offset. Re-enters the runtime (`rt_str_new` may grow memory, so `data_mut` is
@@ -906,6 +943,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     let ext_rt = crate::dylink_engine::ExtRt {
         str_new: rt_str_new,
         str_data: rt_str_data,
+        release: wts(rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_release"))?,
         alloc: wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?,
         free: wts(rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free"))?,
         record_new: wts(rt_inst.get_typed_func::<(u32, u32), u32>(&mut store, "rt_record_new"))?,
@@ -913,6 +951,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     let ext_libs = crate::dylink_engine::load_ext_libraries(&mut store, engine, rt_inst, memory, model, &ext_rt)?;
     define_external_imports(&mut linker, &mut store, model, memory, &ext_rt, &ext_libs, nls)?;
     define_print_import(&mut linker, memory)?;
+    crate::host::define_uri_import(&mut linker, memory, ext_rt.str_new.clone(), ext_rt.str_data.clone())?;
     let instance = wts(linker.instantiate(&mut store, &model_module))?;
     let inst_time = t_inst.elapsed();
     let rt_alloc = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?;

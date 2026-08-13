@@ -284,6 +284,10 @@ fn builtin_index(name: &str) -> Option<u32> {
 /// `rt_reinit_note(state_off, value)` records an executed `reinit` for the driver's
 /// `LOG_EVENTS` block; C prints that line from the model itself, but the block's
 /// indentation belongs to whichever driver owns the run.
+///
+/// `rt_uri_to_filename(uri, fmu) -> filename` is C's `OpenModelica_uriToFilename_impl`,
+/// which needs a filesystem and the loaded program's class directories. `fmu` picks
+/// the FMU resources directory (`OpenModelica_fmuLoadResource`). Borrows `uri`.
 pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
     (
         "rt_assert",
@@ -298,6 +302,7 @@ pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_print", &[WTy::I32], &[]),
     ("rt_row_asserts", &[WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_reinit_note", &[WTy::I32, WTy::F64], &[]),
+    ("rt_uri_to_filename", &[WTy::I32, WTy::I32], &[WTy::I32]),
 ];
 
 /// Absolute wasm function index of an `ENV_EXTRA` import (after the `BUILTINS`
@@ -7784,6 +7789,18 @@ fn compile_math_builtin(
             let w = compile_exp(ctx, argv[0])?;
             Ok(exp_sigty(argv[0])
                 .unwrap_or(if w == WTy::F64 { SigTy::Real } else { SigTy::Int }))
+        }
+        // The frontend folds a literal URI, so the argument here is computed.
+        "OpenModelica_uriToFilename" | "OpenModelica_fmuLoadResource" => {
+            need_args(&argv, 1, name)?;
+            compile_exp(ctx, argv[0])?;
+            let t = ctx.alloc_temp(WTy::I32);
+            ctx.emit(we::Instruction::LocalSet(t));
+            ctx.emit(we::Instruction::LocalGet(t));
+            ctx.emit(we::Instruction::I32Const(i32::from(name == "OpenModelica_fmuLoadResource")));
+            ctx.emit(we::Instruction::Call(env_extra_index("rt_uri_to_filename")?));
+            release_temp(ctx, t)?;
+            Ok(SigTy::Str)
         }
         // der(cref): an explicit derivative left in an equation. Read the
         // derivative variable's slot ($DER.<cref>), as the C target does.

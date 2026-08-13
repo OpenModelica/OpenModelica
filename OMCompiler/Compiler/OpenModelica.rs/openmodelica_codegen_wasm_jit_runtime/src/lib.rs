@@ -114,6 +114,13 @@ mod reinit_notes {
 #[cfg(not(feature = "host_log"))]
 pub use reinit_notes::take_reinit_notes;
 
+// `rt_uri_to_filename`: same rule as `rt_reinit_note` — a host binds its own
+// resolver (which has the class directories); a host-free module resolves it here.
+#[cfg(not(feature = "host_log"))]
+mod uri;
+#[cfg(not(feature = "host_log"))]
+pub use uri::set_resources_dir;
+
 /// With a host present the notes live host-side (`rt_host_take_reinits`).
 #[cfg(feature = "host_log")]
 pub fn take_reinit_notes() -> alloc::vec::Vec<(u32, f64)> {
