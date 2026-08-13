@@ -823,15 +823,15 @@ namespace ModelInstance
    * \param skipTopLevel - if true then it will skip the top level modifier each and final.
    * \param includeComment - if true then it will include the comment in the string.
    * \param onlyType - if true then it will return only the type of the modifier.
-   * \param elementPropertiesDialog - if true then it will return the string for element properties dialog.
+   * \param skipDisplayUnit - if true then skip displayUnit modifier in the string.
    * \return
    */
-  QString Modifier::toString(bool skipTopLevel, bool includeComment, bool onlyType, bool elementPropertiesDialog) const
+  QString Modifier::toString(bool skipTopLevel, bool includeComment, bool onlyType, bool skipDisplayUnit) const
   {
     /*! We need to return empty string for displayUnit modifier in Element Properties dialog
      *  because we are showing a drop down for the display unit in separate column.
      */
-    if (elementPropertiesDialog) {
+    if (skipDisplayUnit) {
       if (mName == QStringLiteral("displayUnit")) {
         return "";
       }
@@ -857,7 +857,7 @@ namespace ModelInstance
       }
       QStringList subModifiers;
       foreach (auto *pSubModifier, mModifiers) {
-        QString subValue = pSubModifier->toString(false, includeComment, onlyType, elementPropertiesDialog);
+        QString subValue = pSubModifier->toString(false, includeComment, onlyType, skipDisplayUnit);
         if (!subValue.isEmpty()) {
           subModifiers.append(subValue);
         }
