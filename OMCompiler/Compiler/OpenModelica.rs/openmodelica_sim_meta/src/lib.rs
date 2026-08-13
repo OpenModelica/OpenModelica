@@ -175,8 +175,14 @@ pub struct Layout {
     /// `functionInitStartValues` fills it; `-iif`/`-override` may replace entries;
     /// the driver then copies it over the live region (C's `setAllVarsToStart`).
     pub start_off: u32,
+    /// C's `realVarsData[i].attribute.nominal` as declared, one f64 per real
+    /// variable in [`Layout::start_off`] order. [`Layout::state_nom_off`] is the
+    /// integrator's clamped copy.
+    pub real_nom_off: u32,
     /// Base of the per-state `nominal` attribute (one f64 per state), written by
     /// `functionUpdateBoundVariableAttributes` once the parameters are computed.
+    /// `fmax(|nominal|, 1e-32)` rather than the attribute itself: it is the
+    /// integrator's `atol` scale and the Jacobian's FD step floor.
     pub state_nom_off: u32,
     /// Base of the per-state `max` attribute, written the same way; C's
     /// `functionJacAC_num` flips its difference quotient at the bound.
@@ -309,7 +315,8 @@ impl Layout {
         let n_math_slots = if n_math > 0 { n_math + 2 } else { 0 };
         let zctol_off = mathevents_off + n_math_slots * 8;
         let start_off = zctol_off + 8;
-        let state_nom_off = start_off + n_real * 8;
+        let real_nom_off = start_off + n_real * 8;
+        let state_nom_off = real_nom_off + n_real * 8;
         let state_max_off = state_nom_off + n_states * 8;
         let sens_off = state_max_off + n_states * 8;
         let dae_res_off = sens_off + n_sens * 8;
@@ -332,7 +339,7 @@ impl Layout {
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
-            mathevents_off, zctol_off, start_off, state_nom_off, state_max_off, n_sens, sens_off,
+            mathevents_off, zctol_off, start_off, real_nom_off, state_nom_off, state_max_off, n_sens, sens_off,
             n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off,
             n_base_clocks, clock_off, n_sub_clocks, subclock_off, clock_fire_off, linz_off, n_linz,
             n_opt_attr, opt_min_off, opt_max_off, opt_nom_off, opt_use_nom_off,
@@ -353,6 +360,11 @@ impl Layout {
     /// Byte offset of real variable `i`'s `start` attribute slot.
     pub fn real_start_off(&self, i: u32) -> u32 {
         self.start_off + i * 8
+    }
+
+    /// Byte offset of real variable `i`'s `nominal` attribute slot.
+    pub fn real_nominal_off(&self, i: u32) -> u32 {
+        self.real_nom_off + i * 8
     }
 
     /// C's `compiledInDAEMode`: the integrator solves `F(t, y, y') = 0` over states
@@ -433,9 +445,8 @@ pub struct MetaVar {
 #[derive(Clone, PartialEq, Debug, Default)]
 pub struct SotiVars {
     /// Real variables in real-variable index order (states, derivatives, then the
-    /// other reals) with the `nominal` attribute; a state's runtime nominal comes
-    /// from [`Layout::state_nom_off`] instead.
-    pub reals: Vec<(String, f64)>,
+    /// other reals). Their `start` and `nominal` attributes are `SimData` slots.
+    pub reals: Vec<String>,
     /// Integer/Boolean variables with their `start` attribute.
     pub ints: Vec<(String, i32)>,
     pub bools: Vec<(String, i32)>,
@@ -830,7 +841,7 @@ impl SimMeta {
         }
         [
             group(
-                self.soti.reals.iter().map(|(n, _)| n.as_str()).collect(),
+                self.soti.reals.iter().map(|n| n.as_str()).collect(),
                 &|i| l.real_start_off(i as u32),
                 WTy::F64,
             ),
@@ -1077,7 +1088,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.terminate_off, l.terminal_off, l.initial_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
-        l.state_nom_off, l.state_max_off, l.n_sens, l.sens_off,
+        l.real_nom_off, l.state_nom_off, l.state_max_off, l.n_sens, l.sens_off,
         l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off,
         l.n_base_clocks, l.clock_off, l.n_sub_clocks, l.subclock_off, l.clock_fire_off,
         l.linz_off, l.n_linz,
@@ -1207,9 +1218,8 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_u32(&mut o, *i as u32);
     }
     put_u32(&mut o, m.soti.reals.len() as u32);
-    for (n, v) in &m.soti.reals {
+    for n in &m.soti.reals {
         put_str(&mut o, n);
-        put_f64(&mut o, *v);
     }
     for list in [&m.soti.ints, &m.soti.bools] {
         put_u32(&mut o, list.len() as u32);
@@ -1422,6 +1432,7 @@ impl<'a> Reader<'a> {
             mathevents_off: self.u32()?,
             zctol_off: self.u32()?,
             start_off: self.u32()?,
+            real_nom_off: self.u32()?,
             state_nom_off: self.u32()?,
             state_max_off: self.u32()?,
             n_sens: self.u32()?,
@@ -1558,7 +1569,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let sample_index = r.u32s()?.into_iter().map(|v| v as i32).collect();
     let mut soti = SotiVars::default();
     for _ in 0..r.u32()? {
-        soti.reals.push((r.string()?, r.f64()?));
+        soti.reals.push(r.string()?);
     }
     for _ in 0..r.u32()? {
         soti.ints.push((r.string()?, r.u32()? as i32));

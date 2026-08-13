@@ -2348,13 +2348,12 @@ fn dump_initial_solution(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
     omclog::info(omclog::SOTI, true, "### SOLUTION OF THE INITIALIZATION ###");
     let real_line = |i: usize| {
         let off = REAL_OFF + i as u32 * 8;
-        let (name, nom) = &soti.reals[i];
-        let nom = if i < n { real(layout.state_nom_off + i as u32 * 8) } else { *nom };
+        let name = &soti.reals[i];
         format!(
             "[{}] Real {name}(start={}, nominal={}) = {} (pre: {})",
             i + 1,
             g(real(layout.real_start_off(i as u32))),
-            g(nom),
+            g(real(layout.real_nominal_off(i as u32))),
             g(real(off)),
             g(pre_real(off))
         )
@@ -2368,7 +2367,7 @@ fn dump_initial_solution(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
         omclog::info(omclog::SOTI, true, "derivatives variables");
         for i in n..2 * n {
             let off = REAL_OFF + i as u32 * 8;
-            let name = &soti.reals[i].0;
+            let name = &soti.reals[i];
             let line = format!("[{}] Real {name} = {} (pre: {})", i + 1, g(real(off)), g(pre_real(off)));
             omclog::info(omclog::SOTI, false, &line);
         }

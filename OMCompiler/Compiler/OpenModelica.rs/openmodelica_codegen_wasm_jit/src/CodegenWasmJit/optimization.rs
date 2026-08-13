@@ -70,11 +70,11 @@ pub(crate) fn attr_defaults(
             if let Ok(k) = crate::CodegenWasmJit::sim_cref_key(&sv.name) {
                 let t = attr_targets.entry(k).or_default();
                 if base == layout.opt_min_off {
-                    t.opt_min_offs.push(off);
+                    t.raw_min_offs.push(off);
                 } else if base == layout.opt_max_off {
-                    t.opt_max_offs.push(off);
+                    t.raw_max_offs.push(off);
                 } else {
-                    t.opt_nom_offs.push(off);
+                    t.raw_nom_offs.push(off);
                 }
             }
         }
