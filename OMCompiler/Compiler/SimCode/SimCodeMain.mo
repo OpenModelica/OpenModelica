@@ -2188,12 +2188,15 @@ protected function objectFilesOf
   "The object files a list of runtime sources compiles to, for the makefile of a
    source FMU.
 
-   Only a one character extension is rewritten, which in practice is the .c that
-   the generated makefile has a rule for. Anything longer is left out and reported:
-   the file would need a rule of its own, and replacing the substring \".c\" in a
-   name like jacobian_colpack.cpp used to give jacobian_colpack.opp, an object that
-   nothing can build. That went unnoticed because it only breaks when somebody
-   builds the FMU from its sources with the makefile."
+   Only .c becomes an object, that being what the generated makefile has a rule for.
+   The lists also carry files that are shipped but never compiled - headers and the
+   .inc the FMI 1.0 and 2.0 interfaces include - and those are simply left out.
+
+   A C++ source is left out too, but reported, because it is one that would have to
+   be built and cannot be: the makefile has no rule for it, and the .c to .o
+   replacement this used to do turned jacobian_colpack.cpp into
+   jacobian_colpack.opp, an object nothing can build. That went unnoticed because it
+   only breaks when somebody builds the FMU from its sources with the makefile."
   input list<String> sourceFiles;
   output list<String> objectFiles = {};
 protected
@@ -2204,13 +2207,13 @@ algorithm
     for part in System.strtok(f, ".") loop
       ext := part; // the last one is the extension
     end for;
-    if stringLength(ext) == 1 then
+
+    if ext == "c" then
       // drop the extension character and put the object one in its place
       objectFiles := substring(f, 1, stringLength(f) - 1) + "o" :: objectFiles;
-    else
+    elseif ext == "cpp" or ext == "cc" or ext == "cxx" or ext == "c++" then
       Error.addCompilerWarning("Leaving " + f + " out of the object files of the FMU makefile: "
-        + "only a one character source extension can be turned into an object file, and the "
-        + "makefile has no rule for '." + ext + "'.");
+        + "the makefile has no rule for '." + ext + "'.");
     end if;
   end for;
   objectFiles := listReverse(objectFiles);
