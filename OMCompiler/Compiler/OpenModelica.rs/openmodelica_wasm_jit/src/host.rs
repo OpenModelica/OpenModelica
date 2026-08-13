@@ -115,6 +115,32 @@ fn write_warnings(recs: &[[i32; 9]], dst: &mut [u8]) -> u32 {
 /// Wire size of one record, shared with the in-wasm reader.
 const REC_BYTES: usize = 9 * 4;
 
+/// `rt_uri_to_filename` on a host: `metamodelica`'s port of
+/// `OpenModelica_uriToFilename_impl`, resolving `modelica://` against the class
+/// directories `System.updateUriMapping` installed. A host run has no FMU
+/// resources directory, so the `fmu` selector only matters inside an FMU.
+///
+/// Like the external "C" path, the run reports itself through its log alone, so
+/// the message the `omc_assert` hook buffered is rolled back and returned.
+#[cfg(feature = "jit")]
+fn uri_to_filename(uri: &str) -> std::result::Result<String, String> {
+    const CP: arcstr::ArcStr = arcstr::literal!("wasm-jit uriToFilename");
+    openmodelica_error::ErrorExt::setCheckpoint(CP);
+    match metamodelica::uriToFilename(arcstr::ArcStr::from(uri)) {
+        Ok(path) => {
+            openmodelica_error::ErrorExt::delCheckpoint(CP);
+            Ok(path.to_string())
+        }
+        Err(_) => {
+            let msg = openmodelica_error::ErrorExt::take_last_runtime_error();
+            openmodelica_error::ErrorExt::rollBack(CP);
+            let msg = msg.unwrap_or_else(|| format!("uriToFilename: cannot resolve {uri}"));
+            crate::sim_driver::note_runtime_error(&msg);
+            Err(msg)
+        }
+    }
+}
+
 /// A [`SimEngine`] over nothing but a read window into the shared linear memory:
 /// formatting a `LOG_ASSERT` block reads the time and the String handles and never
 /// calls back into the model. The reader is a closure so each engine can serve it
@@ -442,6 +468,45 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     Ok(())
 }
 
+/// `rt.rt_uri_to_filename`: the model's URI resolved into a fresh in-wasm String.
+/// Per instance, not in [`add_host_builtins`]: it re-enters the string constructors.
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+pub fn define_uri_import<T: 'static>(
+    linker: &mut wasmtime::Linker<T>,
+    memory: wasmtime::Memory,
+    str_new: wasmtime::TypedFunc<u32, u32>,
+    str_data: wasmtime::TypedFunc<u32, u32>,
+) -> Result<()> {
+    linker
+        .func_wrap(
+            "rt",
+            "rt_uri_to_filename",
+            move |mut caller: wasmtime::Caller<'_, T>, handle: u32, _fmu: i32| -> std::result::Result<u32, wasmtime::Error> {
+                let uri = read_wasm_string(memory, &caller, handle);
+                let path = uri_to_filename(&uri).map_err(wasmtime::Error::msg)?;
+                let out = str_new.call(&mut caller, path.len() as u32)?;
+                let at = str_data.call(&mut caller, out)? as usize;
+                memory.data_mut(&mut caller)[at..at + path.len()].copy_from_slice(path.as_bytes());
+                Ok(out)
+            },
+        )
+        .map(|_| ())
+        .map_err(|_| "CodegenWasmJit: wasm engine error")
+}
+
+/// The bytes of the String at `handle` (`[refcount:u32][len:u32][utf8…]`).
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+fn read_wasm_string<T>(memory: wasmtime::Memory, caller: &wasmtime::Caller<'_, T>, handle: u32) -> String {
+    if handle == 0 {
+        return String::new();
+    }
+    let data = memory.data(caller);
+    let h = handle as usize;
+    let Some(lenb) = data.get(h + 4..h + 8) else { return String::new() };
+    let len = u32::from_le_bytes(lenb.try_into().unwrap()) as usize;
+    data.get(h + 8..h + 8 + len).map(|b| String::from_utf8_lossy(b).into_owned()).unwrap_or_default()
+}
+
 /// The runtime's memory, handed to the wasmer host builtins by [`HostMem::set`]
 /// once the instance exists; the imports have to be defined before it.
 #[cfg(all(feature = "jit", any(feature = "engine-wasmer", target_arch = "wasm32")))]
@@ -541,6 +606,52 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
         ),
     );
     Ok(HostMem(mem_env))
+}
+
+/// The wasmer counterpart of [`define_uri_import`] (wasmtime): see there.
+#[cfg(all(feature = "jit", any(feature = "engine-wasmer", target_arch = "wasm32")))]
+pub fn define_uri_import(
+    store: &mut wasmer::Store,
+    imports: &mut wasmer::Imports,
+    memory: &wasmer::Memory,
+    str_new: &wasmer::TypedFunction<u32, u32>,
+    str_data: &wasmer::TypedFunction<u32, u32>,
+) {
+    use wasmer::{Function, FunctionEnv, FunctionEnvMut, RuntimeError};
+    struct Env {
+        memory: wasmer::Memory,
+        str_new: wasmer::TypedFunction<u32, u32>,
+        str_data: wasmer::TypedFunction<u32, u32>,
+    }
+    let env = FunctionEnv::new(
+        &mut *store,
+        Env { memory: memory.clone(), str_new: str_new.clone(), str_data: str_data.clone() },
+    );
+    let f = Function::new_typed_with_env(
+        &mut *store,
+        &env,
+        |mut env: FunctionEnvMut<Env>, handle: u32, _fmu: i32| -> std::result::Result<u32, RuntimeError> {
+            let (data, mut store) = env.data_and_store_mut();
+            let (memory, str_new, str_data) = (data.memory.clone(), data.str_new.clone(), data.str_data.clone());
+            // String layout: [refcount:u32][len:u32][utf8].
+            let view = memory.view(&store);
+            let mut lenb = [0u8; 4];
+            let mut uri = Vec::new();
+            if handle != 0 && view.read(handle as u64 + 4, &mut lenb).is_ok() {
+                uri = vec![0u8; u32::from_le_bytes(lenb) as usize];
+                view.read(handle as u64 + 8, &mut uri).map_err(|e| RuntimeError::new(e.to_string()))?;
+            }
+            let path = uri_to_filename(&String::from_utf8_lossy(&uri)).map_err(RuntimeError::new)?;
+            let out = str_new.call(&mut store, path.len() as u32)?;
+            let at = str_data.call(&mut store, out)?;
+            memory
+                .view(&store)
+                .write(at as u64, path.as_bytes())
+                .map_err(|e| RuntimeError::new(e.to_string()))?;
+            Ok(out)
+        },
+    );
+    imports.define("rt", "rt_uri_to_filename", f);
 }
 
 /// Redirect the process's stdout/stderr into the run's log for one capture phase

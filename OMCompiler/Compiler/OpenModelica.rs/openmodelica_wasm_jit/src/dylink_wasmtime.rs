@@ -516,6 +516,7 @@ mod tests {
         let rt = ExtRt {
             str_new: rt_inst.get_typed_func(&mut store, "rt_str_new").unwrap(),
             str_data: rt_inst.get_typed_func(&mut store, "rt_str_data").unwrap(),
+            release: rt_inst.get_typed_func(&mut store, "rt_release").unwrap(),
             alloc: alloc.clone(),
             free: rt_inst.get_typed_func(&mut store, "rt_free").unwrap(),
             record_new: rt_inst.get_typed_func(&mut store, "rt_record_new").unwrap(),
@@ -691,6 +692,7 @@ pub fn modelica_utilities_imports(
 pub struct ExtRt {
     pub str_new: wasmtime::TypedFunc<u32, u32>,
     pub str_data: wasmtime::TypedFunc<u32, u32>,
+    pub release: wasmtime::TypedFunc<u32, ()>,
     pub alloc: wasmtime::TypedFunc<u32, u32>,
     pub free: wasmtime::TypedFunc<u32, ()>,
     pub record_new: wasmtime::TypedFunc<(u32, u32), u32>,
@@ -761,6 +763,8 @@ fn call_external_in_wasm(
     // Column-major copies a FORTRAN 77 callee gets instead of the array itself:
     // (scratch, element area, dims, element size, is output).
     let mut f77_arrays: Vec<(u32, u32, Vec<usize>, usize, bool)> = Vec::new();
+    // Output `String[…]`: (`char**` scratch, element area, element count).
+    let mut str_out_arrays: Vec<(u32, u32, usize)> = Vec::new();
 
     let alloc = |caller: &mut wasmtime::Caller<'_, WasiCtx>, n: u32| -> Result<u32> {
         rt.alloc.call(&mut *caller, n).map_err(|e| format!("rt_alloc: {e}"))
@@ -879,6 +883,29 @@ fn call_external_in_wasm(
                 let (dims, data_off) = crate::host::array_abi::dims_and_data(memory.data(&*caller), off)
                     .ok_or_else(|| "external \"C\": malformed array argument".to_string())?;
                 let base = (off + data_off) as u32;
+                // Handles, not the `const char**` C declares: rebuilt as a vector of
+                // NUL-terminated copies (C's `data_of_string_c89_array`).
+                if let SigTy::Str = &**elem {
+                    let n = dims.iter().product::<usize>();
+                    let vec_cell = alloc(caller, (n * 4).max(1) as u32)?;
+                    temps.push(vec_cell);
+                    for k in 0..n {
+                        let h = read_u32(memory, caller, base + (k * 4) as u32);
+                        let len = if h == 0 { 0 } else { read_u32(memory, caller, h + 4) as usize };
+                        let cell = alloc(caller, (len + 1) as u32)?;
+                        temps.push(cell);
+                        let mem = memory.data_mut(&mut *caller);
+                        mem.copy_within(h as usize + 8..h as usize + 8 + len, cell as usize);
+                        mem[cell as usize + len] = 0;
+                        let slot = vec_cell as usize + k * 4;
+                        mem[slot..slot + 4].copy_from_slice(&cell.to_le_bytes());
+                    }
+                    call_args.push(Val::I32(vec_cell as i32));
+                    if *is_out {
+                        str_out_arrays.push((vec_cell, base, n));
+                    }
+                    continue;
+                }
                 if fortran && dims.len() > 1 {
                     // C's `convert_alloc_*_to_f77`.
                     let esz = crate::host::array_abi::elem_size(elem);
@@ -918,6 +945,28 @@ fn call_external_in_wasm(
         let mut buf = vec![0u8; n];
         crate::host::array_abi::reorder(&mem[*cell as usize..*cell as usize + n], &mut buf, dims, *esz, false);
         mem[*base as usize..*base as usize + n].copy_from_slice(&buf);
+    }
+
+    // C's `unpack_string_array`; an element the callee did not write still points
+    // at our own input copy.
+    for (vec_cell, base, n) in &str_out_arrays {
+        for k in 0..*n {
+            let ptr = read_u32(memory, caller, vec_cell + (k * 4) as u32) as usize;
+            let len = str_len(memory, caller, ptr)?;
+            let handle = rt.str_new.call(&mut *caller, len as u32).map_err(|e| format!("{e}"))?;
+            let dst = rt.str_data.call(&mut *caller, handle).map_err(|e| format!("{e}"))? as usize;
+            let slot = *base as usize + k * 4;
+            let old = {
+                let mem = memory.data_mut(&mut *caller);
+                mem.copy_within(ptr..ptr + len, dst);
+                let old = u32::from_le_bytes(mem[slot..slot + 4].try_into().unwrap());
+                mem[slot..slot + 4].copy_from_slice(&handle.to_le_bytes());
+                old
+            };
+            if old != 0 {
+                rt.release.call(&mut *caller, old).map_err(|e| format!("{e}"))?;
+            }
+        }
     }
 
     let mut result = Vec::with_capacity(rets.len());
@@ -983,12 +1032,7 @@ fn ext_result(
         SigTy::Int | SigTy::Bool | SigTy::Ptr => Val::I32(i32::from_le_bytes(raw[..4].try_into().unwrap())),
         SigTy::Str => {
             let ptr = u32::from_le_bytes(raw[..4].try_into().unwrap()) as usize;
-            let data = memory.data(&*caller);
-            let len = if ptr == 0 {
-                0
-            } else {
-                data[ptr..].iter().position(|&b| b == 0).ok_or_else(|| "external \"C\": unterminated `char*` result".to_string())?
-            };
+            let len = str_len(memory, caller, ptr)?;
             let handle = rt.str_new.call(&mut *caller, len as u32).map_err(|e| format!("{e}"))?;
             let dst = rt.str_data.call(&mut *caller, handle).map_err(|e| format!("{e}"))? as usize;
             memory.data_mut(&mut *caller).copy_within(ptr..ptr + len, dst);
@@ -1262,6 +1306,17 @@ fn wasm_string(
         memory.data_mut(&mut *caller).copy_within(ptr as usize..ptr as usize + len, dst);
     }
     Ok(handle)
+}
+
+/// `strlen` of the NUL-terminated `char*` at `ptr` in the shared memory.
+fn str_len(memory: wasmtime::Memory, caller: &mut wasmtime::Caller<'_, WasiCtx>, ptr: usize) -> Result<usize> {
+    if ptr == 0 {
+        return Ok(0);
+    }
+    memory.data(&*caller)[ptr..]
+        .iter()
+        .position(|&b| b == 0)
+        .ok_or_else(|| "external \"C\": unterminated `char*`".to_string())
 }
 
 fn read_u32(memory: wasmtime::Memory, caller: &mut wasmtime::Caller<'_, WasiCtx>, at: u32) -> u32 {

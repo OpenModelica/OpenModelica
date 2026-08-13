@@ -303,6 +303,7 @@ struct ExtEnv {
     free: wasmer::TypedFunction<u32, ()>,
     rt_str_new: wasmer::TypedFunction<u32, u32>,
     rt_str_data: wasmer::TypedFunction<u32, u32>,
+    rt_release: wasmer::TypedFunction<u32, ()>,
     func: wasmer::Function,
     sig: crate::sig::ExtCallSig,
 }
@@ -325,6 +326,7 @@ fn define_external_imports(
     sim_mem: &wasmer::Memory,
     rt_str_new: &wasmer::TypedFunction<u32, u32>,
     rt_str_data: &wasmer::TypedFunction<u32, u32>,
+    rt_release: &wasmer::TypedFunction<u32, ()>,
 ) -> Result<()> {
     use wasmer::{AsStoreRef, Function, FunctionEnv, FunctionEnvMut, FunctionType, RuntimeError, Value};
 
@@ -469,6 +471,7 @@ fn define_external_imports(
             free: free.clone(),
             rt_str_new: rt_str_new.clone(),
             rt_str_data: rt_str_data.clone(),
+            rt_release: rt_release.clone(),
             func,
             sig: sig.clone(),
         });
@@ -523,6 +526,7 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
     let free = data.free.clone();
     let rt_str_new = data.rt_str_new.clone();
     let rt_str_data = data.rt_str_data.clone();
+    let rt_release = data.rt_release.clone();
     let func = data.func.clone();
     let sig = data.sig.clone();
 
@@ -539,6 +543,8 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
     // offset, byte length, header data offset, column-major dims + element size
     // for a Fortran callee).
     let mut out_arrays: Vec<(u32, u32, usize, u32, Option<(Vec<usize>, usize)>)> = Vec::new();
+    // Output `String[…]`: (`char**` side scratch, sim element area, element count).
+    let mut str_out_arrays: Vec<(u32, u32, usize)> = Vec::new();
     let fortran = sig.lang == crate::sig::ExtLang::Fortran77;
     let mut in_i = 0usize;
     for (ty, is_out) in &sig.args {
@@ -589,6 +595,33 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
                 let total = read_u32_mem(&sim_mem, &store, off + 12)? as usize;
                 let elem_size = crate::host::array_abi::elem_size(elem);
                 let data_off = (16 + ndims * 4 + 7) & !7;
+                // Handles, not the `const char**` C declares: rebuilt in side memory
+                // as NUL-terminated copies (C's `data_of_string_c89_array`).
+                if let SigTy::Str = &**elem {
+                    let base = off + data_off;
+                    let vec_cell = malloc.call(&mut store, (total * 4).max(1) as u32)
+                        .map_err(|_| "CodegenWasmJit: wasm engine error")?;
+                    temps.push(vec_cell);
+                    for k in 0..total {
+                        let h = read_u32_mem(&sim_mem, &store, base + (k * 4) as u32)?;
+                        let len = if h == 0 { 0 } else { read_u32_mem(&sim_mem, &store, h + 4)? as usize };
+                        let mut buf = vec![0u8; len + 1]; // + NUL
+                        sim_mem.view(&store).read((h + 8) as u64, &mut buf[..len])
+                            .map_err(|_| "CodegenWasmJit: wasm engine error")?;
+                        let cell = malloc.call(&mut store, (len + 1) as u32)
+                            .map_err(|_| "CodegenWasmJit: wasm engine error")?;
+                        side_mem.view(&store).write(cell as u64, &buf)
+                            .map_err(|_| "CodegenWasmJit: wasm engine error")?;
+                        temps.push(cell);
+                        side_mem.view(&store).write((vec_cell + (k * 4) as u32) as u64, &cell.to_le_bytes())
+                            .map_err(|_| "CodegenWasmJit: wasm engine error")?;
+                    }
+                    call_args.push(Value::I32(vec_cell as i32));
+                    if *is_out {
+                        str_out_arrays.push((vec_cell, base, total));
+                    }
+                    continue;
+                }
                 let bytes = total * elem_size;
                 let mut buf = vec![0u8; bytes];
                 sim_mem.view(&store).read((off + data_off) as u64, &mut buf).map_err(|_| "CodegenWasmJit: wasm engine error")?;
@@ -632,6 +665,24 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
             buf = row;
         }
         sim_mem.view(&store).write((*woff + *data_off) as u64, &buf).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+    }
+
+    // C's `unpack_string_array`; an element the callee did not write still points
+    // at our own input copy.
+    for (vec_cell, base, n) in &str_out_arrays {
+        for k in 0..*n {
+            let ptr = read_u32_mem(&side_mem, &store, vec_cell + (k * 4) as u32)?;
+            let bytes = read_side_cstr(&side_mem, &store, ptr)?;
+            let handle = rt_str_new.call(&mut store, bytes.len() as u32).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            let doff = rt_str_data.call(&mut store, handle).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            sim_mem.view(&store).write(doff as u64, &bytes).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            let slot = base + (k * 4) as u32;
+            let old = read_u32_mem(&sim_mem, &store, slot)?;
+            sim_mem.view(&store).write(slot as u64, &handle.to_le_bytes()).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            if old != 0 {
+                rt_release.call(&mut store, old).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            }
+        }
     }
 
     // Build an in-wasm String (in the sim memory) from a NUL-terminated `char*` at
@@ -852,9 +903,15 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     if !model.ext_imports.is_empty() {
         let rt_str_new: wasmer::TypedFunction<u32, u32> = wts(rt_inst.exports.get_typed_function(&store, "rt_str_new"))?;
         let rt_str_data: wasmer::TypedFunction<u32, u32> = wts(rt_inst.exports.get_typed_function(&store, "rt_str_data"))?;
-        define_external_imports(&mut store, &mut imports, model, &memory, &rt_str_new, &rt_str_data)?;
+        let rt_release: wasmer::TypedFunction<u32, ()> = wts(rt_inst.exports.get_typed_function(&store, "rt_release"))?;
+        define_external_imports(&mut store, &mut imports, model, &memory, &rt_str_new, &rt_str_data, &rt_release)?;
     }
     define_print_import(&mut store, &mut imports, &memory);
+    {
+        let str_new: wasmer::TypedFunction<u32, u32> = wts(rt_inst.exports.get_typed_function(&store, "rt_str_new"))?;
+        let str_data: wasmer::TypedFunction<u32, u32> = wts(rt_inst.exports.get_typed_function(&store, "rt_str_data"))?;
+        crate::host::define_uri_import(&mut store, &mut imports, &memory, &str_new, &str_data);
+    }
 
     let instance = wts(wasmer::Instance::new(&mut store, &model_module, &imports))?;
     let inst_time = t_inst.elapsed();

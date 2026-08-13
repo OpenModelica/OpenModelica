@@ -145,7 +145,6 @@ pub(super) fn load_and_execute(
     openmodelica_wasm_jit::host::add_host_builtins(&mut store, &mut imports)?;
     let rt_inst = wt(wasmer::Instance::new(&mut store, &cache.runtime_module, &imports))?;
     imports.register_namespace("rt", rt_inst.exports.iter().map(|(k, v)| (k.clone(), v.clone())));
-    let instance = wt(wasmer::Instance::new(&mut store, &module, &imports))?;
 
     // Runtime entry points needed to marshal heap values (strings, arrays) in
     // and out of the shared heap.
@@ -154,6 +153,15 @@ pub(super) fn load_and_execute(
         .get_memory("memory")
         .map_err(|e| "CodegenWasmJit: runtime has no `memory` export")?
         .clone();
+    // The host's, not the runtime's, so it goes after the namespace registration
+    // that would shadow it.
+    {
+        let str_new = wt(rt_inst.exports.get_typed_function(&store, "rt_str_new"))?;
+        let str_data = wt(rt_inst.exports.get_typed_function(&store, "rt_str_data"))?;
+        openmodelica_wasm_jit::host::define_uri_import(&mut store, &mut imports, &memory, &str_new, &str_data);
+    }
+    let instance = wt(wasmer::Instance::new(&mut store, &module, &imports))?;
+
     let rt = RtFns {
         mem: memory,
         str_new: wt(rt_inst.exports.get_typed_function(&store, "rt_str_new"))?,

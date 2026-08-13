@@ -171,6 +171,7 @@ openmodelica_codegen_wasm_jit_runtime/src/solvers.rs
 openmodelica_codegen_wasm_jit_runtime/src/spatial.rs
 openmodelica_codegen_wasm_jit_runtime/src/standalone.rs
 openmodelica_codegen_wasm_jit_runtime/src/sundials.rs
+openmodelica_codegen_wasm_jit_runtime/src/uri.rs
 openmodelica_fmi3_wasm/Cargo.lock
 openmodelica_fmi3_wasm/Cargo.toml
 openmodelica_fmi3_wasm/src/lib.rs

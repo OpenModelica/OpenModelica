@@ -2011,6 +2011,27 @@ fn deflate(data: &[u8]) -> Option<Vec<u8>> {
     Some(miniz_oxide::deflate::compress_to_vec(data, 6))
 }
 
+/// Add `path` (a file, or a directory copied whole) under `resources/<path>`,
+/// keeping the absolute path so `rt_uri_to_filename` names it again at run time.
+fn add_resource(entries: &mut Vec<(String, Vec<u8>)>, path: &str) {
+    if openmodelica_wasi::fs::is_dir(path) {
+        let Ok(dir) = openmodelica_wasi::fs::read_dir(path) else { return };
+        for e in dir {
+            add_resource(entries, &format!("{}/{}", path.trim_end_matches('/'), e.name));
+        }
+        return;
+    }
+    // A drive letter cannot be a directory name.
+    let drive = path.len() > 2
+        && path.as_bytes()[0].is_ascii_alphabetic()
+        && path.as_bytes()[1] == b':'
+        && matches!(path.as_bytes()[2], b'/' | b'\\');
+    let name = if drive { path.replace(':', "").replace('\\', "/") } else { path.trim_start_matches('/').to_string() };
+    if let Ok(bytes) = openmodelica_wasi::fs::read(path) {
+        entries.push((format!("resources/{name}"), bytes));
+    }
+}
+
 /// A ZIP assembled in-process rather than by an external `zip`, deflated unless
 /// that would grow the entry.
 fn zip_archive(entries: &[(String, Vec<u8>)]) -> Vec<u8> {
@@ -2318,6 +2339,11 @@ fn emit_fmu(
             entries.push((format!("resources/{model_id}.wasm"), component));
         } else {
             entries.push((format!("binaries/wasm32-wasip2/{model_id}.wasm"), component));
+        }
+        // What `Modelica.Utilities.Files.loadResource` named; C's `SimCodeMain`
+        // copies the same set.
+        for path in lst(&sim_code.modelInfo.resourcePaths) {
+            add_resource(&mut entries, path);
         }
         // Ship the -d=visxml scene as a resource (the <Visualization> annotation
         // points at it), plus the CAD files it references so the scene is
