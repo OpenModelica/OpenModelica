@@ -71,7 +71,7 @@ inline void eval_current_point_ode(InfoGDOP& info) {
 void eval_ode_write(InfoGDOP& info, f64* eval_ode_buffer);
 inline void eval_write_ode_jacobian(InfoGDOP& info, f64* eval_ode_jac_buffer) {
     assert(info.exc_jac->A.jacobian && info.exc_jac->A.jacobian->sparsePattern);
-    evalJacobian(info.data, info.threadData, info.exc_jac->A.jacobian, NULL, eval_ode_jac_buffer, FALSE);
+    evalJacobian(info.data, info.threadData, info.exc_jac->A.jacobian, NULL, NULL, eval_ode_jac_buffer, FALSE);
 }
 
 // === Optimization Utils ===
@@ -86,7 +86,7 @@ void eval_mr_write(InfoGDOP& info, f64* eval_mr_buffer);
 /* call evalJacobian and write to buffer in *CSC* form; just passes the current buffer with offset to OM Jacobian */
 inline void jac_eval_write_as_csc(InfoGDOP& info, JACOBIAN* jacobian, f64* eval_jac_buffer) {
     assert(jacobian != NULL && jacobian->sparsePattern != NULL);
-    evalJacobian(info.data, info.threadData, jacobian, NULL, eval_jac_buffer, FALSE);
+    evalJacobian(info.data, info.threadData, jacobian, NULL, NULL, eval_jac_buffer, FALSE);
 }
 
 /* eval full jacobian (full_buffer) but only fill eval_jac_buffer with elements of first, *moved* row in Exchange's COO structure

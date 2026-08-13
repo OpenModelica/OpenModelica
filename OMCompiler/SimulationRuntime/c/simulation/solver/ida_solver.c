@@ -57,7 +57,6 @@
 #include "dassl.h"
 #include "epsilon.h"
 #include "external_input.h"
-#include "jacobianSymbolical.h"
 #include "simulation/jacobian_util.h"
 #include "model_help.h"
 #include "omc_math.h"
@@ -475,14 +474,16 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
 #ifdef USE_PARJAC
-      allocateThreadLocalJacobians(data, &(idaData->jacColumns));
-      idaData->allocatedParMem = 1;   /* TRUE */
+      if (idaData->jacobianMethod == COLOREDSYMJAC) {
+        allocateThreadLocalJacobians(&(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]), &(idaData->jacColumns));
+        idaData->allocatedParMem = 1;   /* TRUE */
+      }
+#endif
       if (omc_flag[FLAG_IDA_SCALING]) {
         idaData->scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, CSC_MAT);
       } else {
         idaData->scaleMatrix = NULL;
       }
-#endif
       break;
     default:
       throwStreamPrint(threadData,"For the klu solver jacobian calculation method has to be %s or %s", JACOBIAN_METHOD_NAME[COLOREDSYMJAC], JACOBIAN_METHOD_NAME[COLOREDNUMJAC]);
@@ -498,7 +499,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       flag = IDASetJacFn(idaData->ida_mem, callDenseJacobian);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
 #ifdef USE_PARJAC
-      allocateThreadLocalJacobians(data, &(idaData->jacColumns));
+      allocateThreadLocalJacobians(&(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]), &(idaData->jacColumns));
       idaData->allocatedParMem = 1;   /* TRUE */
 #endif
       break;
@@ -1846,28 +1847,19 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   double *states = N_VGetArrayPointer_Serial(yy);
   double *yprime = N_VGetArrayPointer_Serial(yp);
 
-#ifdef USE_PARJAC
-  JACOBIAN* t_jac = (idaData->jacColumns);
-#else
-  JACOBIAN* t_jac = jac;
-#endif
-  unsigned int columns = jac->sizeCols;
-  unsigned int rows = jac->sizeRows;
   SPARSE_PATTERN* sparsePattern = jac->sparsePattern;
-  int maxColors = sparsePattern->maxColors;
 
   /* Reset Jacobian matrix */
   SUNMatZero(Jac);
 
   setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
-  /* Evaluate constant equations if available */
-  if (jac->constantEqns != NULL) {
-      jac->constantEqns(data, threadData, jac, NULL);
-  }
-
-  genericColoredSymbolicJacobianEvaluation(rows, columns, sparsePattern, Jac, t_jac,
-                                           data, threadData, &setJacElementSundialsSparse);
+  setSundialsSparsePattern(jac, Jac);
+#ifdef USE_PARJAC
+  evalJacobian(data, threadData, jac, NULL, idaData->jacColumns, SM_DATA_S(Jac), FALSE);
+#else
+  evalJacobian(data, threadData, jac, NULL, NULL, SM_DATA_S(Jac), FALSE);
+#endif
 
   finishSparseColPtr(Jac, sparsePattern->nnz);
   unsetContext(data);

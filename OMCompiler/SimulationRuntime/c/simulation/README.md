@@ -140,7 +140,7 @@ The dashed ODE solvers `Runge Kutta`, `symSolver`, `symSolverSsc` and `QSS` are 
     Handling of state and time events during simulation.
 
   - Symbolic Jacobians:
-    [solver/jacobianSymbolical.c](./solver/jacobianSymbolical.c)<br/>
+    [jacobian_util.c](./jacobian_util.c)<br/>
     Symbolic evaluation of Jacobians.
 
   - State Selection: [solver/stateset.c](./solver/stateset.c)<br/>

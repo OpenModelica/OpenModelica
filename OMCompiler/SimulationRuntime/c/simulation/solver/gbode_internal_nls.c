@@ -458,7 +458,7 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
   }
   else if (!nls->multirate && jacobian_ODE->availability == JACOBIAN_AVAILABLE)
   {
-    evalJacobian(data, threadData, jacobian_ODE, NULL, nls->jacobian_callback, FALSE);
+    evalJacobian(data, threadData, jacobian_ODE, NULL, NULL, nls->jacobian_callback, FALSE);
   }
   else
   {
