@@ -112,8 +112,12 @@ else:
 shipped = [n[len('sources/'):] for n in names
            if n.startswith('sources/') and n.endswith(('.c', '.cpp'))]
 if shipped and not listed:
-    sys.exit("Error: %s ships %d source files but declares none in %s"
-             % (fmu, len(shipped), where))
+    # Not an error. An FMU exported with fmiSources=false or --fmiFilter=blackBox
+    # has its list emptied on purpose, and the Cpp target does not write one at
+    # all, while both still package some sources.
+    print("%s: ships %d source files and declares none in %s"
+          % (fmu, len(shipped), where))
+
 missing = [f for f in listed if 'sources/' + f not in names]
 if missing:
     sys.exit("Error: %s declares %d source file(s) in %s that it does not ship: %s"
