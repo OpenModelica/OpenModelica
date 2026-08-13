@@ -313,6 +313,7 @@ fn unresolved_external_detail(name: &str, model: &SimModel, load_errors: &[Strin
         .iter()
         .map(|l| l.name.as_str())
         .chain(model.ext_native_libs.iter().map(|s| s.as_str()))
+        .chain(model.ext_archives.iter().flat_map(|a| a.archives.iter().map(|s| s.as_str())))
         .collect();
     let mut s = if searched.is_empty() {
         format!(
@@ -336,8 +337,9 @@ fn unresolved_external_detail(name: &str, model: &SimModel, load_errors: &[Strin
 }
 
 /// The model's `external "C"` implementations outside wasm, resolved on demand: the
-/// platform libraries its `Library` annotations name, then — only once those and the
-/// process image have come up short — its `Include` C source.
+/// platform libraries its `Library` annotations name (its archives linked into
+/// one), then — only once those and the process image have come up short — its
+/// `Include` C source.
 #[derive(Default)]
 struct NativeExternals {
     handles: Vec<usize>,
@@ -353,6 +355,16 @@ impl NativeExternals {
             let (handles, errors) = openmodelica_util::dynload::load_external_libraries(&model.ext_native_libs);
             self.handles = handles;
             self.errors = errors;
+            if let Some(archives) = &model.ext_archives {
+                match archives.link() {
+                    Ok(path) => {
+                        let (h, errors) = openmodelica_util::dynload::load_external_libraries(&[path]);
+                        self.handles.extend(h);
+                        self.errors.extend(errors);
+                    }
+                    Err(e) => self.errors.push(e),
+                }
+            }
         }
         if let Some(addr) = openmodelica_util::dynload::external_symbol_in(&self.handles, name) {
             return Some(addr);
