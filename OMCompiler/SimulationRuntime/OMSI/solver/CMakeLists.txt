@@ -72,7 +72,6 @@ if(NOT TARGET omc::3rd::sundials::kinsol)
   find_library(SUNDIALS_CORE                 NAMES sundials_core                 PATHS ${SUNDIALS_LIB_DIR})
   find_library(SUNDIALS_LIBRARY_NVEC         NAMES sundials_nvecserial           PATHS ${SUNDIALS_LIB_DIR})
   find_library(SUNDIALS_KINSOL               NAMES sundials_kinsol               PATHS ${SUNDIALS_LIB_DIR})
-  find_library(SUNDIALS_SUNLINSOLKLU         NAMES sundials_sunlinsolklu         PATHS ${SUNDIALS_LIB_DIR})
   find_library(SUNDIALS_SUNLINSOLLAPACKDENSE NAMES sundials_sunlinsollapackdense PATHS ${SUNDIALS_LIB_DIR})
 
   # Check if all libraries found
@@ -85,9 +84,6 @@ if(NOT TARGET omc::3rd::sundials::kinsol)
   if(NOT SUNDIALS_KINSOL)
     message(FATAL_ERROR "Could not find libsundials_kinsol!")
   endif()
-  if(NOT SUNDIALS_SUNLINSOLKLU)
-    message(FATAL_ERROR "Could not find sundials_sunlinsolklu!")
-  endif()
   if(NOT SUNDIALS_SUNLINSOLLAPACKDENSE)
     message(FATAL_ERROR "Could not find sundials_sunlinsollapackdense!")
   endif()
@@ -97,7 +93,6 @@ if(NOT TARGET omc::3rd::sundials::kinsol)
 
   set(SUNDIALS_LIBRARIES
     ${SUNDIALS_KINSOL}
-    ${SUNDIALS_SUNLINSOLKLU}
     ${SUNDIALS_SUNLINSOLLAPACKDENSE}
     ${SUNDIALS_LIBRARY_NVEC}
     ${SUNDIALS_CORE})
@@ -125,7 +120,6 @@ target_link_libraries(${OMSISolverName} PUBLIC ${CMAKE_DL_LIBS})
 target_link_libraries(${OMSISolverName} PUBLIC ${LAPACK_LIBRARIES})
 if(TARGET omc::3rd::sundials::kinsol)
   target_link_libraries(${OMSISolverName} PUBLIC omc::3rd::sundials::kinsol)
-  target_link_libraries(${OMSISolverName} PUBLIC omc::3rd::sundials::sunlinsolklu)
   target_link_libraries(${OMSISolverName} PUBLIC omc::3rd::sundials::sunlinsollapackdense)
 else()
   target_link_libraries(${OMSISolverName} PUBLIC ${SUNDIALS_LIBRARIES})
