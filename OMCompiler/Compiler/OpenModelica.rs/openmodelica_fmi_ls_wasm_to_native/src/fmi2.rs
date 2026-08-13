@@ -689,13 +689,34 @@ pub unsafe extern "C" fn fmi2SetRealInputDerivatives(
     ERROR
 }
 
+/// The derivative of each named output.
 #[no_mangle]
 pub unsafe extern "C" fn fmi2GetRealOutputDerivatives(
-    _c: *mut c_void,
-    _value_references: *const u32,
-    _n_value_references: usize,
-    _orders: *const i32,
-    _values: *mut f64,
+    c: *mut c_void,
+    value_references: *const u32,
+    n_value_references: usize,
+    orders: *const i32,
+    values: *mut f64,
 ) -> i32 {
-    ERROR
+    let Some(inst) = inst_mut(c) else { return ERROR };
+    let Some(refs) = shift(inst, value_references, n_value_references, Base::Real) else { return ERROR };
+    if (values.is_null() || orders.is_null()) && n_value_references != 0 {
+        return ERROR;
+    }
+    // The order reaches the component unused, as in C.
+    let requests: Vec<(u32, u32)> =
+        refs.iter().enumerate().map(|(i, vr)| (*vr, (*orders.add(i)).max(0) as u32)).collect();
+    on_instance!(Some(inst), |store, g, h, st| match g.call_get_output_derivatives(store, h, &requests) {
+        Ok(Ok(v)) => {
+            if v.len() != n_value_references {
+                return ERROR;
+            }
+            for (i, x) in v.into_iter().enumerate() {
+                *values.add(i) = x;
+            }
+            OK
+        }
+        Ok(Err(s)) => st(s),
+        Err(_) => ERROR,
+    })
 }

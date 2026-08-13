@@ -2775,6 +2775,19 @@ fn fire_clocks(
     Ok(any)
 }
 
+/// C's `handleTimersFMI`: the clock half of the event update for a host that owns
+/// the integration (`fmi2NewDiscreteStates`), so no output rows. Reports whether
+/// any clock ticked.
+pub fn fmi_handle_timers(
+    e: &mut dyn SimEngine,
+    sync: &mut crate::sync::Sync,
+    model: &SimMeta,
+    sim_data: u32,
+    time: f64,
+) -> Result<bool> {
+    fire_clocks(e, sync, model, sim_data, time, time.abs().max(1.0) * 1e-10, None)
+}
+
 /// Output point `row` of the equidistant grid, as C's `perform_simulation`
 /// computes it: `row*(stop-start)/numSteps + start`, *not* `start + row*h` —
 /// the two round differently and the result files must agree bit for bit.
@@ -4615,6 +4628,12 @@ pub(crate) fn leak_error(s: String) -> &'static str {
     alloc::boxed::Box::leak(s.into_boxed_str())
 }
 
+/// How close to a target counts as reached, and so the smallest step the chunked
+/// fixed-step loop may ask for.
+fn reached_eps(t: f64) -> f64 {
+    t.abs().max(1.0) * 1e-10
+}
+
 /// How far one [`SolverCore::solve_toward`] got.
 enum Solved {
     Reached,
@@ -5150,7 +5169,7 @@ impl SolverCore {
         let sim_data = self.sim_data;
         let n_states = self.n_states;
         let ders_base = self.ders_base;
-        let eps = tout.abs().max(1.0) * 1e-10;
+        let eps = reached_eps(tout);
         let mut grid_covered = false;
 
         loop {
@@ -5454,6 +5473,7 @@ impl CsDriver {
             return Ok(CsStep::Reached);
         }
 
+        self.refresh_ders(e)?;
         let outcome = self.integrate_chunked(e, model, t_target, false)?;
         match outcome {
             Step::Terminated => return Ok(CsStep::Terminated),
@@ -5518,6 +5538,7 @@ impl CsDriver {
             return Ok(CsStep::Reached);
         }
 
+        self.refresh_ders(e)?;
         let outcome = self.integrate_chunked(e, model, t_target, true)?;
         match outcome {
             Step::Terminated => return Ok(CsStep::Terminated),
@@ -5563,6 +5584,18 @@ impl CsDriver {
         Ok(up)
     }
 
+    /// C's `fmi2DoStep` reads the derivatives at the start of every step, after the
+    /// master has set that point's inputs; a fixed-step method takes its first
+    /// stage from them. The variable-step solvers evaluate the model themselves and
+    /// must keep their own history, so this is for the fixed-step ones.
+    fn refresh_ders(&mut self, e: &mut (dyn SimEngine + 'static)) -> Result<()> {
+        if self.fixed_h.is_none() || self.core.n_states == 0 {
+            return Ok(());
+        }
+        e.call1("functionODE", self.core.sim_data)?;
+        self.core.read_states(e)
+    }
+
     /// Integrate to `t_target`: in one go for a variable-step method, or one step per
     /// call for a fixed-step one. Those steps land on the model's own output grid — the
     /// sequence the standalone driver produces — so a communication point only cuts the
@@ -5583,21 +5616,34 @@ impl CsDriver {
         let mut did_step = false;
         loop {
             let target = match self.fixed_h {
-                // The next grid point after `t`; the nudge stops drift just short of
-                // one from producing a step of nearly zero length.
+                // The next grid point past `t` by more than `integrate_to` calls
+                // reached, or it refuses the step and this asks forever. Communication
+                // points drift off the grid further than a nudge on the quotient.
                 Some(h) => {
-                    let k = libm::floor((self.core.t - model.start_time) / h + 1e-10) + 1.0;
-                    (model.start_time + k * h).min(t_target)
+                    let mut g = model.start_time + (libm::floor((self.core.t - model.start_time) / h) + 1.0) * h;
+                    if g - self.core.t <= reached_eps(self.core.t) {
+                        g += h;
+                    }
+                    g.min(t_target)
                 }
                 None => t_target,
             };
+            let t_before = self.core.t;
             let outcome = self.core.integrate_to(
                 e, model, &mut ctx, &mut self.samp, &mut self.sync, target, f64::INFINITY, None,
                 &mut did_step, stop_at_event,
             )?;
-            if !matches!(outcome, Step::Reached { .. }) || self.core.t >= t_target - eps {
+            // On the chunk that asked for the caller's target, wherever rounding left
+            // `t`: a tighter test on `t` asks for the same chunk forever.
+            if !matches!(outcome, Step::Reached { .. }) || target >= t_target - eps {
                 self.core.nfe = ctx.nfe;
                 return Ok(outcome);
+            }
+            if self.core.t <= t_before {
+                return Err(leak_error(alloc::format!(
+                    "CodegenWasmJit: the integrator made no progress at t={} toward {t_target}",
+                    self.core.t
+                )));
             }
         }
     }
