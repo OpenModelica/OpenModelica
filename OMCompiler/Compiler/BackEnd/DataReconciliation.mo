@@ -258,8 +258,8 @@ algorithm
 
   // prepare set-s other equations
   outOtherEqns := BackendEquation.listEquation(setS_Eq);
-  // extract parameters from set-s equations
-  paramVars := BackendEquation.equationsVars(outOtherEqns, shared.globalKnownVars);
+  // extract parameters from set-s and set-c equations
+  paramVars := BackendEquation.equationsVars(BackendEquation.merge(outOtherEqns, outResidualEqns), shared.globalKnownVars);
   //setSVars  := BackendEquation.equationsVars(outOtherEqns, currentSystem.orderedVars);
 
   // prepare variables stucture from list of extracted equations
@@ -943,7 +943,7 @@ algorithm
   // prepare set-s other equations
   outOtherEqns := BackendEquation.listEquation(setS_Eq);
   // extract parameters from set-s equations
-  paramVars := BackendEquation.equationsVars(outOtherEqns, shared.globalKnownVars);
+  paramVars := BackendEquation.equationsVars(BackendEquation.merge(outOtherEqns, outResidualEqns), shared.globalKnownVars);
   //setSVars  := BackendEquation.equationsVars(outOtherEqns, currentSystem.orderedVars);
 
   // prepare variables stucture from list of extracted equations
