@@ -28,6 +28,7 @@ ExtendsBasic.mos  \
 FrameTest.mos \
 IdealDiode.mos  \
 impureTest.mos \
+NegatedBooleanAlias.mos \
 NoLoadModel.mos \
 nonConstantIndex.mos \
 nonConstantParam.mos \

@@ -18,7 +18,8 @@ use core::cell::RefCell;
 
 use crate::omclog;
 use crate::{
-    JacAInfo, Layout as SimLayout, MetaKind as ResultKind, REAL_OFF, SimMeta, SolveStats, StateSetInfo, TIME_OFF,
+    JacAInfo, Layout as SimLayout, MetaKind as ResultKind, Neg, REAL_OFF, SimMeta, SolveStats, StateSetInfo,
+    TIME_OFF,
     WTy,
 };
 
@@ -2298,8 +2299,7 @@ pub(crate) fn bisection_iterations(width: f64, ttol: f64) -> i64 {
     }
 }
 
-/// Snapshot the zero-crossing g-values into `zeroCrossingsPre` (C's
-/// `saveZeroCrossings`); `delayZeroCrossing` reads it as the held g-value.
+/// Hold the zero-crossing g-values as `pre(zeroCrossing)`.
 fn save_zc_pre(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.n_zc == 0 {
         return Ok(());
@@ -2307,6 +2307,60 @@ fn save_zc_pre(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Resu
     let mut buf = vec![0u8; (layout.n_zc * 8) as usize];
     e.read_bytes(sim_data + layout.zc_off, &mut buf)?;
     e.write_bytes(sim_data + layout.zc_pre_off, &buf)
+}
+
+/// C's `sign()` (`omc_math.h`).
+fn zsign(v: f64) -> i32 {
+    if v > 0.0 {
+        1
+    } else if v < 0.0 {
+        -1
+    } else {
+        0
+    }
+}
+
+/// C's `checkForStateEvent` (`events.c`): the crossings whose g-value changed sign
+/// against the held one. The root finding only supplies the time.
+fn zc_sign_changed(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<usize>> {
+    let mut out = Vec::new();
+    for i in 0..layout.n_zc {
+        let cur = read_f64(e, sim_data + layout.zc_off + i * 8)?;
+        let pre = read_f64(e, sim_data + layout.zc_pre_off + i * 8)?;
+        if zsign(cur) != zsign(pre) {
+            out.push(i as usize);
+        }
+    }
+    Ok(out)
+}
+
+/// C's `saveZeroCrossings` (`model_help.c`), the tail of every `simulationUpdate`:
+/// hold, then recompute at the accepted point.
+fn save_zero_crossings(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+) -> Result<Vec<usize>> {
+    if layout.n_zc == 0 {
+        return Ok(Vec::new());
+    }
+    save_zc_pre(e, sim_data, layout)?;
+    e.call1("functionZeroCrossings", sim_data)?;
+    zc_sign_changed(e, sim_data, layout)
+}
+
+/// C's `saveZeroCrossingsAfterEvent` (`events.c`): recompute first, *then* hold, so
+/// the discrete update's own jump is not read as a crossing.
+fn save_zero_crossings_after_event(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+) -> Result<()> {
+    if layout.n_zc == 0 {
+        return Ok(());
+    }
+    e.call1("functionZeroCrossings", sim_data)?;
+    save_zc_pre(e, sim_data, layout)
 }
 
 /// Copy `relations[]` into the held relation snapshot at `stored_rel_off`. The
@@ -2455,7 +2509,7 @@ fn log_reinits(e: &mut dyn SimEngine, model: &SimMeta) {
         let name = model
             .vars
             .iter()
-            .find(|v| matches!(v.kind, ResultKind::Column { col: c, negate: false } if c == col))
+            .find(|v| matches!(v.kind, ResultKind::Column { col: c, negate: Neg::None } if c == col))
             .map(|v| v.name.as_str())
             .unwrap_or_default();
         omclog::info(omclog::EVENTS, false, &format!("reinit {name} = {}", format_g(value, 6)));
@@ -5147,6 +5201,54 @@ impl SolverCore {
         }
     }
 
+    /// C's `handleEvents` for the crossings [`save_zero_crossings`] reported at an
+    /// accepted point; there is no root to localize. `Ok(true)` = terminated.
+    #[allow(clippy::too_many_arguments)]
+    fn handle_zc_flips(
+        &mut self,
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        ctx: &mut ResCtx,
+        sync: &mut crate::sync::Sync,
+        mut rows: Option<&mut Vec<f64>>,
+        flips: &[usize],
+    ) -> Result<bool> {
+        let layout = &model.layout;
+        let sim_data = self.sim_data;
+        let t = self.t;
+        let eps = t.abs().max(1.0) * 1e-10;
+        self.state_events += 1;
+        log_state_event(t, flips, model);
+        if let Some(r) = rows.as_deref_mut()
+            && !no_event_emit()
+        {
+            capture_pre(e, r, sim_data, layout, t)?;
+        }
+        event_update(e, sim_data, layout, None, t)?;
+        save_zero_crossings_after_event(e, sim_data, layout)?;
+        if let Some(r) = rows.as_deref_mut() {
+            if emit_post_event_row(model, t) {
+                capture_row(e, r, sim_data, layout)?;
+            }
+            check_asserts(e, sim_data, layout, omclog::INFO)?;
+        }
+        if terminated(e, sim_data, layout)? {
+            return Ok(true);
+        }
+        fire_clocks(e, sync, model, sim_data, t, eps, rows.as_deref_mut())?;
+        store_operators(e, sim_data, layout)?;
+        log_reinits(e, model);
+        omclog::close(omclog::EVENTS);
+        if terminated(e, sim_data, layout)? {
+            return Ok(true);
+        }
+        self.read_states(e)?;
+        self.refresh_yp(e)?;
+        self.restart()?;
+        self.dae_restart(e, ctx)?;
+        Ok(false)
+    }
+
     /// Integrate to `tout`, handling the state events the solver roots out and the
     /// samples due on the way. `rows` collects the pre/post-event rows when the
     /// caller wants them; CS passes `None`. A `Yielded` return resumes on the same
@@ -5226,6 +5328,13 @@ impl SolverCore {
                         }
                     }
                     store_operators_at(e, sim_data, layout, self.t)?;
+                    let flips = save_zero_crossings(e, sim_data, layout)?;
+                    if !flips.is_empty() {
+                        *did_step = true;
+                        if self.handle_zc_flips(e, model, ctx, sync, rows.as_deref_mut(), &flips)? {
+                            return Ok(Step::Terminated);
+                        }
+                    }
                     continue;
                 }
                 // A zero-crossing root at `t` (< target). Handle the state event
@@ -5271,7 +5380,9 @@ impl SolverCore {
                         capture_pre(e, r, sim_data, layout, troot)?;
                     }
                     store_operators_at(e, sim_data, layout, troot)?;
+                    let _ = save_zero_crossings(e, sim_data, layout)?;
                     event_update(e, sim_data, layout, None, troot)?;
+                    save_zero_crossings_after_event(e, sim_data, layout)?;
                     if let Some(r) = rows.as_deref_mut() {
                         if emit_post_event_row(model, troot) {
                             capture_row(e, r, sim_data, layout)?;
@@ -5320,6 +5431,7 @@ impl SolverCore {
                     emit_row(e, r, sim_data, layout, te, model.stop_time)?; // pre-event row (held)
                 }
                 store_operators_at(e, sim_data, layout, te)?;
+                let _ = save_zero_crossings(e, sim_data, layout)?;
                 write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
                 samp.fire(e, sim_data, te)?;
                 refresh_relations(e, sim_data, layout)?;
@@ -5330,6 +5442,7 @@ impl SolverCore {
                 {
                     emit_row(e, r, sim_data, layout, te, model.stop_time)?;
                 }
+                save_zero_crossings_after_event(e, sim_data, layout)?;
                 store_operators(e, sim_data, layout)?;
                 log_reinits(e, model);
                 omclog::close(omclog::EVENTS);
@@ -5379,6 +5492,10 @@ impl SolverCore {
                 // exactly when the caller writes that row and stores after it.
                 if rows.is_none() {
                     store_operators_at(e, sim_data, layout, self.t)?;
+                    let flips = save_zero_crossings(e, sim_data, layout)?;
+                    if !flips.is_empty() && self.handle_zc_flips(e, model, ctx, sync, None, &flips)? {
+                        return Ok(Step::Terminated);
+                    }
                 }
                 return Ok(Step::Reached { grid_covered });
             }
@@ -5964,6 +6081,12 @@ impl Driver for EventsDriver {
                 close_assert_window(e, sim_data).and(emitted)?;
                 // The row's evaluation is this point's `updateContinuousSystem`.
                 store_operators(e, sim_data, layout)?;
+                let flips = save_zero_crossings(e, sim_data, layout)?;
+                if !flips.is_empty()
+                    && self.core.handle_zc_flips(e, model, &mut ctx, &mut self.sync, Some(&mut self.rows), &flips)?
+                {
+                    break Advance::Terminated;
+                }
                 if terminated(e, sim_data, layout)? {
                     break Advance::Terminated;
                 }

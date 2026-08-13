@@ -1917,6 +1917,46 @@ algorithm
   end match;
 end traverseStmtsForExps;
 
+public function setOperatorZeroCrossingIndices
+  "`delayZeroCrossing` and `spatialDistributionZeroCrossing` read `zeroCrossingsPre` at
+   the index passed as their second argument, so it has to be the crossing's own index.
+   `collectZC` cannot know it yet -- the call must exist before the crossing can be
+   registered -- so it fills in the relation index; overwrite it once the list is final.
+   A model has at least as many relations as crossings, so leaving it there reads
+   another crossing's held value, or past the end of the array."
+  input list<BackendDAE.ZeroCrossing> inZeroCrossings;
+  output list<BackendDAE.ZeroCrossing> outZeroCrossings = {};
+protected
+  DAE.Exp relation_;
+algorithm
+  for zc in inZeroCrossings loop
+    (relation_, _) := Expression.traverseExpBottomUp(zc.relation_, setOperatorIndex, zc.index);
+    zc.relation_ := relation_;
+    outZeroCrossings := zc :: outZeroCrossings;
+  end for;
+  outZeroCrossings := listReverse(outZeroCrossings);
+end setOperatorZeroCrossingIndices;
+
+protected function setOperatorIndex
+  input DAE.Exp inExp;
+  input Integer inIndex;
+  output DAE.Exp outExp;
+  output Integer outIndex = inIndex;
+algorithm
+  outExp := match inExp
+    local
+      DAE.Exp expr, delay, x, dir;
+      DAE.CallAttributes attr;
+    case DAE.CALL(path = Absyn.IDENT("delayZeroCrossing"), expLst = {expr, _, delay}, attr = attr)
+    then DAE.CALL(Absyn.IDENT("delayZeroCrossing"), {expr, DAE.ICONST(inIndex), delay}, attr);
+
+    case DAE.CALL(path = Absyn.IDENT("spatialDistributionZeroCrossing"), expLst = {expr, _, x, dir}, attr = attr)
+    then DAE.CALL(Absyn.IDENT("spatialDistributionZeroCrossing"), {expr, DAE.ICONST(inIndex), x, dir}, attr);
+
+    else inExp;
+  end match;
+end setOperatorIndex;
+
 protected function createZeroCrossings "
   Constructs a list of zero crossings from a list of relations. Each zero
   crossing gets the same equation indices and when clause indices."

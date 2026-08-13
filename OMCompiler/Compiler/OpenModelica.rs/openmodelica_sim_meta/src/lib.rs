@@ -411,6 +411,57 @@ impl Layout {
     }
 }
 
+/// How a negated alias derives its value. C's `crefToCStr` negates a Boolean
+/// logically, everything else arithmetically.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum Neg {
+    #[default]
+    None,
+    /// `-v`
+    Arith,
+    /// `!v`, i.e. `1 - v` over the 0/1 encoding.
+    Not,
+}
+
+impl Neg {
+    pub fn apply_f64(self, v: f64) -> f64 {
+        match self {
+            Neg::None => v,
+            Neg::Arith => -v,
+            Neg::Not => 1.0 - v,
+        }
+    }
+    pub fn apply_i32(self, v: i32) -> i32 {
+        match self {
+            Neg::None => v,
+            Neg::Arith => -v,
+            Neg::Not => (v == 0) as i32,
+        }
+    }
+    /// Compose one more negation step (an alias of an alias).
+    pub fn toggle(self, is_bool: bool) -> Neg {
+        match self {
+            Neg::None if is_bool => Neg::Not,
+            Neg::None => Neg::Arith,
+            _ => Neg::None,
+        }
+    }
+    fn code(self) -> u8 {
+        match self {
+            Neg::None => 0,
+            Neg::Arith => 1,
+            Neg::Not => 2,
+        }
+    }
+    fn from_code(c: u8) -> Neg {
+        match c {
+            1 => Neg::Arith,
+            2 => Neg::Not,
+            _ => Neg::None,
+        }
+    }
+}
+
 /// How a result signal sources its value (the run-time superset of
 /// `openmodelica_mat_writer::MatKind`: `Param` additionally carries the `SimData`
 /// offset/type so the driver can read the parameter's value back after the run).
@@ -420,12 +471,30 @@ pub enum MetaKind {
     Time,
     /// A time-variant real signal at result-buffer column `col` (`negate` for a
     /// negated alias).
-    Column { col: u32, negate: bool },
+    Column { col: u32, negate: Neg },
     /// A time-invariant parameter read from `SimData` at byte offset `off` as
     /// `wty` (`negate` for a negated alias).
-    Param { off: u32, wty: WTy, negate: bool },
+    Param { off: u32, wty: WTy, negate: Neg },
     /// A compile-time constant.
     Const { value: f64 },
+}
+
+impl MetaKind {
+    /// Project onto the `.mat` writer's kind.
+    pub fn mat(&self) -> openmodelica_mat_writer::MatKind {
+        use openmodelica_mat_writer::{MatKind, Neg as MatNeg};
+        let neg = |n: &Neg| match n {
+            Neg::None => MatNeg::None,
+            Neg::Arith => MatNeg::Arith,
+            Neg::Not => MatNeg::Not,
+        };
+        match self {
+            MetaKind::Time => MatKind::Time,
+            MetaKind::Column { col, negate } => MatKind::Column { col: *col, negate: neg(negate) },
+            MetaKind::Param { negate, .. } => MatKind::Param { negate: neg(negate) },
+            MetaKind::Const { value } => MatKind::Const { value: *value },
+        }
+    }
 }
 
 /// One result signal (C-compatible order: time, states, derivatives, algebraics,
@@ -557,7 +626,7 @@ impl LinLanguage {
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub struct LinVar {
     pub off: u32,
-    pub negate: bool,
+    pub negate: Neg,
 }
 
 /// What `-l` needs beyond the ODE: C's `nInputVars`/`nOutputVars` as `SimData`
@@ -736,7 +805,7 @@ pub struct FmiVr {
     pub off: u32,
     pub wty: WTy,
     /// The variable is a negated alias of the slot at `off`; a read negates it.
-    pub negate: bool,
+    pub negate: Neg,
     /// A real variable's `start` attribute slot, 0 for everything else. An
     /// Initialization Mode set must land here: `setAllVarsToStart` runs after the
     /// parameter overrides and would overwrite `off` from it.
@@ -1124,13 +1193,13 @@ fn put_kind(o: &mut Vec<u8>, k: &MetaKind) {
         MetaKind::Column { col, negate } => {
             o.push(1);
             put_u32(o, *col);
-            o.push(*negate as u8);
+            o.push(negate.code());
         }
         MetaKind::Param { off, wty, negate } => {
             o.push(2);
             put_u32(o, *off);
             o.push(matches!(wty, WTy::F64) as u8);
-            o.push(*negate as u8);
+            o.push(negate.code());
         }
         MetaKind::Const { value } => {
             o.push(3);
@@ -1177,7 +1246,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_u32(&mut o, v.vr);
         put_u32(&mut o, v.off);
         o.push(matches!(v.wty, WTy::F64) as u8);
-        o.push(v.negate as u8);
+        o.push(v.negate.code());
         put_u32(&mut o, v.start_off);
         o.push(v.is_string as u8);
         put_u32(&mut o, v.der_off);
@@ -1277,7 +1346,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
                 put_u32(&mut o, g.len() as u32);
                 for v in g {
                     put_u32(&mut o, v.off);
-                    o.push(v.negate as u8);
+                    o.push(v.negate.code());
                 }
             }
             o.push(l.language as u8);
@@ -1478,11 +1547,11 @@ impl<'a> Reader<'a> {
     fn kind(&mut self) -> Result<MetaKind, &'static str> {
         Ok(match self.u8()? {
             0 => MetaKind::Time,
-            1 => MetaKind::Column { col: self.u32()?, negate: self.u8()? != 0 },
+            1 => MetaKind::Column { col: self.u32()?, negate: Neg::from_code(self.u8()?) },
             2 => MetaKind::Param {
                 off: self.u32()?,
                 wty: if self.u8()? != 0 { WTy::F64 } else { WTy::I32 },
-                negate: self.u8()? != 0,
+                negate: Neg::from_code(self.u8()?),
             },
             3 => MetaKind::Const { value: self.f64()? },
             _ => return Err("sim_meta: bad MetaKind tag"),
@@ -1535,7 +1604,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         let vr = r.u32()?;
         let off = r.u32()?;
         let wty = if r.u8()? != 0 { WTy::F64 } else { WTy::I32 };
-        let negate = r.u8()? != 0;
+        let negate = Neg::from_code(r.u8()?);
         let start_off = r.u32()?;
         let is_string = r.u8()? != 0;
         let der_off = r.u32()?;
@@ -1629,7 +1698,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
                 let n = r.u32()? as usize;
                 let mut out = Vec::with_capacity(n);
                 for _ in 0..n {
-                    out.push(LinVar { off: r.u32()?, negate: r.u8()? != 0 });
+                    out.push(LinVar { off: r.u32()?, negate: Neg::from_code(r.u8()?) });
                 }
                 Ok(out)
             };
@@ -1752,10 +1821,10 @@ mod tests {
             model_name: "MyModel".to_string(),
             vars: vec![
                 MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, filter: 0 },
-                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: false }, filter: var_filter::PROTECTED },
-                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: true }, filter: var_filter::ALIAS },
-                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: false }, filter: 0 },
-                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: false }, filter: var_filter::HIDE_RESULT },
+                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::None }, filter: var_filter::PROTECTED },
+                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::Not }, filter: var_filter::ALIAS },
+                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: Neg::Arith }, filter: 0 },
+                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: Neg::None }, filter: var_filter::HIDE_RESULT },
                 MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, filter: var_filter::FILTERED },
             ],
             jac_a: Some(JacAInfo {
@@ -1774,8 +1843,8 @@ mod tests {
                 result_offs: vec![224],
             }],
             fmi_vrs: vec![
-                FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: false, start_off: 96, is_string: false, der_off: 0 },
-                FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: true, start_off: 0, is_string: true, der_off: 0 },
+                FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: Neg::None, start_off: 96, is_string: false, der_off: 0 },
+                FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: Neg::Arith, start_off: 0, is_string: true, der_off: 0 },
             ],
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
             rel_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
@@ -1815,8 +1884,8 @@ mod tests {
                 ],
             }],
             lin: Some(LinInfo {
-                input_vars: vec![LinVar { off: 40, negate: false }],
-                output_vars: vec![LinVar { off: 48, negate: true }],
+                input_vars: vec![LinVar { off: 40, negate: Neg::None }],
+                output_vars: vec![LinVar { off: 48, negate: Neg::Arith }],
                 language: LinLanguage::Julia,
                 frame: "function linearized_model()\n%s%s%s%s%s%s\nend".to_string(),
                 frame_datarec: String::new(),

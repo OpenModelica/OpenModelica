@@ -24,7 +24,7 @@
 //! - `wasm-merge runtime.wasm rt model.wasm model` connects both directions,
 //!   leaving only the WASI imports (satisfied by `wasmtime`/the worker shim).
 
-use openmodelica_mat_writer::{MatKind, MatVar};
+use openmodelica_mat_writer::MatVar;
 use openmodelica_sim_meta::driver::{self, SimEngine};
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{self as meta, MetaKind, SimMeta};
@@ -220,16 +220,7 @@ fn run() {
         if !keep {
             continue;
         }
-        matvars.push(MatVar {
-            name: &v.name,
-            comment: &v.comment,
-            kind: match &v.kind {
-                MetaKind::Time => MatKind::Time,
-                MetaKind::Column { col, negate } => MatKind::Column { col: *col, negate: *negate },
-                MetaKind::Param { negate, .. } => MatKind::Param { negate: *negate },
-                MetaKind::Const { value } => MatKind::Const { value: *value },
-            },
-        });
+        matvars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
     }
 
     let bytes = openmodelica_mat_writer::write_mat4(

@@ -32,7 +32,7 @@ use openmodelica_sim_meta::driver::{
 };
 #[cfg(feature = "cs")]
 use openmodelica_sim_meta::driver::{CsDriver, CsStep};
-use openmodelica_sim_meta::{decode, omclog, FmiVr, Layout, WTy, REAL_OFF, TIME_OFF};
+use openmodelica_sim_meta::{decode, omclog, FmiVr, Layout, Neg, WTy, REAL_OFF, TIME_OFF};
 
 // ── Model kernel imports ─────────────────────────────────────────────────────
 // `env` is the dylink convention: the Linker resolves these against the model
@@ -769,10 +769,7 @@ macro_rules! shared_instance_methods {
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::F64 => {
-                    let v = st.read_f64(e.off);
-                    out.push(if e.negate { -v } else { v });
-                }
+                Some(e) if e.wty == WTy::F64 => out.push(e.negate.apply_f64(st.read_f64(e.off))),
                 _ => return Err(Status::Error),
             }
         }
@@ -793,8 +790,7 @@ macro_rules! shared_instance_methods {
         for vr in vrs {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && !e.is_string => {
-                    let v = st.read_i32(e.off);
-                    out.push(if e.negate { -v } else { v });
+                    out.push(e.negate.apply_i32(st.read_i32(e.off)))
                 }
                 _ => return Err(Status::Error),
             }
@@ -812,8 +808,7 @@ macro_rules! shared_instance_methods {
         for vr in vrs {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && !e.is_string => {
-                    let v = st.read_i32(e.off);
-                    out.push((if e.negate { -v } else { v }) as i64);
+                    out.push(e.negate.apply_i32(st.read_i32(e.off)) as i64)
                 }
                 _ => return Err(Status::Error),
             }
@@ -851,7 +846,9 @@ macro_rules! shared_instance_methods {
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && !e.is_string => out.push(st.read_i32(e.off) != 0),
+                Some(e) if e.wty == WTy::I32 && !e.is_string => {
+                    out.push(e.negate.apply_i32(st.read_i32(e.off)) != 0)
+                }
                 _ => return Err(Status::Error),
             }
         }
@@ -889,7 +886,7 @@ macro_rules! shared_instance_methods {
         let mut st = self.st.borrow_mut();
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::F64 && !e.negate => {
+                Some(e) if e.wty == WTy::F64 && e.negate == Neg::None => {
                     st.write_f64(e.off, v);
                     if st.mode != Mode::Ready {
                         let start = e.start_off != 0;
@@ -915,7 +912,7 @@ macro_rules! shared_instance_methods {
         let mut st = self.st.borrow_mut();
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && !e.negate && !e.is_string => {
+                Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
                     st.write_i32(e.off, v);
                     if st.mode != Mode::Ready {
                         st.record_override(e.off, WTy::I32, v as f64, false);
@@ -934,7 +931,7 @@ macro_rules! shared_instance_methods {
         let mut st = self.st.borrow_mut();
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && !e.negate && !e.is_string => {
+                Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
                     st.write_i32(e.off, v as i32);
                     if st.mode != Mode::Ready {
                         st.record_override(e.off, WTy::I32, v as f64, false);
@@ -962,7 +959,7 @@ macro_rules! shared_instance_methods {
         let mut st = self.st.borrow_mut();
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && !e.negate && !e.is_string => {
+                Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
                     st.write_i32(e.off, v as i32);
                     if st.mode != Mode::Ready {
                         st.record_override(e.off, WTy::I32, v as f64, false);
@@ -981,7 +978,7 @@ macro_rules! shared_instance_methods {
         let mut st = self.st.borrow_mut();
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
-                Some(e) if e.wty == WTy::I32 && !e.negate && !e.is_string => {
+                Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
                     let iv = if v { 1 } else { 0 };
                     st.write_i32(e.off, iv);
                     if st.mode != Mode::Ready {

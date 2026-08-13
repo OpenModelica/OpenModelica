@@ -93,6 +93,7 @@ import FGraph;
 import Flags;
 import FlagsUtil;
 import FlatModel = NFFlatModel;
+import FindZeroCrossings;
 import NFFunction;
 import NFFlatten.{FunctionTree, FunctionTreeImpl};
 import NFApi;
@@ -2099,7 +2100,7 @@ algorithm
       stateSets                   = {},
       constraints                 = {},
       classAttributes             = {},
-      zeroCrossings               = ZeroCrossings.updateIndices(zeroCrossings),
+      zeroCrossings               = FindZeroCrossings.setOperatorZeroCrossingIndices(ZeroCrossings.updateIndices(zeroCrossings)),
       relations                   = ZeroCrossings.updateIndices(relations),
       timeEvents                  = timeEvents,
       discreteModelVars           = discreteModelVars,

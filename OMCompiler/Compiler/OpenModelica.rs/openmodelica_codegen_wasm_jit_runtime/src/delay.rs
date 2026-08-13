@@ -2,12 +2,26 @@
 //! ring buffer per `delay(...)` expression. State is a module global (single-
 //! threaded wasm), reset by `rt_delay_init` each run.
 
+use crate::omclog;
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 use core::cell::UnsafeCell;
+use openmodelica_sim_meta::driver::{format_e, format_g};
 
 /// C `DBL_EPSILON`.
 const DBL_EPSILON: f64 = f64::EPSILON;
+
+/// C `printRingBuffer` with `printDelayBuffer`, minus the element addresses.
+fn print_buffer(stream: omclog::Stream, buf: &VecDeque<Row>) {
+    if !omclog::active(stream) {
+        return;
+    }
+    omclog::info(stream, true, "Printing ring buffer:");
+    for &(t, v) in buf {
+        omclog::info(stream, false, &alloc::format!("({},{})", format_e(t), format_e(v)));
+    }
+    omclog::close(stream);
+}
 
 /// One `(time, value)` ring-buffer row.
 type Row = (f64, f64);
@@ -61,6 +75,9 @@ fn search_event(time: f64, buf: &VecDeque<Row>) -> bool {
             break;
         }
     }
+    if found {
+        print_buffer(omclog::DEBUG, buf);
+    }
     found
 }
 
@@ -100,6 +117,17 @@ impl DelayState {
                 buf.pop_front();
             }
         }
+        omclog::info(
+            omclog::DELAY,
+            false,
+            &alloc::format!(
+                "storeDelayed[{idx}] ({},{}) position={}",
+                format_g(time, 6),
+                format_g(value, 6),
+                buf.len()
+            ),
+        );
+        print_buffer(omclog::DELAY, buf);
     }
 
     /// C `delayImpl`: `expr(time - delay_time)` by linear interpolation, with the
@@ -107,10 +135,28 @@ impl DelayState {
     fn eval(&self, idx: usize, time: f64, value: f64, delay_time: f64) -> f64 {
         let buf = &self.buffers[idx];
         let length = buf.len();
+        omclog::info(
+            omclog::DELAY,
+            false,
+            &alloc::format!(
+                "delayImpl: exprNumber = {idx}, exprValue = {}, time = {}, delayTime = {}",
+                format_g(value, 6),
+                format_g(time, 6),
+                format_g(delay_time, 6)
+            ),
+        );
         if time <= self.start_time {
             return value;
         }
         if length == 0 {
+            omclog::info(
+                omclog::EVENTS,
+                false,
+                &alloc::format!(
+                    "delayImpl: Missing initial value, using argument value {} instead.",
+                    format_g(value, 6)
+                ),
+            );
             return value;
         }
         if time <= self.start_time + delay_time {
@@ -141,9 +187,8 @@ impl DelayState {
             return value1;
         }
         let timedif = time1 - time0;
-        let dt0 = time1 - time_stamp;
         let dt1 = time_stamp - time0;
-        (value0 * dt0 + value1 * dt1) / timedif
+        value0 + (value1 - value0) * (dt1 / timedif)
     }
 
     /// C `delayZeroCrossing`: the wrapped relation's pre g-value, sign-flipped when
