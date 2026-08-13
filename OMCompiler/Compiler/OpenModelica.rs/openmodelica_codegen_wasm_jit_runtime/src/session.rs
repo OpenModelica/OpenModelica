@@ -128,10 +128,10 @@ impl SimEngine for InWasmEngine {
         let f: extern "C" fn(u32, f64, f64, u32) -> u32 = unsafe { core::mem::transmute(idx as usize) };
         Ok(f(sim_data, start, stop, n_steps))
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
         let mut out = Vec::new();
         loop {
-            let mut buf = [[0i32; 9]; 8];
+            let mut buf = [[0i32; 10]; 8];
             let n = unsafe { rt_host_take_warnings(buf.as_mut_ptr() as u32, buf.len() as u32) } as usize;
             out.extend_from_slice(&buf[..n.min(buf.len())]);
             if n < buf.len() {
@@ -150,7 +150,7 @@ impl SimEngine for InWasmEngine {
             }
         }
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         // The model imports `rt_assert` from the host; a failed assert traps and
         // unwinds out of `rt_sim_advance` to the host, which reports it. Nothing
         // to take in-wasm.

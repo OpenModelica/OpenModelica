@@ -205,6 +205,7 @@ pub extern "C" fn rt_assert(
     _ecol: i32,
     _read_only: i32,
     _cond: i32,
+    _initial: i32,
 ) -> i32 {
     fmi_log(Status::Error, CAT_ERROR, &assert_message(msg, file, sline));
     core::arch::wasm32::unreachable()
@@ -221,6 +222,7 @@ pub extern "C" fn rt_assert_warning(
     _eline: i32,
     _ecol: i32,
     _read_only: i32,
+    _initial: i32,
 ) {
     fmi_log(Status::Warning, CAT_WARNING, &assert_message(msg, file, sline));
 }
@@ -302,7 +304,7 @@ impl SimEngine for Engine {
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> driver::Result<u32> {
         Err("fmi3-me: simulate not used")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         None
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {

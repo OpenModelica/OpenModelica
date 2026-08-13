@@ -256,14 +256,14 @@ pub trait SimEngine {
     /// in-wasm Euler driver; returns the result-buffer pointer.
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32>;
     /// If the last wasm call trapped on a failed `assert()`, take the recorded
-    /// assertion as `[msg, file, sline, scol, eline, ecol, read_only, cond]` (handles
-    /// into shared memory), else `None`. Backed by the engine's `rt_assert` host
-    /// import; lets [`drive`] report a model assertion instead of a bare trap.
-    fn take_pending_assert(&mut self) -> Option<[i32; 8]>;
+    /// assertion as `[msg, file, sline, scol, eline, ecol, read_only, cond, initial]`
+    /// (handles into shared memory), else `None`. Backed by the engine's `rt_assert`
+    /// host import; lets [`drive`] report a model assertion instead of a bare trap.
+    fn take_pending_assert(&mut self) -> Option<[i32; 9]>;
     /// Take the violations that did not throw, each as `[kind, cond, msg, file,
-    /// sline, scol, eline, ecol, read_only]` (`kind` per `ASSERT_*`). Drained by
-    /// the drivers to emit C's `LOG_ASSERT` blocks. Default: none.
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
+    /// sline, scol, eline, ecol, read_only, initial]` (`kind` per `ASSERT_*`). Drained
+    /// by the drivers to emit C's `LOG_ASSERT` blocks. Default: none.
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
         Vec::new()
     }
     /// Take the `reinit`s the model executed since the last call, as `(state
@@ -415,7 +415,7 @@ fn enrich_trap_impl(e: &mut dyn SimEngine, err: &'static str, init_time: Option<
         col_end: pa[5],
     };
     if let Some(t) = init_time {
-        log_assert_block(&info, &cond, t, true);
+        log_assert_block(&info, &cond, t, pa[8] != 0);
         omclog::info(omclog::ASSERT, false, "simulation terminated by an assertion at initialization");
     }
     let p = ASSERT_REPORTER.load(Ordering::Relaxed);
@@ -1291,7 +1291,7 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType) -
             line_end: el,
             col_end: ec,
         };
-        let line = assert_block(&info, &cond, time, false);
+        let line = assert_block(&info, &cond, time, w[9] != 0);
         let ty = if suppressed { omclog::INFO } else { level };
         if suppressed {
             omclog::message_text(ty, omclog::ASSERT, false, &line);
@@ -1514,7 +1514,6 @@ fn init_model(
     // before any equation function (`rt_delay_eval` traps on unallocated ones).
     write_f64(e, sim_data + TIME_OFF, start_time)?;
     e.call1_if_present("functionInitDelay", sim_data)?;
-    write_i32(e, sim_data + layout.initial_off, 1)?;
     run_initialization_impl(e, sim_data, layout, inputs, model)?;
     if let Some(m) = model {
         dump_initial_solution(e, sim_data, m);
@@ -1565,6 +1564,9 @@ fn run_initialization_impl(
     steady_report::reset();
     seed_start_values(e, sim_data, layout, inputs, model)?;
     log_static_data_update();
+    // C sets `initial()` here: the start values and bound parameters above are
+    // evaluated with it still clear.
+    write_i32(e, sim_data + layout.initial_off, 1)?;
 
     // C's `IIM_NONE`: every variable keeps its start value, the initial system is
     // never solved. C still marks the systems solved before it picks the method.
