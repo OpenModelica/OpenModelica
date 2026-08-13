@@ -5,6 +5,7 @@ Inverter2.mos
 
 TESTFILES = \
 partialConstArray.mos \
+nestedRecordOutput.mos \
 functionArray.mos \
 functionEvaluation.mos \
 functionTest4.mos \
