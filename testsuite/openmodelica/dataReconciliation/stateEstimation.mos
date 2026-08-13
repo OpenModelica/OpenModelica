@@ -321,11 +321,12 @@ getErrorString();
 // 2: BQ type: Real
 //
 //
-// Parameters in SET_S (3)
+// Parameters in SET_S (4)
 // ========================================
-// 1: k1:PARAM()  = 1.0  type: Real
-// 2: der_V:PARAM()  = -9.07595e-4  type: Real
-// 3: rho:PARAM()  = 1.0  type: Real
+// 1: k3:PARAM()  = 1.0  type: Real
+// 2: k1:PARAM()  = 1.0  type: Real
+// 3: der_V:PARAM()  = -9.07595e-4  type: Real
+// 4: rho:PARAM()  = 1.0  type: Real
 //
 //
 //
