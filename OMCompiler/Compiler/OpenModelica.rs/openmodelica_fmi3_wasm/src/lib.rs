@@ -338,6 +338,14 @@ impl Vrs {
 }
 
 // ── Instance state ───────────────────────────────────────────────────────────
+/// C's `ModelState`, as far as the component acts on it.
+#[derive(Clone, Copy, PartialEq)]
+enum Mode {
+    Instantiated,
+    Init,
+    Ready,
+}
+
 struct MeState {
     sim_data: u32,
     layout: Layout,
@@ -352,16 +360,23 @@ struct MeState {
     #[cfg(feature = "cs")]
     event_mode: bool,
     vrs: Vrs,
-    in_init: bool,
-    /// Set during Initialization Mode, applied by `run_initialization`: states as
-    /// start overrides (see `FmiVr::start_off`), everything else as parameters.
+    mode: Mode,
+    /// C's `_need_update`, consumed by `update_if_needed`.
+    need_update: bool,
+    /// Every set made before Initialization Mode is left, applied by
+    /// `run_initialization`: states as start overrides (see `FmiVr::start_off`),
+    /// everything else as parameters. C's `setReal` writes the `start` attribute
+    /// in both states, and `fmi2EnterInitializationMode` snapshots the live values
+    /// into it, so a set made before Initialization Mode counts too.
     init_overrides: Vec<(u32, WTy, f64)>,
     init_start_overrides: Vec<(u32, WTy, f64)>,
-    /// String parameter sets from Initialization Mode, applied after
-    /// `run_initialization` so init equations don't clobber them (cf `init_overrides`).
+    /// String parameter sets, applied after `run_initialization` so init equations
+    /// don't clobber them (cf `init_overrides`).
     init_string_overrides: Vec<(u32, String)>,
     /// Sample schedule, loaded once the model's `initSample` has run.
     samples: Option<Samples>,
+    /// Synchronous clocks (C's `initSynchronous`), for a model that has any.
+    sync: Option<openmodelica_sim_meta::sync::Sync>,
 }
 
 impl MeState {
@@ -410,6 +425,52 @@ impl MeState {
         let _ = e.call1("functionODE", self.sim_data);
         if !self.layout.has_when {
             let _ = e.call1("functionAlgebraics", self.sim_data);
+        }
+    }
+
+    /// C's `updateIfNeeded`. In Initialization Mode the update is the initial
+    /// solve, with the sets made so far as start values.
+    fn update_if_needed(&mut self) -> driver::Result<()> {
+        if !self.need_update {
+            return Ok(());
+        }
+        if self.mode == Mode::Init {
+            self.run_init()?;
+        } else {
+            self.eval();
+        }
+        self.need_update = false;
+        Ok(())
+    }
+
+    /// C's `initialization()`, repeatable: the overrides stay, so the importer can
+    /// keep setting and get a fresh solve each time.
+    fn run_init(&mut self) -> driver::Result<()> {
+        set_param_overrides(self.init_overrides.clone(), self.init_start_overrides.clone());
+        let mut e = Engine;
+        let start_time = self.read_f64(TIME_OFF);
+        // No `-csvInput` on the FMI path: the importer drives the inputs.
+        run_initialization(&mut e, self.sim_data, &self.layout, &[], start_time)?;
+        // C's `initializeModel` runs `initSynchronous` too.
+        if !self.meta.clocks.is_empty() {
+            let mut sync = openmodelica_sim_meta::sync::Sync::new(&mut e, &self.meta, self.sim_data)?;
+            sync.take_fired(&mut e, start_time)?;
+            self.sync = Some(sync);
+        }
+        // After the init equations, so they land in the slots last.
+        for (off, val) in core::mem::take(&mut self.init_string_overrides) {
+            self.write_string(off, &val);
+        }
+        Ok(())
+    }
+
+    /// C's `setReal` writing the `start` attribute. Last write per slot wins, so a
+    /// master iterating an algebraic loop does not grow the list.
+    fn record_override(&mut self, off: u32, wty: WTy, val: f64, is_start: bool) {
+        let list = if is_start { &mut self.init_start_overrides } else { &mut self.init_overrides };
+        match list.iter_mut().find(|(o, _, _)| *o == off) {
+            Some(e) => e.2 = val,
+            None => list.push((off, wty, val)),
         }
     }
 }
@@ -486,11 +547,13 @@ fn new_state() -> Option<MeState> {
         cs: None,
         #[cfg(feature = "cs")]
         event_mode: false,
-        in_init: false,
+        mode: Mode::Instantiated,
+        need_update: true,
         init_overrides: Vec::new(),
         init_start_overrides: Vec::new(),
         init_string_overrides: Vec::new(),
         samples: None,
+        sync: None,
     };
     st.seed_start_state();
     Some(st)
@@ -546,9 +609,10 @@ macro_rules! shared_instance_methods {
         _stop_time: Option<f64>,
     ) -> Status {
         let mut st = self.st.borrow_mut();
-        st.in_init = true;
-        st.init_overrides.clear();
-        st.init_start_overrides.clear();
+        // The sets made while Instantiated stay: C's `setStartValues` here turns
+        // the live values into the `start` attributes the initial solve reads.
+        st.mode = Mode::Init;
+        st.need_update = true;
         st.write_f64(TIME_OFF, start_time);
         let (sim_data, layout) = (st.sim_data, st.layout);
         let mut e = Engine;
@@ -560,21 +624,12 @@ macro_rules! shared_instance_methods {
 
     fn exit_initialization_mode(&self) -> Status {
         let mut st = self.st.borrow_mut();
-        st.in_init = false;
-        let params = core::mem::take(&mut st.init_overrides);
-        let starts = core::mem::take(&mut st.init_start_overrides);
-        set_param_overrides(params, starts);
-        let mut e = Engine;
-        let start_time = st.read_f64(TIME_OFF);
-        // No `-csvInput` on the FMI path: the importer drives the inputs.
-        if let Err(err) = run_initialization(&mut e, st.sim_data, &st.layout, &[], start_time) {
+        // Only when something was set since the last solve: a get in Initialization
+        // Mode has already run it otherwise.
+        if let Err(err) = st.update_if_needed() {
             return err_status(err);
         }
-        // Apply deferred String parameter sets now that init equations have run, so
-        // they land in the slots last (mirrors the numeric init_overrides above).
-        for (off, val) in core::mem::take(&mut st.init_string_overrides) {
-            st.write_string(off, &val);
-        }
+        st.mode = Mode::Ready;
         // `run_initialization` has run `initSample`, so the schedule is readable.
         if st.layout.n_samples > 0 {
             match Samples::load(&Engine, st.sim_data, &st.layout) {
@@ -591,7 +646,7 @@ macro_rules! shared_instance_methods {
         if st.event_mode {
             let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
             let meta = st.meta.clone();
-            match CsDriver::new(&mut e, &meta, sim_data, t) {
+            match CsDriver::new(&mut Engine, &meta, sim_data, t) {
                 Ok(d) => st.cs = Some(d),
                 Err(_) => return Status::Error,
             }
@@ -636,13 +691,30 @@ macro_rules! shared_instance_methods {
             Err(err) => return Err(err_status(err)),
         };
 
+        // C's `internalEventUpdate`: the timers, then the earliest of the next
+        // sample and the next activation.
+        let mut next = up.next_event_time;
+        let mut ticked = false;
+        if let Some(mut sync) = st.sync.take() {
+            let r = driver::fmi_handle_timers(&mut e, &mut sync, &st.meta, sim_data, time);
+            let tc = sync.next_time();
+            st.sync = Some(sync);
+            match r {
+                Ok(fired) => ticked = fired,
+                Err(err) => return Err(err_status(err)),
+            }
+            if tc.is_finite() {
+                next = Some(next.map_or(tc, |n: f64| n.min(tc)));
+            }
+        }
+
         Ok(DiscreteStatesInfo {
             new_discrete_states_needed: false,
             terminate_simulation: up.terminate,
             nominals_of_continuous_states_changed: false,
-            values_of_continuous_states_changed: up.states_changed,
-            next_event_time_defined: up.next_event_time.is_some(),
-            next_event_time: up.next_event_time.unwrap_or(0.0),
+            values_of_continuous_states_changed: up.states_changed || ticked,
+            next_event_time_defined: next.is_some(),
+            next_event_time: next.unwrap_or(0.0),
         })
     }
 
@@ -661,11 +733,13 @@ macro_rules! shared_instance_methods {
         unsafe {
             core::ptr::write_bytes(st.sim_data as *mut u8, 0, st.layout.total as usize);
         }
-        st.in_init = false;
+        st.mode = Mode::Instantiated;
+        st.need_update = true;
         st.init_overrides.clear();
         st.init_start_overrides.clear();
         st.init_string_overrides.clear();
         st.samples = None;
+        st.sync = None;
         #[cfg(feature = "cs")]
         {
             st.cs = None;
@@ -686,8 +760,10 @@ macro_rules! shared_instance_methods {
         Err(Status::Error)
     }
     fn get_float64(&self, vrs: Vec<u32>) -> Result<Vec<f64>, Status> {
-        let st = self.st.borrow();
-        st.eval();
+        let mut st = self.st.borrow_mut();
+        if let Err(err) = st.update_if_needed() {
+            return Err(err_status(err));
+        }
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
@@ -707,8 +783,10 @@ macro_rules! shared_instance_methods {
         Err(Status::Error)
     }
     fn get_int32(&self, vrs: Vec<u32>) -> Result<Vec<i32>, Status> {
-        let st = self.st.borrow();
-        st.eval();
+        let mut st = self.st.borrow_mut();
+        if let Err(err) = st.update_if_needed() {
+            return Err(err_status(err));
+        }
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
@@ -724,8 +802,10 @@ macro_rules! shared_instance_methods {
     // fmi3 accesses `<Enumeration>` vars via Int64; they are `WTy::I32` slots here,
     // so widen/narrow around the i32.
     fn get_int64(&self, vrs: Vec<u32>) -> Result<Vec<i64>, Status> {
-        let st = self.st.borrow();
-        st.eval();
+        let mut st = self.st.borrow_mut();
+        if let Err(err) = st.update_if_needed() {
+            return Err(err_status(err));
+        }
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
@@ -748,8 +828,10 @@ macro_rules! shared_instance_methods {
         Err(Status::Error)
     }
     fn get_uint64(&self, vrs: Vec<u32>) -> Result<Vec<u64>, Status> {
-        let st = self.st.borrow();
-        st.eval();
+        let mut st = self.st.borrow_mut();
+        if let Err(err) = st.update_if_needed() {
+            return Err(err_status(err));
+        }
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
@@ -760,8 +842,10 @@ macro_rules! shared_instance_methods {
         Ok(out)
     }
     fn get_boolean(&self, vrs: Vec<u32>) -> Result<Vec<bool>, Status> {
-        let st = self.st.borrow();
-        st.eval();
+        let mut st = self.st.borrow_mut();
+        if let Err(err) = st.update_if_needed() {
+            return Err(err_status(err));
+        }
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
@@ -772,7 +856,10 @@ macro_rules! shared_instance_methods {
         Ok(out)
     }
     fn get_string(&self, vrs: Vec<u32>) -> Result<Vec<String>, Status> {
-        let st = self.st.borrow();
+        let mut st = self.st.borrow_mut();
+        if let Err(err) = st.update_if_needed() {
+            return Err(err_status(err));
+        }
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
             match st.vrs.resolve(vr) {
@@ -801,17 +888,16 @@ macro_rules! shared_instance_methods {
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::F64 && !e.negate => {
-                    if st.in_init && e.start_off != 0 {
-                        st.init_start_overrides.push((e.start_off, WTy::F64, v));
-                    } else if st.in_init {
-                        st.init_overrides.push((e.off, WTy::F64, v));
-                    } else {
-                        st.write_f64(e.off, v);
+                    st.write_f64(e.off, v);
+                    if st.mode != Mode::Ready {
+                        let start = e.start_off != 0;
+                        st.record_override(if start { e.start_off } else { e.off }, WTy::F64, v, start);
                     }
                 }
                 _ => return Status::Error,
             }
         }
+        st.need_update = true;
         Status::Ok
     }
     fn set_int8(&self, _: Vec<u32>, _: Vec<i8>) -> Status {
@@ -828,15 +914,15 @@ macro_rules! shared_instance_methods {
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && !e.negate && !e.is_string => {
-                    if st.in_init {
-                        st.init_overrides.push((e.off, WTy::I32, v as f64));
-                    } else {
-                        st.write_i32(e.off, v);
+                    st.write_i32(e.off, v);
+                    if st.mode != Mode::Ready {
+                        st.record_override(e.off, WTy::I32, v as f64, false);
                     }
                 }
                 _ => return Status::Error,
             }
         }
+        st.need_update = true;
         Status::Ok
     }
     fn set_int64(&self, vrs: Vec<u32>, values: Vec<i64>) -> Status {
@@ -847,15 +933,15 @@ macro_rules! shared_instance_methods {
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && !e.negate && !e.is_string => {
-                    if st.in_init {
-                        st.init_overrides.push((e.off, WTy::I32, v as f64));
-                    } else {
-                        st.write_i32(e.off, v as i32);
+                    st.write_i32(e.off, v as i32);
+                    if st.mode != Mode::Ready {
+                        st.record_override(e.off, WTy::I32, v as f64, false);
                     }
                 }
                 _ => return Status::Error,
             }
         }
+        st.need_update = true;
         Status::Ok
     }
     fn set_uint8(&self, _: Vec<u32>, _: Vec<u8>) -> Status {
@@ -875,15 +961,15 @@ macro_rules! shared_instance_methods {
         for (vr, v) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && !e.negate && !e.is_string => {
-                    if st.in_init {
-                        st.init_overrides.push((e.off, WTy::I32, v as f64));
-                    } else {
-                        st.write_i32(e.off, v as i32);
+                    st.write_i32(e.off, v as i32);
+                    if st.mode != Mode::Ready {
+                        st.record_override(e.off, WTy::I32, v as f64, false);
                     }
                 }
                 _ => return Status::Error,
             }
         }
+        st.need_update = true;
         Status::Ok
     }
     fn set_boolean(&self, vrs: Vec<u32>, values: Vec<bool>) -> Status {
@@ -895,15 +981,15 @@ macro_rules! shared_instance_methods {
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && !e.negate && !e.is_string => {
                     let iv = if v { 1 } else { 0 };
-                    if st.in_init {
-                        st.init_overrides.push((e.off, WTy::I32, iv as f64));
-                    } else {
-                        st.write_i32(e.off, iv);
+                    st.write_i32(e.off, iv);
+                    if st.mode != Mode::Ready {
+                        st.record_override(e.off, WTy::I32, iv as f64, false);
                     }
                 }
                 _ => return Status::Error,
             }
         }
+        st.need_update = true;
         Status::Ok
     }
     fn set_string(&self, vrs: Vec<u32>, values: Vec<String>) -> Status {
@@ -914,15 +1000,16 @@ macro_rules! shared_instance_methods {
         for (vr, val) in vrs.into_iter().zip(values) {
             match st.vrs.resolve(vr) {
                 Some(e) if e.is_string => {
-                    if st.in_init {
+                    st.write_string(e.off, &val);
+                    if st.mode != Mode::Ready {
+                        st.init_string_overrides.retain(|(o, _)| *o != e.off);
                         st.init_string_overrides.push((e.off, val)); // see the field
-                    } else {
-                        st.write_string(e.off, &val);
                     }
                 }
                 _ => return Status::Error,
             }
         }
+        st.need_update = true;
         Status::Ok
     }
     fn set_binary(&self, _: Vec<u32>, _: Vec<Vec<u8>>) -> Status {
@@ -1006,8 +1093,25 @@ macro_rules! shared_instance_methods {
         Status::Ok
     }
 
-    fn get_output_derivatives(&self, _: Vec<(u32, u32)>) -> Result<Vec<f64>, Status> {
-        Err(Status::Error)
+    /// C's `fmi2GetRealOutputDerivatives`: `$<name>_der`. C reports the first
+    /// derivative whatever order is asked for.
+    fn get_output_derivatives(&self, requests: Vec<(u32, u32)>) -> Result<Vec<f64>, Status> {
+        let mut st = self.st.borrow_mut();
+        if let Err(err) = st.update_if_needed() {
+            return Err(err_status(err));
+        }
+        let mut out = Vec::with_capacity(requests.len());
+        for (vr, _order) in requests {
+            match st.vrs.resolve(vr) {
+                Some(e) if e.der_off != 0 => out.push(st.read_f64(e.der_off)),
+                _ => {
+                    return Err(err_status(
+                        "the model has no output derivative for this variable                          (an FMU exported with -d=fmuExperimental has them)",
+                    ))
+                }
+            }
+        }
+        Ok(out)
     }
     };
 }
@@ -1035,25 +1139,29 @@ impl GuestModelExchangeInstance for Instance {
     }
 
     fn set_time(&self, time: f64) -> Status {
-        let st = self.st.borrow();
+        let mut st = self.st.borrow_mut();
         st.write_f64(TIME_OFF, time);
+        st.need_update = true;
         Status::Ok
     }
     fn set_continuous_states(&self, states: Vec<f64>) -> Status {
-        let st = self.st.borrow();
+        let mut st = self.st.borrow_mut();
         if states.len() != st.layout.n_states as usize {
             return Status::Error;
         }
         for (i, v) in states.into_iter().enumerate() {
             st.write_f64(REAL_OFF + (i as u32) * 8, v);
         }
+        st.need_update = true;
         Status::Ok
     }
 
+    /// C's `internalGetDerivatives`, which leaves `_need_update` set for the next
+    /// getter.
     fn get_continuous_state_derivatives(&self) -> Result<Vec<f64>, Status> {
         let st = self.st.borrow();
         let mut e = Engine;
-        if e.call1("functionODE", st.sim_data).is_err() {
+        if st.need_update && e.call1("functionODE", st.sim_data).is_err() {
             return Err(Status::Error);
         }
         let n = st.layout.n_states;
@@ -1061,9 +1169,12 @@ impl GuestModelExchangeInstance for Instance {
         Ok((0..n).map(|i| st.read_f64(base + i * 8)).collect())
     }
     fn get_event_indicators(&self) -> Result<Vec<f64>, Status> {
-        let st = self.st.borrow();
+        let mut st = self.st.borrow_mut();
         let mut e = Engine;
-        let _ = e.call1("functionODE", st.sim_data);
+        if st.need_update {
+            let _ = e.call1("functionODE", st.sim_data);
+            st.need_update = false;
+        }
         if st.layout.n_zc == 0 {
             return Ok(Vec::new());
         }
@@ -1172,6 +1283,8 @@ impl GuestCoSimulationInstance for Instance {
         };
         let last = driver.time();
         st.cs = Some(driver);
+        // C's `fmi2DoStep`: the getters now report the new time's values.
+        st.need_update = true;
         let eps = target.abs().max(1.0) * 1e-10;
         match outcome {
             Ok(CsStep::Reached) => Ok(DoStepResult {

@@ -1993,6 +1993,14 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
         .chain(lst(&vars.boolAlgVars))
         .chain(lst(&vars.boolParamVars))
         .chain(lst(&vars.boolAliasVars));
+    // C's `mapOutputReference2RealOutputDerivatives`.
+    let mut out_der: HashMap<String, u32> = HashMap::new();
+    for sv in lst(&vars.outputVars) {
+        let key = sim_cref_key(&sv.name)?;
+        if let Some(slot) = map.vars.get(&format!("${key}_der")) {
+            out_der.insert(key, slot.off);
+        }
+    }
     let mut out = Vec::new();
     for sv in all {
         let key = sim_cref_key(&sv.name)?;
@@ -2003,7 +2011,16 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
         // A real variable's start slot: an init-mode set must go to the `start`
         // attribute, not to the live slot `setAllVarsToStart` is about to rewrite.
         let start_off = map.start_slots.get(&key).copied().unwrap_or(0);
-        out.push(FmiVr { vr, off: slot.off, wty: slot.wty, negate: slot.negate, start_off, is_string: false });
+        let der_off = out_der.get(&key).copied().unwrap_or(0);
+        out.push(FmiVr {
+            vr,
+            off: slot.off,
+            wty: slot.wty,
+            negate: slot.negate,
+            start_off,
+            is_string: false,
+            der_off,
+        });
     }
     // String variables: `is_string` marks the slot as an i32 runtime-String
     // handle, so the adapter reads/writes it via `rt_str_*`, not as a number.
@@ -2016,13 +2033,29 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
         let vr: u32 = SimCodeUtil::getFMI3ValueReference(sv.clone(), sim_code.clone())?
             .parse()
             .map_err(|_| "CodegenWasmJit: FMI3 value reference is not a number")?;
-        out.push(FmiVr { vr, off: slot.off, wty: slot.wty, negate: slot.negate, start_off: 0, is_string: true });
+        out.push(FmiVr {
+            vr,
+            off: slot.off,
+            wty: slot.wty,
+            negate: slot.negate,
+            start_off: 0,
+            is_string: true,
+            der_off: 0,
+        });
     }
     // time, then the event indicators after it (`EventIndicatorVariables3`).
     let time_vr: u32 = SimCodeUtil::getFMI3TimeValueReference(sim_code.clone())?
         .parse()
         .map_err(|_| "CodegenWasmJit: FMI3 time value reference is not a number")?;
-    out.push(FmiVr { vr: time_vr, off: TIME_OFF, wty: WTy::F64, negate: false, start_off: 0, is_string: false });
+    out.push(FmiVr {
+        vr: time_vr,
+        off: TIME_OFF,
+        wty: WTy::F64,
+        negate: false,
+        start_off: 0,
+        is_string: false,
+        der_off: 0,
+    });
     for k in 0..layout.n_zc {
         out.push(FmiVr {
             vr: time_vr + 1 + k,
@@ -2031,6 +2064,7 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
             negate: false,
             start_off: 0,
             is_string: false,
+            der_off: 0,
         });
     }
     out.sort_by_key(|e| e.vr);
@@ -2311,10 +2345,14 @@ fn emit_fmu(
     // one solver, so the flag has to reach the export. On the settings it reaches
     // both the adapter choice and the metadata the driver reads.
     let mut sim_code = sim_code;
-    if let (Some(s), Some(settings)) =
-        (fmi_flag(&simulation_flags_json, "s"), sim_code.simulationSettingsOpt.as_mut())
-    {
-        settings.method = ArcStr::from(s.as_str());
+    if let Some(settings) = sim_code.simulationSettingsOpt.as_mut() {
+        match fmi_flag(&simulation_flags_json, "s") {
+            Some(s) => settings.method = ArcStr::from(s.as_str()),
+            // C's `FMI2CS_initializeSolverData` default. The method the model was
+            // translated with is the standalone simulation's, not the FMU's.
+            None if kind != "ME" => settings.method = ArcStr::from("euler"),
+            None => {}
+        }
     }
     // Emitting the model takes seconds; a host that compiles the native platforms
     // out of process can spend them loading its compiler.
