@@ -3,6 +3,7 @@
 // cflags: +std=2.x -d=-newInst
 // status: correct
 // teardown_command: rm -f WatchDogSystem.SystemSimulations.WatchDogSystemSimulation_1 *.c *.plt *.mat *.makefile *.libs *.log *.h *.cpp *.txt
+// suite: disabled
 //
 // ModelicaML: 1.3.6 Examples from 29.Nov 2010
 

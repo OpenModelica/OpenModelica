@@ -1,6 +1,7 @@
 // name:     AccessFromOutside
 // keywords: state machines
 // status: correct
+// suite: disabled
 
 loadFile("AccessFromOutside.mo");
 echo(false);

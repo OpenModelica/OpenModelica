@@ -85,7 +85,9 @@ use openmodelica_sim_meta::{
 use openmodelica_wasm_jit::{sim_driver, sim_runtime};
 #[cfg(feature = "jit")]
 use openmodelica_wasm_jit::wasi_shim;
-pub(crate) use openmodelica_wasm_jit::model::{EditableParam, ExtIncludes, ExtLibrary, ModelCompileJob, SimModel};
+pub(crate) use openmodelica_wasm_jit::model::{
+    EditableParam, ExtArchives, ExtIncludes, ExtLibrary, ModelCompileJob, SimModel,
+};
 #[cfg(feature = "jit")]
 pub use openmodelica_wasm_jit::model::{set_inwasm_driver_override, set_sim_bench};
 #[cfg(feature = "jit")]
@@ -1478,6 +1480,8 @@ pub(crate) struct ExtLibraries {
     pub wasm: Vec<ExtLibrary>,
     /// In link order, for a native host to fall back to.
     pub native: Vec<String>,
+    /// The static archives and object files among them, likewise in link order.
+    pub archives: Vec<String>,
     /// `#include` lines for the C sources a `Library` named, which the C target
     /// hands to the compiler rather than the linker.
     pub sources: Vec<String>,
@@ -1499,6 +1503,14 @@ pub(crate) fn resolve_ext_libraries(
             dirs.push(format!("{}/", d.trim_matches('"')));
         }
     }
+    // The rest of the `LDFLAGS=` line CodegenC.tpl writes. `ffi/` comes first: it
+    // holds the shared build of libraries the lib dir ships only as archives.
+    dirs.push(format!("{}/lib/{}/omc/ffi/", mp.omhome, openmodelica_util::Autoconf::triple));
+    dirs.push(format!("{}/lib/{}/omc/", mp.omhome, openmodelica_util::Autoconf::triple));
+    dirs.push(format!("{}/lib/", mp.omhome));
+    for d in ld_search_dirs(&mp.ldflags) {
+        dirs.push(format!("{d}/"));
+    }
     let mut out = ExtLibraries::default();
     let mut seen: HashSet<String> = HashSet::new();
     for lib in lst(&mp.libs) {
@@ -1509,8 +1521,12 @@ pub(crate) fn resolve_ext_libraries(
         if !lib.ends_with(".wasm") {
             if let Some(path) = find_source_library(&lib, &dirs) {
                 out.sources.push(format!("#include \"{}\"", path.replace('\\', "/")));
-            } else if let Some(path) = find_native_library(&lib, &dirs) {
-                out.native.push(path);
+            } else {
+                match find_native_library(&lib, &dirs) {
+                    Some(NativeLib::Shared(path)) => out.native.push(path),
+                    Some(NativeLib::Archive(path)) => out.archives.push(path),
+                    None => (),
+                }
             }
             continue;
         }
@@ -1656,6 +1672,40 @@ fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> Vec<S
     ext_imports.iter().map(|s| s.name.as_str()).filter(|n| !defined.contains(n)).map(String::from).collect()
 }
 
+/// The `-L` directories of a linker flag string (`-Ldir`, `-L"dir"`, `-L dir`).
+/// It is a shell command line, so quotes group rather than belong to the path.
+fn ld_search_dirs(flags: &str) -> Vec<String> {
+    let mut words: Vec<String> = Vec::new();
+    let mut word = String::new();
+    let mut quote: Option<char> = None;
+    for c in flags.chars() {
+        match (quote, c) {
+            (Some(q), c) if c == q => quote = None,
+            (Some(_), c) => word.push(c),
+            (None, '"' | '\'') => quote = Some(c),
+            (None, c) if c.is_whitespace() => {
+                if !word.is_empty() {
+                    words.push(std::mem::take(&mut word));
+                }
+            }
+            (None, c) => word.push(c),
+        }
+    }
+    if !word.is_empty() {
+        words.push(word);
+    }
+    let mut dirs = Vec::new();
+    let mut words = words.into_iter();
+    while let Some(w) = words.next() {
+        if w == "-L" {
+            dirs.extend(words.next());
+        } else if let Some(d) = w.strip_prefix("-L") {
+            dirs.push(d.to_owned());
+        }
+    }
+    dirs
+}
+
 /// A `Library` naming a C source file, which gcc compiles rather than links.
 fn find_source_library(spec: &str, dirs: &[String]) -> Option<String> {
     if !spec.ends_with(".c") && !spec.ends_with(".cc") && !spec.ends_with(".cpp") && !spec.ends_with(".cxx") {
@@ -1664,10 +1714,22 @@ fn find_source_library(spec: &str, dirs: &[String]) -> Option<String> {
     dirs.iter().map(|d| format!("{d}{spec}")).find(|p| openmodelica_wasi::fs::exists(p))
 }
 
-/// The platform shared library a host linker spec names. A `-lfoo` nothing under
-/// `dirs` provides stays a plain soname, for the system loader to find the way the
-/// linker would; static archives and object files have no loadable form at all.
-fn find_native_library(spec: &str, dirs: &[String]) -> Option<String> {
+/// What a host linker spec resolves to.
+enum NativeLib {
+    /// A shared object, which the loader opens as it is.
+    Shared(String),
+    /// A static archive or an object file, which [`ExtArchives`] has to link first.
+    Archive(String),
+}
+
+fn is_link_input(name: &str) -> bool {
+    name.ends_with(".a") || name.ends_with(".o")
+}
+
+/// The platform library a host linker spec names. A `-lfoo` nothing under `dirs`
+/// provides stays a plain soname, for the system loader to find the way the linker
+/// would.
+fn find_native_library(spec: &str, dirs: &[String]) -> Option<NativeLib> {
     if cfg!(target_arch = "wasm32") {
         return None; // no dynamic loader to fall back to
     }
@@ -1678,20 +1740,23 @@ fn find_native_library(spec: &str, dirs: &[String]) -> Option<String> {
         None if spec.starts_with('-') => return None,
         None => spec,
     };
-    if name.ends_with(".a") || name.ends_with(".o") || name.ends_with(".obj") || name.ends_with(".lib") {
+    // `.lib` is both spellings on Windows, with no `cc -shared` to sort them out.
+    if name.ends_with(".obj") || name.ends_with(".lib") {
         return None;
     }
-    if name.contains(suffix) || name.contains(std::path::MAIN_SEPARATOR) {
-        return dirs.iter().map(|d| format!("{d}{name}")).find(|p| std::path::Path::new(p).exists());
+    let found = |p: String| Some(if is_link_input(&p) { NativeLib::Archive(p) } else { NativeLib::Shared(p) });
+    if is_link_input(name) || name.contains(suffix) || name.contains(std::path::MAIN_SEPARATOR) {
+        return dirs.iter().map(|d| format!("{d}{name}")).find(|p| std::path::Path::new(p).exists()).and_then(found);
     }
+    // As ld searches: a directory at a time, the shared object before the archive.
     for dir in dirs {
-        for candidate in [format!("{dir}{prefix}{name}{suffix}"), format!("{dir}{name}{suffix}")] {
-            if std::path::Path::new(&candidate).exists() {
-                return Some(candidate);
-            }
+        let candidates =
+            [format!("{dir}{prefix}{name}{suffix}"), format!("{dir}{name}{suffix}"), format!("{dir}{prefix}{name}.a")];
+        if let Some(p) = candidates.into_iter().find(|p| std::path::Path::new(p).exists()) {
+            return found(p);
         }
     }
-    (spec != name).then(|| format!("{prefix}{name}{suffix}"))
+    (spec != name).then(|| NativeLib::Shared(format!("{prefix}{name}{suffix}")))
 }
 
 /// `<dir><name>` or `<dir>lib<name>`, the two spellings a `Library="foo"`
@@ -1928,6 +1993,14 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
         .chain(lst(&vars.boolAlgVars))
         .chain(lst(&vars.boolParamVars))
         .chain(lst(&vars.boolAliasVars));
+    // C's `mapOutputReference2RealOutputDerivatives`.
+    let mut out_der: HashMap<String, u32> = HashMap::new();
+    for sv in lst(&vars.outputVars) {
+        let key = sim_cref_key(&sv.name)?;
+        if let Some(slot) = map.vars.get(&format!("${key}_der")) {
+            out_der.insert(key, slot.off);
+        }
+    }
     let mut out = Vec::new();
     for sv in all {
         let key = sim_cref_key(&sv.name)?;
@@ -1938,7 +2011,16 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
         // A real variable's start slot: an init-mode set must go to the `start`
         // attribute, not to the live slot `setAllVarsToStart` is about to rewrite.
         let start_off = map.start_slots.get(&key).copied().unwrap_or(0);
-        out.push(FmiVr { vr, off: slot.off, wty: slot.wty, negate: slot.negate, start_off, is_string: false });
+        let der_off = out_der.get(&key).copied().unwrap_or(0);
+        out.push(FmiVr {
+            vr,
+            off: slot.off,
+            wty: slot.wty,
+            negate: slot.negate,
+            start_off,
+            is_string: false,
+            der_off,
+        });
     }
     // String variables: `is_string` marks the slot as an i32 runtime-String
     // handle, so the adapter reads/writes it via `rt_str_*`, not as a number.
@@ -1951,13 +2033,29 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
         let vr: u32 = SimCodeUtil::getFMI3ValueReference(sv.clone(), sim_code.clone())?
             .parse()
             .map_err(|_| "CodegenWasmJit: FMI3 value reference is not a number")?;
-        out.push(FmiVr { vr, off: slot.off, wty: slot.wty, negate: slot.negate, start_off: 0, is_string: true });
+        out.push(FmiVr {
+            vr,
+            off: slot.off,
+            wty: slot.wty,
+            negate: slot.negate,
+            start_off: 0,
+            is_string: true,
+            der_off: 0,
+        });
     }
     // time, then the event indicators after it (`EventIndicatorVariables3`).
     let time_vr: u32 = SimCodeUtil::getFMI3TimeValueReference(sim_code.clone())?
         .parse()
         .map_err(|_| "CodegenWasmJit: FMI3 time value reference is not a number")?;
-    out.push(FmiVr { vr: time_vr, off: TIME_OFF, wty: WTy::F64, negate: false, start_off: 0, is_string: false });
+    out.push(FmiVr {
+        vr: time_vr,
+        off: TIME_OFF,
+        wty: WTy::F64,
+        negate: false,
+        start_off: 0,
+        is_string: false,
+        der_off: 0,
+    });
     for k in 0..layout.n_zc {
         out.push(FmiVr {
             vr: time_vr + 1 + k,
@@ -1966,6 +2064,7 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
             negate: false,
             start_off: 0,
             is_string: false,
+            der_off: 0,
         });
     }
     out.sort_by_key(|e| e.vr);
@@ -2246,10 +2345,14 @@ fn emit_fmu(
     // one solver, so the flag has to reach the export. On the settings it reaches
     // both the adapter choice and the metadata the driver reads.
     let mut sim_code = sim_code;
-    if let (Some(s), Some(settings)) =
-        (fmi_flag(&simulation_flags_json, "s"), sim_code.simulationSettingsOpt.as_mut())
-    {
-        settings.method = ArcStr::from(s.as_str());
+    if let Some(settings) = sim_code.simulationSettingsOpt.as_mut() {
+        match fmi_flag(&simulation_flags_json, "s") {
+            Some(s) => settings.method = ArcStr::from(s.as_str()),
+            // C's `FMI2CS_initializeSolverData` default. The method the model was
+            // translated with is the standalone simulation's, not the FMU's.
+            None if kind != "ME" => settings.method = ArcStr::from("euler"),
+            None => {}
+        }
     }
     // Emitting the model takes seconds; a host that compiles the native platforms
     // out of process can spend them loading its compiler.
@@ -3599,6 +3702,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let mut ext_lib_notes: Vec<String> = Vec::new();
     let mut ext_libs = ExtLibraries::default();
     let mut ext_includes = None;
+    let mut ext_archives = None;
     if !ext_imports.is_empty() {
         ext_libs = resolve_ext_libraries(&sim_code.makefileParams, &mut ext_lib_notes)?;
         // What the `Library` annotations did not provide may come from an `Include`
@@ -3610,6 +3714,15 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
             .collect();
         let dirs: Vec<String> = lst(&mp.includes).map(|s| s.to_string()).collect();
         let prefix = sim_code.fileNamePrefix.to_string();
+        if !ext_libs.archives.is_empty() && ext_host == ExtHost::Native {
+            ext_archives = Some(ExtArchives {
+                archives: std::mem::take(&mut ext_libs.archives),
+                symbols: ext_imports.iter().map(|s| s.name.clone()).collect(),
+                ccompiler: mp.ccompiler.to_string(),
+                dllext: mp.dllext.to_string(),
+                prefix: prefix.clone(),
+            });
+        }
         if !sources.is_empty() {
             match ext_host {
                 // Built on demand, for a symbol the loaded libraries turn out not
@@ -4598,6 +4711,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         result_vars,
         ext_libs: ext_libs.wasm,
         ext_native_libs: ext_libs.native,
+        ext_archives,
         ext_includes,
         ext_lib_notes,
         ext_imports,

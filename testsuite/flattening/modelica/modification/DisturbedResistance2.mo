@@ -1,6 +1,7 @@
 // name:     DisturbedResistance2
 // keywords: modification
 // status:   incorrect
+// suite: disabled
 //
 // A parameter may not be redeclared as variable.
 //

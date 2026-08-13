@@ -30,7 +30,7 @@ failingtest : check defs
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)
 check:
 	@echo Checking if JRE is installed
 	@$(TEST) JavaTest.mos GetDefinitions.mos || (echo "Skipping Java testsuite. Install Java JDK or add the Java installation directory to the JAVA_HOME environment variable." && false)

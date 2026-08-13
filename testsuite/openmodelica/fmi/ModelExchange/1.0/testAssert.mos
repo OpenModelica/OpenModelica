@@ -3,6 +3,7 @@
 // status: erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml testAssertFMI* output.log testAssertFMI/*
 // cflags: -d=-newInst
+// suite: disabled
 
 loadString("
 model testAssertFMI

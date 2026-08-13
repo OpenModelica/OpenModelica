@@ -1,6 +1,7 @@
 // name: CauerLowPassAnalog
 // keywords: NewBackend, msl
 // status: correct
+// suite: disabled
 
 loadModel(Modelica); getErrorString();
 

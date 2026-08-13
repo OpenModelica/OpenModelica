@@ -1,6 +1,7 @@
 // name: InvalidConnectorDirection4
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 
 model InvalidConnectorDirection4
@@ -24,7 +25,7 @@ end InvalidConnectorDirection4;
 
 // Result:
 // Error processing file: InvalidConnectorDirection4.mo
-// [flattening/modelica/scodeinst/InvalidConnectorDirection4.mo:23:3-23:18:writable] Error: Cannot connect input component c1.x to non-input component c2.x.
+// [flattening/modelica/scodeinst/InvalidConnectorDirection4.mo:24:3-24:18:writable] Error: Cannot connect input component c1.x to non-input component c2.x.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

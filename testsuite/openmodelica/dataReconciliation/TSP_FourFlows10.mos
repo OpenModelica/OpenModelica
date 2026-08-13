@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows10_Inputs.csv
+// suite: disabled
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");

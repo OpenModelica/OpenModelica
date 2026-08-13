@@ -1231,10 +1231,10 @@ algorithm
             a_simCode=simCode,
             a_FMUVersion=FMUVersion,
             a_sourceFiles=model_all_gen_files,
-            a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files),
-            a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources),
-            a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources),
-            a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
+            a_runtimeObjectFiles=objectFilesOf(shared_source_files),
+            a_dgesvObjectFiles=objectFilesOf(dgesv_sources),
+            a_cminpackObjectFiles=objectFilesOf(cminpack_sources),
+            a_sundialsObjectFiles=objectFilesOf(simrt_c_sundials_sources)),
           txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));
         Tpl.closeFile(Tpl.tplCallWithFailError(
           CodegenFMU.settingsfile,
@@ -2183,6 +2183,41 @@ algorithm
     Error.assertion(System.copyFile(source + "/" + f, f2), "Failed to copy file " + f + " from " + source + " to " + destination, sourceInfo());
   end for;
 end copyFiles;
+
+protected function objectFilesOf
+  "The object files a list of runtime sources compiles to, for the makefile of a
+   source FMU.
+
+   Only .c becomes an object, that being what the generated makefile has a rule for.
+   The lists also carry files that are shipped but never compiled - headers and the
+   .inc the FMI 1.0 and 2.0 interfaces include - and those are simply left out.
+
+   A C++ source is left out too, but reported, because it is one that would have to
+   be built and cannot be: the makefile has no rule for it, and the .c to .o
+   replacement this used to do turned jacobian_colpack.cpp into
+   jacobian_colpack.opp, an object nothing can build. That went unnoticed because it
+   only breaks when somebody builds the FMU from its sources with the makefile."
+  input list<String> sourceFiles;
+  output list<String> objectFiles = {};
+protected
+  String ext;
+algorithm
+  for f in sourceFiles loop
+    ext := "";
+    for part in System.strtok(f, ".") loop
+      ext := part; // the last one is the extension
+    end for;
+
+    if ext == "c" then
+      // drop the extension character and put the object one in its place
+      objectFiles := substring(f, 1, stringLength(f) - 1) + "o" :: objectFiles;
+    elseif ext == "cpp" or ext == "cc" or ext == "cxx" or ext == "c++" then
+      Error.addCompilerWarning("Leaving " + f + " out of the object files of the FMU makefile: "
+        + "the makefile has no rule for '." + ext + "'.");
+    end if;
+  end for;
+  objectFiles := listReverse(objectFiles);
+end objectFilesOf;
 
 annotation(__OpenModelica_Interface="backend_main");
 end SimCodeMain;

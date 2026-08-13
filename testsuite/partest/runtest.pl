@@ -295,11 +295,19 @@ open(my $test_log, "<", "$test.test_log") or die "Couldn't open test log $test.l
 
 my $exit_status = 1;
 my $erroneous = 0;
+my $disabled = 0;
 my $time = 0;
 my $nfailed = 1;
 
 while(<$test_log>) {
-  if(/\.\.\. erroneous/) {
+  if(/^ \. .*\.\.\. disabled\s*$/) {
+    # rtest refuses to run a test tagged '// suite: disabled'; neither a pass nor
+    # a failure. Only reachable via -file=, since the suite filtering in
+    # runtests.pl drops these tests before they get here.
+    $disabled = 1;
+    $nfailed = 0;
+  }
+  elsif(/\.\.\. erroneous/) {
     $erroneous = 1;
   }
   elsif(/== (\d) out of 1 tests failed.*time: (\d*)/) {
@@ -317,7 +325,9 @@ while(<$test_log>) {
 }
 
 if (!$no_colour) {
-  if($nfailed =~ /0/) {
+  if($disabled) {
+    print color 'yellow';
+  } elsif($nfailed =~ /0/) {
     if ($test_baseline) {
 	  print color 'blue';
 	} else {
@@ -335,13 +345,17 @@ if (!$no_colour) {
   }
   print " ";
 }
-if ($test_baseline) {
+if ($disabled) {
+  print "[$test:disabled]";
+} elsif ($test_baseline) {
   print "[Baselining $test:$time]";
 } else {
   print "[$test:$time]";
 }
 if ($no_colour) {
-  if($nfailed =~ /0/) {
+  if($disabled) {
+    print " Disabled\n";
+  } elsif($nfailed =~ /0/) {
     print " OK\n";
   } else {
     if($erroneous == 0) {
@@ -369,7 +383,10 @@ if ($withxml) {
   $classname =~ s,/,_,g;
 
   print $XMLOUT "<testcase classname=\"$classname\" name=\"$test\" time=\"$time\">";
-  if ($erroneous == 1) {
+  if ($disabled == 1) {
+    print $XMLOUT '<skipped message="disabled test" />';
+  }
+  elsif ($erroneous == 1) {
     print $XMLOUT '<skipped />';
   }
   elsif ($exit_status == 0) {

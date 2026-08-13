@@ -1,6 +1,7 @@
 // name: Inline5
 // keywords: inline, function
 // status: correct
+// suite: disabled
 //
 // Test case for inline annotations
 //

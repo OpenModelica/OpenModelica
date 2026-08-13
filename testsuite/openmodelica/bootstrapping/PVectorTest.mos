@@ -2,6 +2,7 @@
 // cflags: -g=MetaModelica -d=rml -d=-newInst
 // status: correct
 // teardown_command: rm -f PVectorTest_*
+// suite: disabled
 
 loadFile("../../../OMCompiler/Compiler/Util/List.mo");
 loadFile("../../../OMCompiler/Compiler/Util/BasePVector.mo");

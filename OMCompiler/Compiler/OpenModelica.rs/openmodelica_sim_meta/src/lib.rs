@@ -744,6 +744,10 @@ pub struct FmiVr {
     /// The variable is a String: `off` is its i32 runtime-String-handle slot, so
     /// the adapter reads/writes it through `rt_str_*` rather than as a number.
     pub is_string: bool,
+    /// The slot of this output's derivative (`$<name>_der`, which
+    /// `-d=fmuExperimental` adds), 0 for everything else. What
+    /// `fmi2GetRealOutputDerivatives` reports.
+    pub der_off: u32,
 }
 
 /// Everything the driver and the `.mat` writer need about one model: its layout,
@@ -1057,7 +1061,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 12;
+const VERSION: u32 = 13;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1176,6 +1180,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         o.push(v.negate as u8);
         put_u32(&mut o, v.start_off);
         o.push(v.is_string as u8);
+        put_u32(&mut o, v.der_off);
     }
     put_u32(&mut o, m.zc_desc.len() as u32);
     for d in &m.zc_desc {
@@ -1533,7 +1538,8 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         let negate = r.u8()? != 0;
         let start_off = r.u32()?;
         let is_string = r.u8()? != 0;
-        fmi_vrs.push(FmiVr { vr, off, wty, negate, start_off, is_string });
+        let der_off = r.u32()?;
+        fmi_vrs.push(FmiVr { vr, off, wty, negate, start_off, is_string, der_off });
     }
     let ndesc = r.u32()? as usize;
     let mut zc_desc = Vec::with_capacity(ndesc);
@@ -1768,8 +1774,8 @@ mod tests {
                 result_offs: vec![224],
             }],
             fmi_vrs: vec![
-                FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: false, start_off: 96, is_string: false },
-                FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: true, start_off: 0, is_string: true },
+                FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: false, start_off: 96, is_string: false, der_off: 0 },
+                FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: true, start_off: 0, is_string: true, der_off: 0 },
             ],
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
             rel_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],

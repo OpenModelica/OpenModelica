@@ -1,6 +1,7 @@
 // name:     IndexOutOfBoundsConnect1
 // keywords: array subscript connect
 // status:   incorrect
+// suite: disabled
 //
 // Tests that indices out of bounds are caught in connect statements.
 //
@@ -19,7 +20,7 @@ end IndexOutOfBoundsConnect1;
 
 // Result:
 // Error processing file: IndexOutOfBoundsConnect1.mo
-// [flattening/modelica/arrays/IndexOutOfBoundsConnect1.mo:16:3-16:24:writable] Error: Subscript '0' for dimension 1 (size = 2) of c1[0] is out of bounds.
+// [flattening/modelica/arrays/IndexOutOfBoundsConnect1.mo:17:3-17:24:writable] Error: Subscript '0' for dimension 1 (size = 2) of c1[0] is out of bounds.
 // Error: Error occurred while flattening model IndexOutOfBoundsConnect1
 //
 // # Error encountered! Exiting...

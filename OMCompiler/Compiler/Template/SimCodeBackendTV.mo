@@ -272,6 +272,146 @@ package FMI
       Integer y1Placement;
       Integer y2Placement;
     end ENUMERATIONVARIABLE;
+
+    /* The FMI 3.0 variables; see FMI.mo for why they are separate records. */
+
+    record FMI3REALVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      list<Real> startValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3REALVARIABLE;
+
+    record FMI3INTEGERVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      list<Integer> startValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3INTEGERVARIABLE;
+
+    record FMI3BOOLEANVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      list<Boolean> startValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3BOOLEANVARIABLE;
+
+    record FMI3STRINGVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      list<String> startValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3STRINGVARIABLE;
+
+    record FMI3BINARYVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      list<String> startValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      String mimeType;
+      Integer maxSize;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3BINARYVARIABLE;
+
+    record FMI3CLOCKVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      String intervalVariability;
+      Real intervalDecimal;
+      Boolean hasIntervalDecimal;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3CLOCKVARIABLE;
+
+    record FMI3ENUMERATIONVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String fmiType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      list<Integer> startValue;
+      Boolean isFixed;
+      Integer valueReference;
+      list<Integer> dimensions;
+      String declaredType;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
+    end FMI3ENUMERATIONVARIABLE;
   end ModelVariables;
 
   uniontype FmiImport
