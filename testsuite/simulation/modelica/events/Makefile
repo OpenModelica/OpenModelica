@@ -14,6 +14,7 @@ ChatteringEventsTest2.mos \
 CheckEvents.mos \
 cseOutsideNoEvent.mos \
 DelayZeroCrossing.mos \
+derInWhenCondition.mos \
 discreteRelations.mos \
 EventDelay.mos \
 EventIteration.mos \

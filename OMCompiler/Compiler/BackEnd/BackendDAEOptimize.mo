@@ -3801,14 +3801,18 @@ algorithm
   (syst, shared) := match (syst, shared)
     local
       BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns, inieqns;
+      BackendDAE.EquationArray eqns, inieqns, remeqns;
       Mutable<BackendDAE.Shared> shared_arr;
 
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(initialEqs=inieqns))
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, removedEqs=remeqns), BackendDAE.SHARED(initialEqs=inieqns))
       algorithm
         shared_arr := Mutable.create(shared);
         (_, vars) := BackendEquation.traverseEquationArray_WithUpdate(eqns, function traverserexpandDerEquation(shared=shared_arr), vars);
         (_, vars) := BackendEquation.traverseEquationArray_WithUpdate(inieqns, function traverserexpandDerEquation(shared=shared_arr), vars);
+        // A side-effect-only when-equation is a removed equation, but its
+        // condition is still evaluated.
+        (remeqns, vars) := BackendEquation.traverseEquationArray_WithUpdate(remeqns, function traverserexpandDerEquation(shared=shared_arr), vars);
+        syst.removedEqs := remeqns;
         syst.orderedVars := vars;
       then (syst, Mutable.access(shared_arr));
   end match;
