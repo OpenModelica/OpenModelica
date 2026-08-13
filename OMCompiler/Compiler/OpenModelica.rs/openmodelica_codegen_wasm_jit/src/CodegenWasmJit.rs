@@ -634,6 +634,8 @@ const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     variable_filter: true,
     // `optimize()`'s solver: the host-driven driver's Ipopt.
     optimization: openmodelica_sim_meta::optimization::AVAILABLE,
+    // A `simulate()` run drives the whole trajectory, which is all QSS can do.
+    qss: true,
 };
 
 /// The solver values a caller may offer for this build, so a menu built from it
@@ -656,6 +658,8 @@ fn fmu_capabilities() -> simflags::Capabilities {
         variable_filter: false,
         // An FMU has no notion of an optimization problem.
         optimization: false,
+        // A Co-Simulation FMU steps to communication points; QSS cannot be stepped.
+        qss: false,
     }
 }
 
