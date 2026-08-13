@@ -454,6 +454,21 @@ pub struct ParamVars {
     pub strings: Vec<(String, String)>,
 }
 
+/// What C's `importStartValues` walks, one entry per [`IMPORT_GROUP`]: each
+/// quantity's name and the slot its imported `start` goes to — the `start` attribute
+/// for a real variable, the live slot for everything else.
+pub type ImportRoster<'a> = [Vec<(&'a str, u32, WTy)>; 6];
+
+/// C's `importStartValues` group headers, in the order its loops run.
+pub const IMPORT_GROUP: [&str; 6] = [
+    "real variables",
+    "integer variables",
+    "boolean variables",
+    "real parameters",
+    "integer parameters",
+    "boolean parameters",
+];
+
 /// The variable (C's `info.name`) an [`Layout::attr_log_off`] slot belongs to, and
 /// which attribute of it — an index into [`ATTR_NAME`].
 #[derive(Clone, Debug, PartialEq)]
@@ -806,6 +821,47 @@ pub struct NlsVars {
 }
 
 impl SimMeta {
+    /// [`ImportRoster`] for this model: the codegen resolves the `-iif` file against
+    /// it and the driver applies the result, so both index the same list.
+    pub fn import_roster(&self) -> ImportRoster<'_> {
+        let l = &self.layout;
+        fn group<'a>(names: Vec<&'a str>, off: &dyn Fn(usize) -> u32, wty: WTy) -> Vec<(&'a str, u32, WTy)> {
+            names.into_iter().enumerate().map(|(i, n)| (n, off(i), wty)).collect()
+        }
+        [
+            group(
+                self.soti.reals.iter().map(|(n, _)| n.as_str()).collect(),
+                &|i| l.real_start_off(i as u32),
+                WTy::F64,
+            ),
+            group(
+                self.soti.ints.iter().map(|(n, _)| n.as_str()).collect(),
+                &|i| l.int_off + i as u32 * 4,
+                WTy::I32,
+            ),
+            group(
+                self.soti.bools.iter().map(|(n, _)| n.as_str()).collect(),
+                &|i| l.bool_off + i as u32 * 4,
+                WTy::I32,
+            ),
+            group(
+                self.params.reals.iter().map(|(n, _, _)| n.as_str()).collect(),
+                &|i| l.rparam_off + i as u32 * 8,
+                WTy::F64,
+            ),
+            group(
+                self.params.ints.iter().map(|(n, _, _)| n.as_str()).collect(),
+                &|i| l.iparam_off + i as u32 * 4,
+                WTy::I32,
+            ),
+            group(
+                self.params.bools.iter().map(|(n, _, _)| n.as_str()).collect(),
+                &|i| l.bparam_off + i as u32 * 4,
+                WTy::I32,
+            ),
+        ]
+    }
+
     /// Number of equidistant output rows the run writes, before C's terminal step
     /// adds its own. `n_intervals + 1` for a real interval; a zero-length run
     /// (`stop <= start`) writes the start point only, regardless of

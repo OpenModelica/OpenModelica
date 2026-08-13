@@ -771,68 +771,48 @@ fn result_path(flags: &simflags::SimFlags, meta: &SimMeta, derived: &str) -> Str
 /// Unknown names are skipped (an unknown override is a no-op, as in the C runtime).
 /// Returns `(param_overrides, start_overrides)`: plain parameters vs. state start
 /// values, applied at different points of initialization (see `run_initialization`).
-///
-/// `-iif=<file>` contributes first, so an explicit `-override` of the same quantity
-/// wins — C skips whatever `isQuantityOverridden` reports (ticket #15807).
 fn resolve_overrides(
     model: &SimModel,
-    meta: &SimMeta,
     flags: &simflags::SimFlags,
 ) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>) {
     let mut params = Vec::new();
     let mut starts = Vec::new();
-    let mut push = |p: &EditableParam, v: f64, params: &mut Vec<_>, starts: &mut Vec<_>| {
-        if p.is_start { starts } else { params }.push((p.off, p.wty, v));
-    };
-    if let Some(file) = &flags.init_file {
-        let t = flags.init_time.unwrap_or(meta.start_time);
-        let (p, s) = import_start_values(model, file, t, &flags.overrides);
-        params.extend(p);
-        starts.extend(s);
-    }
     for (name, val) in &flags.overrides {
         if let Some(p) = model.editable_params.iter().find(|p| &p.name == name) {
-            push(p, *val, &mut params, &mut starts);
+            if p.is_start { &mut starts } else { &mut params }.push((p.off, p.wty, *val));
         }
     }
     (params, starts)
 }
 
-/// C's `importStartValues`: the `start` attribute of every quantity the file names,
-/// at `t0` (`-iit`, the start time by default), except the overridden ones
-/// (`isQuantityOverridden`). Returns the parameter and start-slot writes.
-fn import_start_values(
-    model: &SimModel,
-    file: &str,
-    t0: f64,
-    overrides: &[(String, f64)],
-) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>) {
+/// Resolve `-iif=<file>` against the model's [`SimMeta::import_roster`] at `-iit`
+/// (the start time by default). Only the host can open the file — the browser reaches
+/// it through the VFS — so the driver applies the values where C's
+/// `importStartValues` does. A quantity `-override` names is left out so the command
+/// line wins (ticket #15807); the driver reports the skip.
+fn resolve_start_imports(meta: &SimMeta, flags: &simflags::SimFlags) -> Option<sim_driver::StartImports> {
+    let file = flags.init_file.as_ref()?;
+    let time = flags.init_time.unwrap_or(meta.start_time);
     let mut reader = match openmodelica_script_util::SimulationResults::read_matlab4::MatReader::open(file) {
         Ok(r) => r,
         Err(e) => {
             record_error(format!("wasm-jit: unable to read input-file <{file}> [{e}]"));
-            return (Vec::new(), Vec::new());
-        }
-    };
-    let overridden = |n: &str| overrides.iter().any(|(o, _)| o == n);
-    let mut value = |name: &str| -> Option<f64> {
-        if overridden(name) {
             return None;
         }
-        let idx = reader.find_var(name)?;
-        reader.val(idx, t0)
     };
-    let params = model
-        .import_slots
+    let overridden = |n: &str| flags.overrides.iter().any(|(o, _)| o == n);
+    let values = meta
+        .import_roster()
         .iter()
-        .filter_map(|(name, off, wty)| value(name).map(|v| (*off, *wty, v)))
+        .flatten()
+        .enumerate()
+        .filter(|(_, (name, _, _))| !overridden(name))
+        .filter_map(|(i, (name, _, _))| {
+            let v = reader.find_var(name).and_then(|idx| reader.val(idx, time))?;
+            Some((i as u32, v))
+        })
         .collect();
-    let starts = model
-        .real_starts
-        .iter()
-        .filter_map(|(name, off)| value(name).map(|v| (*off, WTy::F64, v)))
-        .collect();
-    (params, starts)
+    Some(sim_driver::StartImports { file: file.clone(), time, values })
 }
 
 /// The driver's [`sim_driver::ResultFileReader`]: C's `importStartValues` for the
@@ -968,8 +948,9 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     sim_driver::set_result_file_reader(read_result_values);
     let (meta, experiment_log) = run_experiment(&model, &flags);
     openmodelica_wasi::wasi::start_stdout_capture();
-    let (param_ov, start_ov) = resolve_overrides(&model, &meta, &flags);
+    let (param_ov, start_ov) = resolve_overrides(&model, &flags);
     sim_driver::set_param_overrides(param_ov, start_ov);
+    sim_driver::set_start_imports(resolve_start_imports(&meta, &flags));
     // `-abortSlowSimulation`: stop the run when chattering is detected.
     sim_driver::set_abort_slow(flags.abort_slow);
     // The hard `-alarm`, if asked for: set before the modules are instantiated.
@@ -1188,8 +1169,9 @@ mod session {
             "CodegenWasmJit: unsupported output format"
         })?;
         openmodelica_wasi::wasi::start_stdout_capture();
-        let (param_ov, start_ov) = resolve_overrides(&model, &meta, &flags);
+        let (param_ov, start_ov) = resolve_overrides(&model, &flags);
         sim_driver::set_param_overrides(param_ov, start_ov);
+        sim_driver::set_start_imports(resolve_start_imports(&meta, &flags));
         // Build the backend (instantiate, init, emit row 0). An init trap is usually
         // a failed `assert()`; the host driver routes it via `enrich_trap`.
         let inwasm = inwasm_driver_enabled();
@@ -2752,7 +2734,7 @@ fn push_sensitivity_vars(
 fn build_var_map(
     vars: &SimCodeVar::SimVars,
     layout: &SimLayout,
-) -> Result<(SimVarMap, Vec<ResultVar>, Vec<EditableParam>, Vec<(String, u32)>, Vec<(String, u32, WTy)>)> {
+) -> Result<(SimVarMap, Vec<ResultVar>, Vec<EditableParam>)> {
     let mut map = SimVarMap {
         vars: Arc::default(),
         starts: Arc::default(),
@@ -2838,12 +2820,9 @@ fn build_var_map(
 
     // States | derivatives | real algebraics -> the realVars region (data_2). Each
     // also owns a `start` attribute slot (C's `realVarsData[i].attribute.start`).
-    let mut real_starts: Vec<(String, u32)> = Vec::new();
-    let mut import_slots: Vec<(String, u32, WTy)> = Vec::new();
     let mut push_start = |map: &mut SimVarMap, sv: &SimCodeVar::SimVar, i: u32, name: &str| -> Result<()> {
         let start_off = layout.real_start_off(i);
         Arc::make_mut(&mut map.start_slots).insert(sim_cref_key(&sv.name)?, start_off);
-        real_starts.push((name.to_string(), start_off));
         if sv.isValueChangeable && is_result_output(sv) {
             if let Some(disp) = result_name(name) {
                 start_editable.push(EditableParam {
@@ -2888,33 +2867,28 @@ fn build_var_map(
         let off = layout.rparam_off + (k as u32) * 8;
         push_primary(&mut map, &mut result_vars, sv, off, WTy::F64, false, name.clone())?;
         push_editable(sv, &name, off, WTy::F64);
-        import_slots.push((name, off, WTy::F64));
     }
     for (i, sv) in lst(&vars.intAlgVars).enumerate() {
         let name = cref_display(&sv.name)?;
         let off = layout.int_off + (i as u32) * 4;
-        push_primary(&mut map, &mut result_vars, sv, off, WTy::I32, false, name.clone())?;
-        import_slots.push((name, off, WTy::I32));
+        push_primary(&mut map, &mut result_vars, sv, off, WTy::I32, false, name)?;
     }
     for (k, sv) in lst(&vars.intParamVars).enumerate() {
         let name = cref_display(&sv.name)?;
         let off = layout.iparam_off + (k as u32) * 4;
         push_primary(&mut map, &mut result_vars, sv, off, WTy::I32, false, name.clone())?;
         push_editable(sv, &name, off, WTy::I32);
-        import_slots.push((name, off, WTy::I32));
     }
     for (i, sv) in lst(&vars.boolAlgVars).enumerate() {
         let name = cref_display(&sv.name)?;
         let off = layout.bool_off + (i as u32) * 4;
-        push_primary(&mut map, &mut result_vars, sv, off, WTy::I32, false, name.clone())?;
-        import_slots.push((name, off, WTy::I32));
+        push_primary(&mut map, &mut result_vars, sv, off, WTy::I32, false, name)?;
     }
     for (k, sv) in lst(&vars.boolParamVars).enumerate() {
         let name = cref_display(&sv.name)?;
         let off = layout.bparam_off + (k as u32) * 4;
         push_primary(&mut map, &mut result_vars, sv, off, WTy::I32, false, name.clone())?;
         push_editable(sv, &name, off, WTy::I32);
-        import_slots.push((name, off, WTy::I32));
     }
     for (i, sv) in lst(&vars.stringAlgVars).enumerate() {
         insert_var(&mut map, sv, layout.str_off + (i as u32) * 4, WTy::I32, true)?;
@@ -3026,7 +3000,7 @@ fn build_var_map(
 
     finalize_array_groups(&mut map)?;
     editable.extend(start_editable);
-    Ok((map, result_vars, editable, real_starts, import_slots))
+    Ok((map, result_vars, editable))
 }
 
 /// Register one variable's slot (by canonical cref key) and its start value. If
@@ -3508,8 +3482,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         sim_code.delayedExps.maxDelayedIndex >= 0 || sim_code.spatialInfo.maxIndex >= 0,
     );
 
-    let (mut var_map, mut result_vars, editable_params, real_starts, import_slots) =
-        build_var_map(vars, &layout)?;
+    let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &layout)?;
     // DAE-mode residual/auxiliary variables: their own `SimData` regions, indexed by
     // the SimVar's `index` as C's `crefToCStr` does. Solver workspace, not results.
     for (svs, base) in [(&dae_res_vars, layout.dae_res_off), (&dae_aux_vars, layout.dae_aux_off)] {
@@ -4610,8 +4583,6 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         state_sets,
         jac_a,
         editable_params,
-        real_starts,
-        import_slots,
         var_units,
         meta,
     })

@@ -1552,6 +1552,40 @@ fn scaled_sq(n: usize, v: &[f64], res_scaling: &[f64]) -> f64 {
     s
 }
 
+/// Which system `newton_c` is solving, for C's `LOG_NLS_V` block. `None` where C runs
+/// another solver (`-nls=newton`), which has its own trace.
+struct HomotopyTrace {
+    eq_index: u32,
+    time: f64,
+    /// C's `discreteCall`: "System values" rather than "System extrapolation".
+    discrete: bool,
+}
+
+/// C's `solveHomotopy` header block, which opens the `LOG_NLS_V` block
+/// `rt_solve_nls` closes.
+fn log_homotopy_enter(t: &HomotopyTrace, n: usize, x: &[f64], nominal: &[f64], xscaling: &[f64]) {
+    use crate::omclog;
+    if !omclog::active(omclog::NLS_V) {
+        return;
+    }
+    omclog::info(
+        omclog::NLS_V,
+        true,
+        &alloc::format!(
+            "Start solving Non-Linear System {} (size {n}) at time {} with Mixed (Newton/Homotopy) Solver",
+            t.eq_index,
+            openmodelica_sim_meta::driver::format_g(t.time, 6)
+        ),
+    );
+    let label = if t.discrete { "System values" } else { "System extrapolation" };
+    omclog::debug_vector_double(omclog::NLS_V, label, x);
+    omclog::debug_vector_double(omclog::NLS_V, "Nominal values", nominal);
+    // C's `xScaling` element `n` is the homotopy parameter's own scaling.
+    let mut scaling = xscaling.to_vec();
+    scaling.push(1.0);
+    omclog::debug_vector_double(omclog::NLS_V, "Scaling values", &scaling);
+}
+
 /// C's `solveHomotopy` entry phase and its `newtonAlgorithm`
 /// (`nonlinearSolverHomotopy.c`): a start point already at tolerance is taken
 /// outright, else the Jacobian formed there feeds a damped Newton with a
@@ -1569,6 +1603,7 @@ fn newton_c(
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     jaceval: &mut dyn FnMut(&[f64], &mut [f64]),
     has_jac: bool,
+    trace: Option<&HomotopyTrace>,
 ) -> (bool, bool) {
     const ALPHA: f64 = 1.0e-1;
     const LAMBDA_MIN_C: f64 = 1.0e-4;
@@ -1587,6 +1622,10 @@ fn newton_c(
         if xscaling[i] <= 0.0 {
             xscaling[i] = 1.0;
         }
+    }
+
+    if let Some(t) = trace {
+        log_homotopy_enter(t, n, x, nominal, &xscaling);
     }
 
     let mut fvec = vec![0.0f64; n];
@@ -1646,6 +1685,9 @@ fn newton_c(
     // of the guess by `xScaling[i]·i/n` of 1%, then 10%, before giving up.
     let mut regular = false;
     for tries in 0..3 {
+        if trace.is_some() {
+            crate::omclog::debug_vector_double(crate::omclog::NLS_V, "x0", x);
+        }
         arm_attempt();
         eval(x, &mut fvec);
         if !attempt_aborted() {
@@ -1653,12 +1695,18 @@ fn newton_c(
             // ~40% of calls, nearly all of them an exact time hit whose residual is 0.
             if nsq(&fvec) < ftol_sq * 1e-4 || scaled_sq(n, &fvec, res_scaling) < ftol_sq * 1e-4 {
                 stat_inc(STAT_NLS_ACCEPT);
+                if trace.is_some() {
+                    crate::omclog::debug_string(crate::omclog::NLS_V, "regular initial point!!!");
+                }
                 return (true, true);
             }
             if form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval) {
                 row_scaling(n, &jac, res_scaling);
                 regular = total_pivot_step(n, &jac, &fvec, &xscaling, &mut step);
                 if regular {
+                    if trace.is_some() {
+                        crate::omclog::debug_string(crate::omclog::NLS_V, "regular initial point!!!");
+                    }
                     break;
                 }
             }
@@ -1667,7 +1715,13 @@ fn newton_c(
             break;
         }
         stat_inc(STAT_NLS_VARY_START);
-        let vary = if tries == 0 { 0.01 } else { 0.1 };
+        let (vary, pct) = if tries == 0 { (0.01, "1") } else { (0.1, "10") };
+        if trace.is_some() {
+            crate::omclog::debug_string(
+                crate::omclog::NLS_V,
+                &alloc::format!("assert handling:\t vary initial guess by +{pct}%."),
+            );
+        }
         for i in 0..n {
             x[i] = x_start[i] + xscaling[i] * (i as f64) / (n as f64) * vary;
         }
@@ -2552,7 +2606,11 @@ pub extern "C" fn rt_solve_nls(
     let mut rel_backup = alloc::vec::Vec::new();
     if discrete_call {
         unsafe { store_u32(rel_fresh_addr, 1) };
+        // `updateInnerEquation` calls the residual directly rather than through
+        // `wrapper_fvec`, so C does not count this evaluation.
+        let uncounted = n_feval.get();
         eval(&nlsx_old, &mut scratch);
+        n_feval.set(uncounted);
         if mixed {
             rel_backup = (0..n_rel).map(|i| unsafe { load_u32(rel_addr + i * 4) }).collect();
         }
@@ -2611,10 +2669,16 @@ pub extern "C" fn rt_solve_nls(
             // phase settled on. `solveHybrd` restarts from that, not from the raw guess.
             let mut nlsx = start.clone();
             let mut converged = false;
-            if matches!(pick, Nls::Default | Nls::Mixed) {
+            // C's `solveHomotopy` opens one `LOG_NLS_V` block over everything down to
+            // its homotopy runs.
+            let homotopy_solver = matches!(pick, Nls::Default | Nls::Mixed);
+            if homotopy_solver {
+                // C's `discreteCall` covers the initial system too, so it is not
+                // `discrete_call` (which is only about holding relations).
+                let t = HomotopyTrace { eq_index, time, discrete: saved_rel_fresh != 0 };
                 (converged, settled) = newton_c(
                     n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
-                    has_jac,
+                    has_jac, Some(&t),
                 );
                 if !converged {
                     stat_inc(STAT_NLS_NEWTON_FAIL);
@@ -2649,7 +2713,7 @@ pub extern "C" fn rt_solve_nls(
                 x.copy_from_slice(&guess);
                 converged = newton_c(
                     n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
-                    has_jac,
+                    has_jac, None,
                 )
                 .0;
             }
@@ -2680,6 +2744,12 @@ pub extern "C" fn rt_solve_nls(
                         break;
                     }
                 }
+            }
+            if homotopy_solver {
+                if !converged {
+                    crate::omclog::debug_string(crate::omclog::NLS_V, "Homotopy solver did not converge!");
+                }
+                crate::omclog::close(crate::omclog::NLS_V);
             }
             converged
         };

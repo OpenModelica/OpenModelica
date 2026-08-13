@@ -219,10 +219,12 @@ pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
     }
 }
 
-/// Set the parameter/start overrides for the next [`rt_sim_start`]. The host's own
-/// `set_param_overrides` cannot reach this module's copy of the store, so it must
-/// hand them over: `n_params: u32`, that many `(off: u32, wty: u32, val: f64)`,
-/// then `n_starts: u32` and the same again. `wty` is 0 = f64, 1 = i32.
+/// Set the parameter/start overrides and the `-iif` imports for the next
+/// [`rt_sim_start`]. The host's own stores cannot reach this module's copies, so it
+/// hands them over: `n_params: u32`, that many `(off: u32, wty: u32, val: f64)`, then
+/// `n_starts: u32` and the same again (`wty` 0 = f64, 1 = i32); then the imports as
+/// `n_values: u32`, `time: f64`, `file_len: u32`, the file name's UTF-8 bytes and
+/// that many `(roster index: u32, val: f64)`. No imports is `n_values` absent.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_set_overrides(ptr: u32, len: u32) -> i32 {
     let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
@@ -232,21 +234,37 @@ pub extern "C" fn rt_sim_set_overrides(ptr: u32, len: u32) -> i32 {
         *p += 4;
         Some(u32::from_le_bytes(v.try_into().ok()?))
     };
+    let f64_at = |p: &mut usize| -> Option<f64> {
+        let v = bytes.get(*p..*p + 8)?;
+        *p += 8;
+        Some(f64::from_le_bytes(v.try_into().ok()?))
+    };
     let group = |p: &mut usize| -> Option<Vec<(u32, WTy, f64)>> {
         let n = u32_at(p)? as usize;
         let mut out = Vec::with_capacity(n);
         for _ in 0..n {
             let off = u32_at(p)?;
             let wty = if u32_at(p)? == 0 { WTy::F64 } else { WTy::I32 };
-            let raw = bytes.get(*p..*p + 8)?;
-            *p += 8;
-            out.push((off, wty, f64::from_le_bytes(raw.try_into().ok()?)));
+            out.push((off, wty, f64_at(p)?));
         }
         Some(out)
+    };
+    let imports = |p: &mut usize| -> Option<openmodelica_sim_meta::driver::StartImports> {
+        let n = u32_at(p)? as usize;
+        let time = f64_at(p)?;
+        let name_len = u32_at(p)? as usize;
+        let file = alloc::string::String::from_utf8_lossy(bytes.get(*p..*p + name_len)?).into_owned();
+        *p += name_len;
+        let mut values = Vec::with_capacity(n);
+        for _ in 0..n {
+            values.push((u32_at(p)?, f64_at(p)?));
+        }
+        Some(openmodelica_sim_meta::driver::StartImports { file, time, values })
     };
     match (group(&mut p), group(&mut p)) {
         (Some(params), Some(starts)) => {
             openmodelica_sim_meta::driver::set_param_overrides(params, starts);
+            openmodelica_sim_meta::driver::set_start_imports(imports(&mut p));
             0
         }
         _ => -1,

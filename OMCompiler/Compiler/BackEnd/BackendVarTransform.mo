@@ -2437,17 +2437,20 @@ algorithm
 end dumpReplacements;
 
 public function dumpExtendReplacements
-"Prints the variable extendreplacements on form var1 -> var2"
+"Prints the variable extendreplacements on form var1 -> var2.
+ Sorted by name: the set is a hash set, so its traversal order depends on the
+ width of Integer and would differ between platforms and compiler builds."
   input VariableReplacements repl;
 protected
-  list<DAE.ComponentRef> crefs;
+  list<String> names;
 algorithm
-  crefs := UnorderedSet.toList(repl.extendhashTable);
+  names := list(ComponentReferenceBasics.printComponentRefStr(c) for c in UnorderedSet.toList(repl.extendhashTable));
+  names := List.sort(names, Util.strcmpBool);
   print("\nExtendReplacements: (");
-  print(String(listLength(crefs)));
+  print(String(listLength(names)));
   print(")\n");
   print("========================================\n");
-  print(stringDelimitList(list(ComponentReferenceBasics.printComponentRefStr(c) for c in crefs), "\n"));
+  print(stringDelimitList(names, "\n"));
   print("\n");
 end dumpExtendReplacements;
 
