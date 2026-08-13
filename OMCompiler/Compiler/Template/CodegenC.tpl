@@ -6361,20 +6361,22 @@ match row
         match context
         case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
           match simVarFromHT(crefStripSubs(sc), jacHT)
-          case SIMVAR() then
+          case v as SIMVAR() then
             if not listEmpty(iters) then
-              // Same reasoning as resizableSparsityRowCount: this row is already
-              // replicated by the outer equation_iterators for-loop, so this pass
-              // covers exactly one (flattened) row - no inner unroll, and
-              // local_row_base must advance by 1, not by sz, or every row emitted
-              // afterwards in this NLS ends up misindexed.
+              // sc's own row must be derived from sc's flattened position (via jacHT's
+              // v.index), not a shared incrementing counter: a single equation can
+              // produce several SparsityRow entries for the same for-loop (e.g. one for
+              // der(x[i1]), another for the off-diagonal der(x[1+i1]) term) whose target
+              // rows overlap, so a sequential counter double-books/overruns rows (see
+              // simple_der_for.mos). flatIdx here is sc's OWN subscript expression
+              // (e.g. i1-1 for x[i1], or (1+i1)-1 for x[1+i1]), matching how columns are
+              // already correctly computed from v.index + offset.
               let flatIdx = <<<%(iters |> it => forIteratorBody(it, context, &preExp, &varDecls, &auxFunction, &sub) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
               <<
               {
                 unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
-                unsigned int row_<%k%> = local_row_base;
+                unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
                 <%depsWholeDep%>
-                local_row_base++;
               }
               >>
             else
@@ -6383,10 +6385,9 @@ match row
               {
                 unsigned int _wr<%k%>;
                 for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
-                  unsigned int row_<%k%> = local_row_base + _wr<%k%>;
+                  unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
                   <%depsWholeDep%>
                 }
-                local_row_base += (unsigned int)(<%sz%>);
               }
               >>
           else ''
@@ -6395,7 +6396,7 @@ match row
         match context
         case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
           match simVarFromHT(crefStripSubs(sc), jacHT)
-          case SIMVAR() then
+          case v as SIMVAR() then
             let sliceArr = daeExp(sliceExp, context, &preExp, &varDecls, &auxFunction)
             let nSlice = tempDecl("modelica_integer", &varDecls)
             let &preExp += '<%nSlice%> = size_of_dimension_base_array(<%sliceArr%>, 1);<%\n%>'
@@ -6403,10 +6404,9 @@ match row
             {
               unsigned int _wr<%k%>;
               for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%nSlice%>); _wr<%k%>++) {
-                unsigned int row_<%k%> = local_row_base + _wr<%k%>;
+                unsigned int row_<%k%> = <%v.index%> + (unsigned int)(((modelica_integer*)<%sliceArr%>.data)[_wr<%k%>] - 1);
                 <%depsWholeReduced%>
               }
-              local_row_base += (unsigned int)(<%nSlice%>);
             }
             >>
           else ''
@@ -6415,11 +6415,11 @@ match row
         match context
         case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
           match simVarFromHT(crefStripSubs(sc), jacHT)
-          case SIMVAR() then
-            let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, nCols, 'local_row_base', context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+          case v as SIMVAR() then
+            let rowExpr = '<%v.index%>'
+            let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
             <<
             <%fillCode%>
-            local_row_base++;
             >>
           else ''
         else ''
@@ -6510,11 +6510,22 @@ match row
           match context
           case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
             match simVarFromHT(crefStripSubs(sc), jacHT)
-            case SIMVAR() then
-              let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, nCols, 'local_row_base', context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
+            case v as SIMVAR() then
+              // Generic single-dimension INDEX subscript with an arbitrary expression
+              // (e.g. der(x[1+i1]), the off-diagonal y' term of a for-equation like
+              // der(x[i]) = der(x[i+1]) + ...). The row must be sc's own flattened
+              // position (v.index + the evaluated index expression, exactly like columns
+              // already compute their offset via indexSubRecursive/daeSubscript) -- not a
+              // shared sequential counter, since a single equation can produce multiple
+              // SparsityRow entries whose target rows overlap with other rows already
+              // assigned by the same or another equation (see simple_der_for.mos).
+              let &offsetPreExp = buffer ""
+              let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(sc))), listReverse(crefSubs(sc)), context, &offsetPreExp, &varDecls, &auxFunction)
+              let rowExpr = '<%v.index%> + (unsigned int)(<%offset%>)'
+              let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern) ;separator="\n")
               <<
+              <%offsetPreExp%>
               <%fillCode%>
-              local_row_base++;
               >>
             else ''
           else ''
