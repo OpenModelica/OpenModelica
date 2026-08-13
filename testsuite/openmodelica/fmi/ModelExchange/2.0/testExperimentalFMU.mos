@@ -3,6 +3,7 @@
 // status: correct
 // teardown_command: rm -rf log.txt
 // cflags: -d=-newInst
+// suite: disabled
 
 loadString("
 model advection

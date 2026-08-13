@@ -77,6 +77,12 @@ $ENV{'PRINTF_EXPONENT_DIGITS'} = 2;
 
 $successes=0;
 $total=0;
+$skipped=0;
+# Tests tagged '// suite: disabled' are not part of the testsuite: they fail, hang
+# or need a setup nobody has. They are only run when asked for, with -disabled or
+# RTEST_RUN_DISABLED=1 (which is what partest's disabled suite and the makefiles'
+# failingtest targets set).
+$run_disabled=($ENV{'RTEST_RUN_DISABLED'} ? 1 : 0);
 $setbaseline=0;
 $verbose="yes";
 $returnwitherror=0;
@@ -417,8 +423,12 @@ sub dofile
         "setup_command" => "",
         "cflags" => "",
         "env" => "",
+        "suite" => "",
         "teardown_command" => "",
         "stack_size" => "");
+    # The suites a test belongs to are only read from the header, i.e. before the
+    # first line of code, the same as partest does.
+    my $in_header = 1;
     $log = "$tmpdir/log-$f";
     $tc_err = 1;
     # Find the expected result
@@ -429,6 +439,7 @@ sub dofile
     while(<IN>) {
     # @adrpo - uncomment for debugging
     # print ($_);
+    $in_header = 0 if $in_header and !/^\s*$|^\s*\/\//;
     if (/^\/\/ Result:/../^\/\/ endResult/) {
         s/^[ \t]*//;
         s/^\/\/ Result://;
@@ -448,7 +459,10 @@ sub dofile
         # @adrpo - uncomment for debugging
         # print "Noticed: $1 = $2\n";
         # $info{$1} = $value;
-        if($1 ne "env" or $set_modelica_lib) {
+        if($1 eq "suite") {
+          # A test may name its suites on more than one line.
+          $info{"suite"} .= " $2" if $in_header;
+        } elsif($1 ne "env" or $set_modelica_lib) {
           $info{$1} = $2;
         }
     }
@@ -494,6 +508,13 @@ sub dofile
         }
     }
     return 0;
+    }
+
+    # A disabled test is neither run nor counted, it is only reported as skipped.
+    if (!$run_disabled and grep { $_ eq "disabled" } split(/[,\s]+/, $info{"suite"})) {
+      printf(" %s %-82s... disabled\n", '.', $info{'name'});
+      $skipped = $skipped + 1;
+      return 0;
     }
 
     if (!$setbaseline) {
@@ -545,6 +566,8 @@ while ($#ARGV >= 0) {
       $diffcmd = $dwdiffcmd
     } elsif ($arg eq "-nodelete") {
       $nodelete = 1;
+    } elsif ($arg eq "-disabled") {
+      $run_disabled = 1;
     } elsif ($arg eq "-p") {
       if ($ENV{"PAGER"} eq "") {
         $pager="more";
@@ -641,6 +664,11 @@ if ($collectkeys || $collectcases) {
   printf "\n== set new baseline for %d tests\n",$total;
 } else {
     printf "\n== %d out of %d tests failed [%s, time: %d]\n", $total-$successes, $total, $dirname, $end_t;
+}
+
+if ($skipped) {
+  printf "== %d disabled test%s skipped, run them with rtest -disabled\n",
+         $skipped, $skipped == 1 ? "" : "s";
 }
 
 if ($returnwitherror && $total!=$successes) {

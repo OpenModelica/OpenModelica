@@ -83,9 +83,10 @@ my $osname = $^O;
 # Every test belongs to exactly one category suite, decided by the directory it
 # lives in, plus any number of tag suites, which the test file names itself with
 # a '// suite: <name>' line in its header. A test runs only if all of the suites
-# it belongs to are enabled.
+# it belongs to are enabled. 'disabled' is such a tag: a test carrying it is not
+# part of the testsuite at all, see %suite_enabled.
 my @category_suites = qw(default cpp cppmsl tearing hpcom);
-my @tag_suites = qw(metamodelica 63bit antlr fmuCSources);
+my @tag_suites = qw(metamodelica 63bit antlr fmuCSources disabled);
 my %suite_enabled = (
   default      => 1,  # Everything not claimed by another category.
   cpp          => 1,  # */cppruntime/*
@@ -96,6 +97,11 @@ my %suite_enabled = (
   '63bit'      => 1,  # Needs a 63/64-bit Modelica Integer.
   antlr        => 1,  # Expects ANTLR's syntax error positions and wording.
   fmuCSources  => 1,  # Inspects sources/ inside an FMU, which only the C export has.
+  # Not part of the testsuite: the tests a makefile lists as failing, not
+  # compiling, not simulating or needing a manual setup. They are the tests that
+  # fail, hang or eat the machine, so they are opt-in and rtest skips them too
+  # unless RTEST_RUN_DISABLED is set below.
+  disabled     => 0,
 );
 
 sub set_suites {
@@ -125,7 +131,7 @@ sub dir_suite {
 }
 
 # The '// suite: a, b' tags a test names in its header. rtest parses such lines
-# as ordinary test metadata, so they are inert there.
+# as ordinary test metadata and ignores all of them but 'disabled'.
 sub test_suites {
   my $test = shift;
   my @suites;
@@ -171,7 +177,7 @@ for(@ARGV){
     print("  -printtests    Don't run the test; only print them.\n");
     print("  -with-xml      Output XML log.\n");
     print("  -with-txt      Output TXT log.\n");
-    print("  -failing       Run failing tests instead of working.\n");
+    print("  -failing       Run failing tests instead of working (implies -suites=+disabled).\n");
     print("  -veryfew       Run only a very small number of tests to see if runtests.pl is working.\n");
     print("  -gitlibs       If you have installed omc using GITLIBRARIES=Yes, you can test some of those libraries.\n");
     print("  -parmodexp     Run the OpenCL ParModelica tests.\n");
@@ -238,6 +244,7 @@ for(@ARGV){
   }
   elsif(/^-failing$/) {
     $run_failing = 1;
+    set_suites("+disabled"); # The failing tests are exactly the disabled ones.
   }
   elsif(/^-veryfew$/) {
     $veryfew = 1;
@@ -259,6 +266,11 @@ for(@ARGV){
     exit 1;
   }
 }
+
+# rtest skips a test tagged '// suite: disabled' on its own, so tell it when the
+# run does want them. Needed for -failing and for -file= lists of failing tests,
+# where the suite filtering below does not apply.
+$ENV{'RTEST_RUN_DISABLED'} = 1 if $suite_enabled{disabled};
 
 if ($use_db) {
   eval { require MLDBM; 1; };
@@ -403,10 +415,27 @@ if (!defined($file)) {
   }
   # Categories were filtered while parsing the makefiles; tags need the test
   # files. Not done for -file=: an explicit list of tests is not a selection.
+  my @unmarked;
   @test_list = grep {
     my @suites = test_suites($_);
+    my $disabled = grep { $_ eq "disabled" } @suites;
+    if ($run_failing) {
+      # A test in one of the failing lists that forgot the tag; rtest would run
+      # it as an ordinary test, which is what the tag is there to prevent.
+      push @unmarked, $_ unless $disabled;
+    } elsif ($disabled) {
+      # The other way around: the test is in TESTFILES, so it is part of the
+      # testsuite, but the tag would silently deselect it from every run.
+      print STDERR "$_: listed in TESTFILES but marked '// suite: disabled'; " .
+                   "remove the marking or move the test to FAILINGTESTFILES\n";
+      exit 1;
+    }
     !grep { !$suite_enabled{$_} } @suites;
   } @test_list;
+  if (@unmarked) {
+    print STDERR "Warning: not marked '// suite: disabled' in their header:\n";
+    print STDERR "  $_\n" for @unmarked;
+  }
 } else {
   read_file($file);
   chdir("..");

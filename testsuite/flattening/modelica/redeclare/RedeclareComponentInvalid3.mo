@@ -1,6 +1,7 @@
 // name:     RedeclareComponentInvalid3
 // keywords: redeclare component
 // status:   incorrect
+// suite: disabled
 //
 // Tests that it's only allowed to redeclare a component marked as replaceable.
 //
@@ -18,7 +19,7 @@ end RedeclareComponentInvalid3;
 
 // Result:
 // Error processing file: RedeclareComponentInvalid3.mo
-// [RedeclareComponentInvalid3.mo:9:3-9:9:writable] Error: Trying to redeclare non-replaceable component r.
+// [RedeclareComponentInvalid3.mo:10:3-10:9:writable] Error: Trying to redeclare non-replaceable component r.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

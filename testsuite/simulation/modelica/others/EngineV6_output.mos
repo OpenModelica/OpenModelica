@@ -1,6 +1,7 @@
 // name:     EngineV6_output
 // keywords: simulation evalOutputOnly
 // status: correct
+// suite: disabled
 //
 loadModel(Modelica,{"3.2.1"});
 loadFile("EngineV6_output.mo");getErrorString();

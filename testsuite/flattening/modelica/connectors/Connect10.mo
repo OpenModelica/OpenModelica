@@ -1,6 +1,7 @@
 // name:     Connect10
 // keywords: connect
 // status:   incorrect
+// suite: disabled
 //
 // Testing of input/output flags
 //

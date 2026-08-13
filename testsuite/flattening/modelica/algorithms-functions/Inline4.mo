@@ -1,6 +1,7 @@
 // name: Inline4
 // keywords: function, inline
 // status: correct
+// suite: disabled
 //
 // Tests inline functions passed to inline functions as arguments
 //

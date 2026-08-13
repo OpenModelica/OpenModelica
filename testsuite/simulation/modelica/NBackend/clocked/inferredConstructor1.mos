@@ -2,6 +2,7 @@
 // keywords: synchronous features, inferredClock, c
 // status: correct
 // cflags: --newBackend
+// suite: disabled
 //
 // Basic inferred Clock constructor with default values
 // Should tick at 0.0, 1.0 and 2.0
