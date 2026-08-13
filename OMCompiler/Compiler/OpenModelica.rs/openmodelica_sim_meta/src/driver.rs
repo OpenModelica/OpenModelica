@@ -827,6 +827,174 @@ fn apply_param_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
     apply_overrides(e, sim_data, &overrides_store::params())
 }
 
+/// What `-iif` found, by index into the concatenated [`SimMeta::import_roster`]. The
+/// host resolves the file; [`import_start_values`] applies and logs it.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct StartImports {
+    pub file: String,
+    pub time: f64,
+    pub values: Vec<(u32, f64)>,
+}
+
+mod imports_store {
+    use super::StartImports;
+
+    #[cfg(feature = "std")]
+    mod imp {
+        use super::StartImports;
+        use core::cell::RefCell;
+        std::thread_local! {
+            static IMPORTS: RefCell<Option<StartImports>> = const { RefCell::new(None) };
+        }
+        pub fn set(i: Option<StartImports>) {
+            IMPORTS.with(|o| *o.borrow_mut() = i);
+        }
+        pub fn get() -> Option<StartImports> {
+            IMPORTS.with(|o| o.borrow().clone())
+        }
+    }
+
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use super::StartImports;
+        use core::cell::UnsafeCell;
+        // Single-threaded in-wasm runtime, as `overrides_store`.
+        struct Store(UnsafeCell<Option<StartImports>>);
+        unsafe impl Sync for Store {}
+        static STORE: Store = Store(UnsafeCell::new(None));
+        pub fn set(i: Option<StartImports>) {
+            unsafe { *STORE.0.get() = i };
+        }
+        pub fn get() -> Option<StartImports> {
+            unsafe { (*STORE.0.get()).clone() }
+        }
+    }
+
+    pub use imp::{get, set};
+}
+
+/// Install the `-iif` values the next [`run_initialization`] imports. As with
+/// [`set_param_overrides`], a host driving the in-wasm session must forward them in.
+pub fn set_start_imports(imports: Option<StartImports>) {
+    imports_store::set(imports);
+}
+
+/// The imports last set, for that forwarding.
+pub fn start_imports() -> Option<StartImports> {
+    imports_store::get()
+}
+
+/// C's `isQuantityOverridden`: the file must not clobber an explicit `-override`
+/// (ticket #15807).
+fn overridden_on_command_line(name: &str) -> bool {
+    crate::simflags::with_flags(|f| f.overrides.iter().any(|(o, _)| o == name))
+}
+
+/// C's `importStartValues` (`initialization.c`): the `start` of every quantity the
+/// `-iif` file names. Runs where C's does — after the bound parameters and
+/// attributes, before `setAllVarsToStart` publishes the starts — so a start bound to
+/// a parameter is overwritten rather than the other way round.
+fn import_start_values(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
+    let Some(imports) = imports_store::get() else { return Ok(()) };
+    omclog::info(
+        omclog::INIT,
+        false,
+        &format!("import start values\nfile: {}\ntime: {}", imports.file, format_g(imports.time, 6)),
+    );
+    // `values` is in roster order, so one cursor walks both.
+    let mut next = 0usize;
+    let mut flat = 0u32;
+    for (group, entries) in crate::IMPORT_GROUP.iter().zip(model.import_roster()) {
+        omclog::info(omclog::INIT, false, &format!("import {group}"));
+        // C's headers are plural, its per-quantity lines singular.
+        let one = group.trim_end_matches('s');
+        for (name, off, wty) in entries {
+            let found = imports.values.get(next).filter(|(i, _)| *i == flat).map(|&(_, v)| v);
+            if found.is_some() {
+                next += 1;
+            }
+            flat += 1;
+            if overridden_on_command_line(name) {
+                omclog::info(
+                    omclog::INIT_V,
+                    false,
+                    &format!("| skip import of {one} {name}: overridden on command line"),
+                );
+                continue;
+            }
+            let Some(v) = found else {
+                // C reports a missing quantity, except for the backend's own variables.
+                if !(group.ends_with("variables") && is_generated(name)) {
+                    omclog::warning(
+                        omclog::INIT,
+                        false,
+                        &format!("unable to import {one} {name} from given file"),
+                    );
+                }
+                continue;
+            };
+            match wty {
+                WTy::F64 => {
+                    write_f64(e, sim_data + off, v)?;
+                    omclog::info(omclog::INIT_V, false, &format!("| {name}(start={})", format_g(v, 6)));
+                }
+                WTy::I32 if group.starts_with("boolean") => {
+                    write_i32(e, sim_data + off, (v != 0.0) as i32)?;
+                    let b = if v != 0.0 { "true" } else { "false" };
+                    omclog::info(omclog::INIT_V, false, &format!("| {name}(start={b})"));
+                }
+                WTy::I32 => {
+                    write_i32(e, sim_data + off, v as i32)?;
+                    omclog::info(omclog::INIT_V, false, &format!("| {name}(start={})", v as i32));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// C's warning filter in `importStartValues`: a name the backend made up.
+fn is_generated(name: &str) -> bool {
+    name.is_empty() || name.starts_with('$') || name.starts_with("der($")
+}
+
+/// What `-iif` imported, as `(roster group, slot, value)`.
+fn imported_slots(model: &SimMeta) -> Vec<(usize, u32, f64)> {
+    let Some(imports) = imports_store::get() else { return Vec::new() };
+    let mut out = Vec::new();
+    let mut next = 0usize;
+    let mut flat = 0u32;
+    for (g, entries) in model.import_roster().iter().enumerate() {
+        for &(_, off, _) in entries {
+            if let Some(&(_, v)) = imports.values.get(next).filter(|(i, _)| *i == flat) {
+                out.push((g, off, v));
+                next += 1;
+            }
+            flat += 1;
+        }
+    }
+    out
+}
+
+/// Imported discrete `start`s, which `setAllVarsToStart` publishes over the
+/// constants the metadata carries.
+fn imported_discrete_starts(model: &SimMeta) -> Vec<(u32, i32)> {
+    imported_slots(model)
+        .into_iter()
+        .filter(|(g, _, _)| *g == 1 || *g == 2)
+        .map(|(g, off, v)| (off, if g == 2 { (v != 0.0) as i32 } else { v as i32 }))
+        .collect()
+}
+
+/// The imported `start`s of the parameters, which C's `printParameters` reports.
+fn imported_param_starts(model: &SimMeta) -> Vec<(u32, f64)> {
+    imported_slots(model)
+        .into_iter()
+        .filter(|(g, _, _)| *g >= 3)
+        .map(|(g, off, v)| (off, if g == 5 { (v != 0.0) as i32 as f64 } else { v }))
+        .collect()
+}
+
 fn apply_start_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
     apply_overrides(e, sim_data, &overrides_store::starts())
 }
@@ -1388,9 +1556,6 @@ fn run_initialization_impl(
     model: Option<&SimMeta>,
 ) -> Result<()> {
     omclog::info(omclog::INIT, false, "### START INITIALIZATION ###");
-    // C's `updateStaticDataOfNonlinearSystems`.
-    omclog::info(omclog::NLS, true, "update static data of non-linear system solvers");
-    omclog::close(omclog::NLS);
     init_report::reset();
     assert_warn_store::reset();
     // Initialization throws on a failed assert (C clears `noThrowAsserts` here).
@@ -1399,6 +1564,7 @@ fn run_initialization_impl(
     term_report::reset();
     steady_report::reset();
     seed_start_values(e, sim_data, layout, inputs, model)?;
+    log_static_data_update();
 
     // C's `IIM_NONE`: every variable keeps its start value, the initial system is
     // never solved. C still marks the systems solved before it picks the method.
@@ -1410,6 +1576,15 @@ fn run_initialization_impl(
     log_init_method("symbolic", "solves the initialization problem symbolically - default");
 
     symbolic_initialization(e, sim_data, layout, inputs, model)
+}
+
+/// C's `updateStaticDataOf{Linear,Nonlinear}Systems`: after the start values are
+/// final, before the method is picked.
+fn log_static_data_update() {
+    omclog::info(omclog::LS_V, true, "update static data of linear system solvers");
+    omclog::close(omclog::LS_V);
+    omclog::info(omclog::NLS, true, "update static data of non-linear system solvers");
+    omclog::close(omclog::NLS);
 }
 
 /// C's `INIT_METHOD_NAME`/`INIT_METHOD_DESC` line.
@@ -1426,6 +1601,10 @@ fn symbolic_initialization(
     inputs: &[crate::InputVar],
     model: Option<&SimMeta>,
 ) -> Result<()> {
+    // C's `storePreValues` opening `symbolic_initialization`, so a `$PRE.<discrete>`
+    // read in an initial equation sees `start`. `-iim=none` never gets here, and the
+    // homotopy retry below does not re-store.
+    seed_pre_from_live(e, sim_data, layout)?;
     solve_initial_system(e, sim_data, layout, inputs, model)?;
     check_removed_initial_equations(e, sim_data, layout, model)
 }
@@ -1535,14 +1714,18 @@ fn seed_start_values(
     apply_param_overrides(e, sim_data)?;
     e.call1("functionInitStartValues", sim_data)?;
     apply_external_input(e, sim_data, inputs)?;
+    copy_start_values_to_init_values(e, sim_data, layout, model)?;
     // C's `read_init_from_file` branch runs them *before* `importStartValues`, giving
     // the file the last word on a start value.
     let from_file = crate::simflags::with_flags(|f| f.init_file.is_some());
     if from_file {
         update_bound_values(e, sim_data, layout, model)?;
+        if let Some(m) = model {
+            import_start_values(e, sim_data, m)?;
+        }
     }
     apply_start_overrides(e, sim_data)?;
-    set_all_vars_to_start(e, sim_data, layout, model)?;
+    set_all_vars_to_start(e, sim_data, layout, model, true)?;
     if !from_file {
         update_bound_values(e, sim_data, layout, model)?;
     }
@@ -1550,14 +1733,25 @@ fn seed_start_values(
     // parameters and precedes the initial system (C's `initializeModel`). Idempotent:
     // it reallocates, so a retried initialization starts from a clean profile.
     e.call1_if_present("functionInitSpatialDistribution", sim_data)?;
-    // C's `storePreValues` before the initial solve: a `$PRE.<discrete>` read in
-    // an initial equation sees `start`, not 0.
-    seed_pre_from_live(e, sim_data, layout)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
     if layout.n_samples > 0 {
         e.call1("initSample", sim_data)?;
     }
     Ok(())
+}
+
+/// C's `copyStartValuestoInitValues` (`model_help.c`), which `initializeModel` runs
+/// *before* `initialization`: variables and `pre` both take the start attributes as
+/// declared. `-iif` and the bound attributes come later, inside `initialization`, so
+/// neither reaches these `pre` values.
+fn copy_start_values_to_init_values(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    model: Option<&SimMeta>,
+) -> Result<()> {
+    set_all_vars_to_start(e, sim_data, layout, model, false)?;
+    seed_pre_from_live(e, sim_data, layout)
 }
 
 /// C's `updateBoundParameters` + `updateBoundVariableAttributes`, always a pair and
@@ -1609,9 +1803,17 @@ fn print_parameters(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
     }
     let p = &model.params;
     let layout = &model.layout;
-    // C's `-override` rewrites the `_init.xml` entry, `start` included.
+    // `-override` rewrites the `_init.xml` entry, `start` included; the import
+    // assigns `attribute.start` directly.
     let ov = overrides_store::params();
-    let start_of = |off: u32, v: f64| ov.iter().find(|o| o.0 == off).map_or(v, |o| o.2);
+    let imported = imported_param_starts(model);
+    let start_of = |off: u32, v: f64| {
+        ov.iter()
+            .find(|o| o.0 == off)
+            .map(|o| o.2)
+            .or_else(|| imported.iter().find(|i| i.0 == off).map(|i| i.1))
+            .unwrap_or(v)
+    };
     omclog::info(omclog::INIT_V, true, "parameter values");
     let mut group = |header: &str, lines: alloc::vec::Vec<String>| {
         if lines.is_empty() {
@@ -2043,7 +2245,15 @@ fn apply_external_input(
 
 /// C's `setAllVarsToStart` for the reals: every real variable takes its `start`
 /// attribute. Integer/Boolean/String starts are still the emitted equations'.
-fn set_all_vars_to_start(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, model: Option<&SimMeta>) -> Result<()> {
+/// C's `setAllVarsToStart`. `with_imports` is false for the pass before
+/// `initialization` ([`copy_start_values_to_init_values`]), which predates `-iif`.
+fn set_all_vars_to_start(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    model: Option<&SimMeta>,
+    with_imports: bool,
+) -> Result<()> {
     // The discrete `start` attributes are constants, so they are metadata rather
     // than a `SimData` region; C reads them out of the `_init.xml`.
     if let Some(m) = model {
@@ -2052,6 +2262,12 @@ fn set_all_vars_to_start(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayou
         }
         for (i, (_, start)) in m.soti.bools.iter().enumerate() {
             write_i32(e, sim_data + layout.bool_off + i as u32 * 4, *start)?;
+        }
+        // `-iif` replaced those constants, and C's `attribute.start` is what it wrote.
+        if with_imports {
+            for (off, start) in imported_discrete_starts(m) {
+                write_i32(e, sim_data + off, start)?;
+            }
         }
     }
     let bytes = ((2 * layout.n_states + layout.n_real_alg) * 8) as usize;
@@ -2167,12 +2383,20 @@ fn dump_initial_solution(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
     }
     let i32_at = |off: u32| read_i32(e, sim_data + off).unwrap_or(0);
     let pre_i32 = |off: u32| layout.pre_slot_off(off).map_or(0, |p| i32_at(p));
+    // A real's `start` is the slot the import wrote; a discrete one is metadata.
+    let imported = imported_discrete_starts(model);
+    let start_of = |off: u32, v: i32| imported.iter().find(|i| i.0 == off).map_or(v, |i| i.1);
     if !soti.ints.is_empty() {
         omclog::info(omclog::SOTI, true, "integer variables");
         for (i, (name, start)) in soti.ints.iter().enumerate() {
             let off = layout.int_off + i as u32 * 4;
-            let line =
-                format!("[{}] Integer {name}(start={start}) = {} (pre: {})", i + 1, i32_at(off), pre_i32(off));
+            let line = format!(
+                "[{}] Integer {name}(start={}) = {} (pre: {})",
+                i + 1,
+                start_of(off, *start),
+                i32_at(off),
+                pre_i32(off)
+            );
             omclog::info(omclog::SOTI, false, &line);
         }
         omclog::close(omclog::SOTI);
@@ -2185,7 +2409,7 @@ fn dump_initial_solution(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
             let line = format!(
                 "[{}] Boolean {name}(start={}) = {} (pre: {})",
                 i + 1,
-                b(*start),
+                b(start_of(off, *start)),
                 b(i32_at(off)),
                 b(pre_i32(off))
             );

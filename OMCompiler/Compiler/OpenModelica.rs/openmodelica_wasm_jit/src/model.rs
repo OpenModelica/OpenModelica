@@ -53,14 +53,6 @@ pub struct SimModel {
     pub jac_a: Option<JacAInfo>,
     /// User-settable initial conditions (changeable parameters), for `-override`.
     pub editable_params: Vec<EditableParam>,
-    /// C's `realVarsData[i].info.name` and its `attribute.start` slot, in
-    /// real-variable index order. `-iif` imports into these; unlike `-override`
-    /// it reaches every real variable, changeable or not.
-    pub real_starts: Vec<(String, u32)>,
-    /// The rest of what `-iif` imports, likewise by name: the integer and boolean
-    /// variables, and the real, integer and boolean parameters. Their live slot is
-    /// their start here — only reals have a separate attribute array.
-    pub import_slots: Vec<(String, u32, WTy)>,
     /// Result-variable display name -> unit, for a host to label plotted signals.
     pub var_units: HashMap<String, String>,
     /// Driver-facing metadata shared with the in-wasm driver (passed to `sim_driver::drive`).
@@ -247,7 +239,8 @@ pub fn inwasm_driver_enabled() -> bool {
     }
 }
 
-/// Encode the host's parameter/start overrides for `rt_sim_set_overrides`.
+/// Encode the host's parameter/start overrides and `-iif` imports for
+/// `rt_sim_set_overrides`.
 #[cfg(feature = "jit")]
 pub fn encode_overrides() -> Vec<u8> {
     let (params, starts) = crate::sim_driver::param_overrides();
@@ -257,6 +250,16 @@ pub fn encode_overrides() -> Vec<u8> {
         for &(off, wty, val) in group.iter() {
             b.extend_from_slice(&off.to_le_bytes());
             b.extend_from_slice(&(if matches!(wty, WTy::F64) { 0u32 } else { 1u32 }).to_le_bytes());
+            b.extend_from_slice(&val.to_le_bytes());
+        }
+    }
+    if let Some(i) = crate::sim_driver::start_imports() {
+        b.extend_from_slice(&(i.values.len() as u32).to_le_bytes());
+        b.extend_from_slice(&i.time.to_le_bytes());
+        b.extend_from_slice(&(i.file.len() as u32).to_le_bytes());
+        b.extend_from_slice(i.file.as_bytes());
+        for &(idx, val) in &i.values {
+            b.extend_from_slice(&idx.to_le_bytes());
             b.extend_from_slice(&val.to_le_bytes());
         }
     }
