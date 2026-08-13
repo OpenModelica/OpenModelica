@@ -689,6 +689,7 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX="`pwd`" \
 		-DCMAKE_INSTALL_INCLUDEDIR=include \
+		-DCMAKE_INSTALL_BINDIR=lib \
 		-DBUILD_SHARED_LIBS:Bool=ON \
 		-DBUILD_STATIC_LIBS:Bool=ON \
 		-DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" \
