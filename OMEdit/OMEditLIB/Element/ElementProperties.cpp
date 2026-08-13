@@ -1550,7 +1550,8 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
               index = pParameter->getUnitComboBox()->count() - 1;
             }
           }
-        } else {
+        }
+        if (index > -1) {
           /* Issue #11782.
            * Setting the display unit trigger SIGNAL currentIndexChanged and calls SLOT unitComboBoxChanged which will set the correct value.
            */
