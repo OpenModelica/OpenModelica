@@ -130,6 +130,59 @@ public
     algorithm
       str := ComponentRef.toString(row.equation_name) + " ... " + List.toString(row.solved_crefs, ComponentRef.toString) + " ... " + List.toString(row.dependencies, dependencyString);
     end toString;
+
+    function mergeDuplicateRows
+      "Index reduction can occasionally produce more residual equations than
+      there are physical Jacobian rows (numberOfResultVars, the runtime's
+      fixed row capacity) -- e.g. static_IR.mos, where an over-determined
+      algebraic subsystem yields several equivalent constraints that all end
+      up tagged with the same solved_crefs. In that situation resizable
+      Jacobian codegen (CodegenC.tpl) would still assign each extra equation
+      its own incrementing row index, writing past the runtime's
+      numberOfResultVars-sized buffers.
+      This is NOT the same as a legitimately coupled multi-row system (e.g.
+      algebraicLoop.mos), where several genuinely different equations validly
+      share the same solved_crefs set (one row each, all coupled to the same
+      variables) with row count already matching numberOfResultVars -- such
+      cases must be left untouched, hence the row-count guard below."
+      input list<SparsityRow> rows_in;
+      input Integer numberOfResultVars;
+      output list<SparsityRow> rows_out;
+    protected
+      UnorderedMap<String, SparsityRow> row_map;
+      list<String> order;
+      String key;
+      SparsityRow existing, merged;
+    algorithm
+      if listLength(rows_in) <= numberOfResultVars then
+        rows_out := rows_in;
+      else
+        row_map := UnorderedMap.new<SparsityRow>(stringHashDjb2, stringEq);
+        order := {};
+        for row in rows_in loop
+          key := stringDelimitList(list(ComponentRef.toString(c) for c in row.solved_crefs), ",");
+          if UnorderedMap.contains(key, row_map) then
+            existing := UnorderedMap.getSafe(key, row_map, sourceInfo());
+            merged := existing;
+            merged.dependencies := List.unionOnTrue(existing.dependencies, row.dependencies, dependencyCrefEqual);
+            UnorderedMap.add(key, merged, row_map);
+          else
+            UnorderedMap.add(key, row, row_map);
+            order := key :: order;
+          end if;
+        end for;
+        order := listReverse(order);
+        rows_out := list(UnorderedMap.getSafe(k, row_map, sourceInfo()) for k in order);
+      end if;
+    end mergeDuplicateRows;
+
+    function dependencyCrefEqual
+      input tuple<ComponentRef, Dependency, Boolean> dep1;
+      input tuple<ComponentRef, Dependency, Boolean> dep2;
+      output Boolean b;
+    algorithm
+      b := ComponentRef.isEqual(Util.tuple31(dep1), Util.tuple31(dep2));
+    end dependencyCrefEqual;
   end SparsityRow;
 
   uniontype Sparsity
@@ -142,10 +195,13 @@ public
 
     function create
       input Adjacency.Matrix mat;
+      input Integer numberOfResultVars;
       output Sparsity sparsity;
     algorithm
       sparsity := match mat
-        case Adjacency.SPARSITY() then SPARSITY(list(SparsityRow.create(e, i, d, r, s) threaded for e in mat.equation_names, i in mat.equation_iterators, d in mat.dependencies, r in mat.repetitions, s in mat.solved_crefs));
+        case Adjacency.SPARSITY() then SPARSITY(SparsityRow.mergeDuplicateRows(
+          list(SparsityRow.create(e, i, d, r, s) threaded for e in mat.equation_names, i in mat.equation_iterators, d in mat.dependencies, r in mat.repetitions, s in mat.solved_crefs),
+          numberOfResultVars));
         case Adjacency.EMPTY() then EMPTY();
 
         else algorithm
@@ -423,7 +479,7 @@ public
             constantEqns        = {},
             columnVars          = tmpVars,
             seedVars            = seedVars,
-            sparsityMatrix      = Sparsity.create(jacobian.sparsity),
+            sparsityMatrix      = Sparsity.create(jacobian.sparsity, SimVars.numScalarElems(resVars)),
             generic_loop_calls  = generic_loop_calls,
             jac_map             = SOME(jac_map),
             isAdjoint           = jacobian.isAdjoint,
