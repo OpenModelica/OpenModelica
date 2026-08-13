@@ -47,6 +47,8 @@ unsafe extern "C" {
     fn functionCheckAsserts(sim_data: u32);
     fn functionStoreDelayed(sim_data: u32);
     fn functionInitDelay(sim_data: u32);
+    fn functionStoreSpatialDistribution(sim_data: u32);
+    fn functionInitSpatialDistribution(sim_data: u32);
     fn functionUpdateBoundParameters(sim_data: u32);
     fn functionUpdateBoundVariableAttributes(sim_data: u32);
     fn functionRemovedInitialEquations(sim_data: u32);
@@ -108,6 +110,8 @@ impl SimEngine for StandaloneEngine {
                 "functionCheckAsserts" => functionCheckAsserts(arg),
                 "functionStoreDelayed" => functionStoreDelayed(arg),
                 "functionInitDelay" => functionInitDelay(arg),
+                "functionStoreSpatialDistribution" => functionStoreSpatialDistribution(arg),
+                "functionInitSpatialDistribution" => functionInitSpatialDistribution(arg),
                 "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
                 "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
                 "functionRemovedInitialEquations" => functionRemovedInitialEquations(arg),

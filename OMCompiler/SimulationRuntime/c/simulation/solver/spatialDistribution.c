@@ -559,11 +559,15 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
    * evaluated unconditionally by the solver, also while the operator is frozen
    * inside an inactive if-branch. Capturing the start position here would mark
    * the operator as started too early and make the guarded storeSpatialDistribution/
-   * spatialDistribution calls see a spurious jump in x (#16099). While the
-   * operator has not started yet its event list is empty and the returned value
-   * does not depend on posX anyway. */
+   * spatialDistribution calls see a spurious jump in x (#16099). */
   if (spatialDistribution->startPosXSet) {
     posX = posX - spatialDistribution->startPosX;
+  } else {
+    /* Not started: its zero point will be the x of its first call, so report the
+     * value it will have then (x = 0 in the operator's own coordinate). Using the
+     * x the inactive branch is not reading would let activating the branch flip
+     * the crossing, reporting an event for a discontinuity that has not moved. */
+    posX = 0.0;
   }
 
   if (doubleEndedListLen(storedEventsList) == 0) {
