@@ -196,6 +196,7 @@ clean-qtclients:
 	$(MAKE) -C OMNotebook/OMNotebook/OMNotebookGUI -f Makefile.omdev.mingw OMBUILDDIR=$(OMBUILDDIR) clean
 	$(MAKE) -C OMShell/OMShell/OMShellGUI -f Makefile.omdev.mingw OMBUILDDIR=$(OMBUILDDIR) clean
 	$(MAKE) -C OMOptim -f Makefile.omdev.mingw OMBUILDDIR=$(OMBUILDDIR) clean
+	$(MAKE) -C OMSens_Qt -f Makefile.omdev.mingw OMBUILDDIR=$(OMBUILDDIR) clean
 
 simulationruntimecmsvc:
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) simulationruntimecmsvc
