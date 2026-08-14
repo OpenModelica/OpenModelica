@@ -765,7 +765,7 @@ mod tests {
         fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
             Err("unused")
         }
-        fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+        fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
             None
         }
     }

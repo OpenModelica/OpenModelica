@@ -1033,10 +1033,10 @@ impl sim_driver::SimEngine for WasmerEngine {
             wt(self.instance.exports.get_typed_function(&self.store, "simulate"))?;
         wt(f.call(&mut self.store, sim_data, start, stop, n_steps))
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
         crate::host::take_pending_warnings()
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
@@ -1185,10 +1185,10 @@ impl sim_driver::SimEngine for InWasmSession {
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
         Err("CodegenWasmJit: call_simulate on in-wasm session (unreachable)")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
         crate::host::take_pending_warnings()
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {

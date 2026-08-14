@@ -134,6 +134,7 @@ import TypesDump;
 import Util;
 import ValuesUtil;
 import VisualXML;
+import FindZeroCrossings;
 import ZeroCrossings;
 import ReduceDAE;
 import Settings;
@@ -799,7 +800,7 @@ algorithm
       stateSets                   = stateSets,
       constraints                 = constraints,
       classAttributes             = classAttributes,
-      zeroCrossings               = ZeroCrossings.updateIndices(zeroCrossings),
+      zeroCrossings               = FindZeroCrossings.setOperatorZeroCrossingIndices(ZeroCrossings.updateIndices(zeroCrossings)),
       relations                   = ZeroCrossings.updateIndices(relations),
       timeEvents                  = timeEvents,
       discreteModelVars           = discreteModelVars,

@@ -129,7 +129,7 @@ fn unknown_variable(name: &str) -> &'static str {
 // driver so the emitted layout and the driver's readback cannot drift). Its
 // wasm-encoder `ValType` mapping is host-only, so it lives here as an extension
 // trait rather than an inherent method.
-pub(crate) use openmodelica_sim_meta::WTy;
+pub(crate) use openmodelica_sim_meta::{Neg, WTy};
 use openmodelica_sim_meta::clock_field;
 pub(crate) use openmodelica_wasm_jit::sig::{ExtCallSig, ExtLang, FnSig, SigTy, WTyVal};
 
@@ -260,13 +260,14 @@ fn builtin_index(name: &str) -> Option<u32> {
 /// `rt_*` indices are unaffected), just before the generated functions. The host
 /// closures live in `runtime::add_host_builtins`.
 ///
-/// `rt_assert(msg, file, sline, scol, eline, ecol, isReadOnly, cond) -> shouldTrap`
+/// `rt_assert(msg, file, sline, scol, eline, ecol, isReadOnly, cond, initial) -> shouldTrap`
 /// records the failed assertion and answers whether the generated code must trap:
 /// it need not while the driver has asserts suppressed (C's `noThrowAsserts`).
 /// `cond` is the dumped condition, or 0 for a model/runtime error, which is never
 /// suppressed; it comes last so callers that already pushed the message append.
+/// `initial` is C's `initial()` at the assert site, for the message header.
 ///
-/// `rt_assert_warning(cond, msg, file, sline, scol, eline, ecol, isReadOnly)`
+/// `rt_assert_warning(cond, msg, file, sline, scol, eline, ecol, isReadOnly, initial)`
 /// records a *non-fatal* (AssertionLevel.warning) violation — the string handles
 /// (dumped condition, message, file) plus source position — for the driver to
 /// format as a `LOG_ASSERT` warning after the step. The generated code continues
@@ -291,12 +292,12 @@ fn builtin_index(name: &str) -> Option<u32> {
 pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
     (
         "rt_assert",
-        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
         &[WTy::I32],
     ),
     (
         "rt_assert_warning",
-        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
         &[],
     ),
     ("rt_print", &[WTy::I32], &[]),
@@ -1521,7 +1522,7 @@ pub(crate) struct SimSlot {
     pub(crate) wty: WTy,
     /// Alias negation: the cref is a negated alias of the variable at `off`, so
     /// a read negates and a write is rejected (aliases are never assigned).
-    pub(crate) negate: bool,
+    pub(crate) negate: Neg,
     /// The slot holds a reference-counted heap handle (a String). A read retains;
     /// an assignment releases the previous handle before storing the new (owned)
     /// one. Scalar Real/Integer/Boolean slots are not heap.
@@ -1891,7 +1892,7 @@ impl<'a> FnCtx<'a> {
             }
             // C's `postExp`: `<var> = $START.<var>`, but not for a String, whose slot
             // holds a reference-counted handle.
-            if let Some(slot) = var.filter(|s| !s.negate && !s.heap) {
+            if let Some(slot) = var.filter(|s| s.negate == Neg::None && !s.heap) {
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::LocalGet(raw));
                 match slot.wty {
@@ -3909,6 +3910,7 @@ fn emit_assert(
         ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
         ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
         ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
+        emit_initial_flag(ctx);
         ctx.emit(we::Instruction::Call(env_extra_index("rt_assert_warning")?));
         ctx.emit(we::Instruction::End);
         return Ok(());
@@ -3929,6 +3931,7 @@ fn emit_assert(
     } else {
         emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition, for the report
     }
+    emit_initial_flag(ctx);
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     // Trap unless the driver took it (suppressed during the event search).
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
@@ -3960,10 +3963,22 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
         ctx.emit(we::Instruction::I32Const(0)); // line/col start+end, isReadOnly
     }
     ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
+    emit_initial_flag(ctx);
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     ctx.emit(we::Instruction::Drop);
     ctx.emit(we::Instruction::Unreachable);
     Ok(())
+}
+
+/// 0 outside a simulation: C's `FUNCTION_CONTEXT` arm prints no header at all.
+fn emit_initial_flag(ctx: &mut FnCtx) {
+    match ctx.sim.as_ref().map(|s| (s.data_local, s.initial_off)) {
+        Some((data, off)) => {
+            ctx.emit(we::Instruction::LocalGet(data));
+            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+        }
+        None => ctx.emit(we::Instruction::I32Const(0)),
+    }
 }
 
 /// The dumped source form of `e`, for embedding in an assertion message.
@@ -5485,17 +5500,20 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
     match slot.wty {
         WTy::F64 => {
             ctx.emit(we::Instruction::F64Load(mem_arg(slot.off, 3)));
-            if slot.negate {
+            if slot.negate != Neg::None {
                 ctx.emit(we::Instruction::F64Neg);
             }
         }
         WTy::I32 => {
             ctx.emit(we::Instruction::I32Load(mem_arg(slot.off, 2)));
-            if slot.negate {
-                // Integer negate; a Boolean negated alias uses `!` but is stored
-                // as 0/1 — handled when Boolean aliases are added.
-                ctx.emit(we::Instruction::I32Const(0));
-                ctx.emit(we::Instruction::I32Sub);
+            match slot.negate {
+                Neg::None => {}
+                Neg::Arith => {
+                    ctx.emit(we::Instruction::I32Const(0));
+                    ctx.emit(we::Instruction::I32Sub);
+                }
+                // A Boolean is stored as 0/1, so `!v` is `v == 0`.
+                Neg::Not => ctx.emit(we::Instruction::I32Eqz),
             }
         }
     }
@@ -5631,7 +5649,7 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
             return Err("CodegenWasmJit: simulation assignment to unknown variable")
         }
     };
-    if slot.negate {
+    if slot.negate != Neg::None {
         return Err("CodegenWasmJit: assignment to negated alias");
     }
     let data = ctx.sim()?.data_local;
@@ -5696,7 +5714,7 @@ pub(crate) fn sim_const_store(
         }
     }
     let Some(slot) = sim.vars.get(&sim_cref_key(cref)?) else { return Ok(None) };
-    if slot.negate || slot.heap {
+    if slot.negate != Neg::None || slot.heap {
         return Ok(None);
     }
     let bytes = match (const_num(exp), slot.wty) {
@@ -8023,6 +8041,7 @@ fn emit_runtime_error(ctx: &mut FnCtx, msg: &str) -> Result<()> {
         ctx.emit(we::Instruction::I32Const(0)); // file handle (null) + zeroed line/col
     }
     ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
+    emit_initial_flag(ctx);
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     ctx.emit(we::Instruction::Drop);
     ctx.emit(we::Instruction::Unreachable);

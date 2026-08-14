@@ -26,6 +26,8 @@ pub enum Solver {
     RungeKutta,
     SymSolver,
     SymSolverSsc,
+    /// C's deprecated experimental QSS1 (`perform_qss_simulation.c.inc`).
+    Qss,
     /// `optimize()`'s collocation solver; only selectable where Ipopt is linked.
     Optimization,
 }
@@ -304,6 +306,10 @@ pub struct Capabilities {
     pub variable_filter: bool,
     /// Ipopt is linked, so `method="optimization"` / `-s=optimization` can run.
     pub optimization: bool,
+    /// This runtime runs a whole simulation of its own, so `-s=qss` — which has no
+    /// output grid and no stepping interface — can drive it. C throws "Unhandled
+    /// case in solver_main_step" where it cannot.
+    pub qss: bool,
 }
 
 /// Reject flag values this runtime cannot honour.
@@ -329,6 +335,7 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
         Some(Solver::Ida) if !cap.ida => "ida",
         Some(Solver::Cvode) if !cap.cvode => "cvode",
         Some(Solver::Optimization) if !cap.optimization => "optimization",
+        Some(Solver::Qss) if !cap.qss => "qss",
         _ => return Ok(()),
     };
     let have: Vec<String> = supported(cap)
@@ -884,6 +891,7 @@ enum Offer {
     WithIda,
     WithCvode,
     WithIpopt,
+    WithQss,
     /// `default`, an alias of a listed value, or one this runtime substitutes for.
     Never,
 }
@@ -896,6 +904,7 @@ impl Offer {
             Offer::WithIda => cap.ida,
             Offer::WithCvode => cap.cvode,
             Offer::WithIpopt => cap.optimization,
+            Offer::WithQss => cap.qss,
             Offer::Never => false,
         }
     }
@@ -914,6 +923,7 @@ const SOLVERS: &[Value<Solver>] = &[
     ("optimization", Solver::Optimization, Offer::WithIpopt),
     ("symSolver", Solver::SymSolver, Offer::Never),
     ("symSolverSsc", Solver::SymSolverSsc, Offer::Never),
+    ("qss", Solver::Qss, Offer::WithQss),
 ];
 
 /// `-nls`. Without the archives `kinsol` runs the runtime's own sparse Newton.
@@ -1063,10 +1073,24 @@ mod tests {
         core::iter::once("model".to_string()).chain(s.iter().map(|x| x.to_string())).collect()
     }
 
-    const NOTHING: Capabilities =
-        Capabilities { klu: false, ida: false, cvode: false, alarm: false, variable_filter: false, optimization: false };
-    const EVERYTHING: Capabilities =
-        Capabilities { klu: true, ida: true, cvode: true, alarm: true, variable_filter: true, optimization: true };
+    const NOTHING: Capabilities = Capabilities {
+        klu: false,
+        ida: false,
+        cvode: false,
+        alarm: false,
+        variable_filter: false,
+        optimization: false,
+        qss: false,
+    };
+    const EVERYTHING: Capabilities = Capabilities {
+        klu: true,
+        ida: true,
+        cvode: true,
+        alarm: true,
+        variable_filter: true,
+        optimization: true,
+        qss: true,
+    };
 
     #[test]
     fn defaults_are_all_unset() {

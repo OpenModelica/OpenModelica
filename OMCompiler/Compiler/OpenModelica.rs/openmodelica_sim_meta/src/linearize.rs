@@ -43,11 +43,11 @@ fn jac_off(lin: &LinInfo, layout: &crate::Layout, k: usize) -> u32 {
 
 fn read_lin_var(e: &dyn SimEngine, sim_data: u32, v: &LinVar) -> Result<f64> {
     let raw = read_f64(e, sim_data + v.off)?;
-    Ok(if v.negate { -raw } else { raw })
+    Ok(v.negate.apply_f64(raw))
 }
 
 fn write_lin_var(e: &mut dyn SimEngine, sim_data: u32, v: &LinVar, value: f64) -> Result<()> {
-    write_f64(e, sim_data + v.off, if v.negate { -value } else { value })
+    write_f64(e, sim_data + v.off, v.negate.apply_f64(value))
 }
 
 /// C's `functionODE_residual`.

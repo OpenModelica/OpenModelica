@@ -74,7 +74,7 @@ use crate::CodegenWasmJitFunctions::{
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{
     var_filter, BaseClockMeta, FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind,
-    MetaVar as ResultVar, SimMeta, StateSetInfo, SubClockMeta,
+    MetaVar as ResultVar, Neg, SimMeta, StateSetInfo, SubClockMeta,
 };
 
 // Engine selected at compile time; same module interface across all three
@@ -220,8 +220,7 @@ fn write_output_vars(model: &SimModel, run: &sim_driver::RunResult, names: &[Str
             let hit = v.name == *name;
             match &v.kind {
                 ResultKind::Column { col, negate } if hit => {
-                    let raw = run.rows[last + *col as usize];
-                    let raw = if *negate { -raw } else { raw };
+                    let raw = negate.apply_f64(run.rows[last + *col as usize]);
                     if *col < n_real_cols {
                         out.push_str(&format!(",{name}={}", g20(raw)));
                     } else {
@@ -232,7 +231,7 @@ fn write_output_vars(model: &SimModel, run: &sim_driver::RunResult, names: &[Str
                     let raw = run.params.get(param_idx).copied().unwrap_or(0.0);
                     param_idx += 1;
                     if hit {
-                        let raw = if *negate { -raw } else { raw };
+                        let raw = negate.apply_f64(raw);
                         match wty {
                             WTy::F64 => out.push_str(&format!(",{name}={}", g20(raw))),
                             _ => out.push_str(&format!(",{name}={}", raw as i64)),
@@ -254,13 +253,8 @@ fn write_output_vars(model: &SimModel, run: &sim_driver::RunResult, names: &[Str
 fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult, keep: &[bool]) {
     let n_reals = run.n_reals as usize;
     let n_rows = if n_reals == 0 { 0 } else { run.rows.len() / n_reals };
-    let column = |col: usize, negate: bool| -> Vec<f64> {
-        (0..n_rows)
-            .map(|r| {
-                let v = run.rows[r * n_reals + col];
-                if negate { -v } else { v }
-            })
-            .collect()
+    let column = |col: usize, negate: Neg| -> Vec<f64> {
+        (0..n_rows).map(|r| negate.apply_f64(run.rows[r * n_reals + col])).collect()
     };
     let is_const_col = |vals: &[f64]| vals.iter().all(|&v| v == vals.first().copied().unwrap_or(0.0));
 
@@ -284,7 +278,7 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult, keep: &[bool]
             series_keep.push(keep);
         }
         match &v.kind {
-            ResultKind::Time => time = column(0, false),
+            ResultKind::Time => time = column(0, Neg::None),
             ResultKind::Column { col, negate } => {
                 let values = column(*col as usize, *negate);
                 let constant = is_const_col(&values);
@@ -295,7 +289,7 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult, keep: &[bool]
                 let raw = run.params.get(param_idx).copied().unwrap_or(0.0);
                 param_idx += 1;
                 param_value_by_off.entry(*off).or_insert(raw);
-                let value = if *negate { -raw } else { raw };
+                let value = negate.apply_f64(raw);
                 let alias = !seen_param_offs.insert(*off);
                 series.push(SimSeries {
                     name: v.name.clone(),
@@ -640,6 +634,8 @@ const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     variable_filter: true,
     // `optimize()`'s solver: the host-driven driver's Ipopt.
     optimization: openmodelica_sim_meta::optimization::AVAILABLE,
+    // A `simulate()` run drives the whole trajectory, which is all QSS can do.
+    qss: true,
 };
 
 /// The solver values a caller may offer for this build, so a menu built from it
@@ -662,6 +658,8 @@ fn fmu_capabilities() -> simflags::Capabilities {
         variable_filter: false,
         // An FMU has no notion of an optimization problem.
         optimization: false,
+        // A Co-Simulation FMU steps to communication points; QSS cannot be stepped.
+        qss: false,
     }
 }
 
@@ -2051,7 +2049,7 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
         vr: time_vr,
         off: TIME_OFF,
         wty: WTy::F64,
-        negate: false,
+        negate: Neg::None,
         start_off: 0,
         is_string: false,
         der_off: 0,
@@ -2061,7 +2059,7 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
             vr: time_vr + 1 + k,
             off: layout.zc_off + k * 8,
             wty: WTy::F64,
-            negate: false,
+            negate: Neg::None,
             start_off: 0,
             is_string: false,
             der_off: 0,
@@ -2632,7 +2630,7 @@ pub(crate) fn const_value(exp: &Option<Arc<DAE::Exp>>) -> Option<f64> {
 /// file: a time-variant real reads a result-buffer column; a real/integer/
 /// boolean parameter reads `data_1`. Integer/boolean *algebraic* variables (not
 /// captured per row) and string variables have no numeric result column.
-fn kind_from_slot(off: u32, wty: WTy, negate: bool, heap: bool, layout: &SimLayout) -> Option<ResultKind> {
+fn kind_from_slot(off: u32, wty: WTy, negate: Neg, heap: bool, layout: &SimLayout) -> Option<ResultKind> {
     if heap {
         return None; // strings are not stored as numeric result data
     }
@@ -2848,7 +2846,7 @@ fn push_sensitivity_vars(
         result_vars.push(ResultVar {
             name: cref_display(&sv.name)?,
             comment: sv.comment.to_string(),
-            kind: ResultKind::Column { col: layout.sens_col0() + i as u32, negate: false },
+            kind: ResultKind::Column { col: layout.sens_col0() + i as u32, negate: Neg::None },
             filter: filter_bits(sv),
         });
     }
@@ -2934,7 +2932,7 @@ fn build_var_map(
          sv: &SimCodeVar::SimVar, off: u32, wty: WTy, heap: bool, raw_name: String| -> Result<()> {
             insert_var(map, sv, off, wty, heap)?;
             if let Some(name) = result_name(&raw_name) {
-                if let Some(kind) = kind_from_slot(off, wty, false, heap, layout) {
+                if let Some(kind) = kind_from_slot(off, wty, Neg::None, heap, layout) {
                     result_vars.push(ResultVar {
                         name,
                         comment: sv.comment.to_string(),
@@ -3067,7 +3065,12 @@ fn build_var_map(
     // and `$START` of an alias read the aliased value, AND emit the alias as a
     // result signal pointing at the target's data column / parameter (with sign)
     // — the C runtime's `dataInfo` aliasing, so the data is stored once.
-    for av in lst(&vars.aliasVars).chain(lst(&vars.intAliasVars)).chain(lst(&vars.boolAliasVars)) {
+    // A Boolean negation is logical, any other arithmetic (C's `crefToCStr`).
+    let alias_lists = lst(&vars.aliasVars)
+        .map(|v| (v, false))
+        .chain(lst(&vars.intAliasVars).map(|v| (v, false)))
+        .chain(lst(&vars.boolAliasVars).map(|v| (v, true)));
+    for (av, is_bool) in alias_lists {
         let (target, negate) = match &av.aliasvar {
             SimCodeVar::AliasVariable::ALIAS { varName } => (varName.clone(), false),
             SimCodeVar::AliasVariable::NEGATEDALIAS { varName } => (varName.clone(), true),
@@ -3078,7 +3081,8 @@ fn build_var_map(
             // Target has no slot: it may be a compile-time constant.
             if let Some(&cval) = const_of.get(&tkey) {
                 if let Some(name) = result_name(&cref_display(&av.name)?) {
-                    let value = if negate { -cval } else { cval };
+                    let value =
+                        if negate { Neg::None.toggle(is_bool).apply_f64(cval) } else { cval };
                     result_vars.push(ResultVar {
                         name,
                         comment: av.comment.to_string(),
@@ -3092,7 +3096,7 @@ fn build_var_map(
         let slot = SimSlot {
             off: tslot.off,
             wty: tslot.wty,
-            negate: tslot.negate ^ negate,
+            negate: if negate { tslot.negate.toggle(is_bool) } else { tslot.negate },
             heap: tslot.heap,
         };
         Arc::make_mut(&mut map.vars).insert(sim_cref_key(&av.name)?, slot);
@@ -3136,7 +3140,7 @@ fn build_var_map(
 /// under its array base name so a whole-array reference can later be marshalled.
 fn insert_var(map: &mut SimVarMap, sv: &SimCodeVar::SimVar, off: u32, wty: WTy, heap: bool) -> Result<()> {
     let key = sim_cref_key(&sv.name)?;
-    Arc::make_mut(&mut map.vars).insert(key.clone(), SimSlot { off, wty, negate: false, heap });
+    Arc::make_mut(&mut map.vars).insert(key.clone(), SimSlot { off, wty, negate: Neg::None, heap });
     Arc::make_mut(&mut map.starts).insert(key, sv.initialValue.clone());
     if let Some((base, subs)) = array_element_of(&sv.name)? {
         map.array_acc.entry(base).or_default().push((subs, off, wty));
@@ -6201,7 +6205,7 @@ fn build_state_set_infos(
         for sv in lst(&set.jacobianMatrix.seedVars) {
             let off = cursor;
             cursor += 8;
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
+            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
             seed_offs.push(off);
         }
         // Result slots (row order) — register the column result var crefs.
@@ -6209,7 +6213,7 @@ fn build_state_set_infos(
         for sv in lst(&col.columnVars) {
             let off = cursor;
             cursor += 8;
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
+            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
             result_offs.push(off);
         }
 
@@ -6832,7 +6836,7 @@ fn build_nls_jac_infos(
         for sv in lst(&jm.seedVars) {
             let off = cursor;
             cursor += 8;
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
+            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
             listed_offs.push(off);
         }
         // Every column variable (results + intermediates) needs a slot so the
@@ -6847,7 +6851,7 @@ fn build_nls_jac_infos(
         for sv in &jac_column_vars(jm) {
             let off = cursor;
             cursor += 8;
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: false, heap: false });
+            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
             if matches!(sv.varKind, VarKind::JAC_VAR) {
                 let row = jac_result_row(sv)
                     .filter(|&r| r < n)
@@ -6968,7 +6972,7 @@ fn build_linz_jac_infos(
         let mut listed = Vec::new();
         for sv in lst(&jm.seedVars) {
             Arc::make_mut(&mut var_map.vars)
-                .insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: false, heap: false });
+                .insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false });
             listed.push(cursor);
             cursor += 8;
         }
@@ -6976,7 +6980,7 @@ fn build_linz_jac_infos(
         let mut result_offs = vec![None; rows];
         for sv in &jac_column_vars(jm) {
             Arc::make_mut(&mut var_map.vars)
-                .insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: false, heap: false });
+                .insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false });
             if matches!(sv.varKind, VarKind::JAC_VAR)
                 && let Some(row) = jac_result_row(sv).filter(|&r| r < rows)
             {
@@ -7204,7 +7208,7 @@ fn build_lin_jac_infos(
     for sys in lin_jac_systems(sim_code) {
         let jm = sys.jacobianMatrix.as_ref().unwrap();
         for sv in lst(&jm.seedVars).chain(jac_column_vars(jm).iter()) {
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: false, heap: false });
+            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false });
             cursor += 8;
         }
     }
@@ -7883,7 +7887,7 @@ fn write_csv(
     let bool_col0 = int_col0 + layout.n_int_alg();
     let sens_col0 = layout.sens_col0();
     // Integers and booleans are captured as f64 but printed as integers.
-    let cols: Vec<(&str, u32, bool, bool)> = model
+    let cols: Vec<(&str, u32, Neg, bool)> = model
         .result_vars
         .iter()
         .zip(keep)
@@ -7903,8 +7907,7 @@ fn write_csv(
     for row in rows.chunks_exact(n_reals.max(1)) {
         out.push_str(&sim_driver::format_g(row[0], 16));
         for &(_, col, negate, is_int) in &cols {
-            let v = row.get(col as usize).copied().unwrap_or(0.0);
-            let v = if negate { -v } else { v };
+            let v = negate.apply_f64(row.get(col as usize).copied().unwrap_or(0.0));
             out.push(',');
             if is_int {
                 out.push_str(&format!("{}", v as i64));
@@ -7927,7 +7930,7 @@ fn write_mat4(
     params: &[f64],
     keep: &[bool],
 ) -> Result<()> {
-    use openmodelica_mat_writer::{MatKind, MatVar};
+    use openmodelica_mat_writer::MatVar;
     // `params` is positional over the unfiltered `Param` signals.
     let mut kept_params: Vec<f64> = Vec::new();
     let mut param_idx = 0usize;
@@ -7941,16 +7944,7 @@ fn write_mat4(
         if !keep {
             continue;
         }
-        vars.push(MatVar {
-            name: &v.name,
-            comment: &v.comment,
-            kind: match &v.kind {
-                ResultKind::Time => MatKind::Time,
-                ResultKind::Column { col, negate } => MatKind::Column { col: *col, negate: *negate },
-                ResultKind::Param { negate, .. } => MatKind::Param { negate: *negate },
-                ResultKind::Const { value } => MatKind::Const { value: *value },
-            },
-        });
+        vars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
     }
     let bytes =
         openmodelica_mat_writer::write_mat4(&vars, meta.start_time, meta.stop_time, rows, n_reals, &kept_params);

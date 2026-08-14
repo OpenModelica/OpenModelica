@@ -24,7 +24,7 @@
 //! - `wasm-merge runtime.wasm rt model.wasm model` connects both directions,
 //!   leaving only the WASI imports (satisfied by `wasmtime`/the worker shim).
 
-use openmodelica_mat_writer::{MatKind, MatVar};
+use openmodelica_mat_writer::MatVar;
 use openmodelica_sim_meta::driver::{self, SimEngine};
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{self as meta, MetaKind, SimMeta};
@@ -149,7 +149,7 @@ impl SimEngine for StandaloneEngine {
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
         crate::take_reinit_notes()
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         // No host to record it; a failed model assert traps (see `rt_assert`).
         None
     }
@@ -220,16 +220,7 @@ fn run() {
         if !keep {
             continue;
         }
-        matvars.push(MatVar {
-            name: &v.name,
-            comment: &v.comment,
-            kind: match &v.kind {
-                MetaKind::Time => MatKind::Time,
-                MetaKind::Column { col, negate } => MatKind::Column { col: *col, negate: *negate },
-                MetaKind::Param { negate, .. } => MatKind::Param { negate: *negate },
-                MetaKind::Const { value } => MatKind::Const { value: *value },
-            },
-        });
+        matvars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
     }
 
     let bytes = openmodelica_mat_writer::write_mat4(
@@ -294,7 +285,7 @@ pub extern "C" fn _start() {
 /// assertion, so print the message (`msg` is an `rt` String handle:
 /// `[refcount:u32][len:u32][utf8…]`) and trap, which aborts the command.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_assert(msg: i32, _file: i32, _sline: i32, _scol: i32, _eline: i32, _ecol: i32, _read_only: i32, _cond: i32) -> i32 {
+pub extern "C" fn rt_assert(msg: i32, _file: i32, _sline: i32, _scol: i32, _eline: i32, _ecol: i32, _read_only: i32, _cond: i32, _initial: i32) -> i32 {
     if msg != 0 {
         let h = msg as u32;
         let len = unsafe { crate::load_u32(h + 4) } as usize;
@@ -341,6 +332,7 @@ pub extern "C" fn rt_assert_warning(
     _eline: i32,
     _ecol: i32,
     _read_only: i32,
+    _initial: i32,
 ) {
     if msg != 0 {
         let h = msg as u32;

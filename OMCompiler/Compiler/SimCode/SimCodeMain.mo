@@ -93,6 +93,7 @@ import FGraph;
 import Flags;
 import FlagsUtil;
 import FlatModel = NFFlatModel;
+import FindZeroCrossings;
 import NFFunction;
 import NFFlatten.{FunctionTree, FunctionTreeImpl};
 import NFApi;
@@ -1365,6 +1366,8 @@ protected
   String flatString = "", NFFlatString = "";
 
 algorithm
+  List.map_0({ClockIndexes.RT_CLOCK_FRONTEND,ClockIndexes.RT_CLOCK_BACKEND,
+              ClockIndexes.RT_CLOCK_SIMCODE,ClockIndexes.RT_CLOCK_TEMPLATES},System.realtimeClear);
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
 
   outLibs := {};
@@ -2099,7 +2102,7 @@ algorithm
       stateSets                   = {},
       constraints                 = {},
       classAttributes             = {},
-      zeroCrossings               = ZeroCrossings.updateIndices(zeroCrossings),
+      zeroCrossings               = FindZeroCrossings.setOperatorZeroCrossingIndices(ZeroCrossings.updateIndices(zeroCrossings)),
       relations                   = ZeroCrossings.updateIndices(relations),
       timeEvents                  = timeEvents,
       discreteModelVars           = discreteModelVars,
