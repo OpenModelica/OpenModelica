@@ -73,6 +73,10 @@ set(OMEDIT_TEST_STRINGHANDLER_SOURCES StringHandler/StringHandlerTest.cpp
                                        StringHandler/StringHandlerTest.h)
 add_omedit_test(StringHandler "${OMEDIT_TEST_STRINGHANDLER_SOURCES}")
 
+set(OMEDIT_TEST_TABBEDVIEW_SOURCES TabbedView/TabbedViewTest.cpp
+                                   TabbedView/TabbedViewTest.h)
+add_omedit_test(TabbedView "${OMEDIT_TEST_TABBEDVIEW_SOURCES}")
+
 set(OMEDIT_TEST_TRANSFORMATION_SOURCES Transformation/TransformationTest.cpp
                                        Transformation/TransformationTest.h)
 add_omedit_test(Transformation "${OMEDIT_TEST_TRANSFORMATION_SOURCES}")
