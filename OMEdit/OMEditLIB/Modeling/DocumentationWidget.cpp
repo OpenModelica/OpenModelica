@@ -1400,6 +1400,9 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
    */
   connect(page(), SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
   connect(page(), SIGNAL(linkHovered(QString)), SLOT(processLinkHover(QString)));
+#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
+  connect(page(), SIGNAL(newWindowRequested(QWebEngineNewWindowRequest&)), SLOT(newWindowRequested(QWebEngineNewWindowRequest&)));
+#endif
   createActions();
   connect(this, SIGNAL(loadFinished(bool)), SLOT(pageLoaded(bool)));
 }
@@ -1549,21 +1552,21 @@ void DocumentationViewer::pageLoaded(bool ok)
   }
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
 /*!
- * \brief DocumentationViewer::createWindow
- * \param type
- * \return
+ * \brief DocumentationViewer::newWindowRequested
+ * Slot activated when the newWindowRequested signal is raised.\n
+ * target="_blank" links and window.open() requests arrive here with the requested URL.
+ * Route the URL through processLinkClick and do not create a new window (do not call
+ * openIn()), so the current documentation remains untouched.
+ * See #16234
+ * \param request
  */
-QWebEngineView* DocumentationViewer::createWindow(QWebEnginePage::WebWindowType type)
+void DocumentationViewer::newWindowRequested(QWebEngineNewWindowRequest &request)
 {
-  Q_UNUSED(type);
-  QWebEngineView *webView = new QWebEngineView;
-  QWebEnginePage *newWeb = new QWebEnginePage(webView);
-  webView->setAttribute(Qt::WA_DeleteOnClose, true);
-  webView->setPage(newWeb);
-  webView->show();
-  return webView;
+  processLinkClick(request.requestedUrl());
 }
+#endif
 
 /*!
  * \brief DocumentationViewer::keyPressEvent
