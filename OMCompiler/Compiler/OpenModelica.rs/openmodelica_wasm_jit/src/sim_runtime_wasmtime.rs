@@ -24,6 +24,7 @@ use std::sync::OnceLock;
 use std::time::Instant;
 
 use crate::sim_driver;
+use crate::dylink_engine::{NlsHooks, zero_results};
 use crate::model::SimModel;
 use openmodelica_sim_meta::SimMeta;
 use crate::host::add_host_builtins;
@@ -116,6 +117,9 @@ fn plain_engine() -> &'static wasmtime::Engine {
 fn build_engine_cfg(extra: impl FnOnce(&mut wasmtime::Config)) -> wasmtime::Engine {
     let mut cfg = wasmtime::Config::new();
     crate::tune_memory(&mut cfg);
+    // A model with external "C" carries the `model_error` tag its `ext` call sites
+    // catch, so the module does not validate without this.
+    cfg.wasm_exceptions(true);
     // Compile module functions across threads (off by default with
     // default-features=false) — ~4x faster module compilation here.
     cfg.parallel_compilation(!crate::model::single_threaded());
@@ -401,11 +405,11 @@ fn define_external_imports(
     memory: wasmtime::Memory,
     rt: &crate::dylink_engine::ExtRt,
     libs: &crate::dylink_engine::Loaded,
-    nls: NlsHooks,
 ) -> Result<()> {
     let rt_str_new = rt.str_new.clone();
     let rt_str_data = rt.str_data.clone();
     let rt_release = rt.release.clone();
+    let nls = rt.nls.clone();
     registry_reset();
     sim_driver::clear_runtime_error();
     openmodelica_util::dynload::install_modelica_message_interception(
@@ -474,42 +478,6 @@ fn define_print_import(linker: &mut wasmtime::Linker<WasiCtx>, memory: wasmtime:
 /// nonlinear solver recovers from leaves no message behind.
 const EXT_CHECKPOINT: arcstr::ArcStr = arcstr::literal!("wasm-jit external \"C\"");
 
-/// The runtime's recoverable-model-error state, reached from the host so an
-/// external "C" `ModelicaError` inside a residual backs the trial off.
-#[derive(Clone)]
-struct NlsHooks {
-    recovering: wasmtime::TypedFunc<(), i32>,
-    note: wasmtime::TypedFunc<(), ()>,
-}
-
-impl NlsHooks {
-    fn recovering(&self, caller: &mut wasmtime::Caller<'_, WasiCtx>) -> Result<bool> {
-        Ok(wt(self.recovering.call(&mut *caller, ()))? != 0)
-    }
-    fn note(&self, caller: &mut wasmtime::Caller<'_, WasiCtx>) -> Result<()> {
-        wt(self.note.call(&mut *caller, ()))
-    }
-}
-
-/// Zeroed results (an empty String for `char*`) after a recovered `ModelicaError`.
-/// The solver discards the residual they feed, but they must be valid handles.
-fn zero_results(
-    sig: &crate::sig::ExtCallSig,
-    caller: &mut wasmtime::Caller<'_, WasiCtx>,
-    rt_str_new: &wasmtime::TypedFunc<u32, u32>,
-    rets: &mut [wasmtime::Val],
-) -> Result<()> {
-    use crate::sig::SigTy;
-    for (slot, ty) in rets.iter_mut().zip(sig.wasm_results()) {
-        *slot = match ty {
-            SigTy::Real => wasmtime::Val::F64(0.0f64.to_bits()),
-            SigTy::Str => wasmtime::Val::I32(wt(rt_str_new.call(&mut *caller, 0))? as i32),
-            _ => wasmtime::Val::I32(0),
-        };
-    }
-    Ok(())
-}
-
 /// Call native external `addr` through libffi, marshalling by the C-call
 /// [`ExtCallSig`]. Input args (in `extArgs` order) come from the wasm parameters:
 /// scalars (Real→f64, Integer/Boolean→i64) by value; `Str` as a NUL-terminated
@@ -533,7 +501,7 @@ unsafe fn call_external(
     rt_str_new: &wasmtime::TypedFunc<u32, u32>,
     rt_str_data: &wasmtime::TypedFunc<u32, u32>,
     rt_release: &wasmtime::TypedFunc<u32, ()>,
-    nls: &NlsHooks,
+    nls: &Option<NlsHooks>,
     args: &[wasmtime::Val],
     rets: &mut [wasmtime::Val],
 ) -> Result<()> {
@@ -726,10 +694,12 @@ unsafe fn call_external(
         // A `ModelicaError` recorded its message in the Error buffer and unwound
         // here as a panic. C's `throwStreamPrint` is caught by a nonlinear solver,
         // so back the trial off first, dropping the message it will not fail on.
-        if nls.recovering(caller)? {
+        if let Some(nls) = nls
+            && wt(nls.recovering(caller))?
+        {
             openmodelica_error::ErrorExt::rollBack(EXT_CHECKPOINT);
-            nls.note(caller)?;
-            return zero_results(sig, caller, rt_str_new, rets);
+            wt(nls.note(caller))?;
+            return wt(zero_results(sig, caller, rt_str_new, rets));
         }
         // The run reports itself through its log alone, as C's separate executable
         // does, so the buffer the message also went to is rolled back.
@@ -959,12 +929,20 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         alloc: wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?,
         free: wts(rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free"))?,
         record_new: wts(rt_inst.get_typed_func::<(u32, u32), u32>(&mut store, "rt_record_new"))?,
+        nls: Some(nls),
     };
     let ext_libs = crate::dylink_engine::load_ext_libraries(&mut store, engine, rt_inst, memory, model, &ext_rt)?;
-    define_external_imports(&mut linker, &mut store, model, memory, &ext_rt, &ext_libs, nls)?;
+    crate::host::set_shadow_stack(ext_libs.shadow_stack());
+    wts(crate::host::set_model_error_tag(&mut store, None))?;
+    define_external_imports(&mut linker, &mut store, model, memory, &ext_rt, &ext_libs)?;
     define_print_import(&mut linker, memory)?;
     crate::host::define_uri_import(&mut linker, memory, ext_rt.str_new.clone(), ext_rt.str_data.clone())?;
     let instance = wts(linker.instantiate(&mut store, &model_module))?;
+    // What a library's `ModelicaError` throws, now that the module defining the
+    // tag exists. Only a model with external "C" carries one.
+    if let Some(wasmtime::Extern::Tag(tag)) = instance.get_export(&mut store, "model_error") {
+        wts(crate::host::set_model_error_tag(&mut store, Some(tag)))?;
+    }
     let inst_time = t_inst.elapsed();
     let rt_alloc = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?;
     // `-nls`/`-nlsLS`/`-ls`/`-lss`: the host-driven runtime links no flag store of

@@ -115,6 +115,11 @@ The nalgebra LAPACK fallback can also be exercised on a native Linux build with
 `openmodelica_util`/the cdylib with `--features lapack-nalgebra` (or run the
 testsuite against such a build) to validate it against system LAPACK.
 
+`-DRUST_OMC_ENGINE_WASMER=ON` runs the wasm-jit simulations on wasmer instead of
+wasmtime — the *web* target's host code (`sim_runtime_wasmer.rs`, external "C"
+through the ModelicaExternalC side module rather than a dynamic library), which
+is otherwise only reachable from a browser.
+
 ### Cross-compiling the C/C++ runtime too (`.cmake/xwin-toolchain.cmake`)
 
 The command above cross-compiles only the Rust omc; the C/C++ parts (3rdParty +

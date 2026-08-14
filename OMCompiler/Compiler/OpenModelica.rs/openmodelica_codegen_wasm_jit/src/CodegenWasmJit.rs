@@ -3896,6 +3896,14 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         );
         ext_type.push(ti);
     }
+    // `om_throw_model_error`'s type, shared with the `model_error` tag: a
+    // library's `ModelicaError` throws it and the `ext` call site catches it,
+    // C's `longjmp` out of a residual. Only a model with external "C" carries a
+    // tag — a module with one needs an engine that takes the exception-handling
+    // proposal.
+    let throw_fn_type = types.len();
+    types.ty().function([], []);
+    let error_tag_type = (!ext_imports.is_empty()).then_some(throw_fn_type);
     let mut model_fn_type: Vec<u32> = Vec::with_capacity(model_fns.len());
     for f in &model_fns {
         let (_, sig) = function_signature(f)?;
@@ -3981,6 +3989,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // --- Compile bodies (collecting String literals into the module pool). ---
     let mut literals = Literals::default();
     let mut bodies: Vec<we::Function> = Vec::new();
+    // With a tag in the module, every `ext` call is lowered under a `try_table`
+    // (tag index 0: the module imports none).
+    crate::CodegenWasmJitFunctions::set_ext_error_catch(error_tag_type.map(|_| 0));
     // Model functions first, in index order; poll for cancellation between them so
     // a long emit is interruptible like the frontend/backend upstream.
     for f in &model_fns {
@@ -4420,6 +4431,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     }
 
     // --- Function section (type index per body, in body order). ---
+    crate::CodegenWasmJitFunctions::set_ext_error_catch(None);
+
     let mut functions = we::FunctionSection::new();
     for ti in &model_fn_type {
         functions.function(*ti);
@@ -4529,6 +4542,20 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     } else {
         None
     };
+    // The throw a host-free `rt_ext_error` reaches for, rustc emitting none for a
+    // wasm target. Always exported, whatever the model does: the runtime module is
+    // prebuilt and its import cannot be conditional.
+    let throw_fn = import_base + bodies.len() as u32;
+    {
+        let mut f = we::Function::new([]);
+        f.instruction(&match error_tag_type {
+            Some(_) => we::Instruction::Throw(0),
+            None => we::Instruction::Unreachable,
+        });
+        f.instruction(&we::Instruction::End);
+        functions.function(throw_fn_type);
+        bodies.push(f);
+    }
     if nls_wiring.is_some() || !thunk_indices.is_empty() {
         imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
             element_type: we::RefType::FUNCREF,
@@ -4548,6 +4575,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // --- Exports: the equation functions (for the host-driven driver) and
     // `simulate` (for the in-wasm driver). ---
     let mut exports = we::ExportSection::new();
+    if error_tag_type.is_some() {
+        // Exported for the host to throw with; caught here whoever throws, so the
+        // tag itself never crosses a module boundary.
+        exports.export("model_error", we::ExportKind::Tag, 0);
+    }
+    exports.export("om_throw_model_error", we::ExportKind::Func, throw_fn);
     exports.export("functionParameters", we::ExportKind::Func, eqfn.parameters);
     exports.export("functionInitialEquations", we::ExportKind::Func, eqfn.initial);
     exports.export("functionInitStartValues", we::ExportKind::Func, eqfn.init_start_values);
@@ -4661,6 +4694,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     module.section(&types);
     module.section(&imports);
     module.section(&functions);
+    if let Some(ti) = error_tag_type {
+        let mut tags = we::TagSection::new();
+        tags.tag(we::TagType { kind: we::TagKind::Exception, func_type_idx: ti });
+        module.section(&tags);
+    }
     // Global + Start + Element sections (in the canonical order) carry the
     // shared-table wiring (NLS callbacks and/or closure thunks) and the
     // shared-literal objects.
@@ -8012,6 +8050,7 @@ mod link_tests {
         );
         // 4: (i32,i32)->()  (functionUpdateSynchronous / functionEquationsSynchronous)
         types.ty().function([we::ValType::I32, we::ValType::I32], []);
+        types.ty().function([], []); // 5: ()->()      (om_throw_model_error)
         m.section(&types);
 
         let mut imports = we::ImportSection::new();
@@ -8051,6 +8090,7 @@ mod link_tests {
         funcs.function(3); // simulate
         funcs.function(4); // functionUpdateSynchronous
         funcs.function(4); // functionEquationsSynchronous
+        funcs.function(5); // om_throw_model_error
         m.section(&funcs);
 
         // Defined-func indices start at 1 (rt_alloc is import 0).
@@ -8072,6 +8112,7 @@ mod link_tests {
             we::ExportKind::Func,
             meta_ptr_idx + 4,
         );
+        exports.export("om_throw_model_error", we::ExportKind::Func, meta_ptr_idx + 5);
         m.section(&exports);
 
         let mut code = we::CodeSection::new();
@@ -8104,6 +8145,11 @@ mod link_tests {
         let mut sync_eqs = we::Function::new([]);
         sync_eqs.instruction(&I::End);
         code.function(&sync_eqs);
+        // om_throw_model_error(): the emitter's no-external-"C" body.
+        let mut throw = we::Function::new([]);
+        throw.instruction(&I::Unreachable);
+        throw.instruction(&I::End);
+        code.function(&throw);
         m.section(&code);
 
         m.finish()

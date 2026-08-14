@@ -37,6 +37,8 @@
 // driver / `write_mat4` / `_start` to do file I/O over WASI — so std is left
 // enabled there, and the custom panic handler (std provides one) is dropped.
 #![cfg_attr(all(not(target_os = "wasi"), not(test)), no_std)]
+// `global_asm!` on wasm32, for the two shadow-stack accessors below.
+#![feature(asm_experimental_arch)]
 
 extern crate alloc;
 
@@ -114,6 +116,29 @@ mod reinit_notes {
 #[cfg(not(feature = "host_log"))]
 pub use reinit_notes::take_reinit_notes;
 
+// `rt_ext_stack_save` / `rt_ext_stack_restore`: an external "C" call site saves
+// the shadow stack before the call and hands it back if a `ModelicaError` threw
+// out of it — the abandoned frames' epilogues never ran. `__stack_pointer` is
+// the linker's own global, which no Rust expression reaches. Same rule as
+// `rt_reinit_note`: with a host present the host binds both instead.
+#[cfg(all(target_arch = "wasm32", not(feature = "host_log")))]
+core::arch::global_asm!(
+    ".globaltype __stack_pointer, i32",
+    ".globl rt_ext_stack_save",
+    ".export_name rt_ext_stack_save, rt_ext_stack_save",
+    "rt_ext_stack_save:",
+    ".functype rt_ext_stack_save () -> (i32)",
+    "global.get __stack_pointer",
+    "end_function",
+    ".globl rt_ext_stack_restore",
+    ".export_name rt_ext_stack_restore, rt_ext_stack_restore",
+    "rt_ext_stack_restore:",
+    ".functype rt_ext_stack_restore (i32) -> ()",
+    "local.get 0",
+    "global.set __stack_pointer",
+    "end_function",
+);
+
 // `rt_uri_to_filename`: same rule as `rt_reinit_note` — a host binds its own
 // resolver (which has the class directories); a host-free module resolves it here.
 #[cfg(not(feature = "host_log"))]
@@ -135,10 +160,24 @@ mod ext_report {
         unsafe { core::ffi::CStr::from_ptr(p as *const core::ffi::c_char) }.to_str().unwrap_or("")
     }
 
-    /// C's `throwStreamPrint(NULL, …)`, then `MMC_THROW`'s end of the run.
+    // The model module's `throw`, which rustc emits for no wasm target: merged
+    // as `model` into the standalone module, resolved through `env` by the FMU's
+    // shared-everything linker. Always exported by the emitter — with an
+    // `unreachable` body when the model has no external "C" to throw for.
+    #[cfg_attr(target_os = "wasi", link(wasm_import_module = "model"))]
+    #[cfg_attr(not(target_os = "wasi"), link(wasm_import_module = "env"))]
+    unsafe extern "C" {
+        fn om_throw_model_error();
+    }
+
+    /// C's `throwStreamPrint(NULL, …)`, then `MMC_THROW` — which a nonlinear
+    /// solver catches, so a trial it will reject leaves no message behind.
     #[unsafe(no_mangle)]
     pub extern "C" fn rt_ext_error(msg: u32) {
-        driver::note_runtime_error(cstr(msg));
+        if crate::nls::rt_nls_recovering() == 0 {
+            driver::note_runtime_error(cstr(msg));
+        }
+        unsafe { om_throw_model_error() };
         crate::trap()
     }
 
@@ -159,6 +198,43 @@ mod ext_report {
 #[cfg(feature = "host_log")]
 pub fn take_reinit_notes() -> alloc::vec::Vec<(u32, f64)> {
     alloc::vec::Vec::new()
+}
+
+// `rt_ext_error` with a host present: the message lives in the side module's own
+// memory, so the host reports it, but the throw must stay in wasm (an unwind
+// through a host frame loses the exception) and reaches the model's
+// `om_throw_model_error` through the shared table.
+#[cfg(all(target_arch = "wasm32", feature = "host_log"))]
+mod ext_report_hosted {
+    use core::sync::atomic::{AtomicU32, Ordering};
+
+    #[link(wasm_import_module = "env")]
+    unsafe extern "C" {
+        fn rt_host_ext_error(msg: u32);
+    }
+
+    /// The model's thrower; 0 (wasm-lld's null slot) is unset, as in the `-d=gen`
+    /// function JIT, which instantiates no model.
+    static THROW_SLOT: AtomicU32 = AtomicU32::new(0);
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_set_ext_throw(slot: u32) {
+        THROW_SLOT.store(slot, Ordering::Relaxed);
+    }
+
+    /// C's `throwStreamPrint(NULL, …)` then `MMC_THROW`; see `ext_report`'s.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_ext_error(msg: u32) {
+        if crate::nls::rt_nls_recovering() == 0 {
+            unsafe { rt_host_ext_error(msg) };
+        }
+        let slot = THROW_SLOT.load(Ordering::Relaxed);
+        if slot != 0 {
+            let throw: extern "C" fn() = unsafe { core::mem::transmute(slot as usize) };
+            throw();
+        }
+        crate::trap()
+    }
 }
 
 // The standalone-export entry point (`_start` + the in-wasm driver), only on the

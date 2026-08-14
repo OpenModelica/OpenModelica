@@ -130,6 +130,7 @@ fn define_external_imports(
         alloc: wt(rt_inst.get_typed_func(&mut *store, "rt_alloc"))?,
         free: wt(rt_inst.get_typed_func(&mut *store, "rt_free"))?,
         record_new: wt(rt_inst.get_typed_func(&mut *store, "rt_record_new"))?,
+        nls: None,
     };
     let mut libs = Vec::with_capacity(sig.libs.len() + 1);
     let libc = openmodelica_wasi_libc::LIBC_PIC;
