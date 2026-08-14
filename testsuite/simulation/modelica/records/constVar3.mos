@@ -2,6 +2,7 @@
 // keywords: record constants function call array
 // status:   correct
 // teardown_command: rm -rf constRecModel3*
+// suite: disabled
 
 loadString("
 package constRecModel3

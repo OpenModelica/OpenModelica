@@ -44,7 +44,12 @@ set(SOURCE_FMU_COMMON_FILES_LIST "gc/memory_pool.c"
                                  "math-support/pivot.c"
                                  "simulation/arrayIndex.c"
                                  "simulation/eval_dep.c"
-                                 "simulation/jacobian_colpack.cpp"
+                                 # jacobian_colpack.cpp is deliberately not here, the same
+                                 # as in Makefile.objs SIM_OBJS_C: all of it is behind
+                                 # OMC_HAVE_COLPACK, which an FMU does not define and could
+                                 # not satisfy anyway, shipping neither ColPack's headers nor
+                                 # the library. jacobian_colpack.h stays, jacobian_util.c
+                                 # includes it unconditionally.
                                  "simulation/jacobian_util.c"
                                  "simulation/omc_simulation_util.c"
                                  "simulation/options.c"

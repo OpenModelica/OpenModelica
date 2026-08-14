@@ -349,6 +349,8 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_array_total", &[WTy::I32], &[WTy::I32]),
     ("rt_array_dim", &[WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_array_elem_ptr", &[WTy::I32, WTy::I32], &[WTy::I32]),
+    // The element area itself, for an `external "C"` array argument.
+    ("rt_array_data", &[WTy::I32], &[WTy::I32]),
     // The out-of-range arm of the inlined element-address computation.
     ("rt_elem_ptr_oob", &[], &[WTy::I32]),
     ("rt_array_release", &[WTy::I32], &[]),
@@ -2572,7 +2574,7 @@ fn emit_known_external_call(
 /// pointer's value) are left on the stack in order; their `SigTy`s are returned.
 thread_local! {
     /// When set, `external "C"` calls pass real shared-memory pointers for String/
-    /// array args (`rt_str_data`/`rt_array_elem_ptr`) instead of runtime handles —
+    /// array args (`rt_str_data`/`rt_array_data`) instead of runtime handles —
     /// for a host-free wasm FMU, where model + runtime + ModelicaExternalC share one
     /// memory so no host trampoline marshals. The interactive wasmer path leaves it
     /// off (two memories, host-marshalled).
@@ -2605,9 +2607,7 @@ fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::
             match sty {
                 SigTy::Str => ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?)),
                 SigTy::Array { .. } => {
-                    // `rt_array_elem_ptr` is 1-based; element 1 is the data start.
-                    ctx.emit(we::Instruction::I32Const(1));
-                    ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_array_data")?));
                 }
                 _ => {}
             }

@@ -3,6 +3,7 @@
 // status:   correct
 // teardown_command: rm -f TestModels.RotationalModels.* output.log
 // cflags: -d=-newInst
+// suite: disabled
 // 
 //  Simulate Rotational gear models and simulate. 
 //

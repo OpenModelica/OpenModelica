@@ -121,6 +121,40 @@ mod uri;
 #[cfg(not(feature = "host_log"))]
 pub use uri::set_resources_dir;
 
+// `rt_ext_*`: where an external "C" function's `ModelicaError`/`Message`/`Warning`
+// goes when the module carries the implementations itself
+// (`openmodelica_wasi_libc/external_c_callbacks.c`), which C's
+// `ModelicaUtilities.c` sends to the simulation log — in an FMU the FMI logger,
+// and the only way out. Same rule as `rt_reinit_note`: with a host present, the
+// host binds `env.Modelica*` instead.
+#[cfg(not(feature = "host_log"))]
+mod ext_report {
+    use openmodelica_sim_meta::{driver, omclog};
+
+    fn cstr<'a>(p: u32) -> &'a str {
+        unsafe { core::ffi::CStr::from_ptr(p as *const core::ffi::c_char) }.to_str().unwrap_or("")
+    }
+
+    /// C's `throwStreamPrint(NULL, …)`, then `MMC_THROW`'s end of the run.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_ext_error(msg: u32) {
+        driver::note_runtime_error(cstr(msg));
+        crate::trap()
+    }
+
+    /// C's `infoStreamPrint(OMC_LOG_STDOUT, 0, …)`.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_ext_message(msg: u32) {
+        omclog::info(omclog::STDOUT, false, cstr(msg).trim_end());
+    }
+
+    /// C's `warningStreamPrint(OMC_LOG_STDOUT, 0, …)`.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_ext_warning(msg: u32) {
+        omclog::warning(omclog::STDOUT, false, cstr(msg).trim_end());
+    }
+}
+
 /// With a host present the notes live host-side (`rt_host_take_reinits`).
 #[cfg(feature = "host_log")]
 pub fn take_reinit_notes() -> alloc::vec::Vec<(u32, f64)> {
@@ -485,6 +519,14 @@ pub extern "C" fn rt_array_elem_ptr(obj: u32, index: i32) -> u32 {
     }
     let kind = unsafe { load_u32(obj + ARR_KIND_OFF) };
     arr_data(obj) + (index as u32 - 1) * elem_stride(kind)
+}
+
+/// Byte address of the element area, whatever the array's size: C's `arr.data`,
+/// which is what an `external "C"` array argument is. An empty one has no element
+/// to bounds-check, and the callee is told the sizes separately.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_array_data(obj: u32) -> u32 {
+    arr_data(obj)
 }
 
 /// The out-of-range arm of [`rt_array_elem_ptr`], also used by the inlined
@@ -1682,13 +1724,18 @@ const STR_DATA_OFF: u32 = 8;
 
 /// Allocate an uninitialized `String` object of `len` bytes (refcount 1, length
 /// set). The caller fills `rt_str_data(obj)..+len` with the bytes.
+///
+/// The byte after them is a NUL, so `rt_str_data` is also a C string, as C's
+/// `modelica_string` always is — an `external "C"` call sharing the memory is
+/// handed it directly.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_str_new(len: u32) -> u32 {
     stat_inc(STAT_STR_NEW);
-    let obj = rt_alloc(STR_DATA_OFF + len);
+    let obj = rt_alloc(STR_DATA_OFF + len + 1);
     unsafe {
         store_u32(obj, 1); // refcount
         store_u32(obj + STR_LEN_OFF, len);
+        *((obj + STR_DATA_OFF + len) as *mut u8) = 0;
     }
     obj
 }

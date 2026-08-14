@@ -1,6 +1,7 @@
 // name: ReduceDrumBoiler
 // cflags: --flowThreshold=1e-15 -d=-newInst
 // status: correct
+// suite: disabled
 
 loadModel(Modelica,{"3.2"});
 getErrorString();

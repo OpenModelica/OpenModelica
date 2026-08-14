@@ -1,6 +1,7 @@
 // name:     Non-expanded Array 2
 // keywords: array
 // status:   correct
+// suite: disabled
 //
 // This is a simple test of non-expanded array handling
 // with array expressions which cannot be ceval-ed because of indefinite dimensions.

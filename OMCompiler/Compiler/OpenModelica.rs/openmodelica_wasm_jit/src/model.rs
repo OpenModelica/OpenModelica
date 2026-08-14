@@ -30,6 +30,8 @@ pub struct SimModel {
     /// library defines: a native host dlopens them and calls in through libffi.
     /// Empty in the browser.
     pub ext_native_libs: Vec<String>,
+    /// The archives and object files among them ([`ExtArchives`]).
+    pub ext_archives: Option<ExtArchives>,
     pub ext_includes: Option<ExtIncludes>,
     /// Why a `Library` or an `Include` yielded no wasm library; reported only if a
     /// symbol then turns out to be missing.
@@ -74,6 +76,69 @@ impl SimModel {
 pub struct ExtLibrary {
     pub name: String,
     pub bytes: Vec<u8>,
+}
+
+/// The static archives and object files a `Library` annotation resolved to
+/// (`libfmilib.a` and friends). No loader can open one, so they are linked into a
+/// shared object with the model's `external "C"` functions as the undefined
+/// symbols that pull the archive members in — the members the C target's own link
+/// pulls in. What is left undefined (`ModelicaFormatError`, libc) resolves in the
+/// global scope, as it would there.
+#[derive(Clone, Default)]
+pub struct ExtArchives {
+    /// In link order.
+    pub archives: Vec<String>,
+    /// The `external "C"` functions to pull out of them.
+    pub symbols: Vec<String>,
+    pub ccompiler: String,
+    pub dllext: String,
+    pub prefix: String,
+}
+
+impl ExtArchives {
+    /// Link them and return the shared object's path, once per process: the model
+    /// can be resimulated, and the link is a compiler run.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn link(&self) -> std::result::Result<String, String> {
+        use std::sync::{LazyLock, Mutex};
+        static LINKED: LazyLock<Mutex<HashMap<String, std::result::Result<String, String>>>> =
+            LazyLock::new(|| Mutex::new(HashMap::new()));
+        let key = format!("{}\n{}", self.archives.join("\n"), self.symbols.join(" "));
+        LINKED.lock().unwrap().entry(key).or_insert_with(|| self.link_uncached()).clone()
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn link_uncached(&self) -> std::result::Result<String, String> {
+        use std::process::Command;
+        let dir = std::env::temp_dir().join(format!("om-extc-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
+        let out = dir.join(format!("{}_libs{}", self.prefix, self.dllext));
+        let mut cmd = Command::new(&self.ccompiler);
+        cmd.arg("-shared").arg("-o").arg(&out);
+        for sym in &self.symbols {
+            cmd.arg(format!("-Wl,-u,{sym}"));
+        }
+        cmd.args(&self.archives);
+        let output = cmd
+            .output()
+            .map_err(|e| format!("`{}` could not be run to link the static libraries: {e}", self.ccompiler))?;
+        if !output.status.success() {
+            return Err(format!(
+                "the static libraries ({}) did not link into a loadable one:\n{}",
+                self.archives.join(", "),
+                String::from_utf8_lossy(&output.stderr)
+            ));
+        }
+        Ok(out.to_string_lossy().into_owned())
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn link(&self) -> std::result::Result<String, String> {
+        Err("the implementation comes from a static library, which has to be linked — the browser \
+             omc has no linker. Provide it as a `Library` built with \
+             `clang --target=wasm32-wasip1 -fPIC -shared`"
+            .to_string())
+    }
 }
 
 /// The model's `Include` annotations, and what it takes to build them: host C source

@@ -1,4 +1,5 @@
 // name : recompileFMU.mos
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf simpleLoop* model_res.mat build_simpleLoop.log
 //

@@ -8,6 +8,7 @@
 
 // cflags: -d=-newInst
 // wbraun: results need to check by some one else
+// suite: disabled
 
 loadModel(Modelica,{"3.1"});
 

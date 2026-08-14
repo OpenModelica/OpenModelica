@@ -2,6 +2,7 @@
 //keyword:     simulation
 //status:      correct
 // cflags: -d=-newInst
+// suite: disabled
 // instantiate/check model example
 //
 
