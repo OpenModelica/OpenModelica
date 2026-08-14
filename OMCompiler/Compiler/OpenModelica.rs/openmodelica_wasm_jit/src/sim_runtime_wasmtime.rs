@@ -1160,6 +1160,13 @@ impl sim_driver::SimEngine for WasmtimeEngine {
             .and_then(|f| f.call(&mut self.store, ()).ok())
             .unwrap_or(0)
     }
+    fn error_stage_addr(&mut self) -> u32 {
+        self.rt_inst
+            .get_typed_func::<(), u32>(&mut self.store, "rt_error_stage_addr")
+            .ok()
+            .and_then(|f| f.call(&mut self.store, ()).ok())
+            .unwrap_or(0)
+    }
     fn clean_nls_history(&mut self, time: f64) {
         if let Ok(f) = self.rt_inst.get_typed_func::<f64, ()>(&mut self.store, "rt_nls_clean_history") {
             let _ = f.call(&mut self.store, time);

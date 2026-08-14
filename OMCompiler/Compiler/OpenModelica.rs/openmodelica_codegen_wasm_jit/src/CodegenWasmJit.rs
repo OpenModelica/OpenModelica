@@ -5317,13 +5317,18 @@ fn is_const_exp(e: &DAE::Exp) -> bool {
 }
 
 /// Whether an equation list assigns `key`, directly or as one element of its array:
-/// the `SimVar`s are scalarized (`ts[1]`), an array assign names the whole `ts`.
+/// the `SimVar`s are scalarized (`ts[1]`, `layer[1][1][1][1]`), an array assign names
+/// the whole `ts`. `sim_cref_key` spells one bracket pair per subscript, so strip
+/// every rank, not just the last.
 fn is_computed(key: &str, computed: &std::collections::HashSet<String>) -> bool {
-    computed.contains(key)
-        || key
-            .strip_suffix(']')
-            .and_then(|k| k.rfind('['))
-            .is_some_and(|i| computed.contains(&key[..i]))
+    let mut key = key;
+    loop {
+        if computed.contains(key) {
+            return true;
+        }
+        let Some(i) = key.strip_suffix(']').and_then(|k| k.rfind('[')) else { return false };
+        key = &key[..i];
+    }
 }
 
 /// Keys of the crefs assigned by a `SimEqSystem` list (scalar/array assigns).

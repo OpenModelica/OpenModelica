@@ -5722,6 +5722,19 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
     if slot.negate != Neg::None {
         return Err("CodegenWasmJit: assignment to negated alias");
     }
+    // An array-valued rhs would `coerce` its handle into the slot: a pointer stored
+    // as a Real. Reject only a type `exp_sigty` names: it is best-effort, and an
+    // expression it cannot type is still one `compile_exp` lowers.
+    if !slot.heap {
+        if let RhsSource::Exp(e) = rhs {
+            if matches!(exp_sigty(e), Ok(SigTy::Array { .. })) {
+                crate::CodegenWasmJit::record_error(format!(
+                    "CodegenWasmJit: array-valued expression assigned to the scalar slot `{key}`"
+                ));
+                return Err("CodegenWasmJit: array-valued expression assigned to a scalar slot");
+            }
+        }
+    }
     let data = ctx.sim()?.data_local;
     if slot.heap {
         // Release the handle the slot currently holds before overwriting it with
@@ -6570,7 +6583,16 @@ fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
             },
         },
         E::CAST { ty, .. } => sig_ty_quiet(ty)?,
-        E::BINARY { operator, .. } | E::UNARY { operator, .. } => operator_sigty(operator)?,
+        // The new frontend leaves some operators `T_UNKNOWN`; read the operands
+        // instead, as `compile_binary` does.
+        E::BINARY { exp1, operator, exp2 } => match operator_sigty(operator) {
+            Ok(s) => s,
+            Err(_) => operand_sigty(exp1, exp2)?,
+        },
+        E::UNARY { operator, exp } => match operator_sigty(operator) {
+            Ok(s) => s,
+            Err(_) => exp_sigty(exp)?,
+        },
         E::RELATION { .. } | E::LBINARY { .. } | E::LUNARY { .. } => SigTy::Bool,
         E::IFEXP { expThen, .. } => exp_sigty(expThen)?,
         E::SHARED_LITERAL { exp, .. } => exp_sigty(exp)?,
