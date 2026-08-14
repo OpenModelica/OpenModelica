@@ -3944,10 +3944,11 @@ algorithm
                      CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
+               "(rm -rf " + buildDir + ") & " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
-               "cd .. && rm -rf " + buildDir;
+               "cd .. && (rm -rf " + buildDir + ") || true";
         if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
@@ -3963,10 +3964,11 @@ algorithm
                      CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
+               "(rm -rf " + buildDir + ") & " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
-               "cd .. && rm -rf " + buildDir;
+               "cd .. && (rm -rf " + buildDir + ") || true";
         if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
