@@ -525,6 +525,11 @@ protected
     input Boolean scalarized;
   algorithm
     () := match eqn
+      local
+        list<Expression> pre_args;
+        ComponentRef pre_state_cref;
+        Pointer<Variable> pre_state_var;
+
       case Equation.WHEN_EQUATION() algorithm
         collectDiscreteStatesFromWhenBody(eqn.body, acc_discrete_states, acc_previous, scalarized);
       then ();
@@ -536,6 +541,34 @@ protected
       case Equation.IF_EQUATION() algorithm
         collectDiscreteStatesFromWhenInIf(eqn.body, acc_discrete_states, acc_previous, scalarized);
       then ();
+
+      // A plain equation of the form `pre(x) = <expr>` (e.g. Modelica.StateGraph's
+      // CompositeStep: `pre(oldActive) = pre(localActive);`) is the only equation
+      // OpenModelica allows that determines a variable purely through its pre()
+      // form, with no equation anywhere for its plain, current-time value. Unlike
+      // when-equation LHS assignments, nothing else marks such a variable as
+      // discrete, so it would otherwise fall through to whatever default
+      // VariableKind its frontend variability implies -- often PARAMETER, since
+      // nothing else appears to make it change over time. Force it to discrete
+      // here, mirroring collectDiscreteStatesFromWhenBody's WhenStatement.ASSIGN
+      // case below (without creating its $PRE shadow var -- collectPreAndPrevious
+      // does that separately for every pre()/previous() call site).
+      case Equation.SCALAR_EQUATION(lhs = Expression.CALL(call = Call.TYPED_CALL(
+          fn = Function.FUNCTION(path = Absyn.IDENT(name = "pre")), arguments = pre_args)))
+        algorithm
+          () := match pre_args
+            case {Expression.CREF(cref = pre_state_cref)} algorithm
+              pre_state_var := BVariable.getVarPointer(pre_state_cref, sourceInfo());
+              BVariable.makeDiscreteStateVar(pre_state_var);
+            then ();
+            case {Expression.LUNARY(exp = Expression.CREF(cref = pre_state_cref))} algorithm
+              pre_state_var := BVariable.getVarPointer(pre_state_cref, sourceInfo());
+              BVariable.makeDiscreteStateVar(pre_state_var);
+            then ();
+            else ();
+          end match;
+        then ();
+
       else ();
     end match;
   end collectDiscreteStatesFromWhen;
