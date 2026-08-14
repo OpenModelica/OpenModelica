@@ -3708,9 +3708,13 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
       let postExp = if isStartCref(cref) then
         <<
         <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
-        infoStreamPrint(OMC_LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)",
-          <%crefVarInfo(popCref(cref))%>.name,
-          (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
+        <%if stringEq(isPrintableCrefType(popCref(cref)), "true") then
+          <<
+          infoStreamPrint(OMC_LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)",
+            <%crefVarInfo(popCref(cref))%>.name,
+            (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
+          >>
+        %>
         >>
 
       let updateEqs = match attribute
@@ -5438,6 +5442,24 @@ template crefToPrintfArg(ComponentRef cr)
   else error(sourceInfo(), 'Do not know what printf argument to give <%crefStr(cr)%>')
   end match
 end crefToPrintfArg;
+
+template isPrintableCrefType(ComponentRef cr)
+"\"true\"/\"false\" for whether cr's type is one of the scalar modelica_* types
+ crefToPrintfArg/crefVarInfo know how to print. External Object crefs (e.g.
+ table handles like _tableID) are neither: they have no crefToPrintfArg format
+ specifier and no modelData array slot for crefVarInfo to reference, so
+ callers must skip debug-printing them entirely rather than just picking a
+ fallback format string. Use with stringEq(..., \"true\") in an if condition,
+ since templates always produce Text, never a real Boolean."
+::=
+  match crefType(cr)
+  case "modelica_real" then "true"
+  case "modelica_integer" then "true"
+  case "modelica_boolean" then "true"
+  case "modelica_string" then "true"
+  else "false"
+  end match
+end isPrintableCrefType;
 
 template crefType(ComponentRef cr) "template crefType
   Like cref but with cast if type is integer."
@@ -7366,10 +7388,14 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
     end match
     <<
     <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
-    infoStreamPrint(OMC_LOG_INIT_V, 0,
-                    "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)",
-                    <%name%>,
-                    (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
+    <%if stringEq(isPrintableCrefType(popCref(cref)), "true") then
+      <<
+      infoStreamPrint(OMC_LOG_INIT_V, 0,
+                      "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)",
+                      <%name%>,
+                      (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
+      >>
+    %>
     >>
   let lhs = equationSimpleAssignLhs(cref, context, &preExp, &varDecls, &auxFunction, &sub)
   <<
