@@ -286,6 +286,11 @@ pub trait SimEngine {
     fn context_addr(&mut self) -> u32 {
         0
     }
+    /// Address of the runtime's error stage / absorbed-error pair, or 0 when the
+    /// backend has no such export.
+    fn error_stage_addr(&mut self) -> u32 {
+        0
+    }
     /// C's `cleanUpOldValueListAfterEvent`. Default: none (an engine that never
     /// integrates).
     fn clean_nls_history(&mut self, _time: f64) {}
@@ -317,6 +322,33 @@ fn set_context(e: &mut dyn SimEngine, addr: u32, ctx: i32) {
     if addr != 0 {
         let _ = write_i32(e, addr, ctx);
     }
+}
+
+/// C's `threadData->currentErrorStage`, mirrored from the runtime's `nls.rs`.
+pub const ERROR_SIMULATION: i32 = 0;
+pub const ERROR_INTEGRATOR: i32 = 1;
+
+/// Open C's `MMC_TRY_INTERNAL(simulationJumpBuffer)` around an integrator callback: a
+/// model error inside it is absorbed rather than trapping, and [`took_error_stage`]
+/// reports it. A no-op without the runtime slot, where such an error stays fatal.
+fn set_error_stage(e: &mut dyn SimEngine, addr: u32, stage: i32) {
+    if addr != 0 {
+        let _ = write_i32(e, addr, stage);
+        if stage != ERROR_SIMULATION {
+            let _ = write_i32(e, addr + 4, 0);
+        }
+    }
+}
+
+/// Close the region [`set_error_stage`] opened: back to `ERROR_SIMULATION`, and
+/// whether a model error was absorbed while it was open (C's `success == 0`).
+fn took_error_stage(e: &mut dyn SimEngine, addr: u32) -> bool {
+    if addr == 0 {
+        return false;
+    }
+    let hit = read_i32(e, addr + 4).unwrap_or(0) != 0;
+    let _ = write_i32(e, addr, ERROR_SIMULATION);
+    hit
 }
 
 /// Must match the runtime's `N_STATS`.
@@ -3454,6 +3486,8 @@ struct ResCtx {
     ext_apply: Option<unsafe fn(*mut core::ffi::c_void, &mut dyn SimEngine, u32, f64)>,
     /// Linear-memory address of the runtime's evaluation context (0 = unsupported).
     ctx_addr: u32,
+    /// Linear-memory address of the runtime's error stage (0 = unsupported).
+    err_stage_addr: u32,
     /// The FD step's fallback scale: `n_states` nominals owned by the driver.
     nominals: *const f64,
     nominal_factor: f64,
@@ -3599,6 +3633,7 @@ unsafe fn dassl_res(
         let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
         e.write_bytes(ctx.states_base, y_bytes)?;
         set_context(e, ctx.ctx_addr, CONTEXT_ODE);
+        set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
         e.call1("functionODE", ctx.sim_data)?;
         set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
         // delta := yprime - f
@@ -3609,6 +3644,7 @@ unsafe fn dassl_res(
         }
         Ok(())
     })();
+    let model_error = took_error_stage(e, ctx.err_stage_addr);
     ctx.nfe += 1;
     match run {
         Err(err) => {
@@ -3616,10 +3652,13 @@ unsafe fn dassl_res(
             unsafe { *ires = -2 };
         }
         Ok(()) => {
-            // A nonlinear system did not converge: recoverable — ask DASKR to
-            // retry at a smaller step (the guess was restored by the codegen).
+            // A model error, or a nonlinear system that did not converge: both
+            // recoverable — ask DASKR to retry at a smaller step (the guess was
+            // restored by the codegen).
             if read_i32(e, ctx.sim_data + ctx.nls_fail_off).unwrap_or(0) != 0 {
                 report_nls_failure_at(e, ctx.sim_data, ctx.nls_fail_off);
+                unsafe { *ires = -1 };
+            } else if model_error {
                 unsafe { *ires = -1 };
             }
         }
@@ -3662,6 +3701,9 @@ unsafe fn dassl_jac(
     // One assembly, however many colours it takes, as C's DASSL counts it.
     ctx.nje += 1;
     set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
+    // C holds `ERROR_INTEGRATOR` over the whole DDASKR call, and there is no `IRES`
+    // here: a model error at a perturbed point leaves the assembly as it stands.
+    set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
     let run = (|| -> Result<()> {
         write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
         for color in &jac.colors {
@@ -3712,6 +3754,7 @@ unsafe fn dassl_jac(
         Ok(())
     })();
     set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
+    took_error_stage(e, ctx.err_stage_addr);
     if let Err(err) = run {
         ctx.err = Some(err);
     }
@@ -3828,6 +3871,28 @@ fn log_dassl_step(t: f64) {
 
 /// The `dassl call statistics:` block, from the work-array indices `dassl.c` reads.
 /// A restart zeroes the counters, as in C.
+/// C's `continue_DASSL`: name the negative `IDID` DASKR stopped on, then
+/// `can't continue`. `-10` is the one [`dassl_res`]'s `IRES = -1` leads to.
+fn report_dassl_failure(idid: i32, t: f64) -> &'static str {
+    let msg = match idid {
+        -2 => "The error tolerances are too stringent",
+        -6 => "DDASSL had repeated error test failures on the last attempted step.",
+        -7 => "The corrector could not converge.",
+        -8 => "The matrix of partial derivatives is singular.",
+        -9 => "The corrector could not converge. There were repeated error test failures in this step.",
+        -10 => "A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER",
+        -11 => "IRES equal to -2 was encountered and control is being returned to the calling program.",
+        -12 => "DDASSL failed to compute the initial YPRIME.",
+        -33 => "The code has encountered trouble from which it cannot recover.",
+        _ => "",
+    };
+    if !msg.is_empty() {
+        omclog::warning(omclog::STDOUT, false, msg);
+    }
+    omclog::warning(omclog::STDOUT, false, &format!("can't continue. time = {t:.6}"));
+    "CodegenWasmJit: DASSL (daskr) failed"
+}
+
 fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
     let g = |v: f64| format_g(v, 4);
     let r = |k: usize| rwork.get(k).copied().unwrap_or(0.0);
@@ -4150,6 +4215,7 @@ impl Driver for DasslDriver {
             ext_input: core::ptr::null_mut(),
             ext_apply: None,
             ctx_addr: e.context_addr(),
+            err_stage_addr: e.error_stage_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
             tol: self.tol,
@@ -4223,7 +4289,7 @@ impl Driver for DasslDriver {
                 continue;
             }
             if self.idid < 0 {
-                return Err("CodegenWasmJit: DASSL (daskr) failed at t=, IDID=");
+                return Err(report_dassl_failure(self.idid, self.t));
             }
             // IDID=1 (INFO(3)=1): one internal step, TOUT still ahead.
             if self.idid == 1 {
@@ -4429,7 +4495,7 @@ impl DaskrState {
         }
         self.ev_retries = 0; // this target's integration is done (or failing)
         if self.idid < 0 {
-            return Progress::Failed("CodegenWasmJit: DASSL (daskr) failed at t=, IDID=");
+            return Progress::Failed(report_dassl_failure(self.idid, *t));
         }
         // IDID=5: stopped at a zero-crossing root; IDID=1: intermediate-output step.
         match self.idid {
@@ -5049,6 +5115,7 @@ impl SolverCore {
             ext_input: core::ptr::null_mut(),
             ext_apply: None,
             ctx_addr: e.context_addr(),
+            err_stage_addr: e.error_stage_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
             tol: self.tol,
@@ -6394,6 +6461,7 @@ impl Driver for CvodeDriver {
             ext_input: core::ptr::null_mut(),
             ext_apply: None,
             ctx_addr: e.context_addr(),
+            err_stage_addr: e.error_stage_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
             tol: self.tol,
@@ -7166,6 +7234,7 @@ impl Driver for IdaDriver {
             ext_input: core::ptr::null_mut(),
             ext_apply: None,
             ctx_addr: e.context_addr(),
+            err_stage_addr: e.error_stage_addr(),
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
             tol: self.tol,

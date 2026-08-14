@@ -56,6 +56,20 @@ fn step_size() -> f64 {
     f64::from_bits(STEP_SIZE.load(Ordering::Relaxed))
 }
 
+/// C's `threadData->currentErrorStage`, as two words the driver stores into: `[0]`
+/// the stage, `[1]` set when a model error was absorbed there.
+/// `ERROR_NONLINEARSOLVER` is [`NLS_DEPTH`], the runtime's own nesting, instead.
+pub const ERROR_SIMULATION: u32 = 0;
+pub const ERROR_INTEGRATOR: u32 = 1;
+static ERROR_STAGE: [AtomicU32; 2] = [AtomicU32::new(ERROR_SIMULATION), AtomicU32::new(0)];
+
+/// Address of [`ERROR_STAGE`], so the driver marks a region with a store rather than
+/// a wasm call per evaluation (as for [`rt_context_addr`]).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_error_stage_addr() -> u32 {
+    ERROR_STAGE.as_ptr() as u32
+}
+
 /// Recoverable-assert state (C's `ERROR_NONLINEARSOLVER`). While `NLS_DEPTH` > 0 a
 /// failed model `assert()` records itself in `NLS_ASSERT_HIT` and returns instead of
 /// trapping; `eval` then turns that trial into a huge residual so the solver backs off.
@@ -107,26 +121,31 @@ fn attempt_aborted() -> bool {
     NLS_ASSERT_SEEN.load(Ordering::Relaxed) != 0
 }
 
-/// Model side (emitted by `emit_assert`): is a failed assert currently recoverable
-/// (i.e. inside a nonlinear-solver residual)? Non-zero → the model records the
-/// assert via [`rt_nls_note_assert`] and bails out instead of trapping.
+/// Model side (emitted by `emit_assert`): is a failed assert currently recoverable —
+/// inside a nonlinear-solver residual, or the integrator's? Non-zero → the model
+/// records the assert via [`rt_nls_note_assert`] and bails out instead of trapping.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_recovering() -> i32 {
-    (NLS_DEPTH.load(Ordering::Relaxed) > 0) as i32
+    (NLS_DEPTH.load(Ordering::Relaxed) > 0
+        || ERROR_STAGE[0].load(Ordering::Relaxed) == ERROR_INTEGRATOR) as i32
 }
 
 /// Model side: flag that a recoverable assert fired at the current trial point.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_note_assert() {
-    NLS_ASSERT_HIT.store(1, Ordering::Relaxed);
+    if NLS_DEPTH.load(Ordering::Relaxed) > 0 {
+        NLS_ASSERT_HIT.store(1, Ordering::Relaxed);
+    } else {
+        ERROR_STAGE[1].store(1, Ordering::Relaxed);
+    }
 }
 
 /// A model error where C's generated code calls `throwStreamPrint` — an invalid
-/// root, a zero divisor, an index out of range. C's `longjmp` lands in the solver's
+/// root, a zero divisor, an index out of range. C's `longjmp` lands in the innermost
 /// `MMC_TRY_INTERNAL`, so inside a residual note the trial and let the caller return
-/// a dummy `eval` discards. Outside one the error is fatal.
+/// a dummy the solver discards. With neither stage open the error is fatal.
 pub(crate) fn model_error() {
-    if NLS_DEPTH.load(Ordering::Relaxed) > 0 {
+    if rt_nls_recovering() != 0 {
         rt_nls_note_assert();
         return;
     }
