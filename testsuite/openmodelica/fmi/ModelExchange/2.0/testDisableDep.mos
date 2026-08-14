@@ -1,5 +1,6 @@
 // name:  testDisableDependency
 // keywords: FMI 2.0 export
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml testDID* output.log
 // cflags: -d=-newInst
