@@ -850,14 +850,22 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
 
   if (!sp) return 0; /* pattern removed; jac is zeroed, solver will fail numerically */
 
-  /* apply scaling to each column; use sizeCols as row stride to match the
-   * square sizeCols×sizeCols layout written by evalJacobian */
-  for (j = 0; j < jacobian->sizeCols; j++) {
-    for (ii = sp->leadindex[j]; ii < sp->leadindex[j+1]; ii++) {
-      l = sp->index[ii];
-      if (l >= (unsigned int)jacobian->sizeCols) continue; /* skip auxiliary rows */
-      k = j*jacobian->sizeCols + l;
-      jac[k] *= solverData->xScaling[j];
+  /* apply scaling to each column; must use the same row stride evalJacobian
+   * used to fill jac (min(sizeRows, sizeCols), not always sizeCols -- see
+   * jacobian_util.c:evalJacobian). Using sizeCols unconditionally here
+   * misaligns every scaling write whenever sizeCols > sizeRows (a genuinely
+   * rectangular Jacobian, not just NLS's "auxiliary rows beyond sizeCols"
+   * case), corrupting entries evalJacobian never touched while leaving the
+   * real ones unscaled. */
+  {
+    const int denseRows = jacobian->sizeRows < jacobian->sizeCols ? jacobian->sizeRows : jacobian->sizeCols;
+    for (j = 0; j < jacobian->sizeCols; j++) {
+      for (ii = sp->leadindex[j]; ii < sp->leadindex[j+1]; ii++) {
+        l = sp->index[ii];
+        if (l >= denseRows) continue; /* skip auxiliary rows */
+        k = j*denseRows + l;
+        jac[k] *= solverData->xScaling[j];
+      }
     }
   }
 
