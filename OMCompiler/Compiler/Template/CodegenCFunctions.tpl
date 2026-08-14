@@ -810,7 +810,7 @@ match var
 case var as VARIABLE(__) then
 
   match var.ty
-  case ty as T_ARRAY(__) then arrayVarAllocInit(var.name, var.ty, ty.dims, var.value, var.bind_from_outside, context, &varDecls, &auxFunction)
+  case ty as T_ARRAY(__) then arrayVarAllocInit(var.name, var.ty, ty.dims, var.value, var.bind_from_outside, var.kind, context, &varDecls, &auxFunction)
 
   case ty as T_COMPLEX(complexClassType=RECORD(__)) then recordVarAllocInit(var.value, var.name, var.bind_from_outside, var.ty, context, &varDecls, &auxFunction)
 
@@ -888,11 +888,33 @@ match subvar
 end match
 end recordInitOutsideBindings;
 
-template arrayVarAllocInit(ComponentRef var_cref, Type var_type, list<DAE.Dimension> var_dims, Option<DAE.Exp> value, Boolean bind_outside, Context context, Text &varDecls, Text &auxFunction)
+template arrayVarConstLiteralAlias(DAE.VarKind var_kind, Option<DAE.Exp> value, Boolean bind_outside, Text var_name, Context context, Text &varDecls, Text &auxFunction)
+ "A Modelica `constant` array bound to a shared literal can never be assigned, so it can point
+  straight at the literal instead of allocating a fresh copy of it on every call. Restricted to
+  CONST on purpose: any other variability may be written to, and writing through a shared literal
+  would hit read-only memory."
+::=
+  match var_kind
+  case CONST(__) then
+    if bind_outside then
+      ""
+    else
+      (match value
+       case SOME(lit as SHARED_LITERAL(__)) then
+         let &preExp = buffer ""
+         let litExp = daeExp(lit, context, &preExp, &varDecls, &auxFunction)
+         '<%var_name%> = <%litExp%>; /* constant: alias the shared literal, no copy needed */<%\n%>'
+       else "")
+  else ""
+end arrayVarConstLiteralAlias;
+
+template arrayVarAllocInit(ComponentRef var_cref, Type var_type, list<DAE.Dimension> var_dims, Option<DAE.Exp> value, Boolean bind_outside, DAE.VarKind var_kind, Context context, Text &varDecls, Text &auxFunction)
 ::=
   let type_name = expTypeShort(var_type)
   let var_name = contextCrefNoPrevExp(var_cref, context, &auxFunction)
+  let constAlias = arrayVarConstLiteralAlias(var_kind, value, bind_outside, var_name, context, &varDecls, &auxFunction)
 
+  if constAlias then constAlias else
   match value
     case SOME(rhs_exp) then
       let &preExpBind = buffer ""
@@ -1506,12 +1528,33 @@ case FUNCTION(__) then
   let boxedFn = if not funcHasParallelInOutArrays(fn) then functionBodyBoxed(fn, isSimulation) else ""
   let &afterBody = buffer ""
   let prototype = functionPrototype(fname, functionArguments, outVars, false, visibility, isSimulation, false, afterBody)
+  /* If nothing this function returns can hold pool-allocated data, everything it allocates
+     is dead once it returns, so the pool can be rolled back to the state it had on entry.
+     Only the pooled allocator (FMI/minimal runtime) can do this; the GC build has no pool. */
+  /* variableDeclarations holds the locals and the outputs but never the inputs (isVarQ filters
+     those out), so the arguments have to be checked separately for external objects. */
+  let poolExtObj = '<%functionHasExternalObject(variableDeclarations)%><%functionHasExternalObject(functionArguments)%>'
+  let poolScoped = (if outVarsHoldNoHeapData(outVars) then
+                      (if poolExtObj then "" else "x"))
+  let poolSave = if poolScoped then
+    <<
+    #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+    MemPoolState omc_pool_state = omc_util_get_pool_state();
+    #endif<%\n%>
+    >>
+  let poolRestore = if poolScoped then
+    <<
+    #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+    omc_util_restore_pool_state(omc_pool_state);
+    #endif<%\n%>
+    >>
   <<
   <%auxFunction%>
   <% match visibility case PUBLIC(__) then "DLLDirection" %>
   <%prototype%>
   {
     <%varDecls%>
+    <%poolSave%>
     <% if boolNot(isSimulation) then 'MMC_SO();<%\n%>'%>_tailrecursive: OMC_LABEL_UNUSED
     <%varInits%>
     <%bodyPart%>
@@ -1520,6 +1563,7 @@ case FUNCTION(__) then
     <%if acceptParModelicaGrammar() then
     '/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
     <%freeConstructedExternalObjects%>
+    <%poolRestore%>
     <%match outVars
        case v::_ then 'return <%funArgName(v)%>;'
        else 'return;'
@@ -1530,6 +1574,43 @@ case FUNCTION(__) then
   <%boxedFn%>
   >>
 end functionBodyRegularFunction;
+
+template outVarsHoldNoHeapData(list<Variable> outVars)
+ "Returns non-empty if none of the outputs can carry heap allocated data, i.e. every output is a
+  scalar Real/Integer/Boolean. Arrays, records, strings, metatypes and function pointers can all
+  reference memory the caller keeps using, so they rule the function out."
+::=
+  let heapOut = (outVars |> var => outVarHoldsHeapData(var))
+  if heapOut then "" else "x"
+end outVarsHoldNoHeapData;
+
+template outVarHoldsHeapData(Variable var)
+ "Returns non-empty if this output may carry heap allocated data."
+::=
+  match var
+  case var as VARIABLE(__) then
+    if instDims then
+      "x"
+    else
+      match varType(var)
+      case "modelica_real"
+      case "modelica_integer"
+      case "modelica_boolean" then ""
+      else "x"
+  else "x"
+end outVarHoldsHeapData;
+
+template functionHasExternalObject(list<Variable> vars)
+ "Returns non-empty if the list holds an external object. Such an object can own memory across
+  calls, and external code reached through it could keep a pointer to something the function
+  allocated, so those functions are left alone. Call it for the arguments as well as the
+  declarations: variableDeclarations never contains the inputs."
+::=
+  (vars |> var =>
+    match var
+    case VARIABLE(ty=T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))) then "x"
+    else "")
+end functionHasExternalObject;
 
 template generateInFunc(Text fname, list<Variable> functionArguments, list<Variable> outVars)
 ::=
@@ -2221,7 +2302,7 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
   let &varDecls += if not outStruct then '<%typeNameFull%> <%varName%><%initVar%>;<%\n%>' //else ""
 
   if instDims then
-    let &varInits += arrayVarAllocInit(var.name, var.ty, instDims, var.value, var.bind_from_outside, contextFunction, &varDecls, &auxFunction)
+    let &varInits += arrayVarAllocInit(var.name, var.ty, instDims, var.value, var.bind_from_outside, var.kind, contextFunction, &varDecls, &auxFunction)
     ""
   else if isRecordType(var.ty) then
     let &varInits += recordVarAllocInit(var.value, var.name, var.bind_from_outside, var.ty, contextFunction, &varDecls, &auxFunction)
