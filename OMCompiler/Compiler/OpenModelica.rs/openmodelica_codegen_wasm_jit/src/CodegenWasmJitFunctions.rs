@@ -484,6 +484,9 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // Recoverable-assert hooks for a nonlinear-solver residual (see `nls.rs`).
     ("rt_nls_recovering", &[], &[WTy::I32]),
     ("rt_nls_note_assert", &[], &[]),
+    // C's `throwStreamPrint` and the reporting half of its `DIVISION_SIM`.
+    ("rt_throw_stream", &[WTy::I32], &[]),
+    ("rt_div_sim", &[WTy::F64, WTy::F64, WTy::I32, WTy::F64, WTy::I32], &[WTy::F64]),
     // System `k`'s solver state (address, size), for `rt_nls_clean_history`.
     ("rt_nls_register", &[WTy::I32, WTy::I32, WTy::I32], &[]),
 ];
@@ -6829,6 +6832,15 @@ fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::
     coerce(ctx, a, wty);
     let b = compile_exp(ctx, e2)?;
     coerce(ctx, b, wty);
+    // C's `daeExpBinary` guards every division: `FUNCTION_CONTEXT` throws outright,
+    // an equation's is `DIVISION_SIM`.
+    if matches!(op, O::DIV { .. }) {
+        if ctx.sim.is_none() {
+            emit_div_zero_guard(ctx, e1, op, e2, wty)?;
+        } else if wty == WTy::F64 {
+            return emit_div_sim(ctx, e2);
+        }
+    }
     match (op, wty) {
         (O::ADD { .. }, WTy::F64) => ctx.emit(we::Instruction::F64Add),
         (O::ADD { .. }, WTy::I32) => ctx.emit(we::Instruction::I32Add),
@@ -6841,6 +6853,86 @@ fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::
         (other, _) => return Err("CodegenWasmJit: unsupported binary operator"),
     }
     Ok(wty)
+}
+
+/// A borrowed handle to a module-wide String literal (C's `_OMC_LIT`), so a guard's
+/// message allocates nothing when it fires.
+fn emit_shared_str(ctx: &mut FnCtx, s: &str) {
+    let g = shared_lits::intern_const(&DAE::Exp::SCONST { string: s.into() });
+    ctx.emit(we::Instruction::GlobalGet(g));
+}
+
+/// The divisor is on the stack: hold it in a temp, and where it is zero throw as
+/// C's generated `if (tvar == 0) {throwStreamPrint(…)}` does. The throw returns
+/// inside a nonlinear-solver residual, so the function leaves its outputs where
+/// they were, as [`emit_nls_recoverable_return`].
+fn emit_div_zero_guard(
+    ctx: &mut FnCtx,
+    e1: &DAE::Exp,
+    op: &DAE::Operator,
+    e2: &DAE::Exp,
+    wty: WTy,
+) -> Result<()> {
+    use we::Instruction as I;
+    let t = ctx.alloc_temp(wty);
+    ctx.emit(I::LocalTee(t));
+    if wty == WTy::F64 {
+        ctx.emit(I::F64Const(0.0f64.into()));
+        ctx.emit(I::F64Eq);
+    } else {
+        ctx.emit(I::I32Const(0));
+        ctx.emit(I::I32Eq);
+    }
+    ctx.emit(I::If(we::BlockType::Empty));
+    let exp = Arc::new(DAE::Exp::BINARY {
+        exp1: Arc::new(e1.clone()),
+        operator: op.clone(),
+        exp2: Arc::new(e2.clone()),
+    });
+    emit_shared_str(ctx, &format!("Division by zero {} in function context", dumped_exp(&exp)?));
+    ctx.emit(I::Call(rt_index("rt_throw_stream")?));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(I::Return);
+    ctx.emit(I::End);
+    ctx.emit(I::LocalGet(t));
+    Ok(())
+}
+
+/// C's `DIVISION_SIM` (`__OMC_DIV_SIM`), with `a` and `b` on the stack. The quotient
+/// stands unless the divisor was zero or it came out inf/nan; `rt_div_sim` (nls.rs)
+/// has what C does with those.
+fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
+    use we::Instruction as I;
+    let (ta, tb, res) = (ctx.alloc_temp(WTy::F64), ctx.alloc_temp(WTy::F64), ctx.alloc_temp(WTy::F64));
+    ctx.emit(I::LocalSet(tb));
+    ctx.emit(I::LocalSet(ta));
+    ctx.emit(I::LocalGet(ta));
+    ctx.emit(I::LocalGet(tb));
+    ctx.emit(I::F64Div);
+    // `res - res != 0` is C's `!valid_number(res)`: inf and nan both fail it.
+    ctx.emit(I::LocalTee(res));
+    ctx.emit(I::LocalGet(res));
+    ctx.emit(I::F64Sub);
+    ctx.emit(I::F64Const(0.0f64.into()));
+    ctx.emit(I::F64Ne);
+    ctx.emit(I::LocalGet(tb));
+    ctx.emit(I::F64Const(0.0f64.into()));
+    ctx.emit(I::F64Eq);
+    ctx.emit(I::I32Or);
+    ctx.emit(I::If(we::BlockType::Result(we::ValType::F64)));
+    ctx.emit(I::LocalGet(ta));
+    ctx.emit(I::LocalGet(tb));
+    emit_shared_str(ctx, &dumped_exp(&Arc::new(e2.clone()))?);
+    let data = ctx.sim()?.data_local;
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::F64Load(mem_arg(0, 3))); // `time` — `SimData` offset 0
+    emit_initial_flag(ctx);
+    ctx.emit(I::Call(rt_index("rt_div_sim")?));
+    ctx.emit(I::Else);
+    ctx.emit(I::LocalGet(res));
+    ctx.emit(I::End);
+    Ok(WTy::F64)
 }
 
 fn compile_relation(

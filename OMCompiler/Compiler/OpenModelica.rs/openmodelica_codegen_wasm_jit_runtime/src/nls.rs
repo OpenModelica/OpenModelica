@@ -79,6 +79,13 @@ static NLS_ASSERT_HIT: AtomicU32 = AtomicU32::new(0);
 static NLS_EVAL_HIT: AtomicU32 = AtomicU32::new(0);
 /// C's `assertCalled`, sticky over one solver attempt.
 static NLS_ASSERT_SEEN: AtomicU32 = AtomicU32::new(0);
+/// The same two, narrowed to a rejection the *model* caused. C's `residualFunc`
+/// throws on a non-finite iteration variable as the guard below rejects one, but
+/// only this target's linear algebra reaches that state (a rank-deficient Jacobian
+/// steps to inf where C's does not), so reporting the guard as a model throw prints
+/// C's assert block for solver states C never enters.
+static NLS_EVAL_THREW: AtomicU32 = AtomicU32::new(0);
+static NLS_THROW_SEEN: AtomicU32 = AtomicU32::new(0);
 
 /// The residual a rejected trial reports; [`newton_c`] damps its step on it.
 const ASSERT_RESIDUAL: f64 = 1e60;
@@ -86,6 +93,15 @@ const ASSERT_RESIDUAL: f64 = 1e60;
 /// Whether the last residual evaluation hit a recoverable model assert.
 pub(crate) fn assert_hit() -> bool {
     NLS_EVAL_HIT.load(Ordering::Relaxed) != 0
+}
+
+/// The same for the last evaluation, and for the attempt: did the model throw?
+fn eval_threw() -> bool {
+    NLS_EVAL_THREW.load(Ordering::Relaxed) != 0
+}
+
+fn attempt_threw() -> bool {
+    NLS_THROW_SEEN.load(Ordering::Relaxed) != 0
 }
 
 /// Take over the hit flag: a residual routinely runs a nested `rt_solve_nls`, whose
@@ -99,20 +115,25 @@ fn enter_eval() -> u32 {
 fn leave_eval(saved: u32) -> bool {
     NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
     let hit = NLS_ASSERT_HIT.swap(saved, Ordering::Relaxed) != 0;
-    note_eval_hit(hit);
+    note_eval_hit(hit, hit);
     hit
 }
 
-fn note_eval_hit(hit: bool) {
+fn note_eval_hit(hit: bool, threw: bool) {
     NLS_EVAL_HIT.store(hit as u32, Ordering::Relaxed);
+    NLS_EVAL_THREW.store(threw as u32, Ordering::Relaxed);
     if hit {
         NLS_ASSERT_SEEN.store(1, Ordering::Relaxed);
+    }
+    if threw {
+        NLS_THROW_SEEN.store(1, Ordering::Relaxed);
     }
 }
 
 /// Open C's `MMC_TRY_INTERNAL` around one solver attempt.
 fn arm_attempt() {
     NLS_ASSERT_SEEN.store(0, Ordering::Relaxed);
+    NLS_THROW_SEEN.store(0, Ordering::Relaxed);
 }
 
 /// The `abort` MINPACK polls. Without it the dogleg grinds against
@@ -133,11 +154,13 @@ pub extern "C" fn rt_nls_recovering() -> i32 {
 /// Model side: flag that a recoverable assert fired at the current trial point.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_note_assert() {
-    if NLS_DEPTH.load(Ordering::Relaxed) > 0 {
-        NLS_ASSERT_HIT.store(1, Ordering::Relaxed);
-    } else {
-        ERROR_STAGE[1].store(1, Ordering::Relaxed);
-    }
+    note_slot().store(1, Ordering::Relaxed);
+}
+
+/// Where [`rt_nls_note_assert`] records: the residual's own flag, or the
+/// integrator region's when the model error is not inside a residual.
+fn note_slot() -> &'static AtomicU32 {
+    if NLS_DEPTH.load(Ordering::Relaxed) > 0 { &NLS_ASSERT_HIT } else { &ERROR_STAGE[1] }
 }
 
 /// A model error where C's generated code calls `throwStreamPrint` — an invalid
@@ -150,6 +173,87 @@ pub(crate) fn model_error() {
         return;
     }
     crate::trap()
+}
+
+/// C's `throwStreamPrint`: log `msg` on `LOG_ASSERT` and unwind — so a trial the
+/// solver goes on to reject still reports why. `msg` is borrowed (the module's
+/// literal pool owns it). Returns only where the unwind is recoverable.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_throw_stream(msg: u32) {
+    throw_stream(core::str::from_utf8(unsafe { crate::str_bytes(msg) }).unwrap_or(""))
+}
+
+fn throw_stream(s: &str) {
+    let recovering = rt_nls_recovering() != 0;
+    // C's `longjmp` leaves the rest of the evaluation unreached, so it reports one
+    // throw per evaluation. Here each frame returns and the ones above it carry on:
+    // report only the throw C's jump would have carried out.
+    if !(recovering && note_slot().load(Ordering::Relaxed) != 0) {
+        if recovering {
+            crate::omclog::message_text(crate::omclog::DEBUG_TYPE, crate::omclog::ASSERT, false, s);
+        } else {
+            // Also arms the trap below to report as an assertion, not a crash.
+            openmodelica_sim_meta::driver::note_runtime_error(s);
+        }
+    }
+    if !recovering {
+        crate::trap()
+    }
+    rt_nls_note_assert();
+}
+
+/// C's `noThrowDivZero`, which `solve_nonlinear_system` holds over a solve: a
+/// division by zero at a trial point is the solver's to walk away from.
+fn no_throw_div_zero() -> bool {
+    NLS_DEPTH.load(Ordering::Relaxed) > 0
+}
+
+/// The slow half of C's `__OMC_DIV_SIM` (util/division.h): the emitted code divides
+/// and calls here only for a zero divisor or a non-finite result. `msg` is the
+/// divisor's source form, borrowed from the module's literal pool.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_div_sim(a: f64, b: f64, msg: u32, time: f64, initial: i32) -> f64 {
+    use openmodelica_sim_meta::driver::format_g;
+    let s = core::str::from_utf8(unsafe { crate::str_bytes(msg) }).unwrap_or("");
+    let res = if b != 0.0 {
+        a / b
+    } else if initial != 0 && a == 0.0 {
+        // C's 0/0 at initialization is zero, not the nan that would go on to fail a
+        // domain check somewhere downstream.
+        return 0.0;
+    } else if no_throw_div_zero() {
+        crate::omclog::warning(
+            crate::omclog::DIVISION,
+            false,
+            &alloc::format!(
+                "solver will try to handle division by zero at time {}: {s}",
+                format_g(time, 16)
+            ),
+        );
+        a / b
+    } else {
+        throw_stream(&alloc::format!(
+            "division by zero at time {}, (a={}) / (b={}), where divisor b expression is: {s}",
+            format_g(time, 16),
+            format_g(a, 16),
+            format_g(b, 16)
+        ));
+        a / b
+    };
+    if !res.is_finite() {
+        let m = alloc::format!(
+            "division leads to inf or nan at time {}, (a={}) / (b={}), where divisor b is: {s}",
+            format_g(time, 6),
+            format_g(a, 6),
+            format_g(b, 6)
+        );
+        if no_throw_div_zero() {
+            crate::omclog::warning(crate::omclog::DIVISION, false, &m);
+        } else {
+            throw_stream(&m);
+        }
+    }
+    res
 }
 
 /// Build the Jacobian-assemble closure used by both kinsol and newton sparse paths.
@@ -967,6 +1071,42 @@ fn hybrd_res_scaling(n: usize, fjac: &[f64], res_scaling: &mut [f64]) {
     }
 }
 
+/// C's `solveHybrd` block for the first model assert that voids a solver attempt.
+fn log_hybrd_assert(t: &HomotopyTrace) {
+    use crate::omclog;
+    use alloc::string::String;
+    let head = if t.initial {
+        String::from("While solving non-linear system an assertion failed during initialization.")
+    } else {
+        alloc::format!(
+            "While solving non-linear system an assertion failed at time {}.",
+            openmodelica_sim_meta::driver::format_g(t.time, 6)
+        )
+    };
+    omclog::warning(omclog::STDOUT, true, &head);
+    let tail = [
+        "The non-linear solver tries to solve the problem that could take some time.",
+        "It could help to provide better start-values for the iteration variables.",
+    ];
+    for line in tail {
+        omclog::warning(omclog::STDOUT, false, line);
+    }
+    if !omclog::active(omclog::NLS_V) {
+        omclog::warning(omclog::STDOUT, false, "For more information simulate with -lv LOG_NLS_V");
+    }
+    omclog::close_warning(omclog::STDOUT);
+}
+
+/// C's warning where a model assert fires in an evaluation made around a solver
+/// attempt rather than in one: `solveHybrd`'s two and `updateInnerEquation`'s.
+fn log_assert_handled() {
+    crate::omclog::warning(
+        crate::omclog::STDOUT,
+        false,
+        "Non-Linear Solver try to handle a problem with a called assert.",
+    );
+}
+
 /// C's `solveHybrd` (nonlinearSolverHybrd.c): MINPACK `hybrd` over C's
 /// forward-difference Jacobian, wrapped in the retry ladder C grinds through before
 /// giving a system up. Every rung restarts the whole solve — the trust-region
@@ -986,7 +1126,7 @@ fn hybrd_c(
     warm: &[f64],
     nominal: &[f64],
     bounds: &[f64],
-    discrete_call: bool,
+    t: &HomotopyTrace,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     set_continuous: &mut dyn FnMut(bool),
 ) -> bool {
@@ -995,6 +1135,7 @@ fn hybrd_c(
     const EPSFCN: f64 = 1.0e-12;
     let maxfev = n * 10000;
     let initial_factor = 100.0f64;
+    let discrete_call = t.discrete;
 
     let mut local_tol = 1.0e-12f64;
     let mut factor = initial_factor;
@@ -1005,8 +1146,12 @@ fn hybrd_c(
     let mut diag: Option<alloc::vec::Vec<f64>> = None;
     let (mut retries, mut retries2, mut retries3) = (0i32, 0i32, 0i32);
     let mut assert_retries = 0usize;
-    let mut assert_called;
+    let mut assert_called = false;
+    // C's `assertMessage`: once per solve.
+    let mut assert_message = false;
 
+    // C's `nlsxOld`, which a clean run after an assert moves.
+    let mut warm = warm.to_vec();
     // C's `nlsx`, which the assert rung lifts off zero and success overwrites.
     let mut nlsx = x_start.to_vec();
     let mut xv = nlsx.clone();
@@ -1055,8 +1200,20 @@ fn hybrd_c(
         // measures at 1, so no rung can mistake it for progress.
         let mut void_run = status == minpack::Status::Aborted;
         if void_run {
+            if !assert_message && attempt_threw() {
+                log_hybrd_assert(t);
+                assert_message = true;
+            }
             assert_called = true;
         } else {
+            if assert_called {
+                crate::omclog::info(
+                    crate::omclog::NLS_V,
+                    false,
+                    "After assertions failed, found a solution for which assertions did not fail.",
+                );
+                warm.copy_from_slice(&xv);
+            }
             assert_retries = 0;
             assert_called = false;
             if discrete_call {
@@ -1065,6 +1222,9 @@ fn hybrd_c(
                 arm_attempt();
                 eval(&xv, &mut fvec);
                 if attempt_aborted() {
+                    if eval_threw() {
+                        log_assert_handled();
+                    }
                     void_run = true;
                     assert_called = true;
                 }
@@ -1098,6 +1258,9 @@ fn hybrd_c(
                 set_continuous(true);
                 return true;
             }
+            if eval_threw() {
+                log_assert_handled();
+            }
             assert_called = true;
             continue;
         }
@@ -1109,7 +1272,7 @@ fn hybrd_c(
         if assert_called && assert_retries < 1 + n {
             // The model asserted: lift collapsed unknowns to nominal, then nudge one
             // variable at a time by 1% of it.
-            xv.copy_from_slice(warm);
+            xv.copy_from_slice(&warm);
             if assert_retries == 0 {
                 for i in 0..n {
                     if nlsx[i] == 0.0 {
@@ -1141,12 +1304,12 @@ fn hybrd_c(
             use_xscaling = false;
             retries += 1;
         } else if retries < 7 && discrete_call {
-            xv.copy_from_slice(warm);
+            xv.copy_from_slice(&warm);
             continuous = false;
             non_continuous = true;
             retries += 1;
         } else if retries2 < 1 {
-            xv.copy_from_slice(warm);
+            xv.copy_from_slice(&warm);
             use_xscaling = true;
             continuous = true;
             factor = initial_factor;
@@ -2636,6 +2799,7 @@ pub extern "C" fn rt_solve_nls(
     // A nested solve (a medium inversion inside a flow residual) must not end the
     // enclosing attempt.
     let saved_assert_seen = NLS_ASSERT_SEEN.swap(0, Ordering::Relaxed);
+    let saved_throw_seen = NLS_THROW_SEEN.swap(0, Ordering::Relaxed);
     // Scratch buffers in the shared linear memory so the model callbacks (which
     // take wasm pointers) can read `x` / write `r`.
     let x_ptr = rt_alloc((n * 8) as u32);
@@ -2676,8 +2840,9 @@ pub extern "C" fn rt_solve_nls(
         // C's generated `residualFunc`: an inf/nan iteration variable fails the
         // evaluation instead of reaching the model. Feed kinsol the nan residual
         // and its line search takes a nan step length, which no exit test catches.
+        // Not a model throw — see [`NLS_EVAL_THREW`].
         if xs.iter().any(|v| !v.is_finite()) {
-            note_eval_hit(true);
+            note_eval_hit(true, false);
             for i in 0..n {
                 r[i] = ASSERT_RESIDUAL;
             }
@@ -2791,20 +2956,29 @@ pub extern "C" fn rt_solve_nls(
     let discrete_call = saved_rel_fresh == 1;
     let mixed = mixed != 0 && discrete_call;
     let mut x = if discrete_call { nlsx_old.clone() } else { guess.clone() };
-    // C's `relationsPreBackup`; `updateInnerEquation` primes at `nlsx`.
+    // C's `relationsPreBackup`; `updateInnerEquation` primes at `nlsx`. C gates it on
+    // `discreteCall`, which `functionInitialEquations` also sets, so an initial system
+    // gets it too — with relations already fresh there, only an event moves the flag.
     let mut rel_backup = alloc::vec::Vec::new();
-    if discrete_call {
-        unsafe { store_u32(rel_fresh_addr, 1) };
+    if saved_rel_fresh != 0 {
+        if discrete_call {
+            unsafe { store_u32(rel_fresh_addr, 1) };
+        }
         // `updateInnerEquation` calls the residual directly rather than through
         // `wrapper_fvec`, so C does not count this evaluation.
         let uncounted = n_feval.get();
         eval(&nlsx_old, &mut scratch);
         n_feval.set(uncounted);
+        if eval_threw() {
+            log_assert_handled();
+        }
         if mixed {
             rel_backup = (0..n_rel).map(|i| unsafe { load_u32(rel_addr + i * 4) }).collect();
         }
-        unsafe { store_u32(rel_fresh_addr, 0) };
-    } else if saved_rel_fresh == 0 {
+        if discrete_call {
+            unsafe { store_u32(rel_fresh_addr, 0) };
+        }
+    } else {
         unsafe { store_u32(rel_fresh_addr, 0) };
     }
     // C prints over `nlsx` (the stored solution), not the extrapolation the solver
@@ -2861,11 +3035,11 @@ pub extern "C" fn rt_solve_nls(
             // C's `solveHomotopy` opens one `LOG_NLS_V` block over everything down to
             // its homotopy runs.
             let homotopy_solver = matches!(pick, Nls::Default | Nls::Mixed);
+            // C's `discreteCall` covers the initial system too, so it is not
+            // `discrete_call` (which is only about holding relations).
+            let t =
+                HomotopyTrace { eq_index, time, discrete: saved_rel_fresh != 0, initial: saved_rel_fresh == 2 };
             if homotopy_solver {
-                // C's `discreteCall` covers the initial system too, so it is not
-                // `discrete_call` (which is only about holding relations).
-                let t =
-                    HomotopyTrace { eq_index, time, discrete: saved_rel_fresh != 0, initial: saved_rel_fresh == 2 };
                 (converged, settled) = newton_c(
                     n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
                     has_jac, Some(&t),
@@ -2887,8 +3061,7 @@ pub extern "C" fn rt_solve_nls(
                     }
                 };
                 converged = hybrd_c(
-                    n, &mut x, &nlsx, &warm, &nominal, &bounds, saved_rel_fresh != 0, &mut eval,
-                    &mut set_cont,
+                    n, &mut x, &nlsx, &warm, &nominal, &bounds, &t, &mut eval, &mut set_cont,
                 );
             }
             // The rungs below are not `solveHomotopy`'s; they catch what C gives up on.
@@ -3018,6 +3191,7 @@ pub extern "C" fn rt_solve_nls(
         unsafe { store_u32(rel_fresh_addr, saved_rel_fresh) };
     }
     NLS_ASSERT_SEEN.store(saved_assert_seen, Ordering::Relaxed);
+    NLS_THROW_SEEN.store(saved_throw_seen, Ordering::Relaxed);
 
     rt_free(x_ptr);
     rt_free(r_ptr);
@@ -3172,7 +3346,8 @@ mod tests {
             r[n - 1] = libm::pow(k, k) - libm::pow(xs[n - 1], k) * xs[0];
         };
         let mut cont = |_: bool| {};
-        assert!(hybrd_c(n, &mut x, &x_start, &warm, &nominal, &bounds, true, &mut eval, &mut cont));
+        let t = HomotopyTrace { eq_index: 0, time: 0.0, discrete: true, initial: true };
+        assert!(hybrd_c(n, &mut x, &x_start, &warm, &nominal, &bounds, &t, &mut eval, &mut cont));
         for i in 0..n {
             assert!((x[i] - (i + 1) as f64).abs() < 1e-6, "x={x:?}");
         }
