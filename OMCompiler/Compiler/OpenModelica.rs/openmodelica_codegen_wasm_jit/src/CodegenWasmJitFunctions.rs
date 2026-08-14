@@ -1345,9 +1345,11 @@ pub(crate) struct SimCtx {
     /// `SES_NONLINEAR` system index -> its `rt_solve_nls` job (shared-table slot
     /// + unknown count). Empty when the model has no nonlinear systems.
     pub(crate) nls_jobs: Arc<HashMap<i32, NlsJob>>,
-    /// `sample(index,…)` event index -> its slot `k`, so the `sample` builtin can
-    /// resolve which `active` flag to read. Empty when the model has no samples.
-    pub(crate) sample_map: Arc<HashMap<i32, u32>>,
+    /// `SimGenericCall` index -> the shared for-loop body it runs (C's
+    /// `sc.generic_loop_calls`).
+    pub(crate) generic_calls: Arc<HashMap<i32, SimCode::SimGenericCall>>,
+    /// Number of `sample(...)` time events, bounding the `active` flag region.
+    pub(crate) n_samples: u32,
     /// `SimData` byte offset of the per-sample `active` flags.
     pub(crate) sample_active_off: u32,
     /// `SimData` byte offset of the held relation values (`relations[]`).
@@ -1507,6 +1509,25 @@ pub(crate) struct ArrayGroup {
     pub(crate) dims: Vec<u32>,
     /// Product of `dims` (number of scalar elements).
     pub(crate) total: u32,
+    /// The `dims.len() + 1` pieces an element key is spelled from, one subscript
+    /// between each: `["module", ".x", ""]` -> `module[i].x[j]`.
+    pub(crate) key_pieces: Vec<String>,
+}
+
+impl ArrayGroup {
+    /// The cref key of element `idx` (1-based), as `sim_cref_key` spells it.
+    pub(crate) fn elem_key(&self, idx: &[i32]) -> String {
+        let mut s = String::new();
+        for (k, piece) in self.key_pieces.iter().enumerate() {
+            s.push_str(piece);
+            if let Some(i) = idx.get(k) {
+                s.push('[');
+                s.push_str(&i.to_string());
+                s.push(']');
+            }
+        }
+        s
+    }
 }
 
 /// A constant array's elements, row-major; it owns no `SimData` slots.
@@ -5042,6 +5063,11 @@ fn sim_pre_is_stored(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
             return Ok(true);
         }
     }
+    if let Some((base, _)) = array_ref_of(cref)? {
+        if sim.array_groups.contains_key(&base) {
+            return Ok(true);
+        }
+    }
     match sim_array_base_subs(cref)? {
         Some((base, _)) => Ok(sim.array_groups.contains_key(&base)),
         None => Ok(false),
@@ -5179,32 +5205,29 @@ fn const_index_value(exp: &DAE::Exp) -> Option<i32> {
 fn array_ref_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::Exp>>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
+    let mut exps = Vec::new();
     let mut node = cr;
     loop {
-        match node {
-            C::CREF_IDENT { ident, subscriptLst, .. } => {
-                base.push_str(ident);
-                if subscriptLst.is_empty() {
-                    return Ok(None);
-                }
-                let mut exps = Vec::new();
-                for sub in &**subscriptLst {
-                    match &**sub {
-                        DAE::Subscript::INDEX { exp } => exps.push(exp.clone()),
-                        _ => return Ok(None), // slice / whole-dim: not an element access
-                    }
-                }
-                return Ok(Some((base, exps)));
-            }
+        let (ident, subscriptLst, next) = match node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
             C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
-                base.push_str(ident);
-                if !push_qual_subs(subscriptLst, &mut base) {
-                    return Ok(None);
-                }
-                base.push('.');
-                node = componentRef;
+                (ident, subscriptLst, Some(componentRef))
             }
             _ => return Ok(None),
+        };
+        base.push_str(ident);
+        for sub in &**subscriptLst {
+            match &**sub {
+                DAE::Subscript::INDEX { exp } => exps.push(exp.clone()),
+                _ => return Ok(None), // slice / whole-dim: not an element access
+            }
+        }
+        match next {
+            Some(n) => {
+                base.push('.');
+                node = n;
+            }
+            None => return Ok(if exps.is_empty() { None } else { Some((base, exps)) }),
         }
     }
 }
@@ -5244,6 +5267,42 @@ fn sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::E
                 node = componentRef;
             }
             _ => return Ok(None),
+        }
+    }
+}
+
+/// [`sim_slice_of`] for a slice indexed on *outer* components: `module[$i].x` is
+/// a contiguous run inside the flattened `module.x` group, so every subscript
+/// the cref carries is a leading index. `None` unless one of them is qualified.
+fn flat_sim_slice_of(cr: &DAE::ComponentRef) -> Result<Option<(String, Vec<Arc<DAE::Exp>>)>> {
+    use DAE::ComponentRef as C;
+    let mut base = String::new();
+    let mut leading = Vec::new();
+    let mut qualified_subs = false;
+    let mut node = cr;
+    loop {
+        let (ident, subscriptLst, next) = match node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
+            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+                qualified_subs |= !subscriptLst.is_empty();
+                (ident, subscriptLst, Some(componentRef))
+            }
+            _ => return Ok(None),
+        };
+        base.push_str(ident);
+        for sub in &**subscriptLst {
+            match &**sub {
+                DAE::Subscript::INDEX { exp } => leading.push(exp.clone()),
+                DAE::Subscript::WHOLEDIM | DAE::Subscript::WHOLE_NONEXP { .. } if next.is_none() => {}
+                _ => return Ok(None),
+            }
+        }
+        match next {
+            Some(n) => {
+                base.push('.');
+                node = n;
+            }
+            None => return Ok((qualified_subs && !leading.is_empty()).then_some((base, leading))),
         }
     }
 }
@@ -5522,8 +5581,11 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
         }
     }
     // Contiguous slice `base[i,…,:]`: gather the row-major block.
-    if let Some((base, leading)) = sim_slice_of(cref)? {
-        if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
+    for slice in [sim_slice_of(cref)?, flat_sim_slice_of(cref)?].into_iter().flatten() {
+        let (base, leading) = slice;
+        if let Some(group) =
+            ctx.sim()?.array_groups.get(&base).filter(|g| leading.len() < g.dims.len()).cloned()
+        {
             emit_sim_slice_gather(ctx, &group, &leading)?;
             return Ok(Some(WTy::I32));
         }
@@ -5678,8 +5740,11 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
         }
     }
     // Contiguous slice `base[i,…,:] := arr`: scatter into the row-major block.
-    if let Some((base, leading)) = sim_slice_of(cref)? {
-        if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
+    for slice in [sim_slice_of(cref)?, flat_sim_slice_of(cref)?].into_iter().flatten() {
+        let (base, leading) = slice;
+        if let Some(group) =
+            ctx.sim()?.array_groups.get(&base).filter(|g| leading.len() < g.dims.len()).cloned()
+        {
             emit_sim_slice_scatter(ctx, &group, &leading, rhs)?;
             return Ok(true);
         }
@@ -6084,13 +6149,7 @@ fn emit_sim_start_array_gather(ctx: &mut FnCtx, group: &ArrayGroup, base_key: &s
             ctx.emit(we::Instruction::I32Const((lin as u32 * stride) as i32));
             ctx.emit(we::Instruction::I32Add);
         }
-        let mut elem_key = String::from(base_key);
-        for i in &idx {
-            elem_key.push('[');
-            elem_key.push_str(&i.to_string());
-            elem_key.push(']');
-        }
-        let wty = emit_sim_start_scalar(ctx, &elem_key)?
+        let wty = emit_sim_start_scalar(ctx, &group.elem_key(&idx))?
             .ok_or("CodegenWasmJit: $START for unknown array element")?;
         coerce(ctx, wty, group.wty);
         match group.wty {
@@ -6107,6 +6166,10 @@ pub(crate) mod closures;
 
 #[path = "CodegenWasmJitFunctions/shared_lits.rs"]
 pub(crate) mod shared_lits;
+
+#[path = "CodegenWasmJitFunctions/generic_calls.rs"]
+mod generic_calls;
+pub(crate) use generic_calls::{emit_entwined_assign, emit_generic_assign, emit_resizable_assign};
 
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
@@ -7813,11 +7876,13 @@ fn compile_math_builtin(
             let DAE::Exp::ICONST { integer } = &**argv[0] else {
                 return Err("CodegenWasmJit: `sample` index must be an integer literal");
             };
-            let k = *ctx
-                .sim()?
-                .sample_map
-                .get(integer)
-                .ok_or_else(|| "CodegenWasmJit: unknown sample index")?;
+            // C's `samples[index - 1]`: the expression's index is 1-based into
+            // the samples array, which the driver fills in `timeEvents` order.
+            let n_samples = ctx.sim()?.n_samples;
+            let k = u32::try_from(*integer - 1)
+                .ok()
+                .filter(|k| *k < n_samples)
+                .ok_or_else(|| "CodegenWasmJit: `sample` index out of range")?;
             let data = ctx.sim()?.data_local;
             let off = ctx.sim()?.sample_active_off + k * 4;
             ctx.emit(we::Instruction::LocalGet(data));

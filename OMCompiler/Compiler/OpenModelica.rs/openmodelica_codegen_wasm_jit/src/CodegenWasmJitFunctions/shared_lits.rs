@@ -106,6 +106,12 @@ pub(crate) fn build_init_fn(
     Ok(f)
 }
 
+/// Intern a heap-valued constant the backend did not mark `SHARED_LITERAL`: the
+/// index tables a non-scalarized for-equation loops over (C's `static const`).
+pub(crate) fn intern_const(e: &DAE::Exp) -> u32 {
+    intern(e)
+}
+
 fn intern(e: &DAE::Exp) -> u32 {
     POOL.with(|p| {
         let mut p = p.borrow_mut();
