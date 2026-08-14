@@ -172,12 +172,22 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
     jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
   }
 
+  /* Dense buffer callers use two different conventions:
+   *  - NLS/torn-system solvers (nonlinearSolverNewton.c etc.) allocate a square
+   *    sizeCols x sizeCols buffer, since sizeRows can exceed sizeCols with
+   *    auxiliary residual rows beyond the NLS size that are not part of the
+   *    square system to solve.
+   *  - Genuinely rectangular Jacobians (e.g. state-selection candidate
+   *    matrices in stateset.c, where sizeCols > sizeRows is normal, not an
+   *    "auxiliary rows" case) allocate exactly sizeRows * sizeCols.
+   * min(sizeRows, sizeCols) as the stride is correct for both: it equals
+   * sizeCols in the NLS case (matching its square buffer) and sizeRows in the
+   * rectangular case (matching its exact buffer, with every column still
+   * written since column is only ever bounded by sizeCols, never clamped). */
+  const int denseRows = jacobian->sizeRows < jacobian->sizeCols ? jacobian->sizeRows : jacobian->sizeCols;
+
   if (isDense) {
-    /* Dense NLS Jacobian: callers allocate a square sizeCols×sizeCols buffer.
-     * Use sizeCols as both row count and stride so that non-square Jacobians
-     * (sizeRows > sizeCols, with auxiliary residual rows beyond the NLS size)
-     * do not write past the end of the caller's buffer. */
-    memset(jac, 0, (size_t)jacobian->sizeCols * jacobian->sizeCols * sizeof(modelica_real));
+    memset(jac, 0, (size_t)denseRows * jacobian->sizeCols * sizeof(modelica_real));
   }
 
   if (!sp) return; /* no sparsity pattern; Jacobian entries cannot be filled */
@@ -200,10 +210,12 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
             /* sparse case */
             jac[nz] = jacobian->resultVars[row]; //* solverData->xScaling[j];
           }
-          else if (row < jacobian->sizeCols) {
-            /* dense case: column-major, sizeCols rows per column.
-             * Skip auxiliary rows (row >= sizeCols) that lie outside the NLS matrix. */
-            jac[column * jacobian->sizeCols + row] = jacobian->resultVars[row];
+          else if (row < denseRows) {
+            /* dense case: column-major, denseRows rows per column.
+             * Skip auxiliary rows (row >= denseRows) that lie outside the NLS matrix
+             * (only relevant when sizeRows > sizeCols; never true for rectangular
+             * Jacobians where denseRows == sizeRows). */
+            jac[column * denseRows + row] = jacobian->resultVars[row];
           }
         }
         /* de-activate seed variable for the corresponding color */
