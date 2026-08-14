@@ -285,6 +285,9 @@ const PLATFORM: &str = {
 fn engine() -> wasmtime::Result<Engine> {
     let mut cfg = Config::new();
     cfg.wasm_component_model(true);
+    // A model with external "C" carries the `model_error` tag its call sites catch.
+    // The exporter's engine must agree, or the `.cwasm` it precompiled is rejected.
+    cfg.wasm_exceptions(true);
     Engine::new(&cfg)
 }
 

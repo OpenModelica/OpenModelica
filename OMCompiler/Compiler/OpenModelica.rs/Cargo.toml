@@ -66,7 +66,7 @@ wasm-encoder = "0.252"
 # or wasmer — whose `js` backend is the only one that can JIT inside a
 # browser-wasm build of omc, and which can also be selected natively
 # (`--features engine-wasmer`) to benchmark against wasmtime.
-wasmtime = { version = "45", default-features = false, features = ["std", "cranelift", "runtime", "parallel-compilation"] }
+wasmtime = { version = "45", default-features = false, features = ["std", "cranelift", "runtime", "parallel-compilation", "gc", "gc-null"] }
 wasmer = { version = "7.2.0-alpha.3", default-features = false, features = ["std", "wat"] }
 openmodelica_wasm_jit = {path = "openmodelica_wasm_jit"}
 openmodelica_codegen_wasm_jit = {path = "openmodelica_codegen_wasm_jit"}

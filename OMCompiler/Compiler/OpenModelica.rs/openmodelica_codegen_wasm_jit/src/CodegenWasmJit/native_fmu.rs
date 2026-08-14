@@ -97,12 +97,15 @@ pub fn available() -> Vec<String> {
 pub fn precompile(component: &[u8], p: &Platform) -> Result<Vec<u8>> {
     let mut cfg = wasmtime::Config::new();
     cfg.wasm_component_model(true);
+    // A model with external "C" carries the `model_error` tag its call sites catch.
+    cfg.wasm_exceptions(true);
     cfg.target(p.triple).map_err(|_| "CodegenWasmJit: unknown target for the FMU platform")?;
     let engine = wasmtime::Engine::new(&cfg)
         .map_err(|_| "CodegenWasmJit: cannot configure the FMU cross-compiler")?;
-    engine
-        .precompile_component(component)
-        .map_err(|_| "CodegenWasmJit: cannot compile the component for the FMU platform")
+    engine.precompile_component(component).map_err(|e| {
+        super::record_error(format!("CodegenWasmJit: compiling the FMU for {}: {e:#}", p.fmi));
+        "CodegenWasmJit: cannot compile the component for the FMU platform"
+    })
 }
 
 /// Nothing to announce: this omc compiles in process.

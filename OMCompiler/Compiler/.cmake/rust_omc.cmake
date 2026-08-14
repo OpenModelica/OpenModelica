@@ -883,6 +883,13 @@ function(omc_rust_setup_codegen)
   if(RUST_OMC_LAPACK_NALGEBRA)
     list(APPEND _rust_omc_features openmodelica_util/lapack-nalgebra)
   endif()
+  # Run the wasm-jit simulations on wasmer rather than wasmtime: the web target's
+  # own host code (`sim_runtime_wasmer.rs`, the ModelicaExternalC side module),
+  # which is otherwise reachable only from a browser.
+  option(RUST_OMC_ENGINE_WASMER "Build the native omc with the wasmer wasm-jit host (the web target's) instead of wasmtime." OFF)
+  if(RUST_OMC_ENGINE_WASMER)
+    list(APPEND _rust_omc_features engine-wasmer)
+  endif()
   # --no-default-features makes sundials off by default; enable it only when
   # the wasm cross-compile is enabled.
   if(RUST_OMC_ENABLE_SUNDIALS)
