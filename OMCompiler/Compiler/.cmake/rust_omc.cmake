@@ -594,9 +594,15 @@ endif()
 # artifacts — not RUST_OMC_PROFILE. --workspace covers every crate's tests. The
 # test does not run codegen itself, so the omc targets must be built first (CTest
 # has no build dependency on them) — the standard build-then-ctest order.
+#
+# `openmodelica` is excluded: it is the thin omc launcher, which links against
+# libOpenModelicaCompiler.so of the *build's* profile. That library is only ever
+# produced in RUST_OMC_PROFILE, so building the package's test target in the dev
+# profile fails to link. It carries no tests of its own.
 # ---------------------------------------------------------------------------
 add_test(NAME rust_cargo_test
-  COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} test --target-dir ${RUST_TARGET_DIR} --workspace
+  COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} test --target-dir ${RUST_TARGET_DIR}
+          --workspace --exclude openmodelica
   WORKING_DIRECTORY ${RUST_OMC_DIR})
 
 # ---------------------------------------------------------------------------

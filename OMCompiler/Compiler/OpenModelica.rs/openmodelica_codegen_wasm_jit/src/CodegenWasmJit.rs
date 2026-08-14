@@ -61,6 +61,7 @@ use crate::CodegenWasmJitFunctions::{
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     ClockInit, ClockUpdate,
     NlsResidual, emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
+    emit_entwined_assign, emit_generic_assign, emit_resizable_assign,
     emit_nls_residual_body, emit_solve_nls_call, external_import_sig, external_known,
     external_general_why, note_declined_external, reset_declined_externals,
     function_signature, rt_index, sim_cref_key, sim_const_store,
@@ -2483,7 +2484,7 @@ pub(crate) struct SimVarMap {
     /// Transient accumulator: base cref key -> the scalarized elements seen
     /// (subscripts, byte offset, value type). Finalized into `array_groups` at the
     /// end of [`build_var_map`].
-    array_acc: HashMap<String, Vec<(Vec<i32>, u32, WTy)>>,
+    array_acc: HashMap<String, Vec<(Vec<i32>, Vec<String>, u32, WTy)>>,
     /// `SimData` byte offset of the `terminate` flag (see [`SimLayout`]).
     terminate_off: u32,
     terminal_off: u32,
@@ -2495,9 +2496,10 @@ pub(crate) struct SimVarMap {
     /// `SES_NONLINEAR` system index -> its `rt_solve_nls` job. Filled by
     /// [`collect_nls_jobs`] before the equation functions are lowered.
     nls_jobs: Arc<HashMap<i32, NlsJob>>,
-    /// `sample(index,…)` event index -> its slot `k` (see [`SampleInfo`]). Empty
-    /// when the model has no samples.
-    sample_map: Arc<HashMap<i32, u32>>,
+    /// `SimGenericCall` index -> the shared for-loop body (`generic_loop_calls`).
+    generic_calls: Arc<HashMap<i32, SimCode::SimGenericCall>>,
+    /// Number of `sample(...)` time events (see [`SampleInfo`]).
+    n_samples: u32,
     /// `SimData` byte offset of the per-sample `active` flags (`SimLayout`).
     sample_active_off: u32,
     /// `SimData` byte offset of the held relation values (`SimLayout::relations_off`).
@@ -2777,7 +2779,8 @@ fn index_attr(attr: &Option<Arc<DAE::Exp>>, idx: &[i32]) -> Option<Arc<DAE::Exp>
 }
 
 /// Element `idx` of an array expression: literal `ARRAY`/`MATRIX` indexed
-/// statically, otherwise wrapped in an `ASUB` evaluated at run time.
+/// statically, otherwise a simplified `ASUB` — `x(each start = 1)` arrives as
+/// `{1.0 for $i in 1:n}`, which only folds through `simplifyAsub`.
 fn index_exp(exp: &Arc<DAE::Exp>, idx: &[i32]) -> Arc<DAE::Exp> {
     use DAE::Exp as E;
     if idx.is_empty() {
@@ -2800,9 +2803,12 @@ fn index_exp(exp: &Arc<DAE::Exp>, idx: &[i32]) -> Arc<DAE::Exp> {
     }
     let sub: List<Arc<DAE::Subscript>> = idx
         .iter()
-        .map(|&i| Arc::new(DAE::Subscript::INDEX { exp: Arc::new(DAE::Exp::ICONST { integer: i }) }))
+        .map(|&i| Arc::new(DAE::Subscript::INDEX { exp: Arc::new(E::ICONST { integer: i }) }))
         .collect();
-    Arc::new(E::ASUB { exp: exp.clone(), sub: Arc::new(sub) })
+    let asub = Arc::new(E::ASUB { exp: exp.clone(), sub: Arc::new(sub) });
+    openmodelica_frontend_base::ExpressionSimplify::simplify1(asub.clone())
+        .map(|(e, _)| e)
+        .unwrap_or(asub)
 }
 
 /// Subscript an alias target by the same `idx`; `NOALIAS` passes through.
@@ -2876,7 +2882,8 @@ fn build_var_map(
         term_info_off: layout.term_info_off,
         nls_fail_off: layout.nls_fail_off,
         nls_jobs: Arc::new(HashMap::new()),
-        sample_map: Arc::new(HashMap::new()),
+        generic_calls: Arc::new(HashMap::new()),
+        n_samples: 0,
         sample_active_off: layout.sample_active_off,
         relations_off: layout.relations_off,
         rel_fresh_off: layout.rel_fresh_off,
@@ -3100,6 +3107,18 @@ fn build_var_map(
             heap: tslot.heap,
         };
         Arc::make_mut(&mut map.vars).insert(sim_cref_key(&av.name)?, slot);
+        // An alias array is assigned as a whole, so it needs a group over the
+        // target's slots. A negated element could not be gathered as it stands.
+        if slot.negate == Neg::None {
+            for g in array_element_keys(&av.name)? {
+                map.array_acc.entry(g.base).or_default().push((
+                    g.subs,
+                    g.pieces,
+                    slot.off,
+                    slot.wty,
+                ));
+            }
+        }
         if let (Some(name), Some(kind)) = (
             result_name(&cref_display(&av.name)?),
             kind_from_slot(slot.off, slot.wty, slot.negate, slot.heap, layout),
@@ -3131,13 +3150,17 @@ fn build_var_map(
     }
     // Same for the array accumulator, so `pre(x[i])` with a non-constant subscript
     // resolves through a `$PRE.<base>` group.
-    let pre_groups: Vec<(String, Vec<(Vec<i32>, u32, WTy)>)> = map
+    let pre_groups: Vec<(String, Vec<(Vec<i32>, Vec<String>, u32, WTy)>)> = map
         .array_acc
         .iter()
         .filter_map(|(base, elems)| {
             let pre: Option<Vec<_>> = elems
                 .iter()
-                .map(|(subs, off, wty)| layout.pre_slot_off(*off).map(|p| (subs.clone(), p, *wty)))
+                .map(|(subs, pieces, off, wty)| {
+                    let mut pieces = pieces.clone();
+                    pieces[0].insert_str(0, "$PRE.");
+                    Some((subs.clone(), pieces, layout.pre_slot_off(*off)?, *wty))
+                })
                 .collect();
             Some((format!("$PRE.{base}"), pre?))
         })
@@ -3156,16 +3179,14 @@ fn insert_var(map: &mut SimVarMap, sv: &SimCodeVar::SimVar, off: u32, wty: WTy, 
     let key = sim_cref_key(&sv.name)?;
     Arc::make_mut(&mut map.vars).insert(key.clone(), SimSlot { off, wty, negate: Neg::None, heap });
     Arc::make_mut(&mut map.starts).insert(key, sv.initialValue.clone());
-    if let Some((base, subs)) = array_element_of(&sv.name)? {
-        map.array_acc.entry(base).or_default().push((subs, off, wty));
+    for g in array_element_keys(&sv.name)? {
+        map.array_acc.entry(g.base).or_default().push((g.subs, g.pieces, off, wty));
     }
     Ok(())
 }
 
 /// If `cr` is a scalarized array element `base[c1,…,cn]` — the subscripts on the
-/// *final* component, all constant integers — return `(base cref key, subscripts)`.
-/// Intermediate subscripts (an array of records) belong to the base key. `None` for
-/// a plain scalar or a non-constant subscript.
+/// deepest component all constant — its base name and those subscripts.
 fn array_element_of(cr: &Arc<DAE::ComponentRef>) -> Result<Option<(String, Vec<i32>)>> {
     use DAE::ComponentRef as C;
     let mut base = String::new();
@@ -3188,6 +3209,77 @@ fn array_element_of(cr: &Arc<DAE::ComponentRef>) -> Result<Option<(String, Vec<i
                 node = componentRef;
             }
             _ => return Ok(None),
+        }
+    }
+}
+
+/// The array groups a scalarized element joins. `b[1].a[2].y` joins `b[1].a`,
+/// keyed as `sim_cref_key` spells it, and the flattened `b.a.y`, which is what
+/// `b[$i].a[$j].y` resolves through.
+fn array_element_keys(cr: &Arc<DAE::ComponentRef>) -> Result<Vec<GroupEntry>> {
+    let mut out = Vec::new();
+    if let Some((base, subs)) = array_element_of(cr)? {
+        let mut pieces = vec![base.clone()];
+        pieces.resize(subs.len() + 1, String::new());
+        out.push(GroupEntry { base, subs, pieces });
+    }
+    if let Some(e) = flat_array_element_of(cr)? {
+        if !out.iter().any(|g| g.base == e.base) {
+            out.push(e);
+        }
+    }
+    Ok(out)
+}
+
+/// A group membership: its key, the element's index in it, and how the group
+/// spells an element key (`ArrayGroup::key_pieces`).
+struct GroupEntry {
+    base: String,
+    subs: Vec<i32>,
+    pieces: Vec<String>,
+}
+
+/// The name with every subscript stripped, the subscripts outermost-first, and
+/// the pieces they sit between. `None` unless an outer component is subscripted.
+fn flat_array_element_of(cr: &Arc<DAE::ComponentRef>) -> Result<Option<GroupEntry>> {
+    use DAE::ComponentRef as C;
+    let mut base = String::new();
+    let mut subs = Vec::new();
+    let mut pieces = Vec::new();
+    let mut piece = String::new();
+    let mut qualified_subs = false;
+    let mut node: &Arc<DAE::ComponentRef> = cr;
+    loop {
+        let (ident, subscriptLst, next) = match &**node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
+            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+                qualified_subs |= !subscriptLst.is_empty();
+                (ident, subscriptLst, Some(componentRef))
+            }
+            _ => return Ok(None),
+        };
+        base.push_str(ident);
+        piece.push_str(ident);
+        match const_int_subscripts(subscriptLst)? {
+            Some(s) => {
+                for ix in s {
+                    subs.push(ix);
+                    pieces.push(core::mem::take(&mut piece));
+                }
+            }
+            None => return Ok(None),
+        }
+        match next {
+            Some(n) => {
+                base.push('.');
+                piece.push('.');
+                node = n;
+            }
+            None => {
+                pieces.push(piece);
+                return Ok((qualified_subs && !subs.is_empty())
+                    .then_some(GroupEntry { base, subs, pieces }));
+            }
         }
     }
 }
@@ -3224,12 +3316,12 @@ fn finalize_array_groups(map: &mut SimVarMap) -> Result<()> {
         // not fatal: individual element references still resolve through their own
         // slots, and a genuine whole-array reference fails later as "unknown
         // variable". Only truly malformed shapes (non-positive index) are errors.
-        if elems.iter().any(|(s, _, _)| s.len() != rank) {
+        if elems.iter().any(|(s, _, _, _)| s.len() != rank) {
             continue; // ragged rank (element and its own sub-slice both present)
         }
         // Shape: 1-based max index per axis.
         let mut dims = vec![0u32; rank];
-        for (subs, _, _) in &elems {
+        for (subs, _, _, _) in &elems {
             for (axis, &ix) in subs.iter().enumerate() {
                 if ix < 1 {
                     record_error(format!(
@@ -3246,23 +3338,25 @@ fn finalize_array_groups(map: &mut SimVarMap) -> Result<()> {
             // reference then fails loudly with "unknown variable".
             continue;
         }
-        let wty = first.2;
-        if elems.iter().any(|(_, _, w)| *w != wty) {
+        let wty = first.3;
+        if elems.iter().any(|(_, _, _, w)| *w != wty) {
             continue; // mixed element storage types: not a uniform contiguous array
         }
         let stride = match wty { WTy::F64 => 8, WTy::I32 => 4 };
-        let Some(base_off) = elems.iter().map(|(_, o, _)| *o).min() else { continue };
+        let Some(base_off) = elems.iter().map(|(_, _, o, _)| *o).min() else { continue };
         // Contiguous row-major? If any element's slot is elsewhere (aliased, or the
         // elements straddle SimData regions), this is not one contiguous block, so
         // skip the group rather than aborting the whole build.
-        let contiguous = elems.iter().all(|(subs, off, _)| {
+        let contiguous = elems.iter().all(|(subs, _, off, _)| {
             let lin = subs.iter().enumerate().fold(0u32, |lin, (axis, &ix)| lin * dims[axis] + (ix as u32 - 1));
             *off == base_off + lin * stride
         });
         if !contiguous {
             continue;
         }
-        Arc::make_mut(&mut map.array_groups).insert(base, ArrayGroup { base_off, wty, dims, total });
+        let key_pieces = first.1.clone();
+        Arc::make_mut(&mut map.array_groups)
+            .insert(base, ArrayGroup { base_off, wty, dims, total, key_pieces });
     }
     finalize_const_groups(map)
 }
@@ -3403,31 +3497,111 @@ fn collect_zero_crossings(
 ) -> Result<Vec<ZcInfo>> {
     let mut out = Vec::new();
     for zc in lst(zcs) {
-        if zc.iter.is_some() {
-            return Err("CodegenWasmJit: for-loop (iterator) zero-crossing not yet supported");
-        }
-        match &*zc.relation_ {
-            DAE::Exp::RELATION { .. } | DAE::Exp::LBINARY { .. } | DAE::Exp::LUNARY { .. } => {
-                out.push(ZcInfo::Bool { expr: zc.relation_.clone() });
+        for relation in expand_iter_crossing(&zc.relation_, &zc.iter)? {
+            match &*relation {
+                DAE::Exp::RELATION { .. } | DAE::Exp::LBINARY { .. } | DAE::Exp::LUNARY { .. } => {
+                    out.push(ZcInfo::Bool { expr: relation.clone() });
+                }
+                // `sample()` in the zero-crossing list is a time event (handled via
+                // `collect_samples`); it contributes no DASKR root, like C's empty case.
+                DAE::Exp::CALL { path, .. } if path_ident_is(path, "sample") => {}
+                DAE::Exp::CALL { path, expLst, .. }
+                    if path_ident_name(path)
+                        .and_then(|n| math_event_kind(n, count(expLst) as usize))
+                        .is_some() =>
+                {
+                    let kind = math_event_kind(path_ident_name(path).unwrap(), count(expLst) as usize).unwrap();
+                    let argv: Vec<Arc<DAE::Exp>> = lst(expLst).cloned().collect();
+                    let idx = math_event_index(argv.last().unwrap())?;
+                    let ops = argv[..argv.len() - 1].to_vec();
+                    out.push(ZcInfo::Math { kind, ops, idx, expr: relation.clone() });
+                }
+                other => return Err("CodegenWasmJit: unsupported zero-crossing form"),
             }
-            // `sample()` in the zero-crossing list is a time event (handled via
-            // `collect_samples`); it contributes no DASKR root, like C's empty case.
-            DAE::Exp::CALL { path, .. } if path_ident_is(path, "sample") => {}
-            DAE::Exp::CALL { path, expLst, .. }
-                if path_ident_name(path)
-                    .and_then(|n| math_event_kind(n, count(expLst) as usize))
-                    .is_some() =>
-            {
-                let kind = math_event_kind(path_ident_name(path).unwrap(), count(expLst) as usize).unwrap();
-                let argv: Vec<Arc<DAE::Exp>> = lst(expLst).cloned().collect();
-                let idx = math_event_index(argv.last().unwrap())?;
-                let ops = argv[..argv.len() - 1].to_vec();
-                out.push(ZcInfo::Math { kind, ops, idx, expr: zc.relation_.clone() });
-            }
-            other => return Err("CodegenWasmJit: unsupported zero-crossing form"),
         }
     }
     Ok(out)
+}
+
+/// A for-loop crossing occupies one slot per iteration: C's `forIteratorBody`
+/// offsets `gout` mixed-radix, first iterator least significant. The counts are
+/// constant, so the same slots come from substituting each iterator value in.
+fn expand_iter_crossing(
+    relation: &Arc<DAE::Exp>,
+    iters: &Option<Arc<List<openmodelica_backend_types::BackendDAE::SimIterator>>>,
+) -> Result<Vec<Arc<DAE::Exp>>> {
+    let Some(iters) = iters else { return Ok(vec![relation.clone()]) };
+    let mut out = vec![relation.clone()];
+    for iter in lst(iters) {
+        let (name, values, sub_iters) = iterator_bindings(iter)?;
+        let mut next = Vec::with_capacity(out.len() * values.len());
+        for (pos, value) in values.iter().enumerate() {
+            for e in &out {
+                let mut e = subst_iterator(e, &name, value)?;
+                for (sub_name, table) in &sub_iters {
+                    let v = table
+                        .get(pos)
+                        .ok_or("CodegenWasmJit: dependent iterator range is too short")?;
+                    e = subst_iterator(&e, sub_name, v)?;
+                }
+                next.push(e);
+            }
+        }
+        out = next;
+    }
+    Ok(out)
+}
+
+/// An iterator's name and per-iteration value, and the same for its dependents.
+type IteratorBindings = (String, Vec<Arc<DAE::Exp>>, Vec<(String, Vec<Arc<DAE::Exp>>)>);
+
+fn iterator_bindings(
+    iter: &openmodelica_backend_types::BackendDAE::SimIterator,
+) -> Result<IteratorBindings> {
+    use openmodelica_backend_types::BackendDAE::SimIterator as S;
+    let iconst = |v: i32| Arc::new(DAE::Exp::ICONST { integer: v });
+    let (name, sub_iter, values) = match iter {
+        S::SIM_ITERATOR_RANGE { name, start, step, non_resizable_size, sub_iter, .. } => {
+            let (Some(start), Some(step)) = (const_int_exp(start), const_int_exp(step)) else {
+                return Err("CodegenWasmJit: for-loop crossing over a non-constant range");
+            };
+            let values = (0..*non_resizable_size).map(|k| iconst(start + k * step)).collect();
+            (name, sub_iter, values)
+        }
+        S::SIM_ITERATOR_LIST { name, lst: values, sub_iter, .. } => {
+            (name, sub_iter, (&**values).into_iter().map(|v| iconst(*v)).collect())
+        }
+    };
+    let mut subs = Vec::new();
+    for (sub_name, table) in &**sub_iter {
+        subs.push((cref_display(sub_name)?, table.borrow().clone()));
+    }
+    Ok((cref_display(name)?, values, subs))
+}
+
+fn const_int_exp(e: &DAE::Exp) -> Option<i32> {
+    match e {
+        DAE::Exp::ICONST { integer } => Some(*integer),
+        _ => None,
+    }
+}
+
+/// Replace the bare iterator `name`, including inside cref subscripts.
+fn subst_iterator(exp: &Arc<DAE::Exp>, name: &str, value: &Arc<DAE::Exp>) -> Result<Arc<DAE::Exp>> {
+    let name = name.to_string();
+    let value = value.clone();
+    let replace = move |e: Arc<DAE::Exp>, acc: i32| -> Result<(Arc<DAE::Exp>, i32)> {
+        if let DAE::Exp::CREF { componentRef, .. } = &*e {
+            if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef {
+                if subscriptLst.is_empty() && ident.as_str() == name {
+                    return Ok((value.clone(), acc));
+                }
+            }
+        }
+        Ok((e, acc))
+    };
+    openmodelica_frontend_base::Expression::traverseExpBottomUp(exp.clone(), Arc::new(replace), 0)
+        .map(|(e, _)| e)
 }
 
 /// Collect `SimCode.relations`, one slot per entry as in C's `functionRelations`:
@@ -3438,13 +3612,12 @@ fn collect_relations(
 ) -> Result<Vec<Option<Arc<DAE::Exp>>>> {
     let mut out = Vec::new();
     for zc in lst(rels) {
-        if zc.iter.is_some() {
-            return Err("CodegenWasmJit: for-loop (iterator) relation not yet supported");
+        for relation in expand_iter_crossing(&zc.relation_, &zc.iter)? {
+            out.push(match &*relation {
+                DAE::Exp::RELATION { .. } => Some(relation.clone()),
+                _ => None,
+            });
         }
-        out.push(match &*zc.relation_ {
-            DAE::Exp::RELATION { .. } => Some(zc.relation_.clone()),
-            _ => None,
-        });
     }
     Ok(out)
 }
@@ -3644,11 +3817,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     }
     let sens_params = push_sensitivity_vars(&sens_vars, n_sens_par, vars, &layout, &mut result_vars)?;
     let var_units = collect_var_units(vars)?;
-    // Sample event index -> its slot `k` (position in `samples`), for the
-    // `sample(index,…)` builtin and the driver's per-sample state.
-    let sample_map: HashMap<i32, u32> =
-        samples.iter().enumerate().map(|(k, s)| (s.index, k as u32)).collect();
-    var_map.sample_map = Arc::new(sample_map);
+    var_map.n_samples = samples.len() as u32;
     var_map.sample_active_off = layout.sample_active_off;
     // Delay-buffer count (0 when the model has no `delay(...)`).
     var_map.n_delays = (sim_code.delayedExps.maxDelayedIndex + 1).max(0) as u32;
@@ -3872,6 +4041,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // Same, for the `-l` linearization matrices.
     let linz_jac_infos = build_linz_jac_infos(&linz, &layout, &mut var_map)?;
     var_map.nls_jobs = Arc::new(nls_jobs);
+    var_map.generic_calls = Arc::new(
+        lst(&sim_code.generic_loop_calls).map(|c| (generic_call_index(c), c.clone())).collect(),
+    );
 
     // --- Type section: one type per import, per model function, per equation
     // function (all take one i32 `SimData` ptr, no result), then `simulate`
@@ -5370,7 +5542,8 @@ fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         term_info_off: var_map.term_info_off,
         nls_fail_off: var_map.nls_fail_off,
         nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
+        generic_calls: var_map.generic_calls.clone(),
+        n_samples: var_map.n_samples,
         sample_active_off: var_map.sample_active_off,
         relations_off: var_map.relations_off,
         rel_fresh_off: var_map.rel_fresh_off,
@@ -6042,7 +6215,7 @@ fn build_init_spatial_fn(
 }
 
 /// Lower a single `SimEqSystem` into the current equation function.
-fn lower_equation(
+pub(crate) fn lower_equation(
     ctx: &mut FnCtx,
     eq: &SimCode::SimEqSystem,
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
@@ -6057,6 +6230,16 @@ fn lower_equation(
         // exp an array-valued expression). For a model array variable this routes
         // through the whole-array scatter in `compile_sim_cref_assign`.
         E::SES_ARRAY_CALL_ASSIGN { lhs, exp, .. } => ctx.sim_assign(lhs, exp),
+        // C's `equationGenericAssign`.
+        E::SES_RESIZABLE_ASSIGN { call_index, iters, .. } => {
+            emit_resizable_assign(ctx, *call_index, iters)
+        }
+        E::SES_GENERIC_ASSIGN { call_index, scal_indices, .. } => {
+            emit_generic_assign(ctx, *call_index, scal_indices)
+        }
+        E::SES_ENTWINED_ASSIGN { call_order, single_calls, .. } => {
+            emit_entwined_assign(ctx, call_order, single_calls, eq_index)
+        }
         E::SES_LINEAR { lSystem, .. } => lower_linear_system(ctx, lSystem, eq_index),
         E::SES_NONLINEAR { nlSystem, .. } => lower_nonlinear_system(ctx, nlSystem, eq_index),
         E::SES_ALGORITHM { statements, .. } => ctx.sim_stmts(statements),
@@ -7401,36 +7584,7 @@ fn build_nls_fns(
         }
         slots.push(slot.off);
     }
-    let mk_sim = || SimCtx {
-        data_local: 0,
-        vars: var_map.vars.clone(),
-        starts: var_map.starts.clone(),
-        start_slots: var_map.start_slots.clone(),
-        array_groups: var_map.array_groups.clone(),
-        consts: var_map.consts.clone(),
-        const_groups: var_map.const_groups.clone(),
-        terminate_off: var_map.terminate_off,
-        terminal_off: var_map.terminal_off,
-        initial_off: var_map.initial_off,
-        term_info_off: var_map.term_info_off,
-        nls_fail_off: var_map.nls_fail_off,
-        nls_jobs: var_map.nls_jobs.clone(),
-        sample_map: var_map.sample_map.clone(),
-        sample_active_off: var_map.sample_active_off,
-        relations_off: var_map.relations_off,
-        rel_fresh_off: var_map.rel_fresh_off,
-        stored_rel_off: var_map.stored_rel_off,
-        relations_pre_off: var_map.relations_pre_off,
-        n_relations: var_map.n_relations,
-        mathevents_off: var_map.mathevents_off,
-        n_mathevents: var_map.n_mathevents,
-        lambda_off: var_map.lambda_off,
-        zctol_off: var_map.zctol_off,
-        zc_pre_off: var_map.zc_pre_off,
-        zc_context: false,
-        clock_fire_off: var_map.clock_fire_off,
-        sub_clock_off: None,
-    };
+    let mk_sim = || sim_ctx(var_map);
     let finish = |ctx: FnCtx| -> we::Function {
         let (locals, instrs) = ctx.finish_sim();
         let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
@@ -7600,6 +7754,15 @@ fn emit_nls_start(
         if let Some(jac_idx) = jac_idx {
             set_slot(f, base_off + 2, *jac_idx);
         }
+    }
+}
+
+fn generic_call_index(call: &SimCode::SimGenericCall) -> i32 {
+    use SimCode::SimGenericCall as G;
+    match call {
+        G::SINGLE_GENERIC_CALL { index, .. }
+        | G::IF_GENERIC_CALL { index, .. }
+        | G::WHEN_GENERIC_CALL { index, .. } => *index,
     }
 }
 
