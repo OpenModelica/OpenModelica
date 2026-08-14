@@ -1856,7 +1856,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
 
   setSundialsSparsePattern(jac, Jac);
 #ifdef USE_PARJAC
-  evalJacobian(data, threadData, jac, NULL, idaData->jacColumns, SM_DATA_S(Jac), FALSE);
+  evalJacobian(data, threadData, jac, NULL, idaData->allocatedParMem ? idaData->jacColumns : NULL, SM_DATA_S(Jac), FALSE);
 #else
   evalJacobian(data, threadData, jac, NULL, NULL, SM_DATA_S(Jac), FALSE);
 #endif

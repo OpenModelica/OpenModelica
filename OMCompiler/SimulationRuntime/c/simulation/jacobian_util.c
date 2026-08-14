@@ -145,7 +145,7 @@ static void evalJacobianParallel(DATA* data, threadData_t *threadData,
 
   GC_allow_register_threads();
 #pragma omp parallel  default(none) \
-                      shared(data, threadData, jacobian, parentJacobian, jac, sp, activeDim, nRows, isDense)
+                      shared(data, threadData, jacobian, parentJacobian, threadLocalJacobians, jac, sp, activeDim, nRows, isDense)
   {
     JACOBIAN* workspace = &threadLocalJacobians[omc_get_thread_num()];
     int color, direction, nz, passive;
