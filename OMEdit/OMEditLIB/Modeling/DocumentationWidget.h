@@ -49,6 +49,9 @@
 #else
 #include <QWebEngineView>
 #include <QWebEnginePage>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
+#include <QWebEngineNewWindowRequest>
+#endif
 #endif
 #include <QToolBar>
 #include <QComboBox>
@@ -222,8 +225,10 @@ public slots:
   void processLinkHover(QString link, QString title, QString textContent);
   void showContextMenu(QPoint point);
   void pageLoaded(bool ok);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
+  void newWindowRequested(QWebEngineNewWindowRequest &request);
+#endif
 protected:
-  virtual QWebEngineView* createWindow(QWebEnginePage::WebWindowType type) override;
   virtual void keyPressEvent(QKeyEvent *event) override;
   virtual void wheelEvent(QWheelEvent *event) override;
   virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
