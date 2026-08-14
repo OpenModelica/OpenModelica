@@ -362,16 +362,7 @@ pipeline {
         // common.partestRust().
         stage('01 testsuite-rust 1/2') {
           agent {
-            docker {
-              alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
-              label 'linux'
-              args '''
-                --mount type=volume,source=runtest-rust-cache,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
+            label 'linux'
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -383,22 +374,16 @@ pipeline {
           }
           steps {
             script {
-              common.partestRust(1)
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
+                                     common.testCacheMounts('runtest-rust-cache')) {
+                common.partestRust(1)
+              }
             }
           }
         }
         stage('02 testsuite-rust 2/2') {
           agent {
-            docker {
-              alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
-              label 'linux'
-              args '''
-                --mount type=volume,source=runtest-rust-cache,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
+            label 'linux'
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -410,23 +395,17 @@ pipeline {
           }
           steps {
             script {
-              common.partestRust(2)
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
+                                     common.testCacheMounts('runtest-rust-cache')) {
+                common.partestRust(2)
+              }
             }
           }
         }
 
         stage('04 testsuite-gcc 1/3') {
           agent {
-            docker {
-              alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              args '''
-                --mount type=volume,source=runtest-gcc-cache,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
+            label 'linux'
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -440,22 +419,18 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.partestStashed('omc-gcc', 1, 3) }
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+                                     common.testCacheMounts('runtest-gcc-cache')) {
+                common.partestStashed('omc-gcc', 1, 3)
+              }
+            }
           }
         }
 
         stage('05 testsuite-gcc 2/3') {
           agent {
-            docker {
-              alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              args '''
-                --mount type=volume,source=runtest-gcc-cache,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
+            label 'linux'
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -469,22 +444,18 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.partestStashed('omc-gcc', 2, 3) }
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+                                     common.testCacheMounts('runtest-gcc-cache')) {
+                common.partestStashed('omc-gcc', 2, 3)
+              }
+            }
           }
         }
 
         stage('06 testsuite-gcc 3/3') {
           agent {
-            docker {
-              alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              args '''
-                --mount type=volume,source=runtest-gcc-cache,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
+            label 'linux'
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -498,22 +469,18 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.partestStashed('omc-gcc', 3, 3) }
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+                                     common.testCacheMounts('runtest-gcc-cache')) {
+                common.partestStashed('omc-gcc', 3, 3)
+              }
+            }
           }
         }
 
         stage('07 testsuite-clang 1/3') {
           agent {
-            docker {
-              alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              args '''
-                --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
+            label 'linux'
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -527,22 +494,18 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.partestStashed('omc-clang', 1, 3) }
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+                                     common.testCacheMounts('runtest-clang-cache')) {
+                common.partestStashed('omc-clang', 1, 3)
+              }
+            }
           }
         }
 
         stage('08 testsuite-clang 2/3') {
           agent {
-           docker {
-              alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              args '''
-                --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
+            label 'linux'
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -556,22 +519,18 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.partestStashed('omc-clang', 2, 3) }
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+                                     common.testCacheMounts('runtest-clang-cache')) {
+                common.partestStashed('omc-clang', 2, 3)
+              }
+            }
           }
         }
 
         stage('09 testsuite-clang 3/3') {
           agent {
-            docker {
-              alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              args '''
-                --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
+            label 'linux'
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -585,7 +544,12 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.partestStashed('omc-clang', 3, 3) }
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+                                     common.testCacheMounts('runtest-clang-cache')) {
+                common.partestStashed('omc-clang', 3, 3)
+              }
+            }
           }
         }
 
@@ -805,12 +769,7 @@ pipeline {
 
         stage('18 testsuite-clang-parmod') {
           agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux-intel-x64'   // TODO: We didn't get OpenCL to work on AMD CPU on Ubuntu Jammy, so Intel it is
-              alwaysPull true
-              // No runtest.db cache necessary; the tests run in serial and do not load libraries!
-            }
+            label 'linux-intel-x64'   // TODO: We didn't get OpenCL to work on AMD CPU on Ubuntu Jammy, so Intel it is
           }
           when {
             beforeAgent true
@@ -820,7 +779,12 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.partestParmod() }
+            script {
+              // No runtest.db cache necessary; the tests run in serial and do not load libraries!
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04', '') {
+                common.partestParmod()
+              }
+            }
           }
         }
 
