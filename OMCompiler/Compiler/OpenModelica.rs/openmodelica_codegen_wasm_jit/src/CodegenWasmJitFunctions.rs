@@ -4971,6 +4971,23 @@ fn pre_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
     })
 }
 
+/// Does `$PRE.<x>` have pre-storage — its own scalar slot, or a subscripted
+/// element of a `$PRE` array group? A whole-array `pre(x)` deliberately does not
+/// count: C's `daeExpCrefRhsSimContext` wraps the live `<type>Vars` region for it,
+/// never `<type>VarsPre`.
+fn sim_pre_is_stored(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
+    let sim = ctx.sim()?;
+    if let Ok(key) = sim_cref_key(cref) {
+        if sim.vars.contains_key(&key) {
+            return Ok(true);
+        }
+    }
+    match sim_array_base_subs(cref)? {
+        Some((base, _)) => Ok(sim.array_groups.contains_key(&base)),
+        None => Ok(false),
+    }
+}
+
 /// The `previous(cr)` component reference: `cr` wrapped in `DAE.previousNamePrefix`,
 /// the variable the backend introduced for it (key `$CLKPRE.<cr>`).
 fn clkpre_cref(cr: &DAE::ComponentRef) -> Arc<DAE::ComponentRef> {
@@ -5405,13 +5422,12 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
         }
     }
     // `$START.<cref>`: read the variable's start-attribute expression (used by
-    // the initial-equation system). `$PRE.<cref>`: the value at the last event;
-    // for the continuous models handled so far it equals the current value, so
-    // we read the live slot (discrete/event handling is future work).
+    // the initial-equation system). `$PRE.<cref>`: the value at the last event,
+    // read from the mirrored pre-slot the driver refreshes at every event.
     if let DAE::ComponentRef::CREF_QUAL { ident, componentRef, .. } = cref {
         match ident.as_str() {
             "$START" => {
-                let key = sim_cref_key(componentRef)?;
+                let key = sim_cref_key_fatal(componentRef)?;
                 if let Some(wty) = emit_sim_start_scalar(ctx, &key)? {
                     return Ok(Some(wty));
                 }
@@ -5423,11 +5439,8 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
                 return Err("CodegenWasmJit: $START for unknown variable");
             }
             "$PRE" => {
-                // A registered `$PRE.<var>` slot resolves via the normal path
-                // below. Otherwise (e.g. `pre()` of a parameter, whose value is
-                // event-invariant) read the live value.
-                let key = sim_cref_key(cref)?;
-                if !ctx.sim()?.vars.contains_key(&key) {
+                // No pre-storage (e.g. `pre()` of a parameter): read the live value.
+                if !sim_pre_is_stored(ctx, cref)? {
                     return compile_sim_cref_read(ctx, componentRef);
                 }
             }
@@ -5579,11 +5592,8 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
         }
         // `$PRE.x := e` targets x's pre-slot when one is registered; otherwise
         // (no pre-slot, e.g. a parameter) fall back to the live slot.
-        if ident.as_str() == "$PRE" {
-            let key = sim_cref_key(cref)?;
-            if !ctx.sim()?.vars.contains_key(&key) {
-                return compile_sim_cref_assign(ctx, componentRef, rhs);
-            }
+        if ident.as_str() == "$PRE" && !sim_pre_is_stored(ctx, cref)? {
+            return compile_sim_cref_assign(ctx, componentRef, rhs);
         }
     }
     // Plain idents that are wasm locals are handled by the normal path.
@@ -5689,7 +5699,7 @@ pub(crate) fn sim_const_store(
         if ident.as_str() == "$START" {
             return sim_const_store(ctx, componentRef, exp);
         }
-        if ident.as_str() == "$PRE" && !sim.vars.contains_key(&sim_cref_key(cref)?) {
+        if ident.as_str() == "$PRE" && !sim_pre_is_stored(ctx, cref)? {
             return sim_const_store(ctx, componentRef, exp);
         }
     }
@@ -8012,9 +8022,11 @@ fn emit_str_literal(ctx: &mut FnCtx, bytes: &[u8]) -> Result<()> {
 }
 
 /// Hand the executed `reinit` to the driver for C's `reinit <var> = <value>` line.
-/// The state's `SimData` offset names it; the value is re-read from the slot.
+/// The state's `SimData` offset names it; the value is re-read from the slot. A
+/// state with no static offset (`reinit(x[i], …)`) still reinitializes, just
+/// without the log line.
 fn emit_reinit_note(ctx: &mut FnCtx, stateVar: &DAE::ComponentRef) -> Result<()> {
-    let key = sim_cref_key(stateVar)?;
+    let Ok(key) = sim_cref_key(stateVar) else { return Ok(()) };
     let Some(slot) = ctx.sim()?.vars.get(&key).copied() else { return Ok(()) };
     if slot.wty != WTy::F64 {
         return Ok(());

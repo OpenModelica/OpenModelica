@@ -3129,6 +3129,20 @@ fn build_var_map(
     for (key, slot) in pre_entries {
         Arc::make_mut(&mut map.vars).insert(key, slot);
     }
+    // Same for the array accumulator, so `pre(x[i])` with a non-constant subscript
+    // resolves through a `$PRE.<base>` group.
+    let pre_groups: Vec<(String, Vec<(Vec<i32>, u32, WTy)>)> = map
+        .array_acc
+        .iter()
+        .filter_map(|(base, elems)| {
+            let pre: Option<Vec<_>> = elems
+                .iter()
+                .map(|(subs, off, wty)| layout.pre_slot_off(*off).map(|p| (subs.clone(), p, *wty)))
+                .collect();
+            Some((format!("$PRE.{base}"), pre?))
+        })
+        .collect();
+    map.array_acc.extend(pre_groups);
 
     finalize_array_groups(&mut map)?;
     editable.extend(start_editable);
