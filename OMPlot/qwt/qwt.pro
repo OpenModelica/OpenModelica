@@ -47,7 +47,8 @@ qwtspec.path  = $${QWT_INSTALL_FEATURES}
 INSTALLS += qwtspec
 
 win32 {
-  equals(QMAKE_CXX, clang++) {
+  _cxx = $$(CXX)
+  equals(_cxx, clang++) {
     message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
     QMAKE_CFLAGS -= -fno-keep-inline-dllexport
     QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
