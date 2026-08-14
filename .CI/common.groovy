@@ -71,6 +71,43 @@ def numLogicalCPU() {
   return env.JENKINS_NUM_LOGICAL_CPU
 }
 
+// 6 GB per parallel test job, at most 80% of the node's RAM. Override 6 and 80
+// with OM_PARTEST_MEM_PER_JOB_GB / OM_PARTEST_MEM_PERCENT when a machine hosts
+// more than one Jenkins instance. The arithmetic is awk's because the Groovy
+// sandbox rejects most of the numeric conversions this would otherwise need.
+String testMemoryLimitMB() {
+  String vars = "-v jobs=${numPhysicalCPU()}" +
+                " -v per_job=\"\${OM_PARTEST_MEM_PER_JOB_GB:-6}\"" +
+                " -v percent=\"\${OM_PARTEST_MEM_PERCENT:-80}\""
+  String prog = '/^MemTotal:/ { cap = int($2/1024*percent/100); want = per_job*1024*jobs; print (want < cap ? want : cap) }'
+  return sh(script: "awk ${vars} '${prog}' /proc/meminfo", returnStdout: true).trim()
+}
+
+// The container's cgroup memory.max: covers every process the run spawns and
+// charges memory in use, not address space. --memory-swap must equal --memory to
+// forbid swapping; docker reads 0 as "unset" and then allows swap up to --memory.
+String memoryLimitArgs() {
+  String mb = testMemoryLimitMB()
+  echo "Test container memory limit: ${mb} MB, no swap"
+  return "--memory=${mb}m --memory-swap=${mb}m"
+}
+
+String testCacheMounts(String runtestCache) {
+  return "--mount type=volume,source=${runtestCache},target=/cache/runtest " +
+         "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+         "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+}
+
+// Not an `agent { docker { args } }`: those args are evaluated before a node is
+// allocated, so the limit could not depend on the node's RAM or CPU count.
+void insideTestImage(String image, String extraArgs, Closure body) {
+  def img = docker.image(image)
+  img.pull()
+  img.inside("${memoryLimitArgs()} ${extraArgs}") {
+    body()
+  }
+}
+
 void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
   if (isWindows()) {
 
@@ -106,11 +143,14 @@ void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
 
   sh ("""#!/bin/bash -x
   ulimit -t 1500
+  # On top of the cgroup limit, to catch a single runaway process early
   ulimit -v 6291456 # Max 6GB per process
 
+  .CI/scripts/cgroup-memory.sh check
   cd testsuite/partest
   ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml ${extraArgs}
   CODE=\$?
+  ../../.CI/scripts/cgroup-memory.sh report
   test \$CODE = 0 -o \$CODE = 7 || exit 1
   """
   + (cache ?
@@ -676,17 +716,24 @@ void partestRust(partition) {
   // fmuCSources checks the generated C files or the list in the XML - wasm-jit does not use C
   // 63bit/antlr: the port's Integer is i32 and its parser is winnow, not ANTLR
   String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-fmuCSources'
+  // wasmtime reserves ~4 GiB of address space per wasm memory, and shrinking that
+  // reservation to fit an RLIMIT_AS costs the bounds-check-free fast path.
+  String asLimit = params.RUST_PARTEST_SIMCODETARGET == 'wasm-jit'
+                   ? '# wasm-jit: address space is not limited, only the cgroup is'
+                   : 'ulimit -v 6291456 # Max 6GB per process'
   try {
     sh """#!/bin/bash
       set -o pipefail
       ulimit -t 1500
-      ulimit -v 6291456
+      ${asLimit}
+      .CI/scripts/cgroup-memory.sh check
       rm -f testsuite/partest-failed-${partition}.txt
       cd testsuite/partest
       set -x
       ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/2 -nocolour -with-xml${suitesArg}${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
       CODE=\${PIPESTATUS[0]}
       set +x
+      ../../.CI/scripts/cgroup-memory.sh report
       # 0/7 == the run completed (7 means some tests failed); only fail the step on
       # anything else, so junit below still publishes the per-test results.
       test \$CODE = 0 -o \$CODE = 7 || exit 1
