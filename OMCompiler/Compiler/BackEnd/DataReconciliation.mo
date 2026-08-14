@@ -258,8 +258,8 @@ algorithm
 
   // prepare set-s other equations
   outOtherEqns := BackendEquation.listEquation(setS_Eq);
-  // extract parameters from set-s equations
-  paramVars := BackendEquation.equationsVars(outOtherEqns, shared.globalKnownVars);
+  // extract parameters from set-s and set-c equations
+  paramVars := BackendEquation.equationsVars(BackendEquation.merge(outOtherEqns, outResidualEqns), shared.globalKnownVars);
   //setSVars  := BackendEquation.equationsVars(outOtherEqns, currentSystem.orderedVars);
 
   // prepare variables stucture from list of extracted equations
@@ -309,7 +309,11 @@ algorithm
   currentSystem.removedEqs :=  BackendEquation.emptyEqns();
 
   inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
-  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
+  /* fix issue https://github.com/OpenModelica/OpenModelica/issues/13710
+   * the shared.globalKnownVars should be updated with the  only input and parameter variables that are part of the
+   * extraction algorithm, to avoid binding equations from the original model to avoid problems in code generation of removed vars and equations
+  */
+  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(BackendVariable.listVar(paramVars), inputVars));
 
   // write the list of known variables to the csv file with the headers
   if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Inputs.csv") then
@@ -728,7 +732,7 @@ algorithm
   currentSystem.removedEqs :=  BackendEquation.emptyEqns();
 
   inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
-  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
+  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(BackendVariable.listVar(paramVars), inputVars));
 
   // BackendDump.dumpVariables(currentSystem.orderedVars, "FinalOrderedVariables");
   // BackendDump.dumpEquationArray(currentSystem.orderedEqs, "FinalOrderedEquation");
@@ -939,7 +943,7 @@ algorithm
   // prepare set-s other equations
   outOtherEqns := BackendEquation.listEquation(setS_Eq);
   // extract parameters from set-s equations
-  paramVars := BackendEquation.equationsVars(outOtherEqns, shared.globalKnownVars);
+  paramVars := BackendEquation.equationsVars(BackendEquation.merge(outOtherEqns, outResidualEqns), shared.globalKnownVars);
   //setSVars  := BackendEquation.equationsVars(outOtherEqns, currentSystem.orderedVars);
 
   // prepare variables stucture from list of extracted equations
@@ -1120,7 +1124,7 @@ algorithm
   currentSystem.removedEqs :=  BackendEquation.emptyEqns();
 
   inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
-  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
+  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(BackendVariable.listVar(paramVars), inputVars));
 
   if debug then
     BackendDump.dumpVariables(currentSystem.orderedVars, "FinalOrderedVariables");
