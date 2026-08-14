@@ -703,6 +703,8 @@ void partestRust(partition) {
     if (params.RUST_PARTEST_JUNIT) {
       junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
     }
+    sh "cp testsuite/partest/result.xml partest-rust-partest-junit-${partition}.xml"
+    archiveArtifacts artifacts: 'partest-rust-partest-junit-${partition}.xml', allowEmptyArchive: true, fingerprint: true
   }
 }
 
