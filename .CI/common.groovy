@@ -672,10 +672,10 @@ void partestRust(partition) {
   """
   String simCodeTargetArg = params.RUST_PARTEST_SIMCODETARGET ? " -simCodeTarget=${params.RUST_PARTEST_SIMCODETARGET}" : ''
   // cpp/hpcom: the Rust omc is built without the C++ runtime. metamodelica:
-  // MetaModelica code generation only works against the C runtime. 63bit/antlr:
-  // the port's Integer is i32 and its parser is winnow, not ANTLR; see
-  // testsuite/rust-ignore-tests.txt.
-  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr'
+  // MetaModelica code generation only works against the C runtime.
+  // fmuCSources checks the generated C files or the list in the XML - wasm-jit does not use C
+  // 63bit/antlr: the port's Integer is i32 and its parser is winnow, not ANTLR
+  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-fmuCSources'
   try {
     sh """#!/bin/bash
       set -o pipefail

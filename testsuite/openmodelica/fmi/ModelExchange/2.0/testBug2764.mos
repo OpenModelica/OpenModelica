@@ -1,5 +1,6 @@
 // name:  testBug2764
 // keywords: FMI 2.0 export
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml test_Bug2764* output.log
 // cflags: -d=-newInst
