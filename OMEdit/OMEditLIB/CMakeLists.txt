@@ -344,11 +344,7 @@ target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::OpenGL)
 target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Network)
 target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Svg)
 
-if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
-  target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::WebEngineWidgets)
-else ()
-  target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::WebKitWidgets)
-endif ()
+target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::WebEngineWidgets)
 
 target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::OpenGL)
 if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)

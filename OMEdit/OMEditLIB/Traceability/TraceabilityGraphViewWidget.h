@@ -44,9 +44,7 @@
 #include "QUrl"
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QWebEngineView>
-#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-#include <QWebView>
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#endif
 
 class TraceabilityGraphViewWidget: public QWidget
 {
@@ -54,11 +52,7 @@ class TraceabilityGraphViewWidget: public QWidget
 public:
   TraceabilityGraphViewWidget(QWidget *pParent = 0);
 private:
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   QWebEngineView *mpTraceabilityGraphWebView;
-#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  QWebView *mpTraceabilityGraphWebView;
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   QLabel *mpTraceabilityGraphViewLabel;
 };
 

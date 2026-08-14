@@ -30,14 +30,12 @@
 #
 # See the full OSMC Public License conditions for more details.
 
-QT += network core gui xml svg opengl printsupport widgets concurrent
+QT += network core gui xml svg opengl printsupport widgets concurrent webenginewidgets
 equals(QT_MAJOR_VERSION, 6) {
-  QT += core5compat openglwidgets webenginewidgets
+  QT += core5compat openglwidgets
   greaterThan(QT_MINOR_VERSION, 4) {
     QT += httpserver
   }
-} else {
-  QT += webkit webkitwidgets
 }
 
 # Set the C++ standard.

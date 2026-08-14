@@ -10,11 +10,7 @@ omc_option(OM_OMEDIT_ENABLE_TESTS "Enable building of OMEdit Testsuite tests." O
 
 find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Widgets PrintSupport Xml OpenGL Network Svg REQUIRED)
 
-if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
-  find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS WebEngineWidgets REQUIRED)
-else ()
-  find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS WebKitWidgets REQUIRED)
-endif ()
+find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS WebEngineWidgets REQUIRED)
 
 if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
   find_package(Qt6 COMPONENTS OpenGLWidgets Core5Compat REQUIRED)
