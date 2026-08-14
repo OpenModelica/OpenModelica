@@ -90,6 +90,41 @@
 #include <QOpenGLWidget>
 #include <QNetworkProxyFactory>
 
+namespace {
+/*!
+ * \brief MdiAreaTabBarMiddleClickEventFilter
+ * Consumes the middle mouse button release event on the QMdiArea tab bar.
+ *
+ * Since Qt 6.11, QTabBar::mouseReleaseEvent() emits tabCloseRequested() on a middle
+ * mouse button release (see commit 571c55dbcd6). The QMdiAreaTabBar already closes
+ * the tab under the cursor on the middle mouse button press, so a single middle
+ * click used to close two tabs (issue #16264): the clicked tab and, because the tab
+ * bar is re-laid out after the press, the tab that shifts into the released position.
+ *
+ * This filter swallows the middle mouse button release so that only the clicked tab
+ * is closed.
+ */
+class MdiAreaTabBarMiddleClickEventFilter : public QObject
+{
+public:
+  explicit MdiAreaTabBarMiddleClickEventFilter(QObject *pParent = 0)
+    : QObject(pParent)
+  {
+  }
+
+  virtual bool eventFilter(QObject *pObject, QEvent *pEvent)
+  {
+    if (pEvent->type() == QEvent::MouseButtonRelease) {
+      QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
+      if (pMouseEvent && pMouseEvent->button() == Qt::MiddleButton) {
+        return true;
+      }
+    }
+    return QObject::eventFilter(pObject, pEvent);
+  }
+};
+}
+
 namespace ToolBars {
   QString welcomePerspective = "welcomePerspective";
   QString modelingModelicaPerspective = "modelingModelicaPerspective";
@@ -2037,15 +2072,26 @@ void MainWindow::switchToWindowMode(QMdiArea *pMdiArea)
 void MainWindow::switchToTabbedMode(QMdiArea *pMdiArea)
 {
   pMdiArea->setViewMode(QMdiArea::TabbedView);
-#ifdef Q_OS_WIN
-  /* See #15239
-   * When switching to tabbed mode, the order of subwindows is not updated until a tab is moved.
-   * To fix this, we connect to the tabMoved signal and set the active subwindow to the moved window.
-   * This way, the order of subwindows is updated immediately after switching to tabbed mode.
-   * This issue is not seen in Linux.
-   */
   QTabBar* tabBar = pMdiArea->findChild<QTabBar*>();
   if (tabBar) {
+    /* See #16264
+     * Since Qt 6.11 the QTabBar emits tabCloseRequested() on a middle mouse button release.
+     * The QMdiAreaTabBar also closes the tab under the cursor on the middle mouse button press.
+     * Since the tab bar is re-laid out after the press, a single middle click closes two tabs.
+     * Install a filter that swallows the middle mouse button release so that only the clicked tab is closed.
+     */
+    if (!tabBar->property("omeditMdiAreaTabBarMiddleClickFilter").toBool()) {
+      tabBar->setProperty("omeditMdiAreaTabBarMiddleClickFilter", true);
+      MdiAreaTabBarMiddleClickEventFilter *pFilter = new MdiAreaTabBarMiddleClickEventFilter(tabBar);
+      tabBar->installEventFilter(pFilter);
+    }
+#ifdef Q_OS_WIN
+    /* See #15239
+     * When switching to tabbed mode, the order of subwindows is not updated until a tab is moved.
+     * To fix this, we connect to the tabMoved signal and set the active subwindow to the moved window.
+     * This way, the order of subwindows is updated immediately after switching to tabbed mode.
+     * This issue is not seen in Linux.
+     */
     connect(tabBar, &QTabBar::tabMoved, MainWindow::instance(), [pMdiArea](int from, int to) {
       Q_UNUSED(from)
       QMdiSubWindow* movedWindow = pMdiArea->subWindowList().at(to);
@@ -2053,8 +2099,8 @@ void MainWindow::switchToTabbedMode(QMdiArea *pMdiArea)
         pMdiArea->setActiveSubWindow(movedWindow);
       }
     });
-  }
 #endif // #ifdef Q_OS_WIN
+  }
 }
 
 /*!
