@@ -2254,17 +2254,14 @@ getErrorString();
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.TSP_Pipe3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "Simulation execution failed for model: NewDataReconciliationSimpleTests.TSP_Pipe3
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_NLS           | error   | residualFunc31: Iteration variable `singularPressureLoss2.pro_pT.cp` is inf or nan.
+// LOG_ASSERT        | debug   | residualFunc31 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// LOG_ASSERT        | debug   | Solving non-linear system 31 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // LOG_STDOUT        | info    | DataReconciliation Starting!
 // LOG_STDOUT        | info    | NewDataReconciliationSimpleTests.TSP_Pipe3
-// LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 1.000000. That might raise performance issues, for more information use -lv LOG_LS.
-// LOG_NLS           | error   | residualFunc76: Iteration variable `singularPressureLoss3.Pm` is inf or nan.
-// LOG_ASSERT        | debug   | residualFunc76 failed at time=1.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// LOG_ASSERT        | debug   | Solving non-linear system 76 failed at time=1.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// getBestJumpBuffer got simulationJumpBuffer=(nil)
 // "
 // end SimulationResult;
 // "[openmodelica/dataReconciliation/NewDataReconciliationSimpleTests/SourcePQ.mo:29:3-30:52:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
