@@ -38,9 +38,13 @@ impl Loaded {
     pub fn func(&self, name: &str) -> Option<&Func> {
         self.funcs.get(name)
     }
-    /// `name`, else what its `Include` address wrapper points at.
+    /// `name`, else its `Include` wrapper: the call one for a macro, or what the
+    /// address one points at.
     pub fn func_or_addr(&self, store: &mut wasmtime::Store<WasiCtx>, name: &str) -> Option<Func> {
         if let Some(f) = self.funcs.get(name) {
+            return Some(f.clone());
+        }
+        if let Some(f) = self.funcs.get(&format!("{}{name}", crate::model::EXT_CALL_PREFIX)) {
             return Some(f.clone());
         }
         let w = self.funcs.get(&format!("{}{name}", crate::model::EXT_ADDR_PREFIX))?;

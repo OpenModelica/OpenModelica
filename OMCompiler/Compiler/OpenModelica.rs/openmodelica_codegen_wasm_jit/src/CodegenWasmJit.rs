@@ -1553,13 +1553,13 @@ pub(crate) fn compile_include_library(
     prefix: &str,
     includes: &[String],
     include_dirs: &[String],
-    symbols: &[String],
+    missing: &[ExtCallSig],
     notes: &mut Vec<String>,
 ) -> Result<Option<ExtLibrary>> {
     if includes.is_empty() {
         return Ok(None);
     }
-    let wrappers = openmodelica_wasm_jit::model::ext_addr_wrappers(symbols);
+    let wrappers = openmodelica_wasm_jit::model::ext_wrappers(missing);
     let n = notes.len();
     match compile_include_tu(prefix, includes, include_dirs, &wrappers, notes)? {
         None if !wrappers.is_empty() => {
@@ -1632,7 +1632,7 @@ pub(crate) fn compile_include_library(
     _prefix: &str,
     includes: &[String],
     _include_dirs: &[String],
-    _symbols: &[String],
+    _missing: &[ExtCallSig],
     notes: &mut Vec<String>,
 ) -> Result<Option<ExtLibrary>> {
     if includes.is_empty() {
@@ -1682,7 +1682,7 @@ fn wasm_builtins(sysroot: &std::path::Path) -> Option<std::path::PathBuf> {
 
 /// The `external "C"` functions neither `libs` nor the libraries every run loads
 /// (libc, ModelicaExternalC) export — what an `Include` still has to provide.
-pub(crate) fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> Vec<String> {
+pub(crate) fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> Vec<ExtCallSig> {
     let mut defined: HashSet<&str> = HashSet::new();
     for bytes in libs.iter().map(|l| &l.bytes[..]).chain([LIBC_PIC, EXTERNAL_C_DYLINK]) {
         for payload in wasmparser::Parser::new(0).parse_all(bytes).flatten() {
@@ -1691,7 +1691,7 @@ pub(crate) fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary
             }
         }
     }
-    ext_imports.iter().map(|s| s.name.as_str()).filter(|n| !defined.contains(n)).map(String::from).collect()
+    ext_imports.iter().filter(|s| !defined.contains(s.name.as_str())).cloned().collect()
 }
 
 /// The `-L` directories of a linker flag string (`-Ldir`, `-L"dir"`, `-L dir`).

@@ -715,7 +715,8 @@ void partestRust(partition) {
   // MetaModelica code generation only works against the C runtime.
   // fmuCSources checks the generated C files or the list in the XML - wasm-jit does not use C
   // 63bit/antlr: the port's Integer is i32 and its parser is winnow, not ANTLR
-  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-fmuCSources'
+  // stackoverflow: Rust aborts on stack overflow, MMC unwinds out of the SEGV handler
+  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-fmuCSources,-stackoverflow'
   // wasmtime reserves ~4 GiB of address space per wasm memory, and shrinking that
   // reservation to fit an RLIMIT_AS costs the bounds-check-free fast path.
   String asLimit = params.RUST_PARTEST_SIMCODETARGET == 'wasm-jit'

@@ -6,10 +6,9 @@
 # deselect them with -suites=-antlr,-63bit. Keep the two in sync.
 #
 # Rust aborts the process on stack overflow (no catchable recursion limit),
-# unlike MMC which unwinds. Any test that deliberately drives deep recursion
-# to hit a recursion-limit / stack-overflow error message will differ.
+# unlike MMC which unwinds out of its SEGV handler. A test that recurses without
+# bound to reach that error message differs; it carries '// suite: stackoverflow'.
 ./flattening/modelica/algorithms-functions/StackOverflowTest.mos
-./flattening/modelica/declarations/ErrorRecursionLimit.mo
 #
 # Parser error position: the hand-written recursive-descent parser reports a
 # "No viable alternative near token: X" syntax error at a different token than

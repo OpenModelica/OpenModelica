@@ -2,16 +2,18 @@ use std::ffi::CString;
 use std::io::Write;
 use std::os::raw::{c_char, c_int};
 
-/// Default worker-thread stack size: 4 MiB - use env. var to increase it.
+/// Default worker-thread stack size: 64 MiB - use env. var to change it.
 ///
 /// MMC's generated C code eliminates tail calls and uses small stack frames,
 /// so the C omc fits deep traversals into the default 8 MiB main stack. The
 /// Rust port only lowers *self* tail calls (mmtorust's `#[tailcall]` pass)
 /// and its frames are larger, so workloads like `DumpGraphviz.dump` over the
 /// whole compiler sources overflow 8 MiB and Rust aborts (no recovery, unlike
-/// MMC's SEGV-handler unwind). The reservation is virtual address space only
-/// — Linux commits stack pages lazily — so the cost of the headroom is nil.
-const DEFAULT_STACK_SIZE: usize = 4 * 1024 * 1024;
+/// MMC's SEGV-handler unwind). The frontend's own recursion guards assume the
+/// same headroom: `Inst` gives up at a depth of 256, which needs ~16 MiB here.
+/// The reservation is virtual address space only — Linux commits stack pages
+/// lazily — so the cost of the headroom is nil.
+const DEFAULT_STACK_SIZE: usize = 64 * 1024 * 1024;
 
 // The compiler itself lives in `libOpenModelicaCompiler.so` (the
 // `libopenmodelica_compiler` cdylib). This executable is a thin launcher that
