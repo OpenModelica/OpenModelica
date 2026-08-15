@@ -58,6 +58,7 @@ GetAllSubtypeOf3.mos \
 GetAllSubtypeOf4.mos \
 GetAllSubtypeOf5.mos \
 getClassComment.mos \
+getClassInformationList.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
 GetComponents.mos \
