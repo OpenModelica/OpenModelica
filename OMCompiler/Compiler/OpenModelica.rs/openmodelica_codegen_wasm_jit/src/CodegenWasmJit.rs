@@ -73,6 +73,7 @@ use crate::CodegenWasmJitFunctions::{
 // defined once in `openmodelica_sim_meta` and shared with the in-wasm driver, so
 // the emitted module and the driver's readback cannot drift. Aliased to their
 // historical host names.
+use openmodelica_sim_meta::omclog;
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{
     var_filter, BaseClockMeta, FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind,
@@ -203,50 +204,6 @@ pub struct CapturedSim {
 fn last_sim() -> &'static Mutex<Option<CapturedSim>> {
     static LAST: OnceLock<Mutex<Option<CapturedSim>>> = OnceLock::new();
     LAST.get_or_init(|| Mutex::new(None))
-}
-
-/// C's `writeOutputVars` (`solver_main.c`): `time=<t>` then `,<name>=<value>` at the
-/// last row, Reals as `%.20g`. An unknown name contributes nothing, as in C.
-fn write_output_vars(model: &SimModel, run: &sim_driver::RunResult, names: &[String]) -> String {
-    let n_reals = run.n_reals as usize;
-    if n_reals == 0 || run.rows.is_empty() {
-        return String::new();
-    }
-    let last = run.rows.len() - n_reals;
-    let n_real_cols = model.layout.n_reals_row();
-    let g20 = |v: f64| sim_driver::format_g(v, 20);
-    let mut out = format!("time={}", g20(run.rows[last]));
-    for name in names {
-        let mut param_idx = 0usize;
-        for v in &model.result_vars {
-            let hit = v.name == *name;
-            match &v.kind {
-                ResultKind::Column { col, negate } if hit => {
-                    let raw = negate.apply_f64(run.rows[last + *col as usize]);
-                    if *col < n_real_cols {
-                        out.push_str(&format!(",{name}={}", g20(raw)));
-                    } else {
-                        out.push_str(&format!(",{name}={}", raw as i64));
-                    }
-                }
-                ResultKind::Param { off: _, wty, negate } => {
-                    let raw = run.params.get(param_idx).copied().unwrap_or(0.0);
-                    param_idx += 1;
-                    if hit {
-                        let raw = negate.apply_f64(raw);
-                        match wty {
-                            WTy::F64 => out.push_str(&format!(",{name}={}", g20(raw))),
-                            _ => out.push_str(&format!(",{name}={}", raw as i64)),
-                        }
-                    }
-                }
-                ResultKind::Const { value } if hit => out.push_str(&format!(",{name}={}", g20(*value))),
-                _ => {}
-            }
-        }
-    }
-    out.push('\n');
-    out
 }
 
 /// Resolve a finished [`sim_driver::RunResult`] into per-signal value arrays
@@ -771,9 +728,12 @@ fn result_path(flags: &simflags::SimFlags, meta: &SimMeta, derived: &str) -> Str
 }
 
 /// Resolve each `-override=name=value` to its editable parameter's `SimData` slot.
-/// Unknown names are skipped (an unknown override is a no-op, as in the C runtime).
 /// Returns `(param_overrides, start_overrides)`: plain parameters vs. state start
 /// values, applied at different points of initialization (see `run_initialization`).
+///
+/// C's `doOverride` also reports what it could not do, walking the `_init.xml`
+/// quantities in class order. The result signals are that roster in that order,
+/// with the editable parameters as its `isValueChangeable` subset.
 fn resolve_overrides(
     model: &SimModel,
     flags: &simflags::SimFlags,
@@ -782,7 +742,33 @@ fn resolve_overrides(
     let mut starts = Vec::new();
     for (name, val) in &flags.overrides {
         if let Some(p) = model.editable_params.iter().find(|p| &p.name == name) {
-            if p.is_start { &mut starts } else { &mut params }.push((p.off, p.wty, *val));
+            let v = p.read_value(val);
+            if p.is_start { &mut starts } else { &mut params }.push((p.off, p.wty, v));
+        }
+    }
+    let editable = |n: &str| model.editable_params.iter().any(|p| p.name == n);
+    let mut refused: Vec<&str> = Vec::new();
+    for v in &model.result_vars {
+        if flags.overrides.iter().any(|(o, _)| *o == v.name) && !editable(&v.name) {
+            refused.push(&v.name);
+            omclog::warning(
+                omclog::STDOUT,
+                false,
+                &format!(
+                    "It is not possible to override the following quantity: {}\nIt seems to be \
+                     structural, final, protected or evaluated or has a non-constant binding.",
+                    v.name
+                ),
+            );
+        }
+    }
+    for (name, _) in &flags.overrides {
+        if !editable(name) && !refused.contains(&name.as_str()) {
+            omclog::warning(
+                omclog::STDOUT,
+                false,
+                &format!("simulation_input_xml.c: override variable name not found in model: {name}\n"),
+            );
         }
     }
     (params, starts)
@@ -965,10 +951,7 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
         // useful for benchmarking the solver in isolation from the `.mat` writer.
         check_output_format(&meta)?;
         let run = sim_runtime::run(&model, &meta)?;
-        // C's `finishSimulation` prints these ahead of the LOG_STATS block.
-        if !flags.output_vars.is_empty() {
-            extra.push_str(&write_output_vars(&model, &run, &flags.output_vars));
-        }
+        // The driver already printed the `-output` line that precedes this block.
         if log_stats {
             extra.push_str(&log_stats_block(&run.stats));
         }
@@ -2602,6 +2585,15 @@ fn apply_variable_filter(result_vars: &mut [ResultVar], filter: &str) {
     }
 }
 
+fn is_boolean_type(ty: &DAE::Type) -> bool {
+    match ty {
+        DAE::Type::T_BOOL { .. } => true,
+        DAE::Type::T_SUBTYPE_BASIC { complexType, .. } => is_boolean_type(complexType),
+        DAE::Type::T_ARRAY { ty, .. } => is_boolean_type(ty),
+        _ => false,
+    }
+}
+
 /// Literal names of an enumeration type (through subtype/array wrappers), or
 /// `None` for a non-enumeration. The stored value is the 1-based index into these.
 fn enumeration_names(ty: &DAE::Type) -> Option<Vec<String>> {
@@ -2940,6 +2932,7 @@ fn build_var_map(
                     off,
                     wty,
                     is_start: false,
+                    is_bool: is_boolean_type(&sv.type_),
                     enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
                 });
             }
@@ -2991,6 +2984,7 @@ fn build_var_map(
                     off: start_off,
                     wty: WTy::F64,
                     is_start: true,
+                    is_bool: is_boolean_type(&sv.type_),
                     enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
                 });
             }

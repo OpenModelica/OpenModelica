@@ -2442,6 +2442,74 @@ pub fn emit_terminal_row(
     check_asserts(e, sim_data, layout, omclog::WARNING)
 }
 
+/// C's `writeOutputVars` (`solver_main.c`): `time=<t>` and each `-output` name's
+/// final value, Reals as `%.20g` and Strings quoted. A name contributes once per
+/// match, as C's loops over the `modelData` arrays do.
+fn write_output_vars(
+    e: &dyn SimEngine,
+    model: &SimModel,
+    sim_data: u32,
+    rows: &[f64],
+    n_reals: usize,
+    names: &[String],
+) -> Result<()> {
+    if n_reals == 0 || rows.len() < n_reals {
+        return Ok(());
+    }
+    let layout = &model.layout;
+    let last = rows.len() - n_reals;
+    let n_real_cols = layout.n_reals_row();
+    let mut out = format!("time={}", format_g(rows[last], 20));
+    for name in names {
+        for v in &model.vars {
+            if v.name != *name {
+                continue;
+            }
+            match &v.kind {
+                ResultKind::Time => {}
+                ResultKind::Column { col, negate } => {
+                    let raw = negate.apply_f64(rows[last + *col as usize]);
+                    if *col < n_real_cols {
+                        out.push_str(&format!(",{name}={}", format_g(raw, 20)));
+                    } else {
+                        out.push_str(&format!(",{name}={}", raw as i64));
+                    }
+                }
+                ResultKind::Param { off, wty, negate } => match wty {
+                    WTy::F64 => {
+                        let v = negate.apply_f64(read_f64(e, sim_data + off)?);
+                        out.push_str(&format!(",{name}={}", format_g(v, 20)));
+                    }
+                    WTy::I32 => {
+                        let v = negate.apply_f64(read_i32(e, sim_data + off)? as f64);
+                        out.push_str(&format!(",{name}={}", v as i64));
+                    }
+                },
+                ResultKind::Const { value } => out.push_str(&format!(",{name}={}", format_g(*value, 20))),
+            }
+        }
+        // Strings own no result column; C reads them from `stringVars`/`stringParameter`.
+        let mut string_at = |off: u32| -> Result<()> {
+            let s = read_rt_string(e, read_i32(e, sim_data + off)?)?;
+            out.push_str(&format!(",{name}=\"{s}\""));
+            Ok(())
+        };
+        for (i, (n, _)) in model.soti.strings.iter().enumerate() {
+            if n == name {
+                string_at(layout.str_off + i as u32 * 4)?;
+            }
+        }
+        for (i, (n, _)) in model.params.strings.iter().enumerate() {
+            if n == name {
+                string_at(layout.sparam_off + i as u32 * 4)?;
+            }
+        }
+    }
+    out.push('\n');
+    log_line(&out);
+    Ok(())
+}
+
 /// The initial result row. C emits it straight after `initializeModel` with no
 /// re-evaluation: `SimData` is already consistent, and re-running the equations
 /// would repeat any side effect they have (`Streams.print`).
@@ -3552,6 +3620,12 @@ pub fn drive(
     }
     let rows = outcome?;
     stats.method = label;
+
+    // C's `finishSimulation` order: this line, then the caller's LOG_STATS block.
+    let out_names = crate::simflags::with_flags(|f| f.output_vars.clone());
+    if !out_names.is_empty() {
+        write_output_vars(e, model, sim_data, &rows, n_reals as usize, &out_names)?;
+    }
 
     let lin = crate::linearize::linearize(e, model, sim_data)?;
     let params = finalize_run(e, model, sim_data)?;
