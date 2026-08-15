@@ -883,33 +883,6 @@ public
     end match;
   end getSubscripts;
 
-  function outermostIntegerSubscript
-    "Returns the integer value of the outermost (root-side) INDEX(INTEGER(n))
-     subscript in the cref chain. Returns 0 if none."
-    input ComponentRef cref;
-    output Integer value = 0;
-  algorithm
-    () := match cref
-      case CREF()
-        algorithm
-          value := outermostIntegerSubscript(cref.restCref);
-          if value == 0 then
-            for s in cref.subscripts loop
-              () := match s
-                local Integer v;
-                case Subscript.INDEX(index = Expression.INTEGER(v))
-                  algorithm value := v;
-                then ();
-                else ();
-              end match;
-              if value <> 0 then return; end if;
-            end for;
-          end if;
-        then ();
-      else ();
-    end match;
-  end outermostIntegerSubscript;
-
   function setSubscripts
     "Sets the subscripts of the first part of a cref."
     input list<Subscript> subscripts;

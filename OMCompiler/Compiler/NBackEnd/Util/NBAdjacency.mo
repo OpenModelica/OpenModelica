@@ -477,34 +477,6 @@ public
       output Matrix adj = upgrade(EMPTY(MatrixStrictness.FULL), full, vars_map, eqns_map, eqns, st, iter);
     end fullToFinal;
 
-    function adjustedIteratorForSlice
-      "For SLICED_COMPONENT for-equations with a partial (non-empty) slice,
-       restrict the iterator start to the 1-based first slice element.
-       This avoids phantom col_counts entries when the original for-loop
-       range exceeds the elements handled by this component."
-      input StrongComponent comp;
-      input Iterator iter;
-      output Iterator out_iter = iter;
-    algorithm
-      () := match (comp, iter)
-        local
-          Integer min_idx_1based, start_val;
-          Expression range;
-        case (StrongComponent.SLICED_COMPONENT(),
-              Iterator.SINGLE(range = range as Expression.RANGE(start = Expression.INTEGER(start_val))))
-          guard not listEmpty(comp.eqn.indices)
-          algorithm
-            min_idx_1based := listHead(comp.eqn.indices) + 1;
-            if min_idx_1based > start_val then
-              out_iter := Iterator.SINGLE(iter.name,
-                Expression.RANGE(range.ty, Expression.INTEGER(min_idx_1based), range.step, range.stop),
-                iter.map);
-            end if;
-        then ();
-        else ();
-      end match;
-    end adjustedIteratorForSlice;
-
     function fullToSparsity
       input Matrix full;
       input list<StrongComponent> comps;
@@ -572,11 +544,7 @@ public
                 (dep_cref, dep) := tpl;
                 repeated := UnorderedSet.contains(dep_cref, full.repetitions[eqn_index]);
                 (inner_deps, changed) := match UnorderedMap.get(dep_cref, inner_map)
-                  // Guard: do not substitute seed variables through inner_map.
-                  // A tearing variable may appear in inner_map if it is also solved
-                  // by some inner component, but it must be kept as a direct seed dep.
-                  case SOME(inner_deps) guard(not filterSet(dep_cref, seed_set))
-                  then (inner_deps, true);
+                  case SOME(inner_deps) then (inner_deps, true);
                   else algorithm
                     // Base-key fallback for subscripted inner LS vars (partial-slice NLS).
                     // Guard prevents outer seed elements (which strip to the same base key
@@ -670,8 +638,7 @@ public
                 // save the row/result dependencies
                 // get the iterators (potentially need local iterators?)
                 eqn_names     := eqn_name :: eqn_names;
-                iter          := adjustedIteratorForSlice(comp, Equation.getForIterator(Pointer.access(eqn)));
-                eqn_iters     := iter :: eqn_iters;
+                eqn_iters     := Equation.getForIterator(Pointer.access(eqn)) :: eqn_iters;
                 deps          := dep_map :: deps;
                 reps          := rep_set :: reps;
                 solved_crefs  := pder_crefs :: solved_crefs;
