@@ -703,6 +703,8 @@ pub struct StateSetInfo {
     pub seed_offs: Vec<u32>,
     /// Jacobian result slots (f64), row order (`n_dummy` of them) — column output.
     pub result_offs: Vec<u32>,
+    /// Candidate names, candidate order (C's `statescandidates[i]->name`).
+    pub candidate_names: Vec<String>,
 }
 
 /// One symbolic Jacobian the optimizer differentiates through: C's
@@ -1241,6 +1243,10 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_u32s(&mut o, &s.a_offs);
         put_u32s(&mut o, &s.seed_offs);
         put_u32s(&mut o, &s.result_offs);
+        put_u32(&mut o, s.candidate_names.len() as u32);
+        for n in &s.candidate_names {
+            put_str(&mut o, n);
+        }
     }
     put_u32(&mut o, m.fmi_vrs.len() as u32);
     for v in &m.fmi_vrs {
@@ -1588,7 +1594,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let nsets = r.u32()? as usize;
     let mut state_sets = Vec::with_capacity(nsets);
     for _ in 0..nsets {
-        state_sets.push(StateSetInfo {
+        let mut s = StateSetInfo {
             n_candidates: r.u32()?,
             n_states: r.u32()?,
             n_dummy: r.u32()?,
@@ -1597,7 +1603,11 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             a_offs: r.u32s()?,
             seed_offs: r.u32s()?,
             result_offs: r.u32s()?,
-        });
+            candidate_names: Vec::new(),
+        };
+        let nn = r.u32()? as usize;
+        s.candidate_names = (0..nn).map(|_| r.string()).collect::<core::result::Result<_, _>>()?;
+        state_sets.push(s);
     }
     let nvr = r.u32()? as usize;
     let mut fmi_vrs = Vec::with_capacity(nvr);
@@ -1842,6 +1852,7 @@ mod tests {
                 a_offs: vec![100, 104, 108, 112, 116, 120],
                 seed_offs: vec![200, 208, 216],
                 result_offs: vec![224],
+                candidate_names: vec!["a.w".to_string(), "b.w".to_string(), "c.w".to_string()],
             }],
             fmi_vrs: vec![
                 FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: Neg::None, start_off: 96, is_string: false, der_off: 0 },

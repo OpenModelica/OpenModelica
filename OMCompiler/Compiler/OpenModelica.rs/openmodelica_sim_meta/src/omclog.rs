@@ -84,6 +84,7 @@ pub const DEBUG: Stream = 5;
 pub const DELAY: Stream = 6;
 pub const DIVISION: Stream = 7;
 pub const DSS: Stream = 8;
+pub const DSS_JAC: Stream = 9;
 pub const EVENTS: Stream = 12;
 pub const EVENTS_V: Stream = 13;
 pub const INIT: Stream = 19;
@@ -176,7 +177,6 @@ fn finish(mut m: Mask) -> Mask {
     const GBODE_V: Stream = 15;
     const GBODE_NLS: Stream = 16;
     const GBODE_NLS_V: Stream = 17;
-    const DSS_JAC: Stream = 9;
     for (from, to) in [
         (GBODE_V, GBODE),
         (GBODE_NLS_V, GBODE_NLS),
