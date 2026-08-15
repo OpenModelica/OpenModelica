@@ -313,7 +313,10 @@ pub const STAT_NEWTON_MAXITER: u32 = 20;
 pub const STAT_NEWTON_STUCK: u32 = 21;
 pub const STAT_NEWTON_JAC: u32 = 22;
 pub const STAT_NEWTON_SINGULAR: u32 = 23;
-pub const N_STATS: usize = 24;
+/// Not a diagnostic: C's `homotopySteps`, which the driver folds into the
+/// initialization success line.
+pub const STAT_HOMOTOPY_STEPS: u32 = 24;
+pub const N_STATS: usize = 25;
 
 static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
     [const { core::sync::atomic::AtomicU64::new(0) }; N_STATS];
@@ -321,6 +324,10 @@ static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
 #[inline]
 pub(crate) fn stat_inc(kind: u32) {
     STATS[kind as usize].fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+}
+
+pub(crate) fn stat_add(kind: u32, n: u64) {
+    STATS[kind as usize].fetch_add(n, core::sync::atomic::Ordering::Relaxed);
 }
 
 #[unsafe(no_mangle)]

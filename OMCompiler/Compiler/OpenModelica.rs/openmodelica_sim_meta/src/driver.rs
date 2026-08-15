@@ -453,14 +453,18 @@ fn took_error_stage(e: &mut dyn SimEngine, addr: u32) -> bool {
 }
 
 /// Must match the runtime's `N_STATS`.
-pub const RT_STATS: usize = 24;
+pub const RT_STATS: usize = 25;
 
 pub const RT_STAT_NAMES: [&str; RT_STATS] = [
     "alloc", "array_new", "record_new", "str_new", "nls_solve", "nls_res", "nls_jac", "nls_fail", "nls_retry",
     "elem_ptr", "nls_iter", "nls_newton_fail", "nls_guess_hit", "nls_accept", "nls_store_back",
     "nls_vary_start", "nls_stale", "newton_irregular", "newton_lambda", "newton_negstep",
-    "newton_maxiter", "newton_stuck", "newton_jac", "newton_singular",
+    "newton_maxiter", "newton_stuck", "newton_jac", "newton_singular", "homotopy_steps",
 ];
+
+/// Lambda steps the runtime's locally-continued systems took, part of the same
+/// `homotopySteps` the driver's own continuation feeds.
+pub const RT_STAT_HOMOTOPY_STEPS: usize = 24;
 
 /// Read a runtime String heap value (`[refcount:u32][len:u32][utf8]`, handle at
 /// its base; `0` is null) into a Rust `String`.
@@ -884,8 +888,9 @@ fn report_nls_failure_at(e: &dyn SimEngine, sim_data: u32, nls_fail_off: u32) {
 /// overrides.
 const HOMOTOPY_STEPS: i32 = 3;
 
+/// C clamps a negative `-ils` to 0, which turns the continuation off entirely.
 fn homotopy_steps() -> i32 {
-    crate::simflags::with_flags(|f| f.init_lambda_steps).unwrap_or(HOMOTOPY_STEPS).max(1)
+    crate::simflags::with_flags(|f| f.init_lambda_steps).unwrap_or(HOMOTOPY_STEPS).max(0)
 }
 
 // Parameter / start `-override`s for the next run, resolved to `(SimData offset,
@@ -1187,14 +1192,16 @@ mod chatter_store {
 /// "finished successfully with N homotopy steps" / "without homotopy method"
 /// (the driver only returns a `&'static str`). 0 = no homotopy was used.
 mod init_report {
-    use core::sync::atomic::{AtomicU32, Ordering};
+    use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
     static HOMOTOPY_STEPS: AtomicU32 = AtomicU32::new(0);
+    static LOCAL: AtomicBool = AtomicBool::new(false);
     /// The homotopy step a failed initialization gave up at, and the system that
     /// did not converge there, both biased by one.
     static FAILED_STEP: AtomicU32 = AtomicU32::new(0);
     static FAILED_SYSTEM: AtomicU32 = AtomicU32::new(0);
     pub fn reset() {
         HOMOTOPY_STEPS.store(0, Ordering::Relaxed);
+        LOCAL.store(false, Ordering::Relaxed);
         FAILED_STEP.store(0, Ordering::Relaxed);
         FAILED_SYSTEM.store(0, Ordering::Relaxed);
     }
@@ -1204,11 +1211,19 @@ mod init_report {
     pub fn failed_system() -> Option<u32> {
         FAILED_SYSTEM.load(Ordering::Relaxed).checked_sub(1)
     }
-    pub fn set_homotopy_steps(n: u32) {
-        HOMOTOPY_STEPS.store(n, Ordering::Relaxed);
+    /// C's `homotopySteps +=`, fed by the driver and every local sweep alike.
+    pub fn add_homotopy_steps(n: u32) {
+        HOMOTOPY_STEPS.fetch_add(n, Ordering::Relaxed);
     }
     pub fn homotopy_steps() -> u32 {
         HOMOTOPY_STEPS.load(Ordering::Relaxed)
+    }
+    /// C's `usedLocal`.
+    pub fn set_local(local: bool) {
+        LOCAL.store(local, Ordering::Relaxed);
+    }
+    pub fn local() -> bool {
+        LOCAL.load(Ordering::Relaxed)
     }
     pub fn set_failed_step(step: i32) {
         FAILED_STEP.store(step as u32 + 1, Ordering::Relaxed);
@@ -1222,6 +1237,11 @@ mod init_report {
 /// to format the initialization success message like the C runtime.
 pub fn init_homotopy_steps() -> u32 {
     init_report::homotopy_steps()
+}
+
+/// Whether those steps were a *local* approach's, which C names in the same line.
+pub fn init_homotopy_local() -> bool {
+    init_report::local()
 }
 
 /// `lambda` of the homotopy step the last initialization failed at, for the host
@@ -1650,6 +1670,12 @@ fn init_model(
     start_time: f64,
     model: Option<&SimMeta>,
 ) -> Result<()> {
+    // C's `initializeNonlinearSystems`, which reports its dropped patterns here.
+    if let Some(m) = model {
+        for w in &m.nls_warnings {
+            omclog::warning(omclog::STDOUT, false, w);
+        }
+    }
     // `functionInitDelay` reads `startTime` from `TIME_OFF`; init the buffers
     // before any equation function (`rt_delay_eval` traps on unallocated ones).
     write_f64(e, sim_data + TIME_OFF, start_time)?;
@@ -1747,13 +1773,16 @@ fn symbolic_initialization(
     // read in an initial equation sees `start`. `-iim=none` never gets here, and the
     // homotopy retry below does not re-store.
     seed_pre_from_live(e, sim_data, layout)?;
-    solve_initial_system(e, sim_data, layout, inputs, model)?;
+    init_report::set_local(!layout.homotopy_method.is_global());
+    let res = solve_initial_system(e, sim_data, layout, inputs, model);
+    // A local approach counts its steps inside the runtime; collect them.
+    init_report::add_homotopy_steps(e.rt_stats()[RT_STAT_HOMOTOPY_STEPS] as u32);
+    res?;
     check_removed_initial_equations(e, sim_data, layout, model)
 }
 
-/// A model with `homotopy()` goes straight to the global equidistant continuation,
-/// unless `-noHomotopyOnFirstTry` asks for the direct solve first with the
-/// continuation as the fallback.
+/// C's `symbolic_initialization` homotopy dispatch: only a *global* approach
+/// continues here, a local one leaving the job to `rt_solve_nls`.
 fn solve_initial_system(
     e: &mut dyn SimEngine,
     sim_data: u32,
@@ -1761,30 +1790,72 @@ fn solve_initial_system(
     inputs: &[crate::InputVar],
     model: Option<&SimMeta>,
 ) -> Result<()> {
-    if !layout.has_homotopy {
+    use crate::HomotopyMethod as H;
+    let method = layout.homotopy_method;
+    if layout.has_homotopy && crate::simflags::with_flags(|f| f.homotopy_on_first_try).is_none() {
+        omclog::info(
+            omclog::INIT_HOMOTOPY,
+            false,
+            "Model contains homotopy operator: Use adaptive homotopy method to solve initialization \
+             problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".",
+        );
+    }
+    let mut solve_with_global = layout.has_homotopy
+        && ((method == H::GlobalEquidistant && homotopy_steps() >= 1) || method == H::GlobalAdaptive);
+    if !solve_with_global {
         return direct_initial_solve(e, sim_data, layout);
     }
-    if homotopy_on_first_try() {
-        run_homotopy_continuation(e, sim_data, layout)?;
-        init_report::set_homotopy_steps(homotopy_steps() as u32);
+    if !homotopy_on_first_try() {
+        omclog::info(omclog::INIT_HOMOTOPY, false, "Try to solve the initialization problem without homotopy first.");
+        if direct_initial_solve(e, sim_data, layout).is_ok() {
+            solve_with_global = false;
+        } else {
+            omclog::warning(
+                omclog::ASSERT,
+                false,
+                "Failed to solve the initialization problem without homotopy method. \
+                 If homotopy is available the homotopy method is used now.",
+            );
+            // C's catch arm resets everything to start before the continuation runs.
+            init_report::reset();
+            let _ = rethrow_store::take();
+            seed_start_values(e, sim_data, layout, inputs, model)?;
+        }
+    }
+    if !solve_with_global {
         return Ok(());
     }
-    if direct_initial_solve(e, sim_data, layout).is_ok() {
+    if method == H::GlobalEquidistant {
+        run_homotopy_continuation(e, sim_data, layout, model)?;
+        init_report::add_homotopy_steps(homotopy_steps() as u32);
         return Ok(());
+    }
+    // GLOBAL_ADAPTIVE: the simplified lambda = 0 system first, then the actual one,
+    // whose homotopy-carrying component runs the arc-length continuation itself.
+    omclog::info(omclog::INIT_HOMOTOPY, false, "Global homotopy with adaptive step size started.");
+    omclog::info(omclog::INIT_HOMOTOPY, true, "homotopy process\n---------------------------");
+    write_f64(e, sim_data + layout.lambda_off, 0.0)?;
+    omclog::info(omclog::INIT_HOMOTOPY, false, "solve simplified lambda0-DAE");
+    call_initial_equations_lambda0(e, sim_data, layout)?;
+    omclog::info(omclog::INIT_HOMOTOPY, false, "solving simplified lambda0-DAE done\n---------------------------");
+    write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+    e.call1("functionInitialEquations", sim_data)?;
+    omclog::close(omclog::INIT_HOMOTOPY);
+    check_nls(e, sim_data, layout)
+}
+
+/// The continuation's lambda = 0 step, falling back to the full initial system.
+fn call_initial_equations_lambda0(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+    if layout.has_init_lambda0 {
+        return e.call1("functionInitialEquations_lambda0", sim_data);
     }
     omclog::warning(
-        omclog::ASSERT,
+        omclog::INIT_HOMOTOPY,
         false,
-        "Failed to solve the initialization problem without homotopy method. \
-         If homotopy is available the homotopy method is used now.",
+        "No initialEquation_lambda0 was generated. Using normal initial equation system with lambda=0 instead.",
     );
-    // C's catch arm resets everything to start before the continuation runs.
-    init_report::reset();
-    let _ = rethrow_store::take();
-    seed_start_values(e, sim_data, layout, inputs, model)?;
-    run_homotopy_continuation(e, sim_data, layout)?;
-    init_report::set_homotopy_steps(homotopy_steps() as u32);
-    Ok(())
+    e.call1("functionInitialEquations", sim_data)
 }
 
 /// C's over-determined check: the removed initial equations are residuals of the
@@ -2051,26 +2122,116 @@ fn homotopy_on_first_try() -> bool {
 /// lambda 0 → 1 in `HOMOTOPY_STEPS` steps, step 0 solving the simplified
 /// `functionInitialEquations_lambda0`, each step seeded by the previous solution.
 /// Leaves lambda = 1.
-fn run_homotopy_continuation(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+fn run_homotopy_continuation(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    model: Option<&SimMeta>,
+) -> Result<()> {
     let steps = homotopy_steps();
+    omclog::info(omclog::INIT_HOMOTOPY, false, "Global homotopy with equidistant step size started.");
+    let mut path = HomotopyPath::open(model, "equidistant_global_homotopy.csv");
+    path.header(model);
+    omclog::info(omclog::INIT_HOMOTOPY, true, "homotopy process\n---------------------------");
     // C runs every step unconditionally and checks the systems once at the end
     // (`check_nonlinear_solutions`), so a system that misses at lambda = 1/3 and
     // lands at lambda = 1 is not a failure. A model assert still aborts.
     for step in 0..=steps {
-        write_f64(e, sim_data + layout.lambda_off, (step as f64 / steps as f64).min(1.0))?;
-        write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+        let lambda = (step as f64 / steps as f64).min(1.0);
+        write_f64(e, sim_data + layout.lambda_off, lambda)?;
+        omclog::info(omclog::INIT_HOMOTOPY, false, &format!("homotopy parameter lambda = {}", format_g(lambda, 6)));
         if step == 0 {
-            e.call1("functionInitialEquations_lambda0", sim_data)?;
+            call_initial_equations_lambda0(e, sim_data, layout)?;
         } else {
+            write_i32(e, sim_data + layout.nls_fail_off, 0)?;
             e.call1("functionInitialEquations", sim_data)?;
         }
+        omclog::info(
+            omclog::INIT_HOMOTOPY,
+            false,
+            &format!("homotopy parameter lambda = {} done\n---------------------------", format_g(lambda, 6)),
+        );
+        path.row(e, sim_data, layout, lambda);
     }
+    omclog::close(omclog::INIT_HOMOTOPY);
+    path.finish();
     write_f64(e, sim_data + layout.lambda_off, 1.0)?;
     if check_nls(e, sim_data, layout).is_err() {
+        omclog::error(
+            omclog::ASSERT,
+            false,
+            "Failed to solve the initialization problem with global homotopy with equidistant step size.",
+        );
         init_report::set_failed_step(steps);
         return Err("CodegenWasmJit: homotopy initialization did not converge at lambda");
     }
     Ok(())
+}
+
+/// C's `log_homotopy_lambda_vars`: with `-lv=LOG_INIT_HOMOTOPY` the real variable
+/// vector is appended to `<prefix>_<name>` at every accepted lambda. Inert without
+/// a filesystem, as C's `OMC_NO_FILESYSTEM` builds are.
+struct HomotopyPath {
+    #[cfg(feature = "std")]
+    file: Option<(String, String)>,
+}
+
+impl HomotopyPath {
+    fn open(model: Option<&SimMeta>, name: &str) -> Self {
+        #[cfg(feature = "std")]
+        {
+            let file = match model {
+                Some(m) if omclog::active(omclog::INIT_HOMOTOPY) => {
+                    let path = format!("{}_{name}", m.prefix);
+                    omclog::info(
+                        omclog::INIT_HOMOTOPY,
+                        false,
+                        &format!("The homotopy path will be exported to {path}."),
+                    );
+                    Some((path, String::new()))
+                }
+                _ => None,
+            };
+            HomotopyPath { file }
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            let _ = (model, name);
+            HomotopyPath {}
+        }
+    }
+
+    fn header(&mut self, model: Option<&SimMeta>) {
+        #[cfg(feature = "std")]
+        if let (Some((_, buf)), Some(m)) = (self.file.as_mut(), model) {
+            buf.push_str("\"lambda\"");
+            for name in &m.soti.reals {
+                buf.push_str(&format!(",\"{name}\""));
+            }
+            buf.push('\n');
+        }
+    }
+
+    fn row(&mut self, e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, lambda: f64) {
+        let _ = (sim_data, layout, lambda, e);
+        #[cfg(feature = "std")]
+        if let Some((_, buf)) = self.file.as_mut() {
+            buf.push_str(&format_g(lambda, 16));
+            for i in 0..2 * layout.n_states + layout.n_real_alg {
+                let v = read_f64(e, sim_data + crate::REAL_OFF + i * 8).unwrap_or(f64::NAN);
+                buf.push(',');
+                buf.push_str(&format_g(v, 16));
+            }
+            buf.push('\n');
+        }
+    }
+
+    fn finish(&mut self) {
+        #[cfg(feature = "std")]
+        if let Some((path, buf)) = self.file.take() {
+            let _ = std::fs::write(path, buf);
+        }
+    }
 }
 
 /// Append one trajectory row to `rows`: the real part `[time | realVars]`

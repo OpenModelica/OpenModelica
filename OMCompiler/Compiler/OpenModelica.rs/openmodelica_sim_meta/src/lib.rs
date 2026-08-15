@@ -83,6 +83,41 @@ pub enum WTy {
     F64,
 }
 
+/// C's `HOMOTOPY_METHOD`, selected by `--homotopyApproach` (and forced to
+/// [`Self::None`] by `--replaceHomotopy`). The numbering is C's.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum HomotopyMethod {
+    LocalEquidistant = 0,
+    #[default]
+    GlobalEquidistant = 1,
+    GlobalAdaptive = 2,
+    LocalAdaptive = 3,
+    None = 4,
+}
+
+impl HomotopyMethod {
+    pub fn from_code(c: u8) -> Self {
+        match c {
+            0 => Self::LocalEquidistant,
+            2 => Self::GlobalAdaptive,
+            3 => Self::LocalAdaptive,
+            4 => Self::None,
+            _ => Self::GlobalEquidistant,
+        }
+    }
+    pub fn code(self) -> u8 {
+        self as u8
+    }
+    /// The parameter reaches the whole initial system, not just the component.
+    pub fn is_global(self) -> bool {
+        matches!(self, Self::GlobalEquidistant | Self::GlobalAdaptive)
+    }
+    /// The step size is the arc-length continuation's, not `1/init_lambda_steps`.
+    pub fn is_adaptive(self) -> bool {
+        matches!(self, Self::GlobalAdaptive | Self::LocalAdaptive)
+    }
+}
+
 /// Fully-resolved layout of one model's `SimData` block. All offsets are byte
 /// offsets within the block; all are compile-time constants baked into the
 /// generated module. This is the single source of truth: the codegen computes it
@@ -99,6 +134,12 @@ pub struct Layout {
     /// A nonlinear system carries the homotopy operator (C's `homotopySupport`), so
     /// the driver runs the continuation over `functionInitialEquations_lambda0`.
     pub has_homotopy: bool,
+    /// `--homotopyApproach` as C's `homotopyMethod` callback field: whose
+    /// continuation runs, and whether it is equidistant or adaptive.
+    pub homotopy_method: HomotopyMethod,
+    /// A simplified lambda = 0 system was generated, so the continuation's first
+    /// step can call `functionInitialEquations_lambda0`.
+    pub has_init_lambda0: bool,
     /// The model has `delay(...)` or `spatialDistribution(...)`, i.e. an operator
     /// with an internal history that `functionStoreDelayed` /
     /// `functionStoreSpatialDistribution` must be fed at every accepted point.
@@ -280,6 +321,8 @@ impl Layout {
         n_removed_init: u32,
         has_when: bool,
         has_homotopy: bool,
+        homotopy_method: HomotopyMethod,
+        has_init_lambda0: bool,
         has_history_ops: bool,
     ) -> Self {
         let n_real = 2 * n_states + n_real_alg; // states | ders | algs
@@ -336,7 +379,7 @@ impl Layout {
         let removed_init_idx_off = removed_init_res_off + 8;
         let total = removed_init_idx_off + 4;
         Layout {
-            n_states, n_real_alg, has_when, has_homotopy, has_history_ops, lambda_off, rparam_off, int_off, iparam_off,
+            n_states, n_real_alg, has_when, has_homotopy, homotopy_method, has_init_lambda0, has_history_ops, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
             terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
@@ -867,6 +910,9 @@ pub struct SimMeta {
     /// Modelica source of each residual `functionRemovedInitialEquations` checks;
     /// C bakes the same text into the generated `errorStreamPrint`.
     pub removed_init_desc: Vec<String>,
+    /// C's `initializeNonlinearSystems` startup warnings, decided at compile time:
+    /// so far only a sparsity pattern `sparsitySanityCheck` rejects.
+    pub nls_warnings: Vec<String>,
     /// C's `simulationInfo->sensitivityParList`: the `SimData` offsets of the
     /// parameters `--calculateSensitivities` selected, in block order.
     pub sens_params: Vec<u32>,
@@ -1177,6 +1223,8 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     }
     o.push(l.has_when as u8);
     o.push(l.has_homotopy as u8);
+    o.push(l.homotopy_method.code());
+    o.push(l.has_init_lambda0 as u8);
     o.push(l.has_history_ops as u8);
 }
 fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
@@ -1292,6 +1340,10 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     }
     put_u32(&mut o, m.removed_init_desc.len() as u32);
     for d in &m.removed_init_desc {
+        put_str(&mut o, d);
+    }
+    put_u32(&mut o, m.nls_warnings.len() as u32);
+    for d in &m.nls_warnings {
         put_str(&mut o, d);
     }
     put_u32(&mut o, m.sample_index.len() as u32);
@@ -1544,10 +1596,14 @@ impl<'a> Reader<'a> {
             total: self.u32()?,
             has_when: false,
             has_homotopy: false,
+            homotopy_method: HomotopyMethod::default(),
+            has_init_lambda0: false,
             has_history_ops: false,
         };
         l.has_when = self.u8()? != 0;
         l.has_homotopy = self.u8()? != 0;
+        l.homotopy_method = HomotopyMethod::from_code(self.u8()?);
+        l.has_init_lambda0 = self.u8()? != 0;
         l.has_history_ops = self.u8()? != 0;
         Ok(l)
     }
@@ -1651,6 +1707,11 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let mut removed_init_desc = Vec::with_capacity(nridesc);
     for _ in 0..nridesc {
         removed_init_desc.push(r.string()?);
+    }
+    let nwarn = r.u32()? as usize;
+    let mut nls_warnings = Vec::with_capacity(nwarn);
+    for _ in 0..nwarn {
+        nls_warnings.push(r.string()?);
     }
     let sample_index = r.u32s()?.into_iter().map(|v| v as i32).collect();
     let mut soti = SotiVars::default();
@@ -1809,7 +1870,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, params, attr_log,
-        removed_init_desc, sample_index, soti, sens_params, nls_vars, dae, clocks, lin, opt, inputs,
+        removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, dae, clocks, lin, opt, inputs,
     })
 }
 
@@ -1821,7 +1882,10 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
-            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, false, false, false),
+            layout: Layout::new(
+                2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, false, false,
+                HomotopyMethod::GlobalEquidistant, false, false,
+            ),
             start_time: 0.0,
             stop_time: 1.0,
             n_intervals: 500,
@@ -1871,6 +1935,7 @@ mod tests {
                 AttrLog { kind: 3, name: "y".to_string() },
             ],
             removed_init_desc: vec!["4.0 - z".to_string()],
+            nls_warnings: Vec::new(),
             sample_index: vec![1],
             soti: SotiVars::default(),
             sens_params: vec![88],

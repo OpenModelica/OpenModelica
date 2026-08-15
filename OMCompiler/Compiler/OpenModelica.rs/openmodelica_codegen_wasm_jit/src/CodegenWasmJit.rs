@@ -444,7 +444,8 @@ fn init_success_line() -> String {
     if steps == 0 {
         "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.".to_string()
     } else {
-        format!("LOG_SUCCESS       | info    | The initialization finished successfully with {steps} homotopy steps.")
+        let local = if sim_driver::init_homotopy_local() { "local " } else { "" };
+        format!("LOG_SUCCESS       | info    | The initialization finished successfully with {steps} {local}homotopy steps.")
     }
 }
 
@@ -2539,6 +2540,8 @@ pub(crate) struct SimVarMap {
     n_mathevents: u32,
     /// `SimData` byte offset of the homotopy parameter lambda (`SimLayout`).
     lambda_off: u32,
+    /// C's `homotopyMethod` code (`SimLayout::homotopy_method`).
+    homotopy_method: u8,
     /// `SimData` byte offset of the zero-crossing hysteresis tolerance (`SimCtx::zctol_off`).
     zctol_off: u32,
     /// `SimData` byte offset of `zeroCrossingsPre` (`SimLayout::zc_pre_off`).
@@ -2914,6 +2917,7 @@ fn build_var_map(
         mathevents_off: layout.mathevents_off,
         n_mathevents: layout.n_math,
         lambda_off: layout.lambda_off,
+        homotopy_method: layout.homotopy_method.code(),
         zctol_off: layout.zctol_off,
         zc_pre_off: layout.zc_pre_off,
         clock_fire_off: layout.clock_fire_off,
@@ -3817,6 +3821,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         removed_init_residuals(sim_code).len() as u32,
         has_when,
         has_homotopy,
+        homotopy_method()?,
+        lst(&sim_code.initialEquations_lambda0).next().is_some(),
         // `delay(...)` / `spatialDistribution(...)`: the driver has to store their
         // accepted points, which costs an extra evaluation, so it asks first.
         sim_code.delayedExps.maxDelayedIndex >= 0 || sim_code.spatialInfo.maxIndex >= 0,
@@ -4027,7 +4033,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
             .iter()
             .map(|l| eqs_with_branches(l.as_slice()))
             .collect();
-    let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_bounds, nls_patterns) = collect_nls_jobs(
+    let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_bounds, nls_patterns, nls_warnings) = collect_nls_jobs(
         &nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>(),
         &nls_nominal_map,
         &mut attr_targets,
@@ -4347,6 +4353,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         fmi_vrs, zc_descriptions(&zero_crossings), rel_descriptions(&sim_code.relations),
         param_vars(vars)?, attr_log_entries(sim_code)?,
         removed_init_residuals(sim_code).iter().map(|e| dump_exp(e)).collect(),
+        nls_warnings.clone(),
         samples.iter().map(|s| s.index).collect(), soti_vars(vars)?, sens_params, nls_vars, dae,
         clocks.iter().map(|c| c.meta.clone()).collect(),
         build_lin_info(&linz, vars, &var_map)?,
@@ -5001,6 +5008,21 @@ fn nls_homotopy_support(sim_code: &SimCode::SimCode) -> bool {
         || has(flatten_eqs_ll(&sim_code.algebraicEquations))
 }
 
+/// C's `homotopyMethod` model-callback entry, from the same `Config` predicates.
+fn homotopy_method() -> Result<openmodelica_sim_meta::HomotopyMethod> {
+    use openmodelica_sim_meta::HomotopyMethod as H;
+    use openmodelica_util::Config;
+    Ok(if Config::replacedHomotopy()? {
+        H::None
+    } else if Config::adaptiveHomotopy()? {
+        if Config::globalHomotopy()? { H::GlobalAdaptive } else { H::LocalAdaptive }
+    } else if Config::globalHomotopy()? {
+        H::GlobalEquidistant
+    } else {
+        H::LocalEquidistant
+    })
+}
+
 /// C's `LOG_STDOUT` "… changed to …" lines, ahead of everything the run prints.
 fn flag_change_log(flags: &simflags::SimFlags) -> String {
     use openmodelica_modelica_utilities::{LOG_STDOUT_INFO, LOG_STDOUT_WARNING};
@@ -5041,12 +5063,36 @@ struct NlsJacPattern {
 }
 
 /// The two patterns C can carry, in the order `functionNonLinearResiduals` picks
-/// them.
+/// them, minus what C's `sparsitySanityCheck` rejects.
 fn nls_jac_pattern(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
+    let pat = nls_jac_pattern_raw(jm, n)?;
+    sparsity_sanity_check(&pat.colptr, &pat.rowidx, n).then_some(pat)
+}
+
+/// The pattern as the backend emitted it, before C's sanity check.
+fn nls_jac_pattern_raw(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
     match &jm.sparsityMatrix {
         SimCode::Sparsity::SPARSITY { .. } => nls_jac_pattern_resizable(jm, n),
         _ => nls_jac_pattern_static(jm, n),
     }
+}
+
+/// C's `sparsitySanityCheck` over the CSC pattern (its `leadindex`/`index`). A
+/// homotopy system always fails it: `__HOM_LAMBDA` has no residual row.
+fn sparsity_sanity_check(colptr: &[i32], rowidx: &[i32], n: usize) -> bool {
+    if n == 0 || rowidx.len() < n {
+        return false;
+    }
+    if (1..n).any(|i| colptr[i] == colptr[i - 1]) {
+        return false;
+    }
+    let mut seen = vec![false; n];
+    for &r in &rowidx[..colptr[n] as usize] {
+        if let Some(s) = seen.get_mut(r as usize) {
+            *s = true;
+        }
+    }
+    seen.iter().all(|&s| s)
 }
 
 /// C's `generateStaticSparseData`: one `sparsity` entry per column holding its
@@ -5241,6 +5287,7 @@ fn build_sim_meta(
     params: openmodelica_sim_meta::ParamVars,
     attr_log: Vec<openmodelica_sim_meta::AttrLog>,
     removed_init_desc: Vec<String>,
+    nls_warnings: Vec<String>,
     sample_index: Vec<i32>,
     soti: openmodelica_sim_meta::SotiVars,
     sens_params: Vec<u32>,
@@ -5270,6 +5317,7 @@ fn build_sim_meta(
         params,
         attr_log,
         removed_init_desc,
+        nls_warnings,
         sample_index,
         soti,
         sens_params,
@@ -5576,6 +5624,7 @@ fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         mathevents_off: var_map.mathevents_off,
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
+        homotopy_method: var_map.homotopy_method,
         zctol_off: var_map.zctol_off,
         zc_pre_off: var_map.zc_pre_off,
         zc_context: false,
@@ -6638,12 +6687,23 @@ fn nls_parts(
     }
     let iter_vars: Vec<Arc<DAE::ComponentRef>> = lst(&nlsystem.crefs).cloned().collect();
     // A for-residual's count is only known at run time, so validate the unknown
-    // count only for scalar-only systems.
+    // count only for scalar-only systems. An adaptive approach appends
+    // `__HOM_LAMBDA` without a residual: the arc-length condition closes it.
     let all_scalar = residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }));
-    if all_scalar && iter_vars.len() != residuals.len() {
+    let extra = usize::from(is_homotopy_lambda(iter_vars.last()));
+    if all_scalar && iter_vars.len() != residuals.len() + extra {
         return Err("CodegenWasmJit: SES_NONLINEAR unknown/residual count mismatch");
     }
     Ok((inner, residuals, iter_vars))
+}
+
+/// The `__HOM_LAMBDA` unknown `generateHomotopyComponents` appends under an
+/// adaptive approach. C maps the cref to `simulationInfo->lambda`.
+fn is_homotopy_lambda(cr: Option<&Arc<DAE::ComponentRef>>) -> bool {
+    matches!(cr.map(|c| &**c),
+        Some(DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. })
+            if subscriptLst.is_empty()
+                && ident.as_str() == openmodelica_backend_types::BackendDAE::homotopyLambda)
 }
 
 /// Scan the compiled equation lists for `SES_NONLINEAR` systems (deduplicated by
@@ -6654,9 +6714,12 @@ fn collect_nls_jobs(
     eq_lists: &[&[Arc<SimCode::SimEqSystem>]],
     nominal_of: &HashMap<String, (f64, f64, f64)>,
     attr_targets: &mut HashMap<String, AttrTargets>,
-) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<f64>, Vec<i32>) {
+) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<f64>, Vec<i32>, Vec<String>) {
     use SimCode::SimEqSystem as E;
     let mut systems: Vec<Arc<SimCode::NonlinearSystem>> = Vec::new();
+    // C's `initializeNonlinearSystems` warning for a rejected pattern, indexed by
+    // the system ordinal as C's `sysNum` is.
+    let mut warnings: Vec<String> = Vec::new();
     let mut jobs: HashMap<i32, NlsJob> = HashMap::new();
     let mut hist_off = 0u32;
     let mut nominal_off = 0u32;
@@ -6681,9 +6744,24 @@ fn collect_nls_jobs(
                 // The pattern goes in whenever it exists: C's density/size rule only
                 // picks the *default* solver (kinsol+KLU vs the dense ladder), while
                 // `-nls=kinsol` hands every patterned system to KINSOL.
-                let pat = has_jac
-                    .then(|| nls_jac_pattern(nlSystem.jacobianMatrix.as_ref().unwrap(), n as usize))
-                    .flatten();
+                // C builds the pattern from the `JAC_MATRIX` alone — an empty column
+                // list still carries one — then checks it.
+                let raw_pat = nlSystem
+                    .jacobianMatrix
+                    .as_ref()
+                    .and_then(|jm| nls_jac_pattern_raw(jm, n as usize));
+                let pat = raw_pat.filter(|p| {
+                    sparsity_sanity_check(&p.colptr, &p.rowidx, n as usize) || {
+                        warnings.push(format!(
+                            "Sparsity pattern for non-linear system {} is not regular. This indicates \
+                             that something went wrong during sparsity pattern generation. Removing \
+                             sparsity pattern and disabling NLS scaling.",
+                            systems.len()
+                        ));
+                        false
+                    }
+                });
+                let pat = if has_jac { pat } else { None };
                 let nnz = pat.as_ref().map_or(0, |p| p.rowidx.len() as u32);
                 let sparse_default = nnz != 0 && nls_use_sparse(n as usize, nnz as usize);
                 if std::env::var("OMC_WASM_SIM_BENCH").is_ok() {
@@ -6699,7 +6777,7 @@ fn collect_nls_jobs(
                     patterns.extend_from_slice(&p.colptr);
                     patterns.extend_from_slice(&p.rowidx);
                 }
-                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, eq_index: nlSystem.index as u32, hist_off, nominal_off, has_jac, mixed, nnz, pat_off, sparse_default });
+                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, eq_index: nlSystem.index as u32, hist_off, nominal_off, has_jac, mixed, nnz, pat_off, sparse_default, homotopy_support: nlSystem.homotopySupport });
                 if nnz != 0 {
                     pat_off += 4 * (n + 1 + nnz);
                 }
@@ -6722,7 +6800,7 @@ fn collect_nls_jobs(
             }
         }
     }
-    (systems, jobs, hist_off, nominals, bounds, patterns)
+    (systems, jobs, hist_off, nominals, bounds, patterns, warnings)
 }
 
 /// The optimizer's Jacobian entry points, in emission order: for B, C and D the
@@ -7046,7 +7124,14 @@ fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
         return false;
     }
     let n = lst(&nlsystem.crefs).count();
-    n > 0 && count(&jm.seedVars) as usize == n && nls_jac_result_rows(jm, n).is_some()
+    let rows = n - nls_lambda_extra(nlsystem) as usize;
+    n > 0 && count(&jm.seedVars) as usize == n && nls_jac_result_rows(jm, rows).is_some()
+}
+
+/// 1 when the last unknown is `__HOM_LAMBDA`, which has no residual row: C's
+/// `size` is then one more than the solver's `n`.
+fn nls_lambda_extra(nlsystem: &SimCode::NonlinearSystem) -> u32 {
+    u32::from(is_homotopy_lambda(lst(&nlsystem.crefs).last()))
 }
 
 /// Torn linear system usable for analytic assembly: square Jacobian with one seed
@@ -7116,17 +7201,19 @@ fn build_nls_jac_infos(
         // residual row (`SimVar.index`), since the listing order need not be row
         // order. Seeds are likewise placed at their column index.
         use openmodelica_backend_types::BackendDAE::VarKind;
-        let n = listed_offs.len();
-        let seed_offs = jac_seed_offs_by_column(jm, &listed_offs, n)
+        let n_cols = listed_offs.len();
+        // A homotopy system's Jacobian is `n×(n+1)`: a `__HOM_LAMBDA` column, no row.
+        let n_rows = n_cols - nls_lambda_extra(sys) as usize;
+        let seed_offs = jac_seed_offs_by_column(jm, &listed_offs, n_cols)
             .ok_or_else(|| "CodegenWasmJit: nonlinear-system Jacobian seed columns are not a permutation")?;
-        let mut result_offs = vec![u32::MAX; n];
+        let mut result_offs = vec![u32::MAX; n_rows];
         for sv in &jac_column_vars(jm) {
             let off = cursor;
             cursor += 8;
             Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
             if matches!(sv.varKind, VarKind::JAC_VAR) {
                 let row = jac_result_row(sv)
-                    .filter(|&r| r < n)
+                    .filter(|&r| r < n_rows)
                     .ok_or_else(|| "CodegenWasmJit: nonlinear-system Jacobian result var has no row index")?;
                 result_offs[row] = off;
             }
@@ -7605,6 +7692,10 @@ fn build_nls_fns(
     // Resolve each unknown to its (real) SimData slot offset.
     let mut slots: Vec<u32> = Vec::with_capacity(iter_vars.len());
     for cr in &iter_vars {
+        if is_homotopy_lambda(Some(cr)) {
+            slots.push(var_map.lambda_off);
+            continue;
+        }
         let key = sim_cref_key(cr)?;
         let slot = var_map
             .vars
