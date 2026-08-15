@@ -6397,28 +6397,25 @@ fn lin_torn_use_sparse(lsystem: &SimCode::LinearSystem, n: usize) -> bool {
 }
 
 
-/// Total f64 count of the state-set Jacobian scratch region: each set contributes
-/// its seed inputs (`n_candidates`) and its column result outputs (`n_dummy`).
+/// Total f64 count of the state-set Jacobian scratch region: the seeds plus every
+/// variable the column equations write.
 fn stateset_scratch_f64(state_sets: &Arc<List<SimCode::StateSet>>) -> Result<u32> {
     let mut n = 0u32;
     for set in lst(state_sets) {
-        let col = lst(&set.jacobianMatrix.columns)
-            .next()
-            .ok_or_else(|| "CodegenWasmJit: state set has no Jacobian column")?;
-        n += count(&set.jacobianMatrix.seedVars) as u32 + count(&col.columnVars) as u32;
+        n += count(&set.jacobianMatrix.seedVars) as u32 + jac_column_vars(&set.jacobianMatrix).len() as u32;
     }
     Ok(n)
 }
 
-/// Register each state set's Jacobian seed/result crefs at the scratch region and
-/// collect the driver-side [`StateSetInfo`]. The seed vars (one per candidate) and
-/// the column result vars get f64 scratch slots so the emitted
-/// `functionStateSetJacobians` (which lowers the `columnEqns`) reads/writes them.
+/// Register each state set's Jacobian seed/column crefs at the scratch region and
+/// collect the driver-side [`StateSetInfo`], so the emitted
+/// `functionStateSetJacobians` works on the Jacobian's own storage.
 fn build_state_set_infos(
     state_sets: &Arc<List<SimCode::StateSet>>,
     layout: &SimLayout,
     var_map: &mut SimVarMap,
 ) -> Result<Vec<StateSetInfo>> {
+    use openmodelica_backend_types::BackendDAE::VarKind;
     let mut infos = Vec::new();
     let mut cursor = layout.stateset_off;
     let real_slot = |var_map: &SimVarMap, cr: &Arc<DAE::ComponentRef>| -> Result<u32> {
@@ -6436,30 +6433,40 @@ fn build_state_set_infos(
         let n_candidates = set.nCandidates.max(0) as u32;
         let n_states = set.nStates.max(0) as u32;
         let n_dummy = n_candidates - n_states;
-        let col = lst(&set.jacobianMatrix.columns)
-            .next()
-            .ok_or_else(|| "CodegenWasmJit: state set has no Jacobian column")?;
+        let jm = &set.jacobianMatrix;
+        let register = |var_map: &mut SimVarMap, sv: &SimCodeVar::SimVar, cursor: &mut u32| -> Result<u32> {
+            let off = *cursor;
+            *cursor += 8;
+            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
+            Ok(off)
+        };
 
-        // Seed slots (candidate order) — register the seed var crefs.
-        let mut seed_offs = Vec::new();
-        for sv in lst(&set.jacobianMatrix.seedVars) {
-            let off = cursor;
-            cursor += 8;
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
-            seed_offs.push(off);
+        // Seeds are listed in their own order; the driver wants Jacobian-column order.
+        let listed: Vec<u32> = lst(&jm.seedVars)
+            .map(|sv| register(var_map, &sv, &mut cursor))
+            .collect::<Result<_>>()?;
+        let seed_offs = jac_seed_offs_by_column(jm, &listed, n_candidates as usize)
+            .ok_or("CodegenWasmJit: state-set Jacobian seed columns are not a permutation")?;
+
+        let mut result_offs = vec![u32::MAX; n_dummy as usize];
+        for sv in &jac_column_vars(jm) {
+            let off = register(var_map, sv, &mut cursor)?;
+            if matches!(sv.varKind, VarKind::JAC_VAR) {
+                let row = jac_result_row(sv)
+                    .filter(|&r| r < n_dummy as usize)
+                    .ok_or("CodegenWasmJit: state-set Jacobian result var has no row index")?;
+                result_offs[row] = off;
+            }
         }
-        // Result slots (row order) — register the column result var crefs.
-        let mut result_offs = Vec::new();
-        for sv in lst(&col.columnVars) {
-            let off = cursor;
-            cursor += 8;
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
-            result_offs.push(off);
+        if result_offs.contains(&u32::MAX) {
+            return Err("CodegenWasmJit: state-set Jacobian has no result var for every row");
         }
 
         let candidate_offs: Vec<u32> = lst(&set.statescandidates)
             .map(|cr| real_slot(var_map, cr))
             .collect::<Result<_>>()?;
+        let candidate_names: Vec<String> =
+            lst(&set.statescandidates).map(|cr| cref_display(cr)).collect::<Result<_>>()?;
         let state_offs: Vec<u32> = lst(&set.states)
             .map(|cr| real_slot(var_map, cr))
             .collect::<Result<_>>()?;
@@ -6486,15 +6493,16 @@ fn build_state_set_infos(
             a_offs,
             seed_offs,
             result_offs,
+            candidate_names,
         });
     }
     Ok(infos)
 }
 
 /// Build `functionStateSetJacobians(SimData*)`: run every state set's Jacobian
-/// `columnEqns`, reading the seed slots and writing the result slots (both in the
-/// scratch region). The driver seeds one candidate at a time and reads back one
-/// Jacobian column (`getAnalyticalJacobianSet` in C's `stateset.c`).
+/// `constantEqns` and `columnEqns` over the scratch slots. The driver seeds one
+/// candidate at a time and reads back one Jacobian column
+/// (`getAnalyticalJacobianSet` in C's `stateset.c`).
 fn build_stateset_jac_fn(
     state_sets: &Arc<List<SimCode::StateSet>>,
     var_map: &SimVarMap,
@@ -6505,6 +6513,7 @@ fn build_stateset_jac_fn(
     let mut eqs: Vec<Arc<SimCode::SimEqSystem>> = Vec::new();
     for set in lst(state_sets) {
         for col in lst(&set.jacobianMatrix.columns) {
+            eqs.extend(lst(&col.constantEqns).cloned());
             eqs.extend(lst(&col.columnEqns).cloned());
         }
     }
