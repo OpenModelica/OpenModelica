@@ -6102,6 +6102,7 @@ template resizableColCountRegular(ComponentRef seed, Integer k, Context context,
   match context
   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
     match simVarFromHT(crefStripSubs(seed), jacHT)
+    case SIMVAR(index=-2) then resizableColCount(seed, context, &preExp, &varDecls, &auxFunction)
     case v as SIMVAR() then
       let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
       <<
@@ -6119,6 +6120,7 @@ template resizableColCount(ComponentRef seed, Context context, Text &preExp, Tex
   match context
   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
     match simVarFromHT(crefStripSubs(seed), jacHT)
+    case SIMVAR(index=-2) then '/* resizableColCount: seed not found in jacHT */'
     case v as SIMVAR() then
       match crefSubs(seed)
         case {} then
@@ -6477,6 +6479,7 @@ template resizableColFillRegular(ComponentRef seed, String rowExpr, Integer k, C
   match context
   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
     match simVarFromHT(crefStripSubs(seed), jacHT)
+    case SIMVAR(index=-2) then resizableColFill(seed, rowExpr, context, &preExp, &varDecls, &auxFunction, spPattern)
     case v as SIMVAR() then
       let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
       <<
@@ -6494,6 +6497,7 @@ template resizableColFill(ComponentRef seed, String rowExpr, Context context, Te
   match context
   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
     match simVarFromHT(crefStripSubs(seed), jacHT)
+    case SIMVAR(index=-2) then '/* resizableColFill: seed not found in jacHT */'
     case v as SIMVAR() then
       match crefSubs(seed)
         case {} then
