@@ -3135,8 +3135,7 @@ fn store_fresh_into_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, wty: WTy, vt
 /// Lower `(l1, l2, …) := f(args)` (`STMT_TUPLE_ASSIGN`): call the multi-output
 /// generated function (which leaves its results on the stack, first result
 /// deepest), then move each owned result into its target local. A `_` (wildcard)
-/// target discards its value (releasing it if heap). Targets must be simple
-/// locals; subscripted / qualified tuple targets are not supported.
+/// target discards its value (releasing it if heap).
 fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &DAE::Exp) -> Result<()> {
     let DAE::Exp::CALL { path, expLst, attr } = call else {
         return Err("CodegenWasmJit: tuple assignment rhs is not a function call");
@@ -3162,21 +3161,64 @@ fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &
         }
     }
     for (i, lhs_exp) in lhs_v.iter().enumerate() {
-        let sty = &results[i];
-        let vt = temps[i];
-        let DAE::Exp::CREF { componentRef, .. } = &***lhs_exp else {
-            return Err("CodegenWasmJit: tuple-assignment target is not a cref");
-        };
-        // `_` output: discard (release a heap value).
-        if let DAE::ComponentRef::WILD = &**componentRef {
-            if let Some(release_fn) = sty.release_fn() {
-                ctx.emit(we::Instruction::LocalGet(vt));
-                ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
-            }
-            continue;
-        }
-        store_fresh_into_cref(ctx, componentRef, sty.wty(), vt)?;
+        store_fresh_into_tuple_target(ctx, lhs_exp, &results[i], temps[i])?;
     }
+    Ok(())
+}
+
+/// Store one freshly-owned tuple result into its target expression.
+fn store_fresh_into_tuple_target(ctx: &mut FnCtx, target: &DAE::Exp, sty: &SigTy, vt: u32) -> Result<()> {
+    use DAE::Exp as E;
+    match target {
+        E::CREF { componentRef, .. } => {
+            // `_` output: discard (release a heap value).
+            if let DAE::ComponentRef::WILD = &**componentRef {
+                if let Some(release_fn) = sty.release_fn() {
+                    ctx.emit(we::Instruction::LocalGet(vt));
+                    ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+                }
+                return Ok(());
+            }
+            store_fresh_into_cref(ctx, componentRef, sty.wty(), vt)
+        }
+        // Alias elimination replaces a record-valued target by its components, as a
+        // constructor call or a `RECORD` (C's `tupleReturnVariableUpdates`).
+        E::RECORD { exps, .. } => scatter_record_target(ctx, exps, sty, vt),
+        E::CALL { expLst, .. } => scatter_record_target(ctx, expLst, sty, vt),
+        _ => Err("CodegenWasmJit: unsupported tuple-assignment target"),
+    }
+}
+
+/// Scatter the freshly-owned record in `vt` into `targets` (one per field, in
+/// declaration order), then release it.
+fn scatter_record_target(
+    ctx: &mut FnCtx,
+    targets: &List<Arc<DAE::Exp>>,
+    sty: &SigTy,
+    vt: u32,
+) -> Result<()> {
+    let SigTy::Record { fields, .. } = sty else {
+        return Err("CodegenWasmJit: record-destructuring tuple target for a non-record output");
+    };
+    let targets: Vec<&Arc<DAE::Exp>> = targets.into_iter().collect();
+    if targets.len() != fields.len() {
+        return Err("CodegenWasmJit: record-destructuring tuple target has the wrong field count");
+    }
+    let layout = record_layout(fields);
+    for (i, (_, fty)) in fields.iter().enumerate() {
+        let ft = ctx.alloc_temp(fty.wty());
+        ctx.emit(we::Instruction::LocalGet(vt));
+        field_load(ctx, fty.wty(), layout.data_off + layout.field_off[i]);
+        ctx.emit(we::Instruction::LocalSet(ft));
+        if fty.is_heap() {
+            // The record still holds its reference; the store consumes one.
+            ctx.emit(we::Instruction::LocalGet(ft));
+            ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+        }
+        store_fresh_into_tuple_target(ctx, targets[i], fty, ft)?;
+    }
+    ctx.emit(we::Instruction::LocalGet(vt));
+    ctx.emit(we::Instruction::Call(rt_index("rt_record_release")?));
     Ok(())
 }
 
@@ -6194,7 +6236,8 @@ pub(crate) use generic_calls::{emit_entwined_assign, emit_generic_assign, emit_r
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
 pub(crate) use sim_systems::{
-    LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, NlsResidual,
+    LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, NlsResidual, NlsResiduals,
+    backup_known_outputs, restore_known_outputs,
     compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
     compile_linear_system_symbolic, emit_linz_jac_body, emit_nls_jac_body, emit_nls_jac_csc_body,
     emit_nls_load_body, emit_nls_residual_body, emit_solve_nls_call, lin_jac_coloring,
@@ -6324,8 +6367,8 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             let DAE::Operator::NOT { .. } = operator else {
                 return Err("CodegenWasmJit: unsupported logical unary operator");
             };
-            // Element-wise `not` over a Boolean array.
-            if matches!(exp_sigty(exp), Ok(SigTy::Array { .. })) {
+            // Element-wise `not` over a Boolean array (`daeExpLunary`).
+            if matches!(logical_operator_sigty(operator), Some(SigTy::Array { .. })) {
                 emit_unary_array(ctx, exp, "rt_array_not_i32")?;
                 return Ok(WTy::I32);
             }
@@ -6338,7 +6381,7 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         E::LBINARY { exp1, operator, exp2 } => {
             // Element-wise `and`/`or` over Boolean arrays (operands are array
             // handles, not i32 truth values — a scalar I32And would corrupt them).
-            if matches!(exp_sigty(exp1), Ok(SigTy::Array { .. })) {
+            if matches!(logical_operator_sigty(operator), Some(SigTy::Array { .. })) {
                 let (op_code, ty) = match operator {
                     DAE::Operator::AND { ty } => (OP_AND, ty),
                     DAE::Operator::OR { ty } => (OP_OR, ty),
@@ -6606,6 +6649,15 @@ fn operator_sigty(op: &DAE::Operator) -> Result<SigTy> {
     sig_ty_quiet(ty)
 }
 
+/// The result type of `and`/`or`/`not`: `Bool`, or a Boolean array when the
+/// operands are arrays. Only the operator records this — a nested logical
+/// operand's own type annotation is just the element type.
+fn logical_operator_sigty(op: &DAE::Operator) -> Option<SigTy> {
+    use DAE::Operator as O;
+    let (O::AND { ty } | O::OR { ty } | O::NOT { ty }) = op else { return None };
+    sig_ty_quiet(ty).ok()
+}
+
 /// The type an operator the frontend left untyped works on: whichever of String,
 /// Real or Integer an operand carries, in Modelica's promotion order.
 fn operand_sigty(e1: &DAE::Exp, e2: &DAE::Exp) -> Result<SigTy> {
@@ -6663,7 +6715,10 @@ fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
             Ok(s) => s,
             Err(_) => exp_sigty(exp)?,
         },
-        E::RELATION { .. } | E::LBINARY { .. } | E::LUNARY { .. } => SigTy::Bool,
+        E::LBINARY { operator, .. } | E::LUNARY { operator, .. } => {
+            logical_operator_sigty(operator).unwrap_or(SigTy::Bool)
+        }
+        E::RELATION { .. } => SigTy::Bool,
         E::IFEXP { expThen, .. } => exp_sigty(expThen)?,
         E::SHARED_LITERAL { exp, .. } => exp_sigty(exp)?,
         // Array-valued expressions carry their (array) type directly.

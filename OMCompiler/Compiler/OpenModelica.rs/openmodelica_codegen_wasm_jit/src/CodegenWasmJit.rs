@@ -60,7 +60,8 @@ use crate::CodegenWasmJitFunctions::{
     SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     ClockInit, ClockUpdate,
-    NlsResidual, emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
+    NlsResidual, NlsResiduals, backup_known_outputs, restore_known_outputs,
+    emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
     emit_entwined_assign, emit_generic_assign, emit_resizable_assign,
     emit_nls_residual_body, emit_solve_nls_call, external_import_sig, external_known,
     external_general_why, note_declined_external, reset_declined_externals,
@@ -3774,7 +3775,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let when_scan = eqs_with_branches(&all_eqs);
     let has_when = dae_eqs.iter().map(|(e, _)| e).chain(when_scan.iter()).any(|e| match &**e {
         SimCode::SimEqSystem::SES_WHEN { .. } => true,
-        SimCode::SimEqSystem::SES_ALGORITHM { statements, .. } => {
+        SimCode::SimEqSystem::SES_ALGORITHM { statements, .. }
+        | SimCode::SimEqSystem::SES_INVERSE_ALGORITHM { statements, .. } => {
             (&**statements).into_iter().any(|s| matches!(&**s, DAE::Statement::STMT_WHEN { .. }))
         }
         _ => false,
@@ -6315,6 +6317,17 @@ pub(crate) fn lower_equation(
         E::SES_LINEAR { lSystem, .. } => lower_linear_system(ctx, lSystem, eq_index),
         E::SES_NONLINEAR { nlSystem, .. } => lower_nonlinear_system(ctx, nlSystem, eq_index),
         E::SES_ALGORITHM { statements, .. } => ctx.sim_stmts(statements),
+        // Inside a nonlinear system the residual function backs the known outputs
+        // up around the body; standalone this is C's `equationAlgorithm`.
+        E::SES_INVERSE_ALGORITHM { statements, knownOutputCrefs, insideNonLinearSystem, .. } => {
+            if *insideNonLinearSystem {
+                return ctx.sim_stmts(statements);
+            }
+            let known: Vec<Arc<DAE::ComponentRef>> = lst(knownOutputCrefs).cloned().collect();
+            let saved = backup_known_outputs(ctx, &known)?;
+            ctx.sim_stmts(statements)?;
+            restore_known_outputs(ctx, &known, &saved)
+        }
         E::SES_WHEN { conditions, whenStmtLst, elseWhen, .. } => {
             ctx.sim_when(conditions, whenStmtLst, elseWhen)
         }
@@ -6663,7 +6676,7 @@ fn lower_nonlinear_system(
 /// [`build_nls_fns`] (which emits the callbacks).
 fn nls_parts(
     nlsystem: &SimCode::NonlinearSystem,
-) -> Result<(Vec<Arc<SimCode::SimEqSystem>>, Vec<NlsResidual>, Vec<Arc<DAE::ComponentRef>>)> {
+) -> Result<(Vec<Arc<SimCode::SimEqSystem>>, NlsResiduals, Vec<Arc<DAE::ComponentRef>>)> {
     use SimCode::SimEqSystem as E;
     let mut inner: Vec<Arc<SimCode::SimEqSystem>> = Vec::new();
     let mut residuals: Vec<NlsResidual> = Vec::new();
@@ -6682,10 +6695,17 @@ fn nls_parts(
             _ => inner.push(e.clone()),
         }
     }
+    let iter_vars: Vec<Arc<DAE::ComponentRef>> = lst(&nlsystem.crefs).cloned().collect();
     if residuals.is_empty() {
+        // An inverse algorithm is the system's lone equation and its own residual.
+        if let [e] = inner.as_slice() {
+            if let E::SES_INVERSE_ALGORITHM { knownOutputCrefs, .. } = &**e {
+                let known = lst(knownOutputCrefs).cloned().collect();
+                return Ok((inner, NlsResiduals::InverseAlgorithm(known), iter_vars));
+            }
+        }
         return Err("CodegenWasmJit: SES_NONLINEAR has no residual equations");
     }
-    let iter_vars: Vec<Arc<DAE::ComponentRef>> = lst(&nlsystem.crefs).cloned().collect();
     // A for-residual's count is only known at run time, so validate the unknown
     // count only for scalar-only systems. An adaptive approach appends
     // `__HOM_LAMBDA` without a residual: the arc-length condition closes it.
@@ -6694,7 +6714,7 @@ fn nls_parts(
     if all_scalar && iter_vars.len() != residuals.len() + extra {
         return Err("CodegenWasmJit: SES_NONLINEAR unknown/residual count mismatch");
     }
-    Ok((inner, residuals, iter_vars))
+    Ok((inner, NlsResiduals::Explicit(residuals), iter_vars))
 }
 
 /// The `__HOM_LAMBDA` unknown `generateHomotopyComponents` appends under an
