@@ -38,6 +38,18 @@ impl Loaded {
     pub fn func(&self, name: &str) -> Option<&Func> {
         self.funcs.get(name)
     }
+    /// `name`, else what its `Include` address wrapper points at.
+    pub fn func_or_addr(&self, store: &mut wasmtime::Store<WasiCtx>, name: &str) -> Option<Func> {
+        if let Some(f) = self.funcs.get(name) {
+            return Some(f.clone());
+        }
+        let w = self.funcs.get(&format!("{}{name}", crate::model::EXT_ADDR_PREFIX))?;
+        // Slot 0 is the null function pointer: the sources only declared it.
+        match w.typed::<(), i32>(&*store).ok()?.call(&mut *store, ()).ok()? {
+            0 => None,
+            idx => self.table.get(store, idx as u64)?.as_func().flatten().cloned(),
+        }
+    }
     pub fn shadow_stack(&self) -> Option<Global> {
         self.stack_pointer
     }

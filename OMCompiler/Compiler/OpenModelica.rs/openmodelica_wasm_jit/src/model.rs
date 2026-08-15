@@ -161,13 +161,24 @@ impl ExtIncludes {
     /// Build the sources into a host shared library and return its path. Per-process
     /// temp directory: it stays mapped as long as the model can be resimulated.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn compile(&self) -> std::result::Result<String, String> {
+    pub fn compile(&self, symbols: &[String]) -> std::result::Result<String, String> {
+        let wrappers = ext_addr_wrappers(symbols);
+        match self.compile_tu(&wrappers) {
+            Err(e) if !wrappers.is_empty() => self.compile_tu("").map_err(|_| e),
+            r => r,
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn compile_tu(&self, wrappers: &str) -> std::result::Result<String, String> {
         use std::process::Command;
         let dir = std::env::temp_dir().join(format!("om-extc-{}", std::process::id()));
         std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
-        let tu = dir.join(format!("{}_includes.c", self.prefix));
-        let out = dir.join(format!("{}_includes{}", self.prefix, self.dllext));
-        std::fs::write(&tu, INCLUDE_TU_PROLOGUE.to_owned() + &self.sources.join("\n") + "\n")
+        // The fallback build must not be handed the path it just failed to load.
+        let stem = if wrappers.is_empty() { "includes_exports" } else { "includes" };
+        let tu = dir.join(format!("{}_{stem}.c", self.prefix));
+        let out = dir.join(format!("{}_{stem}{}", self.prefix, self.dllext));
+        std::fs::write(&tu, INCLUDE_TU_PROLOGUE.to_owned() + &self.sources.join("\n") + "\n" + wrappers)
             .map_err(|e| format!("cannot write {}: {e}", tu.display()))?;
 
         let mut cmd = Command::new(&self.ccompiler);
@@ -199,12 +210,25 @@ impl ExtIncludes {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn compile(&self) -> std::result::Result<String, String> {
+    pub fn compile(&self, _symbols: &[String]) -> std::result::Result<String, String> {
         Err("the implementation comes from an `Include` annotation with C source, which has to be \
              compiled — the browser omc has no compiler. Provide it as a `Library` built with \
              `clang --target=wasm32-wasip1 -fPIC -shared`"
             .to_string())
     }
+}
+
+/// A header-only `Include` may declare every function `static`, exporting nothing;
+/// a wrapper handing back the address needs no prototype and reaches it anyway.
+pub const EXT_ADDR_PREFIX: &str = "omc_ext_addr_";
+
+/// Taking the address of a function the sources never declare does not compile,
+/// so the caller falls back to the unit without these.
+pub fn ext_addr_wrappers(symbols: &[String]) -> String {
+    symbols
+        .iter()
+        .map(|s| format!("void (*{EXT_ADDR_PREFIX}{s}(void))(void) {{ return (void (*)(void)) {s}; }}\n"))
+        .collect()
 }
 
 /// What the C target's generated `<prefix>_includes.h` opens with, so external C
