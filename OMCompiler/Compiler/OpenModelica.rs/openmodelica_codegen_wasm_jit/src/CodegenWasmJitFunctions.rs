@@ -6981,7 +6981,9 @@ fn compile_relation(
     // re-evaluates. A Real inequality gets a hysteresis band (`compile_relation_hyst`)
     // at events and in the crossing function, but stays exact at init (`rel_fresh == 2`)
     // so a start value like `v <= 0` at `v == 0` resolves as written.
-    let indexed = matches!(ctx.sim(), Ok(s) if index >= 0 && (index as u32) < s.n_relations);
+    // A clocked partition is C's `contextOther`: plain relations.
+    let indexed = matches!(ctx.sim(), Ok(s) if index >= 0 && (index as u32) < s.n_relations
+        && s.sub_clock_off.is_none());
     if !indexed {
         return compile_relation_fresh(ctx, e1, op, e2);
     }
