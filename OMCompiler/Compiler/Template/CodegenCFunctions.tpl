@@ -4953,25 +4953,7 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
      case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
        if stringEq(sub, "") then 'jacobian->seedVars[<%index%>]<%crefCCommentWithVariability(v)%>'
        else '(&(jacobian->seedVars[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
-     case SIMVAR(index=-2) then
-       // Subscripted seed cref not in jac_map.  Two fallbacks:
-       // 1. Try the fully-stripped cref: handles whole-array seeds where the
-       //    diff_map subscript-copy produced e.g. $SEED.module[2].field while
-       //    jac_map only has the base $SEED.module.field.
-       // 2. Return 0.0 only for subscripted crefs: connection-aliased variables
-       //    that are not seeds of this system have zero Jacobian contribution.
-       //    Non-subscripted crefs not in jac_map are loop iterators (e.g. $i1)
-       //    and must fall through to crefOld so they resolve to the loop
-       //    variable already in scope.
-       match simVarFromHT(ComponentReference.crefStripSubs(cr), jacHT)
-       case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
-         if stringEq(sub, "") then 'jacobian->seedVars[<%v.index%>]<%crefCCommentWithVariability(v)%>'
-         else '(&(jacobian->seedVars[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
-       else
-         // Non-seed variables (CREF_QUAL actual values like MMmix, CREF_IDENT loop
-         // iterators like $i1) both use crefOld: actual values read from data,
-         // loop iterators resolve to the C loop variable already in scope.
-         crefOld(cr, ix)
+     case SIMVAR(index=-2) then crefOld(cr, ix)
 end jacCrefs;
 
 template jacSparsityIndex(ComponentRef cr, Context context)
@@ -8153,14 +8135,7 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
                 if stringEq(&sub, "") then
                   '((modelica_real *)(<%attr%>.start.data))[0]'
                 else
-                  // For subscripted access to $START.Y of a non-scalarized array variable,
-                  // use realVars[Y] instead of attribute.start[Y].
-                  // attribute.start is a 1-element broadcast per scalarized variable and
-                  // cannot be safely subscripted: writes overflow the 1-element allocation
-                  // and reads always return the default 0.0 via the broadcast path.
-                  // realVars is correctly indexed and populated by prior init equations,
-                  // so it gives the right value for both reads and writes.
-                  '(<%arr%>data->localData[<%ix%>]-><%ty%>Vars[data->simulationInfo-><%ty%>VarsIndex[<%index%>]]<%c_comment%>)<%sub%>'
+                  '(*(real_array_nr_of_elements(<%attr%>.start) == 1 ? &((modelica_real *)(<%attr%>.start.data))[0] : &((modelica_real *)(<%attr%>.start.data))<%&sub%>))'
               else
                 '<%varAttributes(var, &sub)%>.start'
           else if isPre then

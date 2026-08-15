@@ -235,26 +235,12 @@ protected
   protected
     UnorderedMap<Absyn.Path, Function> replacements "rules for replacements are stored inside here";
     UnorderedSet<VariablePointer> set "new iterators from function bodies";
-    // VarData.getVariables() only returns the continuous variable set. For the initial system
-    // (init = true), unfixed $START pseudo-variables live in varData.initials instead, so they'd
-    // otherwise look "unknown" to collectIterators/lowerComponentReference below and get
-    // misclassified as for-loop iterators, fabricating duplicate Variables that silently
-    // overwrite the real ones (VariablePointers keys on the subscript-stripped name).
-    VariablePointers variables;
+    VariablePointers variables = VarData.getVariables(varData);
     Absyn.Path key;
     Function value;
     // this map should probably be saved somewhere so its not done again for the initial system
     UnorderedMap<Function, InlineRating> func_map = UnorderedMap.new<InlineRating>(Function.nameHash, Function.nameEqual);
   algorithm
-    variables := VarData.getVariables(varData);
-    if init then
-      variables := match varData
-        local
-          VariablePointers initials;
-        case VarData.VAR_DATA_SIM(initials = initials) then VariablePointers.addList(VariablePointers.toList(initials), variables);
-        else variables;
-      end match;
-    end if;
     // collect functions
     replacements := UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
     for tpl in UnorderedMap.toList(funcMap) loop

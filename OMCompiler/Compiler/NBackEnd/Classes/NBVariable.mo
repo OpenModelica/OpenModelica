@@ -990,30 +990,18 @@ function isJacobianResultVar
 
   function isFixed
     extends checkVar;
-  protected
-    Option<Binding> fixed_opt;
-    Binding fixed;
   algorithm
     // FIXME use VariableAttributes.isFixed()?
-    fixed_opt := match var.backendinfo.attributes
-      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then SOME(fixed);
-      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then SOME(fixed);
-      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then SOME(fixed);
-      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then SOME(fixed);
-      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then SOME(fixed);
-      else NONE();
+    b := match var.backendinfo.attributes
+      local
+        Binding fixed;
+      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      else false;
     end match;
-    // When fixed is explicitly set, use that value.
-    // Otherwise, parameters are fixed=true by default per the Modelica spec.
-    if isSome(fixed_opt) then
-      SOME(fixed) := fixed_opt;
-      b := Expression.isAllTrue(Binding.getTypedExp(fixed));
-    else
-      b := match var.backendinfo.varKind
-        case VariableKind.PARAMETER() then true;
-        else false;
-      end match;
-    end if;
   end isFixed;
 
   function isFixable
@@ -1495,46 +1483,38 @@ function isJacobianResultVar
         original_cref := cref;
         // get the variable pointer from the old cref to later on link back to it
         old_var_ptr := getVarPointer(cref, sourceInfo());
-        // For subscripted element crefs (partial-slice NLS iter vars), skip the
-        // base-ptr cache so each outer element gets its own scalar seed var instead
-        // of all elements sharing the first element's seed via the array ptr cache.
-        // For non-subscripted crefs, use the cache normally (check first, create if absent).
-        if ComponentRef.hasSubscripts(original_cref) then
-          ovar := NONE();
+        // Skip base-ptr cache for subscripted element crefs (partial-slice NLS iter vars)
+        // so that each outer element gets its own scalar seed var instead of all elements
+        // sharing the first element's seed via the array ptr cache.
+        ovar := if ComponentRef.hasSubscripts(original_cref) then NONE() else getVarSeed(old_var_ptr);
+        if isSome(ovar) then
+          var_ptr := Util.getOption(ovar);
+          cref := getVarName(var_ptr);
         else
-          ovar := getVarSeed(old_var_ptr);
+          // prepend the seed str and the matrix name and create the new cref
+          qual.name := SEED_STR + "_" + name;
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+          var := fromCref(cref, NFAttributes.IMPL_DISCRETE_ATTR);
+
+          // update the variable to be a seed and pass the pointer to the original variable
+          // if it is a record, clear the children instead
+          varKind := match getVarKind(old_var_ptr)
+            case varKind as VariableKind.RECORD() algorithm
+              varKind.children := {};
+            then varKind;
+            else VariableKind.SEED_VAR();
+          end match;
+          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
+
+          // create the new variable pointer and safe it to the component reference
+          (var_ptr, cref) := makeVarPtrCyclic(var, cref);
+          // For subscripted element crefs (partial-slice NLS iter vars), skip linking back to
+          // the base array ptr so the shared cache is not populated, allowing each element to
+          // create its own independent seed on subsequent calls.
+          if not ComponentRef.hasSubscripts(original_cref) then
+            connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
+          end if;
         end if;
-
-        () := match ovar
-          case SOME(var_ptr) algorithm
-            // Cache hit (non-subscripted case only): reuse existing seed
-            cref := getVarName(var_ptr);
-          then ();
-          else algorithm
-            // Cache miss OR subscripted element: create a new seed variable
-            qual.name := SEED_STR + "_" + name;
-            cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-            var := fromCref(cref, NFAttributes.IMPL_DISCRETE_ATTR);
-
-            // update the variable to be a seed and pass the pointer to the original variable
-            // if it is a record, clear the children instead
-            varKind := match getVarKind(old_var_ptr)
-              case varKind as VariableKind.RECORD() algorithm
-                varKind.children := {};
-              then varKind;
-              else VariableKind.SEED_VAR();
-            end match;
-            var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
-
-            // create the new variable pointer and save it to the component reference
-            (var_ptr, cref) := makeVarPtrCyclic(var, cref);
-            // For non-subscripted crefs, connect partners to populate the cache.
-            // For subscripted element crefs, skip so the cache stays clean for other elements.
-            if not ComponentRef.hasSubscripts(original_cref) then
-              connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
-            end if;
-          then ();
-        end match;
       then ();
 
       else algorithm
@@ -1990,12 +1970,6 @@ function isJacobianResultVar
 
       case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO()) algorithm
         start := Binding.getExp(var.binding);
-        // Evaluate constant binding expressions to their literal values so the
-        // init XML serializer can write correct per-element start values instead
-        // of leaving an unevaluated array expression that would serialize as 0.0.
-        // tryEvalExp is safe here: it catches errors and returns the original on
-        // failure, and this function is only called when hasEvaluableBinding is true.
-        start := Ceval.tryEvalExp(SimplifyExp.simplify(start));
         binfo.attributes := VariableAttributes.setStartAttribute(binfo.attributes, start, overwrite);
         var.backendinfo := binfo;
       then var;
