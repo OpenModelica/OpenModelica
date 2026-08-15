@@ -993,6 +993,26 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         });
         wts(set.call(&mut store, t))?;
     }
+    // `-ils` / `-homotopyOnFirstTry`: a local approach sweeps inside `rt_solve_nls`.
+    if let Ok(set) = rt_inst.get_typed_func::<(u32, u32), ()>(&mut store, "rt_set_homotopy") {
+        let h = openmodelica_sim_meta::simflags::with_flags(|f| {
+            openmodelica_sim_meta::simflags::homotopy_codes(f)
+        });
+        wts(set.call(&mut store, h))?;
+    }
+    // The arc-length solver's `-hom*` constants.
+    if let Ok(set) = rt_inst
+        .get_typed_func::<(f64, f64, f64, f64, f64, f64, f64, f64, f64, u32, u32, u32, u32, u32), ()>(
+            &mut store, "rt_set_homotopy_tuning",
+        )
+    {
+        let h = openmodelica_sim_meta::simflags::with_flags(openmodelica_sim_meta::simflags::hom_tuning);
+        wts(set.call(&mut store, (
+            h.adapt_bend, h.h_eps, h.tau_dec, h.tau_dec_pred, h.tau_inc, h.tau_inc_threshold,
+            h.tau_max, h.tau_min, h.tau_start, h.max_lambda_steps, h.max_newton_steps, h.max_tries,
+            h.orthogonal_backtrace as u32, h.neg_start_dir as u32,
+        )))?;
+    }
     // Same for `-lv`: the nonlinear solver logs from inside the module.
     let log_mask = openmodelica_sim_meta::simflags::with_flags(|f| f.log_mask);
     if let Ok(set) = rt_inst.get_typed_func::<(u32, u32), ()>(&mut store, "rt_set_log_streams") {

@@ -465,7 +465,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // index, load-table index, n unknowns, nls_fail flag address) -> 0 ok / 1
     // recoverable failure. The Newton driver lives in the runtime; the model
     // supplies `residual`/`load` funcs reached by `call_indirect` (see `nls.rs`).
-    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     // `delay(...)` / `delayZeroCrossing(...)` ring buffers (runtime `delay.rs`).
     ("rt_delay_init", &[WTy::I32, WTy::F64], &[]),
     ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
@@ -1373,6 +1373,8 @@ pub(crate) struct SimCtx {
     /// `SimData` byte offset of the homotopy parameter lambda (`homotopy(a, s)` =
     /// `s + lambda*(a-s)`).
     pub(crate) lambda_off: u32,
+    /// C's `homotopyMethod` code, handed to `rt_solve_nls`.
+    pub(crate) homotopy_method: u8,
     /// True while lowering the `functionZeroCrossings` body: an indexed relation is
     /// then evaluated *fresh* (so a sign change is detectable) rather than held.
     pub(crate) zc_context: bool,
@@ -1444,6 +1446,8 @@ pub(crate) struct NlsJob {
     /// (sparse) rather than the dense `NLS_MIXED` ladder. `-nls=` overrides it, and
     /// it also picks the format `nls_jac` writes (CSC vs dense `n×n`).
     pub(crate) sparse_default: bool,
+    /// C's `NONLINEAR_SYSTEM_DATA::homotopySupport`.
+    pub(crate) homotopy_support: bool,
 }
 
 /// Per-system solver state for `n` unknowns: a count (padded to 8), C's

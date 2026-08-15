@@ -188,7 +188,10 @@ pub(crate) fn emit_nls_jac_body(
     lower_column: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
-    let n = iter_slots.len();
+    // Equal but for a homotopy system, whose `__HOM_LAMBDA` column has no row
+    // (C's `n × (n+1)` `fJac`).
+    let n_cols = iter_slots.len();
+    let n_rows = result_offs.len();
     for (j, &off) in iter_slots.iter().enumerate() {
         ctx.emit(I::LocalGet(0));
         ctx.emit(I::LocalGet(1));
@@ -202,7 +205,7 @@ pub(crate) fn emit_nls_jac_body(
         ctx.emit(I::F64Const(val.into()));
         ctx.emit(I::F64Store(mem_arg(off, 3)));
     };
-    for j in 0..n {
+    for j in 0..n_cols {
         for (k, &soff) in seed_offs.iter().enumerate() {
             store_const(ctx, soff, if k == j { 1.0 } else { 0.0 });
         }
@@ -214,7 +217,7 @@ pub(crate) fn emit_nls_jac_body(
             ctx.emit(I::LocalGet(2));
             ctx.emit(I::LocalGet(0));
             ctx.emit(I::F64Load(mem_arg(roff, 3)));
-            ctx.emit(I::F64Store(mem_arg(((j * n + i) as u32) * 8, 3)));
+            ctx.emit(I::F64Store(mem_arg(((j * n_rows + i) as u32) * 8, 3)));
         }
     }
     Ok(())
@@ -1434,6 +1437,7 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     let data = ctx.sim()?.data_local;
     let nls_fail_off = ctx.sim()?.nls_fail_off;
     let rel_fresh_off = ctx.sim()?.rel_fresh_off;
+    let lambda_off = ctx.sim()?.lambda_off;
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));
     ctx.emit(I::I32Const((3 * job.k) as i32));
@@ -1494,6 +1498,12 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::I32Const(job.sparse_default as i32));
     ctx.emit(I::I32Const(nls_lss_handle(job.k) as i32));
     ctx.emit(I::I32Const(job.eq_index as i32));
+    // C's `homotopySupport`/`homotopyMethod` and the `lambda` slot they drive.
+    ctx.emit(I::I32Const(job.homotopy_support as i32));
+    ctx.emit(I::I32Const(ctx.sim()?.homotopy_method as i32));
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::I32Const(lambda_off as i32));
+    ctx.emit(I::I32Add);
     ctx.emit(I::Call(rt_index("rt_solve_nls")?));
     ctx.emit(I::Drop);
     Ok(())

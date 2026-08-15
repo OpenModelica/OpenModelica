@@ -357,7 +357,9 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
             s.last_type[i] = ty;
             s.last_stream = stream;
         }
-        if indent_next {
+        // C's `messageText` recurses for the second line and returns, so a
+        // multi-line message never opens a block however `indentNext` is set.
+        if indent_next && !msg.contains('\n') {
             s.level[i] += 1;
         }
     });
@@ -367,6 +369,14 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
 /// C's `%<width>.<prec>g`.
 pub fn g(v: f64, width: usize, prec: i32) -> String {
     pad(crate::driver::format_g(v, prec), width)
+}
+
+/// C's `%<width>.<prec>f`: fixed point, no exponent.
+pub fn f(v: f64, width: usize, prec: usize) -> String {
+    if !v.is_finite() {
+        return alloc::format!("{v}");
+    }
+    pad(alloc::format!("{v:.prec$}"), width)
 }
 
 /// C's `%<width>.<prec>e`: always an exponent, at least two exponent digits.
