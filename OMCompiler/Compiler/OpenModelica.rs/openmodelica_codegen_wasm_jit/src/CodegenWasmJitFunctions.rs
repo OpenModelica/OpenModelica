@@ -10009,11 +10009,14 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
     let mut sig = format!("{in_codes}\n{out_codes}\n");
     if !ext_imports.is_empty() {
         let mut notes: Vec<String> = Vec::new();
-        // Only the wasm modules: the function JIT calls them wasm->wasm, with no
-        // libffi trampoline to reach a platform library through.
-        let libs = crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, &mut notes)?.wasm;
+        let resolved = crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, &mut notes)?;
+        let libs = resolved.wasm;
         for lib in &libs {
             sig.push_str(&format!("lib\t{}\n", lib.name));
+        }
+        // What the wasm modules do not define is called through libffi.
+        for lib in &resolved.native {
+            sig.push_str(&format!("nlib\t{lib}\n"));
         }
         // An implementation given as C source in an `Include`.
         let includes: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.externalFunctionIncludes).map(|s| s.to_string()).collect();

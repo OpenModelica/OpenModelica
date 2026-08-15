@@ -151,25 +151,52 @@ fn define_external_imports(
     let engine = linker.engine().clone();
     let loaded = dl::load(&mut *store, &engine, memory, table, &ext_rt.alloc, &libs, &host)
         .map_err(|e| record_dylink_error(e))?;
+    // A dlopen each, so only once a symbol needs one.
+    let mut native: Option<NativeExternals> = None;
     for s in &sig.ext_imports {
         let functype = wasmtime::FuncType::new(
             &engine,
             s.wasm_params().iter().map(|t| valtype(t.wty())),
             s.wasm_results().iter().map(|t| valtype(t.wty())),
         );
-        let target = loaded.func_or_addr(&mut *store, &s.name).ok_or_else(|| {
-            record_dylink_error(format!(
+        if let Some(target) = loaded.func_or_addr(&mut *store, &s.name) {
+            let f = dl::bind_in_wasm_external(&mut *store, s, &functype, target, &ext_rt)
+                .map_err(record_dylink_error)?
+                .ok_or("CodegenWasmJit: external \"C\" function has the wrong signature in the library")?;
+            wt(linker.define(&mut *store, "ext", &s.name, f))?;
+            continue;
+        }
+        // No wasm library defines it: the implementation is a platform one, as it
+        // is for the C target. LAPACK and omc's own runtime live in this process.
+        let native = native.get_or_insert_with(|| NativeExternals::new(&sig.native_libs));
+        let Some(addr) = native.resolve(&s.name) else {
+            return Err(record_dylink_error(format!(
                 "external \"C\" function `{}` is in none of the model's libraries{}",
                 s.name,
-                sig.notes.iter().map(|n| format!("\n  {n}")).collect::<String>()
-            ))
-        })?;
-        let f = dl::bind_in_wasm_external(&mut *store, s, &functype, target, &ext_rt)
-            .map_err(record_dylink_error)?
-            .ok_or("CodegenWasmJit: external \"C\" function has the wrong signature in the library")?;
-        wt(linker.define(&mut *store, "ext", &s.name, f))?;
+                sig.notes.iter().chain(native.errors.iter()).map(|n| format!("\n  {n}")).collect::<String>()
+            )));
+        };
+        openmodelica_wasm_jit::sim_runtime::define_native_external(linker, s, functype, addr, memory, &ext_rt)?;
     }
     Ok(())
+}
+
+/// The `external "C"` implementations outside wasm: the platform shared libraries
+/// the `Library` annotations resolved to, then the process image.
+struct NativeExternals {
+    handles: Vec<usize>,
+    errors: Vec<String>,
+}
+
+impl NativeExternals {
+    fn new(paths: &[String]) -> Self {
+        let (handles, errors) = openmodelica_util::dynload::load_external_libraries(paths);
+        NativeExternals { handles, errors }
+    }
+
+    fn resolve(&self, name: &str) -> Option<usize> {
+        openmodelica_util::dynload::external_symbol_in(&self.handles, name)
+    }
 }
 
 /// The reason (a missing symbol, a library built without `-shared`) is specific
@@ -191,6 +218,8 @@ struct Sig {
     inputs: Vec<SigTy>,
     outputs: Vec<SigTy>,
     libs: Vec<String>,
+    /// The same implementations as platform shared libraries.
+    native_libs: Vec<String>,
     ext_imports: Vec<ExtCallSig>,
     notes: Vec<String>,
 }
@@ -204,17 +233,19 @@ fn read_sig(path: &str) -> Result<Sig> {
     let inputs = parse(lines.next())?;
     let outputs = parse(lines.next())?;
     let mut libs = Vec::new();
+    let mut native_libs = Vec::new();
     let mut ext_imports = Vec::new();
     let mut notes = Vec::new();
     for line in lines {
         match line.split_once('\t') {
             Some(("lib", rest)) => libs.push(rest.to_string()),
+            Some(("nlib", rest)) => native_libs.push(rest.to_string()),
             Some(("ext", rest)) => ext_imports.push(super::parse_ext_sig(rest)?),
             Some(("note", rest)) => notes.push(rest.to_string()),
             _ => {}
         }
     }
-    Ok(Sig { inputs, outputs, libs, ext_imports, notes })
+    Ok(Sig { inputs, outputs, libs, native_libs, ext_imports, notes })
 }
 
 

@@ -376,11 +376,11 @@ impl NativeExternals {
         if !self.built_includes {
             self.built_includes = true;
             if let Some(inc) = &model.ext_includes {
-                let missing: Vec<String> = model
+                let missing: Vec<crate::sig::ExtCallSig> = model
                     .ext_imports
                     .iter()
-                    .map(|s| s.name.clone())
-                    .filter(|n| self.symbol(n).is_none())
+                    .filter(|s| self.symbol(&s.name).is_none())
+                    .cloned()
                     .collect();
                 let errors = self.errors.len();
                 // A wrapper for a function the sources only declare leaves an
@@ -395,10 +395,10 @@ impl NativeExternals {
         None
     }
 
-    /// Build the `Include` sources with `symbols` reachable by address, and load
-    /// the result. Searched first: it is the model's own source.
-    fn load_includes(&mut self, inc: &model::ExtIncludes, symbols: &[String]) -> bool {
-        let path = match inc.compile(symbols) {
+    /// Build the `Include` sources with `missing` reachable, and load the result.
+    /// Searched first: it is the model's own source.
+    fn load_includes(&mut self, inc: &model::ExtIncludes, missing: &[crate::sig::ExtCallSig]) -> bool {
+        let path = match inc.compile(missing) {
             Ok(p) => p,
             Err(e) => {
                 self.errors.push(e);
@@ -412,10 +412,14 @@ impl NativeExternals {
         loaded
     }
 
-    /// The symbol itself, else the address its `Include` wrapper hands back.
+    /// The symbol itself, else its `Include` wrapper: the call one for a macro,
+    /// the address one for a function with no external linkage.
     fn symbol(&self, name: &str) -> Option<usize> {
         use openmodelica_util::dynload::external_symbol_in;
         if let Some(addr) = external_symbol_in(&self.handles, name) {
+            return Some(addr);
+        }
+        if let Some(addr) = external_symbol_in(&self.handles, &format!("{}{name}", model::EXT_CALL_PREFIX)) {
             return Some(addr);
         }
         let wrapper = external_symbol_in(&self.handles, &format!("{}{name}", model::EXT_ADDR_PREFIX))?;
@@ -439,10 +443,6 @@ fn define_external_imports(
     rt: &crate::dylink_engine::ExtRt,
     libs: &crate::dylink_engine::Loaded,
 ) -> Result<()> {
-    let rt_str_new = rt.str_new.clone();
-    let rt_str_data = rt.str_data.clone();
-    let rt_release = rt.release.clone();
-    let nls = rt.nls.clone();
     registry_reset();
     sim_driver::clear_runtime_error();
     openmodelica_util::dynload::install_modelica_message_interception(
@@ -470,20 +470,34 @@ fn define_external_imports(
             crate::set_engine_error_detail(unresolved_external_detail(&sig.name, model, &native.errors));
             "external \"C\" function not found in any loaded library"
         })?;
-        let name = sig.name.clone();
-        let sig = sig.clone();
-        let rt_str_new = rt_str_new.clone();
-        let rt_str_data = rt_str_data.clone();
-        let rt_release = rt_release.clone();
-        let nls = nls.clone();
-        wt(linker.func_new("ext", &name, functype, move |mut caller, args, rets| {
-            // Safety: `addr` resolves `sig.name`; the `Cif` matches the validated sig.
-            unsafe {
-                call_external(addr, &sig, &mut caller, memory, &rt_str_new, &rt_str_data, &rt_release, &nls, args, rets)
-            }
-            .map_err(|e| wasmtime::Error::msg(format!("{e}")))
-        }))?;
+        define_native_external(linker, sig, functype, addr, memory, rt)?;
     }
+    Ok(())
+}
+
+/// Bind `ext.<sig.name>` to native `addr` through the libffi trampoline. Shared
+/// with the `-d=gen` function JIT, whose externals resolve the same way.
+pub fn define_native_external(
+    linker: &mut wasmtime::Linker<WasiCtx>,
+    sig: &crate::sig::ExtCallSig,
+    functype: wasmtime::FuncType,
+    addr: usize,
+    memory: wasmtime::Memory,
+    rt: &crate::dylink_engine::ExtRt,
+) -> Result<()> {
+    let name = sig.name.clone();
+    let sig = sig.clone();
+    let rt_str_new = rt.str_new.clone();
+    let rt_str_data = rt.str_data.clone();
+    let rt_release = rt.release.clone();
+    let nls = rt.nls.clone();
+    wt(linker.func_new("ext", &name, functype, move |mut caller, args, rets| {
+        // Safety: `addr` resolves `sig.name`; the `Cif` matches the validated sig.
+        unsafe {
+            call_external(addr, &sig, &mut caller, memory, &rt_str_new, &rt_str_data, &rt_release, &nls, args, rets)
+        }
+        .map_err(|e| wasmtime::Error::msg(format!("{e}")))
+    }))?;
     Ok(())
 }
 

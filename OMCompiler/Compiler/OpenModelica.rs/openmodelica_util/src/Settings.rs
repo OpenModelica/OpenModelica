@@ -139,33 +139,48 @@ pub fn setInstallationDirectoryPath(inString: ArcStr) {
 /// and replaces it with a generic message that never mentions
 /// `OPENMODELICAHOME` — without the stderr line the actual cause is invisible.
 fn strip_bin_path(path: &str) -> Result<ArcStr> {
-    fn cannot_deduce(path: &str) -> &'static str {
-        let msg = format!(
+    strip_bin_path_opt(path).ok_or_else(|| {
+        eprintln!(
             "could not deduce the OpenModelica installation directory from \
              executable path: [{path}], please set OPENMODELICAHOME"
         );
-        eprintln!("{msg}");
         "error"
-    }
+    })
+}
 
+fn strip_bin_path_opt(path: &str) -> Option<ArcStr> {
     if !path.contains("bin") && !path.contains("lib") {
-        return Err(cannot_deduce(path));
+        return None;
     }
     let mut s = path.to_string();
     loop {
-        match s.rfind('/') {
-            Some(idx) => {
-                let removed = s.split_off(idx); // removed starts with '/'
-                if &removed[1..] == "bin" || &removed[1..] == "lib" {
-                    break;
-                }
-            }
-            // C asserts the slash exists; reaching the start without finding a
-            // bin/lib component is the same unrecoverable situation.
-            None => return Err(cannot_deduce(path)),
+        // C asserts the slash exists; reaching the start without finding a
+        // bin/lib component is the same unrecoverable situation.
+        let idx = s.rfind('/')?;
+        let removed = s.split_off(idx); // removed starts with '/'
+        if &removed[1..] == "bin" || &removed[1..] == "lib" {
+            break;
         }
     }
-    Ok(ArcStr::from(s))
+    Some(ArcStr::from(s))
+}
+
+/// `dladdr` on our own code: the path of the shared library the compiler lives in,
+/// as the loader opened it — what C deduces the prefix from. It keeps the runpath
+/// it was reached through, `..` and all (`<omhome>/bin/..` for the omc launcher's
+/// `$ORIGIN/../lib/…`), and unlike the executable's own path it is still right
+/// when the compiler is embedded in another program, as OMEdit does.
+#[cfg(unix)]
+fn self_library_path() -> Option<ArcStr> {
+    let mut info: libc::Dl_info = unsafe { std::mem::zeroed() };
+    // SAFETY: a code address in this library; `dladdr` only reads it.
+    if unsafe { libc::dladdr(self_library_path as *const libc::c_void, &mut info) } == 0
+        || info.dli_fname.is_null()
+    {
+        return None;
+    }
+    let name = unsafe { std::ffi::CStr::from_ptr(info.dli_fname) };
+    Some(ArcStr::from(name.to_str().ok()?))
 }
 
 pub fn getInstallationDirectoryPath() -> Result<ArcStr> {
@@ -174,12 +189,12 @@ pub fn getInstallationDirectoryPath() -> Result<ArcStr> {
     //
     // Resolution order here:
     //   1. the cached value (set previously or by `setInstallationDirectoryPath`);
-    //   2. the install root (the directory above the executable's `bin`/`lib`),
-    //      normalized — no literal `..` (strict consumers like Chromium reject it);
-    //   3. `$OPENMODELICAHOME` — the dev-workflow fallback for running the
+    //   2. the prefix of the library this code is in, as C deduces it;
+    //   3. the install root (the directory above the executable's `bin`/`lib`);
+    //   4. `$OPENMODELICAHOME` — the dev-workflow fallback for running the
     //      port straight out of `target/debug` (also what the C
     //      OMC_BOOTSTRAPPING build reads);
-    //   4. the `strip_bin_path` prefix of the executable as a last resort.
+    //   5. the `strip_bin_path` prefix of the executable as a last resort.
     {
         let state = STATE.lock().unwrap();
         if let Some(p) = &state.installation_path {
@@ -196,6 +211,14 @@ pub fn getInstallationDirectoryPath() -> Result<ArcStr> {
     {
         let path = convert_to_forward_slashes(&env);
         let mut state = STATE.lock().unwrap();
+        state.installation_path = Some(path.clone());
+        return Ok(path);
+    }
+
+    #[cfg(unix)]
+    if let Some(path) = self_library_path().as_deref().and_then(strip_bin_path_opt) {
+        let mut state = STATE.lock().unwrap();
+        set_env_var("OPENMODELICAHOME", &path);
         state.installation_path = Some(path.clone());
         return Ok(path);
     }

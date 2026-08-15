@@ -86,7 +86,7 @@ my $osname = $^O;
 # it belongs to are enabled. 'disabled' is such a tag: a test carrying it is not
 # part of the testsuite at all, see %suite_enabled.
 my @category_suites = qw(default cpp cppmsl tearing hpcom);
-my @tag_suites = qw(metamodelica 63bit antlr fmuCSources disabled);
+my @tag_suites = qw(metamodelica 63bit antlr fmuCSources stackoverflow disabled);
 my %suite_enabled = (
   default      => 1,  # Everything not claimed by another category.
   cpp          => 1,  # */cppruntime/*
@@ -97,6 +97,8 @@ my %suite_enabled = (
   '63bit'      => 1,  # Needs a 63/64-bit Modelica Integer.
   antlr        => 1,  # Expects ANTLR's syntax error positions and wording.
   fmuCSources  => 1,  # Inspects sources/ inside an FMU, which only the C export has.
+  stackoverflow => 1, # Recurses until the stack runs out; needs MMC's SEGV-handler
+                      # recovery, which the Rust port has no equivalent of.
   # Not part of the testsuite: the tests a makefile lists as failing, not
   # compiling, not simulating or needing a manual setup. They are the tests that
   # fail, hang or eat the machine, so they are opt-in and rtest skips them too
