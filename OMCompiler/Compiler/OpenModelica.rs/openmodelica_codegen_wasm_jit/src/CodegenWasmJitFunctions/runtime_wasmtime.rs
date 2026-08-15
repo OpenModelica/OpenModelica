@@ -157,7 +157,7 @@ fn define_external_imports(
             s.wasm_params().iter().map(|t| valtype(t.wty())),
             s.wasm_results().iter().map(|t| valtype(t.wty())),
         );
-        let target = loaded.func(&s.name).cloned().ok_or_else(|| {
+        let target = loaded.func_or_addr(&mut *store, &s.name).ok_or_else(|| {
             record_dylink_error(format!(
                 "external \"C\" function `{}` is in none of the model's libraries{}",
                 s.name,

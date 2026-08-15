@@ -1551,12 +1551,32 @@ pub(crate) fn compile_include_library(
     prefix: &str,
     includes: &[String],
     include_dirs: &[String],
+    symbols: &[String],
     notes: &mut Vec<String>,
 ) -> Result<Option<ExtLibrary>> {
-    use std::process::Command;
     if includes.is_empty() {
         return Ok(None);
     }
+    let wrappers = openmodelica_wasm_jit::model::ext_addr_wrappers(symbols);
+    let n = notes.len();
+    match compile_include_tu(prefix, includes, include_dirs, &wrappers, notes)? {
+        None if !wrappers.is_empty() => {
+            notes.truncate(n);
+            compile_include_tu(prefix, includes, include_dirs, "", notes)
+        }
+        r => Ok(r),
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn compile_include_tu(
+    prefix: &str,
+    includes: &[String],
+    include_dirs: &[String],
+    wrappers: &str,
+    notes: &mut Vec<String>,
+) -> Result<Option<ExtLibrary>> {
+    use std::process::Command;
     let sysroot = wasi_sysroot();
     let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
     let dir = std::env::temp_dir().join(format!("om-wasm-include-{}-{prefix}", std::process::id()));
@@ -1564,7 +1584,7 @@ pub(crate) fn compile_include_library(
     let tu = dir.join(format!("{prefix}_includes.c"));
     let out = dir.join(format!("{prefix}_includes.wasm"));
     let prologue = openmodelica_wasm_jit::model::INCLUDE_TU_PROLOGUE_WASM;
-    std::fs::write(&tu, prologue.to_owned() + &includes.join("\n") + "\n")
+    std::fs::write(&tu, prologue.to_owned() + &includes.join("\n") + "\n" + wrappers)
         .map_err(|_| "CodegenWasmJit: cannot write the external \"C\" translation unit")?;
 
     let mut cmd = Command::new(&clang);
@@ -1610,6 +1630,7 @@ pub(crate) fn compile_include_library(
     _prefix: &str,
     includes: &[String],
     _include_dirs: &[String],
+    _symbols: &[String],
     notes: &mut Vec<String>,
 ) -> Result<Option<ExtLibrary>> {
     if includes.is_empty() {
@@ -1657,12 +1678,12 @@ fn wasm_builtins(sysroot: &std::path::Path) -> Option<std::path::PathBuf> {
     .find(|p| p.exists())
 }
 
-/// The `external "C"` functions none of `libs` exports — what an `Include` still
-/// has to provide.
-fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> Vec<String> {
+/// The `external "C"` functions neither `libs` nor the libraries every run loads
+/// (libc, ModelicaExternalC) export — what an `Include` still has to provide.
+pub(crate) fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> Vec<String> {
     let mut defined: HashSet<&str> = HashSet::new();
-    for lib in libs {
-        for payload in wasmparser::Parser::new(0).parse_all(&lib.bytes).flatten() {
+    for bytes in libs.iter().map(|l| &l.bytes[..]).chain([LIBC_PIC, EXTERNAL_C_DYLINK]) {
+        for payload in wasmparser::Parser::new(0).parse_all(bytes).flatten() {
             if let wasmparser::Payload::ExportSection(exports) = payload {
                 defined.extend(exports.into_iter().flatten().map(|e| e.name));
             }
@@ -3926,12 +3947,14 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
                 }
                 // A wasm artifact carries every implementation, so the same
                 // decision has to be made here, off the libraries' exports.
-                ExtHost::Wasm if !missing_ext_symbols(&ext_imports, &ext_libs.wasm).is_empty() => {
-                    if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &mut ext_lib_notes)? {
-                        ext_libs.wasm.push(l);
+                ExtHost::Wasm => {
+                    let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
+                    if !missing.is_empty() {
+                        if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &missing, &mut ext_lib_notes)? {
+                            ext_libs.wasm.push(l);
+                        }
                     }
                 }
-                ExtHost::Wasm => {}
             }
         }
     }

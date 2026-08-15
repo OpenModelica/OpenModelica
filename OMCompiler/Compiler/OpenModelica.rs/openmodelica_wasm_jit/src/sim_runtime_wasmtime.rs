@@ -25,7 +25,7 @@ use std::time::Instant;
 
 use crate::sim_driver;
 use crate::dylink_engine::{NlsHooks, zero_results};
-use crate::model::SimModel;
+use crate::model::{self, SimModel};
 use openmodelica_sim_meta::SimMeta;
 use crate::host::add_host_builtins;
 
@@ -370,25 +370,58 @@ impl NativeExternals {
                 }
             }
         }
-        if let Some(addr) = openmodelica_util::dynload::external_symbol_in(&self.handles, name) {
+        if let Some(addr) = self.symbol(name) {
             return Some(addr);
         }
         if !self.built_includes {
             self.built_includes = true;
             if let Some(inc) = &model.ext_includes {
-                match inc.compile() {
-                    Ok(path) => {
-                        let (h, errors) = openmodelica_util::dynload::load_external_libraries(&[path]);
-                        // Searched first: it is the model's own source.
-                        self.handles.splice(0..0, h);
-                        self.errors.extend(errors);
-                    }
-                    Err(e) => self.errors.push(e),
+                let missing: Vec<String> = model
+                    .ext_imports
+                    .iter()
+                    .map(|s| s.name.clone())
+                    .filter(|n| self.symbol(n).is_none())
+                    .collect();
+                let errors = self.errors.len();
+                // A wrapper for a function the sources only declare leaves an
+                // address the loader cannot resolve.
+                if !self.load_includes(inc, &missing) && !missing.is_empty() {
+                    self.errors.truncate(errors);
+                    self.load_includes(inc, &[]);
                 }
-                return openmodelica_util::dynload::external_symbol_in(&self.handles, name);
+                return self.symbol(name);
             }
         }
         None
+    }
+
+    /// Build the `Include` sources with `symbols` reachable by address, and load
+    /// the result. Searched first: it is the model's own source.
+    fn load_includes(&mut self, inc: &model::ExtIncludes, symbols: &[String]) -> bool {
+        let path = match inc.compile(symbols) {
+            Ok(p) => p,
+            Err(e) => {
+                self.errors.push(e);
+                return false;
+            }
+        };
+        let (handles, errors) = openmodelica_util::dynload::load_external_libraries(&[path]);
+        let loaded = !handles.is_empty();
+        self.handles.splice(0..0, handles);
+        self.errors.extend(errors);
+        loaded
+    }
+
+    /// The symbol itself, else the address its `Include` wrapper hands back.
+    fn symbol(&self, name: &str) -> Option<usize> {
+        use openmodelica_util::dynload::external_symbol_in;
+        if let Some(addr) = external_symbol_in(&self.handles, name) {
+            return Some(addr);
+        }
+        let wrapper = external_symbol_in(&self.handles, &format!("{}{name}", model::EXT_ADDR_PREFIX))?;
+        // Safety: the generated wrapper is `void (*w(void))(void)`.
+        let w: extern "C" fn() -> usize = unsafe { std::mem::transmute(wrapper) };
+        Some(w()).filter(|a| *a != 0)
     }
 }
 
@@ -425,7 +458,7 @@ fn define_external_imports(
             sig.wasm_results().iter().map(|s| wty_valtype(s.wty())),
         );
         // The model's own libraries shadow a same-named symbol in the process.
-        if let Some(target) = libs.func(&sig.name).cloned() {
+        if let Some(target) = libs.func_or_addr(&mut *store, &sig.name) {
             if let Some(f) = crate::dylink_engine::bind_in_wasm_external(store, sig, &functype, target, rt)
                 .map_err(|_| "external \"C\": cannot bind a library function")?
             {

@@ -9950,13 +9950,15 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
         let mut notes: Vec<String> = Vec::new();
         // Only the wasm modules: the function JIT calls them wasm->wasm, with no
         // libffi trampoline to reach a platform library through.
-        for lib in &crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, &mut notes)?.wasm {
+        let libs = crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, &mut notes)?.wasm;
+        for lib in &libs {
             sig.push_str(&format!("lib\t{}\n", lib.name));
         }
         // An implementation given as C source in an `Include`.
         let includes: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.externalFunctionIncludes).map(|s| s.to_string()).collect();
         let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes).map(|s| s.to_string()).collect();
-        if let Some(l) = crate::CodegenWasmJit::compile_include_library(&base, &includes, &dirs, &mut notes)? {
+        let missing = crate::CodegenWasmJit::missing_ext_symbols(&ext_imports, &libs);
+        if let Some(l) = crate::CodegenWasmJit::compile_include_library(&base, &includes, &dirs, &missing, &mut notes)? {
             let path = format!("{base}_includes.wasm");
             openmodelica_wasi::fs::write(&path, &l.bytes)
                 .map_err(|_| "CodegenWasmJitFunctions: cannot stage the compiled include library")?;
