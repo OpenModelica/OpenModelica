@@ -48,6 +48,13 @@ pub(crate) enum NlsResidual {
     },
 }
 
+/// What closes a nonlinear system: residual expressions, or — for a lone
+/// `SES_INVERSE_ALGORITHM` — the known output crefs whose displacement is it.
+pub(crate) enum NlsResiduals {
+    Explicit(Vec<NlsResidual>),
+    InverseAlgorithm(Vec<Arc<DAE::ComponentRef>>),
+}
+
 /// Emit the body of a nonlinear system's `residual(sim_data, x, r)` callback
 /// (wasm locals: 0 = `SimData`, 1 = `x` pointer, 2 = `r` pointer). Copies the
 /// `n` unknowns from `x` into their `slots`, runs the inner (torn) equations via
@@ -56,7 +63,7 @@ pub(crate) enum NlsResidual {
 pub(crate) fn emit_nls_residual_body(
     ctx: &mut FnCtx,
     slots: &[u32],
-    residuals: &[NlsResidual],
+    residuals: &NlsResiduals,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
@@ -66,6 +73,12 @@ pub(crate) fn emit_nls_residual_body(
         ctx.emit(I::F64Load(mem_arg((j as u32) * 8, 3)));
         ctx.emit(I::F64Store(mem_arg(off, 3)));
     }
+    let residuals = match residuals {
+        NlsResiduals::Explicit(r) => r,
+        NlsResiduals::InverseAlgorithm(known) => {
+            return emit_inverse_algorithm_residual(ctx, slots.len(), known, lower_inner)
+        }
+    };
     lower_inner(ctx)?;
     // All-scalar systems keep sequential `r[i]` addressing; a for-residual forces
     // `res_index`-based addressing throughout (C's `res[res_index + shift]`).
@@ -85,6 +98,78 @@ pub(crate) fn emit_nls_residual_body(
         }
     }
     Ok(())
+}
+
+/// C's `OLD_<i>` backup of the outputs an inverse algorithm must not change.
+pub(crate) fn backup_known_outputs(
+    ctx: &mut FnCtx,
+    crefs: &[Arc<DAE::ComponentRef>],
+) -> Result<Vec<(u32, WTy)>> {
+    let mut saved = Vec::with_capacity(crefs.len());
+    for cr in crefs {
+        let wty = compile_sim_cref_read(ctx, cr)?
+            .ok_or("CodegenWasmJit: inverse-algorithm output is not a simulation variable")?;
+        let t = ctx.alloc_temp(wty);
+        ctx.emit(we::Instruction::LocalSet(t));
+        saved.push((t, wty));
+    }
+    Ok(saved)
+}
+
+/// Put the [`backup_known_outputs`] values back.
+pub(crate) fn restore_known_outputs(
+    ctx: &mut FnCtx,
+    crefs: &[Arc<DAE::ComponentRef>],
+    saved: &[(u32, WTy)],
+) -> Result<()> {
+    for (cr, &(local, wty)) in crefs.iter().zip(saved) {
+        if !compile_sim_cref_assign(ctx, cr, RhsSource::Temp { local, wty })? {
+            return Err("CodegenWasmJit: inverse-algorithm output is not a simulation variable");
+        }
+    }
+    Ok(())
+}
+
+/// Residual of an inverse-algorithm system: run it from the current guess and
+/// accumulate each known output's squared displacement into `r[i % n]`,
+/// restoring the outputs afterwards so the solve moves only the unknowns.
+fn emit_inverse_algorithm_residual(
+    ctx: &mut FnCtx,
+    n: usize,
+    known: &[Arc<DAE::ComponentRef>],
+    lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    if n == 0 {
+        return Err("CodegenWasmJit: inverse-algorithm system has no unknowns");
+    }
+    let saved = backup_known_outputs(ctx, known)?;
+    lower_inner(ctx)?;
+    for i in 0..n as u32 {
+        ctx.emit(I::LocalGet(2)); // r
+        ctx.emit(I::F64Const(0.0.into()));
+        ctx.emit(I::F64Store(mem_arg(i * 8, 3)));
+    }
+    let d = ctx.alloc_temp(WTy::F64);
+    for (i, (cr, &(old, old_wty))) in known.iter().zip(&saved).enumerate() {
+        let dest = (i % n) as u32;
+        ctx.emit(I::LocalGet(old));
+        coerce(ctx, old_wty, WTy::F64);
+        let w = compile_sim_cref_read(ctx, cr)?
+            .ok_or("CodegenWasmJit: inverse-algorithm output is not a simulation variable")?;
+        coerce(ctx, w, WTy::F64);
+        ctx.emit(I::F64Sub);
+        ctx.emit(I::LocalSet(d));
+        ctx.emit(I::LocalGet(2)); // r
+        ctx.emit(I::LocalGet(2));
+        ctx.emit(I::F64Load(mem_arg(dest * 8, 3)));
+        ctx.emit(I::LocalGet(d));
+        ctx.emit(I::LocalGet(d));
+        ctx.emit(I::F64Mul);
+        ctx.emit(I::F64Add);
+        ctx.emit(I::F64Store(mem_arg(dest * 8, 3)));
+    }
+    restore_known_outputs(ctx, known, &saved)
 }
 
 /// Emit a `SES_FOR_RESIDUAL`: nested `for` loops (outermost first) storing
