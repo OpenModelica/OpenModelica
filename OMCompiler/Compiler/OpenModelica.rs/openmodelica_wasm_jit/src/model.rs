@@ -329,8 +329,25 @@ pub struct EditableParam {
     pub wty: WTy,
     /// A state's start value (vs. a plain parameter): overridden after `functionInitStartValues`.
     pub is_start: bool,
+    /// A Boolean quantity: reads an `-override` value C's `read_value_bool` way.
+    pub is_bool: bool,
     /// Enumeration literal names (1-based index → name), empty for non-enum.
     pub enum_names: Vec<String>,
+}
+
+impl EditableParam {
+    /// C's per-class `_init.xml` readers on an `-override` value: `read_value_bool`
+    /// for a Boolean, else `read_value_real`/`_long`, whose `atof`/`atol` give 0 for junk.
+    pub fn read_value(&self, s: &str) -> f64 {
+        if self.is_bool {
+            return if s == "true" { 1.0 } else { 0.0 };
+        }
+        match s {
+            "true" => 1.0,
+            "false" => 0.0,
+            _ => s.parse::<f64>().unwrap_or(0.0),
+        }
+    }
 }
 
 // ─────────────────────────── driver selection ───────────────────────────

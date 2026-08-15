@@ -172,8 +172,10 @@ pub struct SimFlags {
     /// homotopy.
     pub homotopy_on_first_try: Option<bool>,
     /// `-override=name=value,…` unresolved: mapping a name to its `SimData` slot
-    /// needs the model, which only the caller has.
-    pub overrides: Vec<(String, f64)>,
+    /// needs the model, which only the caller has. The value stays the string C
+    /// puts in the quantity's `start` attribute; reading it is the variable class's
+    /// job, and an unresolvable name still has to be reported.
+    pub overrides: Vec<(String, String)>,
     /// `-output=a,b,c`: variables printed at the stop time (C's
     /// `outputVariablesAtEnd` / `writeOutputVars`).
     pub output_vars: Vec<String>,
@@ -599,12 +601,10 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 }
             }
             "override" => {
-                for item in value(name)?.split(',') {
-                    // An unparsable or unknown override is a no-op, as in C.
+                // C's `parseVariableStr` splits on commas outside `[]`.
+                for item in split_top_level(&value(name)?) {
                     if let Some((n, v)) = item.split_once('=') {
-                        if let Ok(val) = v.trim().parse::<f64>() {
-                            f.overrides.push((n.trim().to_string(), val));
-                        }
+                        f.overrides.push((n.trim().to_string(), v.trim().to_string()));
                     }
                 }
             }
@@ -1396,8 +1396,15 @@ mod tests {
 
     #[test]
     fn overrides_keep_order_and_skip_junk() {
-        let f = parse(&argv(&["-override=a=1,bad,b=2.5,c=x"])).expect("parses");
-        assert_eq!(f.overrides, [("a".to_string(), 1.0), ("b".to_string(), 2.5)]);
+        let f = parse(&argv(&["-override=a=1,bad,b[1,2]=2.5,c=false"])).expect("parses");
+        assert_eq!(
+            f.overrides,
+            [
+                ("a".to_string(), "1".to_string()),
+                ("b[1,2]".to_string(), "2.5".to_string()),
+                ("c".to_string(), "false".to_string())
+            ]
+        );
     }
 
     #[test]
