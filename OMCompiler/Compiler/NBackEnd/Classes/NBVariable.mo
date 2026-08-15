@@ -1486,7 +1486,11 @@ function isJacobianResultVar
         // Skip base-ptr cache for subscripted element crefs (partial-slice NLS iter vars)
         // so that each outer element gets its own scalar seed var instead of all elements
         // sharing the first element's seed via the array ptr cache.
-        ovar := if ComponentRef.hasSubscripts(original_cref) then NONE() else getVarSeed(old_var_ptr);
+        if ComponentRef.hasSubscripts(original_cref) then
+          ovar := NONE();
+        else
+          ovar := getVarSeed(old_var_ptr);
+        end if;
         if isSome(ovar) then
           var_ptr := Util.getOption(ovar);
           cref := getVarName(var_ptr);
