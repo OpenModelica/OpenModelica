@@ -24,6 +24,7 @@ const LIBS: &[&str] = &[
     "sundials_sunmatrixdense",
     "sundials_nvecserial",
     "klu",
+    "umfpack",
     "amd",
     "colamd",
     "btf",
