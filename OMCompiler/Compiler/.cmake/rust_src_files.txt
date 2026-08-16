@@ -212,6 +212,8 @@ openmodelica_frontend_inst/Cargo.toml
 openmodelica_frontend_types/Cargo.toml
 openmodelica_mat_writer/Cargo.toml
 openmodelica_mat_writer/src/lib.rs
+openmodelica_plt_writer/Cargo.toml
+openmodelica_plt_writer/src/lib.rs
 openmodelica_modelica_utilities/Cargo.toml
 openmodelica_modelica_utilities/src/lib.rs
 openmodelica_nbackend/Cargo.toml

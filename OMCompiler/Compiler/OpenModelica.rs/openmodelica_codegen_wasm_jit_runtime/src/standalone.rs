@@ -204,46 +204,80 @@ fn run() {
         }
     }
 
-    if m.output_format != "mat" {
+    if m.output_format != "mat" && m.output_format != "plt" {
         return; // "empty": run only (benchmarking), no file
     }
 
     // A run-time `-variableFilter` was refused at the flag check (no regex engine);
     // the model's own filter is the codegen's verdict.
     let keep = m.output_keep(None);
-    let mut params: Vec<f64> = Vec::new();
+    // `params` is positional over the unfiltered `Param` signals; only the kept
+    // ones are collected, in signal order, for the writer.
+    let mut kept_params: Vec<f64> = Vec::new();
     let mut param_idx = 0usize;
-    let mut matvars: Vec<MatVar> = Vec::new();
-    for (v, &keep) in m.vars.iter().zip(&keep) {
-        let is_param = matches!(v.kind, MetaKind::Param { .. });
-        if is_param && keep {
-            params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
+    let bytes = if m.output_format == "mat" {
+        let mut matvars: Vec<MatVar> = Vec::new();
+        for (v, &keep) in m.vars.iter().zip(&keep) {
+            let is_param = matches!(v.kind, MetaKind::Param { .. });
+            if is_param && keep {
+                kept_params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
+            }
+            param_idx += is_param as usize;
+            if !keep {
+                continue;
+            }
+            matvars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
         }
-        param_idx += is_param as usize;
-        if !keep {
-            continue;
+        openmodelica_mat_writer::write_mat4(
+            &matvars,
+            m.start_time,
+            m.stop_time,
+            &result.rows,
+            result.n_reals,
+            &kept_params,
+        )
+    } else {
+        use openmodelica_plt_writer::{Neg as PltNeg, PltKind, PltVar};
+        let neg = |n: &meta::Neg| match n {
+            meta::Neg::None => PltNeg::None,
+            meta::Neg::Arith => PltNeg::Arith,
+            meta::Neg::Not => PltNeg::Not,
+        };
+        let to_plt = |k: &MetaKind| match k {
+            MetaKind::Time => PltKind::Time,
+            MetaKind::Column { col, negate } => PltKind::Column { col: *col, negate: neg(negate) },
+            MetaKind::Param { negate, .. } => PltKind::Param { negate: neg(negate) },
+            MetaKind::Const { value } => PltKind::Const { value: *value },
+        };
+        let mut signals: Vec<PltVar> = Vec::new();
+        for (v, &keep) in m.vars.iter().zip(&keep) {
+            let is_param = matches!(v.kind, MetaKind::Param { .. });
+            // C's plt writer omits integer/boolean parameters (`nParameters*`);
+            // real parameters ride in `nVariablesReal` and are kept.
+            let is_int_bool_param = matches!(v.kind, MetaKind::Param { wty: meta::WTy::I32, .. });
+            let emit = keep && !is_int_bool_param;
+            if is_param && emit {
+                kept_params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
+            }
+            param_idx += is_param as usize;
+            if !emit {
+                continue;
+            }
+            signals.push(PltVar { name: &v.name, kind: to_plt(&v.kind) });
         }
-        matvars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
-    }
-
-    let bytes = openmodelica_mat_writer::write_mat4(
-        &matvars,
-        m.start_time,
-        m.stop_time,
-        &result.rows,
-        result.n_reals,
-        &params,
-    );
-    std::fs::write(result_file(&m.prefix), bytes).expect("wasm-jit standalone: cannot write result file");
+        openmodelica_plt_writer::write_plt(&signals, &result.rows, result.n_reals, &kept_params)
+    };
+    std::fs::write(result_file(&m.prefix, &m.output_format), bytes)
+        .expect("wasm-jit standalone: cannot write result file");
 }
 
 /// C's result-file resolution (`simulation_runtime.cpp`): `-r` outright, else
-/// `<prefix>_res.mat` under `-outputPath`.
-fn result_file(prefix: &str) -> String {
+/// `<prefix>_res.<format>` under `-outputPath`.
+fn result_file(prefix: &str, format: &str) -> String {
     simflags::with_flags(|f| match (&f.result_file, &f.output_path) {
         (Some(r), _) => r.clone(),
-        (None, Some(dir)) => format!("{dir}/{prefix}_res.mat"),
-        (None, None) => format!("{prefix}_res.mat"),
+        (None, Some(dir)) => format!("{dir}/{prefix}_res.{format}"),
+        (None, None) => format!("{prefix}_res.{format}"),
     })
 }
 

@@ -701,9 +701,9 @@ fn run_experiment(model: &SimModel, flags: &simflags::SimFlags) -> (SimMeta, Str
 /// model's own `outputFormat` as `-outputFormat` may have replaced it.
 fn check_output_format(meta: &SimMeta) -> std::result::Result<(), String> {
     match meta.output_format.as_str() {
-        "mat" | "csv" | "empty" => Ok(()),
+        "mat" | "csv" | "plt" | "empty" => Ok(()),
         other => Err(format!(
-            "CodegenWasmJit: this runtime writes `mat`/`csv` results, or `empty` for none (got `{other}`)"
+            "CodegenWasmJit: this runtime writes `mat`/`csv`/`plt` results, or `empty` for none (got `{other}`)"
         )),
     }
 }
@@ -8224,6 +8224,7 @@ fn write_result(
     match meta.output_format.as_str() {
         "mat" => write_mat4(model, meta, path, &run.rows, run.n_reals, &run.params, keep),
         "csv" => write_csv(model, meta, path, &run.rows, run.n_reals, keep),
+        "plt" => write_plt(model, meta, path, &run.rows, run.n_reals, &run.params, keep),
         _ => Ok(()),
     }
 }
@@ -8307,6 +8308,57 @@ fn write_mat4(
         openmodelica_mat_writer::write_mat4(&vars, meta.start_time, meta.stop_time, rows, n_reals, &kept_params);
     let _ = &model.model_name; // (kept for diagnostics)
     write_output(path, &bytes).map_err(|e| "CodegenWasmJit: cannot write")
+}
+
+/// Write the run as C's `simulation_result_plt`; the serialization lives in
+/// `openmodelica_plt_writer`, shared with the standalone wasip1 runtime.
+fn write_plt(
+    model: &SimModel,
+    meta: &SimMeta,
+    path: &str,
+    rows: &[f64],
+    n_reals: u32,
+    params: &[f64],
+    keep: &[bool],
+) -> Result<()> {
+    use openmodelica_plt_writer::{Neg as PltNeg, PltKind, PltVar};
+    // `params` is positional over the unfiltered `Param` signals.
+    let mut kept_params: Vec<f64> = Vec::new();
+    let mut param_idx = 0usize;
+    let mut signals: Vec<PltVar> = Vec::new();
+    for (v, &keep) in model.result_vars.iter().zip(keep) {
+        let is_param = matches!(v.kind, ResultKind::Param { .. });
+        // C's plt writer omits `nParameters*`: drop integer/boolean parameters,
+        // keep real ones (they ride in `nVariablesReal`).
+        let is_int_bool_param = matches!(v.kind, ResultKind::Param { wty: WTy::I32, .. });
+        let emit = keep && !is_int_bool_param;
+        if is_param && emit {
+            kept_params.push(params.get(param_idx).copied().unwrap_or(0.0));
+        }
+        param_idx += is_param as usize;
+        if !emit {
+            continue;
+        }
+        signals.push(PltVar { name: &v.name, kind: to_plt_kind(&v.kind) });
+    }
+    let bytes = openmodelica_plt_writer::write_plt(&signals, rows, n_reals, &kept_params);
+    write_output(path, &bytes).map_err(|e| "CodegenWasmJit: cannot write")
+}
+
+/// Project a result signal's [`ResultKind`] onto the plt writer's [`PltKind`].
+fn to_plt_kind(k: &ResultKind) -> openmodelica_plt_writer::PltKind {
+    use openmodelica_plt_writer::{Neg as PltNeg, PltKind};
+    let neg = |n: &Neg| match n {
+        Neg::None => PltNeg::None,
+        Neg::Arith => PltNeg::Arith,
+        Neg::Not => PltNeg::Not,
+    };
+    match k {
+        ResultKind::Time => PltKind::Time,
+        ResultKind::Column { col, negate } => PltKind::Column { col: *col, negate: neg(negate) },
+        ResultKind::Param { negate, .. } => PltKind::Param { negate: neg(negate) },
+        ResultKind::Const { value } => PltKind::Const { value: *value },
+    }
 }
 
 /// Which result variables this run emits, one flag per [`SimModel::result_vars`]
