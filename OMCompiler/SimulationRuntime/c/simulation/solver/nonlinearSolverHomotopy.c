@@ -167,6 +167,21 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   DATA_HOMOTOPY* homotopyData = (DATA_HOMOTOPY*) malloc(sizeof(DATA_HOMOTOPY));
   assertStreamPrint(NULL, NULL != homotopyData, "allocationHomotopyData() failed!");
 
+  /* fJac/fJacx0/debug_fJac receive evalJacobian's dense output, which is
+   * strided by the analytic Jacobian's OWN sizeCols -- this can exceed the
+   * NLS's genuine unknown count `size` for a partial-slice Jacobian that
+   * needs extra addressable (but not genuinely-unknown) seed columns for
+   * symbolic subscript correctness (see NBJacobian.mo's
+   * partialSliceSeedCandidates whole-array fallback). Size those three
+   * buffers off the larger of the two so evalJacobian never writes past the
+   * allocation; every other field below stays sized to the genuine `size`
+   * (the Newton/homotopy iteration itself must never see phantom unknowns). */
+  size_t jacCols = size + 1;
+  if (userData != NULL && userData->analyticJacobian != NULL &&
+      (size_t)userData->analyticJacobian->sizeCols > jacCols) {
+    jacCols = (size_t)userData->analyticJacobian->sizeCols;
+  }
+
   homotopyData->initialized = FALSE;
   homotopyData->n = size;
   homotopyData->m = size + 1;
@@ -184,7 +199,8 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   homotopyData->hvecScaled = (double*) calloc(size,sizeof(double));
   homotopyData->dxScaled = (double*) calloc(size,sizeof(double));
 
-  homotopyData->xScaling = (double*) calloc((size+1),sizeof(double));
+  /* indexed up to jacobian->sizeCols in getAnalyticalJacobianHomotopy's column-scaling loop */
+  homotopyData->xScaling = (double*) calloc(jacCols,sizeof(double));
 
   homotopyData->f1 = (double*) calloc(size,sizeof(double));
   homotopyData->f2 = (double*) calloc(size,sizeof(double));
@@ -197,12 +213,12 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   homotopyData->x1 = (double*) calloc((size+1),sizeof(double));
   homotopyData->finit = (double*) calloc(size,sizeof(double));
   homotopyData->fx0 = (double*) calloc(size,sizeof(double));
-  homotopyData->fJac = (double*) calloc((size*(size+1)),sizeof(double));
-  homotopyData->fJacx0 = (double*) calloc((size*(size+1)),sizeof(double));
+  homotopyData->fJac = (double*) calloc((size*jacCols),sizeof(double));
+  homotopyData->fJacx0 = (double*) calloc((size*jacCols),sizeof(double));
 
   /* debug arrays */
   homotopyData->debug_dx = (double*) calloc(size,sizeof(double));
-  homotopyData->debug_fJac = (double*) calloc((size*(size+1)),sizeof(double));
+  homotopyData->debug_fJac = (double*) calloc((size*jacCols),sizeof(double));
 
    /* homotopy */
   homotopyData->y0 = (double*) calloc((size+1),sizeof(double));
@@ -213,9 +229,9 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   homotopyData->dy1 = (double*) calloc((size+homBacktraceStrategy),sizeof(double));
   homotopyData->dy2 = (double*) calloc((size+1),sizeof(double));
   homotopyData->hvec = (double*) calloc(size,sizeof(double));
-  homotopyData->hJac = (double*) calloc(size*(size+1),sizeof(double));
-  homotopyData->hJac2 = (double*) calloc((size+1)*(size+2),sizeof(double));
-  homotopyData->hJacInit = (double*) calloc(size*(size+1),sizeof(double));
+  homotopyData->hJac = (double*) calloc(size*jacCols,sizeof(double));
+  homotopyData->hJac2 = (double*) calloc((size+1)*(jacCols+1),sizeof(double));
+  homotopyData->hJacInit = (double*) calloc(size*jacCols,sizeof(double));
   homotopyData->ones = (double*) calloc(size+1,sizeof(double));
 
   /* linear system */
