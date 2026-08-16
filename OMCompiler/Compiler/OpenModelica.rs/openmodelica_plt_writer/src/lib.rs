@@ -99,6 +99,15 @@ pub fn write_plt(signals: &[PltVar], rows: &[f64], n_reals: u32, kept_params: &[
         out.push_str("DataSet: ");
         out.push_str(sig.name);
         out.push('\n');
+        // A parameter is constant across all its points: read the value once.
+        let param_value = match sig.kind {
+            PltKind::Param { .. } => {
+                let v = kept_params.get(param_idx).copied().unwrap_or(0.0);
+                param_idx += 1;
+                Some(v)
+            }
+            _ => None,
+        };
         for i in 0..actual_points {
             let row = &rows[i * n_reals..(i + 1) * n_reals];
             let time = row[0];
@@ -108,11 +117,7 @@ pub fn write_plt(signals: &[PltVar], rows: &[f64], n_reals: u32, kept_params: &[
                     let c = (col as usize).min(row.len().saturating_sub(1));
                     apply_negate(row[c], negate)
                 }
-                PltKind::Param { negate } => {
-                    let v = kept_params.get(param_idx).copied().unwrap_or(0.0);
-                    param_idx += 1;
-                    apply_negate(v, negate)
-                }
+                PltKind::Param { negate } => apply_negate(param_value.unwrap_or(0.0), negate),
                 PltKind::Const { value } => value,
             };
             out.push_str(&format!("{}, {}\n", format_g(time, 16), format_g(val, 16)));
@@ -121,4 +126,30 @@ pub fn write_plt(signals: &[PltVar], rows: &[f64], n_reals: u32, kept_params: &[
     }
 
     out.into_bytes()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A parameter must emit the same value at every point, and each parameter
+    /// signal must take its own value (not the next one's) — regression test for
+    /// the `param_idx` advancing once per point instead of once per signal.
+    #[test]
+    fn params_are_constant_and_distinct() {
+        let signals = vec![
+            PltVar { name: "time", kind: PltKind::Time },
+            PltVar { name: "p1", kind: PltKind::Param { negate: Neg::None } },
+            PltVar { name: "p2", kind: PltKind::Param { negate: Neg::None } },
+        ];
+        // 3 points, n_reals = 2 (time + one unused column).
+        let rows = vec![0.0, 9.0, 0.5, 9.0, 1.0, 9.0];
+        let kept_params = vec![5.0, 7.0];
+        let out = String::from_utf8(write_plt(&signals, &rows, 2, &kept_params)).unwrap();
+        let block = |name: &str| {
+            out.split(&format!("DataSet: {name}\n")).nth(1).unwrap().lines().take(3).collect::<Vec<_>>()
+        };
+        assert_eq!(block("p1"), vec!["0, 5", "0.5, 5", "1, 5"]);
+        assert_eq!(block("p2"), vec!["0, 7", "0.5, 7", "1, 7"]);
+    }
 }
