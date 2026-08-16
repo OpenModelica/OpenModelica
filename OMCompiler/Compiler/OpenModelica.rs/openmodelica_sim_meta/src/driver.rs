@@ -3175,6 +3175,23 @@ impl Samples {
     }
 }
 
+/// C's `handleEvents` time-event half plus `updateDiscreteSystem`, which C runs at
+/// a time event exactly as at a state event.
+fn fire_time_event(
+    e: &mut dyn SimEngine,
+    samples: &mut Samples,
+    sim_data: u32,
+    layout: &SimLayout,
+    te: f64,
+) -> Result<()> {
+    write_f64(e, sim_data + TIME_OFF, te)?;
+    write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+    refresh_relations(e, sim_data, layout)?;
+    samples.fire(e, sim_data, te)?;
+    iterate_discrete(e, sim_data, layout)?;
+    store_relations(e, sim_data, layout)
+}
+
 /// The clock half of C's `simulationUpdate`: fire every timer due at `time`,
 /// running the discrete update in between whenever one asks for an event, until
 /// nothing more fires. `SimData` must already hold the state at `time` — a tick
@@ -3290,12 +3307,8 @@ pub fn event_update(
     let time_event = samples.as_ref().is_some_and(|s| s.next_time() <= time + eps);
     if time_event {
         if let Some(s) = samples.as_deref_mut() {
-            s.fire(e, sim_data, time)?;
+            fire_time_event(e, s, sim_data, layout, time)?;
         }
-        refresh_relations(e, sim_data, layout)?;
-        // `fire` cleared the `active` flag; re-evaluate so the condition reads
-        // false and `pre` records it, or the next firing sees no edge.
-        eval_discrete(e, sim_data, layout)?;
     } else {
         // `pre(x)` of a continuous variable must be its value at the crossing.
         save_pre_real(e, sim_data, layout)?;
@@ -5934,9 +5947,7 @@ impl SolverCore {
                 }
                 store_operators_at(e, sim_data, layout, te)?;
                 let _ = save_zero_crossings(e, sim_data, layout)?;
-                write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh relations
-                samp.fire(e, sim_data, te)?;
-                refresh_relations(e, sim_data, layout)?;
+                fire_time_event(e, samp, sim_data, layout, te)?;
                 e.clean_nls_history(te);
                 self.time_events += 1;
                 if let Some(r) = rows.as_deref_mut()
@@ -6303,16 +6314,12 @@ impl EventsDriver {
         let n_reals = layout.n_row_total();
         let start = model.start_time;
 
-        let mut samp = Samples::load(e, sim_data, layout)?;
+        let samp = Samples::load(e, sim_data, layout)?;
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
         let mut core = SolverCore::new(&*e, model, sim_data, start, method, gbode)?;
         core.prime(e, layout)?;
-        // A sample scheduled exactly at the start time fires before row 0.
-        if samp.next_time() <= start + start.abs().max(1.0) * 1e-10 {
-            samp.fire(e, sim_data, start)?;
-            refresh_relations(e, sim_data, layout)?;
-            core.time_events += 1;
-        }
+        // A sample due at the start time is left to the first step, which C shortens
+        // to zero length and handles as an ordinary time event.
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
 
@@ -6468,9 +6475,7 @@ impl Driver for EventsDriver {
                             emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?;
                         }
                         store_operators_at(e, sim_data, layout, te)?;
-                        write_i32(e, sim_data + layout.rel_fresh_off, 1)?; // event: refresh
-                        self.samp.fire(e, sim_data, te)?;
-                        refresh_relations(e, sim_data, layout)?;
+                        fire_time_event(e, &mut self.samp, sim_data, layout, te)?;
                         e.clean_nls_history(te);
                         self.core.time_events += 1;
                         if emit_post_event_row(model, te) {
