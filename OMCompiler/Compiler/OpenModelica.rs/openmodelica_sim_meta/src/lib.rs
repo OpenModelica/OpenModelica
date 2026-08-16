@@ -144,6 +144,9 @@ pub struct Layout {
     /// with an internal history that `functionStoreDelayed` /
     /// `functionStoreSpatialDistribution` must be fed at every accepted point.
     pub has_history_ops: bool,
+    /// The model has a `SES_LINEAR` with a symbolic Jacobian, the only reader of
+    /// `old_real_off`.
+    pub has_old_real: bool,
     /// `SimData` offset of the homotopy parameter lambda (f64).
     pub lambda_off: u32,
     pub rparam_off: u32,
@@ -161,6 +164,9 @@ pub struct Layout {
     pub pre_real_off: u32,
     pub pre_int_off: u32,
     pub pre_bool_off: u32,
+    /// C's `data->localData[1]->realVars`: the reals as of the last accepted step,
+    /// a method-1 linear system's `aux_x`.
+    pub old_real_off: u32,
     /// `terminate(...)` flag (i32).
     pub terminate_off: u32,
     /// `terminal()` flag (i32): C's `data->simulationInfo->terminal`, raised by
@@ -324,6 +330,7 @@ impl Layout {
         homotopy_method: HomotopyMethod,
         has_init_lambda0: bool,
         has_history_ops: bool,
+        has_old_real: bool,
     ) -> Self {
         let n_real = 2 * n_states + n_real_alg; // states | ders | algs
         let rparam_off = REAL_OFF + n_real * 8;
@@ -338,7 +345,8 @@ impl Layout {
         let pre_real_off = (eobj_off + n_eobj * 4 + 7) & !7;
         let pre_int_off = pre_real_off + n_real * 8;
         let pre_bool_off = pre_int_off + n_int_alg * 4;
-        let terminate_off = pre_bool_off + n_bool_alg * 4;
+        let old_real_off = (pre_bool_off + n_bool_alg * 4 + 7) & !7;
+        let terminate_off = old_real_off + if has_old_real { n_real * 8 } else { 0 };
         let terminal_off = terminate_off + 4;
         let initial_off = terminal_off + 4;
         let term_info_off = initial_off + 4;
@@ -379,8 +387,8 @@ impl Layout {
         let removed_init_idx_off = removed_init_res_off + 8;
         let total = removed_init_idx_off + 4;
         Layout {
-            n_states, n_real_alg, has_when, has_homotopy, homotopy_method, has_init_lambda0, has_history_ops, lambda_off, rparam_off, int_off, iparam_off,
-            bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
+            n_states, n_real_alg, has_when, has_homotopy, homotopy_method, has_init_lambda0, has_history_ops, has_old_real, lambda_off, rparam_off, int_off, iparam_off,
+            bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off, old_real_off,
             terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
             mathevents_off, zctol_off, start_off, real_nom_off, state_nom_off, state_max_off, n_sens, sens_off,
@@ -429,6 +437,11 @@ impl Layout {
         } else {
             None
         }
+    }
+
+    /// Bytes the live real region (states | derivatives | algebraics) spans.
+    pub fn real_bytes(&self) -> usize {
+        ((2 * self.n_states + self.n_real_alg) * 8) as usize
     }
 
     /// f64 in the real part of a result row: `time` + states + derivatives + real
@@ -1206,7 +1219,7 @@ fn put_u32s2(o: &mut Vec<u8>, v: &[Vec<u32>]) {
 fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     for v in [
         l.n_states, l.n_real_alg, l.lambda_off, l.rparam_off, l.int_off, l.iparam_off, l.bool_off,
-        l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off,
+        l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off, l.old_real_off,
         l.terminate_off, l.terminal_off, l.initial_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
@@ -1226,6 +1239,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     o.push(l.homotopy_method.code());
     o.push(l.has_init_lambda0 as u8);
     o.push(l.has_history_ops as u8);
+    o.push(l.has_old_real as u8);
 }
 fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
     match j {
@@ -1542,6 +1556,7 @@ impl<'a> Reader<'a> {
             pre_real_off: self.u32()?,
             pre_int_off: self.u32()?,
             pre_bool_off: self.u32()?,
+            old_real_off: self.u32()?,
             terminate_off: self.u32()?,
             terminal_off: self.u32()?,
             initial_off: self.u32()?,
@@ -1599,12 +1614,14 @@ impl<'a> Reader<'a> {
             homotopy_method: HomotopyMethod::default(),
             has_init_lambda0: false,
             has_history_ops: false,
+            has_old_real: false,
         };
         l.has_when = self.u8()? != 0;
         l.has_homotopy = self.u8()? != 0;
         l.homotopy_method = HomotopyMethod::from_code(self.u8()?);
         l.has_init_lambda0 = self.u8()? != 0;
         l.has_history_ops = self.u8()? != 0;
+        l.has_old_real = self.u8()? != 0;
         Ok(l)
     }
     fn kind(&mut self) -> Result<MetaKind, &'static str> {
@@ -1882,9 +1899,10 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
+            // Every flag non-default, so the round-trip covers the flag block.
             layout: Layout::new(
-                2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, false, false,
-                HomotopyMethod::GlobalEquidistant, false, false,
+                2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, true, true,
+                HomotopyMethod::LocalAdaptive, true, true, true,
             ),
             start_time: 0.0,
             stop_time: 1.0,

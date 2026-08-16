@@ -1384,6 +1384,9 @@ pub(crate) struct SimCtx {
     /// `functionZeroCrossings` so a relation stays put within the band — this keeps
     /// a bouncing ball from chattering through the floor near rest.
     pub(crate) zctol_off: u32,
+    /// C's `data->localData[1]->realVars` as `(one past the live real region, the
+    /// mirror's base)`; `None` when no linear system reads it.
+    pub(crate) old_real: Option<(u32, u32)>,
     /// `SimData` byte offset of `zeroCrossingsPre` — the previous accepted
     /// g-values, read by the `delayZeroCrossing` builtin in `zc_context`.
     pub(crate) zc_pre_off: u32,

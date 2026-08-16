@@ -43,6 +43,7 @@ unsafe extern "C" {
     fn functionAlgebraics(sim_data: u32);
     fn functionStateSetJacobians(sim_data: u32);
     fn functionZeroCrossings(sim_data: u32);
+    fn functionZeroCrossingsEquations(sim_data: u32);
     fn functionUpdateRelations(sim_data: u32);
     fn functionCheckAsserts(sim_data: u32);
     fn functionStoreDelayed(sim_data: u32);
@@ -106,6 +107,7 @@ impl SimEngine for StandaloneEngine {
                 "functionAlgebraics" => functionAlgebraics(arg),
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
                 "functionZeroCrossings" => functionZeroCrossings(arg),
+                "functionZeroCrossingsEquations" => functionZeroCrossingsEquations(arg),
                 "functionUpdateRelations" => functionUpdateRelations(arg),
                 "functionCheckAsserts" => functionCheckAsserts(arg),
                 "functionStoreDelayed" => functionStoreDelayed(arg),
