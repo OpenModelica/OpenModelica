@@ -98,6 +98,10 @@ pub struct SimFlags {
     pub output_format: Option<String>,
     /// `-noemit`: no result file, C's `sim_noemit` (which it treats as `empty`).
     pub noemit: bool,
+    /// `-single`: store the `.mat` real data (`data_1`/`data_2`) as 4-byte single
+    /// precision (C's `FLAG_SINGLE_PRECISION`). The simulation itself always runs
+    /// in double; this only narrows the result file.
+    pub single_precision: bool,
     /// `-outputPath=<dir>`: holds `<prefix>_res.<format>` unless `-r` names a file.
     pub output_path: Option<String>,
     /// `-iit=<t>`: where `-iif`'s result file is read (C's `init_time`, default the
@@ -614,6 +618,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "tolerance" => f.tolerance = Some(real(name, &value(name)?)?),
             "outputFormat" => f.output_format = Some(output_format(&value(name)?)?),
             "noemit" => f.noemit = true,
+            "single" => f.single_precision = true,
             "outputPath" => f.output_path = Some(value(name)?),
             "iit" => f.init_time = Some(real(name, &value(name)?)?),
             "mei" => f.max_event_iter = Some(int(name, &value(name)?)?.max(0) as u32),
@@ -1446,6 +1451,12 @@ mod tests {
         assert!(parse(&argv(&["-outputFormat=nope"])).expect_err("unknown").contains("Unknown"));
         // `-noemit` is C's `sim_noemit`, which it treats exactly as `empty`.
         assert!(parse(&argv(&["-noemit"])).expect("parses").noemit);
+    }
+
+    #[test]
+    fn the_single_flag_selects_single_precision_output() {
+        assert!(!parse(&argv(&[])).expect("parses").single_precision);
+        assert!(parse(&argv(&["-single"])).expect("parses").single_precision);
     }
 
     #[test]

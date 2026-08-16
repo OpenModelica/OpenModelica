@@ -8346,7 +8346,7 @@ fn write_mat4(
     params: &[f64],
     keep: &[bool],
 ) -> Result<()> {
-    use openmodelica_mat_writer::MatVar;
+    use openmodelica_mat_writer::{MatVar, Precision};
     // `params` is positional over the unfiltered `Param` signals.
     let mut kept_params: Vec<f64> = Vec::new();
     let mut param_idx = 0usize;
@@ -8362,8 +8362,18 @@ fn write_mat4(
         }
         vars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
     }
-    let bytes =
-        openmodelica_mat_writer::write_mat4(&vars, meta.start_time, meta.stop_time, rows, n_reals, &kept_params);
+    // `-single` narrows the real data to 4-byte float (C's `FLAG_SINGLE_PRECISION`).
+    let precision =
+        simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
+    let bytes = openmodelica_mat_writer::write_mat4(
+        &vars,
+        meta.start_time,
+        meta.stop_time,
+        rows,
+        n_reals,
+        &kept_params,
+        precision,
+    );
     let _ = &model.model_name; // (kept for diagnostics)
     write_output(path, &bytes).map_err(|e| "CodegenWasmJit: cannot write")
 }
