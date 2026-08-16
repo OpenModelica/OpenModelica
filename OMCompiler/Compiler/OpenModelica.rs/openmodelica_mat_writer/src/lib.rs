@@ -46,6 +46,27 @@ pub enum MatKind {
     Const { value: f64 },
 }
 
+/// The precision of the real-valued result data (`data_1`/`data_2`). Mirrors C's
+/// `MatVer4Type_t` for the real matrices; the `-single` flag selects
+/// [`Precision::Single`].
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Precision {
+    /// 8-byte IEEE double (C's `MatVer4Type_DOUBLE`).
+    Double,
+    /// 4-byte IEEE single (C's `MatVer4Type_SINGLE`).
+    Single,
+}
+
+impl Precision {
+    /// The mat v4 type code for the real matrices (C's `MatVer4Type_t`).
+    fn type_code(self) -> i32 {
+        match self {
+            Precision::Double => 0,
+            Precision::Single => 10,
+        }
+    }
+}
+
 /// One signal in the result file (C-compatible order: time, states, derivatives,
 /// algebraics, then parameters). `name`/`comment` borrow the caller's strings.
 pub struct MatVar<'a> {
@@ -56,8 +77,9 @@ pub struct MatVar<'a> {
 
 /// Serialize the MATLAB v4 result file for `signals`. `rows` is the row-major
 /// time-variant buffer (`n_reals` columns per row, column 0 = time); `params`
-/// holds the scalar parameter values in `MatKind::Param` order. Returns the file
-/// bytes.
+/// holds the scalar parameter values in `MatKind::Param` order. `precision`
+/// selects the storage width of the real data (`data_1`/`data_2`). Returns the
+/// file bytes.
 pub fn write_mat4(
     signals: &[MatVar],
     start_time: f64,
@@ -65,6 +87,7 @@ pub fn write_mat4(
     rows: &[f64],
     n_reals: u32,
     params: &[f64],
+    precision: Precision,
 ) -> Vec<u8> {
     let n_reals = n_reals as usize;
     let n_rows = if n_reals == 0 { 0 } else { rows.len() / n_reals };
@@ -211,7 +234,7 @@ pub fn write_mat4(
         data_1[idx] = v;
         data_1[n_data1 + idx] = v;
     }
-    write_double_matrix(&mut out, "data_1", n_data1, 2, &data_1);
+    write_real_matrix(&mut out, "data_1", n_data1, 2, &data_1, precision);
 
     // data_2 (n_reals2 x n_rows double, column-major): time + the varying columns.
     let n_reals2 = 1 + varying_cols.len();
@@ -223,7 +246,7 @@ pub fn write_mat4(
             data_2.push(if neg == Neg::Not { 1.0 - v } else { v });
         }
     }
-    write_double_matrix(&mut out, "data_2", n_reals2, n_rows, &data_2);
+    write_real_matrix(&mut out, "data_2", n_reals2, n_rows, &data_2, precision);
 
     out
 }
@@ -245,10 +268,13 @@ fn write_mat_header(out: &mut Vec<u8>, name: &str, ty: i32, mrows: usize, ncols:
     out.push(0);
 }
 
-fn write_double_matrix(out: &mut Vec<u8>, name: &str, mrows: usize, ncols: usize, data: &[f64]) {
-    write_mat_header(out, name, mat_type(0, false), mrows, ncols);
+fn write_real_matrix(out: &mut Vec<u8>, name: &str, mrows: usize, ncols: usize, data: &[f64], precision: Precision) {
+    write_mat_header(out, name, precision.type_code(), mrows, ncols);
     for v in data {
-        out.extend_from_slice(&v.to_le_bytes());
+        match precision {
+            Precision::Double => out.extend_from_slice(&v.to_le_bytes()),
+            Precision::Single => out.extend_from_slice(&(*v as f32).to_le_bytes()),
+        }
     }
 }
 
@@ -303,6 +329,8 @@ mod tests {
                 1 // char/uint8
             } else if (ty / 10) % 10 == 2 {
                 4 // int32
+            } else if (ty / 10) % 10 == 1 {
+                4 // single
             } else {
                 8 // double
             };
@@ -318,6 +346,9 @@ mod tests {
 
     fn f64s(payload: &[u8]) -> Vec<f64> {
         payload.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect()
+    }
+    fn f32s(payload: &[u8]) -> Vec<f32> {
+        payload.chunks_exact(4).map(|c| f32::from_le_bytes(c.try_into().unwrap())).collect()
     }
     fn i32s(payload: &[u8]) -> Vec<i32> {
         payload.chunks_exact(4).map(|c| i32::from_le_bytes(c.try_into().unwrap())).collect()
@@ -336,7 +367,7 @@ mod tests {
         // 3 communication points; x ramps 0,1,2.
         let rows = [0.0, 0.0, /*r1*/ 0.5, 1.0, /*r2*/ 1.0, 2.0];
         let params = [7.0]; // p = 7
-        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &params);
+        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &params, Precision::Double);
 
         // name matrix: 4 columns, one per signal, column-major null-padded.
         let (mrows, ncols, name_payload) = find_matrix(&buf, "name");
@@ -381,7 +412,7 @@ mod tests {
         ];
         // n_reals = 3: [time, x, b]; b toggles, so its column stays time-variant.
         let rows = [0.0, 1.0, 0.0, /*r1*/ 0.5, 2.0, 1.0];
-        let buf = write_mat4(&vars, 0.0, 0.5, &rows, 3, &[1.0]);
+        let buf = write_mat4(&vars, 0.0, 0.5, &rows, 3, &[1.0], Precision::Double);
 
         let (_r, _c, di) = find_matrix(&buf, "dataInfo");
         let di = i32s(di);
@@ -398,5 +429,77 @@ mod tests {
         let (m2, n2, d2) = find_matrix(&buf, "data_2");
         assert_eq!((m2, n2), (4, 2));
         assert_eq!(f64s(d2), vec![0.0, 1.0, 0.0, 1.0, 0.5, 2.0, 1.0, 0.0]);
+    }
+
+    /// The type code of a named matrix's header (to assert `-single`'s 10).
+    fn matrix_type(buf: &[u8], want: &str) -> i32 {
+        let mut p = 0;
+        while p + 20 <= buf.len() {
+            let ty = i32::from_le_bytes(buf[p..p + 4].try_into().unwrap());
+            let mrows = i32::from_le_bytes(buf[p + 4..p + 8].try_into().unwrap()) as usize;
+            let ncols = i32::from_le_bytes(buf[p + 8..p + 12].try_into().unwrap()) as usize;
+            let namelen = i32::from_le_bytes(buf[p + 16..p + 20].try_into().unwrap()) as usize;
+            let name = core::str::from_utf8(&buf[p + 20..p + 20 + namelen - 1]).unwrap();
+            let p_elt = if ty % 10 == 1 { 1 } else if (ty / 10) % 10 == 2 { 4 } else if (ty / 10) % 10 == 1 { 4 } else { 8 };
+            let data_off = p + 20 + namelen;
+            if name == want {
+                return ty;
+            }
+            p = data_off + mrows * ncols * p_elt;
+        }
+        panic!("matrix `{want}` not found");
+    }
+
+    /// `-single`: the real matrices carry type code 10 and 4-byte elements, and
+    /// the values round-trip as `f32`.
+    #[test]
+    fn single_precision() {
+        let vars = [
+            MatVar { name: "time", comment: "", kind: MatKind::Time },
+            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
+            MatVar { name: "p", comment: "", kind: MatKind::Param { negate: Neg::None } },
+        ];
+        // 2 rows; x is 0.5 and 1.5 (exact in f32), p = 7 (exact in f32).
+        let rows = [0.0, 0.5, 1.0, 1.5];
+        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &[7.0], Precision::Single);
+
+        assert_eq!(matrix_type(&buf, "data_1"), 10);
+        assert_eq!(matrix_type(&buf, "data_2"), 10);
+
+        let (m1, n1, d1) = find_matrix(&buf, "data_1");
+        assert_eq!(d1.len(), m1 * n1 * 4); // 4-byte elements
+        assert_eq!(f32s(d1), vec![0.0, 7.0, 1.0, 7.0]);
+        let (m2, n2, d2) = find_matrix(&buf, "data_2");
+        assert_eq!(d2.len(), m2 * n2 * 4);
+        assert_eq!(f32s(d2), vec![0.0, 0.5, 1.0, 1.5]);
+    }
+
+    /// A value not exact in `f32` rounds to the nearest single, as C's cast does.
+    #[test]
+    fn single_precision_rounds() {
+        let vars = [
+            MatVar { name: "time", comment: "", kind: MatKind::Time },
+            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
+        ];
+        // 1/3 is not exact in f32; the stored value must equal the f32 rounding.
+        let rows = [0.0, 1.0 / 3.0];
+        let buf = write_mat4(&vars, 0.0, 0.0, &rows, 2, &[], Precision::Single);
+        let (_r, _c, d2) = find_matrix(&buf, "data_2");
+        let d2 = f32s(d2);
+        assert_eq!(d2[1], (1.0 / 3.0) as f32);
+    }
+
+    /// The single-precision file is smaller than the double one, as the test
+    /// `s2 > s1` checks.
+    #[test]
+    fn single_precision_is_smaller() {
+        let vars = [
+            MatVar { name: "time", comment: "", kind: MatKind::Time },
+            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
+        ];
+        let rows = [0.0, 0.0, 1.0, 0.5, 2.0, 1.5];
+        let single = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Single);
+        let double = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Double);
+        assert!(single.len() < double.len());
     }
 }

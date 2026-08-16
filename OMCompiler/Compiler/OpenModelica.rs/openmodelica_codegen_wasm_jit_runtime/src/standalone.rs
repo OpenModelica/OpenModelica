@@ -24,7 +24,7 @@
 //! - `wasm-merge runtime.wasm rt model.wasm model` connects both directions,
 //!   leaving only the WASI imports (satisfied by `wasmtime`/the worker shim).
 
-use openmodelica_mat_writer::MatVar;
+use openmodelica_mat_writer::{MatVar, Precision};
 use openmodelica_sim_meta::driver::{self, SimEngine};
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{self as meta, MetaKind, SimMeta};
@@ -230,6 +230,9 @@ fn run() {
             }
             matvars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
         }
+        // `-single` narrows the real data to 4-byte float (C's `FLAG_SINGLE_PRECISION`).
+        let precision =
+            simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
         openmodelica_mat_writer::write_mat4(
             &matvars,
             m.start_time,
@@ -237,6 +240,7 @@ fn run() {
             &result.rows,
             result.n_reals,
             &kept_params,
+            precision,
         )
     } else {
         use openmodelica_plt_writer::{Neg as PltNeg, PltKind, PltVar};
