@@ -367,7 +367,8 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData, double* aux_x)
 
   int unz = solverData->info[UMFPACK_UNZ];
 
-  Up = (int*) malloc((solverData->n_row + 1) * sizeof(int));
+  /* umfpack_di_get_numeric writes Up[n_col+1], Ui[unz] and Ux[unz] */
+  Up = (int*) malloc((solverData->n_col + 1) * sizeof(int));
   Ui = (int*) malloc(unz * sizeof(int));
   Ux = (double*) malloc(unz * sizeof(double));
 
@@ -441,23 +442,23 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData, double* aux_x)
     else
     {
       infoStreamPrint(OMC_LOG_LS_V, 0, "error: system is not solvable*");
-      /* free all used memory */
-      free(Up);
-      free(Ui);
-      free(Ux);
-
-      free(Q);
-      free(Rs);
-
-      free(b);
-      free(y);
-      free(z);
-      return -1;
+      success = -1;
+      goto cleanup;
     }
   }
 
   current_rank = rank;
-  current_unz = unz;
+  /* U is column-stored, so column j owns Ui/Ux[Up[j] .. Up[j+1]-1] and its last
+   * entry is the diagonal; current_unz is that entry's index, as every use below
+   * assumes. unz is one past the end of the whole array. */
+  if (Up[current_rank + 1] <= Up[current_rank])
+  {
+    /* no pivot in this column - nothing to back-substitute with */
+    infoStreamPrint(OMC_LOG_LS_V, 0, "error: system is not solvable*");
+    success = -1;
+    goto cleanup;
+  }
+  current_unz = Up[current_rank + 1] - 1;
 
   while ((stop == 0) && (current_rank > 1))
   {
@@ -493,18 +494,8 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData, double* aux_x)
         else
         {
           infoStreamPrint(OMC_LOG_LS_V, 0, "error: system is not solvable");
-          /* free all used memory */
-          free(Up);
-          free(Ui);
-          free(Ux);
-
-          free(Q);
-          free(Rs);
-
-          free(b);
-          free(y);
-          free(z);
-          return -1;
+          success = -1;
+          goto cleanup;
         }
 
         current_rank--;
@@ -523,9 +514,16 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData, double* aux_x)
   {
     /* get diagonal element r_ii, j shows where the element is in vector Ux, Ui */
     j = Up[i];
-    while (Ui[j] != i)
+    while ((j < Up[i + 1]) && (Ui[j] != i))
     {
       j++;
+    }
+    if (j >= Up[i + 1])
+    {
+      /* a singular U can miss a diagonal; searching on would run off Ui */
+      infoStreamPrint(OMC_LOG_LS_V, 0, "error: system is not solvable*");
+      success = -1;
+      goto cleanup;
     }
     r_ii = Ux[j];
     sum = 0.0;
@@ -548,6 +546,7 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData, double* aux_x)
     aux_x[Q[i]] = z[i];
   }
 
+cleanup:
   /* free all used memory */
   free(Up);
   free(Ui);

@@ -2398,21 +2398,29 @@ pub extern "C" fn rt_lin_solves() -> u64 {
 /// and 0 is returned; 1 only when the system is genuinely unsolvable.
 ///
 /// LU with partial pivoting (like C's `dgesv`), then a total-pivot search on a
-/// singular matrix, mirroring C's `LS_DEFAULT`; `-ls=klu` uses KLU instead.
+/// singular matrix, mirroring C's `LS_DEFAULT`; `-ls=klu`/`-ls=umfpack` use
+/// SuiteSparse instead.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let n = n as usize;
     #[cfg(sundials)]
-    if solvers::ls() == solvers::Ls::Klu {
-        return sundials::klu_solve_dense(a_ptr, b_ptr, n);
+    match solvers::ls() {
+        solvers::Ls::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
+        // Singular: fall through to the total-pivot search, C's own fallback.
+        solvers::Ls::Umfpack => match sundials::umfpack_solve_dense(a_ptr, b_ptr, n) {
+            0 => return 0,
+            2 => return 1,
+            _ => {}
+        },
+        _ => {}
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
     // `-ls=totalpivot` skips straight to the total-pivot search; LAPACK (C's
     // `dgesv`, and the default) is partial-pivot LU with that as its singular
-    // fallback.
-    let lu_first = solvers::ls() != solvers::Ls::TotalPivot;
+    // fallback. `-ls=umfpack` only gets here having found the matrix singular.
+    let lu_first = !matches!(solvers::ls(), solvers::Ls::TotalPivot | solvers::Ls::Umfpack);
     if (lu_first && nls::lu_solve(a, b, n)) || nls::total_pivot_solve(a, b, n) {
         0
     } else {
@@ -2477,8 +2485,10 @@ pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, n: u32) -> i
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let n = n as usize;
     #[cfg(sundials)]
-    if solvers::lss() == solvers::Lss::Klu {
-        return sundials::klu_solve_dense(a_ptr, b_ptr, n);
+    match solvers::lss() {
+        solvers::Lss::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
+        solvers::Lss::Umfpack => return (sundials::umfpack_solve_dense(a_ptr, b_ptr, n) != 0) as i32,
+        solvers::Lss::Rsparse => {}
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
 
@@ -2554,6 +2564,7 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let backend = match solvers::lss() {
         solvers::Lss::Klu => solvers::Sparse::Klu,
+        solvers::Lss::Umfpack => solvers::Sparse::Umfpack,
         solvers::Lss::Rsparse => solvers::Sparse::Rsparse,
     };
     lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz, backend)
@@ -2577,8 +2588,10 @@ pub(crate) fn lin_sparse_cached(
     let nnz = nnz as usize;
 
     #[cfg(sundials)]
-    if backend == solvers::Sparse::Klu {
-        return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz);
+    match backend {
+        solvers::Sparse::Klu => return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
+        solvers::Sparse::Umfpack => return sundials::umfpack_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
+        solvers::Sparse::Rsparse => {}
     }
     #[cfg(not(sundials))]
     let _ = backend;

@@ -1646,6 +1646,10 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
 /// `SimData`): per seed column, seed it, zero the result slots, run the column
 /// equations and store the rows as column `j` at `out_off` (`out[j*rows + i]`).
 /// C's `functionJacX` loop; the constant equations run in the caller.
+///
+/// The column body is emitted once inside a wasm loop, so the code size is
+/// independent of the column count; unrolled it runs past wasmtime's
+/// per-function body limit.
 pub(crate) fn emit_linz_jac_body(
     ctx: &mut FnCtx,
     out_off: u32,
@@ -1658,31 +1662,141 @@ pub(crate) fn emit_linz_jac_body(
     if result_offs.len() != rows {
         return Err("CodegenWasmJit: linearization Jacobian row count mismatch");
     }
-    let store_const = |ctx: &mut FnCtx, off: u32, val: f64| {
-        ctx.emit(I::LocalGet(0));
-        ctx.emit(I::F64Const(val.into()));
-        ctx.emit(I::F64Store(mem_arg(off, 3)));
-    };
-    for j in 0..seed_offs.len() {
-        for (k, &soff) in seed_offs.iter().enumerate() {
-            store_const(ctx, soff, if k == j { 1.0 } else { 0.0 });
-        }
-        for &roff in result_offs.iter().flatten() {
-            store_const(ctx, roff, 0.0);
-        }
-        lower_column(ctx)?;
-        for (i, roff) in result_offs.iter().enumerate() {
-            let out = out_off + ((j * rows + i) as u32) * 8;
-            match roff {
-                Some(roff) => {
-                    ctx.emit(I::LocalGet(0));
-                    ctx.emit(I::LocalGet(0));
-                    ctx.emit(I::F64Load(mem_arg(*roff, 3)));
-                    ctx.emit(I::F64Store(mem_arg(out, 3)));
-                }
-                None => store_const(ctx, out, 0.0),
-            }
-        }
+    let n_cols = seed_offs.len();
+    if n_cols == 0 {
+        return Ok(());
     }
+    // A row the backend left out has no slot; the column's zero fill is its value.
+    let present: Vec<(u32, u32)> = result_offs
+        .iter()
+        .enumerate()
+        .filter_map(|(i, off)| off.map(|off| (i as u32, off)))
+        .collect();
+
+    // Scratch index tables (i32): seed_tab | res_row | res_off.
+    let seed_tab_off: u32 = 0;
+    let res_row_off: u32 = (n_cols * 4) as u32;
+    let res_off_off: u32 = res_row_off + (present.len() * 4) as u32;
+    let scratch_bytes: u32 = res_off_off + (present.len() * 4) as u32;
+    let base = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(scratch_bytes as i32));
+    ctx.emit(I::Call(rt_index("rt_alloc")?));
+    ctx.emit(I::LocalSet(base));
+    let store_i32 = |ctx: &mut FnCtx, off: u32, v: i32| {
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::I32Const(v));
+        ctx.emit(I::I32Store(mem_arg(off, 2)));
+    };
+    for (k, &soff) in seed_offs.iter().enumerate() {
+        store_i32(ctx, seed_tab_off + (k as u32) * 4, soff as i32);
+    }
+    for (m, &(row, off)) in present.iter().enumerate() {
+        store_i32(ctx, res_row_off + (m as u32) * 4, row as i32);
+        store_i32(ctx, res_off_off + (m as u32) * 4, off as i32);
+    }
+
+    for &soff in seed_offs {
+        ctx.emit(I::LocalGet(0));
+        ctx.emit(I::F64Const(0.0f64.into()));
+        ctx.emit(I::F64Store(mem_arg(soff, 3)));
+    }
+
+    let jloc = ctx.alloc_temp(WTy::I32);
+    let iloc = ctx.alloc_temp(WTy::I32);
+    let mloc = ctx.alloc_temp(WTy::I32);
+    // `out_off + j*rows*8` relative to `data`.
+    let colbase = ctx.alloc_temp(WTy::I32);
+    jac_count_loop(ctx, jloc, n_cols as i32, &mut |ctx| {
+        jac_slot_addr(ctx, base, seed_tab_off, jloc);
+        ctx.emit(I::F64Const(1.0f64.into()));
+        ctx.emit(I::F64Store(mem_arg(0, 3)));
+        jac_count_loop(ctx, mloc, present.len() as i32, &mut |ctx| {
+            jac_slot_addr(ctx, base, res_off_off, mloc);
+            ctx.emit(I::F64Const(0.0f64.into()));
+            ctx.emit(I::F64Store(mem_arg(0, 3)));
+            Ok(())
+        })?;
+        lower_column(ctx)?;
+        ctx.emit(I::LocalGet(0));
+        ctx.emit(I::LocalGet(jloc));
+        ctx.emit(I::I32Const((rows * 8) as i32));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::I32Add);
+        ctx.emit(I::LocalSet(colbase));
+        // C memsets the column, so a structurally-zero row keeps its 0.
+        jac_count_loop(ctx, iloc, rows as i32, &mut |ctx| {
+            ctx.emit(I::LocalGet(colbase));
+            ctx.emit(I::LocalGet(iloc));
+            ctx.emit(I::I32Const(8));
+            ctx.emit(I::I32Mul);
+            ctx.emit(I::I32Add);
+            ctx.emit(I::F64Const(0.0f64.into()));
+            ctx.emit(I::F64Store(mem_arg(out_off, 3)));
+            Ok(())
+        })?;
+        jac_count_loop(ctx, mloc, present.len() as i32, &mut |ctx| {
+            ctx.emit(I::LocalGet(colbase));
+            ctx.emit(I::LocalGet(base));
+            ctx.emit(I::LocalGet(mloc));
+            ctx.emit(I::I32Const(4));
+            ctx.emit(I::I32Mul);
+            ctx.emit(I::I32Add);
+            ctx.emit(I::I32Load(mem_arg(res_row_off, 2)));
+            ctx.emit(I::I32Const(8));
+            ctx.emit(I::I32Mul);
+            ctx.emit(I::I32Add);
+            jac_slot_addr(ctx, base, res_off_off, mloc);
+            ctx.emit(I::F64Load(mem_arg(0, 3)));
+            ctx.emit(I::F64Store(mem_arg(out_off, 3)));
+            Ok(())
+        })?;
+        jac_slot_addr(ctx, base, seed_tab_off, jloc);
+        ctx.emit(I::F64Const(0.0f64.into()));
+        ctx.emit(I::F64Store(mem_arg(0, 3)));
+        Ok(())
+    })?;
+
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::Call(rt_index("rt_free")?));
+    Ok(())
+}
+
+/// Push `data + tab[idx]`, `tab` being an i32 offset table at `base`.
+fn jac_slot_addr(ctx: &mut FnCtx, base: u32, tab: u32, idx: u32) {
+    use we::Instruction as I;
+    ctx.emit(I::LocalGet(0));
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::LocalGet(idx));
+    ctx.emit(I::I32Const(4));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Load(mem_arg(tab, 2)));
+    ctx.emit(I::I32Add);
+}
+
+/// Emit `for loc in 0..end { body }`.
+fn jac_count_loop(
+    ctx: &mut FnCtx,
+    loc: u32,
+    end: i32,
+    body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(loc));
+    ctx.emit(I::Block(we::BlockType::Empty));
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(loc));
+    ctx.emit(I::I32Const(end));
+    ctx.emit(I::I32GeS);
+    ctx.emit(I::BrIf(1));
+    body(ctx)?;
+    ctx.emit(I::LocalGet(loc));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(loc));
+    ctx.emit(I::Br(0));
+    ctx.emit(I::End);
+    ctx.emit(I::End);
     Ok(())
 }

@@ -39,12 +39,14 @@ pub(crate) enum Ls {
     Lapack,
     TotalPivot,
     Klu,
+    Umfpack,
 }
 
 /// `-lss`, for a sparse (torn) linear system.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Lss {
     Klu,
+    Umfpack,
     Rsparse,
 }
 
@@ -52,6 +54,7 @@ pub(crate) enum Lss {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Sparse {
     Klu,
+    Umfpack,
     Rsparse,
 }
 
@@ -238,6 +241,7 @@ pub(crate) fn ls() -> Ls {
     match LS.load(Ordering::Relaxed) {
         3 => Ls::TotalPivot,
         4 if cfg!(sundials) => Ls::Klu,
+        5 if cfg!(sundials) => Ls::Umfpack,
         _ => Ls::Lapack, // 0 unset, 1 default, 2 lapack — C's dense default
     }
 }
@@ -246,6 +250,7 @@ pub(crate) fn lss() -> Lss {
     match LSS.load(Ordering::Relaxed) {
         _ if !cfg!(sundials) => Lss::Rsparse,
         3 => Lss::Rsparse,
+        4 => Lss::Umfpack,
         _ => Lss::Klu, // 0 unset, 1 default, 2 klu — C's sparse default
     }
 }

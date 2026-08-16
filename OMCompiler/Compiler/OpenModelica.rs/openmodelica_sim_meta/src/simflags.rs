@@ -65,6 +65,7 @@ pub enum Ls {
     Lapack = 2,
     TotalPivot = 3,
     Klu = 4,
+    Umfpack = 5,
 }
 
 /// `-lss`. `Rsparse` is wasm-jit's own solver, not a C runtime value.
@@ -74,6 +75,7 @@ pub enum Lss {
     Default = 1,
     Klu = 2,
     Rsparse = 3,
+    Umfpack = 4,
 }
 
 /// `-idaLS`, the linear solver IDA's Newton iteration uses.
@@ -322,14 +324,15 @@ pub struct Capabilities {
 
 /// Reject flag values this runtime cannot honour.
 pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
+    // KLU and UMFPACK ride on the same SuiteSparse archives.
     if !cap.klu {
-        for (flag, requested) in [
-            ("lss", f.lss == Some(Lss::Klu)),
-            ("ls", f.ls == Some(Ls::Klu)),
-            ("nlsLS", f.nls_ls == Some(NlsLs::Klu)),
+        for (flag, name) in [
+            ("lss", (f.lss == Some(Lss::Klu)).then_some("klu").or((f.lss == Some(Lss::Umfpack)).then_some("umfpack"))),
+            ("ls", (f.ls == Some(Ls::Klu)).then_some("klu").or((f.ls == Some(Ls::Umfpack)).then_some("umfpack"))),
+            ("nlsLS", (f.nls_ls == Some(NlsLs::Klu)).then_some("klu")),
         ] {
-            if requested {
-                return Err(format!("-{flag}=klu: this runtime has no KLU linear solver"));
+            if let Some(name) = name {
+                return Err(format!("-{flag}={name}: this runtime has no SuiteSparse linear solver"));
             }
         }
     }
@@ -1093,6 +1096,7 @@ const LS_VALUES: &[Value<Ls>] = &[
     ("lapack", Ls::Lapack, Offer::Always),
     ("totalpivot", Ls::TotalPivot, Offer::Always),
     ("klu", Ls::Klu, Offer::WithSundials),
+    ("umfpack", Ls::Umfpack, Offer::WithSundials),
 ];
 
 /// `-lss`
@@ -1100,6 +1104,7 @@ const LSS_VALUES: &[Value<Lss>] = &[
     ("default", Lss::Default, Offer::Never),
     ("rsparse", Lss::Rsparse, Offer::Always),
     ("klu", Lss::Klu, Offer::WithSundials),
+    ("umfpack", Lss::Umfpack, Offer::WithSundials),
 ];
 
 /// `-idaLS`. All five reach a SUNLinearSolver; the whole entry rides on `cap.ida`.
@@ -1252,7 +1257,9 @@ mod tests {
 
     #[test]
     fn unavailable_solvers_are_rejected_with_the_flag_named() {
-        for (arg, needle) in [("-lss=klu", "KLU"), ("-ls=klu", "KLU"), ("-nlsLS=klu", "KLU"),
+        for (arg, needle) in [("-lss=klu", "-lss=klu"), ("-ls=klu", "-ls=klu"),
+                              ("-nlsLS=klu", "-nlsLS=klu"), ("-lss=umfpack", "-lss=umfpack"),
+                              ("-ls=umfpack", "-ls=umfpack"),
                               ("-s=ida", "dassl"), ("-s=cvode", "dassl")] {
             let f = parse(&argv(&[arg])).expect("parses");
             let e = check(&f, NOTHING).expect_err("must reject");
@@ -1290,9 +1297,10 @@ mod tests {
                 }
             }
         }
-        // KLU and KINSOL come from the archives, so neither shows up above.
-        assert!(!supported(NOTHING).iter().any(|(_, v)| v.contains(&"klu")));
-        assert!(!supported(NOTHING).iter().any(|(_, v)| v.contains(&"kinsol")));
+        // KLU, UMFPACK and KINSOL come from the archives, so none shows up above.
+        for v in ["klu", "umfpack", "kinsol"] {
+            assert!(!supported(NOTHING).iter().any(|(_, vals)| vals.contains(&v)));
+        }
     }
 
     /// The other direction: a value [`check`] rejects must not be offered.
@@ -1329,6 +1337,8 @@ mod tests {
         let f = parse(&argv(&["-nls=kinsol", "-nlsLS=totalpivot", "-ls=klu", "-lss=rsparse"]))
             .expect("parses");
         assert_eq!(f.solver_codes(), (2, 2, 4, 3));
+        let f = parse(&argv(&["-ls=umfpack", "-lss=umfpack"])).expect("parses");
+        assert_eq!(f.solver_codes(), (0, 0, 5, 4));
     }
 
     #[test]

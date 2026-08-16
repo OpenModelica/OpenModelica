@@ -321,6 +321,10 @@ if(RUST_OMC_ENABLE_SUNDIALS)
   # SuiteSparse toolchain: base wasi toolchain + include dirs for KLU headers.
   # CMAKE_C_FLAGS_INIT is a STRING (not list) so no semicolon issues.
   set(_sundials_cflags "-O2 -I${_suitesparse_sources}/AMD/Include -I${_suitesparse_sources}/COLAMD/Include -I${_suitesparse_sources}/BTF/Include -I${_suitesparse_sources}/SuiteSparse_config")
+  # UMFPACK adds its own headers and `NBLAS`, its no-BLAS build, there being no
+  # BLAS for wasm. Passed as CMAKE_C_FLAGS, not through the toolchain's
+  # CMAKE_C_FLAGS_INIT, which an already-configured build directory ignores.
+  set(_suitesparse_cflags "${_sundials_cflags} -DNBLAS -I${_suitesparse_sources}/UMFPACK/Include")
   set(_sundials_toolchain ${CMAKE_CURRENT_BINARY_DIR}/sundials-wasi-toolchain.cmake)
   file(WRITE ${_sundials_toolchain}
     "set(CMAKE_SYSTEM_NAME WASI)\n"
@@ -342,16 +346,22 @@ if(RUST_OMC_ENABLE_SUNDIALS)
     LIST_SEPARATOR |
     CMAKE_ARGS
       -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
+      -DCMAKE_C_FLAGS=${_suitesparse_cflags}
       -DBUILD_SHARED_LIBS=OFF
-      -DSUITESPARSE_ENABLE_PROJECTS=suitesparse_config|amd|colamd|btf|klu
+      -DSUITESPARSE_ENABLE_PROJECTS=suitesparse_config|amd|colamd|btf|klu|umfpack
       -DSUITESPARSE_USE_FORTRAN=OFF
       -DSUITESPARSE_USE_OPENMP=OFF
       -DSUITESPARSE_USE_CUDA=OFF
       -DSUITESPARSE_DEMOS=OFF
       -DSUITESPARSE_USE_STRICT=OFF
       -DKLU_USE_CHOLMOD=OFF
+      -DUMFPACK_USE_CHOLMOD=OFF
+      # An empty BLAS_LIBRARIES takes SuiteSparseBLAS's "user supplied" path
+      # instead of find_package(BLAS); BLA_VENDOR only picks name-mangling defines.
+      -DBLAS_LIBRARIES=
+      -DBLA_VENDOR=Generic
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_suitesparse_ep_build} --parallel
-      --target KLU_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static
+      --target KLU_static UMFPACK_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static
     INSTALL_COMMAND ""
     BUILD_ALWAYS ON
     EXCLUDE_FROM_ALL ON)
@@ -394,6 +404,7 @@ if(RUST_OMC_ENABLE_SUNDIALS)
     COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_WASM_DIR}/lib
     COMMAND ${CMAKE_COMMAND} -E copy
       ${_suitesparse_ep_build}/KLU/libklu.a
+      ${_suitesparse_ep_build}/UMFPACK/libumfpack.a
       ${_suitesparse_ep_build}/AMD/libamd.a
       ${_suitesparse_ep_build}/COLAMD/libcolamd.a
       ${_suitesparse_ep_build}/BTF/libbtf.a
