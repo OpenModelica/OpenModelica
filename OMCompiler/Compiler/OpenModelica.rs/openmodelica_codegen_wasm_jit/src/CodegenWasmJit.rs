@@ -2526,6 +2526,8 @@ pub(crate) struct SimVarMap {
     lambda_off: u32,
     /// C's `homotopyMethod` code (`SimLayout::homotopy_method`).
     homotopy_method: u8,
+    /// `SimCtx::old_real`.
+    old_real: Option<(u32, u32)>,
     /// `SimData` byte offset of the zero-crossing hysteresis tolerance (`SimCtx::zctol_off`).
     zctol_off: u32,
     /// `SimData` byte offset of `zeroCrossingsPre` (`SimLayout::zc_pre_off`).
@@ -2911,6 +2913,7 @@ fn build_var_map(
         n_mathevents: layout.n_math,
         lambda_off: layout.lambda_off,
         homotopy_method: layout.homotopy_method.code(),
+        old_real: layout.has_old_real.then_some((layout.rparam_off, layout.old_real_off)),
         zctol_off: layout.zctol_off,
         zc_pre_off: layout.zc_pre_off,
         clock_fire_off: layout.clock_fire_off,
@@ -3822,6 +3825,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         // `delay(...)` / `spatialDistribution(...)`: the driver has to store their
         // accepted points, which costs an extra evaluation, so it asks first.
         sim_code.delayedExps.maxDelayedIndex >= 0 || sim_code.spatialInfo.maxIndex >= 0,
+        // Mirroring the last accepted step's reals costs a copy per step, so only
+        // a model with a method-1 linear system to read them asks for it.
+        has_method1_linear(sim_code),
     );
 
     let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &layout)?;
@@ -3870,6 +3876,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     index_list(&sim_code.removedEquations, &mut eq_index);
     index_list(&sim_code.startValueEquations, &mut eq_index);
     index_list(&sim_code.algorithmAndEquationAsserts, &mut eq_index);
+    index_list(&sim_code.equationsForZeroCrossings, &mut eq_index);
     for e in dae_eqs.iter() {
         index_eq_recursive(&e.0, &mut eq_index);
     }
@@ -4017,6 +4024,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let lambda0_eqs = flatten_eqs(&sim_code.initialEquations_lambda0);
     let assert_eqs = flatten_eqs(&sim_code.algorithmAndEquationAsserts);
     let ode_eqs = flatten_eqs_ll(&sim_code.odeEquations);
+    let zc_eqs = flatten_eqs(&sim_code.equationsForZeroCrossings);
     // Register every nonlinear system with the runtime solver `rt_solve_nls`
     // *before* lowering the equation functions (which call it): assign each a
     // shared-table job and thread the map through `var_map`. The systems' own
@@ -4025,7 +4033,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let mut attr_targets: HashMap<String, AttrTargets> = HashMap::new();
     let dae_only_eqs: Vec<Arc<SimCode::SimEqSystem>> = dae_eqs.iter().map(|(e, _)| e.clone()).collect();
     let nls_scan: Vec<Vec<Arc<SimCode::SimEqSystem>>> =
-        [&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs, &dae_only_eqs]
+        [&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs, &dae_only_eqs, &zc_eqs]
             .iter()
             .map(|l| eqs_with_branches(l.as_slice()))
             .collect();
@@ -4488,6 +4496,13 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         splits.push(build_split_fn("functionCheckAsserts", &eq_units(&assert_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
         idx
     };
+    // C's `function_ZeroCrossingsEquations`: what the crossings read, which is
+    // neither `functionODE` nor all of `functionAlgebraics`.
+    let zc_equations_idx = {
+        let idx = import_base + bodies.len() as u32;
+        splits.push(build_split_fn("functionZeroCrossingsEquations", &eq_units(&zc_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+        idx
+    };
     bodies[simulate_slot] = build_simulate(&layout, &eqfn, has_asserts.then_some(check_asserts_idx))?;
     let update_relations_idx = {
         let idx = import_base + bodies.len() as u32;
@@ -4663,6 +4678,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     functions.function(eqfn_type); // functionStateSetJacobians: (i32) -> ()
     functions.function(eqfn_type); // functionInitialEquations_lambda0: (i32) -> ()
     functions.function(eqfn_type); // functionCheckAsserts: (i32) -> ()
+    functions.function(eqfn_type); // functionZeroCrossingsEquations: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateRelations: (i32) -> ()
     functions.function(eqfn_type); // functionStoreDelayed: (i32) -> ()
     functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
@@ -4790,6 +4806,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     exports.export("callExternalObjectDestructors", we::ExportKind::Func, destructors_idx);
     exports.export("initSample", we::ExportKind::Func, init_sample_idx);
     exports.export("functionZeroCrossings", we::ExportKind::Func, zc_idx);
+    exports.export("functionZeroCrossingsEquations", we::ExportKind::Func, zc_equations_idx);
     exports.export("functionStateSetJacobians", we::ExportKind::Func, stateset_jac_idx);
     exports.export("functionInitialEquations_lambda0", we::ExportKind::Func, init_lambda0_idx);
     exports.export("functionCheckAsserts", we::ExportKind::Func, check_asserts_idx);
@@ -4845,6 +4862,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         ("callExternalObjectDestructors", destructors_idx),
         ("initSample", init_sample_idx),
         ("functionZeroCrossings", zc_idx),
+        ("functionZeroCrossingsEquations", zc_equations_idx),
         ("functionStateSetJacobians", stateset_jac_idx),
         ("functionInitialEquations_lambda0", init_lambda0_idx),
         ("functionCheckAsserts", check_asserts_idx),
@@ -5621,6 +5639,7 @@ fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         n_mathevents: var_map.n_mathevents,
         lambda_off: var_map.lambda_off,
         homotopy_method: var_map.homotopy_method,
+        old_real: var_map.old_real,
         zctol_off: var_map.zctol_off,
         zc_pre_off: var_map.zc_pre_off,
         zc_context: false,
@@ -6461,7 +6480,9 @@ fn lower_linear_system(
         );
     }
 
-    compile_linear_system(ctx, &vars, &res_exps, &mut lower_inner, use_sparse)
+    // C keys `method` off `ls.jacobianMatrix` alone, not off whether it assembles
+    // `A` from one.
+    compile_linear_system(ctx, &vars, &res_exps, &mut lower_inner, use_sparse, lsystem.jacobianMatrix.is_some())
 }
 
 /// Whether a torn linear system uses the sparse solver (C's density/size
@@ -7929,8 +7950,43 @@ pub(crate) fn eq_kind_name(eq: &SimCode::SimEqSystem) -> &'static str {
     }
 }
 
-/// The `index` of a `SimEqSystem` (best-effort; systems without a top-level
-/// index report -1).
+/// Whether any equation, at any nesting depth, is a `SES_LINEAR` C would solve
+/// with `method = 1`.
+fn has_method1_linear(sim_code: &SimCode::SimCode) -> bool {
+    fn walk(e: &Arc<SimCode::SimEqSystem>) -> bool {
+        use SimCode::SimEqSystem as E;
+        match &**e {
+            E::SES_LINEAR { lSystem, alternativeTearing, .. } => {
+                lSystem.jacobianMatrix.is_some()
+                    || alternativeTearing.as_ref().is_some_and(|a| a.jacobianMatrix.is_some())
+                    || lst(&lSystem.residual).any(walk)
+            }
+            E::SES_NONLINEAR { nlSystem, alternativeTearing, .. } => {
+                lst(&nlSystem.eqs).any(walk)
+                    || alternativeTearing.as_ref().is_some_and(|a| lst(&a.eqs).any(walk))
+            }
+            E::SES_MIXED { cont, discEqs, .. } => walk(cont) || lst(discEqs).any(walk),
+            E::SES_IFEQUATION { ifbranches, elsebranch, .. } => {
+                lst(ifbranches).any(|(_, eqs)| lst(eqs).any(walk)) || lst(elsebranch).any(walk)
+            }
+            _ => false,
+        }
+    }
+    let lists = [
+        &sim_code.allEquations,
+        &sim_code.initialEquations,
+        &sim_code.initialEquations_lambda0,
+        &sim_code.parameterEquations,
+        &sim_code.removedInitialEquations,
+        &sim_code.removedEquations,
+        &sim_code.startValueEquations,
+        &sim_code.equationsForZeroCrossings,
+    ];
+    lists.iter().any(|l| lst(l).any(walk))
+        || lst(&sim_code.odeEquations).chain(lst(&sim_code.algebraicEquations)).any(|p| lst(p).any(walk))
+        || sim_code.daeModeData.as_ref().is_some_and(|d| lst(&d.daeEquations).any(|p| lst(p).any(walk)))
+}
+
 /// Index `e` by its own index and recurse into nested equations (torn-system
 /// inner constraints, mixed cont/disc parts, if-branches), which an `SES_ALIAS`
 /// may target but which the top-level lists don't reach.
@@ -7985,6 +8041,8 @@ fn index_eq_recursive(e: &Arc<SimCode::SimEqSystem>, idx: &mut HashMap<i32, Arc<
     }
 }
 
+/// The `index` of a `SimEqSystem` (best-effort; systems without a top-level
+/// index report -1).
 fn eq_index_of(eq: &SimCode::SimEqSystem) -> i32 {
     use SimCode::SimEqSystem as E;
     match eq {

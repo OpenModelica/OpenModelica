@@ -318,6 +318,7 @@ pub const MODEL_FNS: &[&str] = &[
     "linearJacC",
     "linearJacD",
     "functionRemovedInitialEquations",
+    "functionZeroCrossingsEquations",
 ];
 
 /// The model entry points that are not `fn(SimData*)`: `--daeMode`'s residual
@@ -1415,7 +1416,7 @@ pub fn format_e(v: f64) -> String {
 
 /// Evaluate `functionCheckAsserts` (C's `checkForAsserts`) at the current point and
 /// format any `AssertionLevel.warning` violation it recorded into a `LOG_ASSERT`
-/// block, once per site. Called by the drivers after each accepted output step.
+/// block, once per site. Called by the drivers after each accepted solver step.
 ///
 /// `level`: C reports a violation met while the integrator updates the system
 /// (`simulationUpdate`, which sets `noThrowAsserts`) as `info`, one met anywhere
@@ -1687,6 +1688,7 @@ fn init_model(
     omclog::info(omclog::INIT, false, "### END INITIALIZATION ###");
     // C's `storePreValues` after the initial solve (initialization.c:903).
     seed_pre_from_live(e, sim_data, layout)?;
+    save_old_real(e, sim_data, layout)?;
     // Seed the continuous phase's held relations from a full discrete fixed point.
     // The initial system does not necessarily touch every relation guarding the
     // continuous equations, so a straight snapshot of `relations[]` here would
@@ -1773,6 +1775,7 @@ fn symbolic_initialization(
     // read in an initial equation sees `start`. `-iim=none` never gets here, and the
     // homotopy retry below does not re-store.
     seed_pre_from_live(e, sim_data, layout)?;
+    save_old_real(e, sim_data, layout)?;
     init_report::set_local(!layout.homotopy_method.is_global());
     let res = solve_initial_system(e, sim_data, layout, inputs, model);
     // A local approach counts its steps inside the runtime; collect them.
@@ -1964,7 +1967,8 @@ fn copy_start_values_to_init_values(
     model: Option<&SimMeta>,
 ) -> Result<()> {
     set_all_vars_to_start(e, sim_data, layout, model, false)?;
-    seed_pre_from_live(e, sim_data, layout)
+    seed_pre_from_live(e, sim_data, layout)?;
+    save_old_real(e, sim_data, layout)
 }
 
 /// C's `updateBoundParameters` + `updateBoundVariableAttributes`, always a pair and
@@ -2386,8 +2390,7 @@ fn eval_zc_equations(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ZEROCROSS);
     }
-    e.call1("functionODE", sim_data)?;
-    e.call1("functionAlgebraics", sim_data)
+    e.call1("functionZeroCrossingsEquations", sim_data)
 }
 
 /// Emit one result row from SimData at `time`, recomputing `functionODE`/
@@ -2552,6 +2555,17 @@ fn save_pre_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
     let mut buf = vec![0u8; bytes];
     e.read_bytes(sim_data + REAL_OFF, &mut buf)?;
     e.write_bytes(sim_data + layout.pre_real_off, &buf)
+}
+
+/// C's `rotateRingBuffer` + `overwriteOldSimulationData`: the live reals become
+/// `localData[1]`. Only a method-1 linear system reads them (its `aux_x`).
+fn save_old_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if !layout.has_old_real {
+        return Ok(());
+    }
+    let mut buf = vec![0u8; layout.real_bytes()];
+    e.read_bytes(sim_data + REAL_OFF, &mut buf)?;
+    e.write_bytes(sim_data + layout.old_real_off, &buf)
 }
 
 /// Copy the live real/integer/boolean regions into their `pre()` mirrors (C's
@@ -2942,23 +2956,40 @@ fn update_relations_pre(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout
 }
 
 /// Evaluate the zero-crossing functions at `time` with the current discrete state,
-/// filling `out` with the `n_zc` values (`gout[i] = relation ? 1 : -1`). Used by
-/// the discrete-only driver to bracket and localize state events between grid
-/// points.
-fn eval_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, time: f64, out: &mut [f64]) -> Result<()> {
-    // Held relations (mode 0): the probe must not flip a relation or fire a
-    // when-body, only a located event changes discrete state. `functionAlgebraics`
-    // is needed alongside `functionODE` so a boolean algebraic the crossing reads
-    // (e.g. StateGraph's `enableFire`) is current; the crossing function itself
-    // re-evaluates relations regardless of this flag.
+/// filling `out` with the `n_zc` values (`gout[i] = relation ? 1 : -1`). Held
+/// relations (mode 0): only a located event changes discrete state, so the probe
+/// must not flip a relation or fire a when-body; the crossing function itself
+/// re-evaluates relations regardless of the flag.
+fn read_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, out: &mut [f64]) -> Result<()> {
     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-    write_f64(e, sim_data + TIME_OFF, time)?;
-    eval_zc_equations(e, sim_data, layout)?;
     e.call1("functionZeroCrossings", sim_data)?;
     for (i, v) in out.iter_mut().enumerate() {
         *v = read_f64(e, sim_data + layout.zc_off + (i as u32) * 8)?;
     }
     Ok(())
+}
+
+/// C's `bisection`: the crossings at `time` off their own equations. A subset, so
+/// an assert outside it does not fire on every trial point of the root search.
+fn probe_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, time: f64, out: &mut [f64]) -> Result<()> {
+    write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+    write_f64(e, sim_data + TIME_OFF, time)?;
+    eval_zc_equations(e, sim_data, layout)?;
+    read_zero_crossings(e, sim_data, layout, out)
+}
+
+/// C's `updateContinuousSystem` + `saveZeroCrossings`, what `checkForStateEvent`
+/// compares against: detection runs off a full evaluation.
+fn update_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, time: f64, out: &mut [f64]) -> Result<()> {
+    // The row re-evaluates this point and reports what it raises; flush anything
+    // older so only this pass's violations are dropped below.
+    drain_asserts(e, sim_data, omclog::INFO)?;
+    write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+    write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+    write_f64(e, sim_data + TIME_OFF, time)?;
+    eval_continuous(e, sim_data, layout)?;
+    let _ = e.take_pending_warnings();
+    read_zero_crossings(e, sim_data, layout, out)
 }
 
 /// Whether any zero-crossing value changed sign between `a` and `b` — i.e. a state
@@ -2991,7 +3022,7 @@ fn locate_zc_root(
         if tm <= t0 || tm >= t1 {
             break;
         }
-        eval_zero_crossings(e, sim_data, layout, tm, scratch)?;
+        probe_zero_crossings(e, sim_data, layout, tm, scratch)?;
         if zc_crossed(zc0, scratch) {
             t1 = tm;
         } else {
@@ -3285,6 +3316,7 @@ pub fn event_update(
     }
 
     e.clean_nls_history(time);
+    save_old_real(e, sim_data, layout)?;
 
     let next = samples.as_ref().map(|s| s.next_time()).filter(|t| t.is_finite());
     Ok(EventUpdate { states_changed, terminate: terminated(e, sim_data, layout)?, next_event_time: next })
@@ -3915,7 +3947,7 @@ unsafe fn dassl_rt(
         let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, ctx.n_states * 8) };
         e.write_bytes(ctx.states_base, y_bytes)?;
         set_context(e, ctx.ctx_addr, CONTEXT_EVENTS);
-        e.call1("functionODE", ctx.sim_data)?;
+        e.call1("functionZeroCrossingsEquations", ctx.sim_data)?;
         e.call1("functionZeroCrossings", ctx.sim_data)?;
         set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
         let rval_bytes = unsafe { core::slice::from_raw_parts_mut(rval as *mut u8, ctx.n_zc * 8) };
@@ -5115,9 +5147,18 @@ pub(crate) fn leak_error(s: String) -> &'static str {
 }
 
 /// How close to a target counts as reached, and so the smallest step the chunked
-/// fixed-step loop may ask for.
-fn reached_eps(t: f64) -> f64 {
-    t.abs().max(1.0) * 1e-10
+/// fixed-step loop may ask for. Floored at the run's own time scale.
+fn reached_eps(t: f64, span: f64) -> f64 {
+    let floor = if span > 0.0 { span.min(1.0) } else { 1.0 };
+    t.abs().max(floor) * 1e-10
+}
+
+/// C's `DASSL_STEP_EPS` (`simulation/solver/epsilon.h`).
+const DASSL_STEP_EPS: f64 = 1e-13;
+
+/// `dassl.c`'s floor on a step worth handing to DASKR.
+fn small_step_eps(span: f64) -> f64 {
+    DASSL_STEP_EPS.max(DASSL_STEP_EPS * span)
 }
 
 /// How far one [`SolverCore::solve_toward`] got.
@@ -5322,6 +5363,37 @@ impl SolverCore {
     /// A step with no state event breaks the run.
     fn note_clean_step(&mut self) {
         self.chatter_consec = 0;
+    }
+
+    /// Record a state event for chattering detection, reporting the run once it
+    /// trips (C's `chatteringInfo`). `-abortSlowSimulation` makes it a failure.
+    fn note_chatter(&mut self, model: &SimModel, zc: usize) -> Result<()> {
+        let step_size = model.step_size();
+        let Some((t0, t1)) = self.note_chatter_event(self.t, step_size) else {
+            return Ok(());
+        };
+        let desc = model.zc_desc.get(zc).map(String::as_str).unwrap_or("<zero-crossing>");
+        omclog::info(
+            omclog::STDOUT,
+            false,
+            &format!(
+                "Chattering detected around time {t0}..{t1} ({CHATTER_LIMIT} state events in a row \
+                 with a total time delta less than the step size {step_size}). This can be a \
+                 performance bottleneck. Use -lv LOG_EVENTS for more information. The \
+                 zero-crossing was: {desc}"
+            ),
+        );
+        if chatter_store::abort() {
+            omclog::message_text(
+                omclog::DEBUG_TYPE,
+                omclog::ASSERT,
+                false,
+                "Aborting simulation due to chattering being detected and the simulation flags \
+                 requesting we do not continue further.",
+            );
+            return Err(CHATTER_ABORT_ERR);
+        }
+        Ok(())
     }
 
     /// Restart the integrator at the current `(t, y)`, banking the run totals its
@@ -5600,7 +5672,6 @@ impl SolverCore {
         }
     }
 
-    /// The first root function that fired, for the chattering message.
     /// Every crossing whose indicator flipped at the located root — C's `eventLst`.
     fn roots_nonzero(&self) -> Vec<usize> {
         let pos = |r: &[i32]| r.iter().enumerate().filter(|(_, v)| **v != 0).map(|(i, _)| i).collect();
@@ -5610,25 +5681,8 @@ impl SolverCore {
             Solver::Cvode(c) => c.cv.as_ref().map(|cv| pos(cv.roots())).unwrap_or_default(),
             #[cfg(sundials)]
             Solver::Ida(s) => s.ida.as_ref().map(|ida| pos(ida.roots())).unwrap_or_default(),
-            Solver::Gbode(_) | Solver::Fixed(_) => vec![self.root_index()],
-        }
-    }
-
-    fn root_index(&self) -> usize {
-        match &self.solver {
-            Solver::Daskr(d) => d.jroot.iter().position(|&r| r != 0).unwrap_or(0),
-            #[cfg(sundials)]
-            Solver::Cvode(c) => c
-                .cv
-                .as_ref()
-                .and_then(|cv| cv.roots().iter().position(|&r| r != 0))
-                .unwrap_or(0),
-            #[cfg(sundials)]
-            Solver::Ida(s) => {
-                s.ida.as_ref().and_then(|ida| ida.roots().iter().position(|&r| r != 0)).unwrap_or(0)
-            }
-            Solver::Gbode(g) => g.root_index(),
-            Solver::Fixed(f) => f.root_index(),
+            Solver::Gbode(g) => vec![g.root_index()],
+            Solver::Fixed(f) => vec![f.root_index()],
         }
     }
 
@@ -5704,7 +5758,9 @@ impl SolverCore {
         let sim_data = self.sim_data;
         let n_states = self.n_states;
         let ders_base = self.ders_base;
-        let eps = reached_eps(tout);
+        let span = model.stop_time - model.start_time;
+        let eps = reached_eps(tout, span);
+        let step_eps = small_step_eps(span);
         let mut grid_covered = false;
 
         loop {
@@ -5718,6 +5774,7 @@ impl SolverCore {
                 self.nfe = ctx.nfe;
                 return Ok(Step::Cancelled);
             }
+            save_old_real(e, sim_data, layout)?; // C's `rotateRingBuffer`
             // Mode 0: hold relations across the DASKR solve so its residual/Jacobian
             // probes are smooth (C's `solveContinuous`); events/outputs refresh them.
             write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
@@ -5732,8 +5789,25 @@ impl SolverCore {
             self.sample_limit = te.min(tc);
             // Integrate from the current t toward `target` (the caller's time or the
             // next scheduled sample). DASKR may stop early at a zero-crossing root.
-            if target - self.t > eps {
+            if target - self.t > step_eps {
+                // C's `perform_simulation` `LOG_SOLVER` block around `simulationStep`.
+                if omclog::active(omclog::SOLVER) {
+                    omclog::info(
+                        omclog::SOLVER,
+                        true,
+                        &format!(
+                            "call solver from {} to {} (stepSize: {})",
+                            format_g(self.t, 6),
+                            format_g(target, 6),
+                            format_g15(target - self.t)
+                        ),
+                    );
+                }
                 let solved = self.solve_toward(target, ctx, deadline, did_step)?;
+                if omclog::active(omclog::SOLVER) {
+                    omclog::info(omclog::SOLVER, false, &format!("finished solver step {}", format_g(self.t, 6)));
+                    omclog::close(omclog::SOLVER);
+                }
                 let rooted = match solved {
                     Solved::Yielded => {
                         self.nfe = ctx.nfe;
@@ -5747,29 +5821,38 @@ impl SolverCore {
                     Solved::Root => true,
                 };
                 self.write_states(e)?;
-                // C emits from `perform_simulation` once `solver_step` returns.
+                // C runs `simulationUpdate` on every accepted step, row due or not.
                 if let Solved::Stepped = solved {
+                    write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+                    let mut emitted = false;
                     if let Some(r) = rows.as_deref_mut()
                         && self.step_emit.take(self.t)
                     {
-                        write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                         emit_row(e, r, sim_data, layout, self.t, model.stop_time)?;
+                        emitted = true;
                         if terminated(e, sim_data, layout)? {
                             return Ok(Step::Terminated);
                         }
                     }
-                    store_operators_at(e, sim_data, layout, self.t)?;
+                    if !emitted {
+                        // C's `updateContinuousSystem`.
+                        write_f64(e, sim_data + TIME_OFF, self.t)?;
+                        eval_continuous(e, sim_data, layout)?;
+                    }
+                    store_operators(e, sim_data, layout)?;
                     let flips = save_zero_crossings(e, sim_data, layout)?;
                     if !flips.is_empty() {
                         *did_step = true;
+                        self.note_chatter(model, flips[0])?;
                         if self.handle_zc_flips(e, model, ctx, sync, rows.as_deref_mut(), &flips)? {
                             return Ok(Step::Terminated);
                         }
                     }
+                    check_asserts(e, sim_data, layout, omclog::INFO)?;
                     continue;
                 }
-                // A zero-crossing root at `t` (< target). Handle the state event
-                // here, then restart the integrator and keep going.
+                // A zero-crossing root at `t` (< target): DASKR stops on the
+                // crossing, so the root itself is the event.
                 if rooted {
                     let troot = self.t;
                     if stop_at_event {
@@ -5777,32 +5860,9 @@ impl SolverCore {
                         return Ok(Step::Event { time: troot });
                     }
                     self.state_events += 1;
-                    log_state_event(troot, &self.roots_nonzero(), model);
-                    let step_size = model.step_size();
-                    if let Some((t0, t1)) = self.note_chatter_event(troot, step_size) {
-                        let zc = self.root_index();
-                        let desc = model.zc_desc.get(zc).map(String::as_str).unwrap_or("<zero-crossing>");
-                        omclog::info(
-                            omclog::STDOUT,
-                            false,
-                            &format!(
-                                "Chattering detected around time {t0}..{t1} ({CHATTER_LIMIT} state \
-                                 events in a row with a total time delta less than the step size \
-                                 {step_size}). This can be a performance bottleneck. Use -lv LOG_EVENTS \
-                                 for more information. The zero-crossing was: {desc}"
-                            ),
-                        );
-                        if chatter_store::abort() {
-                            omclog::message_text(
-                                omclog::DEBUG_TYPE,
-                                omclog::ASSERT,
-                                false,
-                                "Aborting simulation due to chattering being detected and the \
-                                 simulation flags requesting we do not continue further.",
-                            );
-                            return Err(CHATTER_ABORT_ERR);
-                        }
-                    }
+                    let roots = self.roots_nonzero();
+                    log_state_event(troot, &roots, model);
+                    self.note_chatter(model, roots.first().copied().unwrap_or(0))?;
                     // pre-event row (before the discrete update), then event +
                     // post-event row.
                     if let Some(r) = rows.as_deref_mut()
@@ -5842,6 +5902,17 @@ impl SolverCore {
                 }
                 // Reached the target with no state event: breaks a chattering run.
                 self.note_clean_step();
+            } else if target > self.t && !self.dae {
+                // `dassl.c`'s "Desired step size too small": one Euler step instead.
+                let h = target - self.t;
+                for i in 0..n_states {
+                    self.y[i] += self.yp[i] * h;
+                }
+                self.t = target;
+                self.write_states(e)?;
+                write_f64(e, sim_data + TIME_OFF, self.t)?;
+                self.refresh_yp(e)?;
+                *did_step = true;
             }
             // Reached `target`. Fire a sample event at `te` if it lands at or
             // before `tout` (pre-event row, fire, post-event row).
@@ -6176,7 +6247,7 @@ impl CsDriver {
                 // points drift off the grid further than a nudge on the quotient.
                 Some(h) => {
                     let mut g = model.start_time + (libm::floor((self.core.t - model.start_time) / h) + 1.0) * h;
-                    if g - self.core.t <= reached_eps(self.core.t) {
+                    if g - self.core.t <= reached_eps(self.core.t, model.stop_time - model.start_time) {
                         g += h;
                     }
                     g.min(t_target)
@@ -6317,7 +6388,7 @@ impl Driver for EventsDriver {
             let mut zc0 = vec![0.0f64; layout.n_zc as usize];
             let mut scratch = vec![0.0f64; layout.n_zc as usize];
             if layout.n_zc > 0 {
-                eval_zero_crossings(e, sim_data, layout, self.core.t, &mut zc0)?;
+                read_zero_crossings(e, sim_data, layout, &mut zc0)?;
             }
             while self.row < n_rows {
                 if did_step && past_deadline(deadline) {
@@ -6334,6 +6405,7 @@ impl Driver for EventsDriver {
                 open_assert_window();
                 // Handle every event (state or sample) up to `tout`, earliest first.
                 loop {
+                    save_old_real(e, sim_data, layout)?; // C's `rotateRingBuffer`
                     let te = self.samp.next_time();
                     let mut tc = self.sync.next_time();
                     if (tc - tout).abs() <= eps {
@@ -6343,7 +6415,7 @@ impl Driver for EventsDriver {
                     // A state event bracketed in (t, subtarget]?
                     let mut troot = None;
                     if layout.n_zc > 0 && subtarget - self.core.t > eps {
-                        eval_zero_crossings(e, sim_data, layout, subtarget, &mut scratch)?;
+                        update_zero_crossings(e, sim_data, layout, subtarget, &mut scratch)?;
                         if zc_crossed(&zc0, &scratch) {
                             troot = Some(locate_zc_root(
                                 e, sim_data, layout, self.core.t, subtarget, &zc0, &mut scratch,
@@ -6351,9 +6423,8 @@ impl Driver for EventsDriver {
                         }
                     }
                     if let Some(tr) = troot {
-                        // The bisection left `SimData` at its last probe; C's
-                        // integrators hand the event handler the system at the root.
-                        eval_zero_crossings(e, sim_data, layout, tr, &mut scratch)?;
+                        // The bisection left `SimData` at its last trial point.
+                        update_zero_crossings(e, sim_data, layout, tr, &mut scratch)?;
                         log_state_event(tr, &zc_crossed_idx(&zc0, &scratch), model);
                         if !no_event_emit() {
                             capture_pre(e, &mut self.rows, sim_data, layout, tr)?; // pre-event row
@@ -6380,7 +6451,7 @@ impl Driver for EventsDriver {
                         // C's "add event to spatialDistribution": the post-event
                         // input jump becomes a discontinuity in the profile.
                         store_operators(e, sim_data, layout)?;
-                        eval_zero_crossings(e, sim_data, layout, tr, &mut zc0)?;
+                        read_zero_crossings(e, sim_data, layout, &mut zc0)?;
                         save_zc_pre(e, sim_data, layout)?;
                         log_reinits(e, model);
                         omclog::close(omclog::EVENTS);
@@ -6412,7 +6483,7 @@ impl Driver for EventsDriver {
                         self.core.t = te;
                         store_operators(e, sim_data, layout)?;
                         if layout.n_zc > 0 {
-                            eval_zero_crossings(e, sim_data, layout, te, &mut zc0)?;
+                            read_zero_crossings(e, sim_data, layout, &mut zc0)?;
                             save_zc_pre(e, sim_data, layout)?;
                         }
                         log_reinits(e, model);
@@ -6436,7 +6507,7 @@ impl Driver for EventsDriver {
                             }
                             store_operators(e, sim_data, layout)?;
                             if layout.n_zc > 0 {
-                                eval_zero_crossings(e, sim_data, layout, subtarget, &mut zc0)?;
+                                read_zero_crossings(e, sim_data, layout, &mut zc0)?;
                                 save_zc_pre(e, sim_data, layout)?;
                             }
                             if subtarget >= tout - eps {
@@ -6457,7 +6528,7 @@ impl Driver for EventsDriver {
                     }
                     store_operators(e, sim_data, layout)?;
                     if layout.n_zc > 0 {
-                        eval_zero_crossings(e, sim_data, layout, tout, &mut zc0)?;
+                        read_zero_crossings(e, sim_data, layout, &mut zc0)?;
                         save_zc_pre(e, sim_data, layout)?;
                     }
                 } else {
@@ -6619,7 +6690,7 @@ unsafe fn eval_roots(ctx: &mut ResCtx, t: f64, y: *const f64, yp: *const f64, go
     if unsafe { ctx.ida.dae.as_ref() }.is_some() {
         e.call2(MODEL_FN_DAE, ctx.sim_data, eval_stage::ZEROCROSS)?;
     } else {
-        e.call1("functionODE", ctx.sim_data)?;
+        e.call1("functionZeroCrossingsEquations", ctx.sim_data)?;
     }
     e.call1("functionZeroCrossings", ctx.sim_data)?;
     set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
