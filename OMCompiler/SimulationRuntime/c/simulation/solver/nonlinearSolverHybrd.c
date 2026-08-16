@@ -65,6 +65,22 @@ DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData)
   DATA_HYBRD* hybrdData = (DATA_HYBRD*) malloc(sizeof(DATA_HYBRD));
   assertStreamPrint(NULL, hybrdData != NULL, "allocationHybrdData() failed!");
 
+  /* fjac/fjacobian receive evalJacobian's dense output (strided by the
+   * analytic Jacobian's own sizeCols) and getAnalyticalJacobian's memcpy uses
+   * sizeRows*sizeCols directly -- both can exceed size*(size+1) for a
+   * partial-slice Jacobian with extra addressable-but-not-genuinely-unknown
+   * seed columns (see allocateHomotopyData's identical fix and
+   * NBJacobian.mo's partialSliceSeedCandidates whole-array fallback). Size
+   * those two buffers off the larger of the two; `size`/`n`, r__ (MINPACK's
+   * own internal packed triangular factor, sized purely off the genuine
+   * unknown count), and everything else below stays genuine (the solver
+   * itself must never see phantom unknowns). */
+  size_t jacCols = size + 1;
+  if (userData != NULL && userData->analyticJacobian != NULL &&
+      (size_t)userData->analyticJacobian->sizeCols > jacCols) {
+    jacCols = (size_t)userData->analyticJacobian->sizeCols;
+  }
+
   hybrdData->initialized = FALSE;
   hybrdData->resScaling = (double*) malloc(size*sizeof(double));
   hybrdData->fvecScaled = (double*) malloc(size*sizeof(double));
@@ -90,8 +106,8 @@ DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData)
   hybrdData->info = 0;
   hybrdData->nfev = 0;
   hybrdData->njev = 0;
-  hybrdData->fjac = (double*) calloc((size*(size+1)), sizeof(double));
-  hybrdData->fjacobian = (double*) calloc((size*(size+1)), sizeof(double));
+  hybrdData->fjac = (double*) calloc((size*jacCols), sizeof(double));
+  hybrdData->fjacobian = (double*) calloc((size*jacCols), sizeof(double));
   hybrdData->ldfjac = size;
   hybrdData->r__ = (double*) malloc(((size*(size+1))/2)*sizeof(double));
   hybrdData->lr = (size*(size + 1)) / 2;
