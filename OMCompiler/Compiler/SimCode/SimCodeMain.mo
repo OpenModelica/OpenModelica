@@ -731,6 +731,11 @@ algorithm
       CodegenWasmJit.translateModel(simCode);
       guid := System.getUUIDStr();
       SerializeInitXML.simulationInitFile(simCode, guid);
+      // The wasm module carries its own metadata, so *_info.json is only needed
+      // for debugging; emit it when the infoXmlOperations debug flag is set.
+      if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+        SerializeModelInfo.serialize(simCode, true);
+      end if;
     then ();
 
     case "wasm" algorithm
