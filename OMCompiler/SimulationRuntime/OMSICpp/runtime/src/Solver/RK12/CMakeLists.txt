@@ -12,7 +12,7 @@ else(NOT BUILD_SHARED_LIBS)
   endif(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries(${RK12Name} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
+target_link_libraries(${RK12Name} ${SolverName} omsicpp_boost_libs ${LAPACK_LIBRARIES})
 add_precompiled_header(${RK12Name} runtime/include/Core/Modelica.h)
 
 

@@ -12,7 +12,7 @@ else(NOT BUILD_SHARED_LIBS)
   endif(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries (${ModelicaUtilitiesName} ${Boost_LIBRARIES}  ${ModelicaName})
+target_link_libraries (${ModelicaUtilitiesName} omsicpp_boost_libs  ${ModelicaName})
 add_precompiled_header(${ModelicaUtilitiesName} runtime/include/Core/Modelica.h )
 
 

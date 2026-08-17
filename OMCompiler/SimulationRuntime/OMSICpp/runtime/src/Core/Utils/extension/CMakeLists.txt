@@ -5,7 +5,7 @@ project(${ExtensionUtilitiesName})
 add_library(${ExtensionUtilitiesName} measure_time.cpp measure_time_statistic.cpp measure_time_rdtsc.cpp measure_time_scorep.cpp logger.cpp)
 
 if(NOT BOOST_STATIC_LINKING)
-  target_link_libraries (${ExtensionUtilitiesName} ${Boost_LIBRARIES})
+  target_link_libraries (${ExtensionUtilitiesName} omsicpp_boost_libs)
 endif(NOT BOOST_STATIC_LINKING)
 
 if(NOT BUILD_SHARED_LIBS)
@@ -53,7 +53,7 @@ if(PAPI_FOUND)
   add_library("${ExtensionUtilitiesName}_papi" SHARED measure_time_papi.cpp)
 
   if(NOT BOOST_STATIC_LINKING)
-    target_link_libraries ("${ExtensionUtilitiesName}_papi" ${Boost_LIBRARIES})
+    target_link_libraries ("${ExtensionUtilitiesName}_papi" omsicpp_boost_libs)
   endif(NOT BOOST_STATIC_LINKING)
 
   install(TARGETS "${ExtensionUtilitiesName}_papi" DESTINATION ${LIBINSTALLEXT})

@@ -10,7 +10,7 @@ set(BASE_LIB "" CACHE INTERNAL "" )
 #ENDIF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))
 
 add_library(${ExtendedSystemName} ExtendedSimObjects.cpp ExtendedSystem.cpp ExtendedSimVars.cpp FactoryExport.cpp)
-target_link_libraries(${ExtendedSystemName} ${SystemBaseName}  ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} ${SimulationSettings} ${ExtensionUtilitiesName})
+target_link_libraries(${ExtendedSystemName} ${SystemBaseName}  omsicpp_boost_libs ${LAPACK_LIBRARIES} ${OMCFactoryName} ${SimulationSettings} ${ExtensionUtilitiesName})
 
 
 if(NOT BUILD_SHARED_LIBS)
