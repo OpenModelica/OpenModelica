@@ -10,6 +10,7 @@ RecompileSourceCodeFMU.mos \
 simpleStiffFMU.mos \
 issue10523.mos \
 Issue14456.mos \
+Issue15532.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

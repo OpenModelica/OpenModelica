@@ -394,6 +394,14 @@ algorithm
       zeroCrossings := listAppend(relations, sampleZC);
     end if;
 
+    // Assign valid indices to delay() expressions that were created by
+    // differentiation (Differentiate.mo emits DAE.ICONST(-1) placeholders, e.g.
+    // for the output derivatives of a CS FMU). extractJacobianDelayedExpressions
+    // below only fixes the jacobian equation systems, so fix the main equations
+    // (in place) and the zero-crossing conditions here, before the SimCode
+    // equations are created from dlow. See ticket #15532.
+    (zeroCrossings, relations) := updateUnassignedDelayExpressions(dlow, zeroCrossings, relations);
+
     (clockedSysts, contSysts) := List.splitOnTrue(dlow.eqs, BackendDAEUtil.isClockedSyst);
     execStat("simCode: created event and clocks part");
 
@@ -5887,7 +5895,90 @@ algorithm
   end match;
 end extractIdAndExpFromDelayExp;
 
-function extractSpatialDistributionInfo
+public function updateUnassignedDelayExpressions
+  "Differentiate.mo emits DAE.ICONST(-1) as a placeholder index when differentiating
+   delay() calls, e.g. to compute the output derivatives of a CS FMU. The fixup in
+   extractJacobianDelayedExpressions only assigns valid indices within jacobian
+   equation systems. This function assigns valid indices to the negative placeholders
+   in the main BackendDAE equations (updated in place) and rewrites the corresponding
+   delayZeroCrossing() conditions of the given zero crossings and relations, so that
+   code generation produces consistent delayImpl/storeDelayedExpression/delayZeroCrossing
+   calls. See ticket #15532."
+  input BackendDAE.BackendDAE dlow;
+  input output list<BackendDAE.ZeroCrossing> zeroCrossings;
+  input output list<BackendDAE.ZeroCrossing> relations;
+protected
+  Integer maxDelayedExpIndex;
+  list<DAE.Exp> new_delayedExps;
+  list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> newDelayedExps;
+algorithm
+  (_, maxDelayedExpIndex) := extractDelayedExpressions(dlow);
+  (_, (new_delayedExps, _)) := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(dlow,
+      Expression.traverseSubexpressionsHelper, (updateDelayExpressions, ({}, maxDelayedExpIndex)));
+  if not listEmpty(new_delayedExps) then
+    newDelayedExps := List.map(new_delayedExps, extractIdAndExpFromDelayExp);
+    zeroCrossings := updateDelayZeroCrossings(zeroCrossings, newDelayedExps);
+    relations := updateDelayZeroCrossings(relations, newDelayedExps);
+  end if;
+end updateUnassignedDelayExpressions;
+
+protected function updateDelayZeroCrossings
+  input list<BackendDAE.ZeroCrossing> zeroCrossings;
+  input list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> newDelayedExps;
+  output list<BackendDAE.ZeroCrossing> outZeroCrossings = {};
+protected
+  DAE.Exp relation;
+algorithm
+  for zc in zeroCrossings loop
+    (relation, _) := Expression.traverseSubexpressions(zc.relation_, newDelayedExps, updateDelayZeroCrossingExpressions);
+    zc.relation_ := relation;
+    outZeroCrossings := zc :: outZeroCrossings;
+  end for;
+  outZeroCrossings := listReverse(outZeroCrossings);
+end updateDelayZeroCrossings;
+
+protected function updateDelayZeroCrossingExpressions
+  "Replaces a negative placeholder index of a delayZeroCrossing() call with the index
+   of the differentiated delay() expression with matching delay time."
+  input output DAE.Exp e;
+  input output list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> newDelayedExps;
+algorithm
+  e := match e
+    local
+      Integer i, r, index;
+      DAE.Exp delayTime;
+      DAE.CallAttributes attr;
+    case DAE.CALL(path = Absyn.IDENT("delayZeroCrossing"), expLst = {DAE.ICONST(i), DAE.ICONST(r), delayTime}, attr = attr)
+      guard i < 0
+      algorithm
+        index := matchDelayTimeIndex(delayTime, newDelayedExps);
+        if index < 0 then
+          index := i; // no match found, keep as-is
+        end if;
+      then DAE.CALL(Absyn.IDENT("delayZeroCrossing"), {DAE.ICONST(index), DAE.ICONST(r), delayTime}, attr);
+    else e;
+  end match;
+end updateDelayZeroCrossingExpressions;
+
+protected function matchDelayTimeIndex
+  "Returns the index of the first new delayed expression whose delay time matches
+   the given expression, or -1 if there is no match."
+  input DAE.Exp delayTime;
+  input list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> newDelayedExps;
+  output Integer index;
+algorithm
+  index := match newDelayedExps
+    local
+      Integer i;
+      DAE.Exp dt;
+      list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> rest;
+    case {} then -1;
+    case (i, (_, dt, _)) :: rest
+      then if ExpressionBasics.expEqual(delayTime, dt) then i else matchDelayTimeIndex(delayTime, rest);
+  end match;
+end matchDelayTimeIndex;
+
+public function extractSpatialDistributionInfo
   "Create spatialDistribution simCode from backend DAE."
   input BackendDAE.BackendDAE dlow;
   output SimCode.SpatialDistributionInfo spatialInfo;
