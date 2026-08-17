@@ -527,6 +527,12 @@ pub fn note_runtime_error(msg: &str) {
     // The whole `vsnprintf` buffer is one message, so a format ending in a
     // newline must not turn into a blank line.
     omclog::message_text(omclog::DEBUG_TYPE, omclog::ASSERT, false, msg.trim_end());
+    note_runtime_error_flag();
+}
+
+/// Raise the flag alone: an in-wasm runtime has already logged the message and
+/// relays only this over `env.rt_host_runtime_error`.
+pub fn note_runtime_error_flag() {
     RUNTIME_ERROR.store(true, Ordering::Relaxed);
 }
 

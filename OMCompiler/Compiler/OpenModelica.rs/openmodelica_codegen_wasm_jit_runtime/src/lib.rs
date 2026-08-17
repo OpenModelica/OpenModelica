@@ -88,6 +88,26 @@ fn trap() -> ! {
     unreachable!("wasm runtime trap on host test build")
 }
 
+/// Log the message and raise the flag `enrich_trap` reads for the trap that
+/// follows. It runs on the host, and this module has its own copy of the driver's
+/// statics, so the flag goes over `env.rt_host_runtime_error` too.
+pub(crate) fn note_runtime_error(msg: &str) {
+    openmodelica_sim_meta::driver::note_runtime_error(msg);
+    host_runtime_error();
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone")))]
+fn host_runtime_error() {
+    #[link(wasm_import_module = "env")]
+    unsafe extern "C" {
+        fn rt_host_runtime_error();
+    }
+    unsafe { rt_host_runtime_error() };
+}
+
+#[cfg(not(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone"))))]
+fn host_runtime_error() {}
+
 // `rt_reinit_note(state_off, value)`: the model records an executed `reinit` for
 // the driver's `LOG_EVENTS` block. Every generated model imports it, so every
 // host-free consumer must define it — the standalone export and the FMI3 adapter
@@ -154,7 +174,7 @@ pub use uri::set_resources_dir;
 // host binds `env.Modelica*` instead.
 #[cfg(not(feature = "host_log"))]
 mod ext_report {
-    use openmodelica_sim_meta::{driver, omclog};
+    use openmodelica_sim_meta::omclog;
 
     fn cstr<'a>(p: u32) -> &'a str {
         unsafe { core::ffi::CStr::from_ptr(p as *const core::ffi::c_char) }.to_str().unwrap_or("")
@@ -175,7 +195,7 @@ mod ext_report {
     #[unsafe(no_mangle)]
     pub extern "C" fn rt_ext_error(msg: u32) {
         if crate::nls::rt_nls_recovering() == 0 {
-            driver::note_runtime_error(cstr(msg));
+            crate::note_runtime_error(cstr(msg));
         }
         unsafe { om_throw_model_error() };
         crate::trap()
@@ -1301,15 +1321,29 @@ rt_math1!(atanh);
 rt_math2!(hypot);
 rt_math2!(fmod);
 
+/// C's `throwStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__,
+/// __LINE__, base, exp)`, with `loc` the `"<file>:<line>: "` prefix in place of
+/// the generated C position.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_invalid_root(base: f64, exp: f64, loc: u32) {
+    use openmodelica_sim_meta::driver::format_g;
+    let at = if loc == 0 { "" } else { core::str::from_utf8(unsafe { str_bytes(loc) }).unwrap_or("") };
+    nls::throw_stream(&format!(
+        "{at}Invalid root: ({})^({})",
+        format_g(base, 6),
+        format_g(exp, 6)
+    ));
+}
+
 /// Scalar `base ^ exp` for a non-integer-literal exponent, replicating the C
 /// target's inlined generic real-power semantics so the result stays
 /// byte-identical. A negative base with an (effectively) integer exponent or an
 /// odd-root fractional exponent gives a real value; any other negative-base
 /// fractional exponent is an "invalid root"; and any nan/inf result is rejected.
-/// The error cases go through [`nls::model_error`], as C's `throwStreamPrint`
+/// The error cases go through [`rt_invalid_root`], as C's `throwStreamPrint`
 /// does: fatal unless a nonlinear solver can back off.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
+pub extern "C" fn rt_real_pow(base: f64, exp: f64, loc: u32) -> f64 {
     let result;
     if base < 0.0 && exp != 0.0 {
         // Split the exponent into integer / fractional parts and round to the
@@ -1342,7 +1376,7 @@ pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
             if libm::fabs(ifrac) < 1e-10 && ((iint as i64 as u64) & 1) != 0 {
                 result = -libm::pow(-base, frac) * libm::pow(base, int);
             } else {
-                nls::model_error();
+                rt_invalid_root(base, exp, loc);
                 return 0.0;
             }
         }
@@ -1350,7 +1384,7 @@ pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
         result = libm::pow(base, exp);
     }
     if result.is_nan() || result.is_infinite() {
-        nls::model_error();
+        rt_invalid_root(base, exp, loc);
         return 0.0;
     }
     result

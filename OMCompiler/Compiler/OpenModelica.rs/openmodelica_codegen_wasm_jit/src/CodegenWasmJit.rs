@@ -5678,6 +5678,27 @@ fn dae_residual_equations(dae: &SimCode::DaeModeData) -> Vec<(Arc<SimCode::SimEq
     out
 }
 
+/// `SimCodeUtil.eqInfo`.
+fn eq_info(eq: &SimCode::SimEqSystem) -> Option<&metamodelica::SourceInfo> {
+    use SimCode::SimEqSystem as E;
+    match eq {
+        E::SES_RESIDUAL { source, .. }
+        | E::SES_FOR_RESIDUAL { source, .. }
+        | E::SES_GENERIC_RESIDUAL { source, .. }
+        | E::SES_SIMPLE_ASSIGN { source, .. }
+        | E::SES_SIMPLE_ASSIGN_CONSTRAINTS { source, .. }
+        | E::SES_ARRAY_CALL_ASSIGN { source, .. }
+        | E::SES_RESIZABLE_ASSIGN { source, .. }
+        | E::SES_GENERIC_ASSIGN { source, .. }
+        | E::SES_ENTWINED_ASSIGN { source, .. }
+        | E::SES_IFEQUATION { source, .. }
+        | E::SES_WHEN { source, .. }
+        | E::SES_FOR_LOOP { source, .. }
+        | E::SES_FOR_EQUATION { source, .. } => Some(&source.info),
+        _ => None,
+    }
+}
+
 /// The equation's `BackendDAE.EquationAttributes`, absent for the few systems that
 /// carry none (`SES_ALIAS` and friends).
 fn eq_attr_of(eq: &SimCode::SimEqSystem) -> Option<&openmodelica_backend_types::BackendDAE::EquationAttributes> {
@@ -6308,6 +6329,9 @@ pub(crate) fn lower_equation(
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
 ) -> Result<()> {
     use SimCode::SimEqSystem as E;
+    if let Some(info) = eq_info(eq) {
+        ctx.set_src_loc(info);
+    }
     match eq {
         E::SES_SIMPLE_ASSIGN { cref, exp, .. } => {
             let lhs = DAE::Exp::CREF { componentRef: cref.clone(), ty: t_real() };

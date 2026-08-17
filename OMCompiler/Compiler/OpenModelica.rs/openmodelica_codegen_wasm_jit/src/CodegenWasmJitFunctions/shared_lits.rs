@@ -88,6 +88,7 @@ pub(crate) fn build_init_fn(
         loops: Vec::new(),
         borrowed_locals: Vec::new(),
         elem_ptr_tmp: None,
+        src_loc: None,
         sim: None,
     };
     for (i, e) in exps.iter().enumerate() {

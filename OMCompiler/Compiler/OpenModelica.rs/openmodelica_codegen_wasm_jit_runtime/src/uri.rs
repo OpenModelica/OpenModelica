@@ -34,7 +34,7 @@ pub extern "C" fn rt_uri_to_filename(uri: u32, fmu: i32) -> u32 {
         Ok(path) => crate::new_str_from(&path),
         Err(msg) => {
             // C's `omc_assert` + `MMC_THROW`: report and abort the run.
-            openmodelica_sim_meta::driver::note_runtime_error(&msg);
+            crate::note_runtime_error(&msg);
             crate::trap()
         }
     }
