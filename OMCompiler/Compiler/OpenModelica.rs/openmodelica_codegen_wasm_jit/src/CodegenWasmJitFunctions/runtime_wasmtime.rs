@@ -1505,16 +1505,16 @@ mod tests {
     #[test]
     fn precompiled_runtime_real_pow() {
         let (mut store, inst) = runtime_instance();
-        let pow = inst.get_typed_func::<(f64, f64), f64>(&mut store, "rt_real_pow").unwrap();
-        assert_eq!(pow.call(&mut store, (2.0, 3.0)).unwrap(), 8.0);
-        assert_eq!(pow.call(&mut store, (4.0, 0.5)).unwrap(), 2.0);
+        let pow = inst.get_typed_func::<(f64, f64, i32), f64>(&mut store, "rt_real_pow").unwrap();
+        assert_eq!(pow.call(&mut store, (2.0, 3.0, 0)).unwrap(), 8.0);
+        assert_eq!(pow.call(&mut store, (4.0, 0.5, 0)).unwrap(), 2.0);
         // Negative base, (effectively) integer exponent → real.
-        assert_eq!(pow.call(&mut store, (-2.0, 3.0)).unwrap(), -8.0);
+        assert_eq!(pow.call(&mut store, (-2.0, 3.0, 0)).unwrap(), -8.0);
         // Odd root of a negative base → real (within rounding of 1/3).
-        assert!((pow.call(&mut store, (-27.0, 1.0 / 3.0)).unwrap() + 3.0).abs() < 1e-9);
+        assert!((pow.call(&mut store, (-27.0, 1.0 / 3.0, 0)).unwrap() + 3.0).abs() < 1e-9);
         // Invalid root and overflow-to-inf both trap.
-        assert!(pow.call(&mut store, (-2.0, 0.5)).is_err());
-        assert!(pow.call(&mut store, (1e300, 2.0)).is_err());
+        assert!(pow.call(&mut store, (-2.0, 0.5, 0)).is_err());
+        assert!(pow.call(&mut store, (1e300, 2.0, 0)).is_err());
     }
 
     /// `rt_mod_int`: floored integer modulo, result takes the divisor's sign.

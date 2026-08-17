@@ -409,8 +409,10 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // integer powers stay byte-identical instead of going through generic pow).
     ("rt_real_int_pow", &[WTy::F64, WTy::I32], &[WTy::F64]),
     // `base ^ exp` generic scalar power matching the C target's negative-base /
-    // odd-root / nan-inf handling (an invalid root is a model error).
-    ("rt_real_pow", &[WTy::F64, WTy::F64], &[WTy::F64]),
+    // odd-root / nan-inf handling; the third argument is the source position an
+    // invalid root reports at.
+    ("rt_real_pow", &[WTy::F64, WTy::F64, WTy::I32], &[WTy::F64]),
+    ("rt_invalid_root", &[WTy::F64, WTy::F64, WTy::I32], &[]),
     // Integer `mod(x,y)` — floored modulo (result takes the divisor's sign).
     ("rt_mod_int", &[WTy::I32, WTy::I32], &[WTy::I32]),
     // Shape / geometric array builtins: vector / matrix reshape, symmetric,
@@ -1292,6 +1294,11 @@ pub(crate) struct FnCtx<'a> {
     /// Scratch pair shared by every [`emit_elem_ptr`] in the body: its sequence is
     /// straight-line, so one pair is enough.
     elem_ptr_tmp: Option<(u32, u32)>,
+    /// Where the equation or statement being lowered came from: C reports a model
+    /// error at the generated C position, which `-d=gendebugsymbols` rewrites to
+    /// this one, and there is no generated C here to name. Rendered only at the
+    /// few sites that can raise one ([`emit_src_loc`]).
+    src_loc: Option<metamodelica::SourceInfo>,
     /// Set when lowering *simulation* equations (the `CodegenWasmJit` target): a
     /// resolver that maps model component references not bound as wasm locals to
     /// slots in the shared `SimData` block. `None` for ordinary function bodies.
@@ -1590,6 +1597,10 @@ impl<'a> FnCtx<'a> {
         Ok(())
     }
 
+    pub(crate) fn set_src_loc(&mut self, info: &metamodelica::SourceInfo) {
+        self.src_loc = Some(info.clone());
+    }
+
     /// Instructions emitted so far: where to cut a split equation function.
     pub(crate) fn instr_len(&self) -> usize {
         self.instrs.len()
@@ -1671,6 +1682,7 @@ impl<'a> FnCtx<'a> {
             loops: Vec::new(),
             borrowed_locals: Vec::new(),
             elem_ptr_tmp: None,
+            src_loc: None,
             sim: Some(sim),
         }
     }
@@ -2320,7 +2332,7 @@ fn compile_function_body(
         intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, sim: None };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None };
     // In declaration order, like C's `varInit` loop: a declaration's dimensions
     // may read an earlier one (`Integer n = size(x,1); Real delta[n-1]`), so
     // allocation and binding must interleave. `variableDeclarations` already
@@ -2387,7 +2399,7 @@ fn compile_external_function(
         intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, sim: None };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None };
     // In the order the C body emits them: `extFunCallF77` appends the `biVars` to
     // the *outputAlloc* buffer, ahead of the outputs (`output Real x[max(nrow,
     // ncol)] = cat(…nrow…)` reads them); `extFunCallC` appends them behind.
@@ -4256,8 +4268,33 @@ fn emit_nth_root(ctx: &mut FnCtx, argv: &[&Arc<DAE::Exp>], name: &str) -> Result
     Ok(SigTy::Real)
 }
 
+/// `DAEUtil.getStatementSource`.
+fn stmt_source(stmt: &DAE::Statement) -> &Arc<DAE::ElementSource> {
+    use DAE::Statement as S;
+    match stmt {
+        S::STMT_ASSIGN { source, .. }
+        | S::STMT_TUPLE_ASSIGN { source, .. }
+        | S::STMT_ASSIGN_ARR { source, .. }
+        | S::STMT_IF { source, .. }
+        | S::STMT_FOR { source, .. }
+        | S::STMT_PARFOR { source, .. }
+        | S::STMT_WHILE { source, .. }
+        | S::STMT_WHEN { source, .. }
+        | S::STMT_ASSERT { source, .. }
+        | S::STMT_TERMINATE { source, .. }
+        | S::STMT_REINIT { source, .. }
+        | S::STMT_NORETCALL { source, .. }
+        | S::STMT_RETURN { source, .. }
+        | S::STMT_BREAK { source, .. }
+        | S::STMT_CONTINUE { source, .. }
+        | S::STMT_ARRAY_INIT { source, .. }
+        | S::STMT_FAILURE { source, .. } => source,
+    }
+}
+
 fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()> {
     use DAE::Statement as S;
+    ctx.set_src_loc(&stmt_source(stmt).info);
     match stmt {
         S::STMT_ASSIGN { exp1, exp, .. } => compile_assign(ctx, exp1, exp),
         S::STMT_TUPLE_ASSIGN { expExpLst, exp, .. } => compile_tuple_assign(ctx, expExpLst, exp),
@@ -7127,16 +7164,22 @@ fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::
     // choice as C keeps the output byte-identical.
     if matches!(op, O::POW { .. }) {
         if exp_is_half(e2) {
-            // sqrt(base); a negative base is an invalid root → trap (fail()).
+            // sqrt(base); a negative base is an invalid root. `rt_invalid_root`
+            // returns only where the throw is recoverable, as `emit_div_zero_guard`.
             let a = compile_exp(ctx, e1)?;
             coerce(ctx, a, WTy::F64);
             let bt = ctx.alloc_temp(WTy::F64);
-            ctx.emit(we::Instruction::LocalSet(bt));
-            ctx.emit(we::Instruction::LocalGet(bt));
+            ctx.emit(we::Instruction::LocalTee(bt));
             ctx.emit(we::Instruction::F64Const(0.0f64.into()));
             ctx.emit(we::Instruction::F64Lt);
             ctx.emit(we::Instruction::If(we::BlockType::Empty));
-            emit_runtime_error(ctx, "wasm-jit: sqrt of a negative number (fractional power of a negative base)")?;
+            ctx.emit(we::Instruction::LocalGet(bt));
+            ctx.emit(we::Instruction::F64Const(0.5f64.into()));
+            emit_src_loc(ctx);
+            ctx.emit(we::Instruction::Call(rt_index("rt_invalid_root")?));
+            release_heap_locals(ctx)?;
+            push_outputs(ctx);
+            ctx.emit(we::Instruction::Return);
             ctx.emit(we::Instruction::End);
             ctx.emit(we::Instruction::LocalGet(bt));
             ctx.emit(we::Instruction::F64Sqrt);
@@ -7152,6 +7195,7 @@ fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::
             coerce(ctx, a, WTy::F64);
             let b = compile_exp(ctx, e2)?;
             coerce(ctx, b, WTy::F64);
+            emit_src_loc(ctx);
             "rt_real_pow"
         };
         ctx.emit(we::Instruction::Call(rt_index(rt)?));
@@ -7194,6 +7238,18 @@ fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::
 fn emit_shared_str(ctx: &mut FnCtx, s: &str) {
     let g = shared_lits::intern_const(&DAE::Exp::SCONST { string: s.into() });
     ctx.emit(we::Instruction::GlobalGet(g));
+}
+
+/// Push the `"<file>:<line>: "` prefix a model error raised here reports.
+fn emit_src_loc(ctx: &mut FnCtx) {
+    let s = match &ctx.src_loc {
+        Some(i) if i.lineNumberStart > 0 && !i.fileName.is_empty() => {
+            let file = openmodelica_util::Testsuite::friendly(i.fileName.clone()).unwrap_or_else(|_| i.fileName.clone());
+            format!("{file}:{}: ", i.lineNumberStart)
+        }
+        _ => String::new(),
+    };
+    emit_shared_str(ctx, &s);
 }
 
 /// The divisor is on the stack: hold it in a temp, and where it is zero throw as

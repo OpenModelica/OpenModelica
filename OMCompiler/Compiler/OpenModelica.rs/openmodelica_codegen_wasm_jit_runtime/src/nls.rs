@@ -183,17 +183,19 @@ pub extern "C" fn rt_throw_stream(msg: u32) {
     throw_stream(core::str::from_utf8(unsafe { crate::str_bytes(msg) }).unwrap_or(""))
 }
 
-fn throw_stream(s: &str) {
+pub(crate) fn throw_stream(s: &str) {
     let recovering = rt_nls_recovering() != 0;
     // C's `longjmp` leaves the rest of the evaluation unreached, so it reports one
     // throw per evaluation. Here each frame returns and the ones above it carry on:
     // report only the throw C's jump would have carried out.
     if !(recovering && note_slot().load(Ordering::Relaxed) != 0) {
         if recovering {
-            crate::omclog::message_text(crate::omclog::DEBUG_TYPE, crate::omclog::ASSERT, false, s);
+            if crate::omclog::active(crate::omclog::ASSERT) {
+                crate::omclog::message_text(crate::omclog::DEBUG_TYPE, crate::omclog::ASSERT, false, s);
+            }
         } else {
             // Also arms the trap below to report as an assertion, not a crash.
-            openmodelica_sim_meta::driver::note_runtime_error(s);
+            crate::note_runtime_error(s);
         }
     }
     if !recovering {
