@@ -11,9 +11,7 @@ simulate(Delta, variableFilter = "time|x", numberOfIntervals=10, fileNamePrefix 
 buildModel(Delta); getErrorString();
 
 for a in {0,1,2,3} loop
-  str_a := String(a); getErrorString();
-  str_cmd := "./Delta -override a=" + str_a;
-  system(str_cmd, "output.txt"); getErrorString();
+  simulate(Delta, simflags="-override a=" + String(a), resimulateExecutable="Delta"); getErrorString();
   res := deltaSimulationResults("Delta_res.mat","Delta_reference_res.mat", "1norm", {"x"});getErrorString();
   res1 := deltaSimulationResults("Delta_res.mat","Delta_reference_res.mat", "2norm", {"x"});getErrorString();
   res2 := deltaSimulationResults("Delta_res.mat","Delta_reference_res.mat", "maxerr", {"x"});getErrorString();
