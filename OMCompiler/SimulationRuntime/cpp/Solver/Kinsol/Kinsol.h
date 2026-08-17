@@ -125,8 +125,7 @@ private:
   SUNMatrix
       _Kin_J;             ///< Temp       - Matrix template for cloning matrices needed within linear solver
 
-  /* SUNDIALS simulation context. Since SUNDIALS 6 every SUNDIALS object has to be
-     created with one. Owned by this solver instance. */
+  /* SUNDIALS simulation context. Owned by this solver instance. */
   SUNContext _sunctx;
 
   void

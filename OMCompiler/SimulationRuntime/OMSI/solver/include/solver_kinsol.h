@@ -71,8 +71,7 @@ typedef struct kinsol_user_data {
  * Solver data for kinsol solver.
  */
 typedef struct solver_data_kinsol {
-    SUNContext sunctx;                      /**< SUNDIALS simulation context. Since SUNDIALS 6
-                                                 every SUNDIALS object has to be created with one.
+    SUNContext sunctx;                      /**< SUNDIALS simulation context.
                                                  Owned by this struct, one per solver instance. */
     void* kinsol_solver_object;             /**< KINSOL memory block */
     kinsol_user_data* kin_user_data;        /**< Pointer to user_data given to all kinsol functions */

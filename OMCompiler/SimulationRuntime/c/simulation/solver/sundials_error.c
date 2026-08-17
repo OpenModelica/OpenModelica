@@ -787,8 +787,7 @@ static void checkReturnFlag_SUNLS(SUNErrCode flag, const char *functionName) {
 /**
  * @brief Checks given SUNMatrix flag and reports potential error.
  *
- * Since SUNDIALS 7 the SUNMatrix operations return a generic SUNErrCode instead
- * of the old SUNMAT_* codes, so let SUNDIALS spell the error out for us.
+ * SUNMatrix operations return a generic SUNErrCode, so let SUNDIALS spell the error out for us.
  *
  * @param flag          Return value of SUNMatrix routine.
  * @param functionName  Name of SUNMatrix function that returned the flag.

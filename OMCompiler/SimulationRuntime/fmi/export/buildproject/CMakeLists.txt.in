@@ -206,7 +206,7 @@ if(${NEED_CVODE})
   # Force static compilation on Windows or if CMake is too old
   if(WIN32 OR (${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none"))
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
-    target_compile_definitions(${FMU_NAME_HASH} PRIVATE LINK_SUNDIALS_STATIC)
+    target_compile_definitions(${FMU_NAME_HASH} PRIVATE SUNDIALS_STATIC_DEFINE)
   endif()
 
   message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
@@ -232,9 +232,6 @@ if(${NEED_CVODE})
   message(STATUS "SUNDIALS_NVECSERIAL_LIBRARY: ${SUNDIALS_NVECSERIAL_LIBRARY}")
   list(APPEND RUNTIME_DEPENDS ${SUNDIALS_NVECSERIAL_LIBRARY})
 
-  # Since SUNDIALS 7 the generic N_Vector/SUNMatrix/SUNLinearSolver operations and
-  # the SUNContext/SUNLogger implementation live in their own library instead of
-  # being compiled into every package library.
   find_library(SUNDIALS_CORE_LIBRARY sundials_core
                PATHS ${CVODE_DIRECTORY}
                NO_DEFAULT_PATH

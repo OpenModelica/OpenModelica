@@ -3944,11 +3944,10 @@ algorithm
                      CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
-               "(rm -rf " + buildDir + ") & " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
-               "cd .. && (rm -rf " + buildDir + ") || true";
+               "cd .. && rm -rf " + buildDir;
         if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
@@ -3964,11 +3963,10 @@ algorithm
                      CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
         cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
-               "(rm -rf " + buildDir + ") & " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
-               "cd .. && (rm -rf " + buildDir + ") || true";
+               "cd .. && rm -rf " + buildDir;
         if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
@@ -4145,7 +4143,7 @@ algorithm
   end if;
   if needs3rdPartyLibs then
     SUNDIALS :=  "1";
-    CPPFLAGS := CPPFLAGS + " -DWITH_SUNDIALS=1 -DLINK_SUNDIALS_STATIC" + " -Isundials";
+    CPPFLAGS := CPPFLAGS + " -DWITH_SUNDIALS=1 -DSUNDIALS_STATIC_DEFINE" + " -Isundials";
   else
     SUNDIALS :=  "";
   end if;

@@ -89,8 +89,7 @@ solver_status solver_kinsol_allocate_data(solver_data* general_solver_data)
         return solver_error;
     }
 
-    /* Mute SUNDIALS' own logger: since SUNDIALS 7 package level messages go to
-     * stderr/stdout by default, and we report solver failures ourselves. */
+    /* Mute SUNDIALS' own logger: package level messages go to stderr/stdout by default, and we report solver failures ourselves. */
     {
         SUNLogger logger = NULL;
         if (SUNContext_GetLogger(kinsol_data->sunctx, &logger) == SUN_SUCCESS && logger != NULL) {
@@ -200,9 +199,6 @@ solver_status solver_kinsol_init_data(solver_data*              general_solver_d
         general_solver_data->state = solver_error_state;
         return solver_error;
     }
-
-    /* KINSetPrintLevel is gone since SUNDIALS 7. KINSOL's progress output goes
-     * through the SUNLogger now and is off at our logging level anyway. */
 
     /* Set KINSOL user data */
     kinsol_data->kin_user_data = (kinsol_user_data*) solver_allocateMemory(1, sizeof(kinsol_user_data));

@@ -227,8 +227,7 @@ void Kinsol::initialize() {
      created with it. */
   if (SUNContext_Create(SUN_COMM_NULL, &_sunctx) != SUN_SUCCESS)
     throw ModelicaSimulationError(ALGLOOP_SOLVER,"SUNDIALS_ERROR: SUNContext_Create failed");
-  /* Mute SUNDIALS' own logger: since SUNDIALS 7 package level messages go to
-     stderr/stdout by default, and we report solver failures ourselves. */
+  /* Mute SUNDIALS' own logger: package level messages go to stderr/stdout by default, and we report solver failures ourselves. */
   {
     SUNLogger _sunlogger = NULL;
     if (SUNContext_GetLogger(_sunctx, &_sunlogger) == SUN_SUCCESS && _sunlogger != NULL) {
@@ -270,8 +269,6 @@ void Kinsol::initialize() {
     throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol::initialize()");
   }
 
-  /* KINSetErrFile is gone since SUNDIALS 7. KINSOL no longer writes error output to
-     a FILE* of its own; it goes through the SUNContext error handler / SUNLogger. */
   idid = KINSetNumMaxIters(_kinMem, 50);
 
   _fnormtol  = 1.e-13;     /* function tolerance */

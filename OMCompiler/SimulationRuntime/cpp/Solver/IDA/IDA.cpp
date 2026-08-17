@@ -281,8 +281,7 @@ void Ida::initialize()
     // Allocate memory for the solver
     if (SUNContext_Create(SUN_COMM_NULL, &_sunctx) != SUN_SUCCESS)
       throw ModelicaSimulationError(SOLVER,"SUNDIALS_ERROR: SUNContext_Create failed");
-    /* Mute SUNDIALS' own logger: since SUNDIALS 7 package level messages go to
-       stderr/stdout by default, and we report solver failures ourselves. */
+    /* Mute SUNDIALS' own logger: package level messages go to stderr/stdout by default, and we report solver failures ourselves. */
     {
       SUNLogger _sunlogger = NULL;
       if (SUNContext_GetLogger(_sunctx, &_sunlogger) == SUN_SUCCESS && _sunlogger != NULL) {
@@ -341,8 +340,6 @@ void Ida::initialize()
       _idid = -5;
       throw std::invalid_argument("Ida::initialize()");
     }
-	/* IDASetErrHandlerFn is gone since SUNDIALS 7; the error handler is pushed onto
-	   the SUNContext instead. */
 	_idid = SUNContext_PushErrHandler(_sunctx, errOutputIDA, _data);
 	 if (_idid < 0)
       throw std::invalid_argument("IDA::initialize()");
