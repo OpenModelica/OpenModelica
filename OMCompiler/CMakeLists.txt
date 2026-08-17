@@ -35,6 +35,11 @@ omc_option(OM_OMC_ENABLE_PRIMME "Should we enable sparse singular value support 
 
 omc_option(OM_OMC_ENABLE_COLPACK "Should we enable graph coloring with ColPack." ON)
 
+# Parallel (OpenMP) evaluation of the symbolic Jacobian columns in DASSL/IDA.
+# Experimental: needs an OpenMP capable C compiler and makes libSimulationRuntimeC
+# depend on the OpenMP runtime. See OMCompiler/SimulationRuntime/c/CMakeLists.txt.
+omc_option(OM_OMC_ENABLE_PARJAC "Should we enable OpenMP-parallel Jacobian evaluation (USE_PARJAC)." OFF)
+
 omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
 
 omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)

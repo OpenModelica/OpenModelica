@@ -1247,7 +1247,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   }
   omp_set_num_threads(num_threads);
 
-  infoStreamPrint(OMC_LOG_STDOUT, 0,
+  /* Keep this on LOG_SOLVER: it is emitted by every simulation of a runtime built
+     with USE_PARJAC and would otherwise show up in all reference outputs. */
+  infoStreamPrint(OMC_LOG_SOLVER, 0,
       "Number of OpenMP threads for parallel Jacobian evaluation: %d",
       omc_get_max_threads());
 #else

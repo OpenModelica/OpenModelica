@@ -26,7 +26,11 @@
  */
 #ifdef USE_PARJAC
   #include <omp.h>
-  #define GC_THREADS
+  /* GC_THREADS is normally already set by the build system (the omcgc target
+     defines it PUBLIC-ly); define it here as well for builds that do not. */
+  #ifndef GC_THREADS
+    #define GC_THREADS
+  #endif
   #include <gc/omc_gc.h>
 #endif
 
@@ -408,12 +412,16 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     case COLOREDSYMJAC:
       data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->maxColors;
       dasslData->jacobianFunction = jacA_symColored;
+#ifdef USE_PARJAC
+      allocateThreadLocalJacobians(data, &(dasslData->jacColumns), data->callback->INDEX_JAC_A);
+      dasslData->allocatedParMem = 1;   /* true */
+#endif
       break;
     case COLOREDSYMJACADJ:
       data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ].sparsePattern->maxColors;
       dasslData->jacobianFunction = jacADJ_symColored;
 #ifdef USE_PARJAC
-      allocateThreadLocalJacobians(data, &(dasslData->jacColumns));
+      allocateThreadLocalJacobians(data, &(dasslData->jacColumns), data->callback->INDEX_JAC_ADJ);
       dasslData->allocatedParMem = 1;   /* true */
 #endif
       break;
@@ -432,7 +440,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     case SYMJAC:
       dasslData->jacobianFunction = jacA_sym;
 #ifdef USE_PARJAC
-      allocateThreadLocalJacobians(data, &(dasslData->jacColumns));
+      allocateThreadLocalJacobians(data, &(dasslData->jacColumns), data->callback->INDEX_JAC_A);
       dasslData->allocatedParMem = 1;   /* true */
 #endif
       break;
@@ -1066,6 +1074,10 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
       jac->constantEqns(data, threadData, jac, NULL);
   }
 
+#ifdef USE_PARJAC
+  syncThreadLocalJacobians(t_jac, jac);
+#endif
+
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
                                            data, threadData, &setJacElementDasslSparse);
 
@@ -1123,6 +1135,10 @@ int jacADJ_symColored(double *t, double *y, double *yprime, double *delta,
   if (jac->constantEqns != NULL) {
       jac->constantEqns(data, threadData, jac, NULL);
   }
+
+#ifdef USE_PARJAC
+  syncThreadLocalJacobians(t_jac, jac);
+#endif
 
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
                                            data, threadData, &setJacElementDasslSparseAdj);
@@ -1204,6 +1220,7 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
   }
 
 #ifdef USE_PARJAC
+  syncThreadLocalJacobians(dasslData->jacColumns, jac);
   GC_allow_register_threads();
 #endif
 

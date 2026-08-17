@@ -30,7 +30,11 @@
 
 #ifdef USE_PARJAC
   #include <omp.h>
-  #define GC_THREADS
+  /* GC_THREADS is normally already set by the build system (the omcgc target
+     defines it PUBLIC-ly); define it here as well for builds that do not. */
+  #ifndef GC_THREADS
+    #define GC_THREADS
+  #endif
   #include <gc/omc_gc.h>
 #endif
 
@@ -463,10 +467,11 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   infoStreamPrint(OMC_LOG_SOLVER, 0, "IDA linear solver method selected %s", IDA_LS_METHOD_DESC[idaData->linearSolverMethod]);
 
   /* Set Jacobian function */
+  idaData->allocatedParMem = 0;   /* FALSE */
+  idaData->scaleMatrix = NULL;    /* allocated on demand, see getScalingFactors */
+
   /* Use sparse jacobian evaluation */
   if (idaData->linearSolverMethod == IDA_LS_KLU) {
-    idaData->allocatedParMem = 0;   /* FALSE */
-
     /* Set Jacobian function for matrix based linear solvers */
     switch (idaData->jacobianMethod){
     case SYMJAC:
@@ -476,13 +481,14 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       flag = IDASetJacFn(idaData->ida_mem, callSparseJacobian);
 
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
-#ifdef USE_PARJAC
-      allocateThreadLocalJacobians(data, &(idaData->jacColumns));
-      idaData->allocatedParMem = 1;   /* TRUE */
       if (omc_flag[FLAG_IDA_SCALING]) {
         idaData->scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, SUN_CSC_MAT, idaData->sunctx);
-      } else {
-        idaData->scaleMatrix = NULL;
+      }
+#ifdef USE_PARJAC
+      /* Only the symbolic paths evaluate the Jacobian in parallel */
+      if (idaData->jacobianMethod == SYMJAC || idaData->jacobianMethod == COLOREDSYMJAC) {
+        allocateThreadLocalJacobians(data, &(idaData->jacColumns), data->callback->INDEX_JAC_A);
+        idaData->allocatedParMem = 1;   /* TRUE */
       }
 #endif
       break;
@@ -500,8 +506,11 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       flag = IDASetJacFn(idaData->ida_mem, callDenseJacobian);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
 #ifdef USE_PARJAC
-      allocateThreadLocalJacobians(data, &(idaData->jacColumns));
-      idaData->allocatedParMem = 1;   /* TRUE */
+      /* Only the symbolic paths evaluate the Jacobian in parallel */
+      if (idaData->jacobianMethod == SYMJAC || idaData->jacobianMethod == COLOREDSYMJAC) {
+        allocateThreadLocalJacobians(data, &(idaData->jacColumns), data->callback->INDEX_JAC_A);
+        idaData->allocatedParMem = 1;   /* TRUE */
+      }
 #endif
       break;
     case INTERNALNUMJAC:
@@ -1547,6 +1556,7 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
   }
 
 #ifdef USE_PARJAC
+  syncThreadLocalJacobians(idaData->jacColumns, jac);
   GC_allow_register_threads();
 #endif
 
@@ -1579,7 +1589,19 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
     }
 
     data->callback->functionJacA_column(data, threadData, t_jac, NULL);
+#ifdef USE_PARJAC
+    /* simulationInfo->currentJacobianEval drives the "reuse matrix A" optimization of
+       the linear solvers (see reuseMatrixJac in linearSolverLapack/Klu/Umfpack). Every
+       thread has its own parDynamicData[thread].A that has to be built at least once,
+       so the counter must not be shared across threads. Only track it when the columns
+       are not actually evaluated in parallel; otherwise A is rebuilt per column.
+       ToDo: Make currentJacobianEval thread local and re-enable the optimization. */
+    if (omc_get_max_threads() == 1) {
+      increaseJacContext(data);
+    }
+#else
     increaseJacContext(data);
+#endif
 
     for(ii = 0; ii < N; ii++)
     {
@@ -1854,6 +1876,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
 
 #ifdef USE_PARJAC
   JACOBIAN* t_jac = (idaData->jacColumns);
+  syncThreadLocalJacobians(t_jac, jac);
 #else
   JACOBIAN* t_jac = jac;
 #endif

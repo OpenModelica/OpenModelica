@@ -29,57 +29,80 @@
  */
 
 #ifdef USE_PARJAC
-  #define GC_THREADS
+  /* GC_THREADS is normally already set by the build system (the omcgc target
+     defines it PUBLIC-ly); define it here as well for builds that do not. */
+  #ifndef GC_THREADS
+    #define GC_THREADS
+  #endif
   #include <gc/omc_gc.h>
 #endif
 
+#include <string.h>
+
 #include "jacobianSymbolical.h"
+#include "util/omc_error.h"
 
 #ifdef USE_PARJAC
 /** Allocate thread local Jacobians in case of OpenMP-parallel Jacobian computation.
  *
  * (symbolical only), used in IDA and Dassl.
+ *
+ * Each thread gets its own seedVars/tmpVars/resultVars working vectors. Everything
+ * else (sparse pattern, evaluation DAG, function pointers, coloring direction, ...)
+ * is read-only during the evaluation and is shared with the Jacobian the copies were
+ * made from.
+ *
+ * \param data            Runtime data struct.
+ * \param jacColumns      On output an array of omc_get_max_threads() Jacobians.
+ * \param jacobianIndex   Index into data->simulationInfo->analyticJacobians of the
+ *                        Jacobian that is evaluated in parallel (INDEX_JAC_A or
+ *                        INDEX_JAC_ADJ).
  */
 // ToDo: Make this usable without OpenMP and use it as default!
-void allocateThreadLocalJacobians(DATA* data, JACOBIAN** jacColumns)
+void allocateThreadLocalJacobians(DATA* data, JACOBIAN** jacColumns, int jacobianIndex)
 {
-  int maxTh = omc_get_max_threads();
+  const int maxTh = omc_get_max_threads();
+  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[jacobianIndex]);
+  int i;
+
   *jacColumns = (JACOBIAN*) malloc(maxTh*sizeof(JACOBIAN));
-  const int index = data->callback->INDEX_JAC_A;
-  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
-  SPARSE_PATTERN* sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
+  assertStreamPrint(NULL, *jacColumns != NULL, "allocateThreadLocalJacobians: Out of memory.");
 
-  unsigned int columns = jac->sizeCols;
-  unsigned int rows = jac->sizeRows;
-  unsigned int sizeTmpVars = jac->sizeTmpVars;
-
-  unsigned int i;
-
-#ifdef USE_PARJAC
-  GC_allow_register_threads();
-#endif
-
-#pragma omp parallel default(none) firstprivate(maxTh, columns, rows, sizeTmpVars, index) shared(sparsePattern, jacColumns, i)
-  /* Benchmarks indicate that it is beneficial to initialize and malloc the jacColumns using a parallel for loop. */
-  {
-  /* Register omp-thread in GC */
-  if(!GC_thread_is_registered()) {
-     struct GC_stack_base sb;
-     memset (&sb, 0, sizeof(sb));
-     GC_get_stack_base(&sb);
-     GC_register_my_thread (&sb);
-  }
-
-#pragma omp for schedule(runtime)
   for (i = 0; i < maxTh; ++i) {
-    (*jacColumns)[i].sizeCols = columns;
-    (*jacColumns)[i].sizeRows = rows;
-    (*jacColumns)[i].sizeTmpVars = sizeTmpVars;
-    (*jacColumns)[i].tmpVars    = (double*) calloc(sizeTmpVars, sizeof(double));
-    (*jacColumns)[i].resultVars = (double*) calloc(rows, sizeof(double));
-    (*jacColumns)[i].seedVars   = (double*) calloc(columns, sizeof(double));
-    (*jacColumns)[i].sparsePattern = sparsePattern;
+    JACOBIAN* t_jac = &((*jacColumns)[i]);
+    /* Start from an exact copy so that all fields that the generated column
+       function relies on (evalColumn, dag, isRowEval, dae_cj, bidirectional
+       data, ...) are set, then hand out private working vectors. */
+    memcpy(t_jac, jac, sizeof(JACOBIAN));
+    t_jac->seedVars   = (modelica_real*) calloc(jac->sizeCols, sizeof(modelica_real));
+    t_jac->resultVars = (modelica_real*) calloc(jac->sizeRows, sizeof(modelica_real));
+    t_jac->tmpVars    = (modelica_real*) calloc(jac->sizeTmpVars, sizeof(modelica_real));
+    assertStreamPrint(NULL, t_jac->seedVars != NULL && t_jac->resultVars != NULL
+                            && (jac->sizeTmpVars == 0 || t_jac->tmpVars != NULL),
+                      "allocateThreadLocalJacobians: Out of memory.");
   }
+}
+
+/** Propagate the per-evaluation state of the master Jacobian to the thread local copies.
+ *
+ * Has to be called before every parallel evaluation and after the constant equations
+ * of the Jacobian have been evaluated: the constant equations write seed independent
+ * partial derivatives into jac->tmpVars which every column evaluation reads, so each
+ * thread needs its own up to date copy of them.
+ *
+ * \param jacColumns  Array of thread local Jacobians.
+ * \param jac         Jacobian the copies were made from.
+ */
+void syncThreadLocalJacobians(JACOBIAN* jacColumns, const JACOBIAN* jac)
+{
+  const int maxTh = omc_get_max_threads();
+  int i;
+
+  for (i = 0; i < maxTh; ++i) {
+    jacColumns[i].dae_cj = jac->dae_cj;
+    if (jac->sizeTmpVars > 0) {
+      memcpy(jacColumns[i].tmpVars, jac->tmpVars, jac->sizeTmpVars*sizeof(modelica_real));
+    }
   }
 }
 #endif
@@ -187,11 +210,20 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
 }
 
 #ifdef USE_PARJAC
-/** Free JACOBIAN struct */
+/** Free the thread local Jacobians allocated by allocateThreadLocalJacobians().
+ *
+ * Only the private working vectors are owned by the copies; the sparse pattern,
+ * the evaluation DAG and the bidirectional data belong to the Jacobian they were
+ * copied from and must not be freed here.
+ */
 void freeAnalyticalJacobian(JACOBIAN** jacColumns)
 {
-  int maxTh = omc_get_max_threads();
-  unsigned int i;
+  const int maxTh = omc_get_max_threads();
+  int i;
+
+  if (*jacColumns == NULL) {
+    return;
+  }
 
   for (i = 0; i < maxTh; ++i) {
     free((*jacColumns)[i].tmpVars);
@@ -200,6 +232,7 @@ void freeAnalyticalJacobian(JACOBIAN** jacColumns)
   }
 
   free(*jacColumns);
+  *jacColumns = NULL;
 }
 #endif
 
