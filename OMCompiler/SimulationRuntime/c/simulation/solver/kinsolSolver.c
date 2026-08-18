@@ -206,6 +206,7 @@ NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_bo
   kinsolData->size = size;
   kinsolData->linearSolverMethod = userData->nlsData->nlsLinearSolver;
   kinsolData->solved = NLS_FAILED;
+  kinsolData->userData = userData;
 
   if (SUNContext_Create(SUN_COMM_NULL, &kinsolData->sunctx) != SUN_SUCCESS) {
     throwStreamPrint(NULL, "KINSOL: In function SUNContext_Create: An error occurred.");
@@ -248,7 +249,6 @@ NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_bo
   kinsolData->scaledJ = NULL;
 
   kinsolData->kinsolMemory = NULL;
-  kinsolData->userData = userData;
 
   initKinsolMemory(kinsolData);
 
@@ -274,6 +274,7 @@ void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData) {
   /* Free linear solver data */
   SUNLinSolFree(kinsolData->linSol);
   SUNMatDestroy(kinsolData->J);
+  SUNMatDestroy(kinsolData->scaledJ);
   N_VDestroy_Serial(kinsolData->y);
   if (kinsolData->tmp1 != NULL) {
     N_VDestroy_Serial(kinsolData->tmp1);
