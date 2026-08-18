@@ -42,6 +42,11 @@ JACOBIAN* copyJacobian(JACOBIAN* source);
 void freeJacobian(JACOBIAN* jac);
 void freeJacobianCopy(JACOBIAN* jac);
 
+/** Number of rows of the Jacobian matrix J described by `jac`. */
+size_t jacobianNumRows(const JACOBIAN* jac);
+/** Number of columns of the Jacobian matrix J described by `jac`. */
+size_t jacobianNumCols(const JACOBIAN* jac);
+
 void allocateThreadLocalJacobians(const JACOBIAN* source, JACOBIAN** jacColumns);
 void freeAnalyticalJacobian(JACOBIAN** jacColumns);
 
