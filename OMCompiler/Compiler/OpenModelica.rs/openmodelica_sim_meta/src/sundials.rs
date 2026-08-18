@@ -160,31 +160,34 @@ impl Cvode {
         if ctx.is_null() {
             return None;
         }
-        let mut cv = unsafe {
-            let y = N_VNew_Serial(n as SunIndex, ctx);
-            let atol_v = N_VNew_Serial(n as SunIndex, ctx);
-            let jac = SUNDenseMatrix(n as SunIndex, n as SunIndex, ctx);
-            if y.is_null() || atol_v.is_null() || jac.is_null() {
-                return None;
-            }
-            let lin_sol = SUNLinSol_Dense(y, jac, ctx);
-            let mem = CVodeCreate(CV_BDF, ctx);
-            if lin_sol.is_null() || mem.is_null() {
-                return None;
-            }
-            Cvode {
-                ctx,
-                mem,
-                y,
-                atol: atol_v,
-                jac,
-                lin_sol,
-                n,
-                n_roots,
-                roots: vec![0; n_roots.max(1)],
-                past: Counters::default(),
-            }
+        // Owned from here on: each handle is stored as soon as it exists, so a
+        // failure below drops `cv` and frees whatever was allocated already.
+        // The SUNDIALS free functions all ignore a null handle.
+        let mut cv = Cvode {
+            ctx,
+            mem: core::ptr::null_mut(),
+            y: core::ptr::null_mut(),
+            atol: core::ptr::null_mut(),
+            jac: core::ptr::null_mut(),
+            lin_sol: core::ptr::null_mut(),
+            n,
+            n_roots,
+            roots: vec![0; n_roots.max(1)],
+            past: Counters::default(),
         };
+        unsafe {
+            cv.y = N_VNew_Serial(n as SunIndex, ctx);
+            cv.atol = N_VNew_Serial(n as SunIndex, ctx);
+            cv.jac = SUNDenseMatrix(n as SunIndex, n as SunIndex, ctx);
+            if cv.y.is_null() || cv.atol.is_null() || cv.jac.is_null() {
+                return None;
+            }
+            cv.lin_sol = SUNLinSol_Dense(cv.y, cv.jac, ctx);
+            cv.mem = CVodeCreate(CV_BDF, ctx);
+            if cv.lin_sol.is_null() || cv.mem.is_null() {
+                return None;
+            }
+        }
         cv.set_y(y0);
         unsafe {
             core::ptr::copy_nonoverlapping(atol.as_ptr(), N_VGetArrayPointer(cv.atol), n);
@@ -488,46 +491,52 @@ impl Ida {
         if ctx.is_null() {
             return None;
         }
-        let mut ida = unsafe {
-            let y = N_VNew_Serial(n as SunIndex, ctx);
-            let yp = N_VNew_Serial(n as SunIndex, ctx);
-            let atol_v = N_VNew_Serial(n as SunIndex, ctx);
-            let j = match ls {
+        // Owned from here on: each handle is stored as soon as it exists, so a
+        // failure below drops `ida` and frees whatever was allocated already.
+        // The SUNDIALS free functions all ignore a null handle.
+        let mut ida = Ida {
+            ctx,
+            mem: core::ptr::null_mut(),
+            y: core::ptr::null_mut(),
+            yp: core::ptr::null_mut(),
+            atol: core::ptr::null_mut(),
+            jac: core::ptr::null_mut(),
+            lin_sol: core::ptr::null_mut(),
+            n,
+            n_roots,
+            roots: vec![0; n_roots.max(1)],
+            past: Counters::default(),
+            sens: None,
+            jac_fn: jac,
+        };
+        unsafe {
+            ida.y = N_VNew_Serial(n as SunIndex, ctx);
+            ida.yp = N_VNew_Serial(n as SunIndex, ctx);
+            ida.atol = N_VNew_Serial(n as SunIndex, ctx);
+            // Matrix-free Krylov keeps `jac` null; every other failure is fatal.
+            ida.jac = match ls {
                 IdaLs::Dense => SUNDenseMatrix(n as SunIndex, n as SunIndex, ctx),
                 IdaLs::Klu => SUNSparseMatrix(n as SunIndex, n as SunIndex, nnz as SunIndex, CSC_MAT, ctx),
                 _ => core::ptr::null_mut(),
             };
-            if [y, yp, atol_v].iter().any(|p| p.is_null()) || (j.is_null() && !ls.matrix_free()) {
+            if [ida.y, ida.yp, ida.atol].iter().any(|p| p.is_null())
+                || (ida.jac.is_null() && !ls.matrix_free())
+            {
                 return None;
             }
             // Krylov `maxl` is the system size, as `ida_solver.c` passes it.
-            let lin_sol = match ls {
-                IdaLs::Dense => SUNLinSol_Dense(y, j, ctx),
-                IdaLs::Klu => SUNLinSol_KLU(y, j, ctx),
-                IdaLs::Spgmr => SUNLinSol_SPGMR(y, PREC_NONE, n as c_int, ctx),
-                IdaLs::Spbcg => SUNLinSol_SPBCGS(y, PREC_NONE, n as c_int, ctx),
-                IdaLs::Sptfqmr => SUNLinSol_SPTFQMR(y, PREC_NONE, n as c_int, ctx),
+            ida.lin_sol = match ls {
+                IdaLs::Dense => SUNLinSol_Dense(ida.y, ida.jac, ctx),
+                IdaLs::Klu => SUNLinSol_KLU(ida.y, ida.jac, ctx),
+                IdaLs::Spgmr => SUNLinSol_SPGMR(ida.y, PREC_NONE, n as c_int, ctx),
+                IdaLs::Spbcg => SUNLinSol_SPBCGS(ida.y, PREC_NONE, n as c_int, ctx),
+                IdaLs::Sptfqmr => SUNLinSol_SPTFQMR(ida.y, PREC_NONE, n as c_int, ctx),
             };
-            let mem = IDACreate(ctx);
-            if lin_sol.is_null() || mem.is_null() {
+            ida.mem = IDACreate(ctx);
+            if ida.lin_sol.is_null() || ida.mem.is_null() {
                 return None;
             }
-            Ida {
-                ctx,
-                mem,
-                y,
-                yp,
-                atol: atol_v,
-                jac: j,
-                lin_sol,
-                n,
-                n_roots,
-                roots: vec![0; n_roots.max(1)],
-                past: Counters::default(),
-                sens: None,
-                jac_fn: jac,
-            }
-        };
+        }
         ida.y_mut().copy_from_slice(y0);
         ida.yp_mut().copy_from_slice(yp0);
         unsafe {
@@ -626,6 +635,7 @@ impl Ida {
                 p: p0.to_vec(),
             }
         };
+        // `sens` owns whatever cloned: dropping it here releases a partial set.
         if [sens.ys, sens.yps, sens.out].iter().any(|a| a.is_null()) {
             return false;
         }
@@ -791,15 +801,21 @@ impl Sens {
     }
 }
 
-impl Drop for Ida {
+impl Drop for Sens {
     fn drop(&mut self) {
-        if let Some(s) = self.sens.take() {
-            unsafe {
-                for a in [s.ys, s.yps, s.out] {
-                    N_VDestroyVectorArray(a, s.ns as c_int);
-                }
+        unsafe {
+            for a in [self.ys, self.yps, self.out] {
+                N_VDestroyVectorArray(a, self.ns as c_int);
             }
         }
+    }
+}
+
+impl Drop for Ida {
+    fn drop(&mut self) {
+        // Before the block below: the vectors were cloned from `y`/`yp` and made
+        // with `ctx`, both freed there.
+        drop(self.sens.take());
         unsafe {
             IDAFree(&mut self.mem);
             SUNLinSolFree(self.lin_sol);
