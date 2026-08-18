@@ -169,11 +169,11 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
   SPARSE_PATTERN* sparsePattern_DIRK;
 
   /* Get Sparsity of ODE Jacobian */
-  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  SPARSE_PATTERN* sparsePattern_ODE = jacobian->sparsePattern;
+  JACOBIAN* jacobian = getSymbolicOdeJacobian(data);
+  SPARSE_PATTERN* sparsePattern_ODE = getJacobianCscPattern(jacobian);
 
-  int sizeRows = jacobian->sizeRows;
-  int sizeCols = jacobian->sizeCols;
+  int sizeRows = jacobianNumRows(jacobian);
+  int sizeCols = jacobianNumCols(jacobian);
 
   /* Compute size of new sparsitiy pattern
    * Increase the size to contain non-zero elements on diagonal. */
@@ -185,8 +185,8 @@ SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sy
       }
     }
   }
-  int missingDiags = jacobian->sizeRows - nDiags;
-  int length_index = jacobian->sparsePattern->nnz + missingDiags;
+  int missingDiags = sizeRows - nDiags;
+  int length_index = sparsePattern_ODE->nnz + missingDiags;
 
   // Allocate memory for new sparsity pattern
   sparsePattern_DIRK = allocSparsePattern(sizeRows, length_index, sizeCols);
@@ -324,11 +324,11 @@ SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* s
   DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
 
   /* Get Sparsity of ODE Jacobian */
-  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  SPARSE_PATTERN* sparsePattern_ODE = jacobian->sparsePattern;
+  JACOBIAN* jacobian = getSymbolicOdeJacobian(data);
+  SPARSE_PATTERN* sparsePattern_ODE = getJacobianCscPattern(jacobian);
 
-  int sizeRows = jacobian->sizeRows;
-  int sizeCols = jacobian->sizeCols;
+  int sizeRows = jacobianNumRows(jacobian);
+  int sizeCols = jacobianNumCols(jacobian);
   int nStages  = gbData->tableau->nStages;
   int nStates  = gbData->nStates;
   double* A    = gbData->tableau->A;

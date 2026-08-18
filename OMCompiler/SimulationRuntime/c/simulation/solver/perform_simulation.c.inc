@@ -396,9 +396,10 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
   if (!compiledInDAEMode)
   {
-    printSparseStructure(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern,
-        data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows,
-        data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeCols,
+    JACOBIAN* odeJacobian = getSymbolicOdeJacobian(data);
+    printSparseStructure(getJacobianCscPattern(odeJacobian),
+        jacobianNumRows(odeJacobian),
+        jacobianNumCols(odeJacobian),
         OMC_LOG_SOLVER, "ODE sparse pattern");
   }
   else

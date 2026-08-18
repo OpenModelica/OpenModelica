@@ -369,17 +369,12 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     idaData->linearSolverMethod = IDA_LS_KLU;
   }
 
-  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-  sortSparseColumns(jacobian->sparsePattern, jacobian->sizeCols);
-  if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
-    infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
-    infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
-    infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
-    messageClose(OMC_LOG_SIMULATION);
-  }
-
-  idaData->jacobianMethod = setJacobianMethod(threadData, jacobian->availability);
+  /* Choose and initialize the ODE Jacobian. The mapping from the `-jacobian` flag to
+   * the forward / adjoint / bidirectional Jacobian is shared with DASSL and GBODE. */
+  idaData->jacobianMethod = getRequestedJacobianMethod(threadData);
+  JACOBIAN* jacobian = initSymbolicOdeJacobian(data, threadData, &idaData->jacobianMethod, FALSE);
+  /* IDA always needs a column oriented pattern, even for adjoint Jacobians. */
+  const SPARSE_PATTERN* cscPattern = getJacobianCscPattern(jacobian);
 
   // change IDA specific jacobian method
   if(idaData->jacobianMethod == SYMJAC) {
@@ -404,7 +399,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   if (idaData->daeMode) {
     idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->nnz;
   } else {
-    idaData->NNZ = jacobian->sparsePattern->nnz;
+    idaData->NNZ = cscPattern->nnz;
   }
 
   switch (idaData->linearSolverMethod){
