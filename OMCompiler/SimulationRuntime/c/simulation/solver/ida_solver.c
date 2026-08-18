@@ -464,13 +464,15 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     case SYMJAC:
     case NUMJAC:
     case COLOREDSYMJAC:
+    case COLOREDSYMJACADJ:
+    case BICOLOREDSYMJAC:
     case COLOREDNUMJAC:
       flag = IDASetJacFn(idaData->ida_mem, callSparseJacobian);
 
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
 #ifdef USE_PARJAC
-      if (idaData->jacobianMethod == COLOREDSYMJAC) {
-        allocateThreadLocalJacobians(&(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]), &(idaData->jacColumns));
+      if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == COLOREDSYMJACADJ) {
+        allocateThreadLocalJacobians(jacobian, &(idaData->jacColumns));
         idaData->allocatedParMem = 1;   /* TRUE */
       }
 #endif
@@ -481,7 +483,9 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       }
       break;
     default:
-      throwStreamPrint(threadData,"For the klu solver jacobian calculation method has to be %s or %s", JACOBIAN_METHOD_NAME[COLOREDSYMJAC], JACOBIAN_METHOD_NAME[COLOREDNUMJAC]);
+      throwStreamPrint(threadData,"For the klu solver jacobian calculation method has to be one of %s, %s, %s or %s",
+                       JACOBIAN_METHOD_NAME[COLOREDSYMJAC], JACOBIAN_METHOD_NAME[COLOREDSYMJACADJ],
+                       JACOBIAN_METHOD_NAME[BICOLOREDSYMJAC], JACOBIAN_METHOD_NAME[COLOREDNUMJAC]);
       break;
     }
   /* Use dense jacobian evaluation */
@@ -490,11 +494,13 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     case SYMJAC:
     case NUMJAC:
     case COLOREDSYMJAC:
+    case COLOREDSYMJACADJ:
+    case BICOLOREDSYMJAC:
     case COLOREDNUMJAC:
       flag = IDASetJacFn(idaData->ida_mem, callDenseJacobian);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
 #ifdef USE_PARJAC
-      allocateThreadLocalJacobians(&(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]), &(idaData->jacColumns));
+      allocateThreadLocalJacobians(jacobian, &(idaData->jacColumns));
       idaData->allocatedParMem = 1;   /* TRUE */
 #endif
       break;
@@ -1499,8 +1505,9 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
 /**
  * @brief Compute colored symbolic Jacobian.
  *
- * Calculate Jacobian matrix using analytic Jacobian column function
- * with coloring from sparsity pattern.
+ * Calculate the Jacobian matrix with the shared symbolic Jacobian evaluation, which
+ * transparently handles forward (coloredSymbolical), adjoint (coloredSymbolicalAdjoint)
+ * and bidirectional (bicoloredSymbolical) evaluation.
  *
  * @param currentTime   Independent variable (time).
  * @param cj            Scalar in the system Jacobian, proportional to the inverse of the step size.
@@ -1517,81 +1524,16 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
 {
   DATA* data = idaData->userData->data;
   threadData_t* threadData = idaData->userData->threadData;
-  void* ida_mem = idaData->ida_mem;
-  long int N = idaData->N;
-  const int index = data->callback->INDEX_JAC_A;
-  unsigned int i,ii,j, nth;
-  SPARSE_PATTERN* sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
-  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jac = getSymbolicOdeJacobian(data);
   jac->dae_cj = cj;
-
-  /* prepare variables */
-  double *states = N_VGetArrayPointer_Serial(yy);
-  double *yprime = N_VGetArrayPointer_Serial(yp);
 
   setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
-  /* Evaluate constant equations if available */
-  if (jac->constantEqns != NULL) {
-      jac->constantEqns(data, threadData, jac, NULL);
-  }
-
 #ifdef USE_PARJAC
-  GC_allow_register_threads();
-#endif
-
-#pragma omp parallel default(none) firstprivate(N) shared(i, sparsePattern, idaData, data, threadData, Jac) private(ii, j, nth)
-{
-#ifdef USE_PARJAC
-  /* Register omp-thread in GC */
-  if(!GC_thread_is_registered()) {
-     struct GC_stack_base sb;
-     memset (&sb, 0, sizeof(sb));
-     GC_get_stack_base(&sb);
-     GC_register_my_thread (&sb);
-  }
-  // ToDo Use always a thread local analyticJacobians (replace simulationInfo->analyticaJacobians)
-  // These are not the Jacobians of the linear systems! (SimulationInfo->linearSystemData[idx].jacobian)
-  JACOBIAN* t_jac = &(idaData->jacColumns[omc_get_thread_num()]);
+  evalJacobian(data, threadData, jac, NULL, idaData->allocatedParMem ? idaData->jacColumns : NULL, SM_DATA_D(Jac), TRUE);
 #else
-  JACOBIAN* t_jac = jac;
+  evalJacobian(data, threadData, jac, NULL, NULL, SM_DATA_D(Jac), TRUE);
 #endif
-
-#pragma omp for
-  for(i = 0; i < sparsePattern->maxColors; i++)
-  {
-    for(ii=0; ii < N; ii++)
-    {
-      if(sparsePattern->colorCols[ii]-1 == i)
-      {
-        t_jac->seedVars[ii] = 1;
-      }
-    }
-
-    data->callback->functionJacA_column(data, threadData, t_jac, NULL);
-    increaseJacContext(data);
-
-    for(ii = 0; ii < N; ii++)
-    {
-      if(sparsePattern->colorCols[ii]-1 == i)
-      {
-        nth = sparsePattern->leadindex[ii];
-        while(nth < sparsePattern->leadindex[ii+1])
-        {
-          j  =  sparsePattern->index[nth];
-          infoStreamPrint(OMC_LOG_JAC, 0, "### symbolical jacobian  at [%d,%d] = %f ###", j, ii, t_jac->resultVars[j]);
-          SM_ELEMENT_D(Jac, j, ii) = t_jac->resultVars[j];
-          nth++;
-        };
-      }
-    }
-
-    for(ii=0; ii < idaData->N; ii++)
-    {
-      t_jac->seedVars[ii] = 0;
-    }
-  } // for column
-} // omp parallel
 
   unsetContext(data);
 
@@ -1635,7 +1577,8 @@ static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
   {
     retVal = jacColoredNumericalDense(tt, cj, yy, yp, rr, Jac, idaData);
   }
-  else if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC)
+  else if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC
+           || idaData->jacobianMethod == COLOREDSYMJACADJ || idaData->jacobianMethod == BICOLOREDSYMJAC)
   {
     retVal = jacColoredSymbolicalDense(tt, cj, yy, yp, rr, Jac, idaData);
   }
@@ -1834,29 +1777,25 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)idaData->userData)->threadData);
-  const int index = data->callback->INDEX_JAC_A;
-  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jac = getSymbolicOdeJacobian(data);
   jac->dae_cj = cj;
 
-  /* prepare variables */
-  double *states = N_VGetArrayPointer_Serial(yy);
-  double *yprime = N_VGetArrayPointer_Serial(yp);
-
-  SPARSE_PATTERN* sparsePattern = jac->sparsePattern;
+  /* Column oriented pattern of J, also for adjoint / bidirectional Jacobians */
+  const SPARSE_PATTERN* cscPattern = getJacobianCscPattern(jac);
 
   /* Reset Jacobian matrix */
   SUNMatZero(Jac);
 
   setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
-  setSundialsSparsePattern(jac, Jac);
+  setSundialsSparsePattern(cscPattern, jacobianNumCols(jac), Jac);
 #ifdef USE_PARJAC
   evalJacobian(data, threadData, jac, NULL, idaData->allocatedParMem ? idaData->jacColumns : NULL, SM_DATA_S(Jac), FALSE);
 #else
   evalJacobian(data, threadData, jac, NULL, NULL, SM_DATA_S(Jac), FALSE);
 #endif
 
-  finishSparseColPtr(Jac, sparsePattern->nnz);
+  finishSparseColPtr(Jac, cscPattern->nnz);
   unsetContext(data);
 
   return 0;
@@ -1880,7 +1819,8 @@ static int callSparseJacobian(double currentTime, double cj,
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   rt_tick(SIM_TIMER_JACOBIAN);
 
-  if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC)
+  if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC
+      || idaData->jacobianMethod == COLOREDSYMJACADJ || idaData->jacobianMethod == BICOLOREDSYMJAC)
   {
     jacColoredSymbolicalSparse(currentTime, yy, yp, rr, Jac, cj, user_data);
   }

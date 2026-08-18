@@ -450,7 +450,13 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
 #endif
 
   rt_tick(SIM_TIMER_JACOBIAN);
-  JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  /* The multi-rate path drives a sub-set of the columns with its own coloring, so it
+   * always needs the forward Jacobian. All other paths use the Jacobian selected by
+   * the `-jacobian` flag, which may be evaluated forward, adjoint or bidirectionally.
+   * Its currently disabled so its fine but its the safe option */
+  JACOBIAN* jacobian_ODE = nls->multirate
+                         ? &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A])
+                         : getSymbolicOdeJacobian(data);
 
   if (nls->multirate && jacobian_ODE->availability == JACOBIAN_AVAILABLE)
   {
@@ -795,7 +801,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
   double *scal = nls->scal;
 
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=(nls->multirate ? (void *) gbData->gbfData : (void *) gbData)};
-  SPARSE_PATTERN *ode_pattern = (nls->multirate ? nls->odePatternMR : data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
+  SPARSE_PATTERN *ode_pattern = (nls->multirate ? nls->odePatternMR : getJacobianCscPattern(getSymbolicOdeJacobian(data)));
 
   const int flag = 1;
   modelica_boolean jac_called = FALSE;
@@ -1197,7 +1203,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   createGbScales(nls, gbData, x, x_start);
   double *scal = nls->scal;
 
-  SPARSE_PATTERN *ode_pattern = (nls->multirate ? nls->odePatternMR : data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
+  SPARSE_PATTERN *ode_pattern = (nls->multirate ? nls->odePatternMR : getJacobianCscPattern(getSymbolicOdeJacobian(data)));
   T_TRANSFORM *transform = nls->tabl->t_transform;
 
   modelica_boolean jac_called = FALSE;
@@ -1491,7 +1497,7 @@ void *gbInternalNlsAllocate(int size,
   BUTCHER_TABLEAU *tabl = (isFast ? ((DATA_GBODEF *) userData->solverData)->tableau
                                   : ((DATA_GBODE *) userData->solverData)->tableau);
   T_TRANSFORM *transform = tabl->t_transform;
-  JACOBIAN* jacobian_ODE = &(userData->data->simulationInfo->analyticJacobians[userData->data->callback->INDEX_JAC_A]);
+  JACOBIAN* jacobian_ODE = getSymbolicOdeJacobian(userData->data);
 
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) malloc(sizeof(GB_INTERNAL_NLS_DATA));
 
@@ -1503,10 +1509,10 @@ void *gbInternalNlsAllocate(int size,
   unsigned int nls_nnz_estimate = 0;
 
   nls->nls_user_data = userData;
-  nls->size = jacobian_ODE->sizeRows;
+  nls->size = jacobianNumRows(jacobian_ODE);
   nls->jacobian_callback = (double *) malloc(jacobian_ODE->sparsePattern->nnz * sizeof(double));
   nls->ode_to_nls = (int *) malloc(jacobian_ODE->sparsePattern->nnz * sizeof(int));
-  nls->nls_diag_indices = (int *) malloc(jacobian_ODE->sizeRows * sizeof(int));
+  nls->nls_diag_indices = (int *) malloc(jacobianNumRows(jacobian_ODE) * sizeof(int));
 
   nls->tabl = tabl;
   nls->use_t_transform = (transform != NULL);
@@ -1890,7 +1896,7 @@ modelica_boolean updateFastStates(DATA *data,
                                   DATA_GBODE* gbData,
                                   GB_INTERNAL_NLS_DATA *nls)
 {
-  SPARSE_PATTERN *full_ode_pattern = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern;
+  SPARSE_PATTERN *full_ode_pattern = getJacobianCscPattern(getSymbolicOdeJacobian(data));
   DATA_GBODEF *gbfData = gbData->gbfData;
 
   // update size
