@@ -5873,7 +5873,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
       ;separator="\n")
 
   let resizableSparsity = (JacobianMatrices |> JAC_MATRIX() =>
-    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, SimCodeUtil.numScalarElems(seedVars), createJacContext(matrixName, crefsHT), isAdjoint, modelNamePrefix) ;separator="\n")
+    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, SimCodeUtil.numScalarElems(seedVars), createJacContext(matrixName, crefsHT), isAdjoint, isBidirectional, adjointJacobianIndex, adjointMatrixName, modelNamePrefix) ;separator="\n")
 
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n\n")
@@ -5890,7 +5890,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
   >>
 end functionAnalyticJacobians;
 
-template initialResizableAnalyticJacobians(String matrixname, list<JacobianColumn> columns, Sparsity sparsity, Integer nCols, Context context, Boolean isAdjoint, String modelNamePrefix)
+template initialResizableAnalyticJacobians(String matrixname, list<JacobianColumn> columns, Sparsity sparsity, Integer nCols, Context context, Boolean isAdjoint, Boolean isBidirectional, Integer adjointJacobianIndex, String adjointMatrixName, String modelNamePrefix)
 "Two-pass CSC construction: count nonzeros per column, allocate, then fill row indices."
 ::=
 match sparsity
@@ -5971,6 +5971,18 @@ match sparsity
        * sparsity) would be invalid for the runtime pattern.  Re-deriving it
        * here guarantees that no two same-color columns share a non-zero row. */
       computeColumnColoring(jacobian->sparsePattern, <%if isAdjoint then patternCols else patternRows%>, <%if isAdjoint then patternRows else patternCols%>);
+
+      <%if isBidirectional then <<
+      /* Link the adjoint Jacobian to this forward Jacobian so that the integrators can
+       * evaluate it bidirectionally. Whether that actually happens is decided at runtime
+       * by initSymbolicOdeJacobian() based on the `-jacobian` flag. */
+      {
+        JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
+        if (<%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac)) return 1;
+        jacobian->adjointJacobian = adjJac;
+        initBidirectionalRecovery(jacobian);
+      }
+      >> %>
 
       jacobian->availability = <%availability%>;
       return 0;
@@ -6727,11 +6739,12 @@ match sparsepattern
       omc_fclose(pFile);
 
       <%if isBidirectional then <<
-      /* Initialize adjoint Jacobian and set up bidirectional evaluation */
+      /* Link the adjoint Jacobian to this forward Jacobian so that the integrators can
+       * evaluate it bidirectionally. Whether that actually happens is decided at runtime
+       * by initSymbolicOdeJacobian() based on the `-jacobian` flag. */
       {
         JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
         <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac);
-        jacobian->isBidirectional = 1;
         jacobian->adjointJacobian = adjJac;
         initBidirectionalRecovery(jacobian);
       }
