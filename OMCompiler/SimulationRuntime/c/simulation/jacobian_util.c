@@ -55,11 +55,15 @@
  */
 void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern)
 {
+  /* isRowEval is only known after this call, so make both vectors large enough for
+   * either orientation. For square Jacobians (the common case) this is exact. */
+  const unsigned int sizeDirection = sizeCols > sizeRows ? sizeCols : sizeRows;
+
   jacobian->sizeCols = sizeCols;
   jacobian->sizeRows = sizeRows;
   jacobian->sizeTmpVars = sizeTmpVars;
-  jacobian->seedVars = (modelica_real*) calloc(sizeCols, sizeof(modelica_real));
-  jacobian->resultVars = (modelica_real*) calloc(sizeRows, sizeof(modelica_real));
+  jacobian->seedVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
+  jacobian->resultVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
   jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
   jacobian->dag = dag;
   jacobian->evalSelection = NULL;
