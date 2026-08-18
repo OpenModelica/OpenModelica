@@ -814,6 +814,12 @@ void fmi2FreeInstance(fmi2Component c)
     return;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2FreeInstance...")
 
+  /* Free CS simulator (CVODE & co) first, while the model data it references
+   * (e.g. the states array wrapped by the solver's N_Vector y) is still alive. */
+  if (comp->solverInfo) {
+    FMI2CS_deInitializeSolverData(comp);
+  }
+
   /* call external objects destructors */
   comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
@@ -871,9 +877,6 @@ void fmi2FreeInstance(fmi2Component c)
   freeMemory(comp->input_real_derivative); comp->input_real_derivative = NULL;
 
   freeMemory(comp->fmuData->modelData->resourcesDir);
-  if (comp->solverInfo) {
-    FMI2CS_deInitializeSolverData(comp);
-  }
 
   /* free simuation data */
   freeMemory(comp->fmuData->modelData);
@@ -1040,6 +1043,13 @@ fmi2Status fmi2Reset(fmi2Component c)
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Reset")
 
   setThreadData(comp);
+  /* Free CS simulator (CVODE & co) first, while the model data it references
+   * (e.g. the states array wrapped by the solver's N_Vector y) is still alive,
+   * see #16319/#14074/#8615. */
+  if (comp->solverInfo) {
+    FMI2CS_deInitializeSolverData(comp);
+  }
+
   /* Free modelData */
   if (!(comp->state & model_state_terminated)) {
     /* call external objects destructors */
@@ -1058,11 +1068,6 @@ fmi2Status fmi2Reset(fmi2Component c)
 #endif
     /* free data struct */
     deInitializeDataStruc(comp->fmuData);
-  }
-
-  /* Free CS simulator */
-  if (comp->solverInfo) {
-    FMI2CS_deInitializeSolverData(comp);
   }
 
   /* Initialize modelData */

@@ -860,6 +860,12 @@ void omcFreeInstance(ModelInstance* c)
     return;
   FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcFreeInstance...")
 
+  /* Free CS simulator (CVODE & co) first, while the model data it references
+   * (e.g. the states array wrapped by the solver's N_Vector y) is still alive. */
+  if (comp->solverInfo) {
+    FMI3CS_deInitializeSolverData(comp);
+  }
+
   /* call external objects destructors */
   comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
@@ -917,9 +923,6 @@ void omcFreeInstance(ModelInstance* c)
   free(comp->input_real_derivative); comp->input_real_derivative = NULL;
 
   free(comp->fmuData->modelData->resourcesDir);
-  if (comp->solverInfo) {
-    FMI3CS_deInitializeSolverData(comp);
-  }
 
   /* free simuation data */
   free(comp->fmuData->modelData);
@@ -1085,6 +1088,13 @@ fmi3Status omcReset(ModelInstance* c)
   FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcReset")
 
   setThreadData(comp);
+  /* Free CS simulator (CVODE & co) first, while the model data it references
+   * (e.g. the states array wrapped by the solver's N_Vector y) is still alive,
+   * see #16319/#14074/#8615. */
+  if (comp->solverInfo) {
+    FMI3CS_deInitializeSolverData(comp);
+  }
+
   /* Free modelData */
   if (!(comp->state & model_state_terminated)) {
     /* call external objects destructors */
@@ -1103,11 +1113,6 @@ fmi3Status omcReset(ModelInstance* c)
 #endif
     /* free data struct */
     deInitializeDataStruc(comp->fmuData);
-  }
-
-  /* Free CS simulator */
-  if (comp->solverInfo) {
-    FMI3CS_deInitializeSolverData(comp);
   }
 
   /* Initialize modelData */
