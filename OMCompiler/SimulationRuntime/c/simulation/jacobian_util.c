@@ -1189,15 +1189,12 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABIL
     jacobianMethod = INTERNALNUMJAC;
     break;
   case JACOBIAN_ONLY_SPARSITY:
-    if (jacobianMethod == COLOREDSYMJAC) {
+    if (jacobianMethod == COLOREDSYMJAC || jacobianMethod == COLOREDSYMJACADJ || jacobianMethod == BICOLOREDSYMJAC) {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to colored numerical Jacobian.");
       jacobianMethod = COLOREDNUMJAC;
     } else if(jacobianMethod == SYMJAC) {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to numerical Jacobian.");
       jacobianMethod = NUMJAC;
-    } else if(jacobianMethod == BICOLOREDSYMJAC) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to colored numerical Jacobian.");
-      jacobianMethod = COLOREDNUMJAC;
     } else if(jacobianMethod == JAC_UNKNOWN) {
       jacobianMethod = COLOREDNUMJAC;
     }
@@ -1234,13 +1231,153 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABIL
     infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Colored symbolical adjoint Jacobian.");
     break;
   case BICOLOREDSYMJAC:
-    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Bicolored (bidirectional) symbolical Jacobian.");
+    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Bicolored symbolical bidirectional Jacobian.");
     break;
   default:
     throwStreamPrint(threadData, "Unhandled case in setJacobianMethod");
     break;
   }
   return jacobianMethod;
+}
+
+/**
+ * @brief Set Jacobian method from user flag and available Jacobian.
+ *
+ * @param threadData              Used for error handling.
+ * @param availability            Is the Jacobian available, only the sparsity pattern available or nothing available.
+ * @return JACOBIAN_METHOD        Returns jacobian method that is availble.
+ */
+JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability)
+{
+  return checkJacobianMethod(threadData, availability, getRequestedJacobianMethod(threadData));
+}
+
+/**
+ * @brief Select and initialize the symbolic ODE Jacobian matching the requested method.
+ *
+ * This is the single place where the mapping
+ *
+ *   COLOREDSYMJAC / other  -> forward Jacobian A       (column evaluation, CSC)
+ *   COLOREDSYMJACADJ       -> adjoint Jacobian ADJ     (row evaluation, CSR)
+ *   BICOLOREDSYMJAC        -> forward Jacobian A       (bidirectional, forward + linked adjoint)
+ *
+ * is implemented, so that DASSL, IDA and GBODE cannot diverge. Methods that are not
+ * backed by the generated code fall back to a method that is, with a warning.
+ *
+ * The forward Jacobian A is only initialized if it is actually going to be used. The
+ * adjoint Jacobian is self contained, so for COLOREDSYMJACADJ the (potentially large)
+ * sparsity pattern, coloring and evaluation DAG of A are not built at all. Solvers that
+ * need A regardless of the selected evaluation direction, because they use its
+ * evaluation DAG or its column function, pass `requireForwardJacobian = TRUE` (GBODE).
+ *
+ * The selected Jacobian is stored in `data->simulationInfo->odeJacobian` and can later
+ * be retrieved with getSymbolicOdeJacobian().
+ *
+ * @param data                    Runtime data struct.
+ * @param threadData              Used for error handling.
+ * @param jacobianMethod          In: requested method (JAC_UNKNOWN for default).
+ *                                Out: method that will actually be used.
+ * @param requireForwardJacobian  Initialize the forward Jacobian A even if it is not the
+ *                                Jacobian that gets evaluated.
+ * @return JACOBIAN*              Jacobian the solver has to evaluate with evalJacobian().
+ */
+JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN_METHOD* jacobianMethod, modelica_boolean requireForwardJacobian)
+{
+  JACOBIAN* forwardJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  JACOBIAN* adjointJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
+  JACOBIAN* jacobian;
+
+  if (requireForwardJacobian || *jacobianMethod != COLOREDSYMJACADJ) {
+    data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
+  }
+
+  if (*jacobianMethod == COLOREDSYMJACADJ) {
+    /* If the model was compiled bidirectionally and A was initialized, the adjoint
+     * Jacobian is already initialized and linked by initialAnalyticJacobianA().
+     * So this check is true if the adjoint Jacobian was not already initialized but is requested. */
+    if (forwardJacobian->adjointJacobian != adjointJacobian) {
+      data->callback->initialAnalyticJacobianADJ(data, threadData, adjointJacobian);
+    }
+    if (adjointJacobian->availability == JACOBIAN_AVAILABLE) {
+      jacobian = adjointJacobian;
+    } else {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "No adjoint symbolic Jacobian was generated "
+                                            "(compile with --generateDynamicJacobian=symbolicAdjoint or =bidirectional). "
+                                            "Switching to the forward symbolic Jacobian.");
+      *jacobianMethod = JAC_UNKNOWN;
+      /* The fallback needs A, which may have been skipped above. */
+      if (forwardJacobian->availability == JACOBIAN_UNKNOWN) {
+        data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
+      }
+      jacobian = forwardJacobian;
+    }
+  } else {
+    jacobian = forwardJacobian;
+    if (*jacobianMethod == BICOLOREDSYMJAC
+        && !(forwardJacobian->adjointJacobian != NULL && forwardJacobian->availability == JACOBIAN_AVAILABLE)) {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "No bidirectional symbolic Jacobian was generated "
+                                            "(compile with --generateDynamicJacobian=bidirectional). "
+                                            "Switching to the forward symbolic Jacobian.");
+      *jacobianMethod = JAC_UNKNOWN;
+    }
+  }
+  /* Runtime switch for the bidirectional evaluation path in evalJacobian() */
+  forwardJacobian->isBidirectional = (*jacobianMethod == BICOLOREDSYMJAC);
+
+  if (jacobian->sparsePattern != NULL) {
+    /* KLU and the sparse pattern printers require ascending secondary indices. */
+    sortSparseColumns(jacobian->sparsePattern, (unsigned int) jacobian->sizeCols);
+    /* Build the column oriented view (and the CSR->CSC value mapping) once up front,
+     * so that evalJacobian() emits sparse values in CSC order for every method. */
+    getJacobianCscPattern(jacobian);
+  }
+
+  *jacobianMethod = checkJacobianMethod(threadData, jacobian->availability, *jacobianMethod);
+
+  if (jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+    infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
+    infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobianNumCols(jacobian), jacobianNumRows(jacobian));
+    infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
+    messageClose(OMC_LOG_SIMULATION);
+  }
+
+  data->simulationInfo->odeJacobian = jacobian;
+  return jacobian;
+}
+
+/**
+ * @brief Get the symbolic ODE Jacobian selected by the integrator.
+ *
+ * Falls back to the forward Jacobian A if no selection was made yet.
+ *
+ * @param data          Runtime data struct.
+ * @return JACOBIAN*    Selected ODE Jacobian.
+ */
+JACOBIAN* getSymbolicOdeJacobian(DATA* data)
+{
+  if (data->simulationInfo->odeJacobian != NULL) {
+    return data->simulationInfo->odeJacobian;
+  }
+  return &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+}
+
+/**
+ * @brief Free the Jacobians initialized by initSymbolicOdeJacobian().
+ *
+ * @param data          Runtime data struct.
+ */
+void freeSymbolicOdeJacobian(DATA* data)
+{
+  JACOBIAN* forwardJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  JACOBIAN* adjointJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
+
+  if (adjointJacobian->availability != JACOBIAN_UNKNOWN) {
+    freeJacobian(adjointJacobian);
+  }
+  if (forwardJacobian->availability != JACOBIAN_UNKNOWN) {
+    freeJacobian(forwardJacobian);
+  }
+  data->simulationInfo->odeJacobian = NULL;
 }
 
 void freeNonlinearPattern(NONLINEAR_PATTERN *nlp)
