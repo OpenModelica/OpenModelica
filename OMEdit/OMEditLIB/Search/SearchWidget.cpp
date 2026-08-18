@@ -211,9 +211,9 @@ void SearchWidget::searchInFiles()
   mpSearchHistoryComboBox->setCurrentIndex(mpSearchHistoryComboBox->findText(searchHistoryItem));
   /* start the search in seperate thread using QtConcurrent */
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  QtConcurrent::run(&Search::run, mpSearch);
+  (void)QtConcurrent::run(&Search::run, mpSearch);
 #else
-  QtConcurrent::run(mpSearch, &Search::run);
+  (void)QtConcurrent::run(mpSearch, &Search::run);
 #endif
 }
 
@@ -557,5 +557,3 @@ void Search::updateCancelSearch()
 {
   mStop = true;
 }
-
-
