@@ -104,6 +104,7 @@ solver_status solver_kinsol_allocate_data(solver_data* general_solver_data)
     kinsol_data->kinsol_solver_object = KINCreate(kinsol_data->sunctx);
     if (kinsol_data->kinsol_solver_object == NULL) {
         solver_logger(log_solver_error, "In function allocate_kinsol_data: Could not create KINSOL solver object.");
+        SUNContext_Free(&kinsol_data->sunctx);
         solver_freeMemory(kinsol_data);
         general_solver_data->specific_data = NULL;
         general_solver_data->state = solver_error_state;

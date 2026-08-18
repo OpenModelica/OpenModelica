@@ -667,6 +667,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
       assertStreamPrint(threadData, NULL != cvodeData->nonLinSol, "##CVODE## SUNNonlinSol_FixedPoint failed.");
       flag = CVodeSetNonlinearSolver(cvodeData->cvode_mem, cvodeData->nonLinSol);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetNonlinearSolver");
+      break;
     case CV_ITER_NEWTON:
       /* Default option, no allocation needed */
       cvodeData->y_nonLinSol = NULL;
