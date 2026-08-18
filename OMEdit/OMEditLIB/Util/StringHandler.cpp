@@ -1630,28 +1630,26 @@ QProcessEnvironment StringHandler::simulationProcessEnvironment()
 QProcessEnvironment StringHandler::modelicaSimulationProcessEnvironment(const QString pathsFileName, QString *errorMsg)
 {
   QProcessEnvironment environment = StringHandler::simulationProcessEnvironment();
-
   // Parse the fileName.bat file to get the necessary paths.
   // Return errorMsg if fails to parse the file as expected.
   QFile batFile(pathsFileName);
-  batFile.open(QIODevice::ReadOnly | QIODevice::Text);
+  if (batFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QString line;
+    // first line is supposed to be '@echo off'
+    line = batFile.readLine();
+    // Second line is where the PATH is set. We want that.
+    line = batFile.readLine();
 
-  QString line;
-  // first line is supposed to be '@echo off'
-  line = batFile.readLine();
-  // Second line is where the PATH is set. We want that.
-  line = batFile.readLine();
-
-  if (!line.toLower().startsWith("set path=")) {
-    *errorMsg = "Failed to read the neccesary PATH values from '" + pathsFileName + "'\n"
-                + "If simulation fails please check that you have the bat file and it is formatted correctly\n";
-  } else {
-    // Strip the 'set PATH='
-    line.remove(0, 9);
-    environment.insert("PATH", line + ";" + environment.value("PATH"));
+    if (!line.toLower().startsWith("set path=")) {
+      *errorMsg = "Failed to read the neccesary PATH values from '" + pathsFileName + "'\n"
+                  + "If simulation fails please check that you have the bat file and it is formatted correctly\n";
+    } else {
+      // Strip the 'set PATH='
+      line.remove(0, 9);
+      environment.insert("PATH", line + ";" + environment.value("PATH"));
+    }
+    batFile.close();
   }
-  batFile.close();
-
   return environment;
 }
 #endif
