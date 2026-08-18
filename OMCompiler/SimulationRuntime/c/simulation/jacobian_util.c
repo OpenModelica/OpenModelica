@@ -1132,37 +1132,52 @@ void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int
 }
 
 /**
- * @brief Set Jacobian method from user flag and available Jacobian.
+ * @brief Read the Jacobian method requested by the user via flag `-jacobian`.
+ *
+ * Performs no availability check, this is done in checkJacobianMethod().
+ *
+ * @param threadData          Used for error handling.
+ * @return JACOBIAN_METHOD    Requested method or JAC_UNKNOWN if the flag is not set.
+ */
+JACOBIAN_METHOD getRequestedJacobianMethod(threadData_t* threadData)
+{
+  JACOBIAN_METHOD jacobianMethod = JAC_UNKNOWN;
+
+  if (!omc_flag[FLAG_JACOBIAN]) {
+    return JAC_UNKNOWN;
+  }
+
+  for (int method=1; method < JAC_MAX; method++) {
+    if (!strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD_NAME[method])) {
+      jacobianMethod = (JACOBIAN_METHOD) method;
+      break;
+    }
+  }
+  // Error case
+  if (jacobianMethod == JAC_UNKNOWN) {
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown value `%s` for flag `-jacobian`", omc_flagValue[FLAG_JACOBIAN]);
+    infoStreamPrint(OMC_LOG_STDOUT, 1, "Available options are");
+    for (int method=1; method < JAC_MAX; method++) {
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "%s", JACOBIAN_METHOD_NAME[method]);
+    }
+    messageClose(OMC_LOG_STDOUT);
+    omc_throw(threadData);
+  }
+
+  return jacobianMethod;
+}
+
+/**
+ * @brief Check that the requested Jacobian method can be used and log it.
  *
  * @param threadData              Used for error handling.
  * @param availability            Is the Jacobian available, only the sparsity pattern available or nothing available.
- * @param flagValue               Flag value of FLAG_JACOBIAN. Can be NULL.
- * @return JACOBIAN_METHOD   Returns jacobian method that is availble.
+ * @param jacobianMethod          Requested method, JAC_UNKNOWN selects the default for `availability`.
+ * @return JACOBIAN_METHOD        Jacobian method that will be used.
  */
-JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability)
+JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability, JACOBIAN_METHOD jacobianMethod)
 {
-  JACOBIAN_METHOD jacobianMethod = JAC_UNKNOWN;
   assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availability status is unknown.");
-
-  /* if FLAG_JACOBIAN is set, choose jacobian calculation method */
-  if (omc_flag[FLAG_JACOBIAN]) {
-    for (int method=1; method < JAC_MAX; method++) {
-      if (!strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD_NAME[method])) {
-        jacobianMethod = (JACOBIAN_METHOD) method;
-        break;
-      }
-    }
-    // Error case
-    if (jacobianMethod == JAC_UNKNOWN) {
-      errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown value `%s` for flag `-jacobian`", omc_flagValue[FLAG_JACOBIAN]);
-      infoStreamPrint(OMC_LOG_STDOUT, 1, "Available options are");
-      for (int method=1; method < JAC_MAX; method++) {
-        infoStreamPrint(OMC_LOG_STDOUT, 0, "%s", JACOBIAN_METHOD_NAME[method]);
-      }
-      messageClose(OMC_LOG_STDOUT);
-      omc_throw(threadData);
-    }
-  }
 
   /* Check if method is available */
   switch (availability)
