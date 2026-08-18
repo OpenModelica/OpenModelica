@@ -323,6 +323,7 @@ void Ida::initialize()
         _CV_yWrite = N_VMake_Serial(_dimSys, _yWrite, _sunctx);
         _CV_ypWrite = N_VMake_Serial(_dimSys, _ypWrite, _sunctx);
         _CV_absTol = N_VMake_Serial(_dimSys, _absTol, _sunctx);
+        _ida_ySolver = N_VNew_Serial(_dimSys, _sunctx);
 
         if (check_flag((void*)_CV_y0, "N_VMake_Serial", 0))
         {
@@ -386,7 +387,9 @@ void Ida::initialize()
             double* tmp = new double[_dimSys];
             std::fill_n(tmp, _dimStates, 1.0);
             std::fill_n(tmp + _dimStates, _dimAE, 0.0);
-            _idid = IDASetId(_idaMem, N_VMake_Serial(_dimSys, tmp, _sunctx));
+            N_Vector id = N_VMake_Serial(_dimSys, tmp, _sunctx);
+            _idid = IDASetId(_idaMem, id);
+            N_VDestroy(id);   // IDA keeps its own copy of id
             delete [] tmp;
             if (_idid < 0)
                 throw std::invalid_argument("IDA::initialize()");

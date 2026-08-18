@@ -332,7 +332,7 @@ void Cvode::initialize()
 		// Initialize dense linear solver
 		_CV_J = SUNDenseMatrix(_dimSys, _dimSys, _sunctx);
 #ifdef USE_SUNDIALS_LAPACK
-		_cvode_linSol = SUNLinSol_LapackDense(_CV_ySolver, _cvode_J, _sunctx);
+		_CV_linSol = SUNLinSol_LapackDense(_CV_ySolver, _CV_J, _sunctx);
 #else
 		_CV_linSol = SUNLinSol_Dense(_CV_ySolver, _CV_J, _sunctx);
 #endif
