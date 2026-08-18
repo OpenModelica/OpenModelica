@@ -23,8 +23,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/mo
 # Variable for signifying that we are using the new CMake configuration.
 # We use this to selectively include some cmake source files
 # e.g. simulationRuntime/c/ has two cmake sources that are conditionally
-# included. The old (cmake 2.8) cmake source in there is used for compilation
-# of simulationruntimemsvc by the Makefile.omdev.mingw makefiles.
+# included. The old (cmake 2.8) cmake source in there is used by the legacy
+# standalone Autoconf/Make build.
 set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 
 # include utility macros.

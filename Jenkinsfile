@@ -4,8 +4,7 @@ def shouldWeBuildAlpine
 def shouldWeBuildEnterpriseLinux
 def shouldWeBuildFedora
 def shouldWeEnableMacOSCMakeBuild
-def shouldWeEnableUCRTCMakeBuild
-def shouldWeBuildUCRT
+def shouldWeBuildWindows
 def shouldWeDisableAllCMakeBuilds
 def shouldWeRunTests
 def shouldWeRunRustTests
@@ -24,12 +23,10 @@ pipeline {
     LC_ALL = 'C.UTF-8'
   }
   parameters {
-    booleanParam(name: 'BUILD_MSYS2_UCRT64', defaultValue: false, description: 'Build with Win/MSYS2-UCRT64')
+    booleanParam(name: 'BUILD_WINDOWS', defaultValue: false, description: 'Build with Windows using CMake')
     booleanParam(name: 'BUILD_ALPINE', defaultValue: false, description: 'Build with Alpine (musl libc) using CMake')
     booleanParam(name: 'BUILD_ENTERPRISE_LINUX', defaultValue: false, description: 'Build with Enterprise Linux')
     booleanParam(name: 'BUILD_FEDORA', defaultValue: false, description: 'Build with Fedora 44')
-    booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
-    booleanParam(name: 'ENABLE_MSYS2_UCRT64_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MSYS2-UCRT64')
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MacOS')
     booleanParam(name: 'ENABLE_RUST_PARTEST', defaultValue: false, description: 'Enable running partest on the Rust target')
     string(name: 'RUST_PARTEST_SIMCODETARGET', defaultValue: 'wasm-jit', description: 'Override simCodeTarget for the Rust partest, e.g. wasm-jit (empty = compiler default)')
@@ -59,9 +56,7 @@ pipeline {
           shouldWeBuildEnterpriseLinux = buildFlags.shouldWeBuildEnterpriseLinux
           shouldWeBuildFedora = buildFlags.shouldWeBuildFedora
           shouldWeEnableMacOSCMakeBuild = buildFlags.shouldWeEnableMacOSCMakeBuild
-          shouldWeEnableUCRTCMakeBuild = buildFlags.shouldWeEnableUCRTCMakeBuild
-          shouldWeBuildUCRT = buildFlags.shouldWeBuildUCRT
-          shouldWeDisableAllCMakeBuilds = buildFlags.shouldWeDisableAllCMakeBuilds
+          shouldWeBuildWindows = buildFlags.shouldWeBuildWindows
           shouldWeRunTests = buildFlags.shouldWeRunTests
           shouldWeRunRustTests = buildFlags.shouldWeRunRustTests
         }
@@ -123,10 +118,6 @@ pipeline {
               '''
             }
           }
-          when {
-            beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds }
-          }
           options {
             retry(count: 2, conditions: [nonresumable()])
           }
@@ -154,7 +145,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds && shouldWeBuildAlpine }
+            expression { shouldWeBuildAlpine }
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
@@ -184,7 +175,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds && shouldWeBuildEnterpriseLinux }
+            expression { shouldWeBuildEnterpriseLinux }
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
@@ -216,7 +207,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds && shouldWeBuildFedora }
+            expression { shouldWeBuildFedora }
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
@@ -242,7 +233,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds && shouldWeEnableMacOSCMakeBuild}
+            expression { shouldWeEnableMacOSCMakeBuild}
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
@@ -264,27 +255,6 @@ pipeline {
         }
 
         // Windows build stages
-        stage('Win/UCRT64') {
-          agent {
-            node {
-              label 'windows-no-release'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeBuildUCRT }
-          }
-          environment {
-            RUNTESTDB = '/c/dev/'
-            LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script { common.buildWinUCRT() }
-          }
-        }
         stage('cmake-OMDev-gcc') {
           agent {
             node {
@@ -293,7 +263,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds && shouldWeEnableUCRTCMakeBuild}
+            expression { shouldWeBuildWindows}
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
@@ -322,10 +292,6 @@ pipeline {
                    "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
-          }
-          when {
-            beforeAgent true
-            expression { !shouldWeDisableAllCMakeBuilds }
           }
           steps {
             script {
@@ -370,7 +336,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunRustTests && !shouldWeDisableAllCMakeBuilds }
+            expression { shouldWeRunRustTests }
           }
           steps {
             script {
@@ -391,7 +357,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunRustTests && !shouldWeDisableAllCMakeBuilds }
+            expression { shouldWeRunRustTests }
           }
           steps {
             script {
@@ -574,7 +540,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds }
+            expression { shouldWeRunTests }
           }
           steps {
             script {
@@ -601,7 +567,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds }
+            expression { shouldWeRunTests }
           }
           steps {
             script {
@@ -625,7 +591,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds }
+            expression { shouldWeRunTests }
           }
           steps {
             script {
@@ -649,7 +615,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds }
+            expression { shouldWeRunTests }
           }
           steps {
             script {
@@ -898,7 +864,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { shouldWeRunTests && !shouldWeDisableAllCMakeBuilds }
+            expression { shouldWeRunTests }
           }
           steps {
             script { common.assembleWeb() }

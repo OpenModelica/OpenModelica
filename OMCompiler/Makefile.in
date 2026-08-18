@@ -50,7 +50,7 @@ QMAKE=@QMAKE@
 APP=@APP@
 
 MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
-# LIBGC configuration is different for Linux (this file) and Windows (Makefile.omdev.mingw)
+# LIBGC configuration is different for Linux (this file) and the CMake Windows build
 # Do not use munmap; it crashes processes...
 LIBGC_EXTRA_CONFIGURATION=--enable-threads=posix --enable-parallel-mark
 LIBFMILIB=@LIBFMILIB@
