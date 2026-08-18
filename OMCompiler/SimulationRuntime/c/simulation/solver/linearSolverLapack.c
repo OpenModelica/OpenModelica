@@ -102,8 +102,8 @@ int freeLapackData(void **voiddata)
 void getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData, double* jac)
 {
   int k;
-  JACOBIAN* jacobian = systemData->parDynamicData[0].jacobian;
-  JACOBIAN* parentJacobian = systemData->parDynamicData[0].parentJacobian;
+  JACOBIAN* jacobian = systemData->jacobian;
+  JACOBIAN* parentJacobian = systemData->parentJacobian;
 
   /* call generic dense Jacobian */
   evalJacobian(data, threadData, jacobian, parentJacobian, jac, TRUE);
@@ -134,7 +134,7 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
   int i, iflag = 1;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
 
-  DATA_LAPACK* solverData = (DATA_LAPACK*) systemData->parDynamicData[0].solverData[0];
+  DATA_LAPACK* solverData = (DATA_LAPACK*) systemData->solverData[0];
   int success = 1;
 
   /* We are given the number of the linear system.
@@ -151,15 +151,15 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
 
   /* set data */
   _omc_setVectorData(solverData->x, aux_x);
-  _omc_setVectorData(solverData->b, systemData->parDynamicData[0].b);
-  _omc_setMatrixData(solverData->A, systemData->parDynamicData[0].A);
+  _omc_setVectorData(solverData->b, systemData->b);
+  _omc_setMatrixData(solverData->A, systemData->A);
 
   rt_ext_tp_tick(&(solverData->timeClock));
   if (0 == systemData->method) {
 
     if (!reuseMatrixJac) {
       /* reset matrix A */
-      memset(systemData->parDynamicData[0].A, 0, (systemData->size)*(systemData->size)*sizeof(double));
+      memset(systemData->A, 0, (systemData->size)*(systemData->size)*sizeof(double));
       /* update matrix A */
       systemData->setA(data, threadData, systemData);
     }

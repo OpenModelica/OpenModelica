@@ -112,8 +112,8 @@ static void getAnalyticalJacobian(DATA* data, threadData_t *threadData,
                                  LINEAR_SYSTEM_DATA* systemData)
 {
   int i,j,l,nth;
-  JACOBIAN* jacobian = systemData->parDynamicData[0].jacobian;
-  JACOBIAN* parentJacobian = systemData->parDynamicData[0].parentJacobian;
+  JACOBIAN* jacobian = systemData->jacobian;
+  JACOBIAN* parentJacobian = systemData->parentJacobian;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
   /* evaluate constant equations of Jacobian */
@@ -166,7 +166,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_KLU* solverData = (DATA_KLU*)systemData->parDynamicData[0].solverData[0];
+  DATA_KLU* solverData = (DATA_KLU*)systemData->solverData[0];
   _omc_scalar residualNorm = 0;
 
   int i, j, status = 0, success = 0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
@@ -205,7 +205,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     /* calculate vector b (rhs) */
     memcpy(solverData->work, aux_x, sizeof(double)*solverData->n_row);
 
-    residual_wrapper(solverData->work, systemData->parDynamicData[0].b, &resUserData, sysNumber);
+    residual_wrapper(solverData->work, systemData->b, &resUserData, sysNumber);
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
@@ -229,7 +229,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
     for (i=0; i<solverData->n_row; i++)
     {
-        infoStreamPrint(OMC_LOG_LS_V, 0, "b[%d] = %e", i, systemData->parDynamicData[0].b[i]);
+        infoStreamPrint(OMC_LOG_LS_V, 0, "b[%d] = %e", i, systemData->b[i]);
     }
   }
   rt_ext_tp_tick(&(solverData->timeClock));
@@ -265,11 +265,11 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
   if (0 == solverData->common.status){
     if (1 == systemData->method){
-      if (klu_solve(solverData->symbolic, solverData->numeric, solverData->n_col, 1, systemData->parDynamicData[0].b, &solverData->common)){
+      if (klu_solve(solverData->symbolic, solverData->numeric, solverData->n_col, 1, systemData->b, &solverData->common)){
         success = 1;
       }
     } else {
-      if (klu_tsolve(solverData->symbolic, solverData->numeric, solverData->n_col, 1, systemData->parDynamicData[0].b, &solverData->common)){
+      if (klu_tsolve(solverData->symbolic, solverData->numeric, solverData->n_col, 1, systemData->b, &solverData->common)){
         success = 1;
       }
     }
@@ -283,7 +283,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     if (1 == systemData->method){
       /* take the solution */
       for(i = 0; i < solverData->n_row; ++i)
-        aux_x[i] += systemData->parDynamicData[0].b[i];
+        aux_x[i] += systemData->b[i];
 
       /* update inner equations */
       residual_wrapper(aux_x, solverData->work, &resUserData, sysNumber);
@@ -297,7 +297,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       }
     } else {
       /* the solution is automatically in x */
-      memcpy(aux_x, systemData->parDynamicData[0].b, sizeof(double)*systemData->size);
+      memcpy(aux_x, systemData->b, sizeof(double)*systemData->size);
     }
 
     if (OMC_ACTIVE_STREAM(OMC_LOG_LS_V))

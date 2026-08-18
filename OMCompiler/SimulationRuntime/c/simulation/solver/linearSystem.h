@@ -46,7 +46,6 @@ extern "C" {
 typedef void* LS_SOLVER_DATA;
 
 int initializeLinearSystems(DATA *data, threadData_t *threadData);
-int allocLinSystThreadData(LINEAR_SYSTEM_DATA *linsys);
 int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData);
 int freeLinearSystems(DATA *data, threadData_t *threadData);
 int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x);

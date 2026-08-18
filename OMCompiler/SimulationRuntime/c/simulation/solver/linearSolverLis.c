@@ -145,8 +145,8 @@ void printLisMatrixCSR(LIS_MATRIX A, int n)
 void getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData)
 {
   int i,j,l,nth;
-  JACOBIAN* jacobian = systemData->parDynamicData[0].jacobian;
-  JACOBIAN* parentJacobian = systemData->parDynamicData[0].parentJacobian;
+  JACOBIAN* jacobian = systemData->jacobian;
+  JACOBIAN* parentJacobian = systemData->parentJacobian;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
   /* evaluate constant equations of Jacobian */
@@ -199,7 +199,7 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_LIS* solverData = (DATA_LIS*)systemData->parDynamicData[0].solverData[0];
+  DATA_LIS* solverData = (DATA_LIS*)systemData->solverData[0];
 
   int i, ret, success = 1, ni, iflag = 1, n = systemData->size, eqSystemNumber = systemData->equationIndex;
   char *lis_returncode[] = {"LIS_SUCCESS", "LIS_ILL_OPTION", "LIS_BREAKDOWN", "LIS_OUT_OF_MEMORY", "LIS_MAXITER", "LIS_NOT_IMPLEMENTED", "LIS_ERR_FILE_IO"};
@@ -240,11 +240,11 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
     /* calculate vector b (rhs) */
     memcpy(solverData->work, aux_x, sizeof(double)*solverData->n_row);
-    wrapper_fvec_lis(solverData->work, systemData->parDynamicData[0].b, &resUserData, sysNumber);
+    wrapper_fvec_lis(solverData->work, systemData->b, &resUserData, sysNumber);
 
 	/* set b vector */
     for(i=0; i<n; i++) {
-      err = lis_vector_set_value(LIS_INS_VALUE, i, systemData->parDynamicData[0].b[i], solverData->b);
+      err = lis_vector_set_value(LIS_INS_VALUE, i, systemData->b[i], solverData->b);
     }
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
