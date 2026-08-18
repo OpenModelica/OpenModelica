@@ -139,6 +139,7 @@ SPATIAL_DISTRIBUTION_DATA* allocSpatialDistribution(unsigned int nSpatialDistrib
     spatialDistributionData[i].transportedQuantity = allocDoubleEndedList(sizeof(TRANSPORTED_QUANTITY_DATA)); /* empty double ended list */
     spatialDistributionData[i].storedEvents = allocDoubleEndedList(sizeof(TRANSPORTED_EVENT_DATA));           /* empty double ended list */
     spatialDistributionData[i].lastStoredEventValue = 0;
+    spatialDistributionData[i].suppressEvents = 0;
   }
 
   return spatialDistributionData;
@@ -351,7 +352,13 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
     TRANSPORTED_QUANTITY_DATA* front = (TRANSPORTED_QUANTITY_DATA*) firstDataDoubleEndedList(transportedQuantityList);
     if (fabs(-posX - front->position) < spatialPosEps(-posX, front->position)) {
       if (fabs(front->value - in0) > spatialValEps(front->value, in0)) {
-        addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, front->position, in0, 1 /* true */);
+        if (spatialDistribution->suppressEvents) {
+          /* noEvent(): store the value but skip the event node so the
+             zero-crossing function never reports a sign change. */
+          addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, front->position, in0, 0 /* false */);
+        } else {
+          addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, front->position, in0, 1 /* true */);
+        }
       }
     } else {
       addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, -posX, in0, 0 /* false */);
@@ -360,7 +367,12 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
     TRANSPORTED_QUANTITY_DATA* last = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
     if (fabs(-posX+1 - last->position) < spatialPosEps(-posX+1, last->position)) {
       if (fabs(last->value - in1) > spatialValEps(last->value, in1)) {
-        addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, last->position, in1, 1 /* true */);
+        if (spatialDistribution->suppressEvents) {
+          /* noEvent(): store the value but skip the event node. */
+          addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, last->position, in1, 0 /* false */);
+        } else {
+          addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, last->position, in1, 1 /* true */);
+        }
       }
     } else {
       addNewNodeSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity, -posX+1, in1, 0 /* false */);
@@ -553,6 +565,12 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
   /* Access spatialDistribution */
   spatialDistribution = &(data->simulationInfo->spatialDistributionData[index]);
   storedEventsList = spatialDistribution->storedEvents;
+
+  /* When suppressEvents is set (noEvent() wraps either input), return the
+   * previous zero-crossing value so the solver never detects a sign change. */
+  if (spatialDistribution->suppressEvents) {
+    return data->simulationInfo->zeroCrossingsPre[relationIndex];
+  }
 
   /* Shift x so the operator starts at x = 0 (only the change of x matters).
    * Do NOT capture the start position here: the zero-crossing function is

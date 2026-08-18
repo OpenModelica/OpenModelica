@@ -998,6 +998,7 @@ public
       Expression initVals           "initial grid values";
       Integer initSize              "number of initial points";
       Option<Expression> condition  "guard condition of the enclosing if-branch, if any";
+      Boolean noEvent               "true when either input is wrapped in noEvent()";
     end SPATIAL_DISTRIBUTION;
 
     function collect
@@ -1062,7 +1063,7 @@ public
           slst      := Pointer.access(spatial_lst);
           index     := listLength(slst);
           exp.call  := Call.setArguments(call, Expression.INTEGER(index) :: {in0, in1, pos, dir, initPnts, initVals});
-          Pointer.update(spatial_lst, SPATIAL_DISTRIBUTION(index, in0, in1, pos, dir, initPnts, initVals, arrayLength(initPnts.elements), condition) :: slst);
+          Pointer.update(spatial_lst, SPATIAL_DISTRIBUTION(index, in0, in1, pos, dir, initPnts, initVals, arrayLength(initPnts.elements), condition, Expression.isCallNamed(in0, "noEvent") or Expression.isCallNamed(in1, "noEvent")) :: slst);
         then exp;
 
         // just traverse deeper
@@ -1099,7 +1100,8 @@ public
         initPnts  = Expression.toDAE(sd.initPnts),
         initVals  = Expression.toDAE(sd.initVals),
         initSize  = sd.initSize,
-        condition = if isSome(sd.condition) then SOME(Expression.toDAE(Util.getOption(sd.condition))) else NONE()
+        condition = if isSome(sd.condition) then SOME(Expression.toDAE(Util.getOption(sd.condition))) else NONE(),
+        noEvent   = sd.noEvent
       );
     end convert;
 

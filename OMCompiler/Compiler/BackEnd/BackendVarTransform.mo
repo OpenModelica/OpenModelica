@@ -2356,6 +2356,7 @@ public function replaceEventInfo
 
 protected
   Integer numberMathEvents;
+  list<Integer> noEventSpDs;
   list<BackendDAE.TimeEvent> timeEvents;
   BackendDAE.ZeroCrossingSet zeroCrossingLst, sampleLst;
   DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relationsLst;
@@ -2365,13 +2366,13 @@ protected
   end Func;
   Func zc;
 algorithm
-  BackendDAE.EVENT_INFO(timeEvents, zeroCrossingLst, relationsLst, sampleLst, numberMathEvents) := eInfoIn;
+  BackendDAE.EVENT_INFO(timeEvents, zeroCrossingLst, relationsLst, sampleLst, numberMathEvents, noEventSpDs) := eInfoIn;
   timeEvents := List.map2(timeEvents, replaceTimeEvents, inVariableReplacements, inFuncTypeExpExpToBooleanOption);
   zc := function replaceZeroCrossing(inVariableReplacements=inVariableReplacements);
   DoubleEnded.mapNoCopy_1(zeroCrossingLst.zc, zc, inFuncTypeExpExpToBooleanOption);
   DoubleEnded.mapNoCopy_1(sampleLst.zc, zc, inFuncTypeExpExpToBooleanOption);
   DoubleEnded.mapNoCopy_1(relationsLst, zc, inFuncTypeExpExpToBooleanOption);
-  eInfoOut := BackendDAE.EVENT_INFO(timeEvents,zeroCrossingLst,relationsLst,sampleLst,numberMathEvents);
+  eInfoOut := BackendDAE.EVENT_INFO(timeEvents,zeroCrossingLst,relationsLst,sampleLst,numberMathEvents,noEventSpDs);
 end replaceEventInfo;
 
 protected function replaceTimeEvents

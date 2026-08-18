@@ -1,0 +1,60 @@
+// name:                noEvent.mos
+// keywords:            spatialDistribution, noEvent
+// status:              correct
+// teardown_command:    rm -f Issue14357Model*
+//
+// When noEvent() wraps the inputs of spatialDistribution(), the output must
+// not generate state events: the discontinuity is transported smoothly.
+// With LOG_EVENTS we expect the input event at time=0.1 (time < 0.1) but no
+// event at time=0.2666 when the transported discontinuity reaches the output.
+
+loadModel(Modelica); getErrorString();
+loadString("
+model Issue14357Model
+  Real x;
+  Real v;
+  Real in0, out0, out1;
+equation
+  der(x) = v;
+  v = 6;
+  in0 = if time < 0.1 then 0 else 1;
+  (out0, out1) = spatialDistribution(noEvent(in0), 0, x, true);
+end Issue14357Model;
+"); getErrorString();
+
+simulate(Issue14357Model, stopTime=0.5, numberOfIntervals=50, simflags="-lv=LOG_EVENTS"); getErrorString();
+
+// Before the transport delay (1/v = 1/6), out1 must still be 0.
+val(out1, 0.1);
+val(out1, 0.25);
+// After the delay the transported value 1 arrives.
+val(out1, 0.3);
+val(out1, 0.5);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Issue14357Model_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 50, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Issue14357Model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// |                 | |       | | [1] (pre: false) false = spatialDistributionZeroCrossing(0, 0, x, true)
+// |                 | |       | | [2] (pre:  true)  true = time < 0.1
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// |                 | |       | | [1] (pre:  0) -1 = spatialDistributionZeroCrossing(0, 0, x, true) > 0.0
+// |                 | |       | | [2] (pre:  0)  1 = time < 0.1
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | state event at time=0.10000000011
+// |                 | |       | | [2] time < 0.1
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0.0
+// 0.0
+// 1.0
+// 1.0
+// endResult

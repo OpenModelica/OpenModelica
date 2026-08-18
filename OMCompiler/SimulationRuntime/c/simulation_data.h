@@ -799,6 +799,10 @@ typedef struct SPATIAL_DISTRIBUTION_DATA {
   DOUBLE_ENDED_LIST* transportedQuantity;
   DOUBLE_ENDED_LIST* storedEvents;
   int lastStoredEventValue;
+  int suppressEvents;  /* when set, storeSpatialDistribution skips event-node
+                          creation so the zero-crossing function never reports
+                          an event; used when noEvent() wraps the inputs of
+                          spatialDistribution. */
 } SPATIAL_DISTRIBUTION_DATA;
 
 typedef struct SIMULATION_INFO

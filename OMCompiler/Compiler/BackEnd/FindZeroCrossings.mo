@@ -579,6 +579,7 @@ algorithm
       BackendDAE.EventInfo einfo;
       list<BackendDAE.Equation> eqs_lst, eqs_lst1;
       list<BackendDAE.TimeEvent> timeEvents;
+      list<Integer> noEventSpDs;
       BackendDAE.ZeroCrossingSet zero_crossings, sampleLst;
       DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
       Integer countMathFunctions;
@@ -592,7 +593,8 @@ algorithm
         BackendDAE.SHARED( globalKnownVars=globalKnownVars, eventInfo=einfo) := inShared;
         BackendDAE.EVENT_INFO( timeEvents=timeEvents, zeroCrossings=zero_crossings,
                                samples=sampleLst, relations=relations,
-                               numberMathEvents=countMathFunctions ) := einfo;
+                               numberMathEvents=countMathFunctions,
+                               noEventSpatialDistributions=noEventSpDs ) := einfo;
         eqs_lst := BackendEquation.equationList(eqns);
         (zero_crossings, eqs_lst1, countMathFunctions, relations, sampleLst) :=
         findZeroCrossings2( vars, globalKnownVars, eqs_lst, 0,
@@ -612,7 +614,7 @@ algorithm
         else
         end try;
         einfo := BackendDAE.EVENT_INFO( timeEvents, zero_crossings, relations, sampleLst,
-                                           countMathFunctions );
+                                           countMathFunctions, noEventSpDs );
       then (outSyst, BackendDAEUtil.setSharedEventInfo(inShared, einfo));
   end match;
 end findZeroCrossings1;
