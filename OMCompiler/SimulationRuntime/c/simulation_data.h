@@ -208,13 +208,23 @@ typedef struct JACOBIAN
   EVAL_SELECTION* evalSelection;        /* selection for evalColumn (don't allocate, only set to other pointer) */
   jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column/row based on seed vector */
   jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
-  modelica_boolean isRowEval;           /* Flag indicating if evalColumn evaluates rows instead of columns and
-                                           uses CSR sparse pattern and row coloring and seedVars is length sizeRows and resultVars is length sizeCols */
+  modelica_boolean isRowEval;           /* Flag indicating that evalColumn evaluates rows of the represented
+                                           Jacobian J instead of columns (adjoint / reverse mode).
+                                           In that case the struct describes the transpose J^T, i.e.
+                                           sizeCols == number of rows of J    (number of seeds),
+                                           sizeRows == number of columns of J (number of results) and
+                                           sparsePattern is CSC of J^T (== CSR of J) with row coloring.
+                                           Use jacobianNumRows()/jacobianNumCols() to get the dimensions of J. */
+  SPARSE_PATTERN* cscPattern;           /* Column oriented (CSC of J) view of a row evaluated Jacobian.
+                                           Lazily created by getJacobianCscPattern(), owned. NULL otherwise.
+                                           TODO: Is this needed? */
   /* Bidirectional (star bicoloring) support */
-  modelica_boolean isBidirectional;     /* Flag indicating this jacobian uses bidirectional evaluation (column + row) */
-  struct JACOBIAN* adjointJacobian;             /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
+  modelica_boolean isBidirectional;     /* Runtime switch: evaluate this Jacobian bidirectionally (column + row phase).
+                                           Only allowed if adjointJacobian is set. */
+  struct JACOBIAN* adjointJacobian;     /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
   unsigned char* recoverMask;           /* Per-nonzero boolean: 1=extract from this direction, 0=skip. Size nnz. NULL if not bidirectional */
-  unsigned int* csrToCscMap;            /* Maps adjoint CSR nz positions to forward CSC nz positions. Size nnz. Only for adjoint in bidirectional mode. */
+  unsigned int* csrToCscMap;            /* Maps CSR (row oriented) nz positions of an adjoint Jacobian to the
+                                           corresponding CSC (column oriented) nz positions of J. Size nnz. */
 } JACOBIAN;
 
 /* EXTERNAL_INPUT
@@ -942,6 +952,8 @@ typedef struct SIMULATION_INFO
   int* sensitivityParList;             /* used by integrator for sensitivity mode */
 
   JACOBIAN* analyticJacobians;          // TODO Only store information for Jacobian used by integrator here
+  JACOBIAN* odeJacobian;                /* Symbolic ODE Jacobian selected by the integrator (forward A or adjoint ADJ).
+                                           Set by initSymbolicOdeJacobian(), NULL before. Not owned. */
 
   NONLINEAR_SYSTEM_DATA* nonlinearSystemData; /* Array of non-linear systems */
 
