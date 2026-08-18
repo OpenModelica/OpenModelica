@@ -4143,7 +4143,7 @@ algorithm
   end if;
   if needs3rdPartyLibs then
     SUNDIALS :=  "1";
-    CPPFLAGS := CPPFLAGS + " -DWITH_SUNDIALS=1 -DLINK_SUNDIALS_STATIC" + " -Isundials";
+    CPPFLAGS := CPPFLAGS + " -DWITH_SUNDIALS=1 -DSUNDIALS_STATIC_DEFINE" + " -Isundials";
   else
     SUNDIALS :=  "";
   end if;

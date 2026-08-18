@@ -15,7 +15,7 @@ LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
 INCLUDE_NONFMI=-I. -I$(builddir_inc)/c
 
-CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(RYUDIR) -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/primme-3.2.3/include $(COLPACK_INCLUDES) -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC -DWIN32_LEAN_AND_MEAN
+CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(RYUDIR) -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/primme-3.2.3/include $(COLPACK_INCLUDES) -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DSUNDIALS_STATIC_DEFINE -DWIN32_LEAN_AND_MEAN
 
 # If we are using the Makefiles then assume we have PThreads available.
 CPPFLAGS += -DOM_HAVE_PTHREADS
@@ -197,7 +197,7 @@ libSimulationRuntimeC.dll: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a $(RYUDIR)/libryu
 	$(CXX) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM) -L$(OMBUILDDIR)/lib/omc \
 		-L$(CDASKRDIR) -lcdaskr -L$(RYUDIR) -lryu \
 		-lklu -lumfpack -lamd -lbtf -lcolamd -lsuitesparseconfig \
-		-lsundials_cvode -lsundials_idas -lsundials_kinsol -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense \
+		-lsundials_cvode -lsundials_idas -lsundials_kinsol -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense -lsundials_core \
 		-lipopt -ldmumps -lmumps_common -lseq -lgfortran \
 		-lprimme -lcolpack\
 		-llis -lcminpack -lomcgc \
@@ -344,19 +344,14 @@ endif
 	cp -p $(LIBFMIRUNTIME) $(LIBSIMULATIONFMI) $(builddir_lib)
 	# FMI runtime libs
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
-	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.4.dylib @rpath/libsundials_idas.4.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.5.dylib @rpath/libsundials_ida.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_cvodes.5.dylib @rpath/libsundials_cvodes.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_cvode.5.dylib @rpath/libsundials_cvode.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.5.dylib @rpath/libsundials_nvecserial.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.5.dylib @rpath/libsundials_kinsol.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	# C runtime libs
-	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.4.dylib @rpath/libsundials_idas.4.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.5.dylib @rpath/libsundials_ida.5.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_cvodes.5.dylib @rpath/libsundials_cvodes.5.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_cvode.5.dylib @rpath/libsundials_cvode.5.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.5.dylib @rpath/libsundials_nvecserial.5.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.5.dylib @rpath/libsundials_kinsol.5.dylib $(builddir_lib)/$(LIBSIMULATION)
+	# Every SUNDIALS package carries its own SOVERSION and they no longer agree
+	# (ida is 7, idas 6, the sunmatrix/sunlinsol ones 5, ...), so read the
+	# dependencies off the library instead of spelling the versions out.
+	test ! `uname` = Darwin || for target in $(builddir_lib)/$(LIBFMIRUNTIME) $(builddir_lib)/$(LIBSIMULATION); do \
+		for dep in `otool -L "$$target" | awk 'NR > 1 { print $$1 }' | grep '^libsundials_'`; do \
+			install_name_tool -change "$$dep" "@rpath/$$dep" "$$target"; \
+		done; \
+	done
 	test ! `uname` = Darwin || install_name_tool -change liblis.dylib @rpath/liblis.dylib $(builddir_lib)/$(LIBSIMULATION)
 	# copy fmi stuff
 	mkdir -p $(builddir_inc)/c/fmi-export

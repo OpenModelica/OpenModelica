@@ -315,7 +315,7 @@ ExternalProject_Add(rust_wasi_pic_sysroot
 option(RUST_OMC_ENABLE_SUNDIALS "Build SUNDIALS/KLU for wasm32-wasip1 (sparse solver in wasm-jit runtime)." ON)
 
 if(RUST_OMC_ENABLE_SUNDIALS)
-  set(_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0)
+  set(_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials)
   set(_suitesparse_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse)
 
   # SuiteSparse toolchain: base wasi toolchain + include dirs for KLU headers.
@@ -376,12 +376,31 @@ if(RUST_OMC_ENABLE_SUNDIALS)
     BINARY_DIR ${_sundials_ep_build}
     CMAKE_ARGS
       -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
-      -DSUNDIALS_BUILD_STATIC_LIBS=ON
-      -DSUNDIALS_BUILD_SHARED_LIBS=OFF
-      -DSUNDIALS_LAPACK_ENABLE=OFF
-      -DSUNDIALS_EXAMPLES_ENABLE_C=OFF
-      -DSUNDIALS_KLU_ENABLE=ON
+      # Keep in sync with 3rdParty/CMakeLists.txt.
+      -DBUILD_STATIC_LIBS=ON
+      -DBUILD_SHARED_LIBS=OFF
+      -DSUNDIALS_ENABLE_LAPACK=OFF
+      -DSUNDIALS_ENABLE_C_EXAMPLES=OFF
+      -DSUNDIALS_ENABLE_CXX_EXAMPLES=OFF
+      -DSUNDIALS_ENABLE_EXAMPLES_INSTALL=OFF
+      -DSUNDIALS_ENABLE_BENCHMARKS=OFF
+      -DSUNDIALS_TEST_ENABLE_UNIT_TESTS=OFF
+      -DSUNDIALS_ENABLE_ERROR_CHECKS=OFF
+      -DSUNDIALS_ENABLE_FORTRAN=OFF
+      -DSUNDIALS_ENABLE_KLU=ON
+      # The KLU compatibility checks try_compile() against the archives below.
+      # The toolchain builds try_compile targets as static libraries, so nothing
+      # is actually linked and the check cannot tell us anything.
+      -DSUNDIALS_ENABLE_KLU_CHECKS=OFF
       -DSUNDIALS_INDEX_SIZE=32
+      # SundialsPOSIXTimers.cmake probes the timers by generating a *sub-project*
+      # and try_compile()ing an executable in it. That sub-project is handed the
+      # compiler and the flags but not CMAKE_TOOLCHAIN_FILE, so it never sees the
+      # sysroot or the wasm32-wasip1 target and always fails here. Answer the
+      # question up front instead - wasi-libc has clock_gettime/clock_getres and
+      # CLOCK_MONOTONIC - otherwise sundials_profiler.c stops the build with
+      # "#error SUNProfiler needs POSIX or Windows timers".
+      -DSUNDIALS_POSIX_TIMERS=TRUE
       -DKLU_INCLUDE_DIR=${_suitesparse_sources}/KLU/Include
       -DKLU_LIBRARY=${_suitesparse_ep_build}/KLU/libklu.a
       -DAMD_LIBRARY=${_suitesparse_ep_build}/AMD/libamd.a
@@ -390,6 +409,7 @@ if(RUST_OMC_ENABLE_SUNDIALS)
       -DSUITESPARSECONFIG_LIBRARY=${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_sundials_ep_build} --parallel
       --target
+      sundials_core_static
       sundials_kinsol_static sundials_idas_static sundials_cvode_static
       sundials_nvecserial_static sundials_sunmatrixdense_static
       sundials_sunmatrixsparse_static sundials_sunlinsoldense_static
@@ -409,6 +429,7 @@ if(RUST_OMC_ENABLE_SUNDIALS)
       ${_suitesparse_ep_build}/COLAMD/libcolamd.a
       ${_suitesparse_ep_build}/BTF/libbtf.a
       ${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
+      ${_sundials_ep_build}/src/sundials/libsundials_core.a
       ${_sundials_ep_build}/src/kinsol/libsundials_kinsol.a
       ${_sundials_ep_build}/src/idas/libsundials_idas.a
       ${_sundials_ep_build}/src/cvode/libsundials_cvode.a
@@ -433,6 +454,9 @@ if(RUST_OMC_ENABLE_SUNDIALS)
         CACHE PATH "Directory the host SUNDIALS archives are collected into.")
     set(_native_sundials_libs
       sundials_cvode_static sundials_idas_static sundials_sunlinsolklu_static
+      sundials_sunlinsoldense_static sundials_sunmatrixsparse_static
+      sundials_sunmatrixdense_static sundials_nvecserial_static
+      sundials_core_static
       KLU_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static)
     set(_native_sundials_files "")
     foreach(_lib IN LISTS _native_sundials_libs)
@@ -569,7 +593,7 @@ if(EXISTS ${_wasi_libc_src}/CMakeLists.txt)
 endif()
 if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV
-       "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0"
+       "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials"
        "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse"
        # The PIC dylink side module compiles the sources again and needs the
        # `sundials_config.h` the wasm ExternalProject generates.
