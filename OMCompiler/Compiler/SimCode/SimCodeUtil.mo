@@ -5893,13 +5893,27 @@ function extractSpatialDistributionInfo
   output SimCode.SpatialDistributionInfo spatialInfo;
 protected
   list<SimCode.SpatialDistribution> spatial_lst;
+  list<SimCode.SpatialDistribution> noEventLst = {};
+  list<Integer> noEventSpDs;
   Mutable<Integer> maxIndex_ptr = Mutable.create(-1);
 algorithm
   // Traverse top-down so we can keep track of the guard condition of the
   // enclosing if-branch a spatialDistribution() operator sits in. The
   // storeSpatialDistribution() callback must be guarded by the same condition
+  // as the operator's evaluation.
   (_, (_, spatial_lst)) := BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsTopDownHelper, (function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (NONE(), {})));
-  spatialInfo := SimCode.SPATIAL_DISTRIBUTION_INFO(spatial_lst, Mutable.access(maxIndex_ptr));
+  // The noEvent() detection has to happen in the backend (BackendDAECreate),
+  // before the simplifier propagates noEvent() onto the relations inside the
+  // inputs. Read the collected indices from the event info.
+  BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(noEventSpatialDistributions = noEventSpDs)) := dlow.shared;
+  for sd in spatial_lst loop
+    noEventLst := (match sd
+        case SimCode.SPATIAL_DISTRIBUTION() guard List.contains(noEventSpDs, sd.index, intEq)
+        then SimCode.SPATIAL_DISTRIBUTION(sd.index, sd.in0, sd.in1, sd.pos, sd.dir, sd.initPnts, sd.initVals, sd.initSize, sd.condition, true);
+        else sd;
+      end match) :: noEventLst;
+  end for;
+  spatialInfo := SimCode.SPATIAL_DISTRIBUTION_INFO(listReverse(noEventLst), Mutable.access(maxIndex_ptr));
 end extractSpatialDistributionInfo;
 
 function extractSpatialDistributionInfoExp
@@ -5907,7 +5921,9 @@ function extractSpatialDistributionInfoExp
    together with the guard condition of the enclosing if-branch it sits in.
    The condition is carried in the traversal argument and conjoined per branch
    (then = cond, else = not cond) so the generated storeSpatialDistribution
-   callback can be guarded by the same event as the operator's evaluation."
+   callback can be guarded by the same event as the operator's evaluation.
+   noEvent() on the inputs is detected earlier, in BackendDAECreate, and read
+   from the event info in extractSpatialDistributionInfo."
   input output DAE.Exp callExp;
   output Boolean cont "Continue descending flag for Expression.traverseExpTopDown";
   input output tuple<Option<DAE.Exp>, list<SimCode.SpatialDistribution>> tpl "current guard condition and collected operators";
@@ -5929,7 +5945,7 @@ algorithm
           Error.addInternalError("function extractDelayedExpressions failed: initialPoints and initialValues of spatialDistribution are not of the same size.", sourceInfo());
         end if;
         initSize := Expression.sizeOf(Expression.typeof(initPnts));
-        spatialInfo := SimCode.SPATIAL_DISTRIBUTION(i, in0, in1, pos, dir, initPnts, initVals, initSize, curCond) :: spatialInfo;
+        spatialInfo := SimCode.SPATIAL_DISTRIBUTION(i, in0, in1, pos, dir, initPnts, initVals, initSize, curCond, false) :: spatialInfo;
     then (true, (curCond, spatialInfo));
 
     // Descend into the branches ourselves so the accumulated guard condition

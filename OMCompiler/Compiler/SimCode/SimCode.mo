@@ -273,6 +273,7 @@ uniontype SpatialDistribution
     DAE.Exp initVals      "initial grid values";
     Integer initSize      "number of initial points";
     Option<DAE.Exp> condition "guard condition of the enclosing if-branch, if any";
+    Boolean noEvent       "true when either input is wrapped in noEvent(), suppressing output events";
   end SPATIAL_DISTRIBUTION;
 end SpatialDistribution;
 

@@ -9640,7 +9640,7 @@ end collapseRemovedEqs1;
 public function emptyEventInfo
   output BackendDAE.EventInfo info;
 algorithm
-  info := BackendDAE.EVENT_INFO({}, ZeroCrossings.new(), DoubleEnded.fromList({}), ZeroCrossings.new(), 0);
+  info := BackendDAE.EVENT_INFO({}, ZeroCrossings.new(), DoubleEnded.fromList({}), ZeroCrossings.new(), 0, {});
 end emptyEventInfo;
 
 public function getSubClock

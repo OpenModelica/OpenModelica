@@ -651,6 +651,7 @@ uniontype EventInfo
     DoubleEnded.MutableList<ZeroCrossing> relations "list of zero crossing function as before";
     ZeroCrossingSet samples       "[deprecated] list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
     Integer numberMathEvents      "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
+    list<Integer> noEventSpatialDistributions "indices of spatialDistribution calls with noEvent() wrapped inputs, suppressing output events";
   end EVENT_INFO;
 end EventInfo;
 

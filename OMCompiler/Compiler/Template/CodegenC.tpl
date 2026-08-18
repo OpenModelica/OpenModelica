@@ -4019,13 +4019,15 @@ template functionInitSpatialDistribution(SpatialDistributionInfo spatialInfo, St
 ::=
   let &varDecls = buffer ""
   let &auxFunction = buffer ""
-  let storePart = (match spatialInfo case SPATIAL_DISTRIBUTION_INFO(__) then (spatialDistributions |> SPATIAL_DISTRIBUTION(index=index, initPnts=initPnts, initVals=initVals, initSize=initSize) =>
+  let storePart = (match spatialInfo case SPATIAL_DISTRIBUTION_INFO(__) then (spatialDistributions |> SPATIAL_DISTRIBUTION(index=index, initPnts=initPnts, initVals=initVals, initSize=initSize, noEvent=noEvt) =>
       let &preExp = buffer ""
       let initPntsT = daeExp(initPnts, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
       let initValsT = daeExp(initVals, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      let suppressEvents = if noEvt then "1" else "0"
       <<
       <%preExp%>
-      initSpatialDistribution(data, threadData, <%index%>, &<%initPntsT%>, &<%initValsT%>, <%initSize%>);<%\n%>
+      initSpatialDistribution(data, threadData, <%index%>, &<%initPntsT%>, &<%initValsT%>, <%initSize%>);
+      data->simulationInfo->spatialDistributionData[<%index%>].suppressEvents = <%suppressEvents%>;
       >>
     ))
   <<

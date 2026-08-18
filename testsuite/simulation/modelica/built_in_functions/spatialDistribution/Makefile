@@ -18,6 +18,7 @@ TESTFILES = \
 	largePositionReversal.mos \
 	rampInput.mos \
 	frozenBranchInitialEvent.mos \
+	noEvent.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

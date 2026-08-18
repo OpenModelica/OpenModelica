@@ -121,6 +121,7 @@ protected
   list<DAE.Element> elems, aliaseqns;
   AvlTreePathFunction.Tree functionTree;
   list<BackendDAE.TimeEvent> timeEvents;
+  list<Integer> noEventSpatialDistributions;
   Integer numCheckpoints;
   BackendDAE.EqSystem syst;
 algorithm
@@ -134,7 +135,7 @@ algorithm
     functionTree := FCore.getFunctionTree(inCache);
     //deactivated because of some codegen errors: functionTree := renameFunctionParameter(functionTree);
     functionTree := lowerFunctions(functionTree);
-    (DAE.DAE(elems), functionTree, timeEvents) := processBuiltinExpressions(lst, functionTree);
+    (DAE.DAE(elems), functionTree, timeEvents, noEventSpatialDistributions) := processBuiltinExpressions(lst, functionTree);
     (varlst, globalKnownVarLst, extvarlst, eqns, reqns, ieqns, constrs, clsAttrs, extObjCls, aliaseqns, _) :=
       lower2(listReverse(elems), functionTree, HashTableExpToExp.emptyHashTable());
 
@@ -158,7 +159,7 @@ algorithm
     eqnarr := BackendEquation.listEquation(eqns);
     reqnarr := BackendEquation.listEquation(reqns);
     ieqnarr := BackendEquation.listEquation(ieqns);
-    einfo := BackendDAE.EVENT_INFO(timeEvents, ZeroCrossings.new(), DoubleEnded.fromList({}), ZeroCrossings.new(), 0);
+    einfo := BackendDAE.EVENT_INFO(timeEvents, ZeroCrossings.new(), DoubleEnded.fromList({}), ZeroCrossings.new(), 0, noEventSpatialDistributions);
     symjacs := {(NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
                 (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
                 (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
@@ -1027,59 +1028,70 @@ protected function processBuiltinExpressions "author: lochel
   output DAE.DAElist outDAE;
   output AvlTreePathFunction.Tree outTree;
   output list<BackendDAE.TimeEvent> outTimeEvents;
+  output list<Integer> outNoEventSpatialDistributions;
 protected
   HashTableExpToIndex.HashTable ht;
 algorithm
   ht := HashTableExpToIndex.emptyHashTable();
-  (outDAE, outTree, (_, (_, _, _, _, outTimeEvents))) := DAEUtil.traverseDAE(inDAE, functionTree, Expression.traverseSubexpressionsHelper, (transformBuiltinExpression, (ht, 0, 0, 0, {})));
+  (outDAE, outTree, (_, (_, _, _, _, outTimeEvents, outNoEventSpatialDistributions))) := DAEUtil.traverseDAE(inDAE, functionTree, Expression.traverseSubexpressionsHelper, (transformBuiltinExpression, (ht, 0, 0, 0, {}, {})));
 end processBuiltinExpressions;
 
 protected function transformBuiltinExpression "author: lochel
   Helper for transformBuiltinExpressions"
   input DAE.Exp inExp;
-  input tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> inTuple;
+  input tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>, list<Integer> /*noEventSpatialDistributions*/> inTuple;
   output DAE.Exp outExp;
-  output tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> outTuple;
+  output tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>, list<Integer> /*noEventSpatialDistributions*/> outTuple;
 algorithm
   (outExp,outTuple) := match (inExp, inTuple)
     local
-      DAE.Exp start, interval;
+      DAE.Exp start, interval, in0, in1;
       list<DAE.Exp> es;
       HashTableExpToIndex.HashTable ht;
       Integer iDelay, iSample, iSpatial;
       list<BackendDAE.TimeEvent> timeEvents;
+      list<Integer> noEventSpDs;
+      Boolean hasNoEvent;
       DAE.CallAttributes attr;
 
     // delay [already in ht]
-    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, _, _, _, _)) guard(BaseHashTable.hasKey(inExp, ht))
+    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, _, _, _, _, _)) guard(BaseHashTable.hasKey(inExp, ht))
     then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(BaseHashTable.get(inExp, ht))::es, attr), inTuple);
 
     // delay [not yet in ht]
-    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, iSpatial, timeEvents)) algorithm
+    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, iSpatial, timeEvents, noEventSpDs)) algorithm
       ht := BaseHashTable.add((inExp, iDelay+1), ht);
-    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample, iSpatial, timeEvents));
+    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample, iSpatial, timeEvents, noEventSpDs));
 
     // spatialDistribution [already in ht]
-    case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, _, _, _, _)) guard(BaseHashTable.hasKey(inExp, ht))
+    case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, _, _, _, _, _)) guard(BaseHashTable.hasKey(inExp, ht))
     then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(BaseHashTable.get(inExp, ht))::es, attr), inTuple);
 
     // spatialDistribution [not yet in ht]
-    case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, iDelay, iSample, iSpatial, timeEvents)) algorithm
+    // Detect noEvent() on the inputs here, before the simplifier propagates it
+    // onto the relations inside the arguments (where the wrapping itself is lost).
+    case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es as {in0, in1, _, _, _, _}, attr), (ht, iDelay, iSample, iSpatial, timeEvents, noEventSpDs)) algorithm
       ht := BaseHashTable.add((inExp, iSpatial+1), ht);
-    then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(iSpatial)::es, attr), (ht, iDelay, iSample, iSpatial+1, timeEvents));
+      hasNoEvent := match (in0, in1)
+        case (DAE.CALL(path = Absyn.IDENT("noEvent")), _) then true;
+        case (_, DAE.CALL(path = Absyn.IDENT("noEvent"))) then true;
+        else false;
+      end match;
+      noEventSpDs := if hasNoEvent then iSpatial::noEventSpDs else noEventSpDs;
+    then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(iSpatial)::es, attr), (ht, iDelay, iSample, iSpatial+1, timeEvents, noEventSpDs));
 
     // sample [already in ht]
-    case (DAE.CALL(Absyn.IDENT("sample"), es as {_, interval}, attr), (ht, _, _, _, _))
+    case (DAE.CALL(Absyn.IDENT("sample"), es as {_, interval}, attr), (ht, _, _, _, _, _))
       guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval)) and BaseHashTable.hasKey(inExp, ht)) algorithm
     then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(BaseHashTable.get(inExp, ht))::es, attr), inTuple);
 
     // sample [not yet in ht]
-    case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, iSpatial, timeEvents))
-    guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) algorithm
+    case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, iSpatial, timeEvents, noEventSpDs))
+      guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) algorithm
       iSample := iSample+1;
       timeEvents := List.appendElt(BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval, NONE()), timeEvents);
       ht := BaseHashTable.add((inExp, iSample), ht);
-    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample, iSpatial, timeEvents));
+    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample, iSpatial, timeEvents, noEventSpDs));
 
     else (inExp,inTuple);
   end match;
