@@ -120,11 +120,6 @@ typedef struct IDA_SOLVER
   N_Vector* ySp;            /* Array of sensitfity vectors of state derivatives */
   N_Vector* ySResult;
 
-#ifdef USE_PARJAC
-  JACOBIAN* jacColumns;
-#endif
-  int allocatedParMem; /* indicated if parallel memory was allocated, 0=false, 1=true*/
-
   /* ### daeMode homotopy ramp ### */
   int homotopyRampActive;   /* set when the initial DAE Jacobian was singular and a
                                homotopy lambda ramp (0->1 over t_ramp) is used to get

@@ -87,7 +87,6 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_IPOPT_WARM_START */             "ipopt_warm_start",
   /* FLAG_JACOBIAN */                     "jacobian",
   /* FLAG_JACOBIAN_NOMINAL_FACTOR */      "jacobianNominalFactor",
-  /* FLAG_JACOBIAN_THREADS */             "jacobianThreads",
   /* FLAG_L */                            "l",
   /* FLAG_L_DATA_RECOVERY */              "l_datarec",
   /* FLAG_LOG_FORMAT */                   "logFormat",
@@ -249,7 +248,6 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IPOPT_WARM_START */             "value specifies lvl for a warm start in ipopt: 1,2,3,...",
   /* FLAG_JACOBIAN */                     "select the calculation method of the Jacobian used only by ida and dassl solver.",
   /* FLAG_JACOBIAN_NOMINAL_FACTOR */      "[double (default 1.0)] scales the nominal value the numerical Jacobian differences over below a variable's absolute tolerance.",
-  /* FLAG_JACOBIAN_THREADS */             "[int default: 1] value specifies the number of threads for jacobian evaluation in dassl or ida.",
   /* FLAG_L */                            "value specifies a time where the linearization of the model should be performed",
   /* FLAG_L_DATA_RECOVERY */              "emit data recovery matrices with model linearization",
   /* FLAG_LOG_FORMAT */                   "value specifies the log format of the executable. -logFormat=text (default), -logFormat=xml or -logFormat=xmltcp",
@@ -496,9 +494,6 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  no scale of its own, over delta_h*factor*nominal[i] instead.\n"
   "  Lower the factor for a model that is non-smooth at that wider step;\n"
   "  the value is a Double with default value 1.0.",
-  /* FLAG_JACOBIAN_THREADS */
-  "  Value specifies the number of threads for jacobian evaluation in dassl or ida."
-  "  The value is an Integer with default value 1.",
   /* FLAG_L */
   "  Value specifies a time where the linearization of the model should be performed.",
   /* FLAG_L_DATA_RECOVERY */
@@ -815,7 +810,6 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_IPOPT_WARM_START */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_JACOBIAN */                     FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_JACOBIAN_NOMINAL_FACTOR */      FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_JACOBIAN_THREADS */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_L */                            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_L_DATA_RECOVERY */              FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_LOG_FORMAT */                   FLAG_REPEAT_POLICY_FORBID,
@@ -976,7 +970,6 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_IPOPT_WARM_START */             FLAG_TYPE_OPTION,
   /* FLAG_JACOBIAN */                     FLAG_TYPE_OPTION,
   /* FLAG_JACOBIAN_NOMINAL_FACTOR */      FLAG_TYPE_OPTION,
-  /* FLAG_JACOBIAN_THREADS */             FLAG_TYPE_OPTION,
   /* FLAG_L */                            FLAG_TYPE_OPTION,
   /* FLAG_L_DATA_RECOVERY */              FLAG_TYPE_FLAG,
   /* FLAG_LOG_FORMAT */                   FLAG_TYPE_OPTION,

@@ -159,7 +159,6 @@ end translateModel;
     #include "simulation/simulation_info_json.h"
     #include "simulation/simulation_runtime.h"
     #include "util/omc_error.h"
-    #include "util/parallel_helper.h"
     #include "simulation/jacobian_util.h"
     #include "simulation/simulation_omc_assert.h"
     #include "simulation/solver/model_help.h"
@@ -2539,7 +2538,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
             threadData_t *threadData = userData->threadData;
             const int equationIndexes[2] = {1,<%ls.index%>};
             <% if ls.partOfJac then
-              'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
+              'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[0].parentJacobian;'
             %>
             JACOBIAN* jacobian = NULL;
             <%varDeclsRes%>
@@ -2571,7 +2570,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
           void setLinearMatrixA<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData)
           {
             const int equationIndexes[2] = {1,<%ls.index%>};
-            <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+            <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[0].parentJacobian;'%>
             <%varDecls%>
             <%equation_withProfile(ls.index, MatrixA)%>
           }
@@ -2579,7 +2578,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
           void setLinearVectorb<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData)
           {
             const int equationIndexes[2] = {1,<%ls.index%>};
-            <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+            <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[0].parentJacobian;'%>
             <%varDecls2%>
             <%equation_withProfile(ls.index, vectorb)%>
           }
@@ -2627,7 +2626,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%ls.index%>};
          <% if ls.partOfJac then
-           'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
+           'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[0].parentJacobian;'
          %>
          JACOBIAN* jacobian = NULL;
          <%varDeclsRes%>
@@ -2651,7 +2650,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%at.index%>};
          <% if ls.partOfJac then
-           'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
+           'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[0].parentJacobian;'
          %>
          JACOBIAN* jacobian = NULL;
          <%varDeclsRes2%>
@@ -2707,7 +2706,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
        void setLinearMatrixA<%ls.index%>(DATA* data, LINEAR_SYSTEM_DATA *linearSystemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
-         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[0].parentJacobian;'%>
          <%varDecls%>
          <%MatrixA%>
        }
@@ -2715,7 +2714,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
        void setLinearVectorb<%ls.index%>(DATA* data, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
-         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[0].parentJacobian;'%>
          <%varDecls2%>
          <%vectorb%>
        }
@@ -2727,7 +2726,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
        void setLinearMatrixA<%at.index%>(DATA* data, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%at.index%>};
-         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[0].parentJacobian;'%>
          <%varDecls3%>
          <%MatrixA2%>
        }
@@ -2735,7 +2734,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
        void setLinearVectorb<%at.index%>(DATA* data, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%at.index%>};
-         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[0].parentJacobian;'%>
          <%varDecls4%>
          <%vectorb2%>
        }
@@ -7581,7 +7580,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
   infoStreamPrint(OMC_LOG_DT, 0, "Solving linear system <%ls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex);' %>
   <% if ls.partOfJac then
-     'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian = jacobian;'
+     'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[0].parentJacobian = jacobian;'
   %>
 
   retValue = solve_linear_system(data, threadData, <%ls.indexLinearSystem%>, &aux_x[0]);

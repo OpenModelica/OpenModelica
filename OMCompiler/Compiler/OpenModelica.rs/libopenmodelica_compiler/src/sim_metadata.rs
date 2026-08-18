@@ -74,7 +74,6 @@ pub static FLAG_NAME: CStrTable<156> = CStrTable([
     c"ipopt_max_iter".as_ptr(),
     c"ipopt_warm_start".as_ptr(),
     c"jacobian".as_ptr(),
-    c"jacobianThreads".as_ptr(),
     c"l".as_ptr(),
     c"l_datarec".as_ptr(),
     c"logFormat".as_ptr(),

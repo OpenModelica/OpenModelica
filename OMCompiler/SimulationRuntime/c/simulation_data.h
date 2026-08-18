@@ -509,7 +509,7 @@ typedef struct LINEAR_SYSTEM_DATA
   SOLVER_MATRIX_FORMAT matrixFormat;   /* dense or sparse, chosen by the backend */
   modelica_boolean useSparseSolver;    /* matrixFormat, unless no sparse solver was built in */
 
-  LINEAR_SYSTEM_THREAD_DATA* parDynamicData; /* Array of length numMaxThreads for internal write data */
+  LINEAR_SYSTEM_THREAD_DATA* parDynamicData; /* Internal write data of the solver */
 
   // ToDo: Gather information from all threads if in parallel region
   modelica_boolean solved;             /* true if solved in current step */

@@ -91,7 +91,6 @@
 #include "simulation/solver/initialization/initialization.h"
 #include "simulation/solver/dae_mode.h"
 #include "dataReconciliation/dataReconciliation.h"
-#include "util/parallel_helper.h"
 
 #ifdef _OMC_QSS_LIB
   #include "solver_qss/solver_qss.h"
@@ -1226,38 +1225,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     warningStreamPrint(OMC_LOG_STDOUT, 0, "The daeMode flag is *deprecated*, because it is not needed any more.\n"
       "If a model is compiled in \"DAEmode\" with compiler flag --daeMode, then it simulates automatically in DAE mode.");
   }
-
-  /* Set the maximum number of threads prior to any allocation w.r.t.
-   * linear systems and Jacobians in order to avoid memory leaks.
-   */
-#ifdef USE_PARJAC
-  int num_threads = omc_get_max_threads();
-  if (omc_flag[FLAG_JACOBIAN_THREADS]) {
-    int num_threads_tmp = atoi(omc_flagValue[FLAG_JACOBIAN_THREADS]);
-    infoStreamPrint(OMC_LOG_STDOUT, 0,
-         "Number of threads passed via -jacobianThreads: %d",
-         num_threads_tmp);
-    if (0 >= num_threads_tmp) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0,
-          "Number of desired OpenMP threads for parallel Jacobian evaluation is <= 0.");
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Use omp_get_max_threads().");
-    } else {
-      num_threads = num_threads_tmp;
-    }
-  }
-  omp_set_num_threads(num_threads);
-
-  /* Keep this on LOG_SOLVER: it is emitted by every simulation of a runtime built
-     with USE_PARJAC and would otherwise show up in all reference outputs. */
-  infoStreamPrint(OMC_LOG_SOLVER, 0,
-      "Number of OpenMP threads for parallel Jacobian evaluation: %d",
-      omc_get_max_threads());
-#else
-  if (omc_flag[FLAG_JACOBIAN_THREADS]) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0,
-          "Simulation flag jacobianThreads not available. Make sure you have configured omc with \"--enable-parjac\" and build with a compiler supporting OpenMP.");
-  }
-#endif
 
   /* set log activation from equationIndex and lv_system */
   setLVSystems(data, threadData);

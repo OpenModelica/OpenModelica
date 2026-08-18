@@ -51,27 +51,6 @@ set_target_properties(OpenModelicaRuntimeCInterface PROPERTIES
   PUBLIC_HEADER "${OMC_SIMRT_PUBLIC_HEADERS}"
 )
 
-# ######################################################################################################################
-# Parallel Jacobian evaluation (USE_PARJAC)
-#
-# The OpenMP-parallel symbolic Jacobian evaluation touches several translation
-# units spread over the util/, simulation/ and optimization/ object libraries and
-# it changes the layout of DASSL_DATA/IDA_SOLVER. So the define has to be visible
-# to *all* of them consistently; hang it (and the OpenMP flags) on the interface
-# target every runtime object library links to.
-if(OM_OMC_ENABLE_PARJAC)
-  find_package(OpenMP REQUIRED COMPONENTS C CXX)
-  target_compile_definitions(OpenModelicaRuntimeCInterface INTERFACE USE_PARJAC)
-  # Both language targets: some of the translation units including
-  # util/parallel_helper.h (e.g. simulation_runtime.cpp) are C++.
-  target_link_libraries(OpenModelicaRuntimeCInterface
-    INTERFACE
-      OpenMP::OpenMP_C
-      OpenMP::OpenMP_CXX
-  )
-  message(STATUS "Parallel Jacobian evaluation (USE_PARJAC) enabled: ${OpenMP_C_FLAGS}")
-endif()
-
 install(
   FILES ${OMC_SIMRT_PUBLIC_HEADERS}
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c

@@ -32,7 +32,6 @@
 #define OMC_JACOBIAN_SYMBOLICAL_H
 
 #include "../../simulation_data.h"
-#include "util/parallel_helper.h"
 
 /**
  * @brief Set element of Jacobian matrix.
@@ -48,14 +47,8 @@
  */
 typedef void (*setJacElementFunc)(int row, int column, int nth, double value, void* Jac, int nRows);
 
-#ifdef USE_PARJAC
-void allocateThreadLocalJacobians(DATA* data, JACOBIAN** jacColumns, int jacobianIndex);
-void syncThreadLocalJacobians(JACOBIAN* jacColumns, const JACOBIAN* jac);
-void freeAnalyticalJacobian(JACOBIAN** jacColumns);
-#endif
-
 void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,
-                                              void* matrixA, JACOBIAN* jacColumns,
+                                              void* matrixA, JACOBIAN* jacobian,
                                               DATA* data,
                                               threadData_t* threadData,
                                               setJacElementFunc setJacElement);
