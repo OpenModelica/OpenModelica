@@ -460,7 +460,7 @@ $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials/CM
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/sundials/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/sundials/build_msvc/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON ^' >> 3rdParty/sundials/build_msvc/build.bat
-	echo '-DSUNDIALS_BUILD_STATIC_LIBS:Bool=OFF -DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_INCLUDEDIR=include -DCMAKE_INSTALL_PREFIX=. ^' >> 3rdParty/sundials/build_msvc/build.bat
+	echo '-DSUNDIALS_BUILD_STATIC_LIBS:Bool=OFF -DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_INCLUDEDIR=include -DCMAKE_INSTALL_BINDIR=lib -DCMAKE_INSTALL_PREFIX=. ^' >> 3rdParty/sundials/build_msvc/build.bat
 	echo '-DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF ^' >> 3rdParty/sundials/build_msvc/build.bat
 	echo '-DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="%OMDEV%\\lib\\3rdParty\\Lapack\\Lib\\blas_win32.lib;%OMDEV%\\lib\\3rdParty\\Lapack\\Lib\\lapack_win32.lib" -DSUNDIALS_F77_FUNC_UNDERSCORES=one -DSUNDIALS_F77_FUNC_CASE=lower ^' >> 3rdParty/sundials/build_msvc/build.bat
 	echo '-DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(OMBUILDDIR_MSVC)\\lib\\omc\\msvc\\" -DKLU_INCLUDE_DIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc\\suitesparse" ^' >> 3rdParty/sundials/build_msvc/build.bat
