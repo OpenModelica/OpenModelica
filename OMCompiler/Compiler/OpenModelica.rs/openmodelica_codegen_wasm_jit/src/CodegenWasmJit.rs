@@ -2571,7 +2571,8 @@ fn is_result_output(sv: &SimCodeVar::SimVar) -> bool {
 /// filters every name that does not match `^(<filter>)$`. C matches per run; the
 /// runtimes have no regex engine, so it is settled here into
 /// [`var_filter::FILTERED`], protected variables included (`-emit_protected`
-/// can reach them).
+/// can reach them). It walks the variable and *alias* arrays only, so a plain
+/// parameter is never filtered.
 fn apply_variable_filter(result_vars: &mut [ResultVar], filter: &str) {
     if filter == ".*" || filter.is_empty() {
         return;
@@ -2581,7 +2582,8 @@ fn apply_variable_filter(result_vars: &mut [ResultVar], filter: &str) {
         return;
     };
     for v in result_vars.iter_mut() {
-        if !matches!(v.kind, ResultKind::Time) && !re.is_match(&v.name) {
+        let is_param = matches!(v.kind, ResultKind::Param { .. }) && v.filter & var_filter::ALIAS == 0;
+        if !matches!(v.kind, ResultKind::Time) && !is_param && !re.is_match(&v.name) {
             v.filter |= var_filter::FILTERED;
         }
     }
@@ -4390,23 +4392,40 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     }
 
     // --- External-object destructors (teardown). One function that calls each
-    // extObj's `<class>.destructor(handle)` in reverse construction order, reading
-    // the handle from its SimData slot. Emitted (and exported) only when the model
-    // has external objects, so output is byte-identical otherwise. ---
+    // extObj's `<class>.destructor(handle)`, reading the handle from its SimData
+    // slot, in `listReverse(extObjInfo.vars)` order as CodegenC's
+    // `callExternalObjectDestructors` does — the causalized construction order,
+    // a different permutation from the `extObjVars` slot order. ---
     let extobj_vars: Vec<&SimCodeVar::SimVar> = lst(&vars.extObjVars).collect();
+    let extobj_slot: HashMap<String, u32> = extobj_vars
+        .iter()
+        .enumerate()
+        .map(|(i, sv)| Ok((sim_cref_key(&sv.name)?, layout.eobj_off + (i as u32) * 4)))
+        .collect::<Result<_>>()?;
+    let mut destruct_order: Vec<&SimCodeVar::SimVar> = lst(&sim_code.extObjInfo.vars).collect();
+    if destruct_order.len() != extobj_vars.len()
+        || destruct_order.iter().any(|sv| {
+            sim_cref_key(&sv.name).is_ok_and(|k| !extobj_slot.contains_key(&k))
+        })
+    {
+        destruct_order = extobj_vars.clone();
+    }
+    destruct_order.reverse();
     // Always emitted + exported (empty when the model has no external objects) so
     // the standalone `wasm-merge` and interactive table always resolve it. It is
     // the first body after the fixed base functions, so its index stays `eq_base+8`.
     let destructors_idx = {
         use we::Instruction as I;
         let mut f = we::Function::new([]);
-        for (i, sv) in extobj_vars.iter().enumerate().rev() {
+        for sv in &destruct_order {
             let key = extobj_destructor_key(sv)?;
             let didx = by_name
                 .get(&key)
                 .ok_or_else(|| "CodegenWasmJit: external-object destructor was not compiled")?
                 .index;
-            let slot = layout.eobj_off + (i as u32) * 4;
+            let slot = *extobj_slot
+                .get(&sim_cref_key(&sv.name)?)
+                .ok_or_else(|| "CodegenWasmJit: external object has no SimData slot")?;
             f.instruction(&I::LocalGet(0)); // SimData*
             f.instruction(&I::I32Load(crate::CodegenWasmJitFunctions::mem_arg(slot, 2))); // handle
             f.instruction(&I::Call(didx));

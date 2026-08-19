@@ -6683,7 +6683,7 @@ name = "openmodelica_modelica_utilities"
 version = "0.1.0"
 dependencies = [
  "libc",
- "openmodelica_wasi",
+ "openmodelica_sim_meta",
 ]
 
 [[package]]
