@@ -1333,6 +1333,9 @@ pub(crate) struct SimCtx {
     /// as one runtime array object (gather on read, scatter on assign). See
     /// `compile_sim_cref_read`/`compile_sim_cref_assign`.
     pub(crate) array_groups: Arc<HashMap<String, ArrayGroup>>,
+    /// The same keys for the arrays that are not one contiguous range; only a
+    /// run-time subscript resolves through these (see `ScatterGroup`).
+    pub(crate) scatter_groups: Arc<HashMap<String, ScatterGroup>>,
     /// `varKind = CONST` variables own no slot: a reference is the binding
     /// literal, as in C's `varArrayNameValues`.
     pub(crate) consts: Arc<HashMap<String, Arc<DAE::Exp>>>,
@@ -1545,6 +1548,17 @@ impl ArrayGroup {
         }
         s
     }
+}
+
+/// An array with no [`ArrayGroup`] because its scalarized elements are not one
+/// contiguous block: alias elimination pointed them at unrelated slots, or one is
+/// a negated alias. A run-time subscript selects between their own offsets.
+#[derive(Clone)]
+pub(crate) struct ScatterGroup {
+    pub(crate) wty: WTy,
+    pub(crate) dims: Vec<u32>,
+    /// `SimData` byte offset and alias negation of each element, row-major.
+    pub(crate) elems: Vec<(u32, Neg)>,
 }
 
 /// A constant array's elements, row-major; it owns no `SimData` slots.
@@ -5425,12 +5439,14 @@ fn sim_pre_is_stored(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
         }
     }
     if let Some((base, _)) = array_ref_of(cref)? {
-        if sim.array_groups.contains_key(&base) {
+        if sim.array_groups.contains_key(&base) || sim.scatter_groups.contains_key(&base) {
             return Ok(true);
         }
     }
     match sim_array_base_subs(cref)? {
-        Some((base, _)) => Ok(sim.array_groups.contains_key(&base)),
+        Some((base, _)) => {
+            Ok(sim.array_groups.contains_key(&base) || sim.scatter_groups.contains_key(&base))
+        }
         None => Ok(false),
     }
 }
@@ -5850,16 +5866,7 @@ fn emit_sim_array_elem_addr(
     }
     let (_, stride) = sim_array_elem_kind_stride(group.wty);
     let data = ctx.sim()?.data_local;
-    ctx.emit(we::Instruction::I32Const(0)); // acc = 0
-    for (k, exp) in sub_exps.iter().enumerate() {
-        ctx.emit(we::Instruction::I32Const(group.dims[k] as i32));
-        ctx.emit(we::Instruction::I32Mul); // acc * dims[k]
-        let wt = compile_exp(ctx, exp)?;
-        coerce(ctx, wt, WTy::I32);
-        ctx.emit(we::Instruction::I32Const(1));
-        ctx.emit(we::Instruction::I32Sub); // e_k - 1 (1-based -> 0-based)
-        ctx.emit(we::Instruction::I32Add); // acc = acc*dims[k] + (e_k - 1)
-    }
+    emit_sim_flat_index(ctx, &group.dims, sub_exps)?;
     // addr = data + base_off + linear * stride
     ctx.emit(we::Instruction::I32Const(stride as i32));
     ctx.emit(we::Instruction::I32Mul);
@@ -5867,6 +5874,94 @@ fn emit_sim_array_elem_addr(
     ctx.emit(we::Instruction::I32Add);
     ctx.emit(we::Instruction::I32Const(group.base_off as i32));
     ctx.emit(we::Instruction::I32Add);
+    Ok(group.wty)
+}
+
+/// Push the 0-based row-major index of element `[e1,…,en]` of an array shaped
+/// `dims`, built at run time (Horner: `acc = acc*dims[k] + (e_k - 1)`).
+fn emit_sim_flat_index(ctx: &mut FnCtx, dims: &[u32], sub_exps: &[Arc<DAE::Exp>]) -> Result<()> {
+    ctx.emit(we::Instruction::I32Const(0));
+    for (k, exp) in sub_exps.iter().enumerate() {
+        ctx.emit(we::Instruction::I32Const(dims[k] as i32));
+        ctx.emit(we::Instruction::I32Mul);
+        let wt = compile_exp(ctx, exp)?;
+        coerce(ctx, wt, WTy::I32);
+        ctx.emit(we::Instruction::I32Const(1));
+        ctx.emit(we::Instruction::I32Sub); // e_k - 1 (1-based -> 0-based)
+        ctx.emit(we::Instruction::I32Add);
+    }
+    Ok(())
+}
+
+/// Apply an alias negation to the value on the stack, as C's `crefToCStr` does.
+fn emit_neg(ctx: &mut FnCtx, wty: WTy, neg: Neg) {
+    match wty {
+        WTy::F64 => {
+            if neg != Neg::None {
+                ctx.emit(we::Instruction::F64Neg);
+            }
+        }
+        WTy::I32 => match neg {
+            Neg::None => {}
+            // wasm has no `i32.neg`.
+            Neg::Arith => {
+                ctx.emit(we::Instruction::I32Const(-1));
+                ctx.emit(we::Instruction::I32Mul);
+            }
+            // A Boolean is stored as 0/1, so `!v` is `v == 0`.
+            Neg::Not => ctx.emit(we::Instruction::I32Eqz),
+        },
+    }
+}
+
+/// Select element `[e1,…,en]` of a [`ScatterGroup`] with a chain of `select`s over
+/// the run-time index, picking the element's offset — or its value, when the
+/// elements carry different alias negations. Leaves the element's byte address on
+/// the stack with `addr_only` (for a store), otherwise its value.
+fn emit_sim_scatter_elem(
+    ctx: &mut FnCtx,
+    group: &ScatterGroup,
+    sub_exps: &[Arc<DAE::Exp>],
+    addr_only: bool,
+) -> Result<WTy> {
+    use we::Instruction as I;
+    let negated = group.elems.iter().any(|(_, n)| *n != Neg::None);
+    if addr_only && negated {
+        return Err("CodegenWasmJit: assignment to negated alias");
+    }
+    let data = ctx.sim()?.data_local;
+    emit_sim_flat_index(ctx, &group.dims, sub_exps)?;
+    let flat = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::LocalSet(flat));
+    // `acc = flat != k ? acc : <element k>`: one value on the stack, no branches.
+    for (k, &(off, neg)) in group.elems.iter().enumerate() {
+        if negated {
+            ctx.emit(I::LocalGet(data));
+            match group.wty {
+                WTy::F64 => ctx.emit(I::F64Load(mem_arg(off, 3))),
+                WTy::I32 => ctx.emit(I::I32Load(mem_arg(off, 2))),
+            }
+            emit_neg(ctx, group.wty, neg);
+        } else {
+            ctx.emit(I::I32Const(off as i32));
+        }
+        if k > 0 {
+            ctx.emit(I::LocalGet(flat));
+            ctx.emit(I::I32Const(k as i32));
+            ctx.emit(I::I32Ne);
+            ctx.emit(I::Select);
+        }
+    }
+    if !negated {
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::I32Add);
+        if !addr_only {
+            match group.wty {
+                WTy::F64 => ctx.emit(I::F64Load(mem_arg(0, 3))),
+                WTy::I32 => ctx.emit(I::I32Load(mem_arg(0, 2))),
+            }
+        }
+    }
     Ok(group.wty)
 }
 
@@ -5939,6 +6034,9 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
                 }
                 return Ok(Some(wty));
             }
+            if let Some(group) = ctx.sim()?.scatter_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
+                return emit_sim_scatter_elem(ctx, &group, &sub_exps, false).map(Some);
+            }
         }
     }
     // Contiguous slice `base[i,…,:]`: gather the row-major block.
@@ -5994,25 +6092,10 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
     let data = ctx.sim()?.data_local;
     ctx.emit(we::Instruction::LocalGet(data));
     match slot.wty {
-        WTy::F64 => {
-            ctx.emit(we::Instruction::F64Load(mem_arg(slot.off, 3)));
-            if slot.negate != Neg::None {
-                ctx.emit(we::Instruction::F64Neg);
-            }
-        }
-        WTy::I32 => {
-            ctx.emit(we::Instruction::I32Load(mem_arg(slot.off, 2)));
-            match slot.negate {
-                Neg::None => {}
-                Neg::Arith => {
-                    ctx.emit(we::Instruction::I32Const(0));
-                    ctx.emit(we::Instruction::I32Sub);
-                }
-                // A Boolean is stored as 0/1, so `!v` is `v == 0`.
-                Neg::Not => ctx.emit(we::Instruction::I32Eqz),
-            }
-        }
+        WTy::F64 => ctx.emit(we::Instruction::F64Load(mem_arg(slot.off, 3))),
+        WTy::I32 => ctx.emit(we::Instruction::I32Load(mem_arg(slot.off, 2))),
     }
+    emit_neg(ctx, slot.wty, slot.negate);
     if slot.heap {
         // Reading a heap (String) slot yields an owned reference, like reading a
         // heap local: retain so the slot keeps its reference while the value flows
@@ -6088,8 +6171,15 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
     // Array element with a non-constant subscript: store to the run-time address.
     if let Some((base, sub_exps)) = array_ref_of(cref)? {
         if sub_exps.iter().any(|e| const_index_value(e).is_none()) {
-            if let Some(group) = ctx.sim()?.array_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
-                let wty = emit_sim_array_elem_addr(ctx, &group, &sub_exps)?; // [addr]
+            // Either group leaves the element's address on the stack.
+            let elem = match ctx.sim()?.array_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
+                Some(group) => Some(emit_sim_array_elem_addr(ctx, &group, &sub_exps)?),
+                None => match ctx.sim()?.scatter_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
+                    Some(group) => Some(emit_sim_scatter_elem(ctx, &group, &sub_exps, true)?),
+                    None => None,
+                },
+            };
+            if let Some(wty) = elem {
                 let rw = rhs.push(ctx)?;
                 coerce(ctx, rw, wty);
                 match wty {
