@@ -95,6 +95,18 @@ pub(crate) fn max_step_factor() -> f64 {
     f64::from_bits(MAX_STEP_FACTOR.load(Ordering::Relaxed))
 }
 
+/// `-lvMaxWarn`, C's `maxWarnDisplays` (`DEFAULT_FLAG_LV_MAX_WARN`).
+static MAX_WARN_DISPLAYS: AtomicU32 = AtomicU32::new(3);
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_max_warn(n: u32) {
+    MAX_WARN_DISPLAYS.store(n, Ordering::Relaxed);
+}
+
+pub(crate) fn max_warn_displays() -> u64 {
+    MAX_WARN_DISPLAYS.load(Ordering::Relaxed) as u64
+}
+
 /// `-ils` (C's `init_lambda_steps`, default 3) and `-homotopyOnFirstTry` /
 /// `-noHomotopyOnFirstTry` as C's tri-state flag: 0 unset, 1 on, 2 off.
 static INIT_LAMBDA_STEPS: AtomicU32 = AtomicU32::new(3);
@@ -204,6 +216,7 @@ pub(crate) fn apply_flags(f: &openmodelica_sim_meta::simflags::SimFlags) {
     rt_set_solvers(nls, nls_ls, ls, lss);
     let (ftol, xtol, msf) = openmodelica_sim_meta::simflags::newton_tuning(f);
     rt_set_newton_tuning(ftol, xtol, msf);
+    rt_set_max_warn(f.max_warn.unwrap_or(3));
     let (steps, first) = openmodelica_sim_meta::simflags::homotopy_codes(f);
     rt_set_homotopy(steps, first);
     let h = openmodelica_sim_meta::simflags::hom_tuning(f);

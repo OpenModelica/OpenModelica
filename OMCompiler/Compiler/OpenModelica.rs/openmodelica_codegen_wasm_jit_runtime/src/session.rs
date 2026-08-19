@@ -284,6 +284,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     // Any prior session is dropped (frees its buffers) before starting a new one.
     *session() = None;
     crate::reset_lin_solves();
+    crate::reset_ls_failures();
     crate::reset_stats();
     crate::sundials::reset_caches();
 

@@ -2435,7 +2435,7 @@ pub extern "C" fn rt_lin_solves() -> u64 {
 /// singular matrix, mirroring C's `LS_DEFAULT`; `-ls=klu`/`-ls=umfpack` use
 /// SuiteSparse instead.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
+pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let n = n as usize;
     #[cfg(sundials)]
@@ -2455,11 +2455,53 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
     // `dgesv`, and the default) is partial-pivot LU with that as its singular
     // fallback. `-ls=umfpack` only gets here having found the matrix singular.
     let lu_first = !matches!(solvers::ls(), solvers::Ls::TotalPivot | solvers::Ls::Umfpack);
-    if (lu_first && nls::lu_solve(a, b, n)) || nls::total_pivot_solve(a, b, n) {
-        0
-    } else {
-        1
+    if lu_first {
+        if nls::lu_solve(a, b, n) {
+            ls_solved(eq_index);
+            return 0;
+        }
+        ls_report_fallback(eq_index, time);
     }
+    if nls::total_pivot_solve(a, b, n) { 0 } else { 1 }
+}
+
+/// C's per-system `linsys->failed` / `numberOfFailures`: the first failure after
+/// a success warns on stdout, a run of them only on `LOG_LS`.
+struct LsFailures(core::cell::UnsafeCell<alloc::vec::Vec<(i32, bool, u64)>>);
+unsafe impl Sync for LsFailures {}
+static LS_FAILURES: LsFailures = LsFailures(core::cell::UnsafeCell::new(alloc::vec::Vec::new()));
+
+fn ls_failure_entry(eq_index: i32) -> &'static mut (i32, bool, u64) {
+    let v = unsafe { &mut *LS_FAILURES.0.get() };
+    if let Some(i) = v.iter().position(|e| e.0 == eq_index) {
+        return &mut v[i];
+    }
+    v.push((eq_index, false, 0));
+    v.last_mut().unwrap()
+}
+
+fn ls_solved(eq_index: i32) {
+    ls_failure_entry(eq_index).1 = false;
+}
+
+/// C's `solve_linear_system` `LS_DEFAULT` branch.
+fn ls_report_fallback(eq_index: i32, time: f64) {
+    let e = ls_failure_entry(eq_index);
+    let stream = if e.1 { omclog::LS } else { omclog::STDOUT };
+    e.1 = true;
+    e.2 += 1;
+    omclog::warning_with_limit(
+        stream,
+        e.2,
+        solvers::max_warn_displays(),
+        &alloc::format!(
+            "The default linear solver fails, the fallback solver with total pivoting is started at time {time:.6}. That might raise performance issues, for more information use -lv LOG_LS."
+        ),
+    );
+}
+
+pub fn reset_ls_failures() {
+    unsafe { &mut *LS_FAILURES.0.get() }.clear();
 }
 
 /// Solve a sparse `n`×`n` system `A x = b` in place, `A` given in CSC:

@@ -980,6 +980,11 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         wts(set.call(&mut store, ftol, xtol, msf))?;
     }
     // See the wasmtime counterpart.
+    if let Ok(set) = rt_inst.exports.get_typed_function::<u32, ()>(&store, "rt_set_max_warn") {
+        let n = openmodelica_sim_meta::simflags::with_flags(|f| f.max_warn.unwrap_or(3));
+        wts(set.call(&mut store, n))?;
+    }
+    // See the wasmtime counterpart.
     if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32), ()>(&store, "rt_set_homotopy") {
         let h = openmodelica_sim_meta::simflags::with_flags(|f| {
             openmodelica_sim_meta::simflags::homotopy_codes(f)

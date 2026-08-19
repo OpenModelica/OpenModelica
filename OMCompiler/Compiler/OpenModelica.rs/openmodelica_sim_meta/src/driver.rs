@@ -4730,11 +4730,10 @@ impl Driver for DasslDriver {
             if terminated(e, sim_data, layout)? {
                 break Advance::Terminated; // terminate() fired: keep this row, stop
             }
-            // Re-select states at the accepted point. A switch changes the meaning of
-            // the state vector (a discontinuity), so refresh the derivatives, re-read
-            // y/yp from the reinitialised states, and restart DASKR (INFO(1)=0).
+            // Re-read y/yp and restart DASKR (INFO(1)=0). No `functionODE` in
+            // between: C's `dassl_step` takes YPRIME from the ring buffer, so it
+            // restarts on the derivatives of the *previous* selection.
             if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
-                e.call1("functionODE", sim_data)?;
                 for i in 0..n_states {
                     self.y[i] = read_f64(e, states_base + (i as u32) * 8)?;
                     self.yp[i] = read_f64(e, ders_base + (i as u32) * 8)?;
@@ -7754,10 +7753,8 @@ impl Driver for IdaDriver {
             if terminated(e, sim_data, layout)? {
                 break Advance::Terminated;
             }
-            // A state-set switch changes the meaning of the state vector, so
-            // re-read it and restart IDA (see `DasslDriver`).
+            // Restart IDA on the reinitialised states (see `DasslDriver`).
             if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
-                e.call1("functionODE", sim_data)?;
                 for i in 0..n_states {
                     ida.y_mut()[i] = read_f64(e, states_base + (i as u32) * 8)?;
                     ida.yp_mut()[i] = read_f64(e, self.ders_base + (i as u32) * 8)?;

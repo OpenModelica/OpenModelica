@@ -141,6 +141,8 @@ pub struct SimFlags {
     /// name fails at parse time as in C and no reader re-derives the implications.
     /// [`parse`] fills it; a default-constructed `SimFlags` has no stream on.
     pub log_mask: crate::omclog::Mask,
+    /// `-lvMaxWarn`: C's `maxWarnDisplays`, how often a repeating warning shows.
+    pub max_warn: Option<u32>,
     pub abort_slow: bool,
     /// `-alarm`: seconds after which the run is aborted (C's `FLAG_ALARM`, where
     /// it is a `SIGALRM` on the simulation executable). 0 disables it, as in C.
@@ -602,6 +604,13 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                         f.log.push(s.to_uppercase());
                     }
                 }
+            }
+            "lvMaxWarn" => {
+                f.max_warn = Some(
+                    value(name)?
+                        .parse::<u32>()
+                        .map_err(|_| "-lvMaxWarn takes an integer argument".to_string())?,
+                )
             }
             "override" => {
                 // C's `parseVariableStr` splits on commas outside `[]`.
