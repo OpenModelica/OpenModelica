@@ -3,6 +3,11 @@
 // "FrontEnd";
 if true then /* Suppress output */
   prefixPath := if getEnvironmentVar("OMCOMPILERSOURCES")=="" then "../../../OMCompiler/Compiler/" else (getEnvironmentVar("OMCOMPILERSOURCES")+"/");
+  // The Template/*.mo generated from the *.tpl are build artifacts and live in
+  // the build tree, not next to their template. OMCOMPILERGENERATEDSOURCES says
+  // where (rtest passes it through); unset means they are next to the sources,
+  // which is where a build without --tplOutputDir still puts them.
+  generatedPath := if getEnvironmentVar("OMCOMPILERGENERATEDSOURCES")=="" then prefixPath else (getEnvironmentVar("OMCOMPILERGENERATEDSOURCES")+"/");
   setCommandLineOptions("+g=MetaModelica");
   files := {
     prefixPath + "FrontEnd/Absyn.mo",
@@ -180,29 +185,29 @@ if true then /* Suppress output */
     prefixPath + "Script/RewriteRules.mo",
 
   // "Template";
-    prefixPath + "Template/AbsynDumpTpl.mo",
-    prefixPath + "Template/CodegenC.mo",
-    prefixPath + "Template/CodegenCpp.mo",
-    prefixPath + "Template/CodegenCppHpcom.mo",
-    prefixPath + "Template/CodegenFMU.mo",
-    prefixPath + "Template/CodegenFMUCpp.mo",
-    prefixPath + "Template/CodegenJS.mo",
-    prefixPath + "Template/CodegenUtil.mo",
-    prefixPath + "Template/CodegenXML.mo",
-    prefixPath + "Template/DAEDumpTpl.mo",
-    prefixPath + "Template/ExpressionDumpTpl.mo",
-    prefixPath + "Template/GraphvizDump.mo",
-    prefixPath + "Template/GraphMLDumpTpl.mo",
-    prefixPath + "Template/NFInstDumpTpl.mo",
-    prefixPath + "Template/SCodeDumpTpl.mo",
-    prefixPath + "Template/SimCodeDump.mo",
+    generatedPath + "Template/AbsynDumpTpl.mo",
+    generatedPath + "Template/CodegenC.mo",
+    generatedPath + "Template/CodegenCpp.mo",
+    generatedPath + "Template/CodegenCppHpcom.mo",
+    generatedPath + "Template/CodegenFMU.mo",
+    generatedPath + "Template/CodegenFMUCpp.mo",
+    generatedPath + "Template/CodegenJS.mo",
+    generatedPath + "Template/CodegenUtil.mo",
+    generatedPath + "Template/CodegenXML.mo",
+    generatedPath + "Template/DAEDumpTpl.mo",
+    generatedPath + "Template/ExpressionDumpTpl.mo",
+    generatedPath + "Template/GraphvizDump.mo",
+    generatedPath + "Template/GraphMLDumpTpl.mo",
+    generatedPath + "Template/NFInstDumpTpl.mo",
+    generatedPath + "Template/SCodeDumpTpl.mo",
+    generatedPath + "Template/SimCodeDump.mo",
     prefixPath + "Template/TplAbsyn.mo",
     prefixPath + "Template/TplCodegen.mo",
     prefixPath + "Template/TplMain.mo",
     prefixPath + "Template/Tpl.mo",
     prefixPath + "Template/TplParser.mo",
-    prefixPath + "Template/Unparsing.mo",
-    prefixPath + "Template/VisualXMLTpl.mo",
+    generatedPath + "Template/Unparsing.mo",
+    generatedPath + "Template/VisualXMLTpl.mo",
 
   // "Global";
     prefixPath + "Global/Global.mo",

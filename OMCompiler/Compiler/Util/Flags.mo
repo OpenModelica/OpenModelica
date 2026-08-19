@@ -1443,6 +1443,9 @@ constant ConfigFlag FMU_NATIVE_PLATFORMS = CONFIG_FLAG(171,
 constant ConfigFlag TEARING_COST_MARGIN = CONFIG_FLAG(170, "tearingCostMargin",
   NONE(), EXTERNAL(), REAL_FLAG(2.0), NONE(),
   "How much cheaper solving a linear system untorn has to be estimated before its\ntearing set is dropped. Raise it to keep tearing systems the estimate would give\nup on, lower it towards 0 to tear less (default 2).");
+constant ConfigFlag TPL_OUTPUT_DIR = CONFIG_FLAG(172, "tplOutputDir",
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  "Directory the .mo generated from a Susan .tpl is written to. Empty (the\ndefault) writes it next to the .tpl, which is how the templates used to be\ngenerated into the source tree.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
