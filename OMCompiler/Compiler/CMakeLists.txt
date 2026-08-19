@@ -377,25 +377,7 @@ endif()
 # They are part of "compiler" installation component. This means that you can
 # install just the files in this component by specifying its name.
 if(WIN32)
-  # Escape the environment variable path
-  if(NOT DEFINED ENV{OMDEV})
-    message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
-  endif()
-  if(NOT DEFINED ENV{MSYSTEM_PREFIX})
-    message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
-  endif()
-
-  # MSYS2 exports MSYSTEM_PREFIX as a POSIX-style path (e.g. "/ucrt64"). When
-  # cmake is invoked directly from an MSYS2 shell, MSYS2 auto-translates that
-  # to an absolute Windows path (relative to its own install root) before the
-  # native cmake.exe process ever sees it, so it can be used as-is. Only if it
-  # is still POSIX-style (translation didn't happen) do we resolve it
-  # ourselves against OMDEV's msys tree.
-  if("$ENV{MSYSTEM_PREFIX}" MATCHES "^[A-Za-z]:")
-    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
-  else()
-    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{OMDEV}\\tools\\msys\\$ENV{MSYSTEM_PREFIX}")
-  endif()
+  omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
 
   set(OMCOMPILER_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/Compiler/bin)
   set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c)

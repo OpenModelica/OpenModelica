@@ -26,28 +26,11 @@ endif()
 
 if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
 
-  # Escape the environment variable path
-  if(NOT DEFINED ENV{OMDEV})
-    message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
-  endif()
   if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(FATAL_ERROR "No 32-bit version of UCRT available!")
   endif()
-  if(NOT DEFINED ENV{MSYSTEM_PREFIX})
-    message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
-  endif()
 
-  # MSYS2 exports MSYSTEM_PREFIX as a POSIX-style path (e.g. "/ucrt64"). When
-  # cmake is invoked directly from an MSYS2 shell, MSYS2 auto-translates that
-  # to an absolute Windows path (relative to its own install root) before the
-  # native cmake.exe process ever sees it, so it can be used as-is. Only if it
-  # is still POSIX-style (translation didn't happen) do we resolve it
-  # ourselves against OMDEV's msys tree.
-  if("$ENV{MSYSTEM_PREFIX}" MATCHES "^[A-Za-z]:")
-    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
-  else()
-    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{OMDEV}\\tools\\msys\\$ENV{MSYSTEM_PREFIX}")
-  endif()
+  omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
 
   # TODO: This is stupid, but I can't get install with RUNTIME_DEPENDENCIES to run.
   # It needs to link to libs that are installed to ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR},
