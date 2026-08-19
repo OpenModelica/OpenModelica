@@ -1,5 +1,5 @@
 # Adrian Pop, adrpo@ida.liu.se, Martin Sjölund, marsj@ida.liu.se
-# - Use make -f Makefile.omdev.mingw if you want to compile on Windows/MinGW
+# - On Windows, build with CMake instead (see OMCompiler/README.Windows.md)
 # - Please leave the UNIX Makefile as it is if you are not using UNIX/Linux
 # If you need to add files, etc, you modify Makefile.common - a common file
 # for both UNIX/Linux and Windows platforms.
@@ -33,14 +33,6 @@ LDFLAGS_SIM=-L$(OMBUILDDIR)/lib/@host_short@/omc -L$(CDASKRDIR) @RT_LDFLAGS_SIM@
 else
 LDFLAGS=-L$(OMBUILDDIR)/lib/@host_short@/omc @RT_LDFLAGS@
 LDFLAGS_SIM=-L$(OMBUILDDIR)/lib/@host_short@/omc @RT_LDFLAGS_SIM@
-endif
-
-USE_PARJAC = @USE_PARJAC@
-ifeq (@USE_PARJAC@,yes)
-	CONFIG_CFLAGS+=@OMPCFLAGS@ -DUSE_PARJAC
-	LDFLAGS+=@OMPCFLAGS@
-else
-	OMPCFLAGS=
 endif
 defaultMakefileTarget = Makefile
 

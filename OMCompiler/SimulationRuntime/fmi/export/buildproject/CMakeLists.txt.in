@@ -206,7 +206,7 @@ if(${NEED_CVODE})
   # Force static compilation on Windows or if CMake is too old
   if(WIN32 OR (${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none"))
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
-    target_compile_definitions(${FMU_NAME_HASH} PRIVATE LINK_SUNDIALS_STATIC)
+    target_compile_definitions(${FMU_NAME_HASH} PRIVATE SUNDIALS_STATIC_DEFINE)
   endif()
 
   message(STATUS "CVODE_DIRECTORY: ${CVODE_DIRECTORY}")
@@ -232,11 +232,25 @@ if(${NEED_CVODE})
   message(STATUS "SUNDIALS_NVECSERIAL_LIBRARY: ${SUNDIALS_NVECSERIAL_LIBRARY}")
   list(APPEND RUNTIME_DEPENDS ${SUNDIALS_NVECSERIAL_LIBRARY})
 
+  find_library(SUNDIALS_CORE_LIBRARY sundials_core
+               PATHS ${CVODE_DIRECTORY}
+               NO_DEFAULT_PATH
+               NO_SYSTEM_ENVIRONMENT_PATH
+               REQUIRED)
+  if(NOT SUNDIALS_CORE_LIBRARY)
+    message(FATAL_ERROR "Couldn't find library sundials_core in ${CVODE_DIRECTORY}")
+  endif()
+  message(STATUS "SUNDIALS_CORE_LIBRARY: ${SUNDIALS_CORE_LIBRARY}")
+  list(APPEND RUNTIME_DEPENDS ${SUNDIALS_CORE_LIBRARY})
+
+  # Order matters for static libraries: cvode and nvecserial both pull symbols out
+  # of sundials_core, so core has to come last.
   target_link_libraries(${FMU_NAME_HASH} PRIVATE ${SUNDIALS_NVECSERIAL_LIBRARY})
   target_link_libraries(${FMU_NAME_HASH} PRIVATE ${SUNDIALS_CVODE_LIBRARY})
+  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${SUNDIALS_CORE_LIBRARY})
   target_include_directories(${FMU_NAME_HASH} PRIVATE sundials)
   set(WITH_SUNDIALS ";WITH_SUNDIALS")
-  message(STATUS "CVODE: ${SUNDIALS_NVECSERIAL_LIBRARY} ${SUNDIALS_CVODE_LIBRARY}")
+  message(STATUS "CVODE: ${SUNDIALS_NVECSERIAL_LIBRARY} ${SUNDIALS_CVODE_LIBRARY} ${SUNDIALS_CORE_LIBRARY}")
 else()
   message(STATUS "CVODE: Not linked")
 endif()

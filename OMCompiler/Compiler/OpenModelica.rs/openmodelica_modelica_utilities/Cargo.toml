@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# The simulation's captured stdout, where `ModelicaMessage` output lands.
-openmodelica_wasi.workspace = true
+# `omclog`: the `-lv` mask `ModelicaMessage` prints through.
+openmodelica_sim_meta.workspace = true
 
 # libc (dlsym RTLD_NEXT / malloc for the non-simulation forward) is native-only;
 # the wasm build always allocates from the arena.

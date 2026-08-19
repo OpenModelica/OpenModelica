@@ -60,9 +60,6 @@
 #include <QStatusBar>
 #include <QListWidget>
 #include <QMdiArea>
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-#include <QtWebKit>
-#endif // #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QSplitter>
 #include <QUndoStack>
 #include <QUndoView>

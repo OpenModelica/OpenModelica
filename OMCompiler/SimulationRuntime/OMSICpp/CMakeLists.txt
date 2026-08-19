@@ -576,8 +576,8 @@ endif(REDUCE_DAE)
 if(USE_SUNDIALS)
   #set sundials solvers include and library directories
   if(MSVC)
-    set(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/include/sundials")
-    set(SUNDIALS_LIBRARY_RELEASE_HOME "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/lib/")
+    set(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc/include/sundials")
+    set(SUNDIALS_LIBRARY_RELEASE_HOME "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc/lib/")
   else(MSVC)
     set(SUNDIALS_INLCUDE_HOME  ${CMAKE_INSTALL_PREFIX}/include/omc/sundials)
     set(SUNDIALS_LIBRARY_RELEASE_HOME ${CMAKE_INSTALL_PREFIX}/${LIB_OMC})
@@ -595,6 +595,12 @@ if(USE_SUNDIALS)
     message(FATAL_ERROR "Could not find Sundials; compile omc first")
   endif()
   include_directories(${SUNDIALS_INCLUDE_DIR})
+
+  find_library(SUNDIALS_CORE_LIB "sundials_core" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} $ENV{SUNDIALS_ROOT}/lib)
+
+  if(NOT SUNDIALS_CORE_LIB)
+    message(FATAL_ERROR "Could not find libsundials_core!")
+  endif()
 
   find_library(SUNDIALS_NVECSERIAL_LIB "sundials_nvecserial" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} $ENV{SUNDIALS_ROOT}/lib)
 
@@ -622,7 +628,7 @@ if(USE_SUNDIALS)
   if(NOT SUNDIALS_KINSOL_LIB)
     message(FATAL_ERROR "Could not find libsundials_kinsol!")
   endif()
-  set(SUNDIALS_LIBRARIES ${SUNDIALS_NVECSERIAL_LIB} ${SUNDIALS_CVODE_LIB} ${SUNDIALS_CVODES_LIB} ${SUNDIALS_IDA_LIB} ${SUNDIALS_KINSOL_LIB})
+  set(SUNDIALS_LIBRARIES ${SUNDIALS_NVECSERIAL_LIB} ${SUNDIALS_CVODE_LIB} ${SUNDIALS_CVODES_LIB} ${SUNDIALS_IDA_LIB} ${SUNDIALS_KINSOL_LIB} ${SUNDIALS_CORE_LIB})
 
   message(STATUS "Sundials Libraries for omsicpp:")
   message(STATUS "${SUNDIALS_LIBRARIES}")

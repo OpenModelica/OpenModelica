@@ -5,6 +5,7 @@ Burger_01.mos \
 HeatingSystem.mos \
 IRK_01.mos \
 multiRate_01.mos \
+multiRateInternal_01.mos \
 RK_01.mos \
 
 FAILINGTESTFILES = \

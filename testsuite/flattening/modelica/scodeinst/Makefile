@@ -770,6 +770,10 @@ IfExpression14.mo \
 IfExpression15.mo \
 IfExpression16.mo \
 IfExpression17.mo \
+IfExpression18.mo \
+IfExpression19.mo \
+IfExpression20.mo \
+IfExpression21.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \

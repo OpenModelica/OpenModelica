@@ -4,8 +4,8 @@
 
 Windows
 ------------------------------
-- If you want to build the GDBMIParser static build use the Makefile.lib.omdev.mingw
-- If you want to build the GDBMIParser sample executable use the Makefile.omdev.mingw
+- The GDBMIParser is built as part of the normal CMake build of OpenModelica;
+  there is no separate Windows build step.
 
 Linux
 ------------------------------

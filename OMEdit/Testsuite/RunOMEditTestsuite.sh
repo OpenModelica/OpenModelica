@@ -2,7 +2,7 @@
 set -e
 
 testcases=( "BrowseMSL" "Diagram" "Transformation" "Homotopy" "Expression"
-            "ModelInstance" "VariableValue" "Utilities" "StringHandler" "DynamicAnnotation"
+            "ModelInstance" "TabbedView" "VariableValue" "Utilities" "StringHandler" "DynamicAnnotation"
             "AutoCompletion" "MergeExtendsModifiers" )
 OMEditTestResults="$PWD/OMEditTestResult"
 

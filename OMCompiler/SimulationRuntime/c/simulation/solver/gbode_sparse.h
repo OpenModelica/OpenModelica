@@ -35,12 +35,10 @@
 extern "C" {
 #endif
 
-void ColoringAlg(SPARSE_PATTERN* sparsePattern, int sizeRows, int sizeCols, int nStages);
-
-SPARSE_PATTERN* initializeSparsePattern_SR(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
-SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data, NONLINEAR_SYSTEM_DATA* sysData);
-
-void updateSparsePattern_MR(DATA_GBODE* gbData, SPARSE_PATTERN *sparsePattern_MR);
+void initializeSparsePattern_GBODE(DATA* data, DATA_GBODE* gbData);
+void initializeSparsePattern_GBODEF(DATA* data, DATA_GBODEF* gbfData);
+void updateSparsePattern_GBODEF(DATA* data, DATA_GBODE* gbData);
+void gbodeMapSparsePattern(const SPARSE_PATTERN *source, const SPARSE_PATTERN *target, int size, int *sourceToTarget, int *targetDiagonal);
 
 #ifdef __cplusplus
 };

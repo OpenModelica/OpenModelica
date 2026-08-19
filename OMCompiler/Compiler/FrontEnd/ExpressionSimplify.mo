@@ -2424,6 +2424,8 @@ algorithm
         true := listLength(expl1) <= 3;
         expl2 := list(Expression.crefToExp(c) for c in ComponentReference.expandCref(cr2, true));
         true := listLength(expl1) == listLength(expl2);
+        // expandCref leaves a non-constant slice alone; expMul would make it an array product.
+        true := List.none(expl1, isArrayTypedExp) and List.none(expl2, isArrayTypedExp);
         expl := List.threadMap(expl1, expl2, Expression.expMul);
         exp := List.reduce(expl, Expression.expAdd);
       then
@@ -2438,6 +2440,11 @@ algorithm
 
   end match;
 end simplifyScalarProduct;
+
+protected function isArrayTypedExp
+  input DAE.Exp exp;
+  output Boolean b = Expression.isArrayType(Expression.typeof(exp));
+end isArrayTypedExp;
 
 protected function unliftOperator
   input DAE.Exp inArray;

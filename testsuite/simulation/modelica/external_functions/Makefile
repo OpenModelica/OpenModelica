@@ -4,6 +4,7 @@ TESTFILES = \
 CevalModelicaStrings.mos \
 ExternalCFuncInputOnly.mos \
 ExternalLibraries.mos \
+ExternalNlsRecovery.mos \
 ExternalRHSFlag.mos \
 extObj_ticket3446.mos \
 ExtObj.mos \
@@ -37,6 +38,7 @@ ExternalFunc1_ext.h \
 ExternalFunc1.c \
 ExternalFunc2.c \
 ExternalFunc2.h \
+ExternalNlsRecovery-f.c \
 ExternalRHSFlag.c \
 ExtObj.c \
 ExtObj.h \

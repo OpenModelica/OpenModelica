@@ -28,11 +28,34 @@ pub struct Loaded {
     data: HashMap<String, u32>,
     func_slots: HashMap<String, u32>,
     table: Table,
+    /// The libraries' shared shadow stack: after a `ModelicaError` unwound their
+    /// frames the epilogues that would have handed it back never ran, so the
+    /// model's recovery path restores what it saved (`rt_ext_stack_restore`).
+    stack_pointer: Option<Global>,
 }
 
 impl Loaded {
     pub fn func(&self, name: &str) -> Option<&Func> {
         self.funcs.get(name)
+    }
+    /// `name`, else its `Include` wrapper: the call one for a macro, or what the
+    /// address one points at.
+    pub fn func_or_addr(&self, store: &mut wasmtime::Store<WasiCtx>, name: &str) -> Option<Func> {
+        if let Some(f) = self.funcs.get(name) {
+            return Some(f.clone());
+        }
+        if let Some(f) = self.funcs.get(&format!("{}{name}", crate::model::EXT_CALL_PREFIX)) {
+            return Some(f.clone());
+        }
+        let w = self.funcs.get(&format!("{}{name}", crate::model::EXT_ADDR_PREFIX))?;
+        // Slot 0 is the null function pointer: the sources only declared it.
+        match w.typed::<(), i32>(&*store).ok()?.call(&mut *store, ()).ok()? {
+            0 => None,
+            idx => self.table.get(store, idx as u64)?.as_func().flatten().cloned(),
+        }
+    }
+    pub fn shadow_stack(&self) -> Option<Global> {
+        self.stack_pointer
     }
 }
 
@@ -69,6 +92,7 @@ pub fn load(
         data: HashMap::new(),
         func_slots: HashMap::new(),
         table,
+        stack_pointer: None,
     };
     if libs.is_empty() {
         return Ok(loaded);
@@ -86,6 +110,7 @@ pub fn load(
         Val::I32((stack + SIDE_STACK_SIZE) as i32),
     )
     .map_err(|e| format!("dylink: cannot create __stack_pointer: {e}"))?;
+    loaded.stack_pointer = Some(stack_pointer);
     loaded.data.insert("__stack_low".to_string(), stack);
     loaded.data.insert("__stack_high".to_string(), stack + SIDE_STACK_SIZE);
     // An empty initial dlmalloc segment: every allocation then comes from `sbrk`,
@@ -520,6 +545,7 @@ mod tests {
             alloc: alloc.clone(),
             free: rt_inst.get_typed_func(&mut store, "rt_free").unwrap(),
             record_new: rt_inst.get_typed_func(&mut store, "rt_record_new").unwrap(),
+            nls: None,
         };
         let sig = ExtCallSig {
             name: "triple".into(),
@@ -632,16 +658,19 @@ pub fn modelica_utilities_imports(
     use wasmtime::{Caller, Func};
     let mut m: HashMap<String, Func> = HashMap::new();
 
-    let error = |mut caller: Caller<'_, WasiCtx>, ptr: i32| -> std::result::Result<(), wasmtime::Error> {
-        let msg = shared_cstr(&mut caller, ptr);
-        openmodelica_error::ErrorExt::runtime_error(&msg);
-        Err(wasmtime::Error::msg(format!("ModelicaError: {msg}")))
-    };
-    let error_fmt = |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| -> std::result::Result<(), wasmtime::Error> {
-        let msg = shared_cstr(&mut caller, fmt);
-        openmodelica_error::ErrorExt::runtime_error(&msg);
-        Err(wasmtime::Error::msg(format!("ModelicaError: {msg}")))
-    };
+    let nls = rt.nls.clone();
+    let err_fn = |store: &mut wasmtime::Store<WasiCtx>, nls: Option<NlsHooks>| Func::wrap(
+        store,
+        move |mut caller: Caller<'_, WasiCtx>, ptr: i32| -> std::result::Result<(), wasmtime::Error> {
+            raise_model_error(&nls, &mut caller, ptr)
+        },
+    );
+    let err_fmt_fn = |store: &mut wasmtime::Store<WasiCtx>, nls: Option<NlsHooks>| Func::wrap(
+        store,
+        move |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| -> std::result::Result<(), wasmtime::Error> {
+            raise_model_error(&nls, &mut caller, fmt)
+        },
+    );
     let warning = |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
         let msg = shared_cstr(&mut caller, ptr);
         openmodelica_error::ErrorExt::runtime_warning(&msg);
@@ -660,9 +689,9 @@ pub fn modelica_utilities_imports(
         openmodelica_wasi::wasi::stdout_write(msg.as_bytes());
     };
 
-    m.insert("ModelicaError".into(), Func::wrap(&mut *store, error));
-    m.insert("ModelicaFormatError".into(), Func::wrap(&mut *store, error_fmt));
-    m.insert("ModelicaVFormatError".into(), Func::wrap(&mut *store, error_fmt));
+    m.insert("ModelicaError".into(), err_fn(&mut *store, nls.clone()));
+    m.insert("ModelicaFormatError".into(), err_fmt_fn(&mut *store, nls.clone()));
+    m.insert("ModelicaVFormatError".into(), err_fmt_fn(&mut *store, nls));
     m.insert("ModelicaWarning".into(), Func::wrap(&mut *store, warning));
     m.insert("ModelicaFormatWarning".into(), Func::wrap(&mut *store, warning_fmt));
     m.insert("ModelicaVFormatWarning".into(), Func::wrap(&mut *store, warning_fmt));
@@ -696,6 +725,76 @@ pub struct ExtRt {
     pub alloc: wasmtime::TypedFunc<u32, u32>,
     pub free: wasmtime::TypedFunc<u32, ()>,
     pub record_new: wasmtime::TypedFunc<(u32, u32), u32>,
+    /// A run's solver state; the `-d=gen` function JIT has no solver.
+    pub nls: Option<NlsHooks>,
+}
+
+/// The runtime's recoverable-model-error state, reached from the host so an
+/// external "C" `ModelicaError` inside a residual backs the trial off.
+#[derive(Clone)]
+pub struct NlsHooks {
+    pub recovering: wasmtime::TypedFunc<(), i32>,
+    pub note: wasmtime::TypedFunc<(), ()>,
+}
+
+impl NlsHooks {
+    pub fn recovering(&self, caller: &mut wasmtime::Caller<'_, WasiCtx>) -> std::result::Result<bool, wasmtime::Error> {
+        Ok(self.recovering.call(&mut *caller, ())? != 0)
+    }
+    pub fn note(&self, caller: &mut wasmtime::Caller<'_, WasiCtx>) -> std::result::Result<(), wasmtime::Error> {
+        self.note.call(&mut *caller, ())
+    }
+}
+
+/// End the call the way C's `throwStreamPrint` does: with the model's
+/// `model_error` tag, which the `ext` call site catches — inside a residual to
+/// reject the trial, outside one to end the run (so only then is the message
+/// worth reporting). With no tag registered (the `-d=gen` function JIT, whose
+/// module has no solver to recover into) it stays a trap.
+fn raise_model_error(
+    nls: &Option<NlsHooks>,
+    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    ptr: i32,
+) -> std::result::Result<(), wasmtime::Error> {
+    let recovering = match nls {
+        Some(nls) => nls.recovering(caller)?,
+        None => false,
+    };
+    if !recovering {
+        let msg = shared_cstr(caller, ptr);
+        // A run reports itself through its log alone, as C's separate executable
+        // does; the function JIT has no log and answers through the Error buffer.
+        match nls {
+            Some(_) => crate::sim_driver::note_runtime_error(&msg),
+            None => openmodelica_error::ErrorExt::runtime_error(&msg),
+        }
+    }
+    match crate::host::model_error_exception(caller)? {
+        Some(exn) => {
+            use wasmtime::AsContextMut;
+            caller.as_context_mut().throw::<()>(exn).map_err(wasmtime::Error::new)
+        }
+        None => Err(wasmtime::Error::msg(format!("ModelicaError: {}", shared_cstr(caller, ptr)))),
+    }
+}
+
+/// Zeroed results (an empty String for `char*`) after a recovered `ModelicaError`.
+/// The solver discards the residual they feed, but they must be valid handles.
+pub fn zero_results(
+    sig: &crate::sig::ExtCallSig,
+    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    rt_str_new: &wasmtime::TypedFunc<u32, u32>,
+    rets: &mut [wasmtime::Val],
+) -> std::result::Result<(), wasmtime::Error> {
+    use crate::sig::SigTy;
+    for (slot, ty) in rets.iter_mut().zip(sig.wasm_results()) {
+        *slot = match ty {
+            SigTy::Real => wasmtime::Val::F64(0.0f64.to_bits()),
+            SigTy::Str => wasmtime::Val::I32(rt_str_new.call(&mut *caller, 0)? as i32),
+            _ => wasmtime::Val::I32(0),
+        };
+    }
+    Ok(())
 }
 
 /// Whether the import is already exactly the C function, so the engine can call it
@@ -735,8 +834,12 @@ pub fn bind_in_wasm_external(
     let sig = sig.clone();
     let rt = rt.clone();
     let f = wasmtime::Func::new(&mut *store, functype.clone(), move |mut caller, args, rets| {
-        call_external_in_wasm(&sig, &rt, &target, &mut caller, args, rets)
-            .map_err(|e| wasmtime::Error::msg(format!("external \"C\" `{}`: {e}", sig.name)))
+        let mut thrown = None;
+        let r = call_external_in_wasm(&sig, &rt, &target, &mut caller, args, rets, &mut thrown);
+        match thrown {
+            Some(e) => Err(e),
+            None => r.map_err(|e| wasmtime::Error::msg(format!("external \"C\" `{}`: {e}", sig.name))),
+        }
     });
     Ok(Some(wasmtime::Extern::Func(f)))
 }
@@ -750,6 +853,7 @@ fn call_external_in_wasm(
     caller: &mut wasmtime::Caller<'_, WasiCtx>,
     args: &[wasmtime::Val],
     rets: &mut [wasmtime::Val],
+    thrown: &mut Option<wasmtime::Error>,
 ) -> Result<()> {
     use crate::sig::SigTy;
     use wasmtime::Val;
@@ -933,7 +1037,16 @@ fn call_external_in_wasm(
     };
     let mut raw_ret = [Val::I32(0)];
     let ret_slice = if returns_value { &mut raw_ret[..] } else { &mut raw_ret[..0] };
-    target.call(&mut *caller, &call_args, ret_slice).map_err(|e| format!("{e}"))?;
+    if let Err(e) = target.call(&mut *caller, &call_args, ret_slice) {
+        // A `model_error` on its way to the model's `try_table` passes straight
+        // through: rewritten, the store's pending exception would never land.
+        if e.downcast_ref::<wasmtime::ThrownException>().is_some() {
+            *thrown = Some(e);
+            return Ok(());
+        }
+        // `{e:?}`: whatever ended the call is the trap's cause.
+        return Err(format!("{e:?}"));
+    }
 
     // C's `convert_alloc_*_from_f77`.
     for (cell, base, dims, esz, is_out) in &f77_arrays {

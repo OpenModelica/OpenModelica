@@ -21,13 +21,19 @@
 
 use std::path::Path;
 
-/// Archives in link order: each entry may only depend on later ones. Every
-/// SUNDIALS solver archive bundles the shared N_Vector/SUNMatrix/SUNLinearSolver
-/// sources, so the first one listed satisfies them for the rest.
+/// Archives in link order: each entry may only depend on later ones. SUNDIALS
+/// ships one archive per module -- the N_Vector/SUNMatrix/SUNLinearSolver
+/// implementations and the SUNContext/SUNErrCode core are their own -- so each
+/// has to be listed, mirroring `LIBS` in openmodelica_codegen_wasm_jit_runtime.
 const NATIVE_LIBS: &[&str] = &[
     "sundials_cvode",
     "sundials_idas",
     "sundials_sunlinsolklu",
+    "sundials_sunlinsoldense",
+    "sundials_sunmatrixsparse",
+    "sundials_sunmatrixdense",
+    "sundials_nvecserial",
+    "sundials_core",
     "klu",
     "amd",
     "colamd",

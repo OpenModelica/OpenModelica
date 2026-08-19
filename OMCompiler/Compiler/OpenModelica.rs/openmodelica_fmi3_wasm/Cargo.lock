@@ -277,11 +277,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_mat_writer"
+version = "0.1.0"
+
+[[package]]
 name = "openmodelica_sim_meta"
 version = "0.1.0"
 dependencies = [
  "daskr",
  "libm",
+ "openmodelica_mat_writer",
 ]
 
 [[package]]

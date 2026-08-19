@@ -39,6 +39,7 @@ SUBDIRS = Util \
   Homotopy \
   Expression \
   ModelInstance \
+  TabbedView \
   VariableValue \
   Utilities \
   StringHandler \
@@ -52,6 +53,7 @@ Transformation.depends = Util
 Homotopy.depends = Util
 Expression.depends = Util
 ModelInstance.depends = Util
+TabbedView.depends = Util
 VariableValue.depends = Util
 Utilities.depends = Util
 StringHandler.depends = Util

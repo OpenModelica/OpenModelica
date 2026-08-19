@@ -44,6 +44,8 @@
 #include <stddef.h>
 
 /* Headers for sundials kinsol */
+#include <sundials/sundials_context.h>     /* SUNContext */
+#include <sundials/sundials_logger.h>      /* SUNLogger */
 #include <kinsol/kinsol.h>
 #include <nvector/nvector_serial.h>
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
@@ -69,6 +71,8 @@ typedef struct kinsol_user_data {
  * Solver data for kinsol solver.
  */
 typedef struct solver_data_kinsol {
+    SUNContext sunctx;                      /**< SUNDIALS simulation context.
+                                                 Owned by this struct, one per solver instance. */
     void* kinsol_solver_object;             /**< KINSOL memory block */
     kinsol_user_data* kin_user_data;        /**< Pointer to user_data given to all kinsol functions */
 

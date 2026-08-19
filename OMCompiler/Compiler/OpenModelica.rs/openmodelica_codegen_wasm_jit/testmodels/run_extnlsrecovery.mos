@@ -1,0 +1,12 @@
+// Recovering from an external "C" ModelicaError under wasm-jit: rejected trial
+// inside the solver, fatal outside it.
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadModel(Modelica); getErrorString();
+
+loadFile("TestExtNlsRecovery.mo"); getErrorString();
+simulate(TestExtNlsRecovery, stopTime = 1.0, numberOfIntervals = 2); getErrorString();
+val(x, 0.0); // 1.4995
+val(x, 1.0); // 1.8999
+
+loadFile("TestExtTableError.mo"); getErrorString();
+simulate(TestExtTableError, stopTime = 3.0, numberOfIntervals = 3); getErrorString();

@@ -40,6 +40,7 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
 	: SolverDefaultImplementation(system, settings),
 	_cvodesettings(dynamic_cast<ISolverSettings*>(_settings)),
 	_cvodeMem(NULL),
+	_sunctx(NULL),
 	_z(NULL),
 	_zInit(NULL),
 	_zWrite(NULL),
@@ -139,6 +140,7 @@ Cvode::~Cvode()
 		SUNMatDestroy(_CV_J);
 		SUNLinSolFree(_CV_linSol);
 		CVodeFree(&_cvodeMem);
+		SUNContext_Free(&_sunctx);
 	}
 
 	if (_colorOfColumn)
@@ -227,7 +229,20 @@ void Cvode::initialize()
 		}
 
 		// Allocate memory for the solver
-		_cvodeMem = CVodeCreate(CV_BDF);
+		if (SUNContext_Create(SUN_COMM_NULL, &_sunctx) != SUN_SUCCESS)
+			throw ModelicaSimulationError(SOLVER,"SUNDIALS_ERROR: SUNContext_Create failed");
+		/* Mute SUNDIALS' own logger: package level messages go to stderr/stdout by default, and we report solver failures ourselves. */
+		{
+		  SUNLogger _sunlogger = NULL;
+		  if (SUNContext_GetLogger(_sunctx, &_sunlogger) == SUN_SUCCESS && _sunlogger != NULL) {
+		    SUNLogger_SetErrorFilename(_sunlogger, "");
+		    SUNLogger_SetWarningFilename(_sunlogger, "");
+		    SUNLogger_SetInfoFilename(_sunlogger, "");
+		    SUNLogger_SetDebugFilename(_sunlogger, "");
+		  }
+		}
+
+		_cvodeMem = CVodeCreate(CV_BDF, _sunctx);
 		if (check_flag((void*)_cvodeMem, "CVodeCreate", 0))
 		{
 			_idid = -5;
@@ -249,11 +264,11 @@ void Cvode::initialize()
 		for (int i = 0; i < _dimSys; i++)
 			_absTol[i] *= dynamic_cast<ISolverSettings*>(_cvodesettings)->getATol();
 
-		_CV_y0 = N_VMake_Serial(_dimSys, _zInit);
-		_CV_y = N_VMake_Serial(_dimSys, _z);
-		_CV_yWrite = N_VMake_Serial(_dimSys, _zWrite);
-		_CV_absTol = N_VMake_Serial(_dimSys, _absTol);
-		_CV_ySolver = N_VNew_Serial(_dimSys);
+		_CV_y0 = N_VMake_Serial(_dimSys, _zInit, _sunctx);
+		_CV_y = N_VMake_Serial(_dimSys, _z, _sunctx);
+		_CV_yWrite = N_VMake_Serial(_dimSys, _zWrite, _sunctx);
+		_CV_absTol = N_VMake_Serial(_dimSys, _absTol, _sunctx);
+		_CV_ySolver = N_VNew_Serial(_dimSys, _sunctx);
 
 		if (check_flag((void*)_CV_y0, "N_VMake_Serial", 0))
 		{
@@ -315,11 +330,11 @@ void Cvode::initialize()
 			throw ModelicaSimulationError(SOLVER,/*_idid,_tCurrent,*/"Cvode::initialize()");
 
 		// Initialize dense linear solver
-		_CV_J = SUNDenseMatrix(_dimSys, _dimSys);
+		_CV_J = SUNDenseMatrix(_dimSys, _dimSys, _sunctx);
 #ifdef USE_SUNDIALS_LAPACK
-		_cvode_linSol = SUNLinSol_LapackDense(_CV_ySolver, _cvode_J);
+		_CV_linSol = SUNLinSol_LapackDense(_CV_ySolver, _CV_J, _sunctx);
 #else
-		_CV_linSol = SUNLinSol_Dense(_CV_ySolver, _CV_J);
+		_CV_linSol = SUNLinSol_Dense(_CV_ySolver, _CV_J, _sunctx);
 #endif
 		_idid = CVodeSetLinearSolver(_cvodeMem, _CV_linSol, _CV_J);
 		if (_idid < 0)
@@ -330,7 +345,7 @@ void Cvode::initialize()
 		_maxColors = _system->getAMaxColors();
 		if (_maxColors < _dimSys && _continuous_system->getDimContinuousStates() > 0)
 		{
-			// _idid = CVDlsSetDenseJacFn(_cvodeMem, &CV_JCallback);
+			// _idid = CVodeSetJacFn(_cvodeMem, &CV_JCallback);
 			// initializeColoredJac();
 		}
 
@@ -466,7 +481,7 @@ void Cvode::solve(const SOLVERCALL action)
 
 		long int nst, nfe, nsetups, netf, nni, ncfn;
 		int qlast, qcur;
-		realtype h0u, hlast, hcur, tcur;
+		sunrealtype h0u, hlast, hcur, tcur;
 
 		int flag;
 
@@ -843,13 +858,13 @@ int Cvode::CV_ZerofCallback(double t, N_Vector y, double *zeroval, void *user_da
 	return (0);
 }
 
-int Cvode::CV_JCallback(long int N, double t, N_Vector y, N_Vector fy, DlsMat Jac, void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
+int Cvode::CV_JCallback(long int N, double t, N_Vector y, N_Vector fy, SUNMatrix Jac, void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {
 	return ((Cvode*)user_data)->calcJacobian(t, N, tmp1, tmp2, tmp3, NV_DATA_S(y), fy, Jac);
 
 }
 
-int Cvode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthCol, double* y, N_Vector fy, DlsMat Jac)
+int Cvode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthCol, double* y, N_Vector fy, SUNMatrix Jac)
 {
 	try
 	{
@@ -917,7 +932,7 @@ int Cvode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeig
 						{
 							l = _jacobianAIndex[j];
 							g = l + startOfColumn;
-							Jac->data[g] = (fHelp_data[l] - f_data[l]) * _deltaInv[k];
+							SM_DATA_D(Jac)[g] = (fHelp_data[l] - f_data[l]) * _deltaInv[k];
 						}
 					}
 				}
@@ -956,7 +971,7 @@ int Cvode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeig
 
 	for(int i=0; i<_dimSys; ++i)
 	{
-	Jac->data[i+j*_dimSys] = NV_Ith_S(jthCol,i);
+	SM_DATA_D(Jac)[i+j*_dimSys] = NV_Ith_S(jthCol,i);
 	}
 
 	//DENSE_COL(Jac,j) = N_VGetArrayPointer(jthCol);
@@ -1024,7 +1039,7 @@ void Cvode::writeSimulationInfo()
 	long int nfQSe, netfQS;
 
 	int qlast, qcur;
-	realtype h0u, hlast, hcur, tcur;
+	sunrealtype h0u, hlast, hcur, tcur;
 
 	int flag;
 
