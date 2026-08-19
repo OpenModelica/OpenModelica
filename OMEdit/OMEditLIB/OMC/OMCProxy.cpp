@@ -502,10 +502,10 @@ bool omcWorkerStageFile(const char *path) {
 // omc invokes this at every cancel check (System.checkCancel); it hands the
 // thread back to Qt so the Cancel click is delivered (flipping the flag omc then
 // reads) and progress repaints. Rate-limited — checkCancel fires per class.
-// Reentering omc is prevented by OmcBusyScope disabling all UI but Cancel.
+// Reentering omc is prevented by OMCLongOperation disabling all UI but Cancel.
 // Reflect the compiler's last-reported progress (read via the backend getters)
 // on the status bar while an in-process op is in flight. Tracks whether it was
-// the one that made the bar visible so OmcBusyScope can restore it on completion.
+// the one that made the bar visible so the scope can restore it on completion.
 static bool g_omcNativeOwnsBar = false;
 static void omcDriveNativeProgress()
 {
@@ -555,55 +555,65 @@ extern "C" void omedit_pump_events()
   QCoreApplication::processEvents();
 }
 
-// Registers omedit_pump_events with whichever omc backend is linked, once.
-static void omedit_install_pump()
+static void omedit_set_pump(bool install)
 {
 #if defined(OMC_RUST_ABI)
-  omc_compiler_set_pump_callback(omedit_pump_events);
+  omc_compiler_set_pump_callback(install ? omedit_pump_events : nullptr);
 #else
-  System_setPumpCallback(omedit_pump_events);
+  System_setPumpCallback(install ? omedit_pump_events : nullptr);
+#endif
+}
+#endif // !__EMSCRIPTEN__
+
+static int g_omcLongOperationDepth = 0;
+
+/*!
+ * \brief OMCLongOperation::OMCLongOperation
+ */
+OMCLongOperation::OMCLongOperation()
+{
+  g_omcLongOperationDepth++;
+#if !defined(__EMSCRIPTEN__)
+  if (g_omcLongOperationDepth > 1) {
+    return;
+  }
+#if defined(OMC_RUST_ABI)
+  omc_compiler_clear_cancel();
+#else
+  System_clearCancel();
+#endif
+  omedit_set_pump(true);
+  if (MainWindow::instance()) {
+    MainWindow::instance()->setOmcOperationRunning(true);
+  }
+  // Delayed so a quick operation never flashes the button. The UI-disable above
+  // is immediate — the pump can fire before this fires.
+  mShowCancelButtonTimer.setSingleShot(true);
+  QObject::connect(&mShowCancelButtonTimer, &QTimer::timeout, []() {
+    if (MainWindow::instance()) MainWindow::instance()->showCancelOperationButton(true);
+  });
+  mShowCancelButtonTimer.start(100);
 #endif
 }
 
-// Marks omc busy for the duration of a command: at the outermost call it clears
-// any stale cancel and disables the UI (except Cancel) so the pumped event loop
-// can't reenter the non-reentrant compiler. Nested calls (e.g. loadModelCB) are
-// no-ops. RAII so early returns in sendCommand still restore the UI.
-namespace {
-int g_omcCommandDepth = 0;
-struct OmcBusyScope {
-  bool outer;
-  // Reveal Cancel only if the op runs past this; quick commands (the vast
-  // majority) finish first and never flash the button. The UI-disable itself
-  // is immediate — the pump can fire mid-op, so reentrancy must be blocked now.
-  QTimer showButtonTimer;
-  OmcBusyScope() : outer(g_omcCommandDepth == 0) {
-    g_omcCommandDepth++;
-    if (outer) {
-#if defined(OMC_RUST_ABI)
-      omc_compiler_clear_cancel();
-#else
-      System_clearCancel();
+/*!
+ * \brief OMCLongOperation::~OMCLongOperation
+ */
+OMCLongOperation::~OMCLongOperation()
+{
+  g_omcLongOperationDepth--;
+#if !defined(__EMSCRIPTEN__)
+  if (g_omcLongOperationDepth > 0) {
+    return;
+  }
+  mShowCancelButtonTimer.stop();
+  omedit_set_pump(false);
+  omcClearNativeProgress();
+  if (MainWindow::instance()) {
+    MainWindow::instance()->setOmcOperationRunning(false);
+  }
 #endif
-      if (MainWindow::instance()) MainWindow::instance()->setOmcOperationRunning(true);
-      showButtonTimer.setSingleShot(true);
-      QObject::connect(&showButtonTimer, &QTimer::timeout, []() {
-        if (MainWindow::instance()) MainWindow::instance()->showCancelOperationButton(true);
-      });
-      showButtonTimer.start(100);
-    }
-  }
-  ~OmcBusyScope() {
-    g_omcCommandDepth--;
-    if (outer) {
-      showButtonTimer.stop();
-      omcClearNativeProgress();
-      if (MainWindow::instance()) MainWindow::instance()->setOmcOperationRunning(false);
-    }
-  }
-};
 }
-#endif // !__EMSCRIPTEN__
 
 /*!
  * \class OMCProxy
@@ -823,12 +833,12 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   threadData->loadModelCB = MainWindow::LoadModelCallbackFunction;
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData);
-  omedit_install_pump();
 #endif
   connect(mpOMCInterface, SIGNAL(logCommand(QString)), this, SLOT(logCommand(QString)));
   connect(mpOMCInterface, SIGNAL(logResponse(QString,QString,double)), this, SLOT(logResponse(QString,QString,double)));
   connect(mpOMCInterface, SIGNAL(throwException(QString)), SLOT(showException(QString)));
   mHasInitialized = true;
+  setOMEditDebugFlag();
   // get OpenModelica version
   QString version = getVersion();
   Helper::OpenModelicaVersion = version;
@@ -928,9 +938,6 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
     }
   }
 #else
-  // Busy scope (outermost call) clears any stale cancel and disables all UI but
-  // the Cancel button, so omedit_pump_events can run the event loop safely.
-  OmcBusyScope omcBusy;
   if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression.toUtf8().constData()), &reply_str)) {
     if (expression == "quit()") {
       return;
@@ -3279,11 +3286,22 @@ bool OMCProxy::clearCommandLineOptions()
 {
   bool result = mpOMCInterface->clearCommandLineOptions();
   if (result) {
+    setOMEditDebugFlag();
     return true;
   } else {
     printMessagesStringInternal();
     return false;
   }
+}
+
+/*!
+ * \brief OMCProxy::setOMEditDebugFlag
+ * Tells omc that OMEdit is its host, so it emits the output only a GUI reads.
+ * A property of the session, hence re-applied whenever the options are cleared.
+ */
+void OMCProxy::setOMEditDebugFlag()
+{
+  setCommandLineOptions("-d=omedit");
 }
 
 bool OMCProxy::enableNewInstantiation()

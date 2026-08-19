@@ -1471,7 +1471,11 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
     mpOMCProxy->setCommandLineOptions(QString("-d=gendebugsymbols"));
   }
   bool includeResources = OptionsDialog::instance()->getFMIPage()->getIncludeResourcesCheckBox()->isChecked();
-  bool isTranslationSuccessful = mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+  bool isTranslationSuccessful;
+  {
+    OMCLongOperation longOperation;
+    isTranslationSuccessful = mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+  }
   // hide progress bar
   hideProgressBar();
   // clear the status bar message
@@ -3759,10 +3763,10 @@ void MainWindow::showCancelOperationButton(bool show)
 
 /*!
  * \brief MainWindow::setOmcOperationRunning
- * Disables everything but the status-bar Cancel button for the duration of an
- * omc command, so the pumped event loop (omedit_pump_events) can deliver the
- * Cancel click without re-entering the non-reentrant compiler. Also parks the
- * auto-save timer, which would otherwise fire an omc command mid-operation.
+ * Disables everything but the status-bar Cancel button for the duration of a
+ * long omc operation, so the pumped event loop (omedit_pump_events) can deliver
+ * the Cancel click without re-entering the non-reentrant compiler. Also parks
+ * the auto-save timer, which would otherwise fire an omc command mid-operation.
  */
 void MainWindow::setOmcOperationRunning(bool running)
 {
@@ -3787,8 +3791,8 @@ void MainWindow::setOmcOperationRunning(bool running)
       mpAutoSaveTimer->start();
     }
   }
-  // The button is revealed by OmcBusyScope's delayed timer so quick commands
-  // don't flash it; here we only guarantee it is hidden once the op ends.
+  // The button is revealed by OMCLongOperation's delayed timer so a quick
+  // operation doesn't flash it; here we only guarantee it is hidden once it ends.
   if (!running) {
     showCancelOperationButton(false);
   }

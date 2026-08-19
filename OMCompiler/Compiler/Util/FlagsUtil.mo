@@ -262,7 +262,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.FLOW_ALIAS_ELIMINATION,
   Flags.DUMP_CHECK_MODEL,
   Flags.CHECK_DEF_USE,
-  Flags.TEARING_COST
+  Flags.TEARING_COST,
+  Flags.OMEDIT
 };
 
 protected

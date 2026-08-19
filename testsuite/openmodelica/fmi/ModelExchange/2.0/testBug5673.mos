@@ -2,7 +2,7 @@
 // keywords: FMI 2.0 export
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml Bug5673.xml
-// cflags: -d=-newInst
+// cflags: -d=-newInst,omedit
 
 loadString("
 package aliasCheck
