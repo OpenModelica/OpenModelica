@@ -3230,13 +3230,13 @@ algorithm
           matchArrayDims(trueType.dimensions, falseType.dimensions, compatibleType, matchKind, options);
 
         if listLength(trueType.dimensions) == listLength(falseType.dimensions) and
-           isIncompatibleMatch(matchKind) or
-           not List.isEqualOnTrue(trueType.dimensions, falseType.dimensions, Dimension.isSame) then
+           (isIncompatibleMatch(matchKind) or
+            not List.isEqualOnTrue(trueType.dimensions, falseType.dimensions, Dimension.isSame)) then
           // The branches are allowed to have different array dimensions as long as
           // they have compatible element types and the same number of dimensions.
-          if InstContext.inSubexpression(context) then
-            // Unify the types if the if-expression is part of a larger expression,
-            // because we can't really handle conditional array sizes in that case.
+          if InstContext.inSubexpression(context) or InstContext.inFunction(context) then
+            // Unify the types if the if-expression is part of a larger expression or we're in
+            // a function, because we can't really handle conditional array sizes in that case.
             compatibleType := Type.unifyArrays(Type.copyElementType(trueType, compatibleType),
                                                Type.copyElementType(falseType, compatibleType));
           else
