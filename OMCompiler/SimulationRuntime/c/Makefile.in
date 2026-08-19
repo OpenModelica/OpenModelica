@@ -34,14 +34,6 @@ else
 LDFLAGS=-L$(OMBUILDDIR)/lib/@host_short@/omc @RT_LDFLAGS@
 LDFLAGS_SIM=-L$(OMBUILDDIR)/lib/@host_short@/omc @RT_LDFLAGS_SIM@
 endif
-
-USE_PARJAC = @USE_PARJAC@
-ifeq (@USE_PARJAC@,yes)
-	CONFIG_CFLAGS+=@OMPCFLAGS@ -DUSE_PARJAC
-	LDFLAGS+=@OMPCFLAGS@
-else
-	OMPCFLAGS=
-endif
 defaultMakefileTarget = Makefile
 
 LIBMAKEFILE = Makefile

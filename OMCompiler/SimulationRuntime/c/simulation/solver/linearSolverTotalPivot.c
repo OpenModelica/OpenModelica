@@ -36,7 +36,6 @@
 #include "../simulation_info_json.h"
 #include "../jacobian_util.h"
 #include "../../util/omc_error.h"
-#include "../../util/parallel_helper.h"
 #include "omc_math.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
@@ -330,8 +329,8 @@ int freeTotalPivotData(void** voiddata)
  */
 void getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData, modelica_real* jac)
 {
-  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  JACOBIAN* jacobian = systemData->jacobian;
+  JACOBIAN* parentJacobian = systemData->parentJacobian;
 
   /* call generic dense Jacobian */
   evalJacobian(data, threadData, jacobian, parentJacobian, jac, TRUE);
@@ -367,7 +366,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int i, j;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_TOTALPIVOT* solverData = (DATA_TOTALPIVOT*) systemData->parDynamicData[omc_get_thread_num()].solverData[1];
+  DATA_TOTALPIVOT* solverData = (DATA_TOTALPIVOT*) systemData->solverData[1];
 
   int n = systemData->size, status;
   double fdeps = 1e-8;
@@ -394,15 +393,15 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   if (0 == systemData->method) {
 
     /* reset matrix A */
-    vecConstLS(n*n, 0.0, systemData->parDynamicData[omc_get_thread_num()].A);
+    vecConstLS(n*n, 0.0, systemData->A);
     /* update matrix A -> first n columns of matrix Ab*/
     systemData->setA(data, threadData, systemData);
-    vecCopyLS(n*n, systemData->parDynamicData[omc_get_thread_num()].A, solverData->Ab);
+    vecCopyLS(n*n, systemData->A, solverData->Ab);
 
     /* update vector b (rhs) -> -b is last column of matrix Ab*/
     rt_ext_tp_tick(&(solverData->timeClock));
     systemData->setb(data, threadData, systemData);
-    vecScalarMultLS(n, systemData->parDynamicData[omc_get_thread_num()].b, -1.0, solverData->Ab + n*n);
+    vecScalarMultLS(n, systemData->b, -1.0, solverData->Ab + n*n);
   } else {
 
     /* calculate jacobian -> first n columns of matrix Ab*/
@@ -424,14 +423,8 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   infoStreamPrint(OMC_LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   if (status != 0) {
-    // ToDo Rework stream prints like this one to work in parallel regions
-#ifdef USE_PARJAC
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Thread %u: Error solving linear system of equations (no. %d) at time %f.", omc_get_thread_num(), (int)systemData->equationIndex, data->localData[0]->timeValue);
-    success = 0;
-#else
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Error solving linear system of equations (no. %d) at time %f.", (int)systemData->equationIndex, data->localData[0]->timeValue);
     success = 0;
-#endif
   } else {
     debugVectorDoubleLS(OMC_LOG_LS_V, "SOLUTION:", solverData->x, n+1);
     if (1 == systemData->method) {

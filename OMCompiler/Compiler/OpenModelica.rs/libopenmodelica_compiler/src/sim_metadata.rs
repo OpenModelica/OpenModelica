@@ -74,7 +74,7 @@ pub static FLAG_NAME: CStrTable<156> = CStrTable([
     c"ipopt_max_iter".as_ptr(),
     c"ipopt_warm_start".as_ptr(),
     c"jacobian".as_ptr(),
-    c"jacobianThreads".as_ptr(),
+    c"jacobianNominalFactor".as_ptr(),
     c"l".as_ptr(),
     c"l_datarec".as_ptr(),
     c"logFormat".as_ptr(),
@@ -169,7 +169,7 @@ pub static FLAG_NAME: CStrTable<156> = CStrTable([
     c"parmodScheduler".as_ptr(),
     c"parmodClustering".as_ptr(),
     c"parmodClustersPerLevel".as_ptr(),
-    c"parmodDumpTaskGraph".as_ptr(),
+    c"parmodExportTaskGraph".as_ptr(),
     c"parmodImportClustering".as_ptr(),
     c"parmodDumpStages".as_ptr(),
     c"FLAG_MAX".as_ptr(),
@@ -234,7 +234,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<156> = CStrTable([
     c"  Value specifies the max number of iteration for ipopt.".as_ptr(),
     c"  Value specifies lvl for a warm start in ipopt: 1,2,3,...".as_ptr(),
     c"  Select the calculation method for Jacobian used by the integration method:\x0a".as_ptr(),
-    c"  Value specifies the number of threads for jacobian evaluation in dassl or ida.  The value is an Integer with default value 1.".as_ptr(),
+    c"  The numerical Jacobian differences column i over\x0a    delta_h * max(|x[i]|, |h*x'[i]|)\x0a  and, where that is inside the variable's own absolute tolerance and so is\x0a  no scale of its own, over delta_h*factor*nominal[i] instead.\x0a  Lower the factor for a model that is non-smooth at that wider step;\x0a  the value is a Double with default value 1.0.".as_ptr(),
     c"  Value specifies a time where the linearization of the model should be performed.".as_ptr(),
     c"  Emit data recovery matrices with model linearization.".as_ptr(),
     c"  Value specifies the log format of the executable:\x0a\x0a  * text (default)\x0a  * xml\x0a  * xmltcp (required -port flag)".as_ptr(),
@@ -296,14 +296,14 @@ pub static FLAG_DETAILED_DESC: CStrTable<156> = CStrTable([
     c"  Reset step size using standard inital step size selection after an event (default false)".as_ptr(),
     c"  Applies exponential smoothing to the step size factor; gbctrl_filter = 0 yields constant step size, gbctrl_filter = 1 uses full adaptation without averaging.".as_ptr(),
     c"  Applies adaptive damping to the step size factor using F\xc3\xbchrer\xe2\x80\x99s approach, scaling it by h_fac *= (h_n / h_n1)^gamma to penalize repeated rejections or reward successful step acceptance.".as_ptr(),
-    c"  Error estimation method for solver gbode (single-rate, slow states integrator)\x0a  Possible values:\x0a\x0a    * default    - depending on the Runge-Kutta method\x0a    * richardson - Richardson extrapolation\x0a    * embedded   - Embedded scheme\x0a".as_ptr(),
+    c"  Error estimation method for solver gbode (single-rate, slow states integrator)\x0a  Possible values:\x0a\x0a    * default - depending on the Runge-Kutta method\x0a    * richardson - Richardson extrapolation\x0a    * embedded   - Embedded scheme\x0a    * two_step           - Two-step estimator, if available\x0a    * contractive_defect - Contractive defect estimator, if available\x0a    * contractive_filter - Contractive filter applied to the embedded estimator, if available\x0a".as_ptr(),
     c"  Interpolation method of solver gbode (single-rate, slow states integrator).".as_ptr(),
     c"  Non-linear solver method of solver gbode (single-rate, slow states integrator).".as_ptr(),
     c"  Value specifies damping applied to the estimated convergence rate in the first Newton iteration (0 <= value <= 1; 0 = conservative, 1 = optimistic). Only valid for -gbnls=internal.\x0a  Since no history is available in the first Newton iteration, the convergence rate is taken from the previous solve and raised to the power of this value.".as_ptr(),
     c"  Value specifies how often the ODE Jacobian is recalculated (0 <= value < 1). Only valid for -gbnls=internal.\x0a  The Jacobian is kept, if the linear convergence rate || dz_k || / || dz_{k-1} || of the Newton iteration is smaller than the specified value. Small values result in more Jacobian callbacks.".as_ptr(),
     c"  Value specifies the chosen solver of solver gbode (multi-rate, fast states integrator).\x0a  Current Restriction: Fully implicit (Gauss, Radau, Lobatto) RK methods are not supported, yet.".as_ptr(),
     c"  Step size control of solver gbode (multi-rate, fast states integrator).".as_ptr(),
-    c"  Error estimation method for solver gbode (multi-rate, fast states integrator)\x0a  Possible values:\x0a\x0a    * default    - depending on the Runge-Kutta method\x0a    * richardson - Richardson extrapolation\x0a    * embedded   - Embedded scheme\x0a".as_ptr(),
+    c"  Error estimation method for solver gbode (multi-rate, fast states integrator)\x0a  Possible values:\x0a\x0a    * default - depending on the Runge-Kutta method\x0a    * richardson - Richardson extrapolation\x0a    * embedded   - Embedded scheme\x0a    * two_step           - Two-step estimator, if available\x0a    * contractive_defect - Contractive defect estimator, if available\x0a    * contractive_filter - Contractive filter applied to the embedded estimator, if available\x0a".as_ptr(),
     c"  Interpolation method of solver gbode (multi-rate, fast states integrator).".as_ptr(),
     c"  Non-linear solver method of solver gbode (multi-rate, fast states integrator).".as_ptr(),
     c"  Define percentage of states for the fast states selection of solver gbode (values from 0 to 1).".as_ptr(),
@@ -380,7 +380,7 @@ pub static INIT_METHOD_DESC: CStrTable<3> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static JACOBIAN_METHOD_NAME: CStrTable<7> = CStrTable([
+pub static JACOBIAN_METHOD_NAME: CStrTable<8> = CStrTable([
     c"unknown".as_ptr(),
     c"coloredNumerical".as_ptr(),
     c"internalNumerical".as_ptr(),
@@ -388,10 +388,11 @@ pub static JACOBIAN_METHOD_NAME: CStrTable<7> = CStrTable([
     c"coloredSymbolicalAdjoint".as_ptr(),
     c"numerical".as_ptr(),
     c"symbolical".as_ptr(),
+    c"bicoloredSymbolical".as_ptr(),
 ]);
 
 #[unsafe(no_mangle)]
-pub static JACOBIAN_METHOD_DESC: CStrTable<7> = CStrTable([
+pub static JACOBIAN_METHOD_DESC: CStrTable<8> = CStrTable([
     c"unknown".as_ptr(),
     c"Colored numerical Jacobian, which is default for dassl and ida. Needs omc compiler flag --generateDynamicJacobian=numeric. With option -idaLS=klu a sparse matrix is used.".as_ptr(),
     c"Dense solver internal numerical Jacobian.".as_ptr(),
@@ -399,6 +400,7 @@ pub static JACOBIAN_METHOD_DESC: CStrTable<7> = CStrTable([
     c"Colored symbolical adjoint Jacobian. Needs omc compiler flags --newBackend and --generateDynamicJacobian=symbolicadjoint.".as_ptr(),
     c"Dense numerical Jacobian.".as_ptr(),
     c"Dense symbolical Jacobian. Needs omc compiler flag --generateDynamicJacobian=symbolic.".as_ptr(),
+    c"Bidirectional (star bicolored) symbolical Jacobian. Needs omc compiler flags --newBackend and --generateDynamicJacobian=bidirectional.".as_ptr(),
 ]);
 
 #[unsafe(no_mangle)]

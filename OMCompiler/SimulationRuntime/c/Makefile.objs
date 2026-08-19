@@ -45,7 +45,6 @@ UTIL_OBJS_MINIMAL=$(UTIL_OBJS_NO_FMI) \
                   omc_mmap$(OBJ_EXT) \
                   omc_msvc$(OBJ_EXT) \
                   omc_numbers$(OBJ_EXT) \
-                  parallel_helper$(OBJ_EXT) \
                   rational$(OBJ_EXT) \
                   real_array$(OBJ_EXT) \
                   ringbuffer$(OBJ_EXT) \

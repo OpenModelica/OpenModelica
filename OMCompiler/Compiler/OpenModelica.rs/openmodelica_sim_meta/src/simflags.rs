@@ -131,9 +131,6 @@ pub struct SimFlags {
     pub show_all_warnings: bool,
     /// `-daeMode`, deprecated in C: `--daeMode` at translation is what selects it.
     pub dae_mode: bool,
-    /// `-jacobianThreads`: this runtime evaluates Jacobians single-threaded, as a C
-    /// runtime built without `--enable-parjac` does.
-    pub jacobian_threads: Option<i32>,
     pub nls: Option<Nls>,
     pub nls_ls: Option<NlsLs>,
     pub ls: Option<Ls>,
@@ -439,7 +436,6 @@ const C_FLAGS: &[(&str, bool)] = &[
     ("ipopt_warm_start", true),
     ("jacobian", true),
     ("jacobianNominalFactor", true),
-    ("jacobianThreads", true),
     ("l", true),
     ("l_datarec", false),
     ("logFormat", true),
@@ -654,7 +650,6 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "steadyStateTol" => f.steady_state_tol = Some(real(name, &value(name)?)?),
             "w" => f.show_all_warnings = true,
             "daeMode" => f.dae_mode = true,
-            "jacobianThreads" => f.jacobian_threads = Some(int(name, &value(name)?)?),
             // C's only other formats are the XML ones its `-port` server speaks.
             "logFormat" => {
                 let v = value(name)?;
@@ -908,14 +903,6 @@ pub fn notices(f: &SimFlags) -> Vec<(crate::omclog::LogType, String)> {
             "The daeMode flag is *deprecated*, because it is not needed any more.\nIf a model is \
              compiled in \"DAEmode\" with compiler flag --daeMode, then it simulates automatically \
              in DAE mode."
-                .to_string(),
-        ));
-    }
-    if f.jacobian_threads.is_some() {
-        out.push((
-            crate::omclog::WARNING,
-            "Simulation flag jacobianThreads not available. This runtime evaluates Jacobians \
-             single-threaded."
                 .to_string(),
         ));
     }
@@ -1490,10 +1477,10 @@ mod tests {
     // C warns about these rather than refusing them, so they must parse.
     #[test]
     fn deprecated_and_unavailable_flags_only_warn() {
-        let f = parse(&argv(&["-daeMode", "-jacobianThreads=4", "-logFormat=text"])).expect("parses");
-        assert!(f.dae_mode && f.jacobian_threads == Some(4));
+        let f = parse(&argv(&["-daeMode", "-logFormat=text"])).expect("parses");
+        assert!(f.dae_mode);
         let msgs = notices(&f);
-        assert_eq!(msgs.len(), 2);
+        assert_eq!(msgs.len(), 1);
         assert!(msgs.iter().all(|(ty, _)| *ty == crate::omclog::WARNING));
         assert!(parse(&argv(&["-logFormat=xml"])).is_err());
     }
