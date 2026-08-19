@@ -31,7 +31,6 @@
 #include "jacobian_util.h"
 #include "options.h"
 #include "../util/omc_file.h"
-#include "../util/parallel_helper.h"
 #include "eval_dep.h"
 #include "jacobian_colpack.h"
 
