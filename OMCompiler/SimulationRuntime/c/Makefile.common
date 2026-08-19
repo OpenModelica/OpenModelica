@@ -1,5 +1,5 @@
 # Adrian Pop, adrpo@ida.liu.se, Martin Sjölund, marsj@ida.liu.se
-# - Use make -f Makefile.omdev.mingw if you want to compile on Windows/MinGW
+# - On Windows, build with CMake instead (see OMCompiler/README.Windows.md)
 # - Please leave the UNIX Makefile as it is if you are not using UNIX/Linux
 # If you need to add files, etc, you modify Makefile.common - a common file
 # for both UNIX/Linux and Windows platforms.

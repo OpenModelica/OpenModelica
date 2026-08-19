@@ -413,8 +413,8 @@ if(WIN32)
   # simulation and FMU code (see RT_LDFLAGS_GENERATED_CODE* in
   # Compiler/runtime/CMakeLists.txt), but it is not a runtime dependency of the
   # compiler itself, so the RUNTIME_DEPENDENCIES scan above does not pick it up.
-  # The autotools/OMDev build copies it explicitly (Makefile.omdev.mingw); do the
-  # same here so e.g. buildModelFMU() can bundle it into the exported FMU.
+  # Install it explicitly so e.g. buildModelFMU() can bundle it into the
+  # exported FMU.
   install(FILES ${MSYSTEM_PREFIX_ESCAPED}/bin/libopenblas.dll
           DESTINATION ${CMAKE_INSTALL_BINDIR}
           COMPONENT omc

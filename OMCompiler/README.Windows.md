@@ -10,7 +10,6 @@
   - [1.5 Environment Variables](#15-environment-variables)
 - [2 Compile OpenModelica](#2-compile-openmodelica)
   - [2.1 MSYS and CMake](#21-msys-and-cmake)
-  - [2.2 MSYS and Make](#22-msys-and-make)
 - [3 Installer](#3-installer)
 - [4 Test Suite](#4-test-suite)
 - [5 Troubleshooting](#5-troubleshooting)
@@ -105,9 +104,8 @@ Additional remarks:
 
 # 2 Compile OpenModelica
 
-You can use MSYS2 with environment UCRT64 with the Makefiles or CMake.
-It's also possible to build with Eclipse using the Makefiles.
-Follow the instructions in [MSYS and Make](#21-msys-and-make) or [Eclipse](#22-eclipse).
+On Windows, CMake is the only supported way to build OpenModelica. Follow the
+instructions in [MSYS and CMake](#21-msys-and-cmake).
 
 ## 2.1 MSYS and CMake
 
@@ -123,27 +121,9 @@ cd build_cmake
 make -j<Nr. of cores> install -Oline
 ```
 
-## 2.2 MSYS and Make
-
-Start `C:\OMDev\tools\msys\ucrt64.exe` (UCRT64) or `C:\OMDev\tools\msys\mingw64.exe`
-(MINGW64) and run:
-
-```bash
-cd /path/to/OpenModelica
-
-# build omc using number of cores, replace by your number of cores
-make -f Makefile.omdev.mingw -j<Nr. of cores>
-
-# if you want to build only omedit then run:
-make -f Makefile.omdev.mingw -j<Nr. of cores> omedit
-
-# if you want to build all qtclients run
-make -f Makefile.omdev.mingw -j<Nr. of cores> qtclients
-```
-
 # 3 Installer
 
-To build the OpenModelica releases and installer the Makefiles build and NSIS is used.
+To build the OpenModelica releases and installer NSIS is used.
 If you need to know more checkout
 [OpenModelicaSetup/BuildWindowsRelease.sh](https://github.com/OpenModelica/OpenModelicaSetup#readme)
 
@@ -153,14 +133,12 @@ If you need to know more checkout
 Many of the tests inside the test suite are OS dependent and will only work on a Linux OS.
 Nonetheless you can run the test suite, but a lot of failing tests should be expected.
 
-The test suite is only supported if you build using Makefiles. For CMake check
-[README.cmake.md](../README.cmake.md).
-
 Start your MSYS shell from OMDev and run:
 
 ```bash
-make -f Makefile.omdev.mingw omc testsuite-depends -j<Nr. of cores>
-cd testsuite/partests
+cd /path/to/OpenModelica
+cmake --build build_cmake --target testsuite-depends --parallel <Nr. of cores>
+cd testsuite/partest
 ./runtests.pl
 ```
 
@@ -177,4 +155,4 @@ If something does not work check the following:
 
 --------------
 
-Last updated 2023-08-11.
+Last updated 2026-08-18.
