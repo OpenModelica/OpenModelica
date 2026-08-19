@@ -1122,12 +1122,13 @@ void buildCMakeGccOMC() {
     "-DCMAKE_BUILD_TYPE=Release",
     "-DOM_USE_CCACHE=OFF",
     "-DCMAKE_INSTALL_PREFIX=build"])
-  // Only the install tree ($ORIGIN-relative RPATHs, so it survives the move to
-  // another node). The testsuite-depends outputs that land in the source tree
-  // (the test libraries, the extracted reference files, the ffi lib) are remade
-  // by makeLibsAndCacheCMake() in the test stage instead: cheaper than shipping
-  // them around, and that stage has the node's omlibrary cache mounted.
-  stash name: 'omc-cmake-gcc', includes: 'build/**'
+
+  // Susan's *.mo and Autoconf.mo travel along because the bootstrapping tests
+  // load the compiler sources by path (see partestCMakeStashed).
+  stash name: 'omc-cmake-gcc',
+        includes: 'build/**,' +
+                  'build_cmake/OMCompiler/Compiler/generated-mo/**,' +
+                  'OMCompiler/Compiler/Util/Autoconf.mo'
 }
 
 void buildClangOMC() {
@@ -1178,7 +1179,14 @@ void partestCMakeStashed(stashName, partition, partitionmodulo) {
   standardSetup()
   unstash stashName
   makeLibsAndCacheCMake()
-  partest(partition, partitionmodulo)
+  // Susan's *.mo are in the build tree, not next to their *.tpl. rtest hands
+  // this to LoadCompilerSources.mos so the bootstrapping tests find them; it
+  // has to be absolute, since the tests run from a temp dir. env.WORKSPACE is
+  // null in the docker agent, hence pwd.
+  def ws = sh(script: 'pwd', returnStdout: true).trim()
+  withEnv(["OMCOMPILERGENERATEDSOURCES=${ws}/build_cmake/OMCompiler/Compiler/generated-mo"]) {
+    partest(partition, partitionmodulo)
+  }
 }
 
 void crossBuildFMU() {
