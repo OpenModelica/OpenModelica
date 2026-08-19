@@ -474,19 +474,21 @@ ELSEIF(NOT FMU_TARGET)
   MESSAGE(STATUS "Boost thread disabled because of available C++11 support")
 ENDIF(NOT(COMPILER_SUPPORTS_CXX11))
 
-IF(NOT FMU_TARGET)
-if(CMAKE_VERSION VERSION_LESS "3.30.0")
-  FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem serialization program_options)
+if(FMU_TARGET)
+  set(BOOST_REQUIRED "")
 else()
-  FIND_PACKAGE(Boost CONFIG COMPONENTS filesystem serialization program_options REQUIRED)
+  set(BOOST_REQUIRED REQUIRED)
 endif()
-ELSE(NOT FMU_TARGET)
 if(CMAKE_VERSION VERSION_LESS "3.30.0")
-  FIND_PACKAGE(Boost COMPONENTS filesystem serialization program_options)
+  FIND_PACKAGE(Boost ${BOOST_REQUIRED} COMPONENTS filesystem serialization program_options)
 else()
-  FIND_PACKAGE(Boost CONFIG COMPONENTS filesystem serialization program_options)
+  FIND_PACKAGE(Boost CONFIG ${BOOST_REQUIRED} COMPONENTS filesystem serialization program_options)
+  # In CONFIG mode, BoostConfig.cmake does not set Boost_INCLUDE_DIR.
+  # Extract it from the Boost::headers target.
+  if(TARGET Boost::headers)
+    get_target_property(Boost_INCLUDE_DIR Boost::headers INTERFACE_INCLUDE_DIRECTORIES)
+  endif()
 endif()
-ENDIF(NOT FMU_TARGET)
 
 # Use old C++ ABI for cross compilation of FMUs
 # because libstdc++ might not be upgraded yet
