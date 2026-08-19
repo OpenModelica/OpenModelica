@@ -3804,7 +3804,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // A model has discrete `when` behaviour through when-equations (SES_WHEN) or
     // when-statements inside an algorithm — both need the per-step pre-value save
     // and the full `allEquations` list as the per-step function.
-    let when_scan = eqs_with_branches(&all_eqs);
+    let when_scan = eqs_with_nested(&all_eqs);
     let has_when = dae_eqs.iter().map(|(e, _)| e).chain(when_scan.iter()).any(|e| match &**e {
         SimCode::SimEqSystem::SES_WHEN { .. } => true,
         SimCode::SimEqSystem::SES_ALGORITHM { statements, .. }
@@ -3917,6 +3917,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     }
     for part in lst(&sim_code.odeEquations).chain(lst(&sim_code.algebraicEquations)) {
         index_list(part, &mut eq_index);
+    }
+    // Last: an index these lists share with one above keeps the earlier entry.
+    index_list(&sim_code.initialEquations_lambda0, &mut eq_index);
+    for e in clocked_eqs(sim_code).iter() {
+        index_eq_recursive(e, &mut eq_index);
     }
 
     // --- Collect the model's Modelica functions (callable from equations). ---
@@ -4067,11 +4072,15 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let nls_nominal_map = build_nls_nominal_map(vars);
     let mut attr_targets: HashMap<String, AttrTargets> = HashMap::new();
     let dae_only_eqs: Vec<Arc<SimCode::SimEqSystem>> = dae_eqs.iter().map(|(e, _)| e.clone()).collect();
-    let nls_scan: Vec<Vec<Arc<SimCode::SimEqSystem>>> =
-        [&param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs, &dae_only_eqs, &zc_eqs]
-            .iter()
-            .map(|l| eqs_with_branches(l.as_slice()))
-            .collect();
+    let removed_init_eqs = flatten_eqs(&sim_code.removedInitialEquations);
+    let clocked = clocked_eqs(sim_code);
+    let nls_scan: Vec<Vec<Arc<SimCode::SimEqSystem>>> = [
+        &param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs, &dae_only_eqs, &zc_eqs,
+        &assert_eqs, &removed_init_eqs, &clocked,
+    ]
+    .iter()
+    .map(|l| eqs_with_nested(l.as_slice()))
+    .collect();
     let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_bounds, nls_patterns, nls_warnings) = collect_nls_jobs(
         &nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>(),
         &nls_nominal_map,
@@ -5561,25 +5570,49 @@ fn flatten_eqs_ll(
     out
 }
 
-/// `eqs` with the equations nested in every `SES_IFEQUATION` branch appended, for
-/// the scans that register nonlinear systems and detect `when` behaviour.
-fn eqs_with_branches(eqs: &[Arc<SimCode::SimEqSystem>]) -> Vec<Arc<SimCode::SimEqSystem>> {
-    fn push(e: &Arc<SimCode::SimEqSystem>, out: &mut Vec<Arc<SimCode::SimEqSystem>>) {
-        out.push(e.clone());
-        if let SimCode::SimEqSystem::SES_IFEQUATION { ifbranches, elsebranch, .. } = &**e {
-            for (_, branch) in lst(ifbranches) {
-                for inner in lst(branch) {
-                    push(inner, out);
-                }
-            }
-            for inner in lst(elsebranch) {
-                push(inner, out);
-            }
+/// Visit `e` and every equation nested inside it, along the paths
+/// [`lower_equation`] descends — not `alternativeTearing`, which is never lowered.
+fn visit_nested_eqs(e: &Arc<SimCode::SimEqSystem>, f: &mut dyn FnMut(&Arc<SimCode::SimEqSystem>)) {
+    use SimCode::SimEqSystem as E;
+    fn visit_list(
+        eqs: &Arc<List<Arc<SimCode::SimEqSystem>>>,
+        f: &mut dyn FnMut(&Arc<SimCode::SimEqSystem>),
+    ) {
+        for e in lst(eqs) {
+            visit_nested_eqs(e, f);
         }
     }
+    f(e);
+    match &**e {
+        E::SES_IFEQUATION { ifbranches, elsebranch, .. } => {
+            for (_, branch) in lst(ifbranches) {
+                visit_list(branch, f);
+            }
+            visit_list(elsebranch, f);
+        }
+        E::SES_ENTWINED_ASSIGN { single_calls, .. } => visit_list(single_calls, f),
+        E::SES_MIXED { cont, discEqs, .. } => {
+            visit_nested_eqs(cont, f);
+            visit_list(discEqs, f);
+        }
+        E::SES_WHEN { elseWhen: Some(w), .. } => visit_nested_eqs(w, f),
+        E::SES_FOR_EQUATION { body, .. } => visit_list(body, f),
+        E::SES_LINEAR { lSystem, .. } => {
+            visit_list(&lSystem.residual, f);
+            for (_, _, inner) in lst(&lSystem.simJac) {
+                visit_nested_eqs(inner, f);
+            }
+        }
+        E::SES_NONLINEAR { nlSystem, .. } => visit_list(&nlSystem.eqs, f),
+        _ => {}
+    }
+}
+
+/// `eqs` with everything [`visit_nested_eqs`] reaches appended.
+fn eqs_with_nested(eqs: &[Arc<SimCode::SimEqSystem>]) -> Vec<Arc<SimCode::SimEqSystem>> {
     let mut out = Vec::with_capacity(eqs.len());
     for e in eqs {
-        push(e, &mut out);
+        visit_nested_eqs(e, &mut |i| out.push(i.clone()));
     }
     out
 }
@@ -7266,7 +7299,7 @@ fn nls_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
     let mut seen: HashSet<i32> = HashSet::new();
     let mut total = 0u32;
     let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
-        for e in &eqs_with_branches(&eqs) {
+        for e in &eqs_with_nested(&eqs) {
             if let E::SES_NONLINEAR { nlSystem, .. } = &**e {
                 if seen.insert(nlSystem.index) && nls_jac_usable(nlSystem) {
                     // seeds + all column variables (results + intermediates) get slots.
@@ -7279,10 +7312,28 @@ fn nls_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
     scan(flatten_eqs(&sim_code.parameterEquations));
     scan(flatten_eqs(&sim_code.initialEquations));
     scan(flatten_eqs(&sim_code.initialEquations_lambda0));
+    scan(flatten_eqs(&sim_code.removedInitialEquations));
+    scan(flatten_eqs(&sim_code.algorithmAndEquationAsserts));
+    scan(flatten_eqs(&sim_code.equationsForZeroCrossings));
     scan(flatten_eqs_ll(&sim_code.odeEquations));
     scan(flatten_eqs_ll(&sim_code.algebraicEquations));
     scan(flatten_eqs(&sim_code.allEquations));
+    scan(clocked_eqs(sim_code));
+    if let Some(d) = &sim_code.daeModeData {
+        scan(flatten_eqs_ll(&d.daeEquations));
+    }
     total
+}
+
+/// Every clocked sub-partition equation, flattened.
+fn clocked_eqs(sim_code: &SimCode::SimCode) -> Vec<Arc<SimCode::SimEqSystem>> {
+    let mut out = Vec::new();
+    for part in lst(&sim_code.clockedPartitions) {
+        for sp in lst(&part.subPartitions) {
+            out.extend(lst(&sp.equations).chain(lst(&sp.removedEquations)).cloned());
+        }
+    }
+    out
 }
 
 /// Register each system's Jacobian seed/result crefs at the `nls_jac_off` scratch
@@ -7627,7 +7678,7 @@ fn lin_jac_systems(sim_code: &SimCode::SimCode) -> Vec<Arc<SimCode::LinearSystem
     let mut seen: HashSet<i32> = HashSet::new();
     let mut out: Vec<Arc<SimCode::LinearSystem>> = Vec::new();
     let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
-        for e in &eqs {
+        for e in &eqs_with_nested(&eqs) {
             if let E::SES_LINEAR { lSystem, .. } = &**e {
                 if lSystem.tornSystem && seen.insert(lSystem.index) && lin_jac_usable(lSystem, lin_n_res(lSystem)) {
                     out.push(lSystem.clone());
@@ -7638,9 +7689,16 @@ fn lin_jac_systems(sim_code: &SimCode::SimCode) -> Vec<Arc<SimCode::LinearSystem
     scan(flatten_eqs(&sim_code.parameterEquations));
     scan(flatten_eqs(&sim_code.initialEquations));
     scan(flatten_eqs(&sim_code.initialEquations_lambda0));
+    scan(flatten_eqs(&sim_code.removedInitialEquations));
+    scan(flatten_eqs(&sim_code.algorithmAndEquationAsserts));
+    scan(flatten_eqs(&sim_code.equationsForZeroCrossings));
     scan(flatten_eqs_ll(&sim_code.odeEquations));
     scan(flatten_eqs_ll(&sim_code.algebraicEquations));
     scan(flatten_eqs(&sim_code.allEquations));
+    scan(clocked_eqs(sim_code));
+    if let Some(d) = &sim_code.daeModeData {
+        scan(flatten_eqs_ll(&d.daeEquations));
+    }
     // A differentiated algebraic loop is a torn linear system in a Jacobian column.
     for jm in lst(&sim_code.jacobianMatrices) {
         if !jac_lowerable(jm) {
