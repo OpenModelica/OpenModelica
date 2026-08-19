@@ -573,6 +573,8 @@ constant DebugFlag CHECK_DEF_USE = DEBUG_FLAG(200, "checkDefUse", false,
   "Warns about variables in functions that cannot statically be proven to be defined (given a value) before they are used, e.g. variables only assigned on some control flow paths. Per the Modelica specification using an uninitialized variable is an error.");
 constant DebugFlag TEARING_COST = DEBUG_FLAG(201, "tearingCost", false,
   "Dumps the estimated cost of every torn system against solving it untorn.");
+constant DebugFlag OMEDIT = DEBUG_FLAG(202, "omedit", false,
+  "Set by OMEdit, so the compiler can emit output only a GUI consumes.");
 
 public
 // CONFIGURATION FLAGS

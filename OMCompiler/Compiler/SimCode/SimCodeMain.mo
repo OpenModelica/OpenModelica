@@ -729,10 +729,12 @@ algorithm
       // translateModel records the lowering error and fails, so the message
       // surfaces (getErrorString / OMEdit) instead of a later "no prepared model".
       CodegenWasmJit.translateModel(simCode);
-      guid := System.getUUIDStr();
-      SerializeInitXML.simulationInitFile(simCode, guid);
-      // The wasm module carries its own metadata, so *_info.json is only needed
-      // for debugging; emit it when the infoXmlOperations debug flag is set.
+      // The wasm module carries its own metadata; *_init.xml is only read by
+      // OMEdit's variable browser and *_info.json only for debugging.
+      if Flags.isSet(Flags.OMEDIT) then
+        guid := System.getUUIDStr();
+        SerializeInitXML.simulationInitFile(simCode, guid);
+      end if;
       if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
         SerializeModelInfo.serialize(simCode, true);
       end if;

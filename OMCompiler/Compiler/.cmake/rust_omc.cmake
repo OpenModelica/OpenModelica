@@ -157,6 +157,14 @@ option(RUST_OMC_PREBUILT_GENERATED_SRC
   "Assume the mmtorust-generated *.rs are already present (e.g. unstashed from an earlier CI stage) and skip the transpile."
   OFF)
 
+# Each client is a separate cargo build resolving the workspace to a different
+# feature set than the cdylib, sharing one target directory: cargo cannot reuse
+# the fingerprints, so every compiler crate is rebuilt per client, every build.
+# The browser OMShell pages come from the wasm target and are not affected.
+option(RUST_OMC_OMSHELL_CLIENTS
+  "Build the desktop egui + dioxus/Blitz OMShell clients. Off by default: each is a separate cargo feature resolution and rebuilds every compiler crate."
+  OFF)
+
 # cargo target/ lives in the build tree, not the source crate tree.
 set(RUST_OMC_TARGET_DIR ${CMAKE_CURRENT_BINARY_DIR}/rust-target
     CACHE PATH "Directory for cargo's target/ output of the Rust omc build.")
@@ -1018,14 +1026,12 @@ function(omc_rust_setup_codegen)
             DESTINATION lib/wasm32-wasi/omc/lib/wasm32-wasip1 COMPONENT omc)
   endif()
 
-  # The native egui OMShell client (omshell_egui), built when the GUI clients are
-  # enabled (OM_ENABLE_GUI_CLIENTS, the same flag that drives OMEdit). It links the
-  # compiler in-process as an ordinary cargo dependency (omshell_omc ->
+  # The desktop egui OMShell client (omshell_egui). It links the compiler
+  # in-process as an ordinary cargo dependency (omshell_omc ->
   # openmodelica_backend_main), so building it compiles the compiler crates too;
   # hence the DEPENDS on rust_codegen (the generated sources must exist first).
-  # The browser build of OMShell is handled by the wasm target (also gated on
-  # OM_ENABLE_GUI_CLIENTS).
-  if(OM_ENABLE_GUI_CLIENTS)
+  # The browser build of OMShell is handled by the wasm target.
+  if(OM_ENABLE_GUI_CLIENTS AND RUST_OMC_OMSHELL_CLIENTS)
     # Serialised after rust_omc: concurrent cargo-xwin runs race on the shared clang-cl wrapper.
     add_custom_target(rust_omshell_egui ALL
       WORKING_DIRECTORY ${RUST_OMC_DIR}
