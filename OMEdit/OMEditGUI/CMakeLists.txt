@@ -37,10 +37,16 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
     message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
   endif()
 
-  if (CMAKE_GENERATOR STREQUAL "MinGW Makefiles" AND "$ENV{VisualStudioVersion}" STREQUAL "")
-    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{OMDEV}\\tools\\msys\\$ENV{MSYSTEM_PREFIX}")
-  else()
+  # MSYS2 exports MSYSTEM_PREFIX as a POSIX-style path (e.g. "/ucrt64"). When
+  # cmake is invoked directly from an MSYS2 shell, MSYS2 auto-translates that
+  # to an absolute Windows path (relative to its own install root) before the
+  # native cmake.exe process ever sees it, so it can be used as-is. Only if it
+  # is still POSIX-style (translation didn't happen) do we resolve it
+  # ourselves against OMDEV's msys tree.
+  if("$ENV{MSYSTEM_PREFIX}" MATCHES "^[A-Za-z]:")
     string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
+  else()
+    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{OMDEV}\\tools\\msys\\$ENV{MSYSTEM_PREFIX}")
   endif()
 
   # TODO: This is stupid, but I can't get install with RUNTIME_DEPENDENCIES to run.
