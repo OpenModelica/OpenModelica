@@ -1024,7 +1024,8 @@ impl SimMeta {
     /// `filterOutput` as the file is opened.
     ///
     /// `matcher` is a compiled `-variableFilter` (wrapped in C's `^(…)$`) and
-    /// *replaces* [`var_filter::FILTERED`]; `None` keeps it.
+    /// *replaces* [`var_filter::FILTERED`]; `None` keeps it. A plain parameter is
+    /// exempt either way — `initializeOutputFilter` never touches one.
     pub fn output_keep(&self, matcher: Option<&dyn Fn(&str) -> bool>) -> Vec<bool> {
         let (emit_protected, ignore_hide) =
             crate::simflags::with_flags(|f| (f.emit_protected, f.ignore_hide_result));
@@ -1035,17 +1036,26 @@ impl SimMeta {
                 if matches!(v.kind, MetaKind::Time) {
                     return true; // never filtered
                 }
-                if v.filter & var_filter::PROTECTED != 0
-                    && !(emit_protected && v.filter & var_filter::ENCRYPTED == 0)
-                {
+                // C's `shouldFilterOutput`: either flag *clears* the verdict both
+                // reasons set, so `-emit_protected` alone emits a variable that is
+                // protected *and* `HideResult=true`.
+                let protected = v.filter & var_filter::PROTECTED != 0;
+                let hidden = v.filter & var_filter::HIDE_RESULT != 0;
+                let mut filtered = protected || hidden;
+                if protected && emit_protected && v.filter & var_filter::ENCRYPTED == 0 {
+                    filtered = false;
+                }
+                if hidden && ignore_hide {
+                    filtered = false;
+                }
+                if filtered {
                     return false;
                 }
-                if v.filter & var_filter::HIDE_RESULT != 0 && !ignore_hide {
-                    return false;
-                }
+                let is_param =
+                    matches!(v.kind, MetaKind::Param { .. }) && v.filter & var_filter::ALIAS == 0;
                 match matcher {
-                    Some(m) => m(&v.name),
-                    None => v.filter & var_filter::FILTERED == 0,
+                    Some(m) if !is_param => m(&v.name),
+                    _ => v.filter & var_filter::FILTERED == 0,
                 }
             })
             .collect();
@@ -2053,11 +2063,11 @@ mod tests {
         assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p", "n"]);
 
         // A `-variableFilter` replaces the model's verdict, so `k` is reachable;
-        // `time` is never filtered.
+        // `time` is never filtered and the parameter `p` is exempt.
         f.ignore_hide_result = false;
         simflags::set_flags(f);
         let only_k = |n: &str| n == "k";
-        assert_eq!(names(m.output_keep(Some(&only_k))), ["time", "k"]);
+        assert_eq!(names(m.output_keep(Some(&only_k))), ["time", "p", "k"]);
     }
 
     /// C's `read_experiment`: the command line replaces what the model was

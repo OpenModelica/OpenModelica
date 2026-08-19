@@ -6163,12 +6163,20 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
     }
     let data = ctx.sim()?.data_local;
     if slot.heap {
-        // Release the handle the slot currently holds before overwriting it with
-        // the new (owned) one; the rhs reference transfers into the slot. The slot
-        // starts null (zeroed `SimData`), and `rt_release` is null-safe.
+        // Release-on-overwrite *after* the rhs: `s := s + x` reads the slot, so
+        // releasing first would free a value the rhs still needs. The slot starts
+        // null (zeroed `SimData`), and `rt_release` is null-safe.
+        let rw = rhs.push(ctx)?;
+        coerce(ctx, rw, slot.wty);
+        let t = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::LocalSet(t));
         ctx.emit(we::Instruction::LocalGet(data));
         ctx.emit(we::Instruction::I32Load(mem_arg(slot.off, 2)));
         ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
+        ctx.emit(we::Instruction::LocalGet(data));
+        ctx.emit(we::Instruction::LocalGet(t));
+        ctx.emit(we::Instruction::I32Store(mem_arg(slot.off, 2)));
+        return Ok(true);
     }
     // Stack order for a store is [addr, value]: push the base, evaluate the rhs,
     // coerce to the slot type, then store at the constant offset.
