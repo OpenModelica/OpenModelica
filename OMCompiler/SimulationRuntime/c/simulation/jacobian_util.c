@@ -35,11 +35,6 @@
 #include "eval_dep.h"
 #include "jacobian_colpack.h"
 
-#ifdef USE_PARJAC
-  #define GC_THREADS
-  #include <gc/omc_gc.h>
-#endif
-
 /**
  * @brief Initialize analytic jacobian.
  *
@@ -126,75 +121,6 @@ void freeJacobian(JACOBIAN *jac)
   }
 }
 
-#ifdef USE_PARJAC
-static void evalJacobianParallel(DATA* data, threadData_t *threadData,
-                                 JACOBIAN* jacobian, JACOBIAN* parentJacobian,
-                                 JACOBIAN* threadLocalJacobians,
-                                 modelica_real* jac, modelica_boolean isDense)
-{
-  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-  const unsigned int activeDim = jacobian->isRowEval ? jacobian->sizeRows : jacobian->sizeCols;
-  const unsigned int nRows = jacobian->sizeRows;
-
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
-  }
-  if (isDense) {
-    memset(jac, 0, jacobian->sizeRows * jacobian->sizeCols * sizeof(modelica_real));
-  }
-
-  GC_allow_register_threads();
-#pragma omp parallel  default(none) \
-                      shared(data, threadData, jacobian, parentJacobian, threadLocalJacobians, jac, sp, activeDim, nRows, isDense)
-  {
-    JACOBIAN* workspace = &threadLocalJacobians[omc_get_thread_num()];
-    int color, direction, nz, passive;
-
-    if (!GC_thread_is_registered()) {
-      struct GC_stack_base sb;
-      memset(&sb, 0, sizeof(sb));
-      GC_get_stack_base(&sb);
-      GC_register_my_thread(&sb);
-    }
-#pragma omp for
-    for (color = 0; color < (int)sp->maxColors; color++) {
-      // set all seedVars to 1.0 which have the current color
-      for (direction = 0; direction < (int)activeDim; direction++) {
-        if ((int)sp->colorCols[direction] - 1 == color) {
-          workspace->seedVars[direction] = 1.0;
-        }
-      }
-
-      workspace->evalColumn(data, threadData, workspace, parentJacobian);
-
-      for (direction = 0; direction < (int)activeDim; direction++) {
-        if ((int)sp->colorCols[direction] - 1 != color) {
-          continue;
-        }
-        for (nz = (int)sp->leadindex[direction]; nz < (int)sp->leadindex[direction + 1]; nz++) {
-          passive = (int)sp->index[nz];
-          if (isDense) {
-            if (jacobian->isRowEval)
-              jac[passive * nRows + direction] = workspace->resultVars[passive];
-            else
-              jac[direction * nRows + passive] = workspace->resultVars[passive];
-          } else {
-            jac[nz] = workspace->resultVars[passive];
-          }
-        }
-        workspace->seedVars[direction] = 0.0;
-      }
-
-      if (jacobian->isRowEval) {
-        memset(workspace->resultVars, 0, jacobian->sizeCols * sizeof(modelica_real));
-        memset(workspace->tmpVars, 0, workspace->sizeTmpVars * sizeof(modelica_real));
-      }
-    }
-  }
-
-}
-#endif
-
 /**
  * @brief Free memory of analytic Jacobian.
  *
@@ -214,63 +140,6 @@ void freeJacobianCopy(JACOBIAN *jac)
   }
 }
 
-/** Allocate thread-local Jacobians for OpenMP symbolic evaluation. */
-void allocateThreadLocalJacobians(const JACOBIAN* source, JACOBIAN** jacColumns)
-{
-  int maxTh = omc_get_max_threads();
-  *jacColumns = (JACOBIAN*) malloc(maxTh * sizeof(JACOBIAN));
-  SPARSE_PATTERN* sparsePattern = source->sparsePattern;
-  const unsigned int columns = source->sizeCols;
-  const unsigned int rows = source->sizeRows;
-  const unsigned int sizeDirection = columns > rows ? columns : rows;
-  const unsigned int sizeTmpVars = source->sizeTmpVars;
-  unsigned int i;
-
-#ifdef USE_PARJAC
-  GC_allow_register_threads();
-#endif
-
-#pragma omp parallel default(none) firstprivate(maxTh, columns, rows, sizeDirection, sizeTmpVars) shared(source, sparsePattern, jacColumns, i)
-  {
-#ifdef USE_PARJAC
-    if (!GC_thread_is_registered()) {
-      struct GC_stack_base sb;
-      memset(&sb, 0, sizeof(sb));
-      GC_get_stack_base(&sb);
-      GC_register_my_thread(&sb);
-    }
-#endif
-
-#pragma omp for schedule(runtime)
-    for (i = 0; i < maxTh; ++i) {
-      (*jacColumns)[i].sizeCols = columns;
-      (*jacColumns)[i].sizeRows = rows;
-      (*jacColumns)[i].sizeTmpVars = sizeTmpVars;
-      (*jacColumns)[i].tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
-      (*jacColumns)[i].resultVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
-      (*jacColumns)[i].seedVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
-      (*jacColumns)[i].sparsePattern = sparsePattern;
-      (*jacColumns)[i].evalColumn = source->evalColumn;
-      (*jacColumns)[i].isRowEval = source->isRowEval;
-    }
-  }
-}
-
-/** Free thread-local Jacobians allocated by allocateThreadLocalJacobians. */
-void freeAnalyticalJacobian(JACOBIAN** jacColumns)
-{
-  int maxTh = omc_get_max_threads();
-  unsigned int i;
-
-  for (i = 0; i < (unsigned int)maxTh; ++i) {
-    free((*jacColumns)[i].tmpVars);
-    free((*jacColumns)[i].resultVars);
-    free((*jacColumns)[i].seedVars);
-  }
-
-  free(*jacColumns);
-}
-
 /*! \fn evalJacobian
  *
  *  compute entries of Jacobian in sparse CSC or dense format
@@ -283,7 +152,7 @@ void freeAnalyticalJacobian(JACOBIAN** jacColumns)
  *  \param [out] [jac]             Output buffer, size nnz (sparse) or #rows * #cols (dense), non zero-initialized
  *  \param [ref] [isDense]         Flag to set dense / sparse output
  */
-void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, JACOBIAN* threadLocalJacobians, modelica_real* jac, modelica_boolean isDense)
+void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense)
 {
   int color, column, row, nz;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
@@ -293,13 +162,6 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
     evalJacobianBidirectional(data, threadData, jacobian, parentJacobian, jac, isDense);
     return;
   }
-
-#ifdef USE_PARJAC
-  if (threadLocalJacobians && omc_get_max_threads() > 1) {
-    evalJacobianParallel(data, threadData, jacobian, parentJacobian, threadLocalJacobians, jac, isDense);
-    return;
-  }
-#endif
 
   if (jacobian->isRowEval) {
     evalJacobianRow(data, threadData, jacobian, parentJacobian, jac, isDense);

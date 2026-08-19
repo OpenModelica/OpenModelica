@@ -45,7 +45,7 @@ void freeJacobianCopy(JACOBIAN* jac);
 void allocateThreadLocalJacobians(const JACOBIAN* source, JACOBIAN** jacColumns);
 void freeAnalyticalJacobian(JACOBIAN** jacColumns);
 
-void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, JACOBIAN* threadLocalJacobians, modelica_real* jac, modelica_boolean isDense);
+void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
 void evalJacobianRow(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
 
 void initBidirectionalRecovery(JACOBIAN* fwd);

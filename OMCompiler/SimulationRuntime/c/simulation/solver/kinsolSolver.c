@@ -656,7 +656,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   rt_ext_tp_tick(&nlsData->jacobianTimeClock);
 
   /* call generic sparse Jacobian with CSC buffer "SM_DATA_S(Jac)" */
-  evalJacobian(data, threadData, jacobian, NULL, NULL, SM_DATA_S(Jac), FALSE);
+  evalJacobian(data, threadData, jacobian, NULL, SM_DATA_S(Jac), FALSE);
   setSundialsSparsePattern(jacobian, Jac);
 
   /* scaling */

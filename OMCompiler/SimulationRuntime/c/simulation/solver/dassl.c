@@ -1027,12 +1027,7 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   const int index = data->callback->INDEX_JAC_A;
   JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
 
-#ifdef USE_PARJAC
-  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
-  evalJacobian(data, threadData, jac, NULL, dasslData->jacColumns, matrixA, TRUE);
-#else
-  evalJacobian(data, threadData, jac, NULL, NULL, matrixA, TRUE);
-#endif
+  evalJacobian(data, threadData, jac, NULL, matrixA, TRUE);
 
   return 0;
 }
@@ -1052,13 +1047,7 @@ int jacADJ_symColored(double *t, double *y, double *yprime, double *delta,
   const int index = data->callback->INDEX_JAC_ADJ;
   JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
 
-#ifdef USE_PARJAC
-  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
-  evalJacobian(data, threadData, jac, NULL, dasslData->jacColumns, matrixA, TRUE);
-#else
-  evalJacobian(data, threadData, jac, NULL, NULL, matrixA, TRUE);
-#endif
-
+  evalJacobian(data, threadData, jac, NULL, matrixA, TRUE);
 
   return 0;
 }
@@ -1092,7 +1081,7 @@ int jacA_symBiColored(double *t, double *y, double *yprime, double *delta,
   }
 
   /* Evaluate into compact nnz-sized sparse buffer (CSC-indexed) */
-  evalJacobian(data, threadData, jac, NULL, NULL, sparse_buf, 0 /* isDense */);
+  evalJacobian(data, threadData, jac, NULL, sparse_buf, 0 /* isDense */);
 
   /* Scatter nonzeros to the dense column-major DASSL matrixA */
   for (col = 0; col < nCols; col++) {
