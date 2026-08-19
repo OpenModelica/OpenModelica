@@ -636,7 +636,8 @@ macro_rules! shared_instance_methods {
         st.mode = Mode::Ready;
         // `run_initialization` has run `initSample`, so the schedule is readable.
         if st.layout.n_samples > 0 {
-            match Samples::load(&Engine, st.sim_data, &st.layout) {
+            let start_time = st.read_f64(TIME_OFF);
+            match Samples::load(&Engine, st.sim_data, &st.layout, start_time) {
                 Ok(s) => st.samples = Some(s),
                 Err(_) => return Status::Error,
             }
