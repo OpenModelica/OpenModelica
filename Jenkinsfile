@@ -122,13 +122,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script {
-              common.buildOMC_CMake([
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-DOM_USE_CCACHE=OFF",
-                "-DCMAKE_INSTALL_PREFIX=build"])
-            }
-            //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
+            script { common.buildCMakeGccOMC() }
           }
         }
         stage('cmake-alpine-clang') {
@@ -369,6 +363,9 @@ pipeline {
           }
         }
 
+        // partest against the CMake-built omc from cmake-jammy-gcc (stash
+        // 'omc-cmake-gcc'), not the Autoconf gcc build. See
+        // common.partestCMakeStashed().
         stage('04 testsuite-gcc 1/3') {
           agent {
             label 'linux'
@@ -388,7 +385,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestStashed('omc-gcc', 1, 3)
+                common.partestCMakeStashed('omc-cmake-gcc', 1, 3)
               }
             }
           }
@@ -413,7 +410,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestStashed('omc-gcc', 2, 3)
+                common.partestCMakeStashed('omc-cmake-gcc', 2, 3)
               }
             }
           }
@@ -438,7 +435,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestStashed('omc-gcc', 3, 3)
+                common.partestCMakeStashed('omc-cmake-gcc', 3, 3)
               }
             }
           }

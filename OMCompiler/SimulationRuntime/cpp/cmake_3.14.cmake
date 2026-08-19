@@ -91,6 +91,14 @@ endif()
 # Signifies that we are building the source code (instead of consuming, say the headers ...).
 target_compile_definitions(OMCppConfig INTERFACE OMC_BUILD)
 
+# Enable the runtime logger. Without it every LOGGER_WRITE in
+# Core/Utils/extension/logger.hpp expands to nothing, so a simulation prints no
+# -lv output whatsoever (no solver statistics, no warnings about unrecognized
+# simulation flags). The generated model code is compiled with the same define,
+# handed to its makefile as USE_LOGGER in ModelicaConfig_gcc.inc; the two must
+# agree, so keep this in sync with USE_LOGGER_ in Core/CMakeLists.txt.
+target_compile_definitions(OMCppConfig INTERFACE USE_LOGGER)
+
 
 # Subdirectories
 add_subdirectory(SimCoreFactory)

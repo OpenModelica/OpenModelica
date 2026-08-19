@@ -206,6 +206,46 @@ void makeLibsAndCache() {
   }
 }
 
+// makeLibsAndCache()'s counterpart for a CMake-built omc (see
+// partestCMakeStashed). Produces the same testsuite dependencies, but without
+// the Autoconf machinery: a CMake build has no config.status, so the top-level
+// Makefile the other variant drives does not exist. Each dependency has a
+// standalone Makefile that only needs the installed omc in build/, which is
+// exactly what libraries/CMakeLists.txt and testsuite/CMakeLists.txt wrap in
+// their libs-for-testing / reference-files / ffi-test-lib targets. omc-diff is
+// not built here: partest() rebuilds it from testsuite/difftool anyway.
+void makeLibsAndCacheCMake() {
+  sh "test ! -z '${env.LIBRARIES}'"
+  // If we don't have any result, copy to the master to get a somewhat decent cache
+  sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
+     "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
+  // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
+  sh label: 'Create directory for omlibrary cache', script: """
+  mkdir -p '${env.LIBRARIES}/om-pkg-cache'
+  # Remove the symbolic link, or if it's a directory there... the entire thing
+  rm libraries/.openmodelica/cache || rm -rf libraries/.openmodelica/cache
+  mkdir -p libraries/.openmodelica/
+  test ! -e libraries/.openmodelica/cache
+  ln -s '${env.LIBRARIES}/om-pkg-cache' libraries/.openmodelica/cache
+  ls -lh libraries/.openmodelica/cache/
+  """
+  def cmd = """#!/bin/bash -xe
+  # libs-for-testing: installs the test libraries with the CMake-built omc
+  ${makeCommand()} -C libraries lib-for-testing
+  # reference-files: xz decompression only
+  ${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse -C testsuite/ReferenceFiles
+  # ffi-test-lib
+  ${makeCommand()} -C testsuite/flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc
+  """
+  if (env.SHARED_LOCK) {
+    lock(env.SHARED_LOCK) {
+      sh cmd
+    }
+  } else {
+    sh cmd
+  }
+}
+
 /*
  * Perform sanity check.
  *
@@ -1074,6 +1114,22 @@ void buildGccOMC() {
   stash name: 'omc-gcc', includes: 'build/**, **/config.status'
 }
 
+// The jammy CMake build of omc. Its install tree is what the testsuite-gcc
+// stages run against (partestCMakeStashed), so keep the flags in sync with what
+// those tests need.
+void buildCMakeGccOMC() {
+  buildOMC_CMake([
+    "-DCMAKE_BUILD_TYPE=Release",
+    "-DOM_USE_CCACHE=OFF",
+    "-DCMAKE_INSTALL_PREFIX=build"])
+  // Only the install tree ($ORIGIN-relative RPATHs, so it survives the move to
+  // another node). The testsuite-depends outputs that land in the source tree
+  // (the test libraries, the extracted reference files, the ffi lib) are remade
+  // by makeLibsAndCacheCMake() in the test stage instead: cheaper than shipping
+  // them around, and that stage has the node's omlibrary cache mounted.
+  stash name: 'omc-cmake-gcc', includes: 'build/**'
+}
+
 void buildClangOMC() {
   buildOMC('clang', 'clang++', '--without-hwloc', true, true)
   getVersion()
@@ -1112,6 +1168,16 @@ void partestStashed(stashName, partition, partitionmodulo) {
   standardSetup()
   unstash stashName
   makeLibsAndCache()
+  partest(partition, partitionmodulo)
+}
+
+// The same, for a stashed CMake install tree (see buildCMakeGccOMC). Only the
+// way the test dependencies are built differs; the run itself is the same
+// partest.
+void partestCMakeStashed(stashName, partition, partitionmodulo) {
+  standardSetup()
+  unstash stashName
+  makeLibsAndCacheCMake()
   partest(partition, partitionmodulo)
 }
 
