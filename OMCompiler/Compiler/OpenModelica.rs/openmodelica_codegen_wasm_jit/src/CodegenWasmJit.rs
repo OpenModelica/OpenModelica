@@ -6586,13 +6586,13 @@ fn lower_linear_system(
         }
         return compile_linear_system_analytic(
             ctx, &vars, &res_exps, &seed_offs, &result_offs,
-            &mut lower_inner, &mut lower_constant, &mut lower_column, use_sparse,
+            &mut lower_inner, &mut lower_constant, &mut lower_column, use_sparse, lsystem.index,
         );
     }
 
     // C keys `method` off `ls.jacobianMatrix` alone, not off whether it assembles
     // `A` from one.
-    compile_linear_system(ctx, &vars, &res_exps, &mut lower_inner, use_sparse, lsystem.jacobianMatrix.is_some())
+    compile_linear_system(ctx, &vars, &res_exps, &mut lower_inner, use_sparse, lsystem.jacobianMatrix.is_some(), lsystem.index)
 }
 
 /// Whether a torn linear system uses the sparse solver (C's density/size

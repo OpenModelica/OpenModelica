@@ -1007,6 +1007,11 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         });
         wts(set.call(&mut store, t))?;
     }
+    // `-lvMaxWarn`: the warnings it caps are printed in-wasm.
+    if let Ok(set) = rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_set_max_warn") {
+        let n = openmodelica_sim_meta::simflags::with_flags(|f| f.max_warn.unwrap_or(3));
+        wts(set.call(&mut store, n))?;
+    }
     // `-ils` / `-homotopyOnFirstTry`: a local approach sweeps inside `rt_solve_nls`.
     if let Ok(set) = rt_inst.get_typed_func::<(u32, u32), ()>(&mut store, "rt_set_homotopy") {
         let h = openmodelica_sim_meta::simflags::with_flags(|f| {

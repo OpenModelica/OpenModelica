@@ -604,6 +604,7 @@ pub(crate) fn compile_linear_system(
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
     use_sparse: bool,
     method1: bool,
+    index: i32,
 ) -> Result<()> {
     let n = iter_vars.len();
     if n == 0 {
@@ -734,7 +735,17 @@ pub(crate) fn compile_linear_system(
     ctx.emit(we::Instruction::End); // block
 
     // --- solve, scatter, recover the torn variables, free the scratch. ---
-    emit_lin_solve_scatter(ctx, base, b_off, n, &slots, use_sparse, method1.then_some(x0_off), lower_inner)
+    emit_lin_solve_scatter(ctx, base, b_off, n, &slots, use_sparse, method1.then_some(x0_off), index, lower_inner)
+}
+
+/// `rt_linsolve`'s trailing `(index, time)`, read only by its fallback warning.
+fn emit_linsolve_context(ctx: &mut FnCtx, index: i32) -> Result<()> {
+    use we::Instruction as I;
+    let data = ctx.sim()?.data_local;
+    ctx.emit(I::I32Const(index));
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::F64Load(mem_arg(0, 3))); // `time` — `SimData` offset 0
+    Ok(())
 }
 
 /// Trap (runtime error) when the solver returned nonzero (singular) — consumes the
@@ -820,6 +831,7 @@ fn emit_scatter_recover_free(
 /// Solve the assembled dense `A dx = b` (column-major `A` at `base+0`, `b` at
 /// `base+b_off`), then scatter/recover/free. `use_sparse` picks
 /// `rt_solve_lin_dense_sparse` vs `rt_linsolve`.
+#[allow(clippy::too_many_arguments)]
 fn emit_lin_solve_scatter(
     ctx: &mut FnCtx,
     base: u32,
@@ -828,6 +840,7 @@ fn emit_lin_solve_scatter(
     slots: &[u32],
     use_sparse: bool,
     x0_off: Option<u32>,
+    index: i32,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
@@ -837,6 +850,9 @@ fn emit_lin_solve_scatter(
     ctx.emit(I::I32Add); // b_ptr
     ctx.emit(I::I32Const(n as i32));
     let solver = if use_sparse { "rt_solve_lin_dense_sparse" } else { "rt_linsolve" };
+    if !use_sparse {
+        emit_linsolve_context(ctx, index)?;
+    }
     ctx.emit(I::Call(rt_index(solver)?));
     emit_singular_check(ctx)?;
     emit_scatter_recover_free(ctx, base, b_off, n, slots, x0_off, lower_inner)
@@ -859,6 +875,7 @@ pub(crate) fn compile_linear_system_analytic(
     lower_constant: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
     lower_column: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
     use_sparse: bool,
+    index: i32,
 ) -> Result<()> {
     use we::Instruction as I;
     let n = iter_vars.len();
@@ -1021,7 +1038,7 @@ pub(crate) fn compile_linear_system_analytic(
     ctx.emit(I::End);
     ctx.emit(I::End);
 
-    emit_lin_solve_scatter(ctx, base, b_off, n, &slots, use_sparse, Some(xold_off), lower_inner)
+    emit_lin_solve_scatter(ctx, base, b_off, n, &slots, use_sparse, Some(xold_off), index, lower_inner)
 }
 
 /// Greedy distance-1 column coloring (Curtis-Powell-Reid) of the CSC pattern:
@@ -1511,12 +1528,13 @@ pub(crate) fn compile_linear_system_symbolic(
             ctx.emit(I::F64Store(mem_arg(elem_off, 3)));
         }
         emit_b_exps(ctx, base, b_off, b_exps)?;
-        // rt_linsolve(a_ptr, b_ptr, n).
+        // rt_linsolve(a_ptr, b_ptr, n, index, time).
         ctx.emit(I::LocalGet(base)); // a_ptr (a_off == 0)
         ctx.emit(I::LocalGet(base));
         ctx.emit(I::I32Const(b_off as i32));
         ctx.emit(I::I32Add);
         ctx.emit(I::I32Const(n as i32));
+        emit_linsolve_context(ctx, index)?;
         ctx.emit(I::Call(rt_index("rt_linsolve")?));
     }
 

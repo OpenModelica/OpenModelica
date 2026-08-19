@@ -307,6 +307,27 @@ pub fn warning(stream: Stream, indent_next: bool, msg: &str) {
     }
 }
 
+/// C's `warningStreamPrintWithLimit`, `max_displayed` being `-lvMaxWarn`.
+pub fn warning_with_limit(stream: Stream, n_displayed: u64, max_displayed: u64, msg: &str) {
+    if !(active(stream) || store::with(|s| s.use_stream & SHOW_ALL_WARNINGS != 0)) {
+        return;
+    }
+    if n_displayed <= max_displayed {
+        message_text(WARNING, stream, false, msg);
+    }
+    if n_displayed == max_displayed {
+        message_text(
+            INFO,
+            stream,
+            false,
+            &format!(
+                "Too many warnings, reached display limit of {max_displayed}. Suppressing further warning messages of the same type."
+            ),
+        );
+        message_text(INFO, stream, false, "Change limit with simulation flag -lvMaxWarn=<newLimit>");
+    }
+}
+
 pub fn error(stream: Stream, indent_next: bool, msg: &str) {
     message_text(ERROR, stream, indent_next, msg);
 }
