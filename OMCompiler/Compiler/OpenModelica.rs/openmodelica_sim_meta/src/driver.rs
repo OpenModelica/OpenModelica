@@ -3112,17 +3112,30 @@ pub struct Samples {
 
 impl Samples {
     /// Read the start/interval pairs `initSample` wrote into the sample region.
-    pub fn load(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Self> {
+    pub fn load(
+        e: &dyn SimEngine,
+        sim_data: u32,
+        layout: &SimLayout,
+        start_time: f64,
+    ) -> Result<Self> {
         let n = layout.n_samples as usize;
+        let mut start = Vec::with_capacity(n);
         let mut next = Vec::with_capacity(n);
         let mut interval = Vec::with_capacity(n);
         for k in 0..n as u32 {
             let base = sim_data + layout.sample_off + k * 16;
-            next.push(read_f64(e, base)?);
-            interval.push(read_f64(e, base + 8)?);
+            let s = read_f64(e, base)?;
+            let iv = read_f64(e, base + 8)?;
+            start.push(s);
+            next.push(if start_time < s || iv <= 0.0 {
+                s
+            } else {
+                s + libm::ceil((start_time - s) / iv) * iv
+            });
+            interval.push(iv);
         }
         Ok(Samples {
-            start: next.clone(),
+            start,
             next,
             interval,
             active_off: sim_data + layout.sample_active_off,
@@ -5936,9 +5949,10 @@ impl SolverCore {
             // Reached `target`. Fire a sample event at `te` if it lands at or
             // before `tout` (pre-event row, fire, post-event row).
             if te <= target + eps {
-                // Snap an event near `tout` onto it (keeps the final row at `stop`
-                // despite float drift).
-                let te = if (te - tout).abs() <= eps { tout } else { te };
+                // Only the final row snaps onto `stop`; C reports every other sample
+                // at its accumulated time.
+                let last = (tout - model.stop_time).abs() <= eps;
+                let te = if last && (te - tout).abs() <= eps { tout } else { te };
                 *did_step = true;
                 if stop_at_event {
                     self.t = te;
@@ -6066,7 +6080,7 @@ impl CsDriver {
             return Err("CodegenWasmJit: method=\"qss\" cannot step to a communication point");
         }
         store_relations(e, sim_data, layout)?;
-        let samp = Samples::load(e, sim_data, layout)?;
+        let samp = Samples::load(e, sim_data, layout, t)?;
         let mut sync = crate::sync::Sync::new(e, model, sim_data)?;
         sync.take_fired(e, t)?;
         let mut core = SolverCore::new(&*e, model, sim_data, t, method, alloc_gbode(model, method)?)?;
@@ -6320,7 +6334,7 @@ impl EventsDriver {
         let n_reals = layout.n_row_total();
         let start = model.start_time;
 
-        let samp = Samples::load(e, sim_data, layout)?;
+        let samp = Samples::load(e, sim_data, layout, start)?;
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
         let mut core = SolverCore::new(&*e, model, sim_data, start, method, gbode)?;
         core.prime(e, layout)?;
@@ -6474,7 +6488,8 @@ impl Driver for EventsDriver {
                     // it is due at or before this grid point; otherwise the interval
                     // is clean up to `tout`.
                     if te <= subtarget + eps {
-                        let te = if (te - tout).abs() <= eps { tout } else { te };
+                        let last = (tout - stop).abs() <= eps;
+                        let te = if last && (te - tout).abs() <= eps { tout } else { te };
                         log_time_event(te, &self.samp, model);
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?; // held pre row
                         if !no_event_emit() {
