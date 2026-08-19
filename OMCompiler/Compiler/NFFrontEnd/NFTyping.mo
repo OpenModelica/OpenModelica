@@ -106,6 +106,8 @@ uniontype TypingError
     Integer upperBound;
   end OUT_OF_BOUNDS;
 
+  record UNKNOWN_TYPE end UNKNOWN_TYPE;
+
   function isError
     input TypingError error;
     output Boolean isError;
@@ -441,6 +443,7 @@ protected
   Component c;
   Boolean is_deleted;
   array<Dimension> dims;
+  Binding binding;
 algorithm
   if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
@@ -797,7 +800,7 @@ algorithm
   // dimensions of the parent(s).
   dim_index := index + parentDims;
 
-  if isSome(ty) then
+  if isSome(ty) and not Type.isConditionalArray(Util.getOption(ty)) then
     // If the type is known, take the dimension directly from it.
     (dim, error) := nthDimensionBoundsChecked(Util.getOption(ty), dim_index);
 
@@ -1950,12 +1953,20 @@ protected
   Integer dim_size = Type.dimensionCount(ty);
   Integer index = dimIndex + offset;
 algorithm
+  // Check that the dimension index is within bounds.
   if index < 1 or index > dim_size then
     dim := Dimension.UNKNOWN();
     error := TypingError.OUT_OF_BOUNDS(dim_size - offset);
   else
-    dim := Type.nthDimension(ty, index);
-    error := TypingError.NO_ERROR();
+    try
+      dim := Type.nthDimension(ty, index);
+      error := TypingError.NO_ERROR();
+    else
+      // Type.nthDimension doesn't work for e.g. conditional arrays that don't have a
+      // selected branch yet. Return an error in that case instead of just failing.
+      dim := Dimension.UNKNOWN();
+      error := TypingError.UNKNOWN_TYPE();
+    end try;
   end if;
 end nthDimensionBoundsChecked;
 
@@ -2701,7 +2712,8 @@ algorithm
 
   (tb, tb_ty, tb_var, tb_pur) := typeExp(tb, next_context, info);
   (fb, fb_ty, fb_var, fb_pur) := typeExp(fb, next_context, info);
-  (tb2, fb2, ty, ty_match) := TypeCheck.matchIfBranches(tb, tb_ty, fb, fb_ty);
+  // Type match the branches, using the context for the whole if-expression rather than the branches.
+  (tb2, fb2, ty, ty_match) := TypeCheck.matchIfBranches(tb, tb_ty, fb, fb_ty, context);
 
   if TypeCheck.isIncompatibleMatch(ty_match) then
     Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,

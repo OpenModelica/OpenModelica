@@ -1454,7 +1454,7 @@ public
             else Expression.CAST(cast_ty, callExp);
           end match;
 
-      else Expression.CAST(Type.setArrayElementType(typeOf(call), ty), callExp);
+      else Expression.typeCastGeneric(callExp, ty);
     end match;
   end typeCast;
 
