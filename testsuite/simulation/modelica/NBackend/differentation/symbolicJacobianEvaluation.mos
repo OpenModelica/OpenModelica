@@ -1,0 +1,88 @@
+// name: symbolicJacobianEvaluation
+// keywords: NewBackend, differentiation, jacobian, adjoint, bidirectional, solver
+// status: correct
+// teardown_command: rm -rf log.txt dassl_fwd.mat dassl_adj.mat dassl_bi.mat ida_fwd.mat ida_adj.mat ida_bi.mat gbode_fwd.mat gbode_adj.mat gbode_bi.mat
+
+loadString("
+model assymetric
+  Real x(start = 1.0, fixed = true);
+  Real y(start = 1.0, fixed = true);
+equation
+  der(x) = -10.0*x + 1000.0*y;
+  der(y) = -x;
+end assymetric;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=bidirectional"); getErrorString();
+
+buildModel(assymetric, stopTime = 1.0, tolerance = 1e-10); getErrorString();
+
+// dassl
+system("./assymetric -s=dassl -jacobian=coloredSymbolical -r=dassl_fwd.mat -lv=-LOG_SUCCESS > log.txt 2>&1");
+readFile("log.txt");
+system("./assymetric -s=dassl -jacobian=coloredSymbolicalAdjoint -r=dassl_adj.mat -lv=-LOG_SUCCESS > log.txt 2>&1");
+readFile("log.txt");
+system("./assymetric -s=dassl -jacobian=bicoloredSymbolical -r=dassl_bi.mat -lv=-LOG_SUCCESS > log.txt 2>&1");
+readFile("log.txt");
+
+// ida
+system("./assymetric -s=ida -jacobian=coloredSymbolical -r=ida_fwd.mat -lv=-LOG_SUCCESS > log.txt 2>&1");
+readFile("log.txt");
+system("./assymetric -s=ida -jacobian=coloredSymbolicalAdjoint -r=ida_adj.mat -lv=-LOG_SUCCESS > log.txt 2>&1");
+readFile("log.txt");
+system("./assymetric -s=ida -jacobian=bicoloredSymbolical -r=ida_bi.mat -lv=-LOG_SUCCESS > log.txt 2>&1");
+readFile("log.txt");
+
+// gbode
+system("./assymetric -s=gbode -jacobian=coloredSymbolical -r=gbode_fwd.mat -lv=-LOG_SUCCESS > log.txt 2>&1");
+readFile("log.txt");
+system("./assymetric -s=gbode -jacobian=coloredSymbolicalAdjoint -r=gbode_adj.mat -lv=-LOG_SUCCESS > log.txt 2>&1");
+readFile("log.txt");
+system("./assymetric -s=gbode -jacobian=bicoloredSymbolical -r=gbode_bi.mat -lv=-LOG_SUCCESS > log.txt 2>&1");
+readFile("log.txt");
+
+diffSimulationResults("dassl_fwd.mat", "ReferenceFiles/symbolicJacobianEvaluation_res.mat", "diff", vars = {"x", "y"});
+diffSimulationResults("dassl_adj.mat", "ReferenceFiles/symbolicJacobianEvaluation_res.mat", "diff", vars = {"x", "y"});
+diffSimulationResults("dassl_bi.mat", "ReferenceFiles/symbolicJacobianEvaluation_res.mat", "diff", vars = {"x", "y"});
+diffSimulationResults("ida_fwd.mat", "ReferenceFiles/symbolicJacobianEvaluation_res.mat", "diff", vars = {"x", "y"});
+diffSimulationResults("ida_adj.mat", "ReferenceFiles/symbolicJacobianEvaluation_res.mat", "diff", vars = {"x", "y"});
+diffSimulationResults("ida_bi.mat", "ReferenceFiles/symbolicJacobianEvaluation_res.mat", "diff", vars = {"x", "y"});
+diffSimulationResults("gbode_fwd.mat", "ReferenceFiles/symbolicJacobianEvaluation_res.mat", "diff", vars = {"x", "y"});
+diffSimulationResults("gbode_adj.mat", "ReferenceFiles/symbolicJacobianEvaluation_res.mat", "diff", vars = {"x", "y"});
+diffSimulationResults("gbode_bi.mat", "ReferenceFiles/symbolicJacobianEvaluation_res.mat", "diff", vars = {"x", "y"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"assymetric", "assymetric_init.xml"}
+// ""
+// 0
+// ""
+// 0
+// ""
+// 0
+// ""
+// 0
+// ""
+// 0
+// ""
+// 0
+// ""
+// 0
+// ""
+// 0
+// ""
+// 0
+// ""
+// (true, {})
+// (true, {})
+// (true, {})
+// (true, {})
+// (true, {})
+// (true, {})
+// (true, {})
+// (true, {})
+// (true, {})
+// endResult
