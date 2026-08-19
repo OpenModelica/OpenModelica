@@ -1,0 +1,51 @@
+// name:     testEbddConvergenceDiagnostics
+// keywords: EBDD runtime info dbg.json LOG_EBDD convergence diagnostics
+// status: correct
+// teardown_command: rm -rf EbddConvDiag* ebddcdcheck.txt
+//
+// Item 5 of the EBDD runtime-information work package: when the Newton
+// diagnostics analyse a nonlinear initial system, simulating with
+// -lv=LOG_EBDD,LOG_NLS_NEWTON_DIAGNOSTICS must emit a convergenceDiagnostics
+// record into <model>_dbg.json, keyed by eqIndex, carrying the number of
+// non-linear equations and the variables they depend on non-linearly.
+// See https://github.com/OpenModelica/OpenModelica/issues/15955
+
+setCommandLineOptions("--maxSizeNonlinearTearing=0"); getErrorString();
+
+loadString("
+model EbddConvDiag
+  Real x(start = 1.2);
+  Real y(start = 0.8);
+  Real w(start = 1.0);
+equation
+  x^2 + y^2 + w = 5;
+  x + y + w = 3;
+  x - y + w = 1;
+end EbddConvDiag;
+"); getErrorString();
+
+// echo(false) suppresses the verbose newton-diagnostics simulation record so the
+// test only checks the stable structural outcome.
+echo(false);
+simulate(EbddConvDiag, stopTime = 0.0, simflags = "-lv=LOG_EBDD,LOG_NLS_NEWTON_DIAGNOSTICS");
+echo(true);
+getErrorString();
+
+// Structural checks (no dependence on solver values):
+//  - the file has at least one convergenceDiagnostics record
+//  - it carries a "nonlinearEquations" count and a "nonlinearVars" list
+system("f=EbddConvDiag_dbg.json; if [ -f \"$f\" ] && [ $(grep -c '\"kind\":\"convergenceDiagnostics\"' \"$f\") -ge 1 ] && grep -q '\"nonlinearEquations\":' \"$f\" && grep -q '\"nonlinearVars\":' \"$f\"; then echo OK; else echo FAIL; fi", outputFile="ebddcdcheck.txt"); getErrorString();
+readFile("ebddcdcheck.txt");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// 0
+// ""
+// "OK
+// "
+// endResult

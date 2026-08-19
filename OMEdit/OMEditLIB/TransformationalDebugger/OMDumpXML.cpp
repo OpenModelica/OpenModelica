@@ -256,6 +256,14 @@ QString OMEquation::toString() const
     return QString("linear, size %1").arg(defines.size());
   } else if (tag == "residual") {
     return "(residual) " + text[0] + " = 0";
+  } else if (tag == "alias") {
+    // text/defines are filled in from the aliased original equation (#10995)
+    if (defines.size() == 1 && text.size() == 1) {
+      return QString("(alias of equation %1) %2 := %3").arg(aliasOf).arg(defines[0]).arg(text[0]);
+    } else if (!text.isEmpty()) {
+      return QString("(alias of equation %1) %2").arg(aliasOf).arg(text.join(","));
+    }
+    return QString("(alias of equation %1)").arg(aliasOf);
   } else {
     return "(" + display + ") " + text.join(",");
   }

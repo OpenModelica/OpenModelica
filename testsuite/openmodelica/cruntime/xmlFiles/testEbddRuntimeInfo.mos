@@ -1,0 +1,48 @@
+// name:     testEbddRuntimeInfo
+// keywords: EBDD runtime info dbg.json LOG_EBDD
+// status: correct
+// teardown_command: rm -rf EbddNLS* ebddcheck.txt
+//
+// Tests the runtime side of the Equation-Based Declarative Debugger: simulating
+// with -lv=LOG_EBDD must produce <model>_dbg.json (newline-delimited JSON) with
+// a meta header and at least one nonlinear-system solve record, keyed by the
+// same eqIndex used by <model>_info.json and carrying the solved iteration
+// variable. See https://github.com/OpenModelica/OpenModelica/issues/15955
+
+loadString("
+model EbddNLS \"small model with a nonlinear algebraic loop\"
+  Real x(start = 1.0);
+  Real y(start = 1.0);
+  Real u = 1.0 + time;
+equation
+  x^2 + y = 3 + u;
+  x - y^2 = -1 - u;
+end EbddNLS;
+"); getErrorString();
+
+simulate(EbddNLS, stopTime = 1.0, numberOfIntervals = 2, simflags = "-lv=LOG_EBDD"); getErrorString();
+
+// Structural checks (no dependence on step count or solver values):
+//  - the file exists
+//  - it has the EBDD meta header line
+//  - it has at least one nonlinear solve record
+//  - the record carries the solved iteration variable 'y'
+system("f=EbddNLS_dbg.json; if [ -f \"$f\" ] && grep -q '\"format\":\"EBDD runtime info\"' \"$f\" && [ $(grep -c '\"kind\":\"nonlinear\"' \"$f\") -ge 1 ] && grep -q '\"name\":\"y\"' \"$f\"; then echo OK; else echo FAIL; fi", outputFile="ebddcheck.txt"); getErrorString();
+readFile("ebddcheck.txt");
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EbddNLS_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'EbddNLS', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EBDD'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+// ""
+// "OK
+// "
+// endResult
