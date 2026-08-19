@@ -57,7 +57,7 @@ use openmodelica_frontend_dump::ComponentReferenceBasics;
 
 use crate::CodegenWasmJitFunctions::{
     ArrayGroup, Attr, AttrTargets, BUILTINS, ConstGroup, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, Literals, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
-    SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
+    ScatterGroup, SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     ClockInit, ClockUpdate,
     NlsResidual, NlsResiduals, backup_known_outputs, restore_known_outputs,
@@ -2481,16 +2481,18 @@ pub(crate) struct SimVarMap {
     start_slots: Arc<HashMap<String, u32>>,
     /// Finalized array-variable groups (base cref key -> contiguous slot range).
     array_groups: Arc<HashMap<String, ArrayGroup>>,
+    /// The arrays that are not one contiguous range (see `ScatterGroup`).
+    scatter_groups: Arc<HashMap<String, ScatterGroup>>,
     /// `varKind = CONST` variables own no `SimData` slot: a reference is the
     /// binding literal, as in C's `varArrayNameValues`. `const_groups` is the
     /// `array_groups` counterpart, `const_acc` its transient accumulator.
     consts: Arc<HashMap<String, Arc<DAE::Exp>>>,
     const_groups: Arc<HashMap<String, ConstGroup>>,
     const_acc: HashMap<String, Vec<(Vec<i32>, Arc<DAE::Exp>, WTy)>>,
-    /// Transient accumulator: base cref key -> the scalarized elements seen
-    /// (subscripts, byte offset, value type). Finalized into `array_groups` at the
-    /// end of [`build_var_map`].
-    array_acc: HashMap<String, Vec<(Vec<i32>, Vec<String>, u32, WTy)>>,
+    /// Transient accumulator: base cref key -> the scalarized elements seen.
+    /// Finalized into `array_groups` / `scatter_groups` at the end of
+    /// [`build_var_map`].
+    array_acc: HashMap<String, Vec<AccElem>>,
     /// `SimData` byte offset of the `terminate` flag (see [`SimLayout`]).
     terminate_off: u32,
     terminal_off: u32,
@@ -2893,6 +2895,7 @@ fn build_var_map(
         starts: Arc::default(),
         start_slots: Arc::default(),
         array_groups: Arc::default(),
+        scatter_groups: Arc::default(),
         consts: Arc::default(),
         const_groups: Arc::default(),
         const_acc: HashMap::new(),
@@ -3133,16 +3136,15 @@ fn build_var_map(
         };
         Arc::make_mut(&mut map.vars).insert(sim_cref_key(&av.name)?, slot);
         // An alias array is assigned as a whole, so it needs a group over the
-        // target's slots. A negated element could not be gathered as it stands.
-        if slot.negate == Neg::None {
-            for g in array_element_keys(&av.name)? {
-                map.array_acc.entry(g.base).or_default().push((
-                    g.subs,
-                    g.pieces,
-                    slot.off,
-                    slot.wty,
-                ));
-            }
+        // target's slots.
+        for g in array_element_keys(&av.name)? {
+            map.array_acc.entry(g.base).or_default().push(AccElem {
+                subs: g.subs,
+                pieces: g.pieces,
+                off: slot.off,
+                wty: slot.wty,
+                neg: slot.negate,
+            });
         }
         if let (Some(name), Some(kind)) = (
             result_name(&cref_display(&av.name)?),
@@ -3175,16 +3177,22 @@ fn build_var_map(
     }
     // Same for the array accumulator, so `pre(x[i])` with a non-constant subscript
     // resolves through a `$PRE.<base>` group.
-    let pre_groups: Vec<(String, Vec<(Vec<i32>, Vec<String>, u32, WTy)>)> = map
+    let pre_groups: Vec<(String, Vec<AccElem>)> = map
         .array_acc
         .iter()
         .filter_map(|(base, elems)| {
             let pre: Option<Vec<_>> = elems
                 .iter()
-                .map(|(subs, pieces, off, wty)| {
-                    let mut pieces = pieces.clone();
+                .map(|e| {
+                    let mut pieces = e.pieces.clone();
                     pieces[0].insert_str(0, "$PRE.");
-                    Some((subs.clone(), pieces, layout.pre_slot_off(*off)?, *wty))
+                    Some(AccElem {
+                        subs: e.subs.clone(),
+                        pieces,
+                        off: layout.pre_slot_off(e.off)?,
+                        wty: e.wty,
+                        neg: e.neg,
+                    })
                 })
                 .collect();
             Some((format!("$PRE.{base}"), pre?))
@@ -3205,7 +3213,13 @@ fn insert_var(map: &mut SimVarMap, sv: &SimCodeVar::SimVar, off: u32, wty: WTy, 
     Arc::make_mut(&mut map.vars).insert(key.clone(), SimSlot { off, wty, negate: Neg::None, heap });
     Arc::make_mut(&mut map.starts).insert(key, sv.initialValue.clone());
     for g in array_element_keys(&sv.name)? {
-        map.array_acc.entry(g.base).or_default().push((g.subs, g.pieces, off, wty));
+        map.array_acc.entry(g.base).or_default().push(AccElem {
+            subs: g.subs,
+            pieces: g.pieces,
+            off,
+            wty,
+            neg: Neg::None,
+        });
     }
     Ok(())
 }
@@ -3262,6 +3276,16 @@ struct GroupEntry {
     base: String,
     subs: Vec<i32>,
     pieces: Vec<String>,
+}
+
+/// One scalarized element accumulated for an array base: where it sits in the
+/// array, how the group spells its key, and where its value lives.
+struct AccElem {
+    subs: Vec<i32>,
+    pieces: Vec<String>,
+    off: u32,
+    wty: WTy,
+    neg: Neg,
 }
 
 /// The name with every subscript stripped, the subscripts outermost-first, and
@@ -3332,22 +3356,25 @@ fn const_int_subscripts(subs: &Arc<List<Arc<DAE::Subscript>>>) -> Result<Option<
 /// element `[i1,…,in]` equals `base_off + rowmajor_index * stride`). If the
 /// backend ever lays them out differently, fail loudly rather than silently
 /// build a wrong array — there is no heuristic fallback.
+///
+/// A well-shaped group that is not contiguous becomes a [`ScatterGroup`] instead,
+/// which is enough to select one element by a run-time subscript.
 fn finalize_array_groups(map: &mut SimVarMap) -> Result<()> {
     let acc = std::mem::take(&mut map.array_acc);
     for (base, elems) in acc {
         let Some(first) = elems.first() else { continue };
-        let rank = first.0.len();
-        // A group that cannot be treated as one contiguous whole-array is skipped,
-        // not fatal: individual element references still resolve through their own
-        // slots, and a genuine whole-array reference fails later as "unknown
-        // variable". Only truly malformed shapes (non-positive index) are errors.
-        if elems.iter().any(|(s, _, _, _)| s.len() != rank) {
+        let rank = first.subs.len();
+        // A group that cannot be treated as one whole-array is skipped, not fatal:
+        // individual element references still resolve through their own slots, and
+        // a genuine whole-array reference fails later as "unknown variable". Only
+        // truly malformed shapes (non-positive index) are errors.
+        if elems.iter().any(|e| e.subs.len() != rank) {
             continue; // ragged rank (element and its own sub-slice both present)
         }
         // Shape: 1-based max index per axis.
         let mut dims = vec![0u32; rank];
-        for (subs, _, _, _) in &elems {
-            for (axis, &ix) in subs.iter().enumerate() {
+        for e in &elems {
+            for (axis, &ix) in e.subs.iter().enumerate() {
                 if ix < 1 {
                     record_error(format!(
                         "CodegenWasmJit: non-positive subscript {ix} for array variable `{base}`"));
@@ -3358,28 +3385,34 @@ fn finalize_array_groups(map: &mut SimVarMap) -> Result<()> {
         }
         let total: u32 = dims.iter().product();
         if total as usize != elems.len() {
-            // Not all elements present (e.g. a sub-slice is its own variable):
-            // cannot treat as one contiguous whole-array. Skip; a whole-array
-            // reference then fails loudly with "unknown variable".
-            continue;
+            continue; // not all elements present (e.g. a sub-slice is its own variable)
         }
-        let wty = first.3;
-        if elems.iter().any(|(_, _, _, w)| *w != wty) {
-            continue; // mixed element storage types: not a uniform contiguous array
+        let wty = first.wty;
+        if elems.iter().any(|e| e.wty != wty) {
+            continue; // mixed element storage types: not a uniform array
         }
+        // Row-major element table. `total == elems.len()` only rules out a hole if
+        // no two elements share an index, so an unfilled entry skips the group.
+        let mut table = vec![None; total as usize];
+        for e in &elems {
+            let lin = e.subs.iter().enumerate().fold(0u32, |lin, (axis, &ix)| lin * dims[axis] + (ix as u32 - 1));
+            table[lin as usize] = Some((e.off, e.neg));
+        }
+        let Some(table) = table.into_iter().collect::<Option<Vec<_>>>() else { continue };
+        // Contiguous row-major and unnegated? If not (aliased elsewhere, or the
+        // elements straddle SimData regions) the array cannot be gathered or
+        // assigned as a whole; only a single element resolves.
         let stride = match wty { WTy::F64 => 8, WTy::I32 => 4 };
-        let Some(base_off) = elems.iter().map(|(_, _, o, _)| *o).min() else { continue };
-        // Contiguous row-major? If any element's slot is elsewhere (aliased, or the
-        // elements straddle SimData regions), this is not one contiguous block, so
-        // skip the group rather than aborting the whole build.
-        let contiguous = elems.iter().all(|(subs, _, off, _)| {
-            let lin = subs.iter().enumerate().fold(0u32, |lin, (axis, &ix)| lin * dims[axis] + (ix as u32 - 1));
-            *off == base_off + lin * stride
+        let base_off = table[0].0;
+        let contiguous = table.iter().enumerate().all(|(lin, &(off, neg))| {
+            neg == Neg::None && off == base_off + lin as u32 * stride
         });
         if !contiguous {
+            Arc::make_mut(&mut map.scatter_groups)
+                .insert(base, ScatterGroup { wty, dims, elems: table });
             continue;
         }
-        let key_pieces = first.1.clone();
+        let key_pieces = first.pieces.clone();
         Arc::make_mut(&mut map.array_groups)
             .insert(base, ArrayGroup { base_off, wty, dims, total, key_pieces });
     }
@@ -5638,6 +5671,7 @@ fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         starts: var_map.starts.clone(),
         start_slots: var_map.start_slots.clone(),
         array_groups: var_map.array_groups.clone(),
+        scatter_groups: var_map.scatter_groups.clone(),
         consts: var_map.consts.clone(),
         const_groups: var_map.const_groups.clone(),
         terminate_off: var_map.terminate_off,
