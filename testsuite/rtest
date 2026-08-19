@@ -50,6 +50,11 @@ if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
   $ENV{'REFERENCEFILES'} = "$1testsuite/ReferenceFiles";
   $ENV{'OMLIBRARYCOMMON'} = "$1testsuite/simulation/libraries/common";
   $ENV{'OMCOMPILERSOURCES'} = "$1OMCompiler/Compiler";
+  # Where the Template/*.mo generated from the *.tpl live. They are build
+  # artifacts and a CMake build keeps them in its build tree (--tplOutputDir),
+  # so honour an OMCOMPILERGENERATEDSOURCES set by the caller; default to the
+  # source tree, which is where a build without that flag leaves them.
+  $ENV{'OMCOMPILERGENERATEDSOURCES'} ||= "$1OMCompiler/Compiler";
   $ENV{'OPENMODELICALIBRARY'} = "$1/libraries/.openmodelica/libraries";
   # In WSL, we need to mark the environment variable as one we pass from WSL to WIN32
   if (defined $ENV{'WSLENV'}) {
