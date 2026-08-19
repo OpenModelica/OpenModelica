@@ -363,10 +363,7 @@ pipeline {
           }
         }
 
-        // partest against the CMake-built omc from cmake-jammy-gcc (stash
-        // 'omc-cmake-gcc'), not the Autoconf gcc build. See
-        // common.partestCMakeStashed().
-        stage('04 testsuite-gcc 1/3') {
+        stage('04 testsuite-cmake-gcc 1/3') {
           agent {
             label 'linux'
           }
@@ -391,7 +388,7 @@ pipeline {
           }
         }
 
-        stage('05 testsuite-gcc 2/3') {
+        stage('05 testsuite-cmake-gcc 2/3') {
           agent {
             label 'linux'
           }
@@ -416,7 +413,7 @@ pipeline {
           }
         }
 
-        stage('06 testsuite-gcc 3/3') {
+        stage('06 testsuite-cmake-gcc 3/3') {
           agent {
             label 'linux'
           }
