@@ -143,8 +143,30 @@ public
     // Parse manifest JSON
     // Get Descriptor.digest
     manifest := JSON.parseFile(manifestFile);
-    descriptor := JSON.get(manifest, "Descriptor");
-    digest := JSON.get(descriptor, "digest");
+    descriptor := match manifest
+      case JSON.OBJECT() then JSON.getOrDefault(manifest, "Descriptor", JSON.NULL());
+      case JSON.LIST_OBJECT() then JSON.getOrDefault(manifest, "Descriptor", JSON.NULL());
+      case JSON.ARRAY()
+        algorithm
+          /* A manifest list has one entry per platform, each with the digest of
+           * that platform instead of the digest of the manifest list itself.
+           */
+          Error.addCompilerError("Container image '" + imageName + "' is a multi-platform image, which isn't supported for cross compilation.");
+          Error.addCompilerNotification("Use a reference to a single platform image, e.g. one of the images listed by `" +
+                                        ContainerImage.containerTool + " manifest inspect " + imageName + "`.");
+          System.removeFile(manifestFile);
+        then fail();
+      else
+        algorithm
+          Error.addCompilerError("Failed to retrieve manifest descriptor of container image '" + imageName + "'.");
+          System.removeFile(manifestFile);
+        then fail();
+    end match;
+    digest := match descriptor
+      case JSON.OBJECT() then JSON.getOrDefault(descriptor, "digest", JSON.NULL());
+      case JSON.LIST_OBJECT() then JSON.getOrDefault(descriptor, "digest", JSON.NULL());
+      else JSON.NULL();
+    end match;
 
     // Get digest
     digest_sha256_str := match digest
@@ -216,7 +238,7 @@ public
 
     // Check combination host+namespace+repository+tag
     isKnownTag := match (image.tag, isOpenModelicaImage)
-      case (SOME("v1.26.0-dev"), true) then true;
+      case (SOME("v1.27.0"), true) then true;
       case (_, true)
         algorithm
           Error.addCompilerWarning("Container image \"" + toString(image) + "\" is not tested for this OpenModelica version.");
@@ -229,8 +251,8 @@ public
     hasKnownDigest := match (image.digest, isKnownTag)
       local
         String digest;
-      // https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/663938369?tag=v1.27.0
-      case (SOME("sha256:ea582449710395fd8b1f62f0be735030a9f332de6dcc44ec2914d7ee0692edec"), true) then true;
+      // https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/1153451071?tag=v1.27.0
+      case (SOME("sha256:5289cb061e29168b201f6f707a9343a18fb76b4f7e421ed9614104a78129a49c"), true) then true;
       case (SOME(digest), true)
       algorithm
         Error.addCompilerWarning("Container image \"" + toString(image) + "\" has unknown digest \"" + digest + "\".");
@@ -267,25 +289,83 @@ public
     System.removeFile(pullLogFile);
   end pull;
 
+  function pullCommand
+    "Return the command to download the container image manually."
+    input ContainerImage image;
+    output String cmd = ContainerImage.containerTool + " pull " + toString(image);
+  end pullCommand;
+
+  function isAvailableLocally
+    "Check if container image is already available on this machine.
+     Uses the digest, if known, to make sure the local image is the exact image
+     that was checked by isTrustedOpenModelicaImage and not some other image
+     that happens to have the same tag."
+    input ContainerImage image;
+    output Boolean isAvailable;
+  protected
+    String inspectLogFile;
+    String imageName = toString(image, useDigest = true);
+    String cmd;
+  algorithm
+    inspectLogFile := image.repository + "_inspect.log";
+    if System.regularFileExists(inspectLogFile) then
+      System.removeFile(inspectLogFile);
+    end if;
+
+    cmd := ContainerImage.containerTool + " image inspect " + imageName;
+    isAvailable := System.systemCall(cmd, outFile=inspectLogFile) == 0;
+
+    if System.regularFileExists(inspectLogFile) then
+      System.removeFile(inspectLogFile);
+    end if;
+  end isAvailableLocally;
+
+  function isCosignAvailable
+    "Check if `cosign` from sigstore is available in PATH.
+     Adds a compiler warning if it isn't."
+    output Boolean hasCosign;
+  protected
+    String cosignLogFile = "cosign_version.log";
+  algorithm
+    if System.regularFileExists(cosignLogFile) then
+      System.removeFile(cosignLogFile);
+    end if;
+
+    hasCosign := System.systemCall("cosign version", outFile=cosignLogFile) == 0;
+    if not hasCosign then
+      Error.addCompilerWarning("Can't find `cosign` from sigstore in PATH. Signatures of container images can't be verified.");
+      Error.addCompilerNotification("Install cosign from https://github.com/sigstore/cosign to verify and automatically download container images.");
+    end if;
+
+    if System.regularFileExists(cosignLogFile) then
+      System.removeFile(cosignLogFile);
+    end if;
+  end isCosignAvailable;
+
   function assertSignature
-    "Assert SHA of downloaded image matches expected SHA and that signature is
-     valid. Fails if signature can't be verified.
+    "Assert that the signature of the container image is valid.
+     The image is identified by its digest, so this can be checked before the
+     image is downloaded. Fails if the signature can't be verified.
      Needs `cosign` from sigstore to be in PATH."
     input ContainerImage image;
   protected
     String cosignLogFile;
     String cmd;
     String imageName = toString(image);
+    String imageReference = toString(image, useDigest = true);
   algorithm
     cosignLogFile := image.repository + "_signature.log";
     if System.regularFileExists(cosignLogFile) then
       System.removeFile(cosignLogFile);
     end if;
-    // TODO: Check if cosign is available
+    if not isCosignAvailable() then
+      Error.addCompilerError("Can't verify signature of container image '" + imageName + "' without `cosign` from sigstore.");
+      fail();
+    end if;
 
     // Verification using cosign
-    cmd := "cosign verify " + imageName +
-           " --certificate-identity=https://github.com/OpenModelica/openmodelica-crossbuild/.github/workflows/publish.yml@refs/tags/v1.26.0-dev" +
+    cmd := "cosign verify " + imageReference +
+           " --certificate-identity=https://github.com/OpenModelica/openmodelica-crossbuild/.github/workflows/publish.yml@refs/tags/v1.27.0" +
            " --certificate-oidc-issuer=https://token.actions.githubusercontent.com";
 
     System.appendFile(cosignLogFile, cmd + "\n");
@@ -301,8 +381,11 @@ public
 
   function toString
     "Return container image as string in format
-     [[HOST[:PORT]/]NAMESPACE/]REPOSITORY[:TAG]."
+     [[HOST[:PORT]/]NAMESPACE/]REPOSITORY[:TAG], or
+     [[HOST[:PORT]/]NAMESPACE/]REPOSITORY[@DIGEST] if useDigest is true and the
+     digest is known."
     input ContainerImage image;
+    input Boolean useDigest = false "Use digest instead of tag, if available.";
     output String imageString = "";
   algorithm
     imageString := hostToString(image);
@@ -312,7 +395,9 @@ public
 
     imageString := imageString + nameToString(image);
 
-    if isSome(image.tag) then
+    if useDigest and isSome(image.digest) then
+      imageString := imageString + "@" + Util.getOption(image.digest);
+    elseif isSome(image.tag) then
       imageString := imageString + ":" + Util.getOption(image.tag);
     end if;
   end toString;

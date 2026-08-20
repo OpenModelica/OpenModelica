@@ -3935,7 +3935,7 @@ algorithm
       ContainerImage.ContainerImage dockerImage;
       list<String> dockerArguments;
       String dockerRunArgs;
-      Boolean isOpenModelicaImage, hasKnownDigest;
+      Boolean isTrustedImage;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
       String dockerLogFile;
@@ -3984,7 +3984,7 @@ algorithm
         (dockerImage, dockerArguments) := ContainerImage.parseWithArgs(dockerImgArgs);
         dockerImage := ContainerImage.getDigestSha(dockerImage);
         Error.addCompilerNotification("Using docker image '" + ContainerImage.toString(dockerImage) + "' for cross compilation.");
-        (isOpenModelicaImage, hasKnownDigest) := ContainerImage.isTrustedOpenModelicaImage(dockerImage);
+        (_, isTrustedImage) := ContainerImage.isTrustedOpenModelicaImage(dockerImage);
         dockerRunArgs := stringDelimitList(dockerArguments, " ") + " " + ContainerImage.toString(dockerImage);
 
         uid := System.getuid();
@@ -3997,10 +3997,18 @@ algorithm
           System.removeFile(dockerLogFile);
         end if;
 
-        // Only automatically pull trusted images
-        if hasKnownDigest then
-          ContainerImage.pull(dockerImage);
-          ContainerImage.assertSignature(dockerImage);
+        // Only download trusted images automatically, and only if the signature
+        // can be verified. Images that are already on this machine are used as is.
+        if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage) then
+          if ContainerImage.isCosignAvailable() then
+            // Verify the image in the registry first, it's only downloaded if the signature is valid.
+            ContainerImage.assertSignature(dockerImage);
+            ContainerImage.pull(dockerImage);
+          else
+            Error.addCompilerError("Refusing to download container image '" + ContainerImage.toString(dockerImage) + "' without verifying its signature.");
+            Error.addCompilerNotification("Download the image manually with `" + ContainerImage.pullCommand(dockerImage) + "` and run the FMU export again.");
+            fail();
+          end if;
         end if;
 
         // Create a docker volume for the FMU since we can't forward volumes
@@ -4057,7 +4065,7 @@ algorithm
           fmiTarget := "";
         end if;
 
-        if isOpenModelicaImage then
+        if isTrustedImage then
           cmake_toolchain := "-DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/" + crossTriple + ".cmake ";
         else
           cmake_toolchain := "";
