@@ -42,7 +42,11 @@ JACOBIAN* copyJacobian(JACOBIAN* source);
 void freeJacobian(JACOBIAN* jac);
 void freeJacobianCopy(JACOBIAN* jac);
 
+void allocateThreadLocalJacobians(const JACOBIAN* source, JACOBIAN** jacColumns);
+void freeAnalyticalJacobian(JACOBIAN** jacColumns);
+
 void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
+void evalJacobianRow(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
 
 void initBidirectionalRecovery(JACOBIAN* fwd);
 void evalJacobianBidirectional(DATA* data, threadData_t *threadData, JACOBIAN* fwd, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);

@@ -50,7 +50,6 @@
 #include "dassl.h"
 #include "epsilon.h"
 #include "external_input.h"
-#include "jacobianSymbolical.h"
 #include "simulation/jacobian_util.h"
 #include "model_help.h"
 #include "omc_math.h"
@@ -1805,23 +1804,15 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   double *states = N_VGetArrayPointer_Serial(yy);
   double *yprime = N_VGetArrayPointer_Serial(yp);
 
-  unsigned int columns = jac->sizeCols;
-  unsigned int rows = jac->sizeRows;
   SPARSE_PATTERN* sparsePattern = jac->sparsePattern;
-  int maxColors = sparsePattern->maxColors;
 
   /* Reset Jacobian matrix */
   SUNMatZero(Jac);
 
   setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
-  /* Evaluate constant equations if available */
-  if (jac->constantEqns != NULL) {
-      jac->constantEqns(data, threadData, jac, NULL);
-  }
-
-  genericColoredSymbolicJacobianEvaluation(rows, columns, sparsePattern, Jac, jac,
-                                           data, threadData, &setJacElementSundialsSparse);
+  setSundialsSparsePattern(jac, Jac);
+  evalJacobian(data, threadData, jac, NULL, SM_DATA_S(Jac), FALSE);
 
   finishSparseColPtr(Jac, sparsePattern->nnz);
   unsetContext(data);

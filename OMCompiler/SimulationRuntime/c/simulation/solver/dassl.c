@@ -40,7 +40,6 @@
 #include "../arrayIndex.h"
 #include "epsilon.h"
 #include "external_input.h"
-#include "jacobianSymbolical.h"
 #include "meta/meta_modelica.h"
 #include "model_help.h"
 #include "omc_math.h"
@@ -117,12 +116,6 @@ int jacA_symBiColored(double *t, double *y, double *yprime,
 int jacADJ_symColored(double *t, double *y, double *yprime,
                    double *deltaD, double *pd, double *cj, double *h,
                    double *wt, double *rpar, int* ipar);
-
-void setJacElementDasslSparse(int l, int k, int nth, double val,
-                                     void* matrixA, int rows);
-
-void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
-                                 void* Jac, int nRows);
 
 void  DDASKR(
     int (*res) (double *t, double *y, double *yprime, double* cj, double *delta, int *ires, double *rpar, int* ipar),
@@ -992,26 +985,6 @@ static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *
   return 0;
 }
 
-/**
- * @brief Set element of dense Jacobian matrix.
- *
- * Jac(row, column) = val.
- *
- * @param row       Row of matrix element.
- * @param column    Column of matrix element.
- * @param nth       Sparsity pattern lead index, unused.
- * @param value     Value to set in position (i,j)
- * @param Jac       Pointer to double array storing matrix.
- * @param nRows     Number of rows of Jacobian matrix
- */
-void setJacElementDasslSparse(int row, int column, int nth, double value, void* Jac, int nRows)
-{
-  UNUSED(nth);  /* Disables compiler warning */
-
-  double* A = (double*) Jac;
-  A[column * nRows + row] = value;
-}
-
 /* \fn jacA_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
    double *rpar, int* ipar)
  *
@@ -1024,44 +997,11 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
-  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   const int index = data->callback->INDEX_JAC_A;
   JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
 
-  unsigned int columns = jac->sizeCols;
-  unsigned int rows = jac->sizeRows;
-  SPARSE_PATTERN* spp = jac->sparsePattern;
-
-  /* Evaluate constant equations if available */
-  if (jac->constantEqns != NULL) {
-      jac->constantEqns(data, threadData, jac, NULL);
-  }
-
-  genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, jac,
-                                           data, threadData, &setJacElementDasslSparse);
-
+  evalJacobian(data, threadData, jac, NULL, matrixA, TRUE);
   return 0;
-}
-
-/**
- * @brief Set element of dense Jacobian matrix transposed.
- * Needed when calculating adjoint Jacobian.
- * Adjoint setter: flip indices to correct transposed storage
- * Jac(row, column) = val.
- *
- * @param row       Row of matrix element.
- * @param column    Column of matrix element.
- * @param nth       Sparsity pattern lead index, unused.
- * @param value     Value to set in position (i,j)
- * @param Jac       Pointer to double array storing matrix.
- * @param nRows     Number of rows of Jacobian matrix
- */
-void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
-                                 void* Jac, int nRows)
-{
-  UNUSED(nth);
-  double* A = (double*) Jac;
-  A[column*nRows + row] = value;
 }
 
 /* \fn jacADJ_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
@@ -1076,22 +1016,10 @@ int jacADJ_symColored(double *t, double *y, double *yprime, double *delta,
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
-  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   const int index = data->callback->INDEX_JAC_ADJ;
   JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
 
-  unsigned int columns = jac->sizeCols;
-  unsigned int rows = jac->sizeRows;
-  SPARSE_PATTERN* spp = jac->sparsePattern;
-
-  /* Evaluate constant equations if available */
-  if (jac->constantEqns != NULL) {
-      jac->constantEqns(data, threadData, jac, NULL);
-  }
-
-  genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, jac,
-                                           data, threadData, &setJacElementDasslSparseAdj);
-
+  evalJacobian(data, threadData, jac, NULL, matrixA, TRUE);
 
   return 0;
 }
@@ -1123,8 +1051,6 @@ int jacA_symBiColored(double *t, double *y, double *yprime, double *delta,
     throwStreamPrint(threadData, "jacA_symBiColored: out of memory allocating sparse buffer (nnz=%u)", nnz);
     return 1;
   }
-
-
 
   /* Evaluate into compact nnz-sized sparse buffer (CSC-indexed) */
   evalJacobian(data, threadData, jac, NULL, sparse_buf, 0 /* isDense */);

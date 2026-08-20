@@ -155,11 +155,15 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
 {
   int color, column, row, nz;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-  int sizeDirection = jacobian->isRowEval ? jacobian->sizeRows : jacobian->sizeCols;
 
   /* Dispatch to bidirectional evaluation if applicable */
   if (jacobian->isBidirectional && jacobian->adjointJacobian) {
     evalJacobianBidirectional(data, threadData, jacobian, parentJacobian, jac, isDense);
+    return;
+  }
+
+  if (jacobian->isRowEval) {
+    evalJacobianRow(data, threadData, jacobian, parentJacobian, jac, isDense);
     return;
   }
 
@@ -177,7 +181,6 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   /* evaluate Jacobian */
   for (color = 0; color < sp->maxColors; color++) {
     /* activate seed variable for the corresponding color */
-    // direction = 0; direction < sizeDirection; direction++
     for (column = 0; column < jacobian->sizeCols; column++)
       if (sp->colorCols[column]-1 == color)
         jacobian->seedVars[column] = 1.0;
@@ -194,7 +197,7 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
             jac[nz] = jacobian->resultVars[row]; //* solverData->xScaling[j];
           }
           else {
-            /* dense case (row major layout for csc format) */
+            /* dense case */
             jac[column * jacobian->sizeRows + row] = jacobian->resultVars[row]; //* solverData->xScaling[j];
           }
         }
@@ -268,14 +271,18 @@ void evalJacobianRow(DATA* data, threadData_t *threadData,
             /* sparse case (CSR value buffer aligned with index order) */
             jac[nz] = jacobian->resultVars[col];
           } else {
-            /* dense case (row-major layout for csr format) */
-            jac[row * nCols + col] = jacobian->resultVars[col];
+            /* dense case */
+            jac[col * nRows + row] = jacobian->resultVars[col];
           }
         }
         /* de-activate seed variable for the corresponding color (row) */
         jacobian->seedVars[row] = 0.0;
       }
     }
+
+    /* Row evaluators accumulate adjoints; reset between colors. */
+    memset(jacobian->resultVars, 0, nCols * sizeof(modelica_real));
+    memset(jacobian->tmpVars, 0, jacobian->sizeTmpVars * sizeof(modelica_real));
   }
 }
 
