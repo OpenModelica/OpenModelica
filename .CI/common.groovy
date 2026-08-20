@@ -1194,8 +1194,8 @@ void crossBuildFMU() {
               "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
               "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest") {
     standardSetup()
-    unstash 'omc-clang'
-    makeLibsAndCache()
+    unstash 'omc-cmake-gcc'
+    makeLibsAndCacheCMake()
     writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: getVersion()
     sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
     sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
