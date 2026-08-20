@@ -17,6 +17,7 @@ use std::sync::Arc;
 
 use arcstr::ArcStr;
 use metamodelica::{List, Result};
+use openmodelica_frontend_base::ComponentReference;
 use openmodelica_frontend_types::DAE;
 use openmodelica_simcode_types::SimCodeFunction;
 use wasm_encoder as we;
@@ -158,8 +159,29 @@ pub(crate) fn compile_parteval(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()> {
     let DAE::Exp::PARTEVALFUNCTION { path, expList, ty, origType } = exp else {
         return Err("CodegenWasmJit: not a PARTEVALFUNCTION");
     };
-    let target = mangle(path)?;
-    let Some(info) = ctx.by_name.get(&target) else {
+    let exps: Vec<&Arc<DAE::Exp>> = (&**expList).into_iter().collect();
+    emit_reference(ctx, &mangle(path)?, &exps, ty, origType)
+}
+
+/// `function f()` with nothing applied, which the frontend leaves as a `CREF`
+/// of function-reference type rather than a `PARTEVALFUNCTION`.
+pub(crate) fn compile_fnref_cref(
+    ctx: &mut FnCtx,
+    cref: &DAE::ComponentRef,
+    ty: &DAE::Type,
+) -> Result<()> {
+    let path = ComponentReference::crefToPath(Arc::new(cref.clone()))?;
+    emit_reference(ctx, &mangle(&path)?, &[], ty, ty)
+}
+
+fn emit_reference(
+    ctx: &mut FnCtx,
+    target: &str,
+    exps: &[&Arc<DAE::Exp>],
+    ty: &DAE::Type,
+    origType: &DAE::Type,
+) -> Result<()> {
+    let Some(info) = ctx.by_name.get(target) else {
         return Err("CodegenWasmJit: function reference to a function that was not compiled");
     };
     let (target_index, target_sig) = (info.index, info.sig.clone());
@@ -172,12 +194,11 @@ pub(crate) fn compile_parteval(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()> {
     }
     let applied: Vec<usize> =
         (0..all_names.len()).filter(|i| !residual_names.contains(&all_names[*i])).collect();
-    let exps: Vec<&Arc<DAE::Exp>> = (&**expList).into_iter().collect();
     if applied.len() != exps.len() {
         return Err("CodegenWasmJit: function reference applies a different number of arguments than it drops");
     }
     let applied_tys: Vec<SigTy> = applied.iter().map(|i| target_sig.params[*i].clone()).collect();
-    let slot = intern_thunk(&target, target_index, &target_sig, &applied, &residual_names, &all_names)?;
+    let slot = intern_thunk(target, target_index, &target_sig, &applied, &residual_names, &all_names)?;
 
     let env = ctx.alloc_temp(WTy::I32);
     let env_flds = env_fields(&applied_tys);
