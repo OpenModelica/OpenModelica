@@ -3340,8 +3340,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input FMI1CoSimulation fmi1cs;
         input Real realValuesReferences[:];
         input Real realValues[size(realValuesReferences, 1)];
-        output Real out_Values[size(realValuesReferences, 1)];
-        external "C" fmi1SetReal_OMC(fmi1cs, size(realValuesReferences, 1), realValuesReferences, realValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        output Real out_Values[size(realValuesReferences, 1)] = realValues;
+        external "C" fmi1SetReal_OMC(fmi1cs, size(realValuesReferences, 1), realValuesReferences, realValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi1SetReal;
 
       function fmi1GetInteger
@@ -3356,8 +3356,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input FMI1CoSimulation fmi1cs;
         input Real integerValuesReferences[:];
         input Integer integerValues[size(integerValuesReferences, 1)];
-        output Real out_Values[size(integerValuesReferences, 1)];
-        external "C" fmi1SetInteger_OMC(fmi1cs, size(integerValuesReferences, 1), integerValuesReferences, integerValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        output Integer out_Values[size(integerValuesReferences, 1)] = integerValues;
+        external "C" fmi1SetInteger_OMC(fmi1cs, size(integerValuesReferences, 1), integerValuesReferences, integerValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi1SetInteger;
 
       function fmi1GetBoolean
@@ -3372,8 +3372,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input FMI1CoSimulation fmi1cs;
         input Real booleanValuesReferences[:];
         input Boolean booleanValues[size(booleanValuesReferences, 1)];
-        output Boolean out_Values[size(booleanValuesReferences, 1)];
-        external "C" fmi1SetBoolean_OMC(fmi1cs, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        output Boolean out_Values[size(booleanValuesReferences, 1)] = booleanValues;
+        external "C" fmi1SetBoolean_OMC(fmi1cs, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi1SetBoolean;
 
       function fmi1GetString
@@ -3388,8 +3388,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input FMI1CoSimulation fmi1cs;
         input Real stringValuesReferences[:];
         input String stringValues[size(stringValuesReferences, 1)];
-        output String out_Values[size(stringValuesReferences, 1)];
-        external "C" fmi1SetString_OMC(fmi1cs, size(stringValuesReferences, 1), stringValuesReferences, stringValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        output String out_Values[size(stringValuesReferences, 1)] = stringValues;
+        external "C" fmi1SetString_OMC(fmi1cs, size(stringValuesReferences, 1), stringValuesReferences, stringValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi1SetString;
     end fmi1Functions;
   end <%if stringEq(name, "") then fmiInfo.fmiModelIdentifier+"_"+getFMIType(fmiInfo)+"_FMU" else name%>;
