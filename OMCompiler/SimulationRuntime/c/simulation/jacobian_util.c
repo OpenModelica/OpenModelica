@@ -1143,17 +1143,19 @@ JACOBIAN_METHOD getRequestedJacobianMethod(threadData_t* threadData)
 {
   JACOBIAN_METHOD jacobianMethod = JAC_UNKNOWN;
 
+  // Check if the user requested a specific Jacobian method via the `-jacobian` flag
+  // if not the colored numerical Jacobian is used by default
   if (!omc_flag[FLAG_JACOBIAN]) {
     return JAC_UNKNOWN;
   }
-
+  // Set the requested method if it is known
   for (int method=1; method < JAC_MAX; method++) {
     if (!strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD_NAME[method])) {
       jacobianMethod = (JACOBIAN_METHOD) method;
       break;
     }
   }
-  // Error case
+  // Error case if the user requested a method that is not known
   if (jacobianMethod == JAC_UNKNOWN) {
     errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown value `%s` for flag `-jacobian`", omc_flagValue[FLAG_JACOBIAN]);
     infoStreamPrint(OMC_LOG_STDOUT, 1, "Available options are");
@@ -1163,7 +1165,6 @@ JACOBIAN_METHOD getRequestedJacobianMethod(threadData_t* threadData)
     messageClose(OMC_LOG_STDOUT);
     omc_throw(threadData);
   }
-
   return jacobianMethod;
 }
 
@@ -1171,7 +1172,7 @@ JACOBIAN_METHOD getRequestedJacobianMethod(threadData_t* threadData)
  * @brief Check that the requested Jacobian method can be used and log it.
  *
  * @param threadData              Used for error handling.
- * @param availability            Is the Jacobian available, only the sparsity pattern available or nothing available.
+ * @param availability            Is the symbolic Jacobian available, only the sparsity pattern available or nothing available.
  * @param jacobianMethod          Requested method, JAC_UNKNOWN selects the default for `availability`.
  * @return JACOBIAN_METHOD        Jacobian method that will be used.
  */
@@ -1179,7 +1180,7 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABIL
 {
   assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availability status is unknown.");
 
-  /* Check if method is available */
+  /* Check if method is available. If all is fine then no case gets triggered. */
   switch (availability)
   {
   case JACOBIAN_NOT_AVAILABLE:
@@ -1193,7 +1194,7 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABIL
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to colored numerical Jacobian.");
       jacobianMethod = COLOREDNUMJAC;
     } else if(jacobianMethod == SYMJAC) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to numerical Jacobian.");
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to uncolored numerical Jacobian.");
       jacobianMethod = NUMJAC;
     } else if(jacobianMethod == JAC_UNKNOWN) {
       jacobianMethod = COLOREDNUMJAC;
@@ -1265,8 +1266,8 @@ JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILIT
  * backed by the generated code fall back to a method that is, with a warning.
  *
  * The forward Jacobian A is only initialized if it is actually going to be used. The
- * adjoint Jacobian is self contained, so for COLOREDSYMJACADJ the (potentially large)
- * sparsity pattern, coloring and evaluation DAG of A are not built at all. Solvers that
+ * adjoint Jacobian is self contained, so for COLOREDSYMJACADJ the sparsity pattern,
+ * coloring and evaluation DAG of A are not built at all. Solvers that
  * need A regardless of the selected evaluation direction, because they use its
  * evaluation DAG or its column function, pass `requireForwardJacobian = TRUE` (GBODE).
  *
