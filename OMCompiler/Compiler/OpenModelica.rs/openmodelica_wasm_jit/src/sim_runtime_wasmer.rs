@@ -377,9 +377,11 @@ fn define_external_imports(
             openmodelica_wasi::wasi::stdout_write(side_msg(&env, ptr).as_bytes());
         },
     );
-    // `usertab` (user-defined table callback) is never used by the standard table
-    // blocks; provide a stub that reports "not found".
-    let usertab = Function::new_typed(&mut *store, |_: i32, _: i32, _: i32, _: i32, _: i32| -> i32 { 1 });
+    // This host cannot build the model's `Include`, so only the C dummy is left.
+    let usertab = Function::new_typed(&mut *store, |_: i32, _: i32, _: i32, _: i32, _: i32| -> i32 {
+        openmodelica_error::ErrorExt::runtime_error("Function \"usertab\" is not implemented\n");
+        1
+    });
     // `ModelicaAllocateString(len)` — allocate the returned string buffer in the
     // side module's own memory (its `malloc`, filled in after instantiation) and
     // record the offset so the trampoline can free it after copying the result out.

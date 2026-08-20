@@ -481,7 +481,50 @@ pub fn load_external_libraries(paths: &[String]) -> (Vec<usize>, Vec<String>) {
 /// Resolve against `handles` — the model's own libraries, which shadow a same-named
 /// symbol elsewhere — then against the process image.
 pub fn external_symbol_in(handles: &[usize], name: &str) -> Option<usize> {
-    handles.iter().find_map(|&h| dl::sym(h, name)).or_else(|| external_symbol(name))
+    symbol_in(handles, name).or_else(|| external_symbol(name))
+}
+
+/// Resolve against `handles` alone: for [`usertab`] the process image holds a
+/// fallback, so only the model's own definition is an answer.
+pub fn symbol_in(handles: &[usize], name: &str) -> Option<usize> {
+    handles.iter().find_map(|&h| dl::sym(h, name))
+}
+
+static USERTAB: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+type UsertabFn = unsafe extern "C-unwind" fn(
+    *mut libc::c_char,
+    libc::c_int,
+    *mut libc::c_int,
+    *mut libc::c_int,
+    *mut *mut f64,
+) -> libc::c_int;
+
+pub fn set_usertab(addr: Option<usize>) {
+    USERTAB.store(addr.unwrap_or(0), std::sync::atomic::Ordering::Relaxed);
+}
+
+/// `usertab`, for a `tableOnFile` table with no `fileName`. Preempts the weak dummy
+/// `libModelicaStandardTables` carries: the compiler image comes first in the scope.
+#[unsafe(no_mangle)]
+pub unsafe extern "C-unwind" fn usertab(
+    table_name: *mut libc::c_char,
+    nipo: libc::c_int,
+    dim: *mut libc::c_int,
+    col_wise: *mut libc::c_int,
+    table: *mut *mut f64,
+) -> libc::c_int {
+    let hook = USERTAB.load(std::sync::atomic::Ordering::Relaxed);
+    if hook != 0 {
+        let f: UsertabFn = unsafe { std::mem::transmute(hook) };
+        return unsafe { f(table_name, nipo, dim, col_wise, table) };
+    }
+    // The runtime's own, so the installed interception reports and throws.
+    if let Some(addr) = dl::open_self().ok().and_then(|me| dl::sym(me, "ModelicaError")) {
+        let err: unsafe extern "C-unwind" fn(*const libc::c_char) = unsafe { std::mem::transmute(addr) };
+        unsafe { err(c"Function \"usertab\" is not implemented\n".as_ptr()) };
+    }
+    1
 }
 
 /// Install the panic-mode `ModelicaError`/`omc_assert` interception for the

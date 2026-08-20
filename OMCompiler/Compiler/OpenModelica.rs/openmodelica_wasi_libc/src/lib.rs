@@ -5,6 +5,9 @@
 /// ModelicaExternalC as a PIC dylink side module.
 pub static EXTERNAL_C_DYLINK: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/modelicaexternalc_dylink.wasm"));
 
+/// The dummy `usertab` ModelicaExternalC imports, separate so it can be linked last.
+pub static USERTAB_DYLINK: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/usertab_dylink.wasm"));
+
 /// A `-fPIC` wasi-libc `libc.so` dylink module (Debian's is non-PIC).
 pub static LIBC_PIC: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/libc_pic.wasm"));
 

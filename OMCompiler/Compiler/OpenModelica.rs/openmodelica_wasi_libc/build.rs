@@ -35,6 +35,10 @@ fn main() {
         .unwrap_or_else(|e| panic!("failed to build the PIC ModelicaExternalC dylink module: {e}"));
     copy(&module, &mec_dest);
 
+    let usertab = build_usertab_dylink(&out_dir, &sysroot, triple)
+        .unwrap_or_else(|e| panic!("failed to build the PIC usertab dummy dylink module: {e}"));
+    copy(&usertab, &out_dir.join("usertab_dylink.wasm"));
+
     // Only a CVODE/IDA Co-Simulation FMU needs this, so an absent sundials tree
     // leaves an empty blob rather than failing the build.
     let sundials_dest = out_dir.join("sundials_dylink.wasm");
@@ -186,7 +190,7 @@ fn ensure_pic_wasi_sysroot() -> PathBuf {
     panic!("OMC_WASI_PIC_SYSROOT={} has no lib/wasm32-wasip1/libc.so", p.display());
 }
 
-/// Compile ModelicaExternalC (+ `DummyUsertab`, `external_c_callbacks.c`,
+/// Compile ModelicaExternalC (+ `external_c_callbacks.c`,
 /// `external_c_stubs.c`) to a PIC dylink side module, then strip its
 /// `_initialize` export: reactor mode emits both `_initialize` and
 /// `__wasm_call_ctors`, and `wit_component::Linker` rejects a library
@@ -196,10 +200,12 @@ fn build_external_c_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, tri
     let c_sources = std::env::var("OMC_EXTERNAL_C_SOURCES").ok().map(PathBuf::from).ok_or_else(|| {
         "OMC_EXTERNAL_C_SOURCES not set".to_owned()
     })?;
+    // No usertab source, so it stays an `env.usertab` import the FMU link resolves
+    // against the model's own libraries first.
     let names = [
         "ModelicaStandardTables.c", "ModelicaStrings.c", "ModelicaRandom.c",
         "ModelicaIO.c", "ModelicaMatIO.c", "snprintf.c",
-        "ModelicaInternal.c", "ModelicaFFT.c", "ModelicaStandardTablesDummyUsertab.c",
+        "ModelicaInternal.c", "ModelicaFFT.c",
     ];
     let mut srcs: Vec<PathBuf> = names.iter().map(|n| c_sources.join(n)).collect();
     if let Some(missing) = srcs.iter().find(|p| !p.exists()) {
@@ -241,6 +247,41 @@ fn build_external_c_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, tri
     let stripped = strip_wasm_export(&bytes, "_initialize");
     let out = out_dir.join("modelicaexternalc_dylink_stripped.wasm");
     std::fs::write(&out, &stripped).map_err(|e| format!("write dylink: {e}"))?;
+    Ok(out)
+}
+
+/// The C dummy `usertab` on its own, so the FMU link can put it behind a model's own.
+fn build_usertab_dylink(out_dir: &Path, sysroot: &Path, triple: &str) -> Result<PathBuf, String> {
+    let c_sources = std::env::var("OMC_EXTERNAL_C_SOURCES").ok().map(PathBuf::from)
+        .ok_or_else(|| "OMC_EXTERNAL_C_SOURCES not set".to_owned())?;
+    let src = c_sources.join("ModelicaStandardTablesUsertab.c");
+    if !src.exists() {
+        return Err(format!("missing {}", src.display()));
+    }
+    println!("cargo:rerun-if-changed={}", src.display());
+
+    let raw = out_dir.join("usertab_dylink_raw.wasm");
+    let builtins = find_wasm_builtins().ok_or("no libclang_rt.builtins-wasm32.a found")?;
+    let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
+    let status = Command::new(&clang)
+        .arg(format!("--target={triple}"))
+        .arg(format!("--sysroot={}", sysroot.display()))
+        .args(["-O2", "-fPIC", "-nodefaultlibs", "-mexec-model=reactor", "-DDUMMY_FUNCTION_USERTAB"])
+        .arg("-I").arg(&c_sources)
+        .arg(&src)
+        .args(["-Wl,--experimental-pic", "-Wl,--shared", "-Wl,--no-entry",
+               "-Wl,--export=usertab", "-Wl,--allow-undefined"])
+        .arg(&builtins)
+        .arg("-o").arg(&raw)
+        .status()
+        .map_err(|e| format!("spawn {clang}: {e}"))?;
+    if !status.success() {
+        return Err(format!("clang (usertab dylink) exited with {status}"));
+    }
+    let bytes = std::fs::read(&raw).map_err(|e| format!("read raw usertab dylink: {e}"))?;
+    let out = out_dir.join("usertab_dylink_stripped.wasm");
+    std::fs::write(&out, strip_wasm_export(&bytes, "_initialize"))
+        .map_err(|e| format!("write usertab dylink: {e}"))?;
     Ok(out)
 }
 
