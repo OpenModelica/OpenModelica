@@ -1399,6 +1399,18 @@ void MainWindow::checkAllModels(LibraryTreeItem *pLibraryTreeItem)
   mpStatusBar->clearMessage();
 }
 
+/*!
+ * \brief isNativeFMUPlatform
+ * Returns true if the platform string names the machine OMEdit runs on, i.e. one that can be
+ * built with the local toolchain. Every other value is a host triple naming a target platform.
+ * \param platform
+ * \return
+ */
+static bool isNativeFMUPlatform(const QString &platform)
+{
+  return platform.compare("static") == 0 || platform.compare("dynamic") == 0;
+}
+
 void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
 {
   // check for supported targetLanguage C or Cpp
@@ -1471,6 +1483,58 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
     mpOMCProxy->setCommandLineOptions(QString("-d=gendebugsymbols"));
   }
   bool includeResources = OptionsDialog::instance()->getFMIPage()->getIncludeResourcesCheckBox()->isChecked();
+#if !defined(__EMSCRIPTEN__)
+  /* Any platform other than the one OMEdit runs on needs the cross compilation machinery
+   * of buildModelFMU(). translateModelFMU() only generates the sources, and the CMake
+   * build FmuExportOutputWidget runs afterwards is host native and builds a single
+   * platform, so cross compiled binaries would silently be missing from the FMU.
+   * See https://github.com/OpenModelica/OpenModelica/issues/9509
+   */
+  bool crossCompile = false;
+  foreach (QString platform, platforms) {
+    if (!isNativeFMUPlatform(platform)) {
+      crossCompile = true;
+      break;
+    }
+  }
+
+  if (crossCompile) {
+    mpStatusBar->showMessage(tr("Exporting model %1 as FMU").arg(pLibraryTreeItem->getName()));
+    // buildModelFMU() compiles and zips the FMU itself, there is nothing left for FmuExportOutputWidget to do.
+    QString fmuFileName;
+    {
+      OMCLongOperation longOperation;
+      fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
+    }
+    // hide progress bar
+    hideProgressBar();
+    // clear the status bar message
+    mpStatusBar->clearMessage();
+
+    if (fmuFileName.isEmpty()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Export of FMU: <b>%1</b> Failed").arg(pLibraryTreeItem->getName()),
+                                                            "Export Error", Helper::errorLevel));
+      return;
+    }
+    // buildModelFMU() leaves the FMU in the working directory it was called in, move it where the user wants it.
+    QString destination = pLibraryTreeItem->getWhereToMoveFMU().isEmpty()
+                          ? OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory()
+                          : pLibraryTreeItem->getWhereToMoveFMU();
+    destination += "/" + QFileInfo(fmuFileName).fileName();
+    if (QFileInfo(fmuFileName).absoluteFilePath() != QFileInfo(destination).absoluteFilePath()) {
+      QFile::remove(destination);
+      if (!QFile::rename(fmuFileName, destination)) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_MOVE_FAILED).arg(destination),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+        return;
+      }
+    }
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_GENERATED).arg(destination),
+                                                          Helper::scriptingKind, Helper::notificationLevel));
+    return;
+  }
+#endif
+
   bool isTranslationSuccessful;
   {
     OMCLongOperation longOperation;

@@ -6376,8 +6376,9 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pNativePlatformCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, "static");
   pPlatformsLayout->addWidget(pNativePlatformCheckBox);
   // docker platforms
-  // image pinned to https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/663938369?tag=v1.27.0
-  const QString dockerImage = "ghcr.io/openmodelica/crossbuild@sha256:ea582449710395fd8b1f62f0be735030a9f332de6dcc44ec2914d7ee0692edec";
+  // Referenced by tag, omc resolves the digest and checks it against the one it trusts.
+  // See https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/1153451071?tag=v1.27.0
+  const QString dockerImage = "ghcr.io/openmodelica/crossbuild:v1.27.0";
   QStringList dockerPlarforms;
   dockerPlarforms << ("x86_64-linux-gnu docker run " + dockerImage)
                   << ("i686-linux-gnu docker run " + dockerImage)
