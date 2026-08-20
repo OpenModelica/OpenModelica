@@ -21,7 +21,7 @@ use crate::omclog;
 use crate::{BaseClockMeta, Layout, clock_field};
 
 /// C's `SYNC_EPS` (`epsilon.h`).
-const SYNC_EPS: f64 = 1e-14;
+pub const SYNC_EPS: f64 = 1e-14;
 
 /// C's `RATIONAL`, kept exact: sub-clock activation is `shift + count*factor`
 /// relative to the base clock, and only the ticks landing on an integer count.
