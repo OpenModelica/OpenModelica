@@ -1,4 +1,5 @@
 // status: correct
+// teardown_command: rm -rf DrumBoiler.fmu DrumBoiler.log DrumBoiler_info.json binaries sources resources documentation modelDescription.xml
 // cflags: -d=-newInst
 
 loadModel(Modelica, {"3.2.3"});getErrorString();

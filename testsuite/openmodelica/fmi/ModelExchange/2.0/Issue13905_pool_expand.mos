@@ -1,7 +1,7 @@
 // name: Issue13905_pool_expand
 // keywords: FMI 2.0 export memory pool
 // status: correct
-// teardown_command: rm -rf Issue13905_pool_expand.fmu Issue13905_pool_expand.fmutmp/ Issue13905_pool_expand.log Issue13905_pool_expand_info.json Issue13905_pool_expand_me_FMU* Issue13905_pool_expand_res.mat index.html
+// teardown_command: rm -rf Issue13905_pool_expand.fmu Issue13905_pool_expand.fmutmp/ Issue13905_pool_expand.log Issue13905_pool_expand_info.json Issue13905_pool_expand_me_FMU* Issue13905_pool_expand_res.mat index.html binaries sources modelDescription.xml
 //
 // Regression test for #13905. pool_expand() ignored its `len` argument and always made the new
 // block 1.5x the previous one, while pool_malloc() documents that "the new block should, at

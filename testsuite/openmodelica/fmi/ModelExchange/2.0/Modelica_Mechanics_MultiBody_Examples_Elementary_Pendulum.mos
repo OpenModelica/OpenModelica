@@ -1,7 +1,7 @@
 // name:     Pendulum
 // keywords: Pendulum FMI-Export FMI-Import
 // status: correct
-// teardown_command: rm -rf Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.* Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum_* binaries sources modelDescription.xml Pendulum.fmu Pendulum_me_FMU.mo Pendulum.lib* Pendulum.so Pendulum.dll Pendulum_*.c Pendulum_*.h Pendulum_*.o Pendulum_*.json
+// teardown_command: rm -rf Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.* Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum_* binaries sources modelDescription.xml Pendulum.fmu Pendulum_me_FMU.mo Pendulum.lib* Pendulum.so Pendulum.dll Pendulum_*.c Pendulum_*.h Pendulum_*.o Pendulum_*.json documentation resources
 // cflags: -d=-newInst
 //
 
