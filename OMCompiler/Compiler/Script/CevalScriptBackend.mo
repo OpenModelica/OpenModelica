@@ -4103,15 +4103,15 @@ algorithm
 
           cmd := "docker cp " + containerID + ":/data/comp-fmutmp.tar.gz .";
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
-          System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz");
+          System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz", outFile=dockerLogFile);
         else
           cmd := "docker cp " + containerID + ":/data/" + fmutmp + "/ .";
           runDockerCmd(cmd, dockerLogFile, cleanup=false, volumeID=volumeID, containerID=containerID);
         end if;
 
         // Cleanup
-        System.systemCall("docker rm " + containerID);
-        System.systemCall("docker volume rm " + volumeID);
+        System.systemCall("docker rm " + containerID, outFile=dockerLogFile);
+        System.systemCall("docker volume rm " + volumeID, outFile=dockerLogFile);
 
         // Copy log file into resources directory
         System.copyFile(dockerLogFile, logfile);
@@ -4142,10 +4142,10 @@ algorithm
 
     if cleanup then
       if not stringEqual(containerID, "") then
-        System.systemCall("docker rm " + containerID);
+        System.systemCall("docker rm " + containerID, outFile=logfile);
       end if;
       if not stringEqual(volumeID, "") then
-        System.systemCall("docker volume rm " + volumeID);
+        System.systemCall("docker volume rm " + volumeID, outFile=logfile);
       end if;
     end if;
 
@@ -4278,7 +4278,7 @@ algorithm
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
           // Cleanup
-          System.systemCall("docker volume rm " + volumeID);
+          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
           fail();
         elseif verbose then
            print(cmd + "\n" + System.readFile(logfile) +"\n");
@@ -4290,8 +4290,8 @@ algorithm
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
           // Cleanup
-          System.systemCall("docker rm " + containerID);
-          System.systemCall("docker volume rm " + volumeID);
+          System.systemCall("docker rm " + containerID, outFile=logfile);
+          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
           fail();
         elseif verbose then
            print(cmd + "\n" + System.readFile(logfile) +"\n");
@@ -4301,8 +4301,8 @@ algorithm
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
           // Cleanup
-          System.systemCall("docker rm " + containerID);
-          System.systemCall("docker volume rm " + volumeID);
+          System.systemCall("docker rm " + containerID, outFile=logfile);
+          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
           fail();
         elseif verbose then
            print(cmd + "\n" + System.readFile(logfile) +"\n");
@@ -4313,10 +4313,10 @@ algorithm
                nozip + dquote;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + ":\n" + System.readFile(logfile)});
-          System.removeFile(logfile);
           // Cleanup
-          System.systemCall("docker rm " + containerID);
-          System.systemCall("docker volume rm " + volumeID);
+          System.systemCall("docker rm " + containerID, outFile=logfile);
+          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
+          System.removeFile(logfile);
           fail();
         elseif verbose then
            print(cmd + "\n" + System.readFile(logfile) +"\n");
@@ -4330,8 +4330,8 @@ algorithm
            print(cmd + "\n" + System.readFile(logfile) +"\n");
         end if;
         // Cleanup
-        System.systemCall("docker rm " + containerID);
-        System.systemCall("docker volume rm " + volumeID);
+        System.systemCall("docker rm " + containerID, outFile=logfile);
+        System.systemCall("docker volume rm " + volumeID, outFile=logfile);
       then true;
     else
       algorithm
