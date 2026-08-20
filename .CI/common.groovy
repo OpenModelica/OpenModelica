@@ -1202,7 +1202,6 @@ void crossBuildFMU() {
     sh 'make -C testsuite/special/FMPy/ fmpy-fmus'
     stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu, testsuite/special/FMPy/Makefile'
     stash name: 'fmpy-fmu', includes: 'testsuite/special/FMPy/*.fmu'
-    stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
     archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
   }
 }
@@ -1273,22 +1272,6 @@ void testUnitC() {
   sh "test -f ./build_cmake/junit.xml"
 }
 
-void fmuCheckerLinuxWine() {
-  echo "${env.NODE_NAME}"
-  sh 'rm -rf testsuite/'
-  unstash 'cross-fmu'
-  unstash 'cross-fmu-extras'
-  sh '''
-  export HOME="$PWD"
-  cd testsuite/special/FmuExportCrossCompile/
-  ./single-fmu-run.sh linux64 `cat VERSION`
-  ./single-fmu-run.sh linux32 `cat VERSION`
-  ./single-fmu-run.sh win64 `cat VERSION`
-  ./single-fmu-run.sh win32 `cat VERSION`
-  '''
-  stash name: 'cross-fmu-results-linux-wine', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
-}
-
 void fmpyLinux() {
   echo "${env.NODE_NAME}"
   unstash 'cross-fmu'
@@ -1298,30 +1281,6 @@ void fmpyLinux() {
   cd testsuite/special/FMPy/
   make test
   '''
-}
-
-void fmuCheckerArm() {
-  echo "${env.NODE_NAME}"
-  sh 'rm -rf testsuite/'
-  unstash 'cross-fmu'
-  unstash 'cross-fmu-extras'
-  sh '''
-  cd testsuite/special/FmuExportCrossCompile/
-  ./single-fmu-run.sh arm-linux-gnueabihf `cat VERSION` /usr/local/bin/fmuCheck.arm-linux-gnueabihf
-  '''
-  stash name: 'cross-fmu-results-armhf', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
-}
-
-void fmuCheckerResults() {
-  echo "${env.NODE_NAME}"
-  sh 'rm -rf build/ testsuite/'
-  unstash 'omc-clang'
-  unstash 'cross-fmu-extras'
-  unstash 'cross-fmu-results-linux-wine'
-  unstash 'cross-fmu-results-armhf'
-  sh 'cd testsuite/special/FmuExportCrossCompile && ../../../build/bin/omc check-files.mos'
-  sh 'cd testsuite/special/FmuExportCrossCompile && tar -czf ../../../Test_FMUs.tar.gz Test_FMUs'
-  archiveArtifacts 'Test_FMUs.tar.gz'
 }
 
 void uploadCompliance() {

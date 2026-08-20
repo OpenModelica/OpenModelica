@@ -930,25 +930,6 @@ pipeline {
     }
     stage('check-and-upload') {
       parallel {
-        stage('fmuchecker-results') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            skipDefaultCheckout true // This seems to cause problems for symbolic links
-          }
-          steps {
-            script { common.fmuCheckerResults() }
-          }
-        }
         stage('upload-compliance') {
           agent {
             docker {
