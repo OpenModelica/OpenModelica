@@ -3205,6 +3205,31 @@ fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &
     Ok(())
 }
 
+/// Leave only result `want` of a call on the stack (first result deepest),
+/// releasing the discarded ones.
+fn keep_call_result(ctx: &mut FnCtx, results: &[SigTy], want: usize) -> Result<WTy> {
+    if results.len() == 1 {
+        return Ok(results[0].wty());
+    }
+    let mut temps = vec![0u32; results.len()];
+    for i in (0..results.len()).rev() {
+        let vt = ctx.alloc_temp(results[i].wty());
+        ctx.emit(we::Instruction::LocalSet(vt));
+        temps[i] = vt;
+    }
+    for (i, sty) in results.iter().enumerate() {
+        if i == want {
+            continue;
+        }
+        if let Some(release_fn) = sty.release_fn() {
+            ctx.emit(we::Instruction::LocalGet(temps[i]));
+            ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+        }
+    }
+    ctx.emit(we::Instruction::LocalGet(temps[want]));
+    Ok(results[want].wty())
+}
+
 /// Store one freshly-owned tuple result into its target expression.
 fn store_fresh_into_tuple_target(ctx: &mut FnCtx, target: &DAE::Exp, sty: &SigTy, vt: u32) -> Result<()> {
     use DAE::Exp as E;
@@ -6842,17 +6867,11 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         }
         E::CALL { path, expLst, attr } => {
             let results = compile_call(ctx, path, expLst, attr)?;
-            match results.len() {
-                1 => Ok(results[0].wty()),
-                0 => return Err("CodegenWasmJit: call to used in expression position returns no value"),
-                // Only `spatialDistribution` gets here: used as a scalar it is its
-                // first output, as any multi-output function call is.
-                2 if matches!(&**path, Absyn::Path::IDENT { name } if &**name == "spatialDistribution") => {
-                    ctx.emit(we::Instruction::Drop);
-                    Ok(results[0].wty())
-                }
-                _ => return Err("CodegenWasmJit: call to returns multiple values; not usable in expression position"),
+            if results.is_empty() {
+                return Err("CodegenWasmJit: call to used in expression position returns no value");
             }
+            // As a value a call is its first output (`daeExpCall`).
+            keep_call_result(ctx, &results, 0)
         }
         // Array constructor `{e1, e2, ...}` or matrix `{{...}, {...}}`.
         E::ARRAY { ty, .. } | E::MATRIX { ty, .. } => {
@@ -6886,8 +6905,7 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             compile_reduction(ctx, reductionInfo, expr, iterators)
         }
         // `f(...)[ix]` — pick one value out of a multi-output call's result
-        // tuple. Compile the call (leaving all results on the stack, first
-        // deepest), keep the `ix`-th (1-based) and release the rest.
+        // tuple.
         E::TSUB { exp, ix, .. } => {
             let DAE::Exp::CALL { path, expLst, attr } = &**exp else {
                 return Err("CodegenWasmJit: tuple subscript of a non-call expression");
@@ -6896,23 +6914,7 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             let want = (*ix as usize).checked_sub(1)
                 .filter(|&i| i < results.len())
                 .ok_or("CodegenWasmJit: tuple subscript index out of range")?;
-            let mut temps = vec![0u32; results.len()];
-            for i in (0..results.len()).rev() {
-                let vt = ctx.alloc_temp(results[i].wty());
-                ctx.emit(we::Instruction::LocalSet(vt));
-                temps[i] = vt;
-            }
-            for (i, sty) in results.iter().enumerate() {
-                if i == want {
-                    continue;
-                }
-                if let Some(release_fn) = sty.release_fn() {
-                    ctx.emit(we::Instruction::LocalGet(temps[i]));
-                    ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
-                }
-            }
-            ctx.emit(we::Instruction::LocalGet(temps[want]));
-            Ok(results[want].wty())
+            keep_call_result(ctx, &results, want)
         }
         // MetaModelica boxing around a call through a function reference; our
         // closures pass values unboxed, so both are the identity.
@@ -7000,8 +7002,8 @@ fn exp_wty_hint(ctx: &FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         E::UNARY { operator, .. } => operator_wty(operator)?,
         E::IFEXP { expThen, .. } => exp_wty_hint(ctx, expThen)?,
         E::CALL { attr, .. } => match identity_builtin_arg(exp) {
-            Some(inner) if sig_ty_quiet(&attr.ty).is_err() => exp_wty_hint(ctx, &inner)?,
-            _ => sig_ty(&attr.ty)?.wty(),
+            Some(inner) if sig_ty_quiet(&call_value_ty(&attr.ty)).is_err() => exp_wty_hint(ctx, &inner)?,
+            _ => sig_ty(&call_value_ty(&attr.ty))?.wty(),
         },
         E::SHARED_LITERAL { exp, .. } => exp_wty_hint(ctx, exp)?,
         // Array/record handles and `size(a, d)` are `i32`; an array element's /
@@ -7108,6 +7110,16 @@ fn identity_builtin_arg(exp: &DAE::Exp) -> Option<Arc<DAE::Exp>> {
     }
 }
 
+/// The type of a call *as a value*: its first output (`daeExpCall`).
+fn call_value_ty(ty: &Arc<DAE::Type>) -> Arc<DAE::Type> {
+    match &**ty {
+        DAE::Type::T_TUPLE { types, .. } => {
+            (&**types).into_iter().next().cloned().unwrap_or_else(|| ty.clone())
+        }
+        _ => ty.clone(),
+    }
+}
+
 /// The `SigTy` of an expression, from the DAE type annotations it carries (the
 /// component reference's `ty`, a call's result `attr.ty`, a literal's kind, …).
 /// Used where the *Modelica* type matters beyond the wasm representation — e.g.
@@ -7121,7 +7133,7 @@ fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
         E::RCONST { .. } => SigTy::Real,
         E::SCONST { .. } => SigTy::Str,
         E::CREF { ty, .. } => sig_ty_quiet(ty)?,
-        E::CALL { attr, .. } => match sig_ty_quiet(&attr.ty) {
+        E::CALL { attr, .. } => match sig_ty_quiet(&call_value_ty(&attr.ty)) {
             Ok(s) => s,
             Err(e) => match identity_builtin_arg(exp) {
                 Some(inner) => exp_sigty(&inner)?,
