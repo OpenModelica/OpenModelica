@@ -937,7 +937,7 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
   JACOBIAN* jac = getSymbolicOdeJacobian(data);
-  evalJacobian(data, threadData, jac, NULL, NULL, matrixA, TRUE);
+  evalJacobian(data, threadData, jac, NULL, matrixA, TRUE);
 
   return 0;
 }

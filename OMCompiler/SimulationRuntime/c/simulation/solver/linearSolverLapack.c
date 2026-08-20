@@ -106,7 +106,7 @@ void getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, LINEAR_SY
   JACOBIAN* parentJacobian = systemData->parentJacobian;
 
   /* call generic dense Jacobian */
-  evalJacobian(data, threadData, jacobian, parentJacobian, NULL, jac, TRUE);
+  evalJacobian(data, threadData, jacobian, parentJacobian, jac, TRUE);
 
   for (k = 0; k < (jacobian->sizeRows) * (jacobian->sizeCols); k++)
     jac[k] = -jac[k];

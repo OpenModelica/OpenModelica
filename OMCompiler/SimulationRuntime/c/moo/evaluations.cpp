@@ -318,7 +318,7 @@ void eval_mr_write(InfoGDOP& info, f64* eval_mr_buffer) {
 void jac_eval_write_first_row_as_csc(InfoGDOP& info, JACOBIAN* jacobian, f64* full_buffer,
                                      f64* eval_jac_buffer, CscToCoo& exc) {
     assert(jacobian && jacobian->sparsePattern);
-    evalJacobian(info.data, info.threadData, jacobian, NULL, NULL, full_buffer, FALSE);
+    evalJacobian(info.data, info.threadData, jacobian, NULL, full_buffer, FALSE);
 
     for (int nz = 0; nz < exc.nnz_moved_row; nz++) {
         eval_jac_buffer[nz] = full_buffer[exc.coo_to_csc(nz)];
