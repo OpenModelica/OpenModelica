@@ -3897,6 +3897,7 @@ protected function configureFMU_cmake
   input String logfile;
   input list<String> externalLibLocations;
   input Boolean isWindows;
+  input Boolean needs3rdPartyLibs;
 protected
   String fmuSourceDir;
   String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
@@ -4042,6 +4043,11 @@ algorithm
         externalIncludeDirsFile := fmutmp + "/.external_include_dirs";
         if System.regularFileExists(externalIncludeDirsFile) then
           locations := listAppend(System.strtok(System.readFile(externalIncludeDirsFile), "\n"), locations);
+        end if;
+        // CVODE_DIRECTORY is not one of the model's link directories, so nothing would
+        // copy it for a model that has no external libraries of its own.
+        if needs3rdPartyLibs then
+          locations := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc" :: locations;
         end if;
         for loc in locations loop
           if System.directoryExists(loc) then
@@ -4912,7 +4918,7 @@ algorithm
   for platform in platforms loop
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
     if Flags.getConfigBool(Flags.FMU_CMAKE_BUILD) then
-      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows);
+      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows, needs3rdPartyLibs);
     else
       configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
     end if;
