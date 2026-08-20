@@ -1,0 +1,71 @@
+// name:     fmi3_import_boolean
+// keywords: fmu export import boolean
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml terminalsAndIcons BooleanImportFMU* BooleanImport* output.log resources
+// cflags:   -d=-newInst
+//
+// A Modelica boolean is a modelica_boolean, i.e. an int, but the FMI import runtime used to
+// exchange the boolean arrays with the generated wrapper as signed char, so it wrote one byte
+// into every four byte slot and the rest of each element stayed uninitialized. Three booleans
+// are used on purpose: a single one survived the mismatch by accident on a little endian
+// machine.
+//
+
+loadString("
+model BooleanImportFMU
+  parameter Boolean bp1 = false;
+  parameter Boolean bp2 = false;
+  parameter Boolean bp3 = true;
+  Boolean bo1;
+  Boolean bo2;
+  Boolean bo3;
+equation
+  bo1 = not bp1;
+  bo2 = bp2 and bp3;
+  bo3 = bp1 or bp2;
+end BooleanImportFMU;
+"); getErrorString();
+
+buildModelFMU(BooleanImportFMU, version="3.0", fmuType="me"); getErrorString();
+importFMU("BooleanImportFMU.fmu"); getErrorString();
+loadFile("BooleanImportFMU_me_FMU.mo"); getErrorString();
+
+loadString("
+model BooleanImport
+  BooleanImportFMU_me_FMU fmu(bp1 = true, bp2 = true, bp3 = false);
+end BooleanImport;
+"); getErrorString();
+
+simulate(BooleanImport, stopTime=0.0); getErrorString();
+
+// bo1 = not true = false, bo2 = true and false = false, bo3 = true or true = true
+val(fmu.bo1, 0.0);
+val(fmu.bo2, 0.0);
+val(fmu.bo3, 0.0);
+
+// Result:
+// true
+// ""
+// "BooleanImportFMU.fmu"
+// ""
+// "BooleanImportFMU_me_FMU.mo"
+// "Warning: module = Attribute noNamespaceSchemaLocation='https://raw.githubusercontent.com/modelica/fmi-standard/main/schema/fmi3ModelDescription.xsd' is ignored. Using standard fmiModelDescription.xsd., log level = WARNING: FMI3XML
+// "
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "BooleanImport_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'BooleanImport', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "module = FMI3XML, log level = WARNING: Attribute noNamespaceSchemaLocation='https://raw.githubusercontent.com/modelica/fmi-standard/main/schema/fmi3ModelDescription.xsd' is ignored. Using standard fmiModelDescription.xsd.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_ASSERT        | debug   | fmi3SetContinuousStates failed with status : Error
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 0.0
+// 1.0
+// endResult

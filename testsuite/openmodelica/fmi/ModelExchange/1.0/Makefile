@@ -4,6 +4,7 @@ TESTFILES = \
 FMI1MEfmpy.mos \
 FMI1MEcvodeFlag.mos \
 FMI1MEInputOutput.mos \
+fmi1_import_boolean.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
