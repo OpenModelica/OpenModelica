@@ -1,8 +1,7 @@
 // status: correct
-// Note: Requires PATH to include cross-compilers for darwin, mingw, armhf
-// cflags: -d=-newInst
+// Note: Requires PATH to include Docker
 
-if not loadModel(Modelica, {"3.2.3"}) then
+if not loadModel(Modelica, {"4.1.0"}) then
   print(getErrorString());
   exit(1);
 end if;
