@@ -728,10 +728,10 @@ void partestRust(partition) {
   String simCodeTargetArg = params.RUST_PARTEST_SIMCODETARGET ? " -simCodeTarget=${params.RUST_PARTEST_SIMCODETARGET}" : ''
   // cpp/hpcom: the Rust omc is built without the C++ runtime. metamodelica:
   // MetaModelica code generation only works against the C runtime.
-  // fmuCSources checks the generated C files or the list in the XML - wasm-jit does not use C
+  // cSources/fmuCSources check generated C files or FMU sources - wasm-jit does not use C
   // 63bit/antlr: the port's Integer is i32 and its parser is winnow, not ANTLR
   // stackoverflow: Rust aborts on stack overflow, MMC unwinds out of the SEGV handler
-  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-fmuCSources,-stackoverflow'
+  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-cSources,-fmuCSources,-stackoverflow'
   // wasmtime reserves ~4 GiB of address space per wasm memory, and shrinking that
   // reservation to fit an RLIMIT_AS costs the bounds-check-free fast path.
   String asLimit = params.RUST_PARTEST_SIMCODETARGET == 'wasm-jit'
