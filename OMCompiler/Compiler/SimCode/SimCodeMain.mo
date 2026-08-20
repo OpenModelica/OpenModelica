@@ -1222,7 +1222,7 @@ algorithm
         // Written as a dot file so it doesn't end up in the FMU archive.
         // See https://github.com/OpenModelica/OpenModelica/issues/9509
         System.writeFile(fmutmp + "/.external_include_dirs",
-                         stringDelimitList(list(substring(i, 4, stringLength(i)-1) for i in simCode.makefileParams.includes), "\n"));
+                         stringDelimitList(list(SimCodeUtil.stripIncludeFlag(i) for i in simCode.makefileParams.includes), "\n"));
 
         // Set model define include in the FMI model interface source. The
         // interface source includes a version-specific placeholder header

@@ -1,4 +1,4 @@
-.PHONE: clean test fmuExportCrossCompile CMakeCrossCompile ExternalDependency
+.PHONY: clean test fmuExportCrossCompile CMakeCrossCompile ExternalDependency
 
 DOCKER_IMAGE := ghcr.io/openmodelica/crossbuild:v1.27.0
 

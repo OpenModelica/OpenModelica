@@ -16779,17 +16779,22 @@ algorithm
   end match;
 end cvodeFmiFlagIsSet;
 
+public function stripIncludeFlag
+  "Directory of a makefileParams include entry, which is of the form \"-I<directory>\",
+   quotes included. Strips exactly the first 3 characters and the trailing quote, e.g.
+   \"-IC:/FmuWithStaticLibEndsWithI\" to C:/FmuWithStaticLibEndsWithI."
+  input String include;
+  output String directory = substring(include, 4, stringLength(include)-1);
+end stripIncludeFlag;
+
 public function make2CMakeInclude
   "Convert makefile include directories to CMake include directories"
   input list<String> includes;
   output String cmakeCode = "";
 algorithm
-  // Each include is of the form "-I<directory>", quotes included. Strip exactly the
-  // first 3 characters and the trailing quote, e.g. "-IC:/FmuWithStaticLibEndsWithI"
-  // to C:/FmuWithStaticLibEndsWithI.
   for include in includes loop
     cmakeCode := cmakeCode + "\n                                               " +
-                 "\"${DOCKER_VOL_DIR}" + substring(include, 4, stringLength(include)-1) + "\"";
+                 "\"${DOCKER_VOL_DIR}" + stripIncludeFlag(include) + "\"";
   end for;
 end make2CMakeInclude;
 

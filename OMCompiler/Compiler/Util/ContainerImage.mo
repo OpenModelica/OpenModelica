@@ -45,6 +45,7 @@ protected
   import Error;
   import JSON;
   import StringUtil;
+  import System;
   import Util;
 
   constant String containerTool = "docker" "Simplify future switch to other container virtualization software, e.g. podman";
@@ -132,7 +133,7 @@ public
 
     // TODO: docker manifest inspect is experimental!
     // See https://docs.docker.com/reference/cli/docker/manifest/inspect/
-    cmd := ContainerImage.containerTool + " manifest inspect " + imageName + " -v";
+    cmd := ContainerImage.containerTool + " manifest inspect " + quoteForShell(imageName) + " -v";
     if System.systemCall(cmd, outFile=manifestFile) <> 0 then
       Error.addCompilerError("Failed to retrieve manifest of container image '" + imageName + "'.");
       Error.addCompilerNotification(System.readFile(manifestFile) + "\n");
@@ -277,7 +278,7 @@ public
   algorithm
     pullLogFile := image.repository + "_pull.log";
 
-    cmd := ContainerImage.containerTool + " pull " + imageName;
+    cmd := ContainerImage.containerTool + " pull " + quoteForShell(imageName);
     if System.systemCall(cmd, outFile=pullLogFile) <> 0 then
       Error.addCompilerError("Failed to pull container image '" + imageName + "'.");
       Error.addCompilerNotification(System.readFile(pullLogFile) + "\n");
@@ -292,7 +293,7 @@ public
   function pullCommand
     "Return the command to download the container image manually."
     input ContainerImage image;
-    output String cmd = ContainerImage.containerTool + " pull " + toString(image);
+    output String cmd = ContainerImage.containerTool + " pull " + quoteForShell(toString(image));
   end pullCommand;
 
   function isAvailableLocally
@@ -312,7 +313,7 @@ public
       System.removeFile(inspectLogFile);
     end if;
 
-    cmd := ContainerImage.containerTool + " image inspect " + imageName;
+    cmd := ContainerImage.containerTool + " image inspect " + quoteForShell(imageName);
     isAvailable := System.systemCall(cmd, outFile=inspectLogFile) == 0;
 
     if System.regularFileExists(inspectLogFile) then
@@ -364,7 +365,7 @@ public
     end if;
 
     // Verification using cosign
-    cmd := "cosign verify " + imageReference +
+    cmd := "cosign verify " + quoteForShell(imageReference) +
            " --certificate-identity=https://github.com/OpenModelica/openmodelica-crossbuild/.github/workflows/publish.yml@refs/tags/v1.27.0" +
            " --certificate-oidc-issuer=https://token.actions.githubusercontent.com";
 
@@ -446,6 +447,18 @@ protected
         then fail();
     end match;
   end parseContainerHostPort;
+
+  function quoteForShell
+    "Single-quote a container reference for the shell. parseContainerReference does not
+     constrain the character set of host, namespace, repository or tag, and the reference
+     comes from the user via the platforms argument, so it must not reach a shell bare."
+    input String str;
+    output String quoted;
+  algorithm
+    // Close the quote, escape the quote character, reopen: the POSIX way, as there is
+    // no escape inside a single-quoted string.
+    quoted := "'" + System.stringReplace(str, "'", "'\\''") + "'";
+  end quoteForShell;
 
   function parseContainerRepository
     "Parse container image repository string:
