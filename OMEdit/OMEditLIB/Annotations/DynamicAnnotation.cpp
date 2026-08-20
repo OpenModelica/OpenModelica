@@ -260,18 +260,24 @@ FlatModelica::Expression DynamicAnnotation::evaluate_helper(FlatModelica::Expres
         QPair<double, bool> value = MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time, false);
         if (value.second) {
           return FlatModelica::Expression(value.first);
-        } else {
-          throw std::runtime_error(vname.toStdString() + " could not be found in " + pModel->getName().toStdString());
         }
       } else {
         // qDebug() << "Evaluating variable:" << vname << "from model:" << (pModel ? pModel->getName() : "null") << "using value:" << value;
         auto valueOrBindingExpression = pModel ? pModel->getVariableValueOrBinding(vname, value) : nullptr;
-        if (!valueOrBindingExpression) {
-          throw std::runtime_error(vname.toStdString() + " could not be found in " + pModel->getName().toStdString());
-        } else {
+        if (valueOrBindingExpression) {
           return *valueOrBindingExpression;
         }
       }
+      /* The name is not a variable of the model and is not in the result file. It can still
+       * be a constant declared somewhere else in the library, e.g. Modelica.Constants.eps,
+       * which the instance API gives us as a fully qualified name. Ask OMC for its value.
+       */
+      auto pConstantExpression = lookupConstant(vname);
+      if (pConstantExpression) {
+        return *pConstantExpression;
+      }
+      throw std::runtime_error(vname.toStdString() + " could not be found in "
+                               + (pModel ? pModel->getName().toStdString() : std::string("the model")));
     };
 
     // Keep evaluating until the expression reduces to a literal. Some DynamicSelect
@@ -298,6 +304,35 @@ FlatModelica::Expression DynamicAnnotation::evaluate_helper(FlatModelica::Expres
 
     return FlatModelica::Expression();
   }
+}
+
+/*!
+ * \brief DynamicAnnotation::lookupConstant
+ * Returns the value of a name that is not an element of the model, e.g. a constant
+ * declared somewhere else in the library like Modelica.Constants.eps.
+ * The values are cached since the annotation is evaluated over and over again while
+ * the animation runs.
+ * \param name
+ * \return the value, or 0 if the name has no value.
+ */
+const FlatModelica::Expression *DynamicAnnotation::lookupConstant(const QString &name)
+{
+  auto it = mConstants.find(name);
+  if (it == mConstants.end()) {
+    FlatModelica::Expression expression;
+    const QString value = MainWindow::instance()->getOMCProxy()->evaluateConstant(name);
+    if (!value.isEmpty()) {
+      try {
+        expression = FlatModelica::Expression::parse(value);
+      } catch (const std::exception &e) {
+        if (MainWindow::instance()->isDebug()) {
+          qDebug() << "Failed to parse the value of" << name << ":" << e.what();
+        }
+      }
+    }
+    it = mConstants.insert(name, expression);
+  }
+  return it.value().isNull() ? nullptr : &it.value();
 }
 
 void DynamicAnnotation::setExp()

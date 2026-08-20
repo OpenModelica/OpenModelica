@@ -1185,6 +1185,35 @@ QString OMCProxy::getErrorString(bool warningsAsErrors)
 }
 
 /*!
+ * \brief OMCProxy::evaluateConstant
+ * Evaluates a fully qualified name in the scripting environment and returns its value,
+ * e.g. Modelica.Constants.eps gives 2.220446049250313e-16.
+ * Used for names that are not elements of the model at hand, like a constant declared
+ * somewhere else in the library.
+ * \param name
+ * \return the value as a Modelica literal, or an empty string if the name has no value.
+ */
+QString OMCProxy::evaluateConstant(const QString &name)
+{
+  /* Only a dotted sequence of identifiers is evaluated so that the scripting environment
+   * is never handed anything but a name.
+   */
+  static QRegularExpression qualifiedName("^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$");
+  if (!qualifiedName.match(name).hasMatch()) {
+    return "";
+  }
+  sendCommand(name);
+  const QString result = getResult().trimmed();
+  if (result.isEmpty()) {
+    /* A name that has no value leaves an error behind. Consume it since the caller
+     * handles the name as unknown instead of showing the error to the user.
+     */
+    getErrorString();
+  }
+  return result;
+}
+
+/*!
  * \brief OMCProxy::printMessagesStringInternal
  * Gets the errors by using the getMessagesStringInternal API.
  * Reads all the errors and add them to the Messages Browser.
