@@ -734,11 +734,13 @@ pub(crate) fn compile_linear_system(
     ctx.emit(we::Instruction::End); // loop
     ctx.emit(we::Instruction::End); // block
 
-    // --- solve, scatter, recover the torn variables, free the scratch. ---
-    emit_lin_solve_scatter(ctx, base, b_off, n, &slots, use_sparse, method1.then_some(x0_off), index, lower_inner)
+    // --- solve, scatter, recover the torn variables, free the scratch. `res0` is
+    // spent by now, so the step check reuses it. ---
+    let m1 = method1.then_some(Method1 { res_off: res0_off, res_exps });
+    emit_lin_solve_scatter(ctx, base, b_off, n, &slots, use_sparse, m1, index, lower_inner)
 }
 
-/// `rt_linsolve`'s trailing `(index, time)`, read only by its fallback warning.
+/// The `(index, time)` a solver's warnings need.
 fn emit_linsolve_context(ctx: &mut FnCtx, index: i32) -> Result<()> {
     use we::Instruction as I;
     let data = ctx.sim()?.data_local;
@@ -753,6 +755,15 @@ fn emit_linsolve_context(ctx: &mut FnCtx, index: i32) -> Result<()> {
 fn emit_singular_check(ctx: &mut FnCtx) -> Result<()> {
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
     emit_runtime_error(ctx, "wasm-jit: linear system is singular (no unique solution)")?;
+    ctx.emit(we::Instruction::End);
+    Ok(())
+}
+
+/// C's `check_linear_solution` for a solver with no fallback left — consumes the
+/// i32 result on the stack.
+fn emit_lin_unsolved(ctx: &mut FnCtx, index: i32) -> Result<()> {
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    emit_runtime_error(ctx, &format!("Solving linear system {index} failed. For more information use -lv LOG_LS."))?;
     ctx.emit(we::Instruction::End);
     Ok(())
 }
@@ -798,15 +809,14 @@ fn old_slot(old_real: Option<(u32, u32)>, off: u32) -> Option<u32> {
 }
 
 /// Scatter the solve's result (at `base+b_off`) into `slots`, recover the torn
-/// variables (`lower_inner` at the solution), and free `base`. `x0_off` makes the
-/// result a step to add to it (C's method 1); without it, the solution itself.
+/// variables (`lower_inner` at the solution), and free `base`. C's method 0, whose
+/// solution is the unknowns themselves; method 1 steps instead ([`emit_lin_step`]).
 fn emit_scatter_recover_free(
     ctx: &mut FnCtx,
     base: u32,
     b_off: u32,
     n: usize,
     slots: &[u32],
-    x0_off: Option<u32>,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
@@ -815,14 +825,96 @@ fn emit_scatter_recover_free(
         ctx.emit(I::LocalGet(data));
         ctx.emit(I::LocalGet(base));
         ctx.emit(I::F64Load(mem_arg(b_off + (j as u32) * 8, 3)));
-        if let Some(x0_off) = x0_off {
-            ctx.emit(I::LocalGet(base));
-            ctx.emit(I::F64Load(mem_arg(x0_off + (j as u32) * 8, 3)));
-            ctx.emit(I::F64Add);
-        }
         ctx.emit(I::F64Store(mem_arg(slots[j], 3)));
     }
     lower_inner(ctx)?;
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::Call(rt_index("rt_free")?));
+    Ok(())
+}
+
+/// A method-1 system's step check: `res_exps` re-evaluated at the step, into the
+/// scratch at `res_off`.
+struct Method1<'a> {
+    res_off: u32,
+    res_exps: &'a [&'a Arc<DAE::Exp>],
+}
+
+/// Take the step `dx` at `base+b_off`, recover the torn variables there, and hold
+/// it to C's method-1 residual test (`rt_ls_check_step`). A rejected step is redone
+/// with total pivoting on the same `A` — `solve_linear_system`'s `LS_DEFAULT`
+/// fallback, which C reaches by re-assembling from the stepped unknowns. The retry
+/// is a second pass of this same body, so it recomputes what C recomputes.
+#[allow(clippy::too_many_arguments)]
+fn emit_lin_step(
+    ctx: &mut FnCtx,
+    base: u32,
+    b_off: u32,
+    n: usize,
+    slots: &[u32],
+    use_sparse: bool,
+    index: i32,
+    m1: &Method1,
+    lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    let data = ctx.sim()?.data_local;
+    // `retry` guards the second pass: C never checks the total-pivot step.
+    let retry = (!use_sparse).then(|| {
+        let l = ctx.alloc_temp(WTy::I32);
+        ctx.emit(I::I32Const(0));
+        ctx.emit(I::LocalSet(l));
+        ctx.emit(I::Block(we::BlockType::Empty));
+        ctx.emit(I::Loop(we::BlockType::Empty));
+        l
+    });
+
+    for j in 0..n {
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::F64Load(mem_arg(slots[j], 3)));
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::F64Load(mem_arg(b_off + (j as u32) * 8, 3)));
+        ctx.emit(I::F64Add);
+        ctx.emit(I::F64Store(mem_arg(slots[j], 3)));
+    }
+    emit_residual_eval(ctx, base, m1.res_exps, m1.res_off, lower_inner)?;
+
+    if let Some(retry) = retry {
+        ctx.emit(I::LocalGet(retry));
+        ctx.emit(I::BrIf(1));
+    }
+    // rt_ls_check_step(res_ptr, b_ptr, n, index, time, dense).
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::I32Const(m1.res_off as i32));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::I32Const(b_off as i32));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Const(n as i32));
+    emit_linsolve_context(ctx, index)?;
+    ctx.emit(I::I32Const(!use_sparse as i32)); // `dense`: a rejected step can retry
+    ctx.emit(I::Call(rt_index("rt_ls_check_step")?));
+    match retry {
+        Some(retry) => {
+            ctx.emit(I::I32Eqz);
+            ctx.emit(I::BrIf(1));
+            ctx.emit(I::LocalGet(base)); // a_ptr, untouched by the solve
+            ctx.emit(I::LocalGet(base));
+            ctx.emit(I::I32Const(b_off as i32));
+            ctx.emit(I::I32Add);
+            ctx.emit(I::I32Const(n as i32));
+            ctx.emit(I::Call(rt_index("rt_linsolve_totalpivot")?));
+            emit_singular_check(ctx)?;
+            ctx.emit(I::I32Const(1));
+            ctx.emit(I::LocalSet(retry));
+            ctx.emit(I::Br(0));
+            ctx.emit(I::End); // loop
+            ctx.emit(I::End); // block
+        }
+        None => emit_lin_unsolved(ctx, index)?,
+    }
+
     ctx.emit(I::LocalGet(base));
     ctx.emit(I::Call(rt_index("rt_free")?));
     Ok(())
@@ -839,7 +931,7 @@ fn emit_lin_solve_scatter(
     n: usize,
     slots: &[u32],
     use_sparse: bool,
-    x0_off: Option<u32>,
+    m1: Option<Method1>,
     index: i32,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
@@ -852,10 +944,14 @@ fn emit_lin_solve_scatter(
     let solver = if use_sparse { "rt_solve_lin_dense_sparse" } else { "rt_linsolve" };
     if !use_sparse {
         emit_linsolve_context(ctx, index)?;
+        ctx.emit(I::I32Const(m1.is_some() as i32)); // a step check follows
     }
     ctx.emit(I::Call(rt_index(solver)?));
     emit_singular_check(ctx)?;
-    emit_scatter_recover_free(ctx, base, b_off, n, slots, x0_off, lower_inner)
+    match &m1 {
+        Some(m1) => emit_lin_step(ctx, base, b_off, n, slots, use_sparse, index, m1, lower_inner),
+        None => emit_scatter_recover_free(ctx, base, b_off, n, slots, lower_inner),
+    }
 }
 
 /// Lower a torn linear system `A dx = b` by analytic-Jacobian assembly (C's method
@@ -897,12 +993,13 @@ pub(crate) fn compile_linear_system_analytic(
     }
     let data = ctx.sim()?.data_local;
 
-    // Scratch: A (n*n column-major f64) | b (n f64) | xold (n f64) | seed_tab
-    // (n i32) | res_tab (n i32). The two i32 tables hold the seed/result slot
-    // offsets so the column loop can index them at run time.
+    // Scratch: A (n*n column-major f64) | b (n f64) | xold (n f64) | res (n f64)
+    // | seed_tab (n i32) | res_tab (n i32). The two i32 tables hold the
+    // seed/result slot offsets so the column loop can index them at run time.
     let b_off: u32 = (n * n * 8) as u32;
     let xold_off: u32 = b_off + (n * 8) as u32;
-    let seed_tab_off: u32 = xold_off + (n * 8) as u32;
+    let res_off: u32 = xold_off + (n * 8) as u32;
+    let seed_tab_off: u32 = res_off + (n * 8) as u32;
     let res_tab_off: u32 = seed_tab_off + (n * 4) as u32;
     let scratch_bytes: u32 = res_tab_off + (n * 4) as u32;
     let base = ctx.alloc_temp(WTy::I32);
@@ -1038,7 +1135,8 @@ pub(crate) fn compile_linear_system_analytic(
     ctx.emit(I::End);
     ctx.emit(I::End);
 
-    emit_lin_solve_scatter(ctx, base, b_off, n, &slots, use_sparse, Some(xold_off), index, lower_inner)
+    let m1 = Method1 { res_off, res_exps };
+    emit_lin_solve_scatter(ctx, base, b_off, n, &slots, use_sparse, Some(m1), index, lower_inner)
 }
 
 /// Greedy distance-1 column coloring (Curtis-Powell-Reid) of the CSC pattern:
@@ -1137,12 +1235,13 @@ pub(crate) fn compile_linear_system_analytic_csc(
     let data = ctx.sim()?.data_local;
 
     // Scratch (f64 regions first for 8-alignment): values (nnz) | b (n) | xold (n)
-    // | colptr (n+1 i32) | rowidx (nnz i32) | seed_tab (n i32) | res_tab (n i32) |
-    // color_ptr (ncolors+1 i32) | color_cols (n i32).
+    // | res (n) | colptr (n+1 i32) | rowidx (nnz i32) | seed_tab (n i32) |
+    // res_tab (n i32) | color_ptr (ncolors+1 i32) | color_cols (n i32).
     let values_off: u32 = 0;
     let b_off: u32 = (nnz * 8) as u32;
     let xold_off: u32 = b_off + (n * 8) as u32;
-    let colptr_off: u32 = xold_off + (n * 8) as u32;
+    let res_off: u32 = xold_off + (n * 8) as u32;
+    let colptr_off: u32 = res_off + (n * 8) as u32;
     let rowidx_off: u32 = colptr_off + ((n + 1) * 4) as u32;
     let seed_tab_off: u32 = rowidx_off + (nnz * 4) as u32;
     let res_tab_off: u32 = seed_tab_off + (n * 4) as u32;
@@ -1367,7 +1466,8 @@ pub(crate) fn compile_linear_system_analytic_csc(
     ctx.emit(I::I32Const(nnz as i32));
     ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
     emit_singular_check(ctx)?;
-    emit_scatter_recover_free(ctx, base, b_off, n, &slots, Some(xold_off), lower_inner)
+    let m1 = Method1 { res_off, res_exps };
+    emit_lin_step(ctx, base, b_off, n, &slots, true, handle, &m1, lower_inner)
 }
 
 /// C's linear sparse-solver selection: density below `lssMaxDensity` (default
@@ -1528,13 +1628,14 @@ pub(crate) fn compile_linear_system_symbolic(
             ctx.emit(I::F64Store(mem_arg(elem_off, 3)));
         }
         emit_b_exps(ctx, base, b_off, b_exps)?;
-        // rt_linsolve(a_ptr, b_ptr, n, index, time).
+        // rt_linsolve(a_ptr, b_ptr, n, index, time, method1).
         ctx.emit(I::LocalGet(base)); // a_ptr (a_off == 0)
         ctx.emit(I::LocalGet(base));
         ctx.emit(I::I32Const(b_off as i32));
         ctx.emit(I::I32Add);
         ctx.emit(I::I32Const(n as i32));
         emit_linsolve_context(ctx, index)?;
+        ctx.emit(I::I32Const(0)); // method 0: the solution is the unknowns
         ctx.emit(I::Call(rt_index("rt_linsolve")?));
     }
 

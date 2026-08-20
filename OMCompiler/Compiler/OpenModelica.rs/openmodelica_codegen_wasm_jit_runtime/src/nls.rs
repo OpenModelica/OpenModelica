@@ -326,7 +326,7 @@ const LAMBDA_MIN: f64 = 9.765625e-4;
 
 /// Euclidean norm (C's `enorm_`). NaN propagates, so a diverged residual falls
 /// through every `< eps` test to the iteration-limit failure.
-fn enorm(v: &[f64]) -> f64 {
+pub(crate) fn enorm(v: &[f64]) -> f64 {
     let mut s = 0.0;
     for &x in v {
         s += x * x;
@@ -338,15 +338,25 @@ fn enorm(v: &[f64]) -> f64 {
 /// Returns `true` on success, `false` on a singular/failed factorization (in
 /// which case `b` is unchanged). Shared by [`newton_solve`] and `rt_linsolve`.
 pub(crate) fn lu_solve(a: &[f64], b: &mut [f64], n: usize) -> bool {
+    lu_solve_singular_pivot(a, b, n).is_none()
+}
+
+/// [`lu_solve`] reporting `dgesv`'s `info`: `None` on success, else the 0-based
+/// index of the first zero pivot on `U`'s diagonal.
+pub(crate) fn lu_solve_singular_pivot(a: &[f64], b: &mut [f64], n: usize) -> Option<usize> {
     use nalgebra::{DMatrix, DVector};
     let am = DMatrix::<f64>::from_column_slice(n, n, a);
     let bv = DVector::<f64>::from_column_slice(b);
-    match am.lu().solve(&bv) {
+    let lu = am.lu();
+    match lu.solve(&bv) {
         Some(x) => {
             b.copy_from_slice(x.as_slice());
-            true
+            None
         }
-        None => false,
+        None => {
+            let u = lu.u();
+            Some((0..n).find(|&i| u[(i, i)] == 0.0).unwrap_or(n.saturating_sub(1)))
+        }
     }
 }
 

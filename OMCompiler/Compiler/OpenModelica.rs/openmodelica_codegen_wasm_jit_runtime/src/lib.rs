@@ -2429,13 +2429,15 @@ pub extern "C" fn rt_lin_solves() -> u64 {
 
 /// Solve the dense `n`×`n` system `A x = b` in place: `A` is `a_ptr` as `n*n`
 /// f64 in **column-major** order, `b` is `b_ptr` as `n` f64. On success `b ← x`
-/// and 0 is returned; 1 only when the system is genuinely unsolvable.
+/// and 0 is returned; 1 only when the system is genuinely unsolvable. `A` is left
+/// intact for [`rt_linsolve_totalpivot`].
 ///
 /// LU with partial pivoting (like C's `dgesv`), then a total-pivot search on a
 /// singular matrix, mirroring C's `LS_DEFAULT`; `-ls=klu`/`-ls=umfpack` use
-/// SuiteSparse instead.
+/// SuiteSparse instead. `method1`: a [`rt_ls_check_step`] follows, and is what
+/// decides whether the system is solved.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64) -> i32 {
+pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64, method1: i32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let n = n as usize;
     #[cfg(sundials)]
@@ -2456,43 +2458,128 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, tim
     // fallback. `-ls=umfpack` only gets here having found the matrix singular.
     let lu_first = !matches!(solvers::ls(), solvers::Ls::TotalPivot | solvers::Ls::Umfpack);
     if lu_first {
-        if nls::lu_solve(a, b, n) {
-            ls_solved(eq_index);
-            return 0;
+        match nls::lu_solve_singular_pivot(a, b, n) {
+            None => {
+                if method1 == 0 {
+                    ls_solved(eq_index);
+                }
+                return 0;
+            }
+            Some(k) => {
+                let count = ls_note_failure(eq_index);
+                // C prints `dgesv`'s 1-based `info` one too high; keep the text.
+                omclog::warning_with_limit(
+                    omclog::LS,
+                    count,
+                    solvers::max_warn_displays(),
+                    &alloc::format!(
+                        "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}, system is singular for U[{p}, {p}].",
+                        p = k + 2
+                    ),
+                );
+                ls_report_fallback(eq_index, time, count);
+                ls_failure_entry(eq_index).fell_back = true;
+            }
         }
-        ls_report_fallback(eq_index, time);
     }
     if nls::total_pivot_solve(a, b, n) { 0 } else { 1 }
 }
 
+/// C's `solveTotalPivot` fallback for a step [`rt_ls_check_step`] rejected: the
+/// same `A` — a linear system's Jacobian does not depend on its unknowns, so C's
+/// re-evaluation of it lands on the same numbers — against the negated residual.
+/// 0 ok, 1 inconsistent. Same `solve_linear_system` call, so not a new solve.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_linsolve_totalpivot(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
+    let n = n as usize;
+    let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
+    let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+    if nls::total_pivot_solve(a, b, n) { 0 } else { 1 }
+}
+
+/// C's method-1 step test (`solveLapack`, `solveKlu`, …): the step `dx` only counts
+/// if the residual `res` re-evaluated at `x + dx` is small — an ill-conditioned
+/// matrix passes the factorization and still leaves the equations unsatisfied.
+/// Returns 1 when the solve must be redone, with `-res` in `b` to step on from
+/// where the unknowns now are. Only the `-ls` (`dense`) solvers have that retry;
+/// a sparse system's rejected step leaves it unsolved, as in C.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64, dense: i32) -> i32 {
+    // `-ls=totalpivot` has no check, and a fallback solve's step already is one.
+    if dense != 0 && matches!(solvers::ls(), solvers::Ls::TotalPivot) {
+        return 0;
+    }
+    if core::mem::replace(&mut ls_failure_entry(eq_index).fell_back, false) {
+        return 0;
+    }
+    let n = n as usize;
+    let res = unsafe { core::slice::from_raw_parts(res_ptr as *const f64, n) };
+    let norm = nls::enorm(res);
+    if !(norm.is_nan() || norm > 1e-4) {
+        ls_solved(eq_index);
+        return 0;
+    }
+    let count = ls_note_failure(eq_index);
+    omclog::warning_with_limit(
+        omclog::LS,
+        count,
+        solvers::max_warn_displays(),
+        &alloc::format!(
+            "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}. Residual norm is {}.",
+            openmodelica_sim_meta::driver::format_g(norm, 15)
+        ),
+    );
+    if dense != 0 {
+        ls_report_fallback(eq_index, time, count);
+        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+        for (bi, &ri) in b.iter_mut().zip(res) {
+            *bi = -ri;
+        }
+    }
+    1
+}
+
 /// C's per-system `linsys->failed` / `numberOfFailures`: the first failure after
 /// a success warns on stdout, a run of them only on `LOG_LS`.
-struct LsFailures(core::cell::UnsafeCell<alloc::vec::Vec<(i32, bool, u64)>>);
+struct LsFailure {
+    eq_index: i32,
+    failed: bool,
+    failures: u64,
+    /// The last solve was the total-pivot fallback, whose step C takes unchecked.
+    fell_back: bool,
+}
+struct LsFailures(core::cell::UnsafeCell<alloc::vec::Vec<LsFailure>>);
 unsafe impl Sync for LsFailures {}
 static LS_FAILURES: LsFailures = LsFailures(core::cell::UnsafeCell::new(alloc::vec::Vec::new()));
 
-fn ls_failure_entry(eq_index: i32) -> &'static mut (i32, bool, u64) {
+fn ls_failure_entry(eq_index: i32) -> &'static mut LsFailure {
     let v = unsafe { &mut *LS_FAILURES.0.get() };
-    if let Some(i) = v.iter().position(|e| e.0 == eq_index) {
+    if let Some(i) = v.iter().position(|e| e.eq_index == eq_index) {
         return &mut v[i];
     }
-    v.push((eq_index, false, 0));
+    v.push(LsFailure { eq_index, failed: false, failures: 0, fell_back: false });
     v.last_mut().unwrap()
 }
 
 fn ls_solved(eq_index: i32) {
-    ls_failure_entry(eq_index).1 = false;
+    ls_failure_entry(eq_index).failed = false;
+}
+
+/// C's `++systemData->numberOfFailures`, shared by both warnings of one failure.
+fn ls_note_failure(eq_index: i32) -> u64 {
+    let e = ls_failure_entry(eq_index);
+    e.failures += 1;
+    e.failures
 }
 
 /// C's `solve_linear_system` `LS_DEFAULT` branch.
-fn ls_report_fallback(eq_index: i32, time: f64) {
+fn ls_report_fallback(eq_index: i32, time: f64, count: u64) {
     let e = ls_failure_entry(eq_index);
-    let stream = if e.1 { omclog::LS } else { omclog::STDOUT };
-    e.1 = true;
-    e.2 += 1;
+    let stream = if e.failed { omclog::LS } else { omclog::STDOUT };
+    e.failed = true;
     omclog::warning_with_limit(
         stream,
-        e.2,
+        count,
         solvers::max_warn_displays(),
         &alloc::format!(
             "The default linear solver fails, the fallback solver with total pivoting is started at time {time:.6}. That might raise performance issues, for more information use -lv LOG_LS."

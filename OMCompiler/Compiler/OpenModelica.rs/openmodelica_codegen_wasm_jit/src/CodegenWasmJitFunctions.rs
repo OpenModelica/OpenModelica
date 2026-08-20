@@ -450,8 +450,15 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_string_format_int", &[WTy::I32, WTy::I32], &[WTy::I32]),
     // Dense linear solve `A x = b` in place (A column-major `n*n` f64 at a_ptr,
     // b `n` f64 at b_ptr; solution overwrites b), then the equation index and time
-    // the fallback warning needs. Returns 0 ok, 1 singular.
-    ("rt_linsolve", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
+    // the fallback warning needs and whether a `rt_ls_check_step` follows.
+    // Returns 0 ok, 1 singular.
+    ("rt_linsolve", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
+    // The same `A` re-solved with total pivoting: (a_ptr, b_ptr, n) -> 0 ok / 1
+    // inconsistent. C's fallback for a method-1 step `rt_ls_check_step` rejected.
+    ("rt_linsolve_totalpivot", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // Method-1 step test: (res_ptr, b_ptr, n, index, time, dense) -> 1 when the
+    // step must be redone, `b` then holding `-res`. See `rt_ls_check_step`.
+    ("rt_ls_check_step", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
     // Sparse linear solve `A x = b` in place, A in CSC: (colptr n+1 i32, rowidx
     // nnz i32, values nnz f64, b_ptr n f64, n, nnz) -> 0 ok / 1 singular. The C
     // runtime's KLU path (AMD-ordered sparse LU); see `rt_solve_lin_sparse`.
