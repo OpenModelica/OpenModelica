@@ -401,6 +401,9 @@ pub trait SimEngine {
     /// C's `cleanUpOldValueListAfterEvent`. Default: none (an engine that never
     /// integrates).
     fn clean_nls_history(&mut self, _time: f64) {}
+    /// C's `RHSFinalFlag` (`dassl.c`): 0 while DASKR evaluates the residual, 1
+    /// while the accepted step's outputs are evaluated, for `external "C"` to read.
+    fn set_rhs_final(&mut self, _final_eval: bool) {}
 }
 
 /// C's `EVAL_CONTEXT`, mirrored from the runtime's `nls.rs`. `unsetContext` restores
@@ -4649,6 +4652,7 @@ impl DasslDriver {
         // Silence DASKR's own diagnostic printing (it would go to stdout and corrupt
         // the omc result record); failures are surfaced here via IDID instead.
         daskr::auxiliary::xsetf(0);
+        e.set_rhs_final(false); // C's `dassl_initial`
         let layout = &model.layout;
         // Init (with homotopy fallback). No state events on this path, so relations
         // stay fresh (mode 2); `rt_solve_nls` still holds them internally.
@@ -4782,6 +4786,10 @@ impl Driver for DasslDriver {
         // output interval ahead) and emits a second row at the start time.
         if no_grid && !self.no_grid_primed {
             self.no_grid_primed = true;
+            // The step size is zero, so C's `dassl_step` takes its "desired step
+            // size too small" branch instead of calling DASKR: a zero-length Euler
+            // step, which leaves the states alone, and one `functionODE`.
+            eval_ode(e, sim_data, layout)?;
             emit_row(e, &mut self.rows, sim_data, layout, self.t, stop)?;
         }
 
@@ -4900,6 +4908,7 @@ impl Driver for DasslDriver {
             if logging {
                 log_dassl_step(self.t);
             }
+            e.set_rhs_final(false); // C's `dassl_step`: clear for DASKR's own evaluations
             unsafe {
                 solver::ddaskr(
                     dassl_res, neq, &mut self.t, self.y.as_mut_ptr(), self.yp.as_mut_ptr(),
@@ -4909,6 +4918,7 @@ impl Driver for DasslDriver {
                     solver::dummy_psol, solver::dummy_rt, nrt, self.jroot.as_mut_ptr(),
                 );
             }
+            e.set_rhs_final(true); // ... and set for the output evaluation
             if logging && self.idid != -1 {
                 log_dassl_stats(self.idid, self.t, &self.rwork, &self.iwork);
             }
