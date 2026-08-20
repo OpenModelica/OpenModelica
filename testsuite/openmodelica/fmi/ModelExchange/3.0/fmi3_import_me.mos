@@ -6,7 +6,7 @@
 // the wrapper. The result is cos(t), which is what der(x) = v, der(v) = -x with
 // x(0) = 1 and v(0) = 0 has to give. See OpenModelica/OpenModelica#16173.
 //
-// teardown_command: rm -rf Osc3.fmu Osc3_me_FMU.mo Osc3_me_FMU* Osc3.log Osc3_info.json Osc3.fmutmp/ binaries sources documentation modelDescription.xml terminalsAndIcons resources
+// teardown_command: rm -rf Osc3.fmu Osc3_me_FMU.mo Osc3_me_FMU* Osc3.log Osc3_info.json Osc3.fmutmp/ binaries sources documentation modelDescription.xml terminalsAndIcons Osc3_FMU.libs Osc3_FMU.makefile Osc3_external_functions.json resources
 
 setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
 

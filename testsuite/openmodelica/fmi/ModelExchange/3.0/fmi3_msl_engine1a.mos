@@ -1,7 +1,7 @@
 // name: fmi3_msl_engine1a
 // keywords: FMI 3.0 export MSL MultiBody FMPy
 // status: correct
-// teardown_command: rm -rf Engine1a.fmu Engine1a.fmutmp/ Engine1a_ref* Engine1a_fmpy.csv Engine1a_diff.*.csv Engine1a_info.json *.log
+// teardown_command: rm -rf Engine1a.fmu Engine1a.fmutmp/ Engine1a_ref* Engine1a_fmpy.csv Engine1a_diff.*.csv Engine1a_info.json *.log Engine1a_FMU.libs Engine1a_FMU.makefile Engine1a_external_functions.json resources
 //
 // MSL 4.1.0 round-trip check (continuous MultiBody model): export
 // Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a as an FMI 3.0 Model
