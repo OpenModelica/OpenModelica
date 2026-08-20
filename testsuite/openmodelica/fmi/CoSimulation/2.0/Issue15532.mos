@@ -1,0 +1,56 @@
+// name:     Issue15532
+// keywords: FMI 2.0 export, delay, output derivatives
+// status: correct
+// teardown_command: rm -rf DelayDer15532.fmu DelayDer15532-tmp DelayDer15532_cs.log DelayDer15532_cs_systemCall.log model_res.mat index.html
+//
+// A delay() expression feeding a RealOutput is differentiated for the CS FMU
+// output derivatives. The differentiated delay() must get a valid delay
+// expression index (not the -1 placeholder from Differentiate.mo), and
+// OMC_NDELAY_EXPRESSIONS must count both delays. Otherwise the FMU segfaults
+// in fmi2ExitInitializationMode. See ticket #15532.
+
+loadModel(Modelica); getErrorString();
+loadString("
+model DelayDer15532
+  Modelica.Blocks.Interfaces.RealOutput y;
+  Real x(start = 1);
+equation
+  der(x) = -x;
+  y = delay(x, 0.003, 0.003);
+end DelayDer15532;
+"); getErrorString();
+buildModelFMU(DelayDer15532, version="2.0", fmuType="cs", platforms=["dynamic"]); getErrorString();
+
+system("unzip -o DelayDer15532.fmu -d DelayDer15532-tmp > /dev/null"); getErrorString();
+// one delay for y and one for der(y): OMC_NDELAY_EXPRESSIONS must be 2
+system("grep \"OMC_NDELAY_EXPRESSIONS 2\" DelayDer15532-tmp/sources/omc_simulation_settings.h > /dev/null"); getErrorString();
+// no negative delay expression indices may survive in the generated C code
+system("grep \"threadData, -1,\" DelayDer15532-tmp/sources/DelayDer15532.c > /dev/null"); getErrorString();
+system("grep \"threadData, -1,\" DelayDer15532-tmp/sources/DelayDer15532_07dly.c > /dev/null"); getErrorString();
+system("grep \"threadData, -1,\" DelayDer15532-tmp/sources/DelayDer15532_05evt.c > /dev/null"); getErrorString();
+
+// simulate the FMU: a missing delay index segfaults here
+system(getInstallationDirectoryPath() + "/bin/OMSimulator DelayDer15532.fmu --mode=cs --tolerance=1e-6 --suppressPath=true --tempDir=\"DelayDer15532-tmp\"", "DelayDer15532_cs_systemCall.log"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"DelayDer15532.fmu"}
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// 0
+// ""
+// 1
+// ""
+// 1
+// ""
+// 1
+// ""
+// 0
+// ""
+// endResult
