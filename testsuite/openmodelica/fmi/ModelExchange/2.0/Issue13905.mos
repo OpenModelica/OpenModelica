@@ -1,7 +1,7 @@
 // name: Issue13905
 // keywords: FMI 2.0 export memory pool function scope
 // status: correct
-// teardown_command: rm -rf Issue13905.fmu Issue13905.fmutmp/ Issue13905.scoped Issue13905.notscoped Issue13905.log Issue13905_info.json Issue13905_me_FMU* Issue13905_res.mat index.html
+// teardown_command: rm -rf Issue13905.fmu Issue13905.fmutmp/ Issue13905.scoped Issue13905.notscoped Issue13905.log Issue13905_info.json Issue13905_me_FMU* Issue13905_res.mat index.html binaries sources modelDescription.xml
 //
 // Regression test for #13905. FMU functions allocate from the memory pool, which is only rolled
 // back at the FMI entry points, so a function that allocates in a loop accumulates for the whole

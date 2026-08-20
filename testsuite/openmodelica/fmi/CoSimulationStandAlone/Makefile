@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+fmi1_cs_import_setters.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing

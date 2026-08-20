@@ -1,0 +1,66 @@
+// name:     Issue16354
+// keywords: fmu export import parameter initialization
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml Issue16354FMU* Issue16354Import* output.log
+// cflags:   -d=-newInst
+//
+// The parameter modifiers of an imported Model Exchange FMU have to reach the FMU
+// before it leaves Initialization Mode, otherwise the FMU computes the values that
+// depend on them from the default values instead. See #16354.
+//
+
+loadString("
+model Issue16354FMU
+  parameter Real rp = 4.0;
+  parameter Integer ip = 4;
+  parameter Boolean bp = false;
+  parameter String sp = \"default\";
+  Real rx;
+  Integer ix;
+equation
+  rx = 2.0*rp;
+  ix = 2*ip;
+end Issue16354FMU;
+"); getErrorString();
+
+buildModelFMU(Issue16354FMU, version="2.0", fmuType="me"); getErrorString();
+importFMU("Issue16354FMU.fmu"); getErrorString();
+loadFile("Issue16354FMU_me_FMU.mo"); getErrorString();
+
+loadString("
+model Issue16354Import
+  Issue16354FMU_me_FMU fmu(rp = 5.0, ip = 5, bp = true, sp = \"modified\");
+end Issue16354Import;
+"); getErrorString();
+
+simulate(Issue16354Import, stopTime=0.0); getErrorString();
+
+// rp and ip are the modifiers, rx and ix are what the FMU computes from them.
+// Before the fix the FMU still used the defaults and returned rx = 8.0, ix = 8.
+val(fmu.rp, 0.0);
+val(fmu.rx, 0.0);
+val(fmu.ix, 0.0);
+
+// Result:
+// true
+// ""
+// "Issue16354FMU.fmu"
+// ""
+// "Issue16354FMU_me_FMU.mo"
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Issue16354Import_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Issue16354Import', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 5.0
+// 10.0
+// 10.0
+// endResult

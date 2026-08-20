@@ -1,7 +1,7 @@
 // name: fmi3_arrays_start_vector.mos
 // keywords: FMI 3.0 export array start vector
 // status: correct
-// teardown_command: rm -rf fmi3_arrays_start_vector.fmu fmi3_arrays_start_vector.xml fmi3_arrays_start_vector_tmp.xml fmi3_arrays_start_vector.fmutmp/ fmi3_arrays_start_vector.log fmi3_arrays_start_vector_info.json index.html
+// teardown_command: rm -rf fmi3_arrays_start_vector.fmu fmi3_arrays_start_vector.xml fmi3_arrays_start_vector_tmp.xml fmi3_arrays_start_vector.fmutmp/ fmi3_arrays_start_vector.log fmi3_arrays_start_vector_info.json index.html fmi3_arrays_start_vector_FMU.libs fmi3_arrays_start_vector_FMU.makefile fmi3_arrays_start_vector_external_functions.json resources
 //
 // FMI 3.0 native array state with element-wise start values (start = {1,2,3}).
 // Checks the start attribute emitted for the array variable x.

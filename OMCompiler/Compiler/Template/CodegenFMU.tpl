@@ -2065,13 +2065,15 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     %>
   initial algorithm
     flowParamsStart := 1;
+    flowInitInputs := 1;
     flowStartTime := fmi1Functions.fmi1SetTime(fmi1me, time, 1);
-    flowInitialized := fmi1Functions.fmi1Initialize(fmi1me, flowParamsStart+flowInitInputs+flowStartTime);
+    /* the parameters must be set before the FMU is initialized,
+       otherwise the FMU computes its calculated parameters from the default values */
     <%if not stringEq(realParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetRealParameter(fmi1me, {"+realParametersVRs+"}, {"+realParametersNames+"});"%>
     <%if not stringEq(integerParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetIntegerParameter(fmi1me, {"+integerParametersVRs+"}, {"+integerParametersNames+"});"%>
     <%if not stringEq(booleanParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetBooleanParameter(fmi1me, {"+booleanParametersVRs+"}, {"+booleanParametersNames+"});"%>
     <%if not stringEq(stringParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetStringParameter(fmi1me, {"+stringParametersVRs+"}, {"+stringParametersNames+"});"%>
-    flowInitInputs := 1;
+    flowInitialized := fmi1Functions.fmi1Initialize(fmi1me, flowParamsStart+flowInitInputs+flowStartTime);
   initial equation
     <%if not stringEq(realDependentParametersVRs, "") then "{"+realDependentParametersNames+"} = fmi1Functions.fmi1GetReal(fmi1me, {"+realDependentParametersVRs+"}, flowInitialized);"%>
     <%if not stringEq(integerDependentParametersVRs, "") then "{"+integerDependentParametersNames+"} = fmi1Functions.fmi1GetInteger(fmi1me, {"+integerDependentParametersVRs+"}, flowInitialized);"%>
@@ -2454,11 +2456,13 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     flowInitInputs := 1;
     flowStartTime := fmi2Functions.fmi2SetupExperiment(fmi2me, false, 0.0, time, false, 0.0, flowParamsStart+flowInitInputs);
     flowEnterInitialization := fmi2Functions.fmi2EnterInitialization(fmi2me, flowParamsStart+flowInitInputs+flowStartTime);
-    flowInitialized := fmi2Functions.fmi2ExitInitialization(fmi2me, flowParamsStart+flowInitInputs+flowStartTime+flowEnterInitialization);
+    /* the parameters must be set while the FMU is still in Initialization Mode,
+       otherwise the FMU computes its calculated parameters from the default values */
     <%if not stringEq(realParametersVRs, "") then "flowParamsStart := fmi2Functions.fmi2SetRealParameter(fmi2me, {"+realParametersVRs+"}, {"+realParametersNames+"});"%>
     <%if not stringEq(integerParametersVRs, "") then "flowParamsStart := fmi2Functions.fmi2SetIntegerParameter(fmi2me, {"+integerParametersVRs+"}, {"+integerParametersNames+"});"%>
     <%if not stringEq(booleanParametersVRs, "") then "flowParamsStart := fmi2Functions.fmi2SetBooleanParameter(fmi2me, {"+booleanParametersVRs+"}, {"+booleanParametersNames+"});"%>
     <%if not stringEq(stringParametersVRs, "") then "flowParamsStart := fmi2Functions.fmi2SetStringParameter(fmi2me, {"+stringParametersVRs+"}, {"+stringParametersNames+"});"%>
+    flowInitialized := fmi2Functions.fmi2ExitInitialization(fmi2me, flowParamsStart+flowInitInputs+flowStartTime+flowEnterInitialization);
   initial equation
     <%if not stringEq(realDependentParametersVRs, "") then "{"+realDependentParametersNames+"} = fmi2Functions.fmi2GetReal(fmi2me, {"+realDependentParametersVRs+"}, flowInitialized);"%>
     <%if not stringEq(integerDependentParametersVRs, "") then "{"+integerDependentParametersNames+"} = fmi2Functions.fmi2GetInteger(fmi2me, {"+integerDependentParametersVRs+"}, flowInitialized);"%>
@@ -2877,11 +2881,13 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     flowInitInputs := 1;
     flowStartTime := flowParamsStart+flowInitInputs;
     flowEnterInitialization := fmi3Functions.fmi3EnterInitialization(fmi3me, false, 0.0, time, false, 0.0, flowParamsStart+flowInitInputs);
-    flowInitialized := fmi3Functions.fmi3ExitInitialization(fmi3me, flowParamsStart+flowInitInputs+flowStartTime+flowEnterInitialization);
+    /* the parameters must be set while the FMU is still in Initialization Mode,
+       otherwise the FMU computes its calculated parameters from the default values */
     <%if not stringEq(realParametersVRs, "") then "flowParamsStart := fmi3Functions.fmi3SetRealParameter(fmi3me, {"+realParametersVRs+"}, {"+realParametersNames+"});"%>
     <%if not stringEq(integerParametersVRs, "") then "flowParamsStart := fmi3Functions.fmi3SetIntegerParameter(fmi3me, {"+integerParametersVRs+"}, {"+integerParametersNames+"});"%>
     <%if not stringEq(booleanParametersVRs, "") then "flowParamsStart := fmi3Functions.fmi3SetBooleanParameter(fmi3me, {"+booleanParametersVRs+"}, {"+booleanParametersNames+"});"%>
     <%if not stringEq(stringParametersVRs, "") then "flowParamsStart := fmi3Functions.fmi3SetStringParameter(fmi3me, {"+stringParametersVRs+"}, {"+stringParametersNames+"});"%>
+    flowInitialized := fmi3Functions.fmi3ExitInitialization(fmi3me, flowParamsStart+flowInitInputs+flowStartTime+flowEnterInitialization);
   initial equation
     <%if not stringEq(realDependentParametersVRs, "") then "{"+realDependentParametersNames+"} = fmi3Functions.fmi3GetReal(fmi3me, {"+realDependentParametersVRs+"}, flowInitialized);"%>
     <%if not stringEq(integerDependentParametersVRs, "") then "{"+integerDependentParametersNames+"} = fmi3Functions.fmi3GetInteger(fmi3me, {"+integerDependentParametersVRs+"}, flowInitialized);"%>
@@ -3334,8 +3340,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input FMI1CoSimulation fmi1cs;
         input Real realValuesReferences[:];
         input Real realValues[size(realValuesReferences, 1)];
-        output Real out_Values[size(realValuesReferences, 1)];
-        external "C" fmi1SetReal_OMC(fmi1cs, size(realValuesReferences, 1), realValuesReferences, realValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        output Real out_Values[size(realValuesReferences, 1)] = realValues;
+        external "C" fmi1SetReal_OMC(fmi1cs, size(realValuesReferences, 1), realValuesReferences, realValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi1SetReal;
 
       function fmi1GetInteger
@@ -3350,8 +3356,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input FMI1CoSimulation fmi1cs;
         input Real integerValuesReferences[:];
         input Integer integerValues[size(integerValuesReferences, 1)];
-        output Real out_Values[size(integerValuesReferences, 1)];
-        external "C" fmi1SetInteger_OMC(fmi1cs, size(integerValuesReferences, 1), integerValuesReferences, integerValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        output Integer out_Values[size(integerValuesReferences, 1)] = integerValues;
+        external "C" fmi1SetInteger_OMC(fmi1cs, size(integerValuesReferences, 1), integerValuesReferences, integerValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi1SetInteger;
 
       function fmi1GetBoolean
@@ -3366,8 +3372,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input FMI1CoSimulation fmi1cs;
         input Real booleanValuesReferences[:];
         input Boolean booleanValues[size(booleanValuesReferences, 1)];
-        output Boolean out_Values[size(booleanValuesReferences, 1)];
-        external "C" fmi1SetBoolean_OMC(fmi1cs, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        output Boolean out_Values[size(booleanValuesReferences, 1)] = booleanValues;
+        external "C" fmi1SetBoolean_OMC(fmi1cs, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi1SetBoolean;
 
       function fmi1GetString
@@ -3382,8 +3388,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input FMI1CoSimulation fmi1cs;
         input Real stringValuesReferences[:];
         input String stringValues[size(stringValuesReferences, 1)];
-        output String out_Values[size(stringValuesReferences, 1)];
-        external "C" fmi1SetString_OMC(fmi1cs, size(stringValuesReferences, 1), stringValuesReferences, stringValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        output String out_Values[size(stringValuesReferences, 1)] = stringValues;
+        external "C" fmi1SetString_OMC(fmi1cs, size(stringValuesReferences, 1), stringValuesReferences, stringValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi1SetString;
     end fmi1Functions;
   end <%if stringEq(name, "") then fmiInfo.fmiModelIdentifier+"_"+getFMIType(fmiInfo)+"_FMU" else name%>;

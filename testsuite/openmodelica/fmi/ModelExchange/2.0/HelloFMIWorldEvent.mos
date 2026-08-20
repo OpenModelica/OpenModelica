@@ -1,7 +1,7 @@
 // name:     HelloFMIWorldEvent
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml HelloFMI20World.fmu HelloFMI20World* HelloFMI20World/* output.log
+// teardown_command: rm -rf binaries sources modelDescription.xml HelloFMI20World.fmu HelloFMI20World* HelloFMI20World/* output.log resources
 // cflags: -d=-newInst
 //
 

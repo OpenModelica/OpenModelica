@@ -1,7 +1,7 @@
 // name: fmi3_arrays_approx.mos
 // keywords: FMI 3.0 export array initial approx
 // status: correct
-// teardown_command: rm -rf fmi3_arrays_approx.fmu fmi3_arrays_approx.xml fmi3_arrays_approx_tmp.xml fmi3_arrays_approx.fmutmp/ fmi3_arrays_approx.log fmi3_arrays_approx_info.json index.html
+// teardown_command: rm -rf fmi3_arrays_approx.fmu fmi3_arrays_approx.xml fmi3_arrays_approx_tmp.xml fmi3_arrays_approx.fmutmp/ fmi3_arrays_approx.log fmi3_arrays_approx_info.json index.html fmi3_arrays_approx_FMU.libs fmi3_arrays_approx_FMU.makefile fmi3_arrays_approx_external_functions.json resources
 //
 // FMI 3.0 native array state with an unfixed start value (fixed = false). The
 // start is a guess, so the continuous-time state must be exported with

@@ -2,7 +2,7 @@
 // keywords: FMI 3.0 export buildDescription source
 // suite: fmuCSources
 // status: correct
-// teardown_command: rm -rf Mbd.fmu Mbd.fmutmp/ Mbd_bd.xml Mbd.log Mbd_info.json index.html
+// teardown_command: rm -rf Mbd.fmu Mbd.fmutmp/ Mbd_bd.xml Mbd.log Mbd_info.json index.html Mbd_FMU.libs Mbd_FMU.makefile Mbd_external_functions.json resources
 //
 // FMI 3.0 source FMUs ship sources/buildDescription.xml describing how to build
 // them (the source file list that FMI 2.0 kept in modelDescription <SourceFiles>).

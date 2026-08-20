@@ -1,5 +1,6 @@
 // keywords: fmu export import
 // status: correct
+// teardown_command: rm -rf TestSourceCodeFMU.fmu TestSourceCodeFMU_me_FMU.mo TestSourceCodeFMU.log TestSourceCodeFMU_info.json binaries sources resources documentation modelDescription.xml
 // cflags: -d=-newInst
 
 setCFlags(getCFlags() + " -g"); getErrorString();

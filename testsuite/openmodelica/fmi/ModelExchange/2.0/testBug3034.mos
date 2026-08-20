@@ -1,7 +1,7 @@
 // name:  testBug3034
 // keywords: FMI 2.0 export
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml test_Bug3034* output.log
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml test_Bug3034* output.log resources
 // cflags: -d=-newInst
 //
 

@@ -2,7 +2,7 @@
 // keywords: FMI 3.0 export array non-scalarized NewBackend
 // suite: fmuCSources
 // status: correct
-// teardown_command: rm -rf fmi3_array_nonscalarized.fmu fmi3_array_nonscalarized.fmutmp/ fmi3_array_nonscalarized.dims fmi3_array_nonscalarized.xml fmi3_array_nonscalarized_tmp.xml fmi3_array_nonscalarized.log fmi3_array_nonscalarized_info.json index.html
+// teardown_command: rm -rf fmi3_array_nonscalarized.fmu fmi3_array_nonscalarized.fmutmp/ fmi3_array_nonscalarized.dims fmi3_array_nonscalarized.xml fmi3_array_nonscalarized_tmp.xml fmi3_array_nonscalarized.log fmi3_array_nonscalarized_info.json index.html fmi3_array_nonscalarized_FMU.libs fmi3_array_nonscalarized_FMU.makefile fmi3_array_nonscalarized_external_functions.json resources
 //
 // #15926, FMI 3.0, new backend, non-scalarized arrays (--simCodeScalarize=false),
 // C runtime. The array is exported as one native FMI 3.0 Float64 with a
