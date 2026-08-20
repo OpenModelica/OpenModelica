@@ -1179,10 +1179,7 @@ void partestCMakeStashed(stashName, partition, partitionmodulo) {
   standardSetup()
   unstash stashName
   makeLibsAndCacheCMake()
-  // Susan's *.mo are in the build tree, not next to their *.tpl. rtest hands
-  // this to LoadCompilerSources.mos so the bootstrapping tests find them; it
-  // has to be absolute, since the tests run from a temp dir. env.WORKSPACE is
-  // null in the docker agent, hence pwd.
+  // Susan's generated *.mo files are in the build tree
   def ws = sh(script: 'pwd', returnStdout: true).trim()
   withEnv(["OMCOMPILERGENERATEDSOURCES=${ws}/build_cmake/OMCompiler/Compiler/generated-mo"]) {
     partest(partition, partitionmodulo)
