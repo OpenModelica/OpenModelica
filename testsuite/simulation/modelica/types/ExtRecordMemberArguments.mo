@@ -11,6 +11,7 @@ model ExtRecordMemberArguments
     annotation (
 
     Include="
+#include <stdio.h>
 void foo(const int* myBooleanArray, size_t dim_myBooleanArray_1, const int* myBooleanMatrix, size_t dim_myBooleanMatrix_1, size_t dim_myBooleanMatrix_2) {
   size_t i, j;
 

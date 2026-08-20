@@ -124,8 +124,9 @@ impl ExtArchives {
             .map_err(|e| format!("`{}` could not be run to link the static libraries: {e}", self.ccompiler))?;
         if !output.status.success() {
             return Err(format!(
-                "the static libraries ({}) did not link into a loadable one:\n{}",
+                "the static libraries ({}) did not link into a loadable one:\n{}\n{}",
                 self.archives.join(", "),
+                command_line(&cmd),
                 String::from_utf8_lossy(&output.stderr)
             ));
         }
@@ -160,8 +161,33 @@ pub struct ExtIncludes {
 impl ExtIncludes {
     /// Build the sources into a host shared library and return its path. Per-process
     /// temp directory: it stays mapped as long as the model can be resimulated.
+    /// Built once, so the run reuses what the compile phase built.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn compile(&self, missing: &[ExtCallSig]) -> std::result::Result<String, String> {
+        use std::sync::{LazyLock, Mutex};
+        static COMPILED: LazyLock<Mutex<HashMap<String, std::result::Result<String, String>>>> =
+            LazyLock::new(|| Mutex::new(HashMap::new()));
+        let key = format!(
+            "{}\n{}\n{}\n{}\n{}",
+            self.prefix,
+            self.cflags,
+            self.include_dirs.join(" "),
+            self.sources.join("\n"),
+            missing.iter().map(|s| &*s.name).collect::<Vec<_>>().join(" ")
+        );
+        let cached = COMPILED.lock().unwrap().get(&key).cloned();
+        match cached {
+            Some(r) => r,
+            None => {
+                let r = self.compile_uncached(missing);
+                COMPILED.lock().unwrap().insert(key, r.clone());
+                r
+            }
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn compile_uncached(&self, missing: &[ExtCallSig]) -> std::result::Result<String, String> {
         let wrappers = ext_wrappers(missing);
         match self.compile_tu(&wrappers) {
             Err(e) if !wrappers.is_empty() => self.compile_tu("").map_err(|_| e),
@@ -178,13 +204,14 @@ impl ExtIncludes {
         let stem = if wrappers.is_empty() { "includes_exports" } else { "includes" };
         let tu = dir.join(format!("{}_{stem}.c", self.prefix));
         let out = dir.join(format!("{}_{stem}{}", self.prefix, self.dllext));
-        std::fs::write(&tu, INCLUDE_TU_PROLOGUE.to_owned() + &self.sources.join("\n") + "\n" + wrappers)
+        // No prologue: external C source includes what it uses. A source that needs
+        // more gets it from `--cflags`, as `-include`.
+        std::fs::write(&tu, self.sources.join("\n") + "\n" + wrappers)
             .map_err(|e| format!("cannot write {}: {e}", tu.display()))?;
 
         let mut cmd = Command::new(&self.ccompiler);
         cmd.args(["-shared", "-fPIC", "-O1"]);
-        // `--cflags`, minus the make variables it is written to be expanded with.
-        cmd.args(self.cflags.split_whitespace().filter(|f| !f.starts_with("${") && !f.starts_with("$(")));
+        cmd.args(split_cflags(&self.cflags));
         // Compiled in a temporary directory, so `#include "x.h"` needs the model's own.
         if let Ok(cwd) = std::env::current_dir() {
             cmd.arg("-I").arg(cwd);
@@ -201,7 +228,8 @@ impl ExtIncludes {
             .map_err(|e| format!("`{}` could not be run to compile the `Include` C sources: {e}", self.ccompiler))?;
         if !output.status.success() {
             return Err(format!(
-                "the `Include` C sources did not compile:\n{}",
+                "the `Include` C sources did not compile:\n{}\n{}",
+                command_line(&cmd),
                 String::from_utf8_lossy(&output.stderr)
             ));
         }
@@ -291,24 +319,6 @@ fn ext_c_type(ty: &crate::sig::SigTy) -> Option<&'static str> {
     })
 }
 
-/// What the C target's generated `<prefix>_includes.h` opens with, so external C
-/// source sees the same declarations wherever it is built.
-pub const INCLUDE_TU_PROLOGUE: &str = "\
-#include \"openmodelica.h\"       /* Defines OPENMODELICA_H_ for libraries to test if called from OpenModelica. */\n\
-#include \"ModelicaUtilities.h\"  /* Make Modelica C util functions available for external includes. */\n";
-
-/// The same for a wasm unit, where `openmodelica.h` cannot be opened — it reaches the
-/// Boehm GC and `setjmp`. Name what external source uses it for instead. Nothing
-/// omc-specific: source needing more than the specification's C interface includes
-/// it itself.
-pub const INCLUDE_TU_PROLOGUE_WASM: &str = "\
-#include <stddef.h>\n\
-#include <stdio.h>\n\
-#include <stdlib.h>\n\
-#include <string.h>\n\
-#include <math.h>\n\
-#include \"ModelicaUtilities.h\"\n";
-
 /// omc's own C headers, plus the bundled `gc.h` that `openmodelica.h` reaches —
 /// the `-I` set the C target's makefile compiles the same source with.
 pub fn omc_c_include_dirs() -> [String; 2] {
@@ -316,6 +326,72 @@ pub fn omc_c_include_dirs() -> [String; 2] {
         .map(|p| p.to_string())
         .unwrap_or_default();
     [format!("{home}/include/omc/c"), format!("{home}/include/omc")]
+}
+
+/// `--cflags` split as the makefile's shell splits it, so a quoted `-I` path with
+/// spaces stays one argument. Drops the make variables it is written to expand with.
+pub fn split_cflags(cflags: &str) -> Vec<String> {
+    let mut args: Vec<String> = Vec::new();
+    let mut cur = String::new();
+    let mut started = false;
+    let mut quote: Option<char> = None;
+    for c in cflags.chars() {
+        match c {
+            '"' | '\'' if quote == Some(c) => quote = None,
+            '"' | '\'' if quote.is_none() => {
+                quote = Some(c);
+                started = true;
+            }
+            _ if c.is_whitespace() && quote.is_none() => {
+                if started {
+                    args.push(std::mem::take(&mut cur));
+                    started = false;
+                }
+            }
+            _ => {
+                cur.push(c);
+                started = true;
+            }
+        }
+    }
+    if started {
+        args.push(cur);
+    }
+    args.retain(|f| !f.starts_with("${") && !f.starts_with("$("));
+    args
+}
+
+/// The preprocessor options in `--cflags`, without the host code-generation flags
+/// a wasm target rejects.
+pub fn cflags_cpp_args(cflags: &str) -> Vec<String> {
+    const OPTS: [&str; 4] = ["-I", "-isystem", "-D", "-include"];
+    let args = split_cflags(cflags);
+    let mut out = Vec::new();
+    let mut it = args.into_iter();
+    while let Some(a) = it.next() {
+        if OPTS.contains(&&*a) {
+            if let Some(v) = it.next() {
+                out.push(a);
+                out.push(v);
+            }
+        } else if OPTS.iter().any(|o| a.starts_with(o)) {
+            out.push(a);
+        }
+    }
+    out
+}
+
+/// The command as a shell would have been given it, for an error to show.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn command_line(cmd: &std::process::Command) -> String {
+    std::iter::once(cmd.get_program())
+        .chain(cmd.get_args())
+        .map(|a| {
+            let a = a.to_string_lossy();
+            if a.contains(char::is_whitespace) { format!("\"{a}\"") } else { a.into_owned() }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// A user-settable parameter (an editable initial condition): display name, unit,

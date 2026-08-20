@@ -6,7 +6,10 @@ package Modelica
     function print "Print string to terminal or file"
       input String string="" "String to be printed";
       input String fileName="" "File where to print (empty string is the terminal)";
-    external "C" myPuts(string,fileName) annotation(Include="#define myPuts(X,Y) fputs(X,stdout)");
+    external "C" myPuts(string,fileName) annotation(Include="
+#include <stdio.h>
+#define myPuts(X,Y) fputs(X,stdout)
+");
     end print;
 
   end Streams;

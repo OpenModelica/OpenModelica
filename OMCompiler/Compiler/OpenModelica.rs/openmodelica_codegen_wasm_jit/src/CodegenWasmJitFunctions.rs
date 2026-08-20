@@ -10463,7 +10463,7 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
         let includes: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.externalFunctionIncludes).map(|s| s.to_string()).collect();
         let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes).map(|s| s.to_string()).collect();
         let missing = crate::CodegenWasmJit::missing_ext_symbols(&ext_imports, &libs);
-        if let Some(l) = crate::CodegenWasmJit::compile_include_library(&base, &includes, &dirs, &missing, &mut notes)? {
+        if let Some(l) = crate::CodegenWasmJit::compile_include_library(&base, &includes, &dirs, &fn_code.makefileParams.cflags, &missing, &mut notes)? {
             let path = format!("{base}_includes.wasm");
             openmodelica_wasi::fs::write(&path, &l.bytes)
                 .map_err(|_| "CodegenWasmJitFunctions: cannot stage the compiled include library")?;

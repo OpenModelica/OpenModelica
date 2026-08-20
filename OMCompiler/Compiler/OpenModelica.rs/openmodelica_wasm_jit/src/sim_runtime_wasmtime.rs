@@ -340,6 +340,19 @@ fn unresolved_external_detail(name: &str, model: &SimModel, load_errors: &[Strin
     s
 }
 
+/// Load the libraries `sigs` are to be found in, link the model's archives and
+/// build its `Include` sources. Called from `buildModel`'s compile phase; the
+/// builds are cached, so instantiation reuses them.
+pub fn prepare_native_externals(model: &SimModel, sigs: &[crate::sig::ExtCallSig]) -> std::result::Result<(), String> {
+    let mut native = NativeExternals::default();
+    for sig in sigs {
+        if native.resolve(&sig.name, model).is_none() {
+            return Err(unresolved_external_detail(&sig.name, model, &native.errors));
+        }
+    }
+    Ok(())
+}
+
 /// The model's `external "C"` implementations outside wasm, resolved on demand: the
 /// platform libraries its `Library` annotations name (its archives linked into
 /// one), then — only once those and the process image have come up short — its
