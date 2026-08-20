@@ -366,23 +366,28 @@ struct NativeExternals {
 }
 
 impl NativeExternals {
-    fn resolve(&mut self, name: &str, model: &SimModel) -> Option<usize> {
-        if !self.loaded {
-            self.loaded = true;
-            let (handles, errors) = openmodelica_util::dynload::load_external_libraries(&model.ext_native_libs);
-            self.handles = handles;
-            self.errors = errors;
-            if let Some(archives) = &model.ext_archives {
-                match archives.link() {
-                    Ok(path) => {
-                        let (h, errors) = openmodelica_util::dynload::load_external_libraries(&[path]);
-                        self.handles.extend(h);
-                        self.errors.extend(errors);
-                    }
-                    Err(e) => self.errors.push(e),
+    fn ensure_loaded(&mut self, model: &SimModel) {
+        if self.loaded {
+            return;
+        }
+        self.loaded = true;
+        let (handles, errors) = openmodelica_util::dynload::load_external_libraries(&model.ext_native_libs);
+        self.handles = handles;
+        self.errors = errors;
+        if let Some(archives) = &model.ext_archives {
+            match archives.link() {
+                Ok(path) => {
+                    let (h, errors) = openmodelica_util::dynload::load_external_libraries(&[path]);
+                    self.handles.extend(h);
+                    self.errors.extend(errors);
                 }
+                Err(e) => self.errors.push(e),
             }
         }
+    }
+
+    fn resolve(&mut self, name: &str, model: &SimModel) -> Option<usize> {
+        self.ensure_loaded(model);
         if let Some(addr) = self.symbol(name) {
             return Some(addr);
         }
@@ -440,7 +445,26 @@ impl NativeExternals {
         let w: extern "C" fn() -> usize = unsafe { std::mem::transmute(wrapper) };
         Some(w()).filter(|a| *a != 0)
     }
+
+    /// The model's own `usertab`: no `external "C"`, so never among `ext_imports`.
+    fn usertab(&mut self, model: &SimModel) -> Option<usize> {
+        use openmodelica_util::dynload::symbol_in;
+        self.ensure_loaded(model);
+        if let Some(addr) = symbol_in(&self.handles, USERTAB) {
+            return Some(addr);
+        }
+        // Building an `Include` that defines none is a compiler run for nothing.
+        let inc = model.ext_includes.as_ref()?;
+        if self.built_includes || !inc.sources.iter().any(|s| s.contains(USERTAB)) {
+            return None;
+        }
+        self.built_includes = true;
+        self.load_includes(inc, &[]);
+        symbol_in(&self.handles, USERTAB)
+    }
 }
+
+const USERTAB: &str = "usertab";
 
 /// Define the model's external "C" function imports (wasm module `ext`) from the
 /// host. Uses the model's `ext_imports` (the C-call `SigTy` signature) rather than
@@ -485,6 +509,9 @@ fn define_external_imports(
         })?;
         define_native_external(linker, sig, functype, addr, memory, rt)?;
     }
+    // No `external "C"` means no `Include`/`Library`, hence no `usertab`.
+    let usertab = (!model.ext_imports.is_empty()).then(|| native.usertab(model)).flatten();
+    openmodelica_util::dynload::set_usertab(usertab);
     Ok(())
 }
 

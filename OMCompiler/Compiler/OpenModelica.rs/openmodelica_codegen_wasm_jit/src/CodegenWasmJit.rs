@@ -1457,7 +1457,7 @@ use openmodelica_wasm_jit::{FMI3_CS_SUNDIALS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER
 /// "C"`. Any is empty when that omc was built without the toolchain.
 use openmodelica_wasi_libc::{
     available as external_c_available, sundials_available, EXTERNAL_C_DYLINK, LIBC_PIC,
-    SUNDIALS_DYLINK, WASI_P1_ADAPTER,
+    SUNDIALS_DYLINK, USERTAB_DYLINK, WASI_P1_ADAPTER,
 };
 
 // ===========================================================================
@@ -1981,6 +1981,10 @@ fn link_fmu_component(
             l = l.library("modelicaexternalc", EXTERNAL_C_DYLINK, false).map_err(link_err)?;
         }
         l = l.library("libc", LIBC_PIC, false).map_err(link_err)?;
+        if has_ext {
+            // Last, so a `usertab` from the model's own libraries wins.
+            l = l.library("usertab", USERTAB_DYLINK, false).map_err(link_err)?;
+        }
         l = l.adapter("wasi_snapshot_preview1", WASI_P1_ADAPTER).map_err(link_err)?;
     }
     l.encode().map_err(link_err)
@@ -4010,7 +4014,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
                 // decision has to be made here, off the libraries' exports.
                 ExtHost::Wasm => {
                     let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
-                    if !missing.is_empty() {
+                    // `usertab` is no `external "C"`, so never among `missing`.
+                    if !missing.is_empty() || sources.iter().any(|s| s.contains("usertab")) {
                         if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &mp.cflags, &missing, &mut ext_lib_notes)? {
                             ext_libs.wasm.push(l);
                         }
@@ -4062,6 +4067,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // used as the per-step function (in place of `algebraicEquations`), and
     // pre-values are saved after each step so the next step's edge test sees them.
     let algebraic_eqs = if has_when { all_eqs } else { flatten_eqs_ll(&sim_code.algebraicEquations) };
+    let output_eqs = if has_when { flatten_eqs_ll(&sim_code.algebraicEquations) } else { Vec::new() };
     // pre := live regions, appended to the per-step (algebraic) function when the
     // model has `when`-equations (see `sim_save_pre_values`).
     let save_pre: Vec<(u32, u32, u32)> = if has_when {
@@ -4599,6 +4605,22 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         splits.push(build_split_fn("functionZeroCrossingsEquations", &eq_units(&zc_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
         idx
     };
+    // C's `functionAlgebraics` + `storePreValues`. Only a `has_when` model needs its
+    // own: there `functionAlgebraics` is fused with the when-bodies a getter must not fire.
+    let outputs_idx = {
+        let idx = import_base + bodies.len() as u32;
+        if has_when {
+            splits.push(build_split_fn("functionOutputs", &eq_units(&output_eqs), 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+        } else {
+            use we::Instruction as I;
+            let mut f = we::Function::new([]);
+            f.instruction(&I::LocalGet(0));
+            f.instruction(&I::Call(eqfn.algebraics));
+            f.instruction(&I::End);
+            bodies.push(f);
+        }
+        idx
+    };
     bodies[simulate_slot] = build_simulate(&layout, &eqfn, has_asserts.then_some(check_asserts_idx))?;
     let update_relations_idx = {
         let idx = import_base + bodies.len() as u32;
@@ -4777,6 +4799,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     functions.function(eqfn_type); // functionInitialEquations_lambda0: (i32) -> ()
     functions.function(eqfn_type); // functionCheckAsserts: (i32) -> ()
     functions.function(eqfn_type); // functionZeroCrossingsEquations: (i32) -> ()
+    functions.function(eqfn_type); // functionOutputs: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateRelations: (i32) -> ()
     functions.function(eqfn_type); // functionStoreDelayed: (i32) -> ()
     functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
@@ -4898,6 +4921,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     exports.export("functionInitStartValues", we::ExportKind::Func, eqfn.init_start_values);
     exports.export("functionODE", we::ExportKind::Func, eqfn.ode);
     exports.export("functionAlgebraics", we::ExportKind::Func, eqfn.algebraics);
+    exports.export("functionOutputs", we::ExportKind::Func, outputs_idx);
     exports.export("simulate", we::ExportKind::Func, simulate_idx);
     exports.export("om_meta_ptr", we::ExportKind::Func, om_meta_ptr_idx);
     exports.export("om_meta_len", we::ExportKind::Func, om_meta_len_idx);
@@ -4956,6 +4980,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         ("functionInitStartValues", eqfn.init_start_values),
         ("functionODE", eqfn.ode),
         ("functionAlgebraics", eqfn.algebraics),
+        ("functionOutputs", outputs_idx),
         ("simulate", simulate_idx),
         ("om_meta_ptr", om_meta_ptr_idx),
         ("om_meta_len", om_meta_len_idx),

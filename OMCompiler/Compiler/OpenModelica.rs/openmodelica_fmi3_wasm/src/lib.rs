@@ -45,6 +45,7 @@ unsafe extern "C" {
     fn functionInitialEquations_lambda0(sim_data: u32);
     fn functionODE(sim_data: u32);
     fn functionAlgebraics(sim_data: u32);
+    fn functionOutputs(sim_data: u32);
     fn functionStateSetJacobians(sim_data: u32);
     fn functionZeroCrossings(sim_data: u32);
     fn functionZeroCrossingsEquations(sim_data: u32);
@@ -266,6 +267,7 @@ impl SimEngine for Engine {
                 "functionInitialEquations_lambda0" => functionInitialEquations_lambda0(arg),
                 "functionODE" => functionODE(arg),
                 "functionAlgebraics" => functionAlgebraics(arg),
+                "functionOutputs" => functionOutputs(arg),
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
                 "functionZeroCrossings" => functionZeroCrossings(arg),
                 "functionZeroCrossingsEquations" => functionZeroCrossingsEquations(arg),
@@ -427,13 +429,11 @@ impl MeState {
         let _ = driver::seed_start_state(&mut e, self.sim_data, &self.meta);
     }
 
-    /// Refresh algebraics/derivatives so getters report consistent values.
+    /// `functionOutputs`, not `functionAlgebraics`: a getter runs no discrete update.
     fn eval(&self) {
         let mut e = Engine;
         let _ = e.call1("functionODE", self.sim_data);
-        if !self.layout.has_when {
-            let _ = e.call1("functionAlgebraics", self.sim_data);
-        }
+        let _ = e.call1("functionOutputs", self.sim_data);
     }
 
     /// C's `updateIfNeeded`. In Initialization Mode the update is the initial
@@ -699,6 +699,10 @@ macro_rules! shared_instance_methods {
             Ok(up) => up,
             Err(err) => return Err(err_status(err)),
         };
+
+        // C's `discreteCall = 0` at the end of `functionDAE`: left in event mode, every
+        // later evaluation restores the relations and hides the next crossing.
+        st.write_i32(layout.rel_fresh_off, 0);
 
         // C's `internalEventUpdate`: the timers, then the earliest of the next
         // sample and the next activation.
@@ -1212,7 +1216,10 @@ impl GuestModelExchangeInstance for Instance {
         &self,
         _no_set_fmu_state_prior_to_current_point: bool,
     ) -> Result<CompletedStepResult, Status> {
-        let st = self.st.borrow();
+        let mut st = self.st.borrow_mut();
+        // C's `internal_CompletedIntegratorStep`; it leaves `_need_update` set.
+        st.eval();
+        st.need_update = true;
         Ok(CompletedStepResult {
             enter_event_mode: false,
             terminate_simulation: st.read_i32(st.layout.terminate_off) != 0,

@@ -297,6 +297,7 @@ pub const MODEL_FNS: &[&str] = &[
     "functionInitialEquations",
     "functionODE",
     "functionAlgebraics",
+    "functionOutputs",
     "functionStateSetJacobians",
     "functionZeroCrossings",
     "initSample",
