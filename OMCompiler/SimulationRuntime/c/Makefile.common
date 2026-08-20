@@ -76,7 +76,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
 OPTIMIZATION_LIBS = $(OPTIMIZATION_MOO_LIBS) $(OPTIMIZATION_IPOPT_LIBS) -lgfortran
 endif
 endif
-OPTIMIZATION_DLL_LIBS ?=
+OPTIMIZATION_DLL_LIBS ?= $(OPTIMIZATION_LIBS)
 COLPACKDIR = $(top_builddir)/3rdParty/ColPack
 COLPACK_HEADERS = inc src/Utilities src/GeneralGraphColoring src/BipartiteGraphBicoloring src/BipartiteGraphPartialColoring src/Recovery src/SMPGC
 COLPACK_INCLUDES = $(addprefix -I$(COLPACKDIR)/,$(COLPACK_HEADERS))
