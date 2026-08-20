@@ -76,6 +76,7 @@ void System_clearCancel();                              // classic C omc runtime
 void System_setPumpCallback(void (*cb)(void));
 int System_progressPermille();
 int System_progressPhase();
+const char* System_progressMessage();                   // label of the step in progress, "" if none
 #endif
 }
 
@@ -514,9 +515,15 @@ static void omcDriveNativeProgress()
 #if defined(OMC_RUST_ABI)
   int phase = omc_compiler_progress_phase();
   int permille = omc_compiler_progress_permille();
+  // The Rust runtime has no message channel yet, so the phase label is all there is.
+  const QString label = omcPhaseLabel(phase);
 #else
   int phase = System_progressPhase();
   int permille = System_progressPermille();
+  // A step that names itself, e.g. which FMU platform is being built, says more
+  // than the generic phase label.
+  const char *message = System_progressMessage();
+  const QString label = (message && *message) ? QString::fromUtf8(message) : omcPhaseLabel(phase);
 #endif
   if (phase == 0) return; // nothing reported yet
   QProgressBar *bar = w->getProgressBar();
@@ -530,7 +537,7 @@ static void omcDriveNativeProgress()
     bar->setRange(0, 1000);
     bar->setValue(permille);
   }
-  w->getStatusBar()->showMessage(omcPhaseLabel(phase));
+  w->getStatusBar()->showMessage(label);
 }
 
 static void omcClearNativeProgress()

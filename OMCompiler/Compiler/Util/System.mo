@@ -1285,6 +1285,11 @@ public function reportProgress "Report progress of the running operation to the 
   external "C" System_reportProgress(permille, phase) annotation(Library = "omcruntime");
 end reportProgress;
 
+public function reportProgressMessage "Label the step in progress for the host UI, which shows it instead of the generic phase label. Cleared by the next reportProgress call, so report it after that one."
+  input String message;
+  external "C" System_reportProgressMessage(message) annotation(Library = "omcruntime");
+end reportProgressMessage;
+
 public function getMemorySize
   output Real memory(unit="MB");
 external "C" memory=System_getMemorySize() annotation(Library = {"omcruntime"});

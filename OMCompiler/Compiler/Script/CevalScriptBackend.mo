@@ -4776,6 +4776,8 @@ protected
   list<String> libs;
   Boolean isWindows;
   Boolean needs3rdPartyLibs;
+  Integer platformIndex, platformCount;
+  String platformName;
   String FMUType = inFMUType;
   // FMI 1.0 is deprecated and the wasm export does not serve it; such a request
   // is the C export's business even under the wasm simCodeTarget.
@@ -4915,8 +4917,20 @@ algorithm
   end if;
 
   // Configure the FMU Makefile
+  // Compiling for several platforms takes minutes per platform, so report which one is
+  // being built. Error.checkCancel() hands the thread to the host UI between platforms,
+  // which is what keeps OMEdit responsive and lets Cancel through.
+  platformCount := listLength(platforms);
+  platformIndex := 0;
   for platform in platforms loop
-    configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
+    platformIndex := platformIndex + 1;
+    platformName := listGet(Util.stringSplitAtChar(platform, " "), 1);
+    Error.checkCancel();
+    System.reportProgress(intDiv((platformIndex - 1) * 1000, platformCount), 4 /* PHASE_BACKEND */);
+    System.reportProgressMessage("Building FMU for " + platformName + " (" + String(platformIndex) + "/" + String(platformCount) + ")");
+    Error.addCompilerNotification("Building FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
+
+    configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(platformName,"/","-")+".log";
     if Flags.getConfigBool(Flags.FMU_CMAKE_BUILD) then
       configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows, needs3rdPartyLibs);
     else
@@ -4925,8 +4939,12 @@ algorithm
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
     end if;
+    Error.addCompilerNotification("Finished FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
     ExecStat.execStat("buildModelFMU: Generate platform " + platform);
   end for;
+  System.reportProgress(1000, 4 /* PHASE_BACKEND */);
+  System.reportProgressMessage("Packing FMU");
+  Error.checkCancel();
 
   // check for '--fmiSource=false' or '--fmiFilter=blackBox' and remove the sources directory before packing the fmu
   if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
