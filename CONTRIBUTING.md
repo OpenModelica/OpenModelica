@@ -24,10 +24,11 @@ Commits that are pushed to this repository should pass the [test suite](https://
 and our CI server [@OpenModelica-Jenkins](https://test.openmodelica.org/jenkins/) makes sure this is true.
 
 Pull requests are automatically checked:
+
 * against the testsuite by Jenkins CI
 * for contribution agreement signature
 
-When creating the PR, if needed, add labels: "CI/Build MINGW" or "CI/Build OSX" to test the build on Windows and MacOS.
+When creating the PR, if needed, add labels: "CI/Build MSYS2-UCRT64" or "CI/Build OSX" to test the build on Windows and macOS.
 One of our developers will review and merge the PR.
 
 All commits should adhere to the following simple guidelines (the Jenkins job checks some of these restrictions, and will not pass your submission):
@@ -44,10 +45,12 @@ All commits should adhere to the following simple guidelines (the Jenkins job ch
 ## Working with the OpenModelica/OMCompiler/3rdParty submodule
 
 If you need to make changes to OMCompiler-3rdParty the procedure is as follows:
+
 * push to a branch in OMCompiler-3rdParty (ask us for access via OpenModelica mailing list)
 * make a PR to OpenModelica glue project with OpenModelica/OMCompiler/3rdParty submodule pointing at your commit from the pushed branch in OMCompiler-3rdParty
 
 After Jenkins checks that all is OK a developer will:
+
 * **reset** (or restart, or **merge**, if there were other commits added to OMCompiler-3rdParty since you started) the OMCompiler-3rdParty master branch so the new HEAD contains the HEAD commit of the branch
 * merge the PR in the OpenModelica glue project
 * delete the branch in the OMCompiler-3rdParty

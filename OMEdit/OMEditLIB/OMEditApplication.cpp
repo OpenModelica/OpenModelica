@@ -336,7 +336,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // event loop is running: a raw suspend during construction corrupts Qt's wasm
   // event pump (QWasmSuspendResumeControl). So defer this whole block to the first
   // event-loop tick on wasm; run it inline everywhere else.
-  auto initMainWindow = [=, this]() {
+  auto initMainWindow = [=]() {
 #if defined(__EMSCRIPTEN__)
   extern void omcInstallWorkerVfsFileEngine();
   omcInstallWorkerVfsFileEngine();

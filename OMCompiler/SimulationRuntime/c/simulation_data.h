@@ -465,27 +465,6 @@ typedef struct NONLINEAR_SYSTEM_DATA
 typedef void* NONLINEAR_SYSTEM_DATA;
 #endif
 
-typedef struct LINEAR_SYSTEM_THREAD_DATA
-{
-  void *solverData[2];                 /* [1] is the totalPivot solver
-                                          [0] holds other solvers
-                                          both are used for the default solver */
-  modelica_real *x;                    /* solution vector x */
-  modelica_real *A;                    /* matrix A */
-  modelica_real *b;                    /* vector b */
-
-  JACOBIAN* parentJacobian;            /* if != NULL then it's the parent jacobian matrix */
-  JACOBIAN* jacobian;                  /* jacobian */
-
-  /* Statistics for each thread */
-  unsigned long numberOfCall;          /* number of solving calls of this system */
-  unsigned long numberOfFailures;      /* number of times solving calls of this system failed */
-  unsigned long numberOfJEval;         /* number of jacobian evaluations of this system */
-  double totalTime;                    /* save the totalTime */
-  rtclock_t totalTimeClock;            /* time clock for the totalTime */
-  double jacobianTime;                 /* save the time to calculate jacobians */
-} LINEAR_SYSTEM_THREAD_DATA;
-
 #if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
 struct LINEAR_SYSTEM_DATA;
 typedef struct LINEAR_SYSTEM_DATA LINEAR_SYSTEM_DATA;
@@ -519,16 +498,21 @@ typedef struct LINEAR_SYSTEM_DATA
   SOLVER_MATRIX_FORMAT matrixFormat;   /* dense or sparse, chosen by the backend */
   modelica_boolean useSparseSolver;    /* matrixFormat, unless no sparse solver was built in */
 
-  LINEAR_SYSTEM_THREAD_DATA* parDynamicData; /* Array of length numMaxThreads for internal write data */
+  /* working data of the solver */
+  void *solverData[2];                 /* [1] is the totalPivot solver
+                                          [0] holds other solvers
+                                          both are used for the default solver */
+  modelica_real *A;                    /* matrix A */
+  modelica_real *b;                    /* vector b */
+  JACOBIAN* parentJacobian;            /* if != NULL then it's the parent jacobian matrix */
+  JACOBIAN* jacobian;                  /* jacobian */
 
-  // ToDo: Gather information from all threads if in parallel region
   modelica_boolean solved;             /* true if solved in current step */
   modelica_boolean failed;             /* true if failed while last try with lapack */
 
   modelica_boolean logActive;          /* Specifies whether LOG_XXX should print for this system.
                                           false if `-lv_system` is specified but equationIndex is not in the list, else true */
 
-  // ToDo: Gather information from all threads if in parallel region
   /* statistics */
   unsigned long numberOfCall;          /* number of solving calls of this system */
   unsigned long numberOfFailures;      /* number of times solving calls of this system failed */

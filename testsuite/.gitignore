@@ -4,6 +4,10 @@
 *.log
 *.o
 *.so
+*.fmutmp/
+*.mos_temp*
+*.mos.result.xml
+*.mo.result.xml
 /failed.*
 difftool/lex.yy.c
 difftool/lex.yy.wsl.c
@@ -22,3 +26,4 @@ ReferenceFiles/**/*.mat
 /.gitvalidfiles.sorted
 flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc/FFITestLib.dll
 flattening/modelica/ffi/FFITest/Resources/Library/
+partest/result.xml

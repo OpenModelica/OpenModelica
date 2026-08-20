@@ -324,13 +324,6 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
     return;
   }
 
-#ifdef USE_PARJAC
-  if (threadLocalJacobians && omc_get_max_threads() > 1) {
-    evalJacobianParallel(data, threadData, jacobian, parentJacobian, threadLocalJacobians, jac, isDense);
-    return;
-  }
-#endif
-
   if (jacobian->isRowEval) {
     evalJacobianRow(data, threadData, jacobian, parentJacobian, jac, isDense);
     return;

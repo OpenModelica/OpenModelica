@@ -1132,7 +1132,11 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+linearizationDumpLanguage=" + mpLinearizationDumpLanguageComboBox->currentText());
   }
-  bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
+  bool result;
+  {
+    OMCLongOperation longOperation;
+    result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
+  }
   // reset simulation settings
   OptionsDialog::instance()->saveSimulationSettings();
   return result;

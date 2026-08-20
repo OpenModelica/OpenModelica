@@ -15,6 +15,8 @@
 use std::cell::{Cell, RefCell};
 use std::os::raw::c_char;
 
+use openmodelica_sim_meta::omclog;
+
 thread_local! {
     /// Set while a simulation external "C" call is in flight (between
     /// `omrs_sim_external_begin` and `_end`). Only then does `ModelicaAllocateString`
@@ -142,16 +144,15 @@ pub fn format_log_stdout(msg: &str, prefix: &str) -> String {
     out
 }
 
-/// Emit `msg` to the running simulation's captured stdout if an external call is
-/// in flight; returns whether it was taken. The caller's format string
-/// `\n`-terminates the line, which the prefixing re-adds.
-fn take_message(msg: *const c_char, prefix: &str) -> bool {
+/// Emit `msg` on `LOG_STDOUT` if an external call is in flight; returns whether it
+/// was taken. `emit` is C's `va_infoStreamPrint`/`va_warningStreamPrint`, so
+/// `-lv=-LOG_STDOUT` drops the message as it does there.
+fn take_message(msg: *const c_char, emit: fn(omclog::Stream, bool, &str)) -> bool {
     if !SIM_MODE.with(Cell::get) || msg.is_null() {
         return false;
     }
     let text = unsafe { std::ffi::CStr::from_ptr(msg) }.to_string_lossy().into_owned();
-    let line = format_log_stdout(text.strip_suffix('\n').unwrap_or(&text), prefix);
-    openmodelica_wasi::wasi::stdout_write(line.as_bytes());
+    emit(omclog::STDOUT, false, text.strip_suffix('\n').unwrap_or(&text));
     true
 }
 
@@ -159,9 +160,9 @@ fn take_message(msg: *const c_char, prefix: &str) -> bool {
 // `dynload::install_modelica_message_interception`.
 
 pub extern "C" fn modelica_message_hook(msg: *const c_char) -> i32 {
-    take_message(msg, LOG_STDOUT_INFO) as i32
+    take_message(msg, omclog::info) as i32
 }
 
 pub extern "C" fn modelica_warning_hook(msg: *const c_char) -> i32 {
-    take_message(msg, LOG_STDOUT_WARNING) as i32
+    take_message(msg, omclog::warning) as i32
 }

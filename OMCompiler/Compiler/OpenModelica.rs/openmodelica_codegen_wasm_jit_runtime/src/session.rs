@@ -166,6 +166,9 @@ impl SimEngine for InWasmEngine {
     fn context_addr(&mut self) -> u32 {
         crate::nls::rt_context_addr()
     }
+    fn error_stage_addr(&mut self) -> u32 {
+        crate::nls::rt_error_stage_addr()
+    }
     fn clean_nls_history(&mut self, time: f64) {
         crate::nls::rt_nls_clean_history(time);
     }
@@ -281,6 +284,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     // Any prior session is dropped (frees its buffers) before starting a new one.
     *session() = None;
     crate::reset_lin_solves();
+    crate::reset_ls_failures();
     crate::reset_stats();
     crate::sundials::reset_caches();
 

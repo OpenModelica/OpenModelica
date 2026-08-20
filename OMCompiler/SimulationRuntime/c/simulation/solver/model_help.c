@@ -52,10 +52,6 @@
 #include "../../meta/meta_modelica.h"
 #include "../eval_dep.h"
 
-#ifdef USE_PARJAC
-  #include <omp.h>
-#endif
-
 /* Private function prototypes */
 void* syncTimerListAlloc(const void* data);
 void syncTimerListFree(void* data);

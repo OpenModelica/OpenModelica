@@ -161,13 +161,24 @@ impl ExtIncludes {
     /// Build the sources into a host shared library and return its path. Per-process
     /// temp directory: it stays mapped as long as the model can be resimulated.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn compile(&self) -> std::result::Result<String, String> {
+    pub fn compile(&self, missing: &[ExtCallSig]) -> std::result::Result<String, String> {
+        let wrappers = ext_wrappers(missing);
+        match self.compile_tu(&wrappers) {
+            Err(e) if !wrappers.is_empty() => self.compile_tu("").map_err(|_| e),
+            r => r,
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn compile_tu(&self, wrappers: &str) -> std::result::Result<String, String> {
         use std::process::Command;
         let dir = std::env::temp_dir().join(format!("om-extc-{}", std::process::id()));
         std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
-        let tu = dir.join(format!("{}_includes.c", self.prefix));
-        let out = dir.join(format!("{}_includes{}", self.prefix, self.dllext));
-        std::fs::write(&tu, INCLUDE_TU_PROLOGUE.to_owned() + &self.sources.join("\n") + "\n")
+        // The fallback build must not be handed the path it just failed to load.
+        let stem = if wrappers.is_empty() { "includes_exports" } else { "includes" };
+        let tu = dir.join(format!("{}_{stem}.c", self.prefix));
+        let out = dir.join(format!("{}_{stem}{}", self.prefix, self.dllext));
+        std::fs::write(&tu, INCLUDE_TU_PROLOGUE.to_owned() + &self.sources.join("\n") + "\n" + wrappers)
             .map_err(|e| format!("cannot write {}: {e}", tu.display()))?;
 
         let mut cmd = Command::new(&self.ccompiler);
@@ -199,12 +210,85 @@ impl ExtIncludes {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn compile(&self) -> std::result::Result<String, String> {
+    pub fn compile(&self, _missing: &[ExtCallSig]) -> std::result::Result<String, String> {
         Err("the implementation comes from an `Include` annotation with C source, which has to be \
              compiled — the browser omc has no compiler. Provide it as a `Library` built with \
              `clang --target=wasm32-wasip1 -fPIC -shared`"
             .to_string())
     }
+}
+
+/// A header-only `Include` may declare every function `static`, exporting nothing;
+/// a wrapper handing back the address needs no prototype and reaches it anyway.
+pub const EXT_ADDR_PREFIX: &str = "omc_ext_addr_";
+
+/// A function-like macro has no address, so the *call* is what the unit provides
+/// — which is all the C target ever compiles, expanding the macro at its own
+/// call site.
+pub const EXT_CALL_PREFIX: &str = "omc_ext_call_";
+
+/// One wrapper per function still to be found. Taking the address of a function
+/// the sources never declare does not compile, so the caller falls back to the
+/// unit without these.
+pub fn ext_wrappers(sigs: &[ExtCallSig]) -> String {
+    let mut out = String::new();
+    for sig in sigs {
+        let name = &sig.name;
+        match ext_call_wrapper(sig) {
+            Some(call) => out.push_str(&format!(
+                "#ifdef {name}\n{call}#else\n{}#endif\n",
+                ext_addr_wrapper(name)
+            )),
+            None => out.push_str(&ext_addr_wrapper(name)),
+        }
+    }
+    out
+}
+
+fn ext_addr_wrapper(name: &str) -> String {
+    format!("void (*{EXT_ADDR_PREFIX}{name}(void))(void) {{ return (void (*)(void)) {name}; }}\n")
+}
+
+/// `T omc_ext_call_f(A a0, …) { return f(a0, …); }`. `None` when an argument has
+/// no C spelling the declaration alone fixes (a record's struct).
+fn ext_call_wrapper(sig: &ExtCallSig) -> Option<String> {
+    let byref = sig.lang == crate::sig::ExtLang::Fortran77;
+    let mut params = String::new();
+    for (i, (ty, is_out)) in sig.args.iter().enumerate() {
+        let ptr = *is_out || byref || matches!(ty, crate::sig::SigTy::Array { .. });
+        params.push_str(&format!(
+            "{}{}{} a{i}",
+            if i == 0 { "" } else { ", " },
+            ext_c_type(ty)?,
+            if ptr { "*" } else { "" }
+        ));
+    }
+    let args: Vec<String> = (0..sig.args.len()).map(|i| format!("a{i}")).collect();
+    let (ret, call) = match &sig.ret {
+        Some(ty) => (ext_c_type(ty)?.to_owned(), "return "),
+        None => ("void".to_owned(), ""),
+    };
+    Some(format!(
+        "{ret} {EXT_CALL_PREFIX}{}({}) {{ {call}{}({}); }}\n",
+        sig.name,
+        if params.is_empty() { "void".to_owned() } else { params },
+        sig.name,
+        args.join(", ")
+    ))
+}
+
+/// The C type the language specification maps a Modelica type to; an array is its
+/// element type, passed by pointer.
+fn ext_c_type(ty: &crate::sig::SigTy) -> Option<&'static str> {
+    use crate::sig::SigTy;
+    Some(match ty {
+        SigTy::Int | SigTy::Bool => "int",
+        SigTy::Real => "double",
+        SigTy::Str => "const char*",
+        SigTy::Ptr => "void*",
+        SigTy::Array { elem, .. } => ext_c_type(elem)?,
+        SigTy::Record { .. } | SigTy::Func { .. } => return None,
+    })
 }
 
 /// What the C target's generated `<prefix>_includes.h` opens with, so external C
@@ -214,7 +298,9 @@ pub const INCLUDE_TU_PROLOGUE: &str = "\
 #include \"ModelicaUtilities.h\"  /* Make Modelica C util functions available for external includes. */\n";
 
 /// The same for a wasm unit, where `openmodelica.h` cannot be opened — it reaches the
-/// Boehm GC and `setjmp`. Name what external source uses it for instead.
+/// Boehm GC and `setjmp`. Name what external source uses it for instead. Nothing
+/// omc-specific: source needing more than the specification's C interface includes
+/// it itself.
 pub const INCLUDE_TU_PROLOGUE_WASM: &str = "\
 #include <stddef.h>\n\
 #include <stdio.h>\n\
@@ -243,8 +329,25 @@ pub struct EditableParam {
     pub wty: WTy,
     /// A state's start value (vs. a plain parameter): overridden after `functionInitStartValues`.
     pub is_start: bool,
+    /// A Boolean quantity: reads an `-override` value C's `read_value_bool` way.
+    pub is_bool: bool,
     /// Enumeration literal names (1-based index → name), empty for non-enum.
     pub enum_names: Vec<String>,
+}
+
+impl EditableParam {
+    /// C's per-class `_init.xml` readers on an `-override` value: `read_value_bool`
+    /// for a Boolean, else `read_value_real`/`_long`, whose `atof`/`atol` give 0 for junk.
+    pub fn read_value(&self, s: &str) -> f64 {
+        if self.is_bool {
+            return if s == "true" { 1.0 } else { 0.0 };
+        }
+        match s {
+            "true" => 1.0,
+            "false" => 0.0,
+            _ => s.parse::<f64>().unwrap_or(0.0),
+        }
+    }
 }
 
 // ─────────────────────────── driver selection ───────────────────────────

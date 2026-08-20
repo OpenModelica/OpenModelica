@@ -377,19 +377,7 @@ endif()
 # They are part of "compiler" installation component. This means that you can
 # install just the files in this component by specifying its name.
 if(WIN32)
-  # Escape the environment variable path
-  if(NOT DEFINED ENV{OMDEV})
-    message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
-  endif()
-  if(NOT DEFINED ENV{MSYSTEM_PREFIX})
-    message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
-  endif()
-
-  if (CMAKE_GENERATOR STREQUAL "MinGW Makefiles" AND "$ENV{VisualStudioVersion}" STREQUAL "")
-    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{OMDEV}\\tools\\msys\\$ENV{MSYSTEM_PREFIX}")
-  else()
-    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
-  endif()
+  omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
 
   set(OMCOMPILER_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/Compiler/bin)
   set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c)
@@ -413,8 +401,8 @@ if(WIN32)
   # simulation and FMU code (see RT_LDFLAGS_GENERATED_CODE* in
   # Compiler/runtime/CMakeLists.txt), but it is not a runtime dependency of the
   # compiler itself, so the RUNTIME_DEPENDENCIES scan above does not pick it up.
-  # The autotools/OMDev build copies it explicitly (Makefile.omdev.mingw); do the
-  # same here so e.g. buildModelFMU() can bundle it into the exported FMU.
+  # Install it explicitly so e.g. buildModelFMU() can bundle it into the
+  # exported FMU.
   install(FILES ${MSYSTEM_PREFIX_ESCAPED}/bin/libopenblas.dll
           DESTINATION ${CMAKE_INSTALL_BINDIR}
           COMPONENT omc

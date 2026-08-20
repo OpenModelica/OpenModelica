@@ -56,6 +56,20 @@ fn step_size() -> f64 {
     f64::from_bits(STEP_SIZE.load(Ordering::Relaxed))
 }
 
+/// C's `threadData->currentErrorStage`, as two words the driver stores into: `[0]`
+/// the stage, `[1]` set when a model error was absorbed there.
+/// `ERROR_NONLINEARSOLVER` is [`NLS_DEPTH`], the runtime's own nesting, instead.
+pub const ERROR_SIMULATION: u32 = 0;
+pub const ERROR_INTEGRATOR: u32 = 1;
+static ERROR_STAGE: [AtomicU32; 2] = [AtomicU32::new(ERROR_SIMULATION), AtomicU32::new(0)];
+
+/// Address of [`ERROR_STAGE`], so the driver marks a region with a store rather than
+/// a wasm call per evaluation (as for [`rt_context_addr`]).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_error_stage_addr() -> u32 {
+    ERROR_STAGE.as_ptr() as u32
+}
+
 /// Recoverable-assert state (C's `ERROR_NONLINEARSOLVER`). While `NLS_DEPTH` > 0 a
 /// failed model `assert()` records itself in `NLS_ASSERT_HIT` and returns instead of
 /// trapping; `eval` then turns that trial into a huge residual so the solver backs off.
@@ -65,6 +79,13 @@ static NLS_ASSERT_HIT: AtomicU32 = AtomicU32::new(0);
 static NLS_EVAL_HIT: AtomicU32 = AtomicU32::new(0);
 /// C's `assertCalled`, sticky over one solver attempt.
 static NLS_ASSERT_SEEN: AtomicU32 = AtomicU32::new(0);
+/// The same two, narrowed to a rejection the *model* caused. C's `residualFunc`
+/// throws on a non-finite iteration variable as the guard below rejects one, but
+/// only this target's linear algebra reaches that state (a rank-deficient Jacobian
+/// steps to inf where C's does not), so reporting the guard as a model throw prints
+/// C's assert block for solver states C never enters.
+static NLS_EVAL_THREW: AtomicU32 = AtomicU32::new(0);
+static NLS_THROW_SEEN: AtomicU32 = AtomicU32::new(0);
 
 /// The residual a rejected trial reports; [`newton_c`] damps its step on it.
 const ASSERT_RESIDUAL: f64 = 1e60;
@@ -72,6 +93,15 @@ const ASSERT_RESIDUAL: f64 = 1e60;
 /// Whether the last residual evaluation hit a recoverable model assert.
 pub(crate) fn assert_hit() -> bool {
     NLS_EVAL_HIT.load(Ordering::Relaxed) != 0
+}
+
+/// The same for the last evaluation, and for the attempt: did the model throw?
+fn eval_threw() -> bool {
+    NLS_EVAL_THREW.load(Ordering::Relaxed) != 0
+}
+
+fn attempt_threw() -> bool {
+    NLS_THROW_SEEN.load(Ordering::Relaxed) != 0
 }
 
 /// Take over the hit flag: a residual routinely runs a nested `rt_solve_nls`, whose
@@ -85,20 +115,25 @@ fn enter_eval() -> u32 {
 fn leave_eval(saved: u32) -> bool {
     NLS_DEPTH.fetch_sub(1, Ordering::Relaxed);
     let hit = NLS_ASSERT_HIT.swap(saved, Ordering::Relaxed) != 0;
-    note_eval_hit(hit);
+    note_eval_hit(hit, hit);
     hit
 }
 
-fn note_eval_hit(hit: bool) {
+fn note_eval_hit(hit: bool, threw: bool) {
     NLS_EVAL_HIT.store(hit as u32, Ordering::Relaxed);
+    NLS_EVAL_THREW.store(threw as u32, Ordering::Relaxed);
     if hit {
         NLS_ASSERT_SEEN.store(1, Ordering::Relaxed);
+    }
+    if threw {
+        NLS_THROW_SEEN.store(1, Ordering::Relaxed);
     }
 }
 
 /// Open C's `MMC_TRY_INTERNAL` around one solver attempt.
 fn arm_attempt() {
     NLS_ASSERT_SEEN.store(0, Ordering::Relaxed);
+    NLS_THROW_SEEN.store(0, Ordering::Relaxed);
 }
 
 /// The `abort` MINPACK polls. Without it the dogleg grinds against
@@ -107,30 +142,120 @@ fn attempt_aborted() -> bool {
     NLS_ASSERT_SEEN.load(Ordering::Relaxed) != 0
 }
 
-/// Model side (emitted by `emit_assert`): is a failed assert currently recoverable
-/// (i.e. inside a nonlinear-solver residual)? Non-zero → the model records the
-/// assert via [`rt_nls_note_assert`] and bails out instead of trapping.
+/// Model side (emitted by `emit_assert`): is a failed assert currently recoverable —
+/// inside a nonlinear-solver residual, or the integrator's? Non-zero → the model
+/// records the assert via [`rt_nls_note_assert`] and bails out instead of trapping.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_recovering() -> i32 {
-    (NLS_DEPTH.load(Ordering::Relaxed) > 0) as i32
+    (NLS_DEPTH.load(Ordering::Relaxed) > 0
+        || ERROR_STAGE[0].load(Ordering::Relaxed) == ERROR_INTEGRATOR) as i32
 }
 
 /// Model side: flag that a recoverable assert fired at the current trial point.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_note_assert() {
-    NLS_ASSERT_HIT.store(1, Ordering::Relaxed);
+    note_slot().store(1, Ordering::Relaxed);
+}
+
+/// Where [`rt_nls_note_assert`] records: the residual's own flag, or the
+/// integrator region's when the model error is not inside a residual.
+fn note_slot() -> &'static AtomicU32 {
+    if NLS_DEPTH.load(Ordering::Relaxed) > 0 { &NLS_ASSERT_HIT } else { &ERROR_STAGE[1] }
 }
 
 /// A model error where C's generated code calls `throwStreamPrint` — an invalid
-/// root, a zero divisor, an index out of range. C's `longjmp` lands in the solver's
+/// root, a zero divisor, an index out of range. C's `longjmp` lands in the innermost
 /// `MMC_TRY_INTERNAL`, so inside a residual note the trial and let the caller return
-/// a dummy `eval` discards. Outside one the error is fatal.
+/// a dummy the solver discards. With neither stage open the error is fatal.
 pub(crate) fn model_error() {
-    if NLS_DEPTH.load(Ordering::Relaxed) > 0 {
+    if rt_nls_recovering() != 0 {
         rt_nls_note_assert();
         return;
     }
     crate::trap()
+}
+
+/// C's `throwStreamPrint`: log `msg` on `LOG_ASSERT` and unwind — so a trial the
+/// solver goes on to reject still reports why. `msg` is borrowed (the module's
+/// literal pool owns it). Returns only where the unwind is recoverable.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_throw_stream(msg: u32) {
+    throw_stream(core::str::from_utf8(unsafe { crate::str_bytes(msg) }).unwrap_or(""))
+}
+
+pub(crate) fn throw_stream(s: &str) {
+    let recovering = rt_nls_recovering() != 0;
+    // C's `longjmp` leaves the rest of the evaluation unreached, so it reports one
+    // throw per evaluation. Here each frame returns and the ones above it carry on:
+    // report only the throw C's jump would have carried out.
+    if !(recovering && note_slot().load(Ordering::Relaxed) != 0) {
+        if recovering {
+            if crate::omclog::active(crate::omclog::ASSERT) {
+                crate::omclog::message_text(crate::omclog::DEBUG_TYPE, crate::omclog::ASSERT, false, s);
+            }
+        } else {
+            // Also arms the trap below to report as an assertion, not a crash.
+            crate::note_runtime_error(s);
+        }
+    }
+    if !recovering {
+        crate::trap()
+    }
+    rt_nls_note_assert();
+}
+
+/// C's `noThrowDivZero`, which `solve_nonlinear_system` holds over a solve: a
+/// division by zero at a trial point is the solver's to walk away from.
+fn no_throw_div_zero() -> bool {
+    NLS_DEPTH.load(Ordering::Relaxed) > 0
+}
+
+/// The slow half of C's `__OMC_DIV_SIM` (util/division.h): the emitted code divides
+/// and calls here only for a zero divisor or a non-finite result. `msg` is the
+/// divisor's source form, borrowed from the module's literal pool.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_div_sim(a: f64, b: f64, msg: u32, time: f64, initial: i32) -> f64 {
+    use openmodelica_sim_meta::driver::format_g;
+    let s = core::str::from_utf8(unsafe { crate::str_bytes(msg) }).unwrap_or("");
+    let res = if b != 0.0 {
+        a / b
+    } else if initial != 0 && a == 0.0 {
+        // C's 0/0 at initialization is zero, not the nan that would go on to fail a
+        // domain check somewhere downstream.
+        return 0.0;
+    } else if no_throw_div_zero() {
+        crate::omclog::warning(
+            crate::omclog::DIVISION,
+            false,
+            &alloc::format!(
+                "solver will try to handle division by zero at time {}: {s}",
+                format_g(time, 16)
+            ),
+        );
+        a / b
+    } else {
+        throw_stream(&alloc::format!(
+            "division by zero at time {}, (a={}) / (b={}), where divisor b expression is: {s}",
+            format_g(time, 16),
+            format_g(a, 16),
+            format_g(b, 16)
+        ));
+        a / b
+    };
+    if !res.is_finite() {
+        let m = alloc::format!(
+            "division leads to inf or nan at time {}, (a={}) / (b={}), where divisor b is: {s}",
+            format_g(time, 6),
+            format_g(a, 6),
+            format_g(b, 6)
+        );
+        if no_throw_div_zero() {
+            crate::omclog::warning(crate::omclog::DIVISION, false, &m);
+        } else {
+            throw_stream(&m);
+        }
+    }
+    res
 }
 
 /// Build the Jacobian-assemble closure used by both kinsol and newton sparse paths.
@@ -201,7 +326,7 @@ const LAMBDA_MIN: f64 = 9.765625e-4;
 
 /// Euclidean norm (C's `enorm_`). NaN propagates, so a diverged residual falls
 /// through every `< eps` test to the iteration-limit failure.
-fn enorm(v: &[f64]) -> f64 {
+pub(crate) fn enorm(v: &[f64]) -> f64 {
     let mut s = 0.0;
     for &x in v {
         s += x * x;
@@ -213,15 +338,25 @@ fn enorm(v: &[f64]) -> f64 {
 /// Returns `true` on success, `false` on a singular/failed factorization (in
 /// which case `b` is unchanged). Shared by [`newton_solve`] and `rt_linsolve`.
 pub(crate) fn lu_solve(a: &[f64], b: &mut [f64], n: usize) -> bool {
+    lu_solve_singular_pivot(a, b, n).is_none()
+}
+
+/// [`lu_solve`] reporting `dgesv`'s `info`: `None` on success, else the 0-based
+/// index of the first zero pivot on `U`'s diagonal.
+pub(crate) fn lu_solve_singular_pivot(a: &[f64], b: &mut [f64], n: usize) -> Option<usize> {
     use nalgebra::{DMatrix, DVector};
     let am = DMatrix::<f64>::from_column_slice(n, n, a);
     let bv = DVector::<f64>::from_column_slice(b);
-    match am.lu().solve(&bv) {
+    let lu = am.lu();
+    match lu.solve(&bv) {
         Some(x) => {
             b.copy_from_slice(x.as_slice());
-            true
+            None
         }
-        None => false,
+        None => {
+            let u = lu.u();
+            Some((0..n).find(|&i| u[(i, i)] == 0.0).unwrap_or(n.saturating_sub(1)))
+        }
     }
 }
 
@@ -400,83 +535,203 @@ fn scale_matrix_rows_aug(n: usize, a: &mut [f64]) {
     }
 }
 
-/// Arc-length homotopy continuation, a port of C's `homotopyAlgorithm`
-/// (`nonlinearSolverHomotopy.c`): Newton homotopy `H(y) = F(x) − (1−λ)·F(x0)` tracked
-/// λ: 0→1 by a tangent predictor + fixed-coordinate Newton corrector with adaptive
-/// step `tau`. Follows folds a fixed-λ homotopy can't. `x` = guess in / λ=1 root out.
-fn homotopy_solve(
+/// Why a homotopy run stopped, so the init arm can print the message C prints.
+enum HomFail {
+    /// C's `iter >= maxTries` with tau already at `tauMin`.
+    TauStuck,
+    /// C's `iter >= maxTries` with tries left to shrink tau.
+    MaxTries(i32),
+    /// C's `y0[n] < -1`: the path turned away from lambda = 1.
+    LambdaNegative(f64),
+    /// C's `numSteps >= maxLambdaSteps`.
+    MaxLambdaSteps(usize),
+    /// C's singular `solveSystemWithTotalPivotSearch` on the tangent.
+    Singular,
+    /// C's "increment zero": the corrector step vanished against the predictor.
+    IncrementZero,
+    /// C's predictor `assert` with tau no longer shrinkable.
+    PredictorTau(f64),
+}
+
+impl HomFail {
+    /// The `LOG_ASSERT` text C's `initHomotopy` arm prints.
+    fn message(&self) -> alloc::string::String {
+        const MORE: &str = "You can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.";
+        const NEWTON_TAIL: &str = "You can also try to allow more newton steps in the corrector step with:\n\t\
+             -homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t\
+             -homHEps=<value>\nYou can also try to use another backtrace stategy in the corrector step \
+             with:\n\t-homBacktraceStrategy=<fix|orthogonal>\n";
+        const TAU_TAIL: &str = "\t-homTauDecFac=<value>\n\t-homTauDecFacPredictor=<value>\n\t\
+             -homTauIncFac=<value>\n\t-homTauIncThreshold=<value>\n\t-homTauMax=<value>\n\t\
+             -homTauMin=<value>\n\t-homTauStart=<value>\n";
+        let head = "Homotopy algorithm did not converge.\n";
+        match self {
+            HomFail::TauStuck => alloc::format!(
+                "{head}No solution for current step size tau found and tau cannot be decreased any \
+                 further.\nYou can set the minimum step size tau with:\n\t-homTauMin=<value>\n\
+                 {NEWTON_TAIL}{MORE}"
+            ),
+            HomFail::MaxTries(iter) => alloc::format!(
+                "{head}The maximum number of tries for one lambda is reached ({iter}).\nYou can \
+                 change the number of tries with:\n\t-homMaxTries=<value>\n{NEWTON_TAIL}{MORE}"
+            ),
+            HomFail::LambdaNegative(l) => {
+                alloc::format!("{head}lambda is smaller than -1: lambda={}\n{MORE}", fmt_g6(*l))
+            }
+            HomFail::MaxLambdaSteps(n) => alloc::format!(
+                "{head}The maximum number of lambda steps is reached ({n}).\nYou can change the \
+                 maximum number of lambda steps with:\n\t-homMaxLambdaSteps=<value>\nYou can also \
+                 try to influence the step size tau with the following flags:\n{TAU_TAIL}or you can \
+                 also set the threshold for accepting the current bending with:\n\t\
+                 -homAdaptBend=<value>\nYou can also try to use another backtrace stategy in the \
+                 corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\n{MORE}"
+            ),
+            HomFail::Singular => alloc::format!("{head}The system is singular and not solvable.\n{MORE}"),
+            HomFail::IncrementZero => alloc::format!(
+                "{head}The value specifying the bending of the homotopy curve is smaller than \
+                 DBL_EPSILON (increment zero).\n{MORE}"
+            ),
+            HomFail::PredictorTau(tau) => alloc::format!(
+                "{head}The step size tau cannot be decreased anymore and current tau={} already \
+                 failed.\nYou can influence the calculation of tau with the following flags:\n\
+                 {TAU_TAIL}You can also set the threshold for accepting the current bending with:\n\t\
+                 -homAdaptBend=<value>\n{MORE}",
+                fmt_g6(*tau)
+            ),
+        }
+    }
+}
+
+/// The homotopy `H(y)` a continuation tracks, `y = [x, λ]` with `m = n+1` entries:
+/// C's `h_function` / `hJac_dh` pair, in its two variants.
+trait Homotopy {
+    /// `H(y)` into `hvec` (`n` residuals).
+    fn h(&mut self, y: &[f64], hvec: &mut [f64]);
+    /// The `n×m` Jacobian at `y`, column-scaled by `xScaling`, given `H(y)` as the
+    /// finite-difference base.
+    fn jac(&mut self, y: &[f64], hbase: &[f64], out: &mut [f64]);
+}
+
+/// C's `getNumericalJacobianHomotopy`: forward differences over the first `n_cols`
+/// coordinates of `y`, scaled by `xScaling[j]`; `max_value` flips the step's sign.
+fn fd_homotopy_jacobian(
+    hom: &mut impl Homotopy,
     n: usize,
-    x: &mut [f64],
-    nominal: &[f64],
+    n_cols: usize,
+    y: &[f64],
+    hbase: &[f64],
+    xscaling: &[f64],
+    max_value: Option<&[f64]>,
+    out: &mut [f64],
+) {
+    let delta_h = libm::sqrt(f64::EPSILON * 20.0);
+    let mut yp = y.to_vec();
+    let mut f2 = vec![0.0f64; n];
+    for j in 0..n_cols {
+        let ysave = yp[j];
+        let mut hh = delta_h * (libm::fabs(ysave) + 1.0);
+        if max_value.is_some_and(|mx| ysave + hh >= mx[j]) {
+            hh = -hh;
+        }
+        yp[j] = ysave + hh;
+        let inv = xscaling[j] / hh;
+        hom.h(&yp, &mut f2);
+        for i in 0..n {
+            out[i + j * n] = (f2[i] - hbase[i]) * inv;
+        }
+        yp[j] = ysave;
+    }
+}
+
+/// C's `wrapper_fvec_homotopy_newton`: `H(y) = F(x) − (1−λ)·F(x0)`, whose λ column
+/// is the constant `F(x0)`.
+struct NewtonHom<'a, 'b> {
+    n: usize,
+    fx0: alloc::vec::Vec<f64>,
+    fx: alloc::vec::Vec<f64>,
+    xscaling: &'a [f64],
+    eval: &'a mut (dyn FnMut(&[f64], &mut [f64]) + 'b),
+}
+
+impl Homotopy for NewtonHom<'_, '_> {
+    fn h(&mut self, y: &[f64], hvec: &mut [f64]) {
+        (self.eval)(&y[..self.n], &mut self.fx);
+        let lam = y[self.n];
+        for i in 0..self.n {
+            hvec[i] = self.fx[i] - (1.0 - lam) * self.fx0[i];
+        }
+    }
+    fn jac(&mut self, y: &[f64], hbase: &[f64], out: &mut [f64]) {
+        let (n, xs) = (self.n, self.xscaling);
+        let xs: alloc::vec::Vec<f64> = xs.to_vec();
+        fd_homotopy_jacobian(self, n, n, y, hbase, &xs, None, out);
+        out[n * n..].copy_from_slice(&self.fx0);
+    }
+}
+
+/// C's `initHomotopy`: `H(y)` is the model's own residual with `λ = y[n]` driving
+/// its `homotopy()` calls, so the λ column is one more Jacobian column.
+struct InitHom<'a, 'b> {
+    n: usize,
+    xscaling: &'a [f64],
+    max_value: Option<&'a [f64]>,
+    /// `y` (`m` entries) -> residual (`n` entries), the model's `residualFunc`.
+    eval: &'a mut (dyn FnMut(&[f64], &mut [f64]) + 'b),
+    /// The symbolic `n×m` Jacobian, unscaled, or `None` for finite differences.
+    jac: Option<&'a mut (dyn FnMut(&[f64], &mut [f64]) + 'b)>,
+}
+
+impl Homotopy for InitHom<'_, '_> {
+    fn h(&mut self, y: &[f64], hvec: &mut [f64]) {
+        (self.eval)(y, hvec);
+    }
+    fn jac(&mut self, y: &[f64], hbase: &[f64], out: &mut [f64]) {
+        let (n, m) = (self.n, self.n + 1);
+        if let Some(j) = self.jac.as_mut() {
+            j(y, out);
+            // C's `getAnalyticalJacobianHomotopy` scales each column by `xScaling[j]`.
+            for c in 0..m {
+                for r in 0..n {
+                    out[r + c * n] *= self.xscaling[c];
+                }
+            }
+            return;
+        }
+        let xs: alloc::vec::Vec<f64> = self.xscaling.to_vec();
+        let mx: Option<alloc::vec::Vec<f64>> = self.max_value.map(|v| v.to_vec());
+        fd_homotopy_jacobian(self, n, m, y, hbase, &xs, mx.as_deref(), out);
+    }
+}
+
+/// Arc-length homotopy continuation, a port of C's `homotopyAlgorithm`
+/// (`nonlinearSolverHomotopy.c`): `H(y)`, `y = [x, λ]`, tracked λ: 0→1 by a tangent
+/// predictor + fixed-coordinate Newton corrector with adaptive step `tau`. Follows
+/// folds a fixed-λ homotopy can't. `y` carries the start `x` in and the λ=1 root
+/// out; `Ok(steps)` is C's `numSteps`.
+fn homotopy_algorithm(
+    n: usize,
+    y: &mut [f64],
+    xscaling: &[f64],
     start_dir: f64,
-    eval: &mut dyn FnMut(&[f64], &mut [f64]),
-) -> bool {
-    const TAU_START: f64 = 0.2;
-    const TAU_MAX: f64 = 10.0;
-    const TAU_MIN: f64 = 1.0e-4;
-    const H_EPS: f64 = 1.0e-5;
-    const ADAPT_BEND: f64 = 0.5;
-    const TAU_DEC: f64 = 10.0;
-    const TAU_DEC_PRED: f64 = 2.0;
-    const TAU_INC: f64 = 2.0;
-    const TAU_INC_THRESH: f64 = 10.0;
-    const MAX_NEWTON: usize = 20;
-    const MAX_TRIES: i32 = 10;
-    const MAX_LAMBDA_STEPS: usize = 1000;
+    log: crate::omclog::Stream,
+    hom: &mut impl Homotopy,
+) -> core::result::Result<usize, HomFail> {
+    let t = crate::solvers::hom_tuning();
     let m = n + 1;
-
-    // xScaling[i] = max(nominal[i], |xStart[i]|) from the original start values.
-    let mut xscaling = vec![0.0f64; m];
-    for i in 0..n {
-        xscaling[i] = nominal[i].abs().max(x[i].abs());
-        if xscaling[i] <= 0.0 {
-            xscaling[i] = 1.0;
-        }
-    }
-    xscaling[m - 1] = 1.0;
-
-    // Regular-initial-point search (C solveHomotopy): the raw start may sit on a
-    // singularity (a spring loop seeds s_rel=0, where the residual and Jacobian
-    // blow up and the homotopy path becomes pathological). Perturb x0 by
-    // xScaling·(i/n)·{0, 1%, 10%} until f(x0) is finite and moderate.
-    let xstart = x[..n].to_vec();
-    let mut x0v = xstart.clone();
-    let mut fx0 = vec![0.0f64; n];
-    for tries in 0..=2 {
-        let pert = match tries {
-            1 => 0.01,
-            2 => 0.10,
-            _ => 0.0,
-        };
-        for i in 0..n {
-            x0v[i] = xstart[i] + xscaling[i] * (i as f64 / n as f64) * pert;
-        }
-        eval(&x0v, &mut fx0);
-        if fx0.iter().all(|v| v.is_finite() && v.abs() < 1e6) {
-            break;
-        }
-    }
-
-    // Homotopy function H and its FD Jacobian, both over the augmented y = [x, λ].
-    let fx0_ref = &fx0;
-    let h_function = |y: &[f64], hvec: &mut [f64], fx: &mut [f64], eval: &mut dyn FnMut(&[f64], &mut [f64])| {
-        eval(&y[..n], fx);
-        let lam = y[n];
-        for i in 0..n {
-            hvec[i] = fx[i] - (1.0 - lam) * fx0_ref[i];
-        }
-    };
+    let max_newton = t.max_newton_steps as usize;
+    let max_tries = t.max_tries as i32;
+    // C's `homMaxLambdaSteps ? … : maxNumberOfIterations` (the solver's `size*100`).
+    let max_lambda_steps = if t.max_lambda_steps > 0 { t.max_lambda_steps as usize } else { n * 100 };
+    let mut tau = t.tau_start;
 
     let mut y0 = vec![0.0f64; m];
-    y0[..n].copy_from_slice(&x0v);
+    y0[..n].copy_from_slice(&y[..n]);
     let mut prev_tangent = vec![0.0f64; m];
     prev_tangent[m - 1] = start_dir;
 
     let mut hvec = vec![0.0f64; n];
-    let mut fx = vec![0.0f64; n];
-    h_function(&y0, &mut hvec, &mut fx, eval);
+    hom.h(&y0, &mut hvec);
 
-    let mut tau = TAU_START;
     let mut iter: i32 = 0;
     let mut num_steps = 0usize;
     let mut initial_step = true;
@@ -485,50 +740,30 @@ fn homotopy_solve(
     let mut y1 = vec![0.0f64; m];
     let mut yt = vec![0.0f64; m];
     let mut dy1 = vec![0.0f64; m];
-    let mut f2 = vec![0.0f64; n];
     let mut res_scaling = vec![1.0f64; n];
     let mut hvec_scaled = vec![0.0f64; n];
-
+    let mut pre_tau = tau;
     let mut tangent_pos: i32 = -1;
 
-    let delta_h = libm::sqrt(f64::EPSILON * 20.0);
-    // Build the scaled n×(n+1) homotopy Jacobian at `y` (FD, fx = F(x) base).
-    let build_jac = |y: &[f64],
-                     fbase: &[f64],
-                     hjac: &mut [f64],
-                     f2: &mut [f64],
-                     xscaling: &[f64],
-                     eval: &mut dyn FnMut(&[f64], &mut [f64])| {
-        let mut xp = y[..n].to_vec();
-        for j in 0..n {
-            let xsave = xp[j];
-            let hh = delta_h * (xsave.abs() + 1.0);
-            xp[j] = xsave + hh;
-            let inv = xscaling[j] / hh;
-            eval(&xp, f2);
-            for i in 0..n {
-                hjac[i + j * n] = (f2[i] - fbase[i]) * inv;
-            }
-            xp[j] = xsave;
-        }
-        // The λ column (∂H/∂λ = F(x0)) is filled in by the caller.
-    };
-
     while y0[n] < 1.0 {
-        if iter >= MAX_TRIES || y0[n] < -1.0 || num_steps >= MAX_LAMBDA_STEPS {
-            return false;
+        crate::omclog::info(log, false, &alloc::format!("homotopy parameter lambda = {}", fmt_g6(y0[n])));
+        if iter >= max_tries {
+            return Err(if pre_tau == tau { HomFail::TauStuck } else { HomFail::MaxTries(iter) });
+        }
+        if y0[n] < -1.0 {
+            return Err(HomFail::LambdaNegative(y0[n]));
+        }
+        if num_steps >= max_lambda_steps {
+            return Err(HomFail::MaxLambdaSteps(max_lambda_steps));
         }
 
         // ---- Predictor: tangent vector (only after an accepted step) ----
         if iter == 0 {
-            build_jac(&y0, &fx, &mut hjac, &mut f2, &xscaling, eval);
-            for i in 0..n {
-                hjac[i + n * n] = fx0[i]; // ∂H/∂λ = F(x0)
-            }
+            hom.jac(&y0, &hvec, &mut hjac);
             scale_matrix_rows_aug(n, &mut hjac);
             tangent_pos = -1;
             if total_pivot_augmented(n, &mut tangent, &mut hjac, &mut tangent_pos) == -1 {
-                return false;
+                return Err(HomFail::Singular);
             }
             for i in 0..m {
                 tangent[i] *= xscaling[i];
@@ -538,14 +773,14 @@ fn homotopy_solve(
             for i in 0..m {
                 dot += tangent[i] * prev_tangent[i];
             }
-            if dot < 0.0 || (dot.abs() < f64::EPSILON && start_dir == -1.0 && initial_step) {
-                for t in tangent.iter_mut() {
-                    *t = -*t;
+            if dot < 0.0 || (libm::fabs(dot) < f64::EPSILON && start_dir == -1.0 && initial_step) {
+                for v in tangent.iter_mut() {
+                    *v = -*v;
                 }
             }
             // Cap tau so λ + tau·dλ ≤ 1.
-            if tangent[n].abs() > 1e-8 {
-                tau = tau.min((1.0 - y0[n]) / tangent[n].abs());
+            if libm::fabs(tangent[n]) > 1e-8 {
+                tau = tau.min((1.0 - y0[n]) / libm::fabs(tangent[n]));
             }
         }
 
@@ -555,42 +790,39 @@ fn homotopy_solve(
             for i in 0..m {
                 y1[i] = y0[i] + tau * tangent[i];
             }
-            h_function(&y1, &mut hvec, &mut fx, eval);
-            if hvec.iter().all(|v| v.abs() < 1e30) {
+            hom.h(&y1, &mut hvec);
+            if hvec.iter().all(|v| libm::fabs(*v) < ASSERT_RESIDUAL) {
                 assert_ok = true;
                 break;
             }
-            tau /= TAU_DEC_PRED;
-            if tau <= TAU_MIN {
+            tau /= t.tau_dec_pred;
+            if tau <= t.tau_min {
                 break;
             }
         }
         if !assert_ok {
-            return false;
+            return Err(HomFail::PredictorTau(tau));
         }
         yt.copy_from_slice(&y1);
 
         // ---- Corrector: Newton with coordinate `pos` fixed ----
         let last_step = y1[n] >= 1.0;
-        let h_eps = if last_step { newton_ftol() } else { H_EPS };
+        let h_eps = if last_step { newton_ftol() } else { t.h_eps };
         let mut pos = if last_step { n as i32 } else { tangent_pos };
         let mut step_accept = false;
         let mut corrector_ok = true;
         hvec_scaled.copy_from_slice(&hvec); // C: hvecScaled starts as hvec (unscaled)
-        for _ in 0..MAX_NEWTON {
+        for _ in 0..max_newton {
             if enorm(&hvec) < h_eps || enorm(&hvec_scaled) < h_eps {
                 step_accept = true;
                 break;
             }
-            build_jac(&y1, &fx, &mut hjac, &mut f2, &xscaling, eval);
-            for i in 0..n {
-                hjac[i + n * n] = fx0[i];
-            }
+            hom.jac(&y1, &hvec, &mut hjac);
             // resScaling[i] = row abs-sum of the homotopy Jacobian (before fixing pos).
             for i in 0..n {
                 let mut s = 0.0;
                 for j in 0..m {
-                    s += hjac[i + j * n].abs();
+                    s += libm::fabs(hjac[i + j * n]);
                 }
                 res_scaling[i] = if s > 0.0 { s } else { 1.0 };
             }
@@ -609,8 +841,8 @@ fn homotopy_solve(
                 dy1[i] *= xscaling[i];
                 y1[i] += dy1[i];
             }
-            h_function(&y1, &mut hvec, &mut fx, eval);
-            if hvec.iter().any(|v| v.abs() >= 1e30) {
+            hom.h(&y1, &mut hvec);
+            if hvec.iter().any(|v| libm::fabs(*v) >= ASSERT_RESIDUAL) {
                 corrector_ok = false;
                 break;
             }
@@ -634,14 +866,14 @@ fn homotopy_solve(
             bend = if pred > 0.0 { libm::sqrt(corr) / pred } else { f64::INFINITY };
         }
 
-        if bend > ADAPT_BEND || !step_accept {
+        if bend > t.adapt_bend || !step_accept {
             if corrector_ok && bend < f64::EPSILON {
-                return false;
+                return Err(HomFail::IncrementZero);
             }
-            let pre_tau = tau;
-            tau = TAU_MIN.max(tau / TAU_DEC);
+            pre_tau = tau;
+            tau = t.tau_min.max(tau / t.tau_dec);
             if tau == pre_tau {
-                iter = MAX_TRIES;
+                iter = max_tries;
             } else {
                 iter += 1;
             }
@@ -649,15 +881,135 @@ fn homotopy_solve(
             initial_step = false;
             iter = 0;
             num_steps += 1;
-            if bend < ADAPT_BEND / TAU_INC_THRESH {
-                tau = TAU_MAX.min(tau * TAU_INC);
+            if bend < t.adapt_bend / t.tau_inc_threshold {
+                tau = t.tau_max.min(tau * t.tau_inc);
             }
             y0.copy_from_slice(&y1);
             prev_tangent.copy_from_slice(&tangent);
         }
     }
-    x[..n].copy_from_slice(&y1[..n]);
-    true
+    crate::omclog::info(log, false, &alloc::format!("homotopy parameter lambda = {}", fmt_g6(y0[n])));
+    y.copy_from_slice(&y1);
+    Ok(num_steps)
+}
+
+/// C's `!initHomotopy` runs: the Newton homotopy over `F`, from the regular start
+/// point the perturbation search below finds. `x` = guess in / λ=1 root out.
+fn homotopy_solve(
+    n: usize,
+    x: &mut [f64],
+    nominal: &[f64],
+    start_dir: f64,
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+) -> bool {
+    let m = n + 1;
+    // xScaling[i] = max(nominal[i], |xStart[i]|) from the original start values.
+    let mut xscaling = vec![0.0f64; m];
+    for i in 0..n {
+        xscaling[i] = libm::fabs(nominal[i]).max(libm::fabs(x[i]));
+        if xscaling[i] <= 0.0 {
+            xscaling[i] = 1.0;
+        }
+    }
+    xscaling[m - 1] = 1.0;
+
+    // Regular-initial-point search (C solveHomotopy): the raw start may sit on a
+    // singularity, where the path is pathological. Perturb x0 by
+    // xScaling·(i/n)·{0, 1%, 10%} until f(x0) is finite and moderate.
+    let xstart = x[..n].to_vec();
+    let mut x0v = xstart.clone();
+    let mut fx0 = vec![0.0f64; n];
+    for tries in 0..=2 {
+        let pert = match tries {
+            1 => 0.01,
+            2 => 0.10,
+            _ => 0.0,
+        };
+        for i in 0..n {
+            x0v[i] = xstart[i] + xscaling[i] * (i as f64 / n as f64) * pert;
+        }
+        eval(&x0v, &mut fx0);
+        if fx0.iter().all(|v| v.is_finite() && libm::fabs(*v) < 1e6) {
+            break;
+        }
+    }
+
+    let mut y = vec![0.0f64; m];
+    y[..n].copy_from_slice(&x0v);
+    let mut hom = NewtonHom { n, fx0, fx: vec![0.0f64; n], xscaling: &xscaling, eval };
+    let ok = homotopy_algorithm(n, &mut y, &xscaling, start_dir, crate::omclog::NLS_HOMOTOPY, &mut hom).is_ok();
+    if ok {
+        x[..n].copy_from_slice(&y[..n]);
+    }
+    ok
+}
+
+/// C's `solveHomotopy` with `initHomotopy`: continue the component along its own
+/// lambda from 0, the opposing start direction being the second and last try. `x`
+/// holds `n` unknowns plus the lambda slot. Returns C's `homotopySteps` share.
+fn init_homotopy_solve<'e>(
+    n: usize,
+    x: &mut [f64],
+    nominal: &[f64],
+    bounds: &[f64],
+    eval: &mut (dyn FnMut(&[f64], &mut [f64]) + 'e),
+    mut jac: Option<&mut (dyn FnMut(&[f64], &mut [f64]) + 'e)>,
+) -> Option<usize> {
+    let m = n + 1;
+    let mut xscaling = vec![0.0f64; m];
+    for i in 0..n {
+        xscaling[i] = libm::fabs(nominal[i]).max(libm::fabs(x[i]));
+    }
+    xscaling[m - 1] = 1.0;
+    // C's `nlsData->max`, the FD sign-flip bound; lambda's own is unbounded.
+    let mut max_value = vec![f64::MAX; m];
+    for i in 0..n {
+        max_value[i] = bounds[2 * i + 1];
+    }
+    let x0 = x[..n].to_vec();
+    let neg = crate::solvers::hom_tuning().neg_start_dir;
+    // C's `runHomotopy` 1 and 2: the second try reverses the start direction.
+    for run in 1..=2 {
+        let dir = if (run == 1) != neg { 1.0 } else { -1.0 };
+        if run == 2 {
+            crate::omclog::info(
+                crate::omclog::ASSERT,
+                false,
+                "The homotopy algorithm is started again with opposing start direction.",
+            );
+        }
+        crate::omclog::debug_int(crate::omclog::INIT_HOMOTOPY, "Homotopy run: ", run);
+        crate::omclog::debug_double(
+            crate::omclog::INIT_HOMOTOPY,
+            if run == 1 { "startDirection = " } else { "Try again with startDirection = " },
+            dir,
+        );
+        let mut y = vec![0.0f64; m];
+        y[..n].copy_from_slice(&x0);
+        let r = {
+            let mut hom = InitHom {
+                n,
+                xscaling: &xscaling,
+                max_value: Some(&max_value),
+                eval,
+                jac: jac.as_deref_mut(),
+            };
+            homotopy_algorithm(n, &mut y, &xscaling, dir, crate::omclog::INIT_HOMOTOPY, &mut hom)
+        };
+        match r {
+            Ok(steps) => {
+                x[..m].copy_from_slice(&y);
+                crate::omclog::debug_int(
+                    crate::omclog::INIT_HOMOTOPY,
+                    "Total number of lambda steps for this homotopy loop:",
+                    steps as i32,
+                );
+                return Some(steps);
+            }
+            Err(e) => crate::omclog::warning(crate::omclog::ASSERT, false, &e.message()),
+        }
+    }
+    None
 }
 
 /// Newton's method with a forward-difference Jacobian and a damped (line-search)
@@ -948,6 +1300,42 @@ fn hybrd_res_scaling(n: usize, fjac: &[f64], res_scaling: &mut [f64]) {
     }
 }
 
+/// C's `solveHybrd` block for the first model assert that voids a solver attempt.
+fn log_hybrd_assert(t: &HomotopyTrace) {
+    use crate::omclog;
+    use alloc::string::String;
+    let head = if t.initial {
+        String::from("While solving non-linear system an assertion failed during initialization.")
+    } else {
+        alloc::format!(
+            "While solving non-linear system an assertion failed at time {}.",
+            openmodelica_sim_meta::driver::format_g(t.time, 6)
+        )
+    };
+    omclog::warning(omclog::STDOUT, true, &head);
+    let tail = [
+        "The non-linear solver tries to solve the problem that could take some time.",
+        "It could help to provide better start-values for the iteration variables.",
+    ];
+    for line in tail {
+        omclog::warning(omclog::STDOUT, false, line);
+    }
+    if !omclog::active(omclog::NLS_V) {
+        omclog::warning(omclog::STDOUT, false, "For more information simulate with -lv LOG_NLS_V");
+    }
+    omclog::close_warning(omclog::STDOUT);
+}
+
+/// C's warning where a model assert fires in an evaluation made around a solver
+/// attempt rather than in one: `solveHybrd`'s two and `updateInnerEquation`'s.
+fn log_assert_handled() {
+    crate::omclog::warning(
+        crate::omclog::STDOUT,
+        false,
+        "Non-Linear Solver try to handle a problem with a called assert.",
+    );
+}
+
 /// C's `solveHybrd` (nonlinearSolverHybrd.c): MINPACK `hybrd` over C's
 /// forward-difference Jacobian, wrapped in the retry ladder C grinds through before
 /// giving a system up. Every rung restarts the whole solve — the trust-region
@@ -967,7 +1355,7 @@ fn hybrd_c(
     warm: &[f64],
     nominal: &[f64],
     bounds: &[f64],
-    discrete_call: bool,
+    t: &HomotopyTrace,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     set_continuous: &mut dyn FnMut(bool),
 ) -> bool {
@@ -976,6 +1364,7 @@ fn hybrd_c(
     const EPSFCN: f64 = 1.0e-12;
     let maxfev = n * 10000;
     let initial_factor = 100.0f64;
+    let discrete_call = t.discrete;
 
     let mut local_tol = 1.0e-12f64;
     let mut factor = initial_factor;
@@ -986,8 +1375,12 @@ fn hybrd_c(
     let mut diag: Option<alloc::vec::Vec<f64>> = None;
     let (mut retries, mut retries2, mut retries3) = (0i32, 0i32, 0i32);
     let mut assert_retries = 0usize;
-    let mut assert_called;
+    let mut assert_called = false;
+    // C's `assertMessage`: once per solve.
+    let mut assert_message = false;
 
+    // C's `nlsxOld`, which a clean run after an assert moves.
+    let mut warm = warm.to_vec();
     // C's `nlsx`, which the assert rung lifts off zero and success overwrites.
     let mut nlsx = x_start.to_vec();
     let mut xv = nlsx.clone();
@@ -1036,8 +1429,20 @@ fn hybrd_c(
         // measures at 1, so no rung can mistake it for progress.
         let mut void_run = status == minpack::Status::Aborted;
         if void_run {
+            if !assert_message && attempt_threw() {
+                log_hybrd_assert(t);
+                assert_message = true;
+            }
             assert_called = true;
         } else {
+            if assert_called {
+                crate::omclog::info(
+                    crate::omclog::NLS_V,
+                    false,
+                    "After assertions failed, found a solution for which assertions did not fail.",
+                );
+                warm.copy_from_slice(&xv);
+            }
             assert_retries = 0;
             assert_called = false;
             if discrete_call {
@@ -1046,6 +1451,9 @@ fn hybrd_c(
                 arm_attempt();
                 eval(&xv, &mut fvec);
                 if attempt_aborted() {
+                    if eval_threw() {
+                        log_assert_handled();
+                    }
                     void_run = true;
                     assert_called = true;
                 }
@@ -1079,6 +1487,9 @@ fn hybrd_c(
                 set_continuous(true);
                 return true;
             }
+            if eval_threw() {
+                log_assert_handled();
+            }
             assert_called = true;
             continue;
         }
@@ -1090,7 +1501,7 @@ fn hybrd_c(
         if assert_called && assert_retries < 1 + n {
             // The model asserted: lift collapsed unknowns to nominal, then nudge one
             // variable at a time by 1% of it.
-            xv.copy_from_slice(warm);
+            xv.copy_from_slice(&warm);
             if assert_retries == 0 {
                 for i in 0..n {
                     if nlsx[i] == 0.0 {
@@ -1122,12 +1533,12 @@ fn hybrd_c(
             use_xscaling = false;
             retries += 1;
         } else if retries < 7 && discrete_call {
-            xv.copy_from_slice(warm);
+            xv.copy_from_slice(&warm);
             continuous = false;
             non_continuous = true;
             retries += 1;
         } else if retries2 < 1 {
-            xv.copy_from_slice(warm);
+            xv.copy_from_slice(&warm);
             use_xscaling = true;
             continuous = true;
             factor = initial_factor;
@@ -1247,6 +1658,46 @@ pub(crate) const HIST_DEPTH: usize = 10;
 
 /// C's `MINIMAL_STEP_SIZE` (`epsilon.h`): times within this count as the same time.
 const MINIMAL_STEP_SIZE: f64 = 1.0e-12;
+
+/// C's `LOCAL_EQUIDISTANT_HOMOTOPY`, the one method the sweep below serves.
+const HOM_LOCAL_EQUIDISTANT: u32 = 0;
+/// The two `HOMOTOPY_METHOD` values C hands to `solveWithInitHomotopy`.
+const HOM_GLOBAL_ADAPTIVE: u32 = 2;
+const HOM_LOCAL_ADAPTIVE: u32 = 3;
+
+/// C's `%g`, the precision `infoStreamPrint` prints lambda with.
+fn fmt_g6(v: f64) -> alloc::string::String {
+    openmodelica_sim_meta::driver::format_g(v, 6)
+}
+
+/// C's two openings of the local equidistant sweep.
+/// C's opening of the local adaptive approach's lambda0 pre-solve.
+fn log_local_adaptive_start(sys_num: u32) {
+    let s = crate::omclog::INIT_HOMOTOPY;
+    crate::omclog::info(
+        s,
+        false,
+        &alloc::format!("Local homotopy with adaptive step size started for nonlinear system {sys_num}."),
+    );
+    crate::omclog::info(s, true, "homotopy process\n---------------------------");
+    crate::omclog::info(s, false, "solve lambda0-system");
+}
+
+fn log_local_homotopy_start(sys_num: u32, wanted: bool) {
+    let msg = if wanted {
+        alloc::format!("Local homotopy with equidistant step size started for nonlinear system {sys_num}.")
+    } else {
+        alloc::format!(
+            "Failed to solve the initial system {sys_num} without homotopy method. \
+             The local homotopy method with equidistant step size is used now."
+        )
+    };
+    if wanted {
+        crate::omclog::info(crate::omclog::INIT_HOMOTOPY, false, &msg);
+    } else {
+        crate::omclog::warning(crate::omclog::ASSERT, false, &msg);
+    }
+}
 
 /// Storage behind C's `oldValueList`: linear memory in the solver, a `Vec` in tests.
 pub(crate) trait History {
@@ -1398,6 +1849,13 @@ pub extern "C" fn rt_nls_register(k: u32, hist_addr: u32, n: u32) {
     let roster = unsafe { &mut *ROSTER.0.get() };
     roster.truncate(k as usize);
     roster.push((hist_addr, n as usize));
+}
+
+/// C's `sysNumber`: the index in `nonlinearSystemData` the homotopy messages quote
+/// (not the equation index). The roster is registered in that order.
+fn nls_sys_number(hist_addr: u32) -> u32 {
+    let roster = unsafe { &*ROSTER.0.get() };
+    roster.iter().position(|(h, _)| *h == hist_addr).unwrap_or(0) as u32
 }
 
 /// C's `NONLINEAR_SYSTEM_DATA::numberOf{Iterations,FEval,JEval}`: per system,
@@ -2608,8 +3066,17 @@ pub extern "C" fn rt_solve_nls(
     sparse_default: u32,
     lss_handle: u32,
     eq_index: u32,
+    hom_support: u32,
+    hom_method: u32,
+    lambda_addr: u32,
 ) -> i32 {
-    let n = n as usize;
+    // Under an adaptive approach a homotopy-carrying system has one unknown more
+    // than residuals: `__HOM_LAMBDA`, the lambda slot (C's `size` vs `size-1`).
+    // `n` below is the residual count; the homotopy solver drives the extra one.
+    let lambda_unknown = hom_support != 0
+        && (hom_method == HOM_GLOBAL_ADAPTIVE || hom_method == HOM_LOCAL_ADAPTIVE)
+        && n > 1;
+    let n = n as usize - usize::from(lambda_unknown);
     // Relation mode (C's hysteresis): Newton always holds relations (mode 0) so it
     // is smooth; mode 2 (init) is fresh throughout; mode 1 (event) re-solves with
     // fresh relations until the discrete state stabilizes (mixed-system iteration).
@@ -2617,9 +3084,12 @@ pub extern "C" fn rt_solve_nls(
     // A nested solve (a medium inversion inside a flow residual) must not end the
     // enclosing attempt.
     let saved_assert_seen = NLS_ASSERT_SEEN.swap(0, Ordering::Relaxed);
+    let saved_throw_seen = NLS_THROW_SEEN.swap(0, Ordering::Relaxed);
     // Scratch buffers in the shared linear memory so the model callbacks (which
-    // take wasm pointers) can read `x` / write `r`.
-    let x_ptr = rt_alloc((n * 8) as u32);
+    // take wasm pointers) can read `x` / write `r`. `x` carries lambda too, as C's
+    // `residualFunc` addresses `xloc[n]`.
+    let m = n + usize::from(lambda_unknown);
+    let x_ptr = rt_alloc((m * 8) as u32);
     let r_ptr = rt_alloc((n * 8) as u32);
 
     // Function-pointer values are `__indirect_function_table` indices on wasm.
@@ -2657,15 +3127,19 @@ pub extern "C" fn rt_solve_nls(
         // C's generated `residualFunc`: an inf/nan iteration variable fails the
         // evaluation instead of reaching the model. Feed kinsol the nan residual
         // and its line search takes a nan step length, which no exit test catches.
+        // Not a model throw — see [`NLS_EVAL_THREW`].
         if xs.iter().any(|v| !v.is_finite()) {
-            note_eval_hit(true);
+            note_eval_hit(true, false);
             for i in 0..n {
                 r[i] = ASSERT_RESIDUAL;
             }
             return;
         }
-        for i in 0..n {
-            unsafe { store_f64(x_ptr + (i * 8) as u32, xs[i]) };
+        for i in 0..m {
+            // A solver iterating only the residual coordinates leaves lambda where
+            // the caller set it, not at C's uninitialized `xloc[n]`.
+            let v = xs.get(i).copied().unwrap_or_else(|| unsafe { load_f64(lambda_addr) });
+            unsafe { store_f64(x_ptr + (i * 8) as u32, v) };
         }
         // Asserts are recoverable while the residual runs (C's ERROR_NONLINEARSOLVER).
         let saved = enter_eval();
@@ -2686,12 +3160,15 @@ pub extern "C" fn rt_solve_nls(
     // Analytic Jacobian callback: `jac(sim_data, x, jptr)` fills a column-major
     // `n×n` matrix, or the `nnz` CSC values when the system is solved sparsely.
     // `u32::MAX` means none, so numeric `hybrd` is used.
-    let has_jac = jac_idx != u32::MAX;
+    // A homotopy system's symbolic Jacobian is `n×m`, which only the arc-length
+    // solver can use; the plain ladder there takes finite differences.
+    let has_hom_jac = lambda_unknown && jac_idx != u32::MAX;
+    let has_jac = jac_idx != u32::MAX && !lambda_unknown;
     // `sparse_default` also says which buffer `jac` fills: CSC values where the codegen
     // chose to solve sparsely, a dense column-major `n×n` for the rest.
     let jac_csc = has_jac && sparse_default != 0;
-    let jac_len = if jac_csc { nnz as usize } else { n * n };
-    let jac_ptr = if has_jac { rt_alloc((jac_len * 8) as u32) } else { 0 };
+    let jac_len = if jac_csc { nnz as usize } else { n * m };
+    let jac_ptr = if has_jac || has_hom_jac { rt_alloc((jac_len * 8) as u32) } else { 0 };
     // `-nls=` overrides the codegen-time choice (C's per-system `nlsMethod`): `kinsol`
     // takes every patterned system, the dense solvers force dense, unset keeps it.
     let pick = crate::solvers::nls();
@@ -2772,20 +3249,29 @@ pub extern "C" fn rt_solve_nls(
     let discrete_call = saved_rel_fresh == 1;
     let mixed = mixed != 0 && discrete_call;
     let mut x = if discrete_call { nlsx_old.clone() } else { guess.clone() };
-    // C's `relationsPreBackup`; `updateInnerEquation` primes at `nlsx`.
+    // C's `relationsPreBackup`; `updateInnerEquation` primes at `nlsx`. C gates it on
+    // `discreteCall`, which `functionInitialEquations` also sets, so an initial system
+    // gets it too — with relations already fresh there, only an event moves the flag.
     let mut rel_backup = alloc::vec::Vec::new();
-    if discrete_call {
-        unsafe { store_u32(rel_fresh_addr, 1) };
+    if saved_rel_fresh != 0 {
+        if discrete_call {
+            unsafe { store_u32(rel_fresh_addr, 1) };
+        }
         // `updateInnerEquation` calls the residual directly rather than through
         // `wrapper_fvec`, so C does not count this evaluation.
         let uncounted = n_feval.get();
         eval(&nlsx_old, &mut scratch);
         n_feval.set(uncounted);
+        if eval_threw() {
+            log_assert_handled();
+        }
         if mixed {
             rel_backup = (0..n_rel).map(|i| unsafe { load_u32(rel_addr + i * 4) }).collect();
         }
-        unsafe { store_u32(rel_fresh_addr, 0) };
-    } else if saved_rel_fresh == 0 {
+        if discrete_call {
+            unsafe { store_u32(rel_fresh_addr, 0) };
+        }
+    } else {
         unsafe { store_u32(rel_fresh_addr, 0) };
     }
     // C prints over `nlsx` (the stored solution), not the extrapolation the solver
@@ -2801,146 +3287,297 @@ pub extern "C" fn rt_solve_nls(
     let mut settled = false;
     // C's `alreadyTested`: the mixed re-check below fires at most once.
     let mut retried = false;
-    // C's `x0`, which the mixed retry restarts from.
-    let start_point = x.clone();
-    let converged = loop {
-        // A system C would hand to kinsol+KLU: scaled Newton over the CSC Jacobian
-        // (`kinsol_sparse_solve`). The dense ladder below is O(n^2) per Jacobian and
-        // O(n^3) per step, which is what the sparse choice exists to avoid.
-        let converged = if sparse {
-            kinsol_sparse_solve(
-                n, &mut x, &guess, &warm, &nominal, sim_data, x_ptr, jac_idx, jac_ptr,
-                pat_addr, nnz as usize, jac_csc, lss_handle, &mut eval,
-            )
-        } else if pick == Nls::Newton {
-            solve_newton_c(
-                n, &mut x, &warm, &nominal, &mut res_scaling, discrete_call, &mut eval, &mut jaceval,
-                has_jac,
-            )
-        } else if pick == Nls::Homotopy {
-            // Both start directions, as C's runHomotopy.
-            let mut ok = false;
-            for &dir in &[1.0f64, -1.0] {
-                let mut hx = guess.clone();
-                if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
-                    x.copy_from_slice(&hx);
-                    ok = true;
-                    break;
+    // C's `x0`, which the mixed retry restarts from; re-taken per homotopy attempt.
+    let mut start_point;
+    // C's `solve_nonlinear_system` homotopy dispatch: only a *local* equidistant
+    // approach sweeps here.
+    let equidistant_homotopy = saved_rel_fresh == 2
+        && hom_support != 0
+        && hom_method == HOM_LOCAL_EQUIDISTANT
+        && crate::solvers::init_lambda_steps() >= 1;
+    // C's `solveWithHomotopySolver`, run after the loop below.
+    let adaptive_homotopy = saved_rel_fresh == 2 && lambda_unknown;
+    let homotopy_deactivated = !(equidistant_homotopy || adaptive_homotopy);
+    let run_plain = homotopy_deactivated || !crate::solvers::homotopy_on_first_try();
+    let hom_steps = crate::solvers::init_lambda_steps();
+    let original_lambda = if lambda_addr != 0 { unsafe { load_f64(lambda_addr) } } else { 1.0 };
+    // C's lambda0-system pre-solve, which only the *local* adaptive approach runs.
+    let pre_lambda0 = adaptive_homotopy && hom_method == HOM_LOCAL_ADAPTIVE;
+    let mut lambda0_ok = true;
+    // -2 = the lambda0 pre-solve, -1 = C's plain `solveNLS` attempt,
+    // 0..=hom_steps = the local equidistant lambda sweep.
+    let mut attempt: i32 = if run_plain {
+        -1
+    } else if pre_lambda0 {
+        -2
+    } else if equidistant_homotopy {
+        0
+    } else {
+        i32::MIN // the arc-length solver alone
+    };
+    let sys_num = nls_sys_number(hist_addr);
+    if attempt == 0 {
+        log_local_homotopy_start(sys_num, true);
+    }
+    if attempt == -2 {
+        log_local_adaptive_start(sys_num);
+    }
+    let mut converged = if attempt == i32::MIN { false } else { 'attempts: loop {
+        if attempt == -2 {
+            // C sets `lambda = 0` before the lambda0-system pre-solve.
+            unsafe { store_f64(lambda_addr, 0.0) };
+        }
+        if attempt >= 0 {
+            let lambda = (attempt as f64 / hom_steps as f64).min(1.0);
+            unsafe { store_f64(lambda_addr, lambda) };
+            crate::omclog::info(
+                crate::omclog::INIT_HOMOTOPY,
+                false,
+                &alloc::format!("[system {sys_num}] homotopy parameter lambda = {}", fmt_g6(lambda)),
+            );
+        }
+        settled = false;
+        retried = false;
+        start_point = x.clone();
+        let attempt_converged = loop {
+            // A system C would hand to kinsol+KLU: scaled Newton over the CSC Jacobian
+            // (`kinsol_sparse_solve`). The dense ladder below is O(n^2) per Jacobian and
+            // O(n^3) per step, which is what the sparse choice exists to avoid.
+            let converged = if sparse {
+                kinsol_sparse_solve(
+                    n, &mut x, &guess, &warm, &nominal, sim_data, x_ptr, jac_idx, jac_ptr,
+                    pat_addr, nnz as usize, jac_csc, lss_handle, &mut eval,
+                )
+            } else if pick == Nls::Newton {
+                solve_newton_c(
+                    n, &mut x, &warm, &nominal, &mut res_scaling, discrete_call, &mut eval, &mut jaceval,
+                    has_jac,
+                )
+            } else if pick == Nls::Homotopy {
+                // Both start directions, as C's runHomotopy.
+                let mut ok = false;
+                for &dir in &[1.0f64, -1.0] {
+                    let mut hx = guess.clone();
+                    if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
+                        x.copy_from_slice(&hx);
+                        ok = true;
+                        break;
+                    }
                 }
-            }
-            ok
-        } else {
-            // C's default `NLS_MIXED` runs `solveHomotopy`, whose primary solver is
-            // `newtonAlgorithm`; minpack `hybrd` is only its fallback, restarted from the
-            // same start point. `-nls=hybrid` selects `solveHybrd` alone and skips ahead.
-            // Both share the retry/homotopy tail below.
-            let start = x.clone();
-            // C's `nlsx`, which `solveHomotopy` overwrites with the start point its entry
-            // phase settled on. `solveHybrd` restarts from that, not from the raw guess.
-            let mut nlsx = start.clone();
-            let mut converged = false;
-            // C's `solveHomotopy` opens one `LOG_NLS_V` block over everything down to
-            // its homotopy runs.
-            let homotopy_solver = matches!(pick, Nls::Default | Nls::Mixed);
-            if homotopy_solver {
+                ok
+            } else {
+                // C's default `NLS_MIXED` runs `solveHomotopy`, whose primary solver is
+                // `newtonAlgorithm`; minpack `hybrd` is only its fallback, restarted from the
+                // same start point. `-nls=hybrid` selects `solveHybrd` alone and skips ahead.
+                // Both share the retry/homotopy tail below.
+                let start = x.clone();
+                // C's `nlsx`, which `solveHomotopy` overwrites with the start point its entry
+                // phase settled on. `solveHybrd` restarts from that, not from the raw guess.
+                let mut nlsx = start.clone();
+                let mut converged = false;
+                // C's `solveHomotopy` opens one `LOG_NLS_V` block over everything down to
+                // its homotopy runs.
+                let homotopy_solver = matches!(pick, Nls::Default | Nls::Mixed);
                 // C's `discreteCall` covers the initial system too, so it is not
                 // `discrete_call` (which is only about holding relations).
                 let t =
                     HomotopyTrace { eq_index, time, discrete: saved_rel_fresh != 0, initial: saved_rel_fresh == 2 };
-                (converged, settled) = newton_c(
-                    n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
-                    has_jac, Some(&t),
-                );
-                if !converged {
-                    stat_inc(STAT_NLS_NEWTON_FAIL);
-                    x.copy_from_slice(&start);
-                }
-            }
-            settled &= converged;
-            // C's `solveHomotopy` on `newtonAlgorithm`'s `info == -1`.
-            if !converged {
-                stat_inc(STAT_NLS_RETRY);
-                // C's `discreteCall` is set for an initial system too; only an event call
-                // has relations to hold, so only there does the continuity flag move.
-                let mut set_cont = |c: bool| {
-                    if saved_rel_fresh == 1 {
-                        unsafe { store_u32(rel_fresh_addr, u32::from(!c)) };
-                    }
-                };
-                converged = hybrd_c(
-                    n, &mut x, &nlsx, &warm, &nominal, &bounds, saved_rel_fresh != 0, &mut eval,
-                    &mut set_cont,
-                );
-            }
-            // The rungs below are not `solveHomotopy`'s; they catch what C gives up on.
-            // `nls_accept` takes only a point at tolerance, so none can report a non-root.
-            if !converged {
-                stat_inc(STAT_NLS_RETRY);
-                x.copy_from_slice(&warm);
-                converged = newton_solve(n, &mut x, &mut eval);
-            }
-            // An initial system gets a second `newtonAlgorithm`, from `x0`.
-            if !converged && saved_rel_fresh == 2 {
-                x.copy_from_slice(&guess);
-                converged = newton_c(
-                    n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
-                    has_jac, None,
-                )
-                .0;
-            }
-            if !converged {
-                stat_inc(STAT_NLS_RETRY);
-                converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
-            }
-            if !converged {
-                x.copy_from_slice(&guess);
-                converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
-            }
-            if !converged {
-                x.copy_from_slice(&guess);
-                converged = lm_solve(n, &mut x, &mut eval);
-            }
-            if !converged {
-                x.copy_from_slice(&warm);
-                converged = lm_solve(n, &mut x, &mut eval);
-            }
-            // C's mixed-solver homotopy fallback: track H(x,λ)=F(x)−(1−λ)·F(x0) from λ=0 to 1.
-            if !converged && saved_rel_fresh == 2 {
-                // Forward then reversed start direction, as C's runHomotopy.
-                for &dir in &[1.0f64, -1.0f64] {
-                    let mut hx = guess.clone();
-                    if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
-                        x.copy_from_slice(&hx);
-                        converged = true;
-                        break;
+                if homotopy_solver {
+                    (converged, settled) = newton_c(
+                        n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
+                        has_jac, Some(&t),
+                    );
+                    if !converged {
+                        stat_inc(STAT_NLS_NEWTON_FAIL);
+                        x.copy_from_slice(&start);
                     }
                 }
-            }
-            if homotopy_solver {
+                settled &= converged;
+                // C's `solveHomotopy` on `newtonAlgorithm`'s `info == -1`.
                 if !converged {
-                    crate::omclog::debug_string(crate::omclog::NLS_V, "Homotopy solver did not converge!");
+                    stat_inc(STAT_NLS_RETRY);
+                    // C's `discreteCall` is set for an initial system too; only an event call
+                    // has relations to hold, so only there does the continuity flag move.
+                    let mut set_cont = |c: bool| {
+                        if saved_rel_fresh == 1 {
+                            unsafe { store_u32(rel_fresh_addr, u32::from(!c)) };
+                        }
+                    };
+                    converged = hybrd_c(
+                        n, &mut x, &nlsx, &warm, &nominal, &bounds, &t, &mut eval, &mut set_cont,
+                    );
                 }
-                crate::omclog::close(crate::omclog::NLS_V);
+                // The rungs below are not `solveHomotopy`'s; they catch what C gives up on.
+                // `nls_accept` takes only a point at tolerance, so none can report a non-root.
+                if !converged {
+                    stat_inc(STAT_NLS_RETRY);
+                    x.copy_from_slice(&warm);
+                    converged = newton_solve(n, &mut x, &mut eval);
+                }
+                // An initial system gets a second `newtonAlgorithm`, from `x0`.
+                if !converged && saved_rel_fresh == 2 {
+                    x.copy_from_slice(&guess);
+                    converged = newton_c(
+                        n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
+                        has_jac, None,
+                    )
+                    .0;
+                }
+                if !converged {
+                    stat_inc(STAT_NLS_RETRY);
+                    converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
+                }
+                if !converged {
+                    x.copy_from_slice(&guess);
+                    converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
+                }
+                if !converged {
+                    x.copy_from_slice(&guess);
+                    converged = lm_solve(n, &mut x, &mut eval);
+                }
+                if !converged {
+                    x.copy_from_slice(&warm);
+                    converged = lm_solve(n, &mut x, &mut eval);
+                }
+                // C's mixed-solver homotopy fallback: track H(x,λ)=F(x)−(1−λ)·F(x0) from λ=0 to 1.
+                if !converged && saved_rel_fresh == 2 {
+                    // Forward then reversed start direction, as C's runHomotopy.
+                    for &dir in &[1.0f64, -1.0f64] {
+                        let mut hx = guess.clone();
+                        if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
+                            x.copy_from_slice(&hx);
+                            converged = true;
+                            break;
+                        }
+                    }
+                }
+                if homotopy_solver {
+                    if !converged {
+                        crate::omclog::debug_string(crate::omclog::NLS_V, "Homotopy solver did not converge!");
+                    }
+                    crate::omclog::close(crate::omclog::NLS_V);
+                }
+                converged
+            };
+            // C's `solveHomotopy` mixed tail: relations live at the solution, and if the
+            // branch moved, the *same* ladder again from the start point with them live.
+            if !converged || !mixed || retried {
+                break converged;
             }
-            converged
+            unsafe { store_u32(rel_fresh_addr, 1) };
+            let uncounted = n_feval.get();
+            eval(&x, &mut scratch);
+            n_feval.set(uncounted);
+            settled = true;
+            if (0..n_rel).all(|i| unsafe { load_u32(rel_addr + i * 4) } == rel_backup[i as usize]) {
+                break converged;
+            }
+            retried = true;
+            settled = false;
+            x.copy_from_slice(&start_point);
         };
-        // C's `solveHomotopy` mixed tail: relations live at the solution, and if the
-        // branch moved, the *same* ladder again from the start point with them live.
-        if !converged || !mixed || retried {
-            break converged;
+        // C's step loop stops at the first lambda that does not converge, and the plain
+        // attempt falls through to the sweep.
+        if attempt == -2 {
+            lambda0_ok = attempt_converged;
+            crate::omclog::info(
+                crate::omclog::INIT_HOMOTOPY,
+                false,
+                &alloc::format!(
+                    "solving lambda0-system done with{} success\n---------------------------",
+                    if attempt_converged { "" } else { "no" }
+                ),
+            );
+            crate::omclog::close(crate::omclog::INIT_HOMOTOPY);
+            break 'attempts false;
         }
-        unsafe { store_u32(rel_fresh_addr, 1) };
-        let uncounted = n_feval.get();
-        eval(&x, &mut scratch);
-        n_feval.set(uncounted);
-        settled = true;
-        if (0..n_rel).all(|i| unsafe { load_u32(rel_addr + i * 4) } == rel_backup[i as usize]) {
-            break converged;
+        if attempt < 0 {
+            if attempt_converged {
+                break 'attempts true;
+            }
+            if adaptive_homotopy {
+                crate::omclog::warning(
+                    crate::omclog::ASSERT,
+                    false,
+                    &alloc::format!(
+                        "Failed to solve the initial system {sys_num} without homotopy method."
+                    ),
+                );
+                if pre_lambda0 {
+                    log_local_adaptive_start(sys_num);
+                    attempt = -2;
+                    continue;
+                }
+                break 'attempts false;
+            }
+            if !equidistant_homotopy {
+                break 'attempts false;
+            }
+            log_local_homotopy_start(sys_num, false);
+            attempt = 0;
+            continue;
         }
-        retried = true;
-        settled = false;
-        x.copy_from_slice(&start_point);
-    };
+        if !attempt_converged {
+            crate::stat_add(crate::STAT_HOMOTOPY_STEPS, hom_steps as u64);
+            break 'attempts false;
+        }
+        crate::omclog::info(
+            crate::omclog::INIT_HOMOTOPY,
+            false,
+            &alloc::format!(
+                "[system {sys_num}] homotopy parameter lambda = {} done\n---------------------------",
+                fmt_g6((attempt as f64 / hom_steps as f64).min(1.0))
+            ),
+        );
+        if attempt >= hom_steps {
+            crate::stat_add(crate::STAT_HOMOTOPY_STEPS, hom_steps as u64);
+            break 'attempts true;
+        }
+        // The next lambda starts from this one's solution, as C's `nlsx` does.
+        attempt += 1;
+        warm.copy_from_slice(&x);
+        guess.copy_from_slice(&x);
+        nlsx_old.copy_from_slice(&x);
+    } };
+    // C's `solveWithInitHomotopy`: run along the model's own homotopy path.
+    if adaptive_homotopy && !converged && (hom_method == HOM_GLOBAL_ADAPTIVE || lambda0_ok) {
+        crate::omclog::info(
+            crate::omclog::INIT_HOMOTOPY,
+            false,
+            "run along the homotopy path and solve the actual system",
+        );
+        unsafe { store_f64(lambda_addr, 0.0) };
+        let mut y = x.clone();
+        y.push(0.0);
+        let mut hom_jac = |ys: &[f64], out: &mut [f64]| {
+            stat_inc(STAT_NLS_JAC);
+            note_jac_eval();
+            let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(jac_idx as usize) };
+            for i in 0..m {
+                unsafe { store_f64(x_ptr + (i * 8) as u32, ys[i]) };
+            }
+            let saved = enter_eval();
+            jacf(sim_data, x_ptr, jac_ptr);
+            leave_eval(saved);
+            for (k, v) in out.iter_mut().enumerate() {
+                *v = unsafe { load_f64(jac_ptr + (k * 8) as u32) };
+            }
+        };
+        let steps = init_homotopy_solve(
+            n,
+            &mut y,
+            &nominal,
+            &bounds,
+            &mut eval,
+            has_hom_jac.then_some(&mut hom_jac as &mut dyn FnMut(&[f64], &mut [f64])),
+        );
+        if let Some(steps) = steps {
+            x.copy_from_slice(&y[..n]);
+            crate::stat_add(crate::STAT_HOMOTOPY_STEPS, steps as u64);
+            converged = true;
+            settled = false;
+        }
+    }
     if retried {
         // `hybrd_c`'s rung may have left the flag held.
         unsafe { store_u32(rel_fresh_addr, 1) };
@@ -2951,6 +3588,12 @@ pub extern "C" fn rt_solve_nls(
         let uncounted = n_feval.get();
         eval(&x, &mut scratch);
         n_feval.set(uncounted);
+    }
+    // C's `data->simulationInfo->lambda = originalLambda` closing
+    // `solve_nonlinear_system` — after the last evaluation, so the torn variables
+    // keep the values the solve left them at, not their values at the old lambda.
+    if lambda_addr != 0 {
+        unsafe { store_f64(lambda_addr, original_lambda) };
     }
     for i in 0..n {
         unsafe { store_f64(scale_addr + (i * 8) as u32, res_scaling[i]) };
@@ -2999,6 +3642,7 @@ pub extern "C" fn rt_solve_nls(
         unsafe { store_u32(rel_fresh_addr, saved_rel_fresh) };
     }
     NLS_ASSERT_SEEN.store(saved_assert_seen, Ordering::Relaxed);
+    NLS_THROW_SEEN.store(saved_throw_seen, Ordering::Relaxed);
 
     rt_free(x_ptr);
     rt_free(r_ptr);
@@ -3153,7 +3797,8 @@ mod tests {
             r[n - 1] = libm::pow(k, k) - libm::pow(xs[n - 1], k) * xs[0];
         };
         let mut cont = |_: bool| {};
-        assert!(hybrd_c(n, &mut x, &x_start, &warm, &nominal, &bounds, true, &mut eval, &mut cont));
+        let t = HomotopyTrace { eq_index: 0, time: 0.0, discrete: true, initial: true };
+        assert!(hybrd_c(n, &mut x, &x_start, &warm, &nominal, &bounds, &t, &mut eval, &mut cont));
         for i in 0..n {
             assert!((x[i] - (i + 1) as f64).abs() < 1e-6, "x={x:?}");
         }

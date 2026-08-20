@@ -80,10 +80,6 @@ typedef struct DASSL_DATA{
   int (*zeroCrossingFunction)(int *neqm, double *t, double *y, double *yp,
                               int *ng, double *gout, double *rpar, int* ipar);
 
-#ifdef USE_PARJAC
-  JACOBIAN* jacColumns;         /* thread local analytic jacobians */
-#endif
-  int allocatedParMem;          /* indicated if parallel memory was allocated, 0=false, 1=true*/
 } DASSL_DATA;
 
 /* main dassl function to make a step */

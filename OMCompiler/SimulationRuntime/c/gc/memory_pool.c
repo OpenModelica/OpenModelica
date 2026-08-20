@@ -87,15 +87,24 @@ static inline void pool_expand(size_t len)
 {
   OMCMemPoolBlock *newBlock = NULL;
 
-  // The new block will be 1.5x the current block's size. More if we request a very large array.
+  // The new block will be 1.5x the current block's size.
   size_t new_size = 3*memory_pools->size / 2;
   // Align the new size to the initial block size (2MB right now) for easier debugging.
   new_size = round_up(new_size, OMC_INITIAL_BLOCK_SIZE);
 
   // Report an error if the size is too big. This will error out before the size request is
-  // able to overflow the the size_t size (at 4GB)
+  // able to overflow the the size_t size (at 4GB).
+  // Only the geometric growth is checked here: a single allocation that is legitimately larger
+  // than the limit is not a sign of broken memory management and is served below.
   if (new_size >= OMC_ERROR_AT_EXPAND_REQUEST) {
     omc_assert_macro(0 && "Attempt to allocate an unusually large memory. The memory management does not seem to be working as intended. Please create an issue on https://github.com/OpenModelica/OpenModelica/issues.");
+  }
+
+  // The caller writes len bytes into this block unconditionally and never checks again, so the
+  // block has to be able to hold the request that triggered the expansion. Growing by 1.5x alone
+  // does not guarantee that for a single large allocation.
+  if (new_size < len) {
+    new_size = round_up(len, OMC_INITIAL_BLOCK_SIZE);
   }
 
   newBlock = (OMCMemPoolBlock*) omc_alloc_interface.malloc_uncollectable(sizeof(OMCMemPoolBlock));

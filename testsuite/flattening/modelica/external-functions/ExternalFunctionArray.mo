@@ -12,6 +12,7 @@ function get_results
   input Integer n;
   output Real res[n];
   external "C" getresults(m, property, res, n) annotation(Include="
+#include <assert.h>
 void getresults(double m,const char *str,double *res, int n) {
   assert(n == 2);
   res[0]=m*1.5;res[1]=m*2.5;

@@ -84,6 +84,7 @@ pub const DEBUG: Stream = 5;
 pub const DELAY: Stream = 6;
 pub const DIVISION: Stream = 7;
 pub const DSS: Stream = 8;
+pub const DSS_JAC: Stream = 9;
 pub const EVENTS: Stream = 12;
 pub const EVENTS_V: Stream = 13;
 pub const INIT: Stream = 19;
@@ -176,7 +177,6 @@ fn finish(mut m: Mask) -> Mask {
     const GBODE_V: Stream = 15;
     const GBODE_NLS: Stream = 16;
     const GBODE_NLS_V: Stream = 17;
-    const DSS_JAC: Stream = 9;
     for (from, to) in [
         (GBODE_V, GBODE),
         (GBODE_NLS_V, GBODE_NLS),
@@ -307,6 +307,27 @@ pub fn warning(stream: Stream, indent_next: bool, msg: &str) {
     }
 }
 
+/// C's `warningStreamPrintWithLimit`, `max_displayed` being `-lvMaxWarn`.
+pub fn warning_with_limit(stream: Stream, n_displayed: u64, max_displayed: u64, msg: &str) {
+    if !(active(stream) || store::with(|s| s.use_stream & SHOW_ALL_WARNINGS != 0)) {
+        return;
+    }
+    if n_displayed <= max_displayed {
+        message_text(WARNING, stream, false, msg);
+    }
+    if n_displayed == max_displayed {
+        message_text(
+            INFO,
+            stream,
+            false,
+            &format!(
+                "Too many warnings, reached display limit of {max_displayed}. Suppressing further warning messages of the same type."
+            ),
+        );
+        message_text(INFO, stream, false, "Change limit with simulation flag -lvMaxWarn=<newLimit>");
+    }
+}
+
 pub fn error(stream: Stream, indent_next: bool, msg: &str) {
     message_text(ERROR, stream, indent_next, msg);
 }
@@ -357,7 +378,9 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
             s.last_type[i] = ty;
             s.last_stream = stream;
         }
-        if indent_next {
+        // C's `messageText` recurses for the second line and returns, so a
+        // multi-line message never opens a block however `indentNext` is set.
+        if indent_next && !msg.contains('\n') {
             s.level[i] += 1;
         }
     });
@@ -367,6 +390,14 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
 /// C's `%<width>.<prec>g`.
 pub fn g(v: f64, width: usize, prec: i32) -> String {
     pad(crate::driver::format_g(v, prec), width)
+}
+
+/// C's `%<width>.<prec>f`: fixed point, no exponent.
+pub fn f(v: f64, width: usize, prec: usize) -> String {
+    if !v.is_finite() {
+        return alloc::format!("{v}");
+    }
+    pad(alloc::format!("{v:.prec$}"), width)
 }
 
 /// C's `%<width>.<prec>e`: always an exponent, at least two exponent digits.

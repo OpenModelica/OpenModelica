@@ -203,6 +203,70 @@ mod sim_memory {
     }
 }
 
+/// The run's `model_error` tag, and the libraries' shadow stack that a caught
+/// throw leaves claimed. Both belong to the run's store, so they are registered
+/// after the model module is instantiated and cleared when the next run starts.
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+mod model_error {
+    use std::cell::RefCell;
+    use wasmtime::{AsContextMut, ExnRef, ExnRefPre, ExnType, Global, Rooted, Tag, Val};
+
+    thread_local! {
+        static TAG: RefCell<Option<(Tag, ExnRefPre)>> = const { RefCell::new(None) };
+        static STACK: RefCell<Option<Global>> = const { RefCell::new(None) };
+    }
+
+    /// `None` clears it — a store outlives neither the run nor its tag.
+    pub fn set_tag(mut store: impl AsContextMut, tag: Option<Tag>) -> Result<(), wasmtime::Error> {
+        let entry = match tag {
+            Some(tag) => {
+                let ty = ExnType::from_tag_type(&tag.ty(&store.as_context_mut()))?;
+                Some((tag, ExnRefPre::new(&mut store, ty)))
+            }
+            None => None,
+        };
+        TAG.with(|t| *t.borrow_mut() = entry);
+        Ok(())
+    }
+
+    pub fn set_shadow_stack(s: Option<Global>) {
+        STACK.with(|c| *c.borrow_mut() = s);
+    }
+
+    /// A fresh exception object to throw, when this run catches them at all.
+    pub fn exception(
+        store: &mut impl AsContextMut,
+    ) -> Result<Option<Rooted<ExnRef>>, wasmtime::Error> {
+        TAG.with(|t| match t.borrow().as_ref() {
+            Some((tag, pre)) => ExnRef::new(&mut *store, pre, tag, &[]).map(Some),
+            None => Ok(None),
+        })
+    }
+
+    /// `rt.rt_ext_stack_save`: the libraries' shadow stack, which the module's own
+    /// (`__stack_pointer` in the runtime) is not — they are separate instances here.
+    pub fn save_shadow_stack(mut store: impl AsContextMut) -> Result<i32, wasmtime::Error> {
+        match STACK.with(|c| *c.borrow()) {
+            Some(g) => Ok(g.get(&mut store).i32().unwrap_or(0)),
+            None => Ok(0),
+        }
+    }
+
+    /// `rt.rt_ext_stack_restore`.
+    pub fn restore_shadow_stack(mut store: impl AsContextMut, sp: i32) -> Result<(), wasmtime::Error> {
+        if let Some(g) = STACK.with(|c| *c.borrow()) {
+            g.set(&mut store, Val::I32(sp))?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+pub use model_error::{
+    exception as model_error_exception, restore_shadow_stack, save_shadow_stack, set_shadow_stack,
+    set_tag as set_model_error_tag,
+};
+
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 pub use sim_memory::set as set_sim_memory;
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
@@ -378,8 +442,23 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     wt(linker.func_wrap("rt", "rt_assert", |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32| -> i32 {
         assert_failed(cond, msg, file, sline, scol, eline, ecol, read_only, initial)
     }))?;
+    wt(linker.func_wrap("rt", "rt_ext_stack_save", |mut caller: wasmtime::Caller<'_, T>| -> std::result::Result<i32, wasmtime::Error> {
+        save_shadow_stack(&mut caller)
+    }))?;
+    wt(linker.func_wrap("rt", "rt_ext_stack_restore", |mut caller: wasmtime::Caller<'_, T>, sp: i32| -> std::result::Result<(), wasmtime::Error> {
+        restore_shadow_stack(&mut caller, sp)
+    }))?;
     wt(linker.func_wrap("rt", "rt_assert_warning", |cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, initial: i32| {
         record_warning([openmodelica_sim_meta::driver::ASSERT_WARNING, cond, msg, file, sline, scol, eline, ecol, read_only, initial]);
+    }))?;
+    // Where the runtime's `rt_ext_error` reports. Unused on this engine, whose
+    // libraries import `ModelicaError` from the host, which throws for itself.
+    wt(linker.func_wrap("env", "rt_host_ext_error", |caller: wasmtime::Caller<'_, T>, msg: u32| {
+        let Some(memory) = sim_memory::get() else { return };
+        let data = memory.data(&caller);
+        let Some(rest) = data.get(msg as usize..) else { return };
+        let len = rest.iter().position(|&b| b == 0).unwrap_or(0);
+        openmodelica_sim_meta::driver::note_runtime_error(&String::from_utf8_lossy(&rest[..len]));
     }))?;
     wt(linker.func_wrap("rt", "rt_reinit_note", |off: i32, value: f64| record_reinit(off as u32, value)))?;
     wt(linker.func_wrap(
@@ -421,6 +500,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     wt(linker.func_wrap("env", "rt_host_cancel", || -> i32 { metamodelica::cancel::check_cancel() as i32 }))?;
     wt(linker.func_wrap("env", "rt_host_init_done", || openmodelica_sim_meta::driver::signal_init_done()))?;
     wt(linker.func_wrap("env", "rt_host_set_no_throw", |v: i32| set_no_throw_asserts(v != 0)))?;
+    wt(linker.func_wrap("env", "rt_host_runtime_error", || openmodelica_sim_meta::driver::note_runtime_error_flag()))?;
     // The model's violations land here even when the driver runs in-wasm; hand
     // them over so that driver can format the `LOG_ASSERT` block.
     wt(linker.func_wrap(
@@ -514,15 +594,30 @@ fn read_wasm_string<T>(memory: wasmtime::Memory, caller: &wasmtime::Caller<'_, T
     data.get(h + 8..h + 8 + len).map(|b| String::from_utf8_lossy(b).into_owned()).unwrap_or_default()
 }
 
-/// The runtime's memory, handed to the wasmer host builtins by [`HostMem::set`]
-/// once the instance exists; the imports have to be defined before it.
+/// What the wasmer host builtins read, filled in once the instances exist (the
+/// imports have to be defined before them).
 #[cfg(all(feature = "jit", any(feature = "engine-wasmer", target_arch = "wasm32")))]
-pub struct HostMem(wasmer::FunctionEnv<Option<wasmer::Memory>>);
+#[derive(Default)]
+pub struct HostEnv {
+    mem: Option<wasmer::Memory>,
+    /// The external "C" side module's own memory and shadow stack.
+    side_mem: Option<wasmer::Memory>,
+    side_sp: Option<wasmer::Global>,
+}
+
+#[cfg(all(feature = "jit", any(feature = "engine-wasmer", target_arch = "wasm32")))]
+pub struct HostMem(wasmer::FunctionEnv<HostEnv>);
 
 #[cfg(all(feature = "jit", any(feature = "engine-wasmer", target_arch = "wasm32")))]
 impl HostMem {
     pub fn set(&self, store: &mut wasmer::Store, memory: &wasmer::Memory) {
-        *self.0.as_mut(store) = Some(memory.clone());
+        self.0.as_mut(store).mem = Some(memory.clone());
+    }
+    /// The ModelicaExternalC side module, once instantiated.
+    pub fn set_side(&self, store: &mut wasmer::Store, memory: &wasmer::Memory, sp: Option<wasmer::Global>) {
+        let env = self.0.as_mut(store);
+        env.side_mem = Some(memory.clone());
+        env.side_sp = sp;
     }
 }
 
@@ -539,16 +634,48 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
         }));
     imports.define("rt", "rt_reinit_note", Function::new_typed(store,
         |off: i32, value: f64| record_reinit(off as u32, value)));
-    // Both memory-reading imports share one env, filled in by `HostMem::set`.
-    let mem_env = wasmer::FunctionEnv::new(store, None);
+    // The imports reading an instance share one env, filled in by `HostMem`.
+    let mem_env = wasmer::FunctionEnv::new(store, HostEnv::default());
+    // The side module's shadow stack, which the frames a throw abandoned never
+    // handed back.
+    imports.define(
+        "rt",
+        "rt_ext_stack_save",
+        Function::new_typed_with_env(store, &mem_env, |mut env: wasmer::FunctionEnvMut<HostEnv>| -> i32 {
+            match env.data().side_sp.clone() {
+                Some(g) => g.get(&mut env).i32().unwrap_or(0),
+                None => 0,
+            }
+        }),
+    );
+    imports.define(
+        "rt",
+        "rt_ext_stack_restore",
+        Function::new_typed_with_env(store, &mem_env, |mut env: wasmer::FunctionEnvMut<HostEnv>, sp: i32| {
+            if let Some(g) = env.data().side_sp.clone() {
+                let _ = g.set(&mut env, wasmer::Value::I32(sp));
+            }
+        }),
+    );
+    // A side-module `ModelicaError`: the runtime cannot read the message (other
+    // memory), so it reports through here before throwing — C's
+    // `throwStreamPrint`, into the run's log.
+    imports.define(
+        "env",
+        "rt_host_ext_error",
+        Function::new_typed_with_env(store, &mem_env, |env: wasmer::FunctionEnvMut<HostEnv>, msg: u32| {
+            let Some(memory) = env.data().side_mem.clone() else { return };
+            openmodelica_sim_meta::driver::note_runtime_error(&crate::sim_runtime::read_cstr(&memory, &env, msg));
+        }),
+    );
     imports.define(
         "rt",
         "rt_row_asserts",
         Function::new_typed_with_env(
             store,
             &mem_env,
-            |env: wasmer::FunctionEnvMut<Option<wasmer::Memory>>, sim_data: u32, warn: i32| -> i32 {
-                let Some(memory) = env.data().clone() else { return 1 };
+            |env: wasmer::FunctionEnvMut<HostEnv>, sim_data: u32, warn: i32| -> i32 {
+                let Some(memory) = env.data().mem.clone() else { return 1 };
                 let view = memory.view(&env);
                 row_asserts(&|addr: u32, buf: &mut [u8]| view.read(addr as u64, buf).is_ok(), sim_data, warn)
             },
@@ -561,8 +688,8 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
         Function::new_typed_with_env(
             store,
             &mem_env,
-            |env: wasmer::FunctionEnvMut<Option<wasmer::Memory>>, ptr: u32, len: u32| {
-                let Some(memory) = env.data().clone() else { return };
+            |env: wasmer::FunctionEnvMut<HostEnv>, ptr: u32, len: u32| {
+                let Some(memory) = env.data().mem.clone() else { return };
                 let mut buf = vec![0u8; len as usize];
                 if memory.view(&env).read(ptr as u64, &mut buf).is_ok() {
                     openmodelica_wasi::wasi::stdout_write(&buf);
@@ -574,6 +701,7 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
     imports.define("env", "rt_host_cancel", Function::new_typed(store, || -> i32 { metamodelica::cancel::check_cancel() as i32 }));
     imports.define("env", "rt_host_init_done", Function::new_typed(store, || openmodelica_sim_meta::driver::signal_init_done()));
     imports.define("env", "rt_host_set_no_throw", Function::new_typed(store, |v: i32| set_no_throw_asserts(v != 0)));
+    imports.define("env", "rt_host_runtime_error", Function::new_typed(store, || openmodelica_sim_meta::driver::note_runtime_error_flag()));
     // See the wasmtime counterpart.
     imports.define(
         "env",
@@ -581,9 +709,9 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
         Function::new_typed_with_env(
             store,
             &mem_env,
-            |mut env: wasmer::FunctionEnvMut<Option<wasmer::Memory>>, ptr: u32, max: u32| -> u32 {
+            |mut env: wasmer::FunctionEnvMut<HostEnv>, ptr: u32, max: u32| -> u32 {
                 let (data, store) = env.data_and_store_mut();
-                let Some(memory) = data.clone() else { return 0 };
+                let Some(memory) = data.mem.clone() else { return 0 };
                 let recs = take_pending_warnings_upto(max as usize);
                 let mut buf = vec![0u8; recs.len() * REC_BYTES];
                 let n = write_warnings(&recs, &mut buf);
@@ -600,9 +728,9 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
         Function::new_typed_with_env(
             store,
             &mem_env,
-            |mut env: wasmer::FunctionEnvMut<Option<wasmer::Memory>>, ptr: u32, max: u32| -> u32 {
+            |mut env: wasmer::FunctionEnvMut<HostEnv>, ptr: u32, max: u32| -> u32 {
                 let (data, store) = env.data_and_store_mut();
-                let Some(memory) = data.clone() else { return 0 };
+                let Some(memory) = data.mem.clone() else { return 0 };
                 let mut buf = vec![0u8; max as usize * REINIT_BYTES];
                 let n = take_reinits_into(&mut buf, max as usize);
                 match memory.view(&store).write(ptr as u64, &buf[..n as usize * REINIT_BYTES]) {

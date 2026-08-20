@@ -7,7 +7,7 @@
 /.vscode/
 /autom4te.cache/
 /build/
-/build_cmake/
+/build_cmake*/
 /config.guess
 /config.log
 /config.status

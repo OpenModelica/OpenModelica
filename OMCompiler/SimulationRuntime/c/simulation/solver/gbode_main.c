@@ -294,13 +294,19 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
       /* The evaluation DAG is generated for the forward Jacobian A only. */
       data->callback->getDAG_JacA(data, threadData, &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]));
     }
+    if (!jacobian->dag) {
+      throwStreamPrint(threadData,
+                       "Cannot create multirate data structures without a valid Jacobian DAG. Use a symbolic Jacobian "
+                       "(--generateDynamicJacobian=symbolic), an explicit integrator, or switch to single-rate integration.");
+    }
+
+    initializeSparsePattern_GBODEF(data, gbfData);
 
     /* Initialize data for the nonlinear solver */
     gbfData->nlsData = initRK_NLS_DATA_MR(data, threadData, gbfData);
     if (!gbfData->nlsData) {
       return -1;
     }
-    gbfData->sparsePattern_DIRK = initializeSparsePattern_SR(data, gbfData->nlsData);
   } else {
     gbfData->symJacAvailable = FALSE;
     gbfData->nlsSolverMethod = GB_NLS_UNKNOWN;
@@ -535,6 +541,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
       gbData->symJacAvailable = FALSE;
     }
 
+    initializeSparsePattern_GBODE(data, gbData);
+
     /* Initialize data for the nonlinear solver */
     gbData->nlsData = initRK_NLS_DATA(data, threadData, gbData);
     if (!gbData->nlsData) {
@@ -638,8 +646,10 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
   /* Free Jacobian */
   freeJacobianCopy(gbfData->jacobian);
 
-  /* Free sparsity pattern */
-  freeSparsePattern(gbfData->sparsePattern_DIRK);
+  /* Free sparsity data. */
+  freeSparsePattern(gbfData->sparsePattern_ODE);
+  freeSparsePattern(gbfData->sparsePattern_NLS);
+  free(gbfData->sparseWork);
 
   /* Free Butcher tableau */
   freeButcherTableau(gbfData->tableau);
@@ -692,6 +702,9 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
 
   /* Free Jacobian */
   freeJacobianCopy(gbData->jacobian);
+
+  /* Free sparsity data. */
+  freeSparsePattern(gbData->sparsePattern_NLS);
 
   /* Free Butcher tableau */
   freeButcherTableau(gbData->tableau);
@@ -965,11 +978,10 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
     messageClose(OMC_LOG_GBODE);
 
-    if (gbfData->nlsData->sparsePattern) {
+    if (gbfData->sparsePattern_NLS) {
+      updateSparsePattern_GBODEF(data, gbData);
       if (gbfData->nlsSolverMethod != GB_NLS_INTERNAL)
       {
-        // internal does it by itself
-        updateSparsePattern_MR(gbData, gbfData->jacobian->sparsePattern);
         gbfData->jacobian->sizeCols = nFastStates;
         gbfData->jacobian->sizeRows = nFastStates;
       }
@@ -1002,8 +1014,10 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         throwStreamPrint(NULL, "NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
       }
     }
-    if (gbfData->jacobian->availability == JACOBIAN_AVAILABLE)
+    // TODO: -gbnls=internal currently does not use the Jacobian eval selection
+    if (gbfData->nlsSolverMethod != GB_NLS_INTERNAL && gbfData->symJacAvailable) {
       updateEvalSelectionJacobian(data, gbData);
+    }
   }
 
   // print informations on the calling details

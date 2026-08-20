@@ -47,6 +47,7 @@ unsafe extern "C" {
     fn functionAlgebraics(sim_data: u32);
     fn functionStateSetJacobians(sim_data: u32);
     fn functionZeroCrossings(sim_data: u32);
+    fn functionZeroCrossingsEquations(sim_data: u32);
     fn functionUpdateRelations(sim_data: u32);
     fn functionCheckAsserts(sim_data: u32);
     fn functionStoreDelayed(sim_data: u32);
@@ -265,6 +266,7 @@ impl SimEngine for Engine {
                 "functionAlgebraics" => functionAlgebraics(arg),
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
                 "functionZeroCrossings" => functionZeroCrossings(arg),
+                "functionZeroCrossingsEquations" => functionZeroCrossingsEquations(arg),
                 "functionUpdateRelations" => functionUpdateRelations(arg),
                 "functionCheckAsserts" => functionCheckAsserts(arg),
                 "functionStoreDelayed" => functionStoreDelayed(arg),
@@ -634,7 +636,8 @@ macro_rules! shared_instance_methods {
         st.mode = Mode::Ready;
         // `run_initialization` has run `initSample`, so the schedule is readable.
         if st.layout.n_samples > 0 {
-            match Samples::load(&Engine, st.sim_data, &st.layout) {
+            let start_time = st.read_f64(TIME_OFF);
+            match Samples::load(&Engine, st.sim_data, &st.layout, start_time) {
                 Ok(s) => st.samples = Some(s),
                 Err(_) => return Status::Error,
             }

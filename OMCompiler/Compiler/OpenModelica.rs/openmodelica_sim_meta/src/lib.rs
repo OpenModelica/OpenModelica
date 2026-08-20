@@ -83,6 +83,41 @@ pub enum WTy {
     F64,
 }
 
+/// C's `HOMOTOPY_METHOD`, selected by `--homotopyApproach` (and forced to
+/// [`Self::None`] by `--replaceHomotopy`). The numbering is C's.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum HomotopyMethod {
+    LocalEquidistant = 0,
+    #[default]
+    GlobalEquidistant = 1,
+    GlobalAdaptive = 2,
+    LocalAdaptive = 3,
+    None = 4,
+}
+
+impl HomotopyMethod {
+    pub fn from_code(c: u8) -> Self {
+        match c {
+            0 => Self::LocalEquidistant,
+            2 => Self::GlobalAdaptive,
+            3 => Self::LocalAdaptive,
+            4 => Self::None,
+            _ => Self::GlobalEquidistant,
+        }
+    }
+    pub fn code(self) -> u8 {
+        self as u8
+    }
+    /// The parameter reaches the whole initial system, not just the component.
+    pub fn is_global(self) -> bool {
+        matches!(self, Self::GlobalEquidistant | Self::GlobalAdaptive)
+    }
+    /// The step size is the arc-length continuation's, not `1/init_lambda_steps`.
+    pub fn is_adaptive(self) -> bool {
+        matches!(self, Self::GlobalAdaptive | Self::LocalAdaptive)
+    }
+}
+
 /// Fully-resolved layout of one model's `SimData` block. All offsets are byte
 /// offsets within the block; all are compile-time constants baked into the
 /// generated module. This is the single source of truth: the codegen computes it
@@ -99,10 +134,19 @@ pub struct Layout {
     /// A nonlinear system carries the homotopy operator (C's `homotopySupport`), so
     /// the driver runs the continuation over `functionInitialEquations_lambda0`.
     pub has_homotopy: bool,
+    /// `--homotopyApproach` as C's `homotopyMethod` callback field: whose
+    /// continuation runs, and whether it is equidistant or adaptive.
+    pub homotopy_method: HomotopyMethod,
+    /// A simplified lambda = 0 system was generated, so the continuation's first
+    /// step can call `functionInitialEquations_lambda0`.
+    pub has_init_lambda0: bool,
     /// The model has `delay(...)` or `spatialDistribution(...)`, i.e. an operator
     /// with an internal history that `functionStoreDelayed` /
     /// `functionStoreSpatialDistribution` must be fed at every accepted point.
     pub has_history_ops: bool,
+    /// The model has a `SES_LINEAR` with a symbolic Jacobian, the only reader of
+    /// `old_real_off`.
+    pub has_old_real: bool,
     /// `SimData` offset of the homotopy parameter lambda (f64).
     pub lambda_off: u32,
     pub rparam_off: u32,
@@ -120,6 +164,9 @@ pub struct Layout {
     pub pre_real_off: u32,
     pub pre_int_off: u32,
     pub pre_bool_off: u32,
+    /// C's `data->localData[1]->realVars`: the reals as of the last accepted step,
+    /// a method-1 linear system's `aux_x`.
+    pub old_real_off: u32,
     /// `terminate(...)` flag (i32).
     pub terminate_off: u32,
     /// `terminal()` flag (i32): C's `data->simulationInfo->terminal`, raised by
@@ -280,7 +327,10 @@ impl Layout {
         n_removed_init: u32,
         has_when: bool,
         has_homotopy: bool,
+        homotopy_method: HomotopyMethod,
+        has_init_lambda0: bool,
         has_history_ops: bool,
+        has_old_real: bool,
     ) -> Self {
         let n_real = 2 * n_states + n_real_alg; // states | ders | algs
         let rparam_off = REAL_OFF + n_real * 8;
@@ -295,7 +345,8 @@ impl Layout {
         let pre_real_off = (eobj_off + n_eobj * 4 + 7) & !7;
         let pre_int_off = pre_real_off + n_real * 8;
         let pre_bool_off = pre_int_off + n_int_alg * 4;
-        let terminate_off = pre_bool_off + n_bool_alg * 4;
+        let old_real_off = (pre_bool_off + n_bool_alg * 4 + 7) & !7;
+        let terminate_off = old_real_off + if has_old_real { n_real * 8 } else { 0 };
         let terminal_off = terminate_off + 4;
         let initial_off = terminal_off + 4;
         let term_info_off = initial_off + 4;
@@ -336,8 +387,8 @@ impl Layout {
         let removed_init_idx_off = removed_init_res_off + 8;
         let total = removed_init_idx_off + 4;
         Layout {
-            n_states, n_real_alg, has_when, has_homotopy, has_history_ops, lambda_off, rparam_off, int_off, iparam_off,
-            bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
+            n_states, n_real_alg, has_when, has_homotopy, homotopy_method, has_init_lambda0, has_history_ops, has_old_real, lambda_off, rparam_off, int_off, iparam_off,
+            bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off, old_real_off,
             terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
             mathevents_off, zctol_off, start_off, real_nom_off, state_nom_off, state_max_off, n_sens, sens_off,
@@ -386,6 +437,11 @@ impl Layout {
         } else {
             None
         }
+    }
+
+    /// Bytes the live real region (states | derivatives | algebraics) spans.
+    pub fn real_bytes(&self) -> usize {
+        ((2 * self.n_states + self.n_real_alg) * 8) as usize
     }
 
     /// f64 in the real part of a result row: `time` + states + derivatives + real
@@ -703,6 +759,8 @@ pub struct StateSetInfo {
     pub seed_offs: Vec<u32>,
     /// Jacobian result slots (f64), row order (`n_dummy` of them) — column output.
     pub result_offs: Vec<u32>,
+    /// Candidate names, candidate order (C's `statescandidates[i]->name`).
+    pub candidate_names: Vec<String>,
 }
 
 /// One symbolic Jacobian the optimizer differentiates through: C's
@@ -865,6 +923,9 @@ pub struct SimMeta {
     /// Modelica source of each residual `functionRemovedInitialEquations` checks;
     /// C bakes the same text into the generated `errorStreamPrint`.
     pub removed_init_desc: Vec<String>,
+    /// C's `initializeNonlinearSystems` startup warnings, decided at compile time:
+    /// so far only a sparsity pattern `sparsitySanityCheck` rejects.
+    pub nls_warnings: Vec<String>,
     /// C's `simulationInfo->sensitivityParList`: the `SimData` offsets of the
     /// parameters `--calculateSensitivities` selected, in block order.
     pub sens_params: Vec<u32>,
@@ -963,7 +1024,8 @@ impl SimMeta {
     /// `filterOutput` as the file is opened.
     ///
     /// `matcher` is a compiled `-variableFilter` (wrapped in C's `^(…)$`) and
-    /// *replaces* [`var_filter::FILTERED`]; `None` keeps it.
+    /// *replaces* [`var_filter::FILTERED`]; `None` keeps it. A plain parameter is
+    /// exempt either way — `initializeOutputFilter` never touches one.
     pub fn output_keep(&self, matcher: Option<&dyn Fn(&str) -> bool>) -> Vec<bool> {
         let (emit_protected, ignore_hide) =
             crate::simflags::with_flags(|f| (f.emit_protected, f.ignore_hide_result));
@@ -974,17 +1036,26 @@ impl SimMeta {
                 if matches!(v.kind, MetaKind::Time) {
                     return true; // never filtered
                 }
-                if v.filter & var_filter::PROTECTED != 0
-                    && !(emit_protected && v.filter & var_filter::ENCRYPTED == 0)
-                {
+                // C's `shouldFilterOutput`: either flag *clears* the verdict both
+                // reasons set, so `-emit_protected` alone emits a variable that is
+                // protected *and* `HideResult=true`.
+                let protected = v.filter & var_filter::PROTECTED != 0;
+                let hidden = v.filter & var_filter::HIDE_RESULT != 0;
+                let mut filtered = protected || hidden;
+                if protected && emit_protected && v.filter & var_filter::ENCRYPTED == 0 {
+                    filtered = false;
+                }
+                if hidden && ignore_hide {
+                    filtered = false;
+                }
+                if filtered {
                     return false;
                 }
-                if v.filter & var_filter::HIDE_RESULT != 0 && !ignore_hide {
-                    return false;
-                }
+                let is_param =
+                    matches!(v.kind, MetaKind::Param { .. }) && v.filter & var_filter::ALIAS == 0;
                 match matcher {
-                    Some(m) => m(&v.name),
-                    None => v.filter & var_filter::FILTERED == 0,
+                    Some(m) if !is_param => m(&v.name),
+                    _ => v.filter & var_filter::FILTERED == 0,
                 }
             })
             .collect();
@@ -1158,7 +1229,7 @@ fn put_u32s2(o: &mut Vec<u8>, v: &[Vec<u32>]) {
 fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     for v in [
         l.n_states, l.n_real_alg, l.lambda_off, l.rparam_off, l.int_off, l.iparam_off, l.bool_off,
-        l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off,
+        l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off, l.old_real_off,
         l.terminate_off, l.terminal_off, l.initial_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
         l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
@@ -1175,7 +1246,10 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     }
     o.push(l.has_when as u8);
     o.push(l.has_homotopy as u8);
+    o.push(l.homotopy_method.code());
+    o.push(l.has_init_lambda0 as u8);
     o.push(l.has_history_ops as u8);
+    o.push(l.has_old_real as u8);
 }
 fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
     match j {
@@ -1241,6 +1315,10 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_u32s(&mut o, &s.a_offs);
         put_u32s(&mut o, &s.seed_offs);
         put_u32s(&mut o, &s.result_offs);
+        put_u32(&mut o, s.candidate_names.len() as u32);
+        for n in &s.candidate_names {
+            put_str(&mut o, n);
+        }
     }
     put_u32(&mut o, m.fmi_vrs.len() as u32);
     for v in &m.fmi_vrs {
@@ -1286,6 +1364,10 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     }
     put_u32(&mut o, m.removed_init_desc.len() as u32);
     for d in &m.removed_init_desc {
+        put_str(&mut o, d);
+    }
+    put_u32(&mut o, m.nls_warnings.len() as u32);
+    for d in &m.nls_warnings {
         put_str(&mut o, d);
     }
     put_u32(&mut o, m.sample_index.len() as u32);
@@ -1484,6 +1566,7 @@ impl<'a> Reader<'a> {
             pre_real_off: self.u32()?,
             pre_int_off: self.u32()?,
             pre_bool_off: self.u32()?,
+            old_real_off: self.u32()?,
             terminate_off: self.u32()?,
             terminal_off: self.u32()?,
             initial_off: self.u32()?,
@@ -1538,11 +1621,17 @@ impl<'a> Reader<'a> {
             total: self.u32()?,
             has_when: false,
             has_homotopy: false,
+            homotopy_method: HomotopyMethod::default(),
+            has_init_lambda0: false,
             has_history_ops: false,
+            has_old_real: false,
         };
         l.has_when = self.u8()? != 0;
         l.has_homotopy = self.u8()? != 0;
+        l.homotopy_method = HomotopyMethod::from_code(self.u8()?);
+        l.has_init_lambda0 = self.u8()? != 0;
         l.has_history_ops = self.u8()? != 0;
+        l.has_old_real = self.u8()? != 0;
         Ok(l)
     }
     fn kind(&mut self) -> Result<MetaKind, &'static str> {
@@ -1588,7 +1677,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let nsets = r.u32()? as usize;
     let mut state_sets = Vec::with_capacity(nsets);
     for _ in 0..nsets {
-        state_sets.push(StateSetInfo {
+        let mut s = StateSetInfo {
             n_candidates: r.u32()?,
             n_states: r.u32()?,
             n_dummy: r.u32()?,
@@ -1597,7 +1686,11 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             a_offs: r.u32s()?,
             seed_offs: r.u32s()?,
             result_offs: r.u32s()?,
-        });
+            candidate_names: Vec::new(),
+        };
+        let nn = r.u32()? as usize;
+        s.candidate_names = (0..nn).map(|_| r.string()).collect::<core::result::Result<_, _>>()?;
+        state_sets.push(s);
     }
     let nvr = r.u32()? as usize;
     let mut fmi_vrs = Vec::with_capacity(nvr);
@@ -1641,6 +1734,11 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let mut removed_init_desc = Vec::with_capacity(nridesc);
     for _ in 0..nridesc {
         removed_init_desc.push(r.string()?);
+    }
+    let nwarn = r.u32()? as usize;
+    let mut nls_warnings = Vec::with_capacity(nwarn);
+    for _ in 0..nwarn {
+        nls_warnings.push(r.string()?);
     }
     let sample_index = r.u32s()?.into_iter().map(|v| v as i32).collect();
     let mut soti = SotiVars::default();
@@ -1799,7 +1897,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, params, attr_log,
-        removed_init_desc, sample_index, soti, sens_params, nls_vars, dae, clocks, lin, opt, inputs,
+        removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, dae, clocks, lin, opt, inputs,
     })
 }
 
@@ -1811,7 +1909,11 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
-            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, false, false, false),
+            // Every flag non-default, so the round-trip covers the flag block.
+            layout: Layout::new(
+                2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, true, true,
+                HomotopyMethod::LocalAdaptive, true, true, true,
+            ),
             start_time: 0.0,
             stop_time: 1.0,
             n_intervals: 500,
@@ -1842,6 +1944,7 @@ mod tests {
                 a_offs: vec![100, 104, 108, 112, 116, 120],
                 seed_offs: vec![200, 208, 216],
                 result_offs: vec![224],
+                candidate_names: vec!["a.w".to_string(), "b.w".to_string(), "c.w".to_string()],
             }],
             fmi_vrs: vec![
                 FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: Neg::None, start_off: 96, is_string: false, der_off: 0 },
@@ -1860,6 +1963,7 @@ mod tests {
                 AttrLog { kind: 3, name: "y".to_string() },
             ],
             removed_init_desc: vec!["4.0 - z".to_string()],
+            nls_warnings: Vec::new(),
             sample_index: vec![1],
             soti: SotiVars::default(),
             sens_params: vec![88],
@@ -1959,11 +2063,11 @@ mod tests {
         assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p", "n"]);
 
         // A `-variableFilter` replaces the model's verdict, so `k` is reachable;
-        // `time` is never filtered.
+        // `time` is never filtered and the parameter `p` is exempt.
         f.ignore_hide_result = false;
         simflags::set_flags(f);
         let only_k = |n: &str| n == "k";
-        assert_eq!(names(m.output_keep(Some(&only_k))), ["time", "k"]);
+        assert_eq!(names(m.output_keep(Some(&only_k))), ["time", "p", "k"]);
     }
 
     /// C's `read_experiment`: the command line replaces what the model was

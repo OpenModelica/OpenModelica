@@ -28,12 +28,6 @@
 /*! \file ida_solver.c
  */
 
-#ifdef USE_PARJAC
-  #include <omp.h>
-  #define GC_THREADS
-  #include <gc/omc_gc.h>
-#endif
-
 #include <string.h>
 #include <setjmp.h>
 
@@ -45,7 +39,6 @@
 #include "gc/omc_gc.h"
 #include "util/context.h"
 #include "util/omc_error.h"
-#include "util/parallel_helper.h"
 
 #include "ida_solver.h"
 
@@ -68,16 +61,13 @@
 #ifdef WITH_SUNDIALS
 
 
-/* Extern function prototypes */
-int IDADlsSetDenseJacFn(void* ida_mem, void*);
-
 /* Private function prototypes */
-static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
+static int callDenseJacobian(sunrealtype tt, sunrealtype cj, N_Vector yy,
                              N_Vector yp, N_Vector rr, SUNMatrix Jac,
                              void *user_data, N_Vector tmp1, N_Vector tmp2,
                              N_Vector tmp3);
 
-static int callSparseJacobian(realtype currentTime, realtype cj,
+static int callSparseJacobian(sunrealtype currentTime, sunrealtype cj,
                               N_Vector yy, N_Vector yp, N_Vector rr, SUNMatrix Jac, void *user_data,
                               N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
 
@@ -198,7 +188,16 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   idaData->homotopyTramp = -1.0;
 
   /* Instantiate IDA solver object */
-  idaData->ida_mem = IDACreate();
+  /* Create the SUNDIALS context every other SUNDIALS object is created with */
+  flag = SUNContext_Create(SUN_COMM_NULL, &idaData->sunctx);
+  assertStreamPrint(threadData, flag == SUN_SUCCESS, "SUNDIALS_ERROR: SUNContext_Create failed.");
+  sundialsSilenceLogger(idaData->sunctx);
+
+  /* Set error handler */
+  flag = SUNContext_PushErrHandler(idaData->sunctx, sundialsErrorHandlerFunction, idaData);
+  assertStreamPrint(threadData, flag == SUN_SUCCESS, "SUNDIALS_ERROR: SUNContext_PushErrHandler failed.");
+
+  idaData->ida_mem = IDACreate(idaData->sunctx);
   if (idaData->ida_mem == NULL) {
     throwStreamPrint(threadData, "##IDA## Initialization of IDA solver failed!");
   }
@@ -233,14 +232,14 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
     memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
 
-    idaData->y = N_VMake_Serial(idaData->N, idaData->states);
-    idaData->yp = N_VMake_Serial(idaData->N, idaData->statesDer);
+    idaData->y = N_VMake_Serial(idaData->N, idaData->states, idaData->sunctx);
+    idaData->yp = N_VMake_Serial(idaData->N, idaData->statesDer, idaData->sunctx);
   }
   else {
     idaData->states = NULL;
     idaData->statesDer = NULL;
-    idaData->y = N_VMake_Serial(idaData->N, data->localData[0]->realVars);
-    idaData->yp = N_VMake_Serial(idaData->N, data->localData[0]->realVars + data->modelData->nStates);
+    idaData->y = N_VMake_Serial(idaData->N, data->localData[0]->realVars, idaData->sunctx);
+    idaData->yp = N_VMake_Serial(idaData->N, data->localData[0]->realVars + data->modelData->nStates, idaData->sunctx);
   }
 
   flag = IDAInit(idaData->ida_mem, idaData->residualFunction,
@@ -252,10 +251,10 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   idaData->ypsave = (double*) malloc(idaData->N*sizeof(double));
   idaData->delta_hh = (double*) malloc(idaData->N*sizeof(double));
   idaData->nominal = (double*) malloc(idaData->N*sizeof(double));
-  idaData->newdelta = N_VNew_Serial(idaData->N);
+  idaData->newdelta = N_VNew_Serial(idaData->N, idaData->sunctx);
 
   /* Allocate memory for linear solver */
-  idaData->y_linSol = N_VNew_Serial(idaData->N);
+  idaData->y_linSol = N_VNew_Serial(idaData->N, idaData->sunctx);
 
   /* Set user data */
   idaData->userData = (IDA_USERDATA*) malloc(sizeof(IDA_USERDATA));
@@ -264,14 +263,10 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   flag = IDASetUserData(idaData->ida_mem, idaData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetUserData");
 
-  /* Set error handler */
-  flag = IDASetErrHandlerFn(idaData->ida_mem, idaErrorHandlerFunction, idaData);
-  checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetErrHandlerFn");
-
   idaData->jacNominalFactor = omc_flag[FLAG_JACOBIAN_NOMINAL_FACTOR]
       ? atof(omc_flagValue[FLAG_JACOBIAN_NOMINAL_FACTOR]) : 1.0;
 
-  idaData->absoluteTolerance = N_VNew_Serial(idaData->N);
+  idaData->absoluteTolerance = N_VNew_Serial(idaData->N, idaData->sunctx);
   idaData->id = NULL;
 
   if (omc_flag[FLAG_IDA_SCALING]) { /* idaNoScaling */
@@ -405,7 +400,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   switch (idaData->linearSolverMethod){
   case IDA_LS_SPGMR:
     idaData->J = NULL;
-    idaData->linSol = SUNLinSol_SPGMR(idaData->y_linSol, PREC_NONE, idaData->N);
+    idaData->linSol = SUNLinSol_SPGMR(idaData->y_linSol, SUN_PREC_NONE, idaData->N, idaData->sunctx);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPGMR: Input incompatible.");
     }
@@ -413,7 +408,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     break;
   case IDA_LS_SPBCG:
     idaData->J = NULL;
-    idaData->linSol = SUNLinSol_SPBCGS(idaData->y_linSol, PREC_NONE, idaData->N);
+    idaData->linSol = SUNLinSol_SPBCGS(idaData->y_linSol, SUN_PREC_NONE, idaData->N, idaData->sunctx);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPBCGS: Input incompatible.");
     }
@@ -421,15 +416,15 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     break;
   case IDA_LS_SPTFQMR:
     idaData->J = NULL;
-    idaData->linSol = SUNLinSol_SPTFQMR(idaData->y_linSol, PREC_NONE, idaData->N);
+    idaData->linSol = SUNLinSol_SPTFQMR(idaData->y_linSol, SUN_PREC_NONE, idaData->N, idaData->sunctx);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPTFQMR: Input incompatible.");
     }
     idaData->jacobianMethod = INTERNALNUMJAC;
     break;
   case IDA_LS_DENSE:
-    idaData->J = SUNDenseMatrix(idaData->N, idaData->N);
-    idaData->linSol = SUNLinSol_Dense(idaData->y_linSol, idaData->J);
+    idaData->J = SUNDenseMatrix(idaData->N, idaData->N, idaData->sunctx);
+    idaData->linSol = SUNLinSol_Dense(idaData->y_linSol, idaData->J, idaData->sunctx);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_Dense: Input incompatible.");
     }
@@ -439,8 +434,8 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     if (idaData->NNZ < 0) {
       throwStreamPrint(threadData, "##IDA## idaData->NNZ not set.");
     }
-    idaData->J = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, CSC_MAT);
-    idaData->linSol = SUNLinSol_KLU(idaData->y_linSol, idaData->J);
+    idaData->J = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, SUN_CSC_MAT, idaData->sunctx);
+    idaData->linSol = SUNLinSol_KLU(idaData->y_linSol, idaData->J, idaData->sunctx);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_KLU: Input incompatible.");
     }
@@ -455,10 +450,10 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   infoStreamPrint(OMC_LOG_SOLVER, 0, "IDA linear solver method selected %s", IDA_LS_METHOD_DESC[idaData->linearSolverMethod]);
 
   /* Set Jacobian function */
+  idaData->scaleMatrix = NULL;    /* allocated on demand, see getScalingFactors */
+
   /* Use sparse jacobian evaluation */
   if (idaData->linearSolverMethod == IDA_LS_KLU) {
-    idaData->allocatedParMem = 0;   /* FALSE */
-
     /* Set Jacobian function for matrix based linear solvers */
     switch (idaData->jacobianMethod){
     case SYMJAC:
@@ -470,16 +465,8 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       flag = IDASetJacFn(idaData->ida_mem, callSparseJacobian);
 
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
-#ifdef USE_PARJAC
-      if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == COLOREDSYMJACADJ) {
-        allocateThreadLocalJacobians(jacobian, &(idaData->jacColumns));
-        idaData->allocatedParMem = 1;   /* TRUE */
-      }
-#endif
       if (omc_flag[FLAG_IDA_SCALING]) {
-        idaData->scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, CSC_MAT);
-      } else {
-        idaData->scaleMatrix = NULL;
+        idaData->scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, SUN_CSC_MAT, idaData->sunctx);
       }
       break;
     default:
@@ -499,10 +486,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     case COLOREDNUMJAC:
       flag = IDASetJacFn(idaData->ida_mem, callDenseJacobian);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
-#ifdef USE_PARJAC
-      allocateThreadLocalJacobians(jacobian, &(idaData->jacColumns));
-      idaData->allocatedParMem = 1;   /* TRUE */
-#endif
       break;
     case INTERNALNUMJAC:
       /* TODO: Set a preconditioner if possible */
@@ -552,7 +535,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       flag = IDASetSuppressAlg(idaData->ida_mem, 1 /* TRUE */);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetSuppressAlg");
     }
-    idaData->id = N_VNew_Serial(idaData->N);
+    idaData->id = N_VNew_Serial(idaData->N, idaData->sunctx);
     for (i=0; i<idaData->N; ++i) {
       NV_Ith_S(idaData->id, i) = (i<data->modelData->nStates)? 1.0: 0.0;
     }
@@ -579,8 +562,8 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
   if (idaData->idaSmode) {
     idaData->Ns = data->modelData->nSensitivityParamVars;
-    idaData->yS = N_VCloneVectorArray_Serial(idaData->Ns, idaData->y);
-    idaData->ySp = N_VCloneVectorArray_Serial(idaData->Ns, idaData->yp);
+    idaData->yS = N_VCloneVectorArray(idaData->Ns, idaData->y);
+    idaData->ySp = N_VCloneVectorArray(idaData->Ns, idaData->yp);
 
     for (i=0; i<idaData->Ns; ++i) {
       N_VConst_Serial(0.0, idaData->yS[i]);
@@ -602,10 +585,12 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetSensErrCon");
 */
     /* allocate result workspace */
-    idaData->ySResult = N_VCloneVectorArrayEmpty_Serial(idaData->Ns, idaData->y);
+    idaData->ySResult = N_VNewVectorArray(idaData->Ns, idaData->sunctx);
     for(i = 0; i < idaData->Ns; ++i)
     {
-      N_VSetArrayPointer_Serial((data->simulationInfo->sensitivityMatrix + i*idaData->N), idaData->ySResult[i]);
+      idaData->ySResult[i] = N_VMake_Serial(idaData->N,
+                                            data->simulationInfo->sensitivityMatrix + i*idaData->N,
+                                            idaData->sunctx);
     }
   }
   if (compiledInDAEMode){
@@ -653,9 +638,9 @@ void ida_solver_deinitial(IDA_SOLVER *idaData)
 
   /* Free sensitivity-mode data */
   if (idaData->idaSmode) {
-    N_VDestroyVectorArray_Serial(idaData->yS, idaData->Ns);
-    N_VDestroyVectorArray_Serial(idaData->ySp, idaData->Ns);
-    N_VDestroyVectorArray_Serial(idaData->ySResult, idaData->Ns);
+    N_VDestroyVectorArray(idaData->yS, idaData->Ns);
+    N_VDestroyVectorArray(idaData->ySp, idaData->Ns);
+    N_VDestroyVectorArray(idaData->ySResult, idaData->Ns);
   }
 
   free(idaData->nominal);
@@ -665,14 +650,9 @@ void ida_solver_deinitial(IDA_SOLVER *idaData)
   }
   N_VDestroy_Serial(idaData->newdelta);
 
-#ifdef USE_PARJAC
-  if (idaData->allocatedParMem) {
-      freeAnalyticalJacobian(&(idaData->jacColumns));
-      idaData->allocatedParMem = 0;
-  }
-#endif
-
   IDAFree(&idaData->ida_mem);
+
+  SUNContext_Free(&idaData->sunctx);
 }
 
 
@@ -1528,12 +1508,7 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
   jac->dae_cj = cj;
 
   setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
-
-#ifdef USE_PARJAC
-  evalJacobian(data, threadData, jac, NULL, idaData->allocatedParMem ? idaData->jacColumns : NULL, SM_DATA_D(Jac), TRUE);
-#else
-  evalJacobian(data, threadData, jac, NULL, NULL, SM_DATA_D(Jac), TRUE);
-#endif
+  evalJacobian(data, threadData, jac, NULL, SM_DATA_D(Jac), TRUE);
 
   unsetContext(data);
 
@@ -1561,7 +1536,7 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
  * @param tmp3        Work array that can be used by, currently unused.
  * @return int        Return 0 on success, positive value on recoverable error and negative value otherwise.
  */
-static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
+static int callDenseJacobian(sunrealtype tt, sunrealtype cj, N_Vector yy,
                              N_Vector yp, N_Vector rr, SUNMatrix Jac,
                              void *user_data, N_Vector tmp1, N_Vector tmp2,
                              N_Vector tmp3) {
@@ -1617,7 +1592,7 @@ static void finishSparseColPtr(SUNMatrix A, int nnz)
   int i;
 
   /* TODO: Remove this check for performance reasons? */
-  if (SM_SPARSETYPE_S(A) != CSC_MAT) {
+  if (SM_SPARSETYPE_S(A) != SUN_CSC_MAT) {
     errorStreamPrint(
         OMC_LOG_STDOUT, 0,
         "In function finishSparseColPtr: Wrong sparse format of SUNMatrix A.");
@@ -1789,11 +1764,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
   setSundialsSparsePattern(cscPattern, jacobianNumCols(jac), Jac);
-#ifdef USE_PARJAC
-  evalJacobian(data, threadData, jac, NULL, idaData->allocatedParMem ? idaData->jacColumns : NULL, SM_DATA_S(Jac), FALSE);
-#else
-  evalJacobian(data, threadData, jac, NULL, NULL, SM_DATA_S(Jac), FALSE);
-#endif
+  evalJacobian(data, threadData, jac, NULL, SM_DATA_S(Jac), FALSE);
 
   finishSparseColPtr(Jac, cscPattern->nnz);
   unsetContext(data);
@@ -1813,7 +1784,7 @@ static int callSparseJacobian(double currentTime, double cj,
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)user_data)->userData)->threadData);
   int i;
-  int flag;
+  SUNErrCode flag;
 
   /* profiling */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
@@ -1857,11 +1828,11 @@ static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleM
 {
   int i;
 
-  N_Vector tmp1 = N_VNew_Serial(idaData->N);
-  N_Vector tmp2 = N_VNew_Serial(idaData->N);
-  N_Vector tmp3 = N_VNew_Serial(idaData->N);
+  N_Vector tmp1 = N_VNew_Serial(idaData->N, idaData->sunctx);
+  N_Vector tmp2 = N_VNew_Serial(idaData->N, idaData->sunctx);
+  N_Vector tmp3 = N_VNew_Serial(idaData->N, idaData->sunctx);
 
-  N_Vector rres = N_VNew_Serial(idaData->N);
+  N_Vector rres = N_VNew_Serial(idaData->N, idaData->sunctx);
 
   SUNMatrix denseMatrix;
 
@@ -1883,19 +1854,19 @@ static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleM
         throwStreamPrint(NULL, "##IDA## idaData->NNZ not set.");
       }
       if (idaData->scaleMatrix == NULL) {
-        idaData->scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, CSC_MAT);
+        idaData->scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ + idaData->N, SUN_CSC_MAT, idaData->sunctx);
       }
       callSparseJacobian(data->localData[0]->timeValue, 1.0, idaData->y, idaData->yp, rres,
                          idaData->scaleMatrix, idaData, tmp1, tmp2, tmp3);
     }
     else
     {
-      denseMatrix = SUNDenseMatrix(idaData->N, idaData->N);
+      denseMatrix = SUNDenseMatrix(idaData->N, idaData->N, idaData->sunctx);
       callDenseJacobian(data->localData[0]->timeValue, 1.0, idaData->y,
                         idaData->yp, rres, denseMatrix, idaData, tmp1, tmp2,
                         tmp3);
       SUNMatDestroy(idaData->scaleMatrix);
-      idaData->scaleMatrix = SUNSparseFromDenseMatrix(denseMatrix, DBL_MIN, CSC_MAT);
+      idaData->scaleMatrix = SUNSparseFromDenseMatrix(denseMatrix, DBL_MIN, SUN_CSC_MAT);
       if (idaData->scaleMatrix == NULL) {
         errorStreamPrint(
             OMC_LOG_STDOUT, 0,

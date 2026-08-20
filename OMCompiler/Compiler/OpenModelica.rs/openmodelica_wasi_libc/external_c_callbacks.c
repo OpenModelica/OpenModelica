@@ -32,7 +32,11 @@
  * memory, an allocated string is a plain pointer the model reads directly — no
  * marshalling. They report through the runtime, as
  * `SimulationRuntime/c/util/ModelicaUtilities.c` does: an FMU has no stdout, and
- * its simulation log is the FMI logger. An error ends the run (C's MMC_THROW). */
+ * its simulation log is the FMI logger. An error ends the run (C's MMC_THROW).
+ *
+ * `OM_EXT_HOST_ALLOC`: the web build's side module has a memory of its own, so
+ * the host allocates the returned strings and records the offsets it frees after
+ * copying them out. Everything else here is the same on both. */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -46,6 +50,7 @@ void rt_ext_warning(const char* msg);
 /* C's SIZE_LOG_BUFFER, and the same truncation. */
 #define LOG_BUFFER 2048
 
+#ifndef OM_EXT_HOST_ALLOC
 char* ModelicaAllocateString(size_t len) {
     char* p = (char*) malloc(len + 1);
     if (p) p[len] = '\0';
@@ -55,6 +60,7 @@ char* ModelicaAllocateString(size_t len) {
 char* ModelicaAllocateStringWithErrorReturn(size_t len) {
     return ModelicaAllocateString(len);
 }
+#endif
 
 static void report(void (*to)(const char*), const char* fmt, va_list ap) {
     char buf[LOG_BUFFER];

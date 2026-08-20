@@ -2218,6 +2218,133 @@ fn push_char_matrix(out: &mut Vec<u8>, name: &str, strings: &[&str], width: usiz
     out.extend_from_slice(&buf);
 }
 
+/// CSV input for [`filterSimulationResults`] (the C implementation has none).
+/// A CSV carries no parameters and no descriptions, so every name is a `data_2`
+/// trajectory and the MAT path's `data_1` remapping does not apply.
+/// `number_of_intervals` re-grids by linear interpolation, as `dataInfo` declares.
+fn filter_csv_input(
+    in_file: &ArcStr,
+    out_file: &ArcStr,
+    reader: &CsvReader,
+    var_names: &[ArcStr],
+    number_of_intervals: i32,
+    remove_description: bool,
+) -> Result<bool> {
+    // Distinct columns in first-requested order; a repeated name shares a column.
+    let mut cols: Vec<Vec<f64>> = Vec::new();
+    let mut col_of: Vec<usize> = Vec::with_capacity(var_names.len());
+    for name in var_names {
+        if let Some(prev) = var_names[..col_of.len()].iter().position(|n| n == name) {
+            let c = col_of[prev];
+            col_of.push(c);
+            continue;
+        }
+        let Some(vals) = reader.dataset(name.as_str()) else {
+            err(&ERROR_COULD_NOT_READ_VAR, [name.clone(), openmodelica_util::System::basename(in_file.clone())])?;
+            return Ok(false);
+        };
+        col_of.push(cols.len());
+        cols.push(vals.to_vec());
+    }
+    let time = cols[col_of[0]].clone();
+    if time.len() < 2 {
+        err(&ERROR_COULD_NOT_READ_VAR, [ArcStr::from("time"), openmodelica_util::System::basename(in_file.clone())])?;
+        return Ok(false);
+    }
+    let start = time[0];
+    let stop = time[time.len() - 1];
+
+    if out_file.ends_with(".csv") {
+        let mut text = String::from("time");
+        for name in &var_names[1..] {
+            text.push_str(",\"");
+            text.push_str(name);
+            text.push('"');
+        }
+        text.push('\n');
+        for row in 0..time.len() {
+            text.push_str(&format_g_prec15(time[row]));
+            for &c in &col_of[1..] {
+                text.push(',');
+                text.push_str(&format_g_prec15(cols[c][row]));
+            }
+            text.push('\n');
+        }
+        if write_output_file(out_file.as_str(), text.as_bytes()).is_err() {
+            err(&ERROR_FILTER_WRITE_FAILED, [out_file.clone()])?;
+            return Ok(false);
+        }
+        return Ok(true);
+    }
+
+    let num_to_filter = var_names.len();
+    let longest_name = var_names.iter().map(|n| n.len()).max().unwrap_or(0);
+    let out_rows = if number_of_intervals != 0 { number_of_intervals as usize + 1 } else { time.len() };
+
+    let mut out: Vec<u8> = Vec::new();
+    const ACLASS_NORMAL: &[u8] = b"A1 bt. ir1 na  Nj  oe  rc  mt  ao  lr   y   ";
+    push_mat_header(&mut out, "Aclass", 4, 11, 1);
+    out.extend_from_slice(ACLASS_NORMAL);
+
+    let names: Vec<&str> = var_names.iter().map(|n| n.as_str()).collect();
+    push_char_matrix(&mut out, "name", &names, longest_name);
+    let _ = remove_description; // a CSV has no descriptions to remove
+
+    // Width 1, not 0: `read_matlab4.c` cannot reopen a zero-width text matrix.
+    push_char_matrix(&mut out, "description", &vec![""; num_to_filter], 1);
+
+    // dataInfo: every variable is data_2, column `col_of[k] + 1`.
+    push_mat_header(&mut out, "dataInfo", num_to_filter as u32, 4, 4);
+    for _ in 0..num_to_filter {
+        out.extend_from_slice(&2i32.to_le_bytes());
+    }
+    for &c in &col_of {
+        out.extend_from_slice(&((c as i32) + 1).to_le_bytes());
+    }
+    for _ in 0..num_to_filter {
+        out.extend_from_slice(&0i32.to_le_bytes()); // linear interpolation
+    }
+    for _ in 0..num_to_filter {
+        out.extend_from_slice(&(-1i32).to_le_bytes()); // not defined outside interval
+    }
+
+    // data_1: just the synthetic time start/stop pair.
+    push_mat_header(&mut out, "data_1", 2, 1, 8);
+    out.extend_from_slice(&start.to_le_bytes());
+    out.extend_from_slice(&stop.to_le_bytes());
+
+    push_mat_header(&mut out, "data_2", out_rows as u32, cols.len() as u32, 8);
+    for col in &cols {
+        if number_of_intervals == 0 {
+            for v in col {
+                out.extend_from_slice(&v.to_le_bytes());
+            }
+            continue;
+        }
+        // Both the grid and the sample times are monotonic; walk them together.
+        let mut k = 0usize;
+        for j in 0..out_rows {
+            let t = if j == out_rows - 1 {
+                stop
+            } else {
+                start + (stop - start) * (j as f64) / (number_of_intervals as f64)
+            };
+            while k + 2 < time.len() && time[k + 1] < t {
+                k += 1;
+            }
+            let (t0, t1) = (time[k], time[k + 1]);
+            let v = if t1 == t0 { col[k] } else { col[k] + (t - t0) / (t1 - t0) * (col[k + 1] - col[k]) };
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+    }
+
+    if write_output_file(out_file.as_str(), &out).is_err() {
+        err(&ERROR_FILTER_WRITE_FAILED, [out_file.clone()])?;
+        return Ok(false);
+    }
+    Ok(true)
+}
+
 pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars: Arc<metamodelica::List<ArcStr>>, mut numberOfIntervals: i32, mut removeDescription: bool, mut hintReadAllVars: bool) -> Result<bool> {
     // C: SimulationResults_filterSimulationResults — copy a result file keeping
     // only the requested variables (optionally resampled to `numberOfIntervals`
@@ -2227,9 +2354,11 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
     // column); the Rust reader always loads data_2 in one pass, so it is a no-op.
     let mut reader = match ResultReader::open_reporting(&inFile)? {
         Some(ResultReader::Mat(r)) => r,
-        Some(ResultReader::Csv(_)) => {
-            err(&ERROR_FILTER_FORMAT, [ArcStr::from("CSV")])?;
-            return Ok(false);
+        Some(ResultReader::Csv(r)) => {
+            let mut names: Vec<ArcStr> = Vec::with_capacity(1 + vars.as_ref().into_iter().count());
+            names.push(ArcStr::from("time"));
+            names.extend(vars.as_ref().into_iter().cloned());
+            return filter_csv_input(&inFile, &outFile, &r, &names, numberOfIntervals, removeDescription);
         }
         Some(ResultReader::Plt(_)) => {
             err(&ERROR_FILTER_FORMAT, [ArcStr::from("PLT")])?;

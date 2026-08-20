@@ -559,19 +559,26 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant) 
 
 /// The `env` imports `sim_runtime_wasmer::define_external_imports` binds. Any other
 /// undefined symbol is a link error, see `build_external_c_wasm`.
+///
+/// The `Modelica*` entry points are not among them: the side module carries
+/// `external_c_callbacks.c`, the same one an FMU links, so a `%g` is interpolated
+/// by `vsnprintf` before the host ever sees the message. Only allocation stays
+/// host-side (`OM_EXT_HOST_ALLOC`) — the buffer lives in the side module's own
+/// memory and the trampoline frees it after copying it out.
 const HOST_PROVIDED: &[&str] = &[
-    "ModelicaError",
-    "ModelicaFormatError",
-    "ModelicaFormatMessage",
-    "ModelicaFormatWarning",
-    "ModelicaVFormatError",
-    "ModelicaVFormatWarning",
+    "rt_ext_error",
+    "rt_ext_message",
+    "rt_ext_warning",
     "ModelicaAllocateString",
     "ModelicaAllocateStringWithErrorReturn",
     "ModelicaInternal_getTime",
     "ModelicaInternal_getpid",
     "usertab",
 ];
+
+/// `--export-all` keeps older MSL compatibility entry points present, but exports
+/// functions only — hence `__stack_pointer`, which the recovery path restores.
+const EXTRA_LINK_ARGS: &[&str] = &["-Wl,--export-all", "-Wl,--export=__stack_pointer"];
 
 /// Build + embed the ModelicaExternalC WASI side module (`modelicaexternalc.wasm`)
 /// for the web (wasmer) simulation host. Provides `ext.Modelica*_*` external functions
@@ -598,6 +605,7 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
         .expect("OMC_EXTERNAL_C_SOURCES not set (CMake provides it)");
 
     let stubs = crate_dir.join("external_c_stubs.c");
+    let callbacks = crate_dir.join("../openmodelica_wasi_libc/external_c_callbacks.c");
     let sources = [
         "ModelicaStandardTables.c", "ModelicaStrings.c", "ModelicaRandom.c",
         "ModelicaIO.c", "ModelicaMatIO.c", "snprintf.c",
@@ -606,6 +614,7 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
     let src_paths: Vec<PathBuf> = sources.iter().map(|s| c_sources.join(s)).collect();
 
     println!("cargo:rerun-if-changed={}", stubs.display());
+    println!("cargo:rerun-if-changed={}", callbacks.display());
     for src in &src_paths {
         println!("cargo:rerun-if-changed={}", src.display());
     }
@@ -634,12 +643,13 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
     let hash = {
         let mut h: u64 = 0xcbf29ce484222325;
         let mut mix = |bytes: &[u8]| for &byte in bytes { h ^= byte as u64; h = h.wrapping_mul(0x100000001b3); };
-        for f in all_srcs.iter().copied().chain(std::iter::once(&stubs)) {
+        for f in all_srcs.iter().copied().chain([&stubs, &callbacks]) {
             if let Ok(b) = std::fs::read(f) { mix(&b); }
         }
         mix(clang.as_bytes());
         mix(sysroot.as_bytes());
         for s in HOST_PROVIDED { mix(s.as_bytes()); }
+        for s in EXTRA_LINK_ARGS { mix(s.as_bytes()); }
         format!("{h:016x}")
     };
     if dest.exists() && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
@@ -647,9 +657,8 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
         return;
     }
 
-    // `--export-all`: export every symbol so older MSL compatibility entry points
-    // are always present. `-mexec-model=reactor`: exports `_initialize` (runs ctors),
-    // no `_start`. `-nodefaultlibs` means `-lc` has to be explicit.
+    // `-mexec-model=reactor`: exports `_initialize` (runs ctors), no `_start`.
+    // `-nodefaultlibs` means `-lc` has to be explicit.
     //
     // `--allow-undefined-file` rather than blanket `--allow-undefined`: a sysroot that
     // fails to provide libc must be a link error, not a module whose `malloc`/`strlen`/
@@ -661,15 +670,15 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
     }).unwrap_or_else(|e| panic!("{e}"));
     let mut cmd = Command::new(&clang);
     cmd.args(["--target=wasm32-wasip1", "-O2", "-mexec-model=reactor",
-               "-nodefaultlibs", "-DNO_MUTEX", "-DHAVE_ZLIB",
+               "-nodefaultlibs", "-DNO_MUTEX", "-DHAVE_ZLIB", "-DOM_EXT_HOST_ALLOC",
                "-Wno-error=implicit-function-declaration"])
         .arg(format!("--sysroot={sysroot}"))
         .arg("-I").arg(&c_sources)
         .arg("-I").arg(&zlib_dir)
-        .args(&all_srcs).arg(&stubs)
+        .args(&all_srcs).arg(&stubs).arg(&callbacks)
         .arg("-lc")
         .arg(&builtins)
-        .arg("-Wl,--export-all")
+        .args(EXTRA_LINK_ARGS)
         .arg(format!("-Wl,--allow-undefined-file={}", permit.display()))
         .arg("-o").arg(&dest);
     let what = format!("{clang} (modelicaexternalc.wasm, --target=wasm32-wasip1, sysroot {sysroot})");

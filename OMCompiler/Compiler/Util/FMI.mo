@@ -364,6 +364,13 @@ algorithm
     case INFO(fmiVersion = "2.0", fmiType = 1) then "me";
     case INFO(fmiVersion = "2.0", fmiType = 2) then "cs";
     case INFO(fmiVersion = "2.0", fmiType = 3) then "me_cs";
+    /* FMI 3.0 numbers its interface types as flags, so 2, 4 and 8 rather than the
+       1, 2, 3 of FMI 2.0; see fmi3_fmu_kind_enu_t. FMIImpl.c stores the one the
+       import picked, not the set the FMU offers. */
+    case INFO(fmiVersion = "3.0", fmiType = 2) then "me";
+    case INFO(fmiVersion = "3.0", fmiType = 4) then "cs";
+    case INFO(fmiVersion = "3.0", fmiType = 8) then "se";
+    else "";
   end match;
 end getFMIType;
 

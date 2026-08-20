@@ -262,7 +262,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.FLOW_ALIAS_ELIMINATION,
   Flags.DUMP_CHECK_MODEL,
   Flags.CHECK_DEF_USE,
-  Flags.TEARING_COST
+  Flags.TEARING_COST,
+  Flags.OMEDIT
 };
 
 protected
@@ -440,7 +441,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMU_PLATFORMS,
   Flags.FMU_VERSION,
   Flags.TEARING_COST_MARGIN,
-  Flags.FMU_NATIVE_PLATFORMS
+  Flags.FMU_NATIVE_PLATFORMS,
+  Flags.TPL_OUTPUT_DIR
 };
 
 public function new

@@ -57,7 +57,7 @@ void setJacElementSundialsSparse(int row, int column, int nth, double value, voi
 
   SUNMatrix A = (SUNMatrix) Jac;
   /* TODO: Remove this check for performance reasons? */
-  if (SM_SPARSETYPE_S(A) != CSC_MAT) {
+  if (SM_SPARSETYPE_S(A) != SUN_CSC_MAT) {
     errorStreamPrint(OMC_LOG_STDOUT, 0,
                      "In function setJacElementSundialsSparse: Wrong sparse format "
                      "of SUNMatrix A.");
@@ -96,23 +96,25 @@ void setSundialsSparsePattern(const SPARSE_PATTERN* sp, size_t nCols, SUNMatrix 
 /**
  * @brief             Scaling of a sparse matrix column-wise by a vector
  *
+ * Might get fixed in a future version of SUDNIALS: https://github.com/llnl/sundials/issues/590
+ *
  * @param A           Sparse matrix in CSC. Will be scaled on return.
  * @param vScale      Vector for scaling.
- * @return            Return `SUNMAT_SUCCESS` on success.
+ * @return            Return `SUN_SUCCESS` on success.
  */
-int _omc_SUNSparseMatrixVecScaling(SUNMatrix A, N_Vector vScale)
+SUNErrCode _omc_SUNSparseMatrixVecScaling(SUNMatrix A, N_Vector vScale)
 {
 
   /* should not be called unless A is a sparse matrix in CSC format;
     otherwise return immediately */
-  if (SUNMatGetID(A) != SUNMATRIX_SPARSE || SM_SPARSETYPE_S(A) == CSR_MAT) {
-    return SUNMAT_ILL_INPUT;
+  if (SUNMatGetID(A) != SUNMATRIX_SPARSE || SM_SPARSETYPE_S(A) == SUN_CSR_MAT) {
+    return SUN_ERR_ARG_INCOMPATIBLE;
   }
 
   sunindextype i, j;
   char *matrixtype;
   char *indexname;
-  realtype *vScaling = N_VGetArrayPointer(vScale);
+  sunrealtype *vScaling = N_VGetArrayPointer(vScale);
 
   for (j=0; j<SM_NP_S(A); j++) {
     for (i=(SM_INDEXPTRS_S(A))[j]; i<(SM_INDEXPTRS_S(A))[j+1]; i++) {
@@ -120,29 +122,41 @@ int _omc_SUNSparseMatrixVecScaling(SUNMatrix A, N_Vector vScale)
     }
   }
 
-  return SUNMAT_SUCCESS;
+  return SUN_SUCCESS;
 }
 
 /**
  * @brief Calculates A+c*I and stores the result in A.
  *
- * TODO: put this into sundials or use another library in the future.
+ * SUNDIALS has no A+c*I operation. Its SUNMatScaleAddI computes c*A+I, which
+ * scales the matrix and adds an unscaled identity - the other way around. The
+ * exact substitute would be SUNMatScaleAdd(1, A, B) with B holding c*I, but
+ * SUNMatScaleAdd_Sparse still zeroes an M-sized work array once per column and
+ * so runs in O(M*N); see https://github.com/LLNL/sundials/issues/253 and
+ * https://github.com/llnl/sundials/issues/590.
  *
- * @param c     Constant to scale identity matrix I.
- * @param A     Sparse matrix in CSC or CSR format.
- * @return int  Returns SUNMAT_SUCCESS on success
- *              or SUNMAT_MEM_FAIL if failed to allocate memory.
+ * This implementation is O(NNZ): the diagonal scan runs over the stored entries
+ * of each column, and the reallocating path fills its work arrays per column
+ * from that column's own entries rather than clearing them over all M rows.
+ *
+ * TODO: Drop this if SUNDIALS ever grows an A+c*I operation, or if
+ *       SUNMatScaleAdd_Sparse becomes linear in the number of nonzeros.
+ *
+ * @param c Constant to scale identity matrix I.
+ * @param A Sparse matrix in CSC or CSR format.
+ * @return  Returns SUN_SUCCESS on success
+ *          or SUN_ERR_MEM_FAIL if failed to allocate memory.
  */
-int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
+SUNErrCode _omc_SUNMatScaleIAdd_Sparse(sunrealtype c, SUNMatrix A)
 {
   sunindextype j, i, p, nz, newvals, M, N, cend, nw;
-  booleantype newmat, found;
+  sunbooleantype newmat, found;
   sunindextype *w, *Ap, *Ai, *Cp, *Ci;
-  realtype *x, *Ax, *Cx;
+  sunrealtype *x, *Ax, *Cx;
   SUNMatrix C;
 
   /* store shortcuts to matrix dimensions (M is inner dimension, N is outer) */
-  if (SM_SPARSETYPE_S(A) == CSC_MAT) {
+  if (SM_SPARSETYPE_S(A) == SUN_CSC_MAT) {
     M = SM_ROWS_S(A);
     N = SM_COLUMNS_S(A);
   }
@@ -155,11 +169,11 @@ int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
   Ap = Ai = NULL;
   Ax = NULL;
   if (SM_INDEXPTRS_S(A))  Ap = SM_INDEXPTRS_S(A);
-  else  return (SUNMAT_MEM_FAIL);
+  else  return (SUN_ERR_MEM_FAIL);
   if (SM_INDEXVALS_S(A))  Ai = SM_INDEXVALS_S(A);
-  else  return (SUNMAT_MEM_FAIL);
+  else  return (SUN_ERR_MEM_FAIL);
   if (SM_DATA_S(A))       Ax = SM_DATA_S(A);
-  else  return (SUNMAT_MEM_FAIL);
+  else  return (SUN_ERR_MEM_FAIL);
 
 
   /* determine if A: contains values on the diagonal (so c*I can just be added in);
@@ -204,7 +218,7 @@ int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
 
     /* create work arrays for nonzero row (column) indices and values in a single column (row) */
     w = (sunindextype *) malloc(M * sizeof(sunindextype));
-    x = (realtype *) malloc(M * sizeof(realtype));
+    x = (sunrealtype *) malloc(M * sizeof(sunrealtype));
 
     /* determine storage location where last column (row) should end */
     nz = Ap[N] + newvals;
@@ -266,22 +280,23 @@ int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
   } else {
 
     /* create work array for nonzero values in a single column (row) */
-    x = (realtype *) malloc(M * sizeof(realtype));
+    x = (sunrealtype *) malloc(M * sizeof(sunrealtype));
 
-    /* create new matrix for sum */
+    /* create new matrix for sum, reusing A's SUNDIALS context */
     C = SUNSparseMatrix(SM_ROWS_S(A), SM_COLUMNS_S(A),
                         Ap[N] + newvals,
-                        SM_SPARSETYPE_S(A));
+                        SM_SPARSETYPE_S(A),
+                        A->sunctx);
 
     /* access data from CSR structures (return if failure) */
     Cp = Ci = NULL;
     Cx = NULL;
     if (SM_INDEXPTRS_S(C))  Cp = SM_INDEXPTRS_S(C);
-    else  return (SUNMAT_MEM_FAIL);
+    else  return (SUN_ERR_MEM_FAIL);
     if (SM_INDEXVALS_S(C))  Ci = SM_INDEXVALS_S(C);
-    else  return (SUNMAT_MEM_FAIL);
+    else  return (SUN_ERR_MEM_FAIL);
     if (SM_DATA_S(C))       Cx = SM_DATA_S(C);
-    else  return (SUNMAT_MEM_FAIL);
+    else  return (SUN_ERR_MEM_FAIL);
 
     /* initialize total nonzero count */
     nz = 0;
@@ -349,7 +364,7 @@ int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
     free(x);
 
   }
-  return SUNMAT_SUCCESS;
+  return SUN_SUCCESS;
 
 }
 

@@ -1,7 +1,7 @@
 // name: inlineAttributes15947
 // keywords: NewBackend inline attributes min max nominal start
 // status: correct
-// cflags: --newBackend
+// cflags: --newBackend -d=omedit
 // teardown_command: rm -rf InlineAttrNB15947*
 //
 // New backend test for issue #15947: the input/output attributes

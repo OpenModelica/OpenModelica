@@ -427,6 +427,19 @@ public
     end if;
   end isMatchedBranch;
 
+  function matchedConditionalArrayType
+    input Type ty;
+    output Type outType;
+  algorithm
+    outType := match ty
+      case CONDITIONAL_ARRAY()
+        then match ty.matchedBranch
+          case Branch.TRUE then ty.trueType;
+          case Branch.FALSE then ty.falseType;
+        end match;
+    end match;
+  end matchedConditionalArrayType;
+
   function simplifyConditionalArray
     input Type ty;
     output Type outType;
@@ -442,6 +455,32 @@ public
       else ty;
     end match;
   end simplifyConditionalArray;
+
+  function unifyArrays
+    "Unifies two array types into a single type, with unknown dimensions where
+     the dimensions of the two types disagree. The types are assumed to be
+     array types with the same number of dimensions."
+    input Type ty1;
+    input Type ty2;
+    output Type outType;
+  protected
+    list<Dimension> dims;
+
+    function unify_dims
+      input Dimension dim1;
+      input Dimension dim2;
+      output Dimension dim;
+    algorithm
+      if Dimension.isSame(dim1, dim2) then
+        dim := dim1;
+      else
+        dim := Dimension.UNKNOWN();
+      end if;
+    end unify_dims;
+  algorithm
+    dims := list(unify_dims(d1, d2) threaded for d1 in arrayDims(ty1), d2 in arrayDims(ty2));
+    outType := ARRAY(elementType(ty1), dims);
+  end unifyArrays;
 
   function isVector
     "Return whether the type is a vector type or not, i.e. a 1-dimensional array."
@@ -874,6 +913,7 @@ public
   algorithm
     dim := match ty
       case ARRAY() then listGet(ty.dimensions, index);
+      case CONDITIONAL_ARRAY() then nthDimension(matchedConditionalArrayType(ty), index);
       case FUNCTION() then nthDimension(Function.returnType(ty.fn), index);
       case METABOXED() then nthDimension(ty.ty, index);
     end match;

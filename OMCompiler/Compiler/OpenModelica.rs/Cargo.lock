@@ -6528,6 +6528,7 @@ dependencies = [
  "openmodelica_frontend_types",
  "openmodelica_mat_writer",
  "openmodelica_modelica_utilities",
+ "openmodelica_plt_writer",
  "openmodelica_script_util",
  "openmodelica_sim_meta",
  "openmodelica_simcode_types",
@@ -6682,7 +6683,7 @@ name = "openmodelica_modelica_utilities"
 version = "0.1.0"
 dependencies = [
  "libc",
- "openmodelica_wasi",
+ "openmodelica_sim_meta",
 ]
 
 [[package]]
@@ -6726,6 +6727,13 @@ dependencies = [
  "openmodelica_frontend_types",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
+]
+
+[[package]]
+name = "openmodelica_plt_writer"
+version = "0.1.0"
+dependencies = [
+ "libm",
 ]
 
 [[package]]

@@ -46,12 +46,13 @@
 #include <QFile>
 #if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
 #include "Modeling/qtwebengine_compat.h" // QtWebEngine unavailable on wasm / stubbed on MSVC
-#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#else
 #include <QWebEngineView>
 #include <QWebEnginePage>
-#else // #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-#include <QWebView>
-#endif // #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
+#include <QWebEngineNewWindowRequest>
+#endif
+#endif
 #include <QToolBar>
 #include <QComboBox>
 #include <QFontComboBox>
@@ -95,9 +96,7 @@ public:
   void showDocumentation(LibraryTreeItem *pLibraryTreeItem);
   void execCommand(const QString &commandName);
   void execCommand(const QString &commandName, const QString &valueArgument);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   QVariant runJavaScript(const QString &javaScript);
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   bool queryCommandState(const QString &commandName);
   QString queryCommandValue(const QString &commandName);
   void saveScrollPosition();
@@ -192,7 +191,6 @@ public slots:
   void removeLink();
 };
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 class DocumentationPage : public QWebEnginePage
 {
   Q_OBJECT
@@ -209,16 +207,11 @@ private slots:
 };
 
 class DocumentationViewer : public QWebEngineView
-#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-class DocumentationViewer : public QWebView
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 {
   Q_OBJECT
 private:
   DocumentationWidget *mpDocumentationWidget;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   DocumentationPage *mpDocumentationPage;
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 public:
   DocumentationViewer(DocumentationWidget *pDocumentationWidget, bool isContentEditable = false);
   void setFocusInternal();
@@ -232,12 +225,10 @@ public slots:
   void processLinkHover(QString link, QString title, QString textContent);
   void showContextMenu(QPoint point);
   void pageLoaded(bool ok);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
+  void newWindowRequested(QWebEngineNewWindowRequest &request);
+#endif
 protected:
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  virtual QWebEngineView* createWindow(QWebEnginePage::WebWindowType type) override;
-#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  virtual QWebView* createWindow(QWebPage::WebWindowType type) override;
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   virtual void keyPressEvent(QKeyEvent *event) override;
   virtual void wheelEvent(QWheelEvent *event) override;
   virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
