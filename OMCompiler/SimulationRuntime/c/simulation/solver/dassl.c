@@ -393,10 +393,6 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     case COLOREDSYMJAC:
       data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->maxColors;
       dasslData->jacobianFunction = jacA_symColored;
-#ifdef USE_PARJAC
-      allocateThreadLocalJacobians(&(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]), &(dasslData->jacColumns));
-      dasslData->allocatedParMem = 1;   /* true */
-#endif
       break;
     case COLOREDSYMJACADJ:
       data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ].sparsePattern->maxColors;
