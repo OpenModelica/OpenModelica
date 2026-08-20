@@ -32,3 +32,29 @@ macro(omc_install_gui_client target)
   install(TARGETS ${target} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
                             BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
 endmacro()
+
+# Resolve the MSYS2 installation prefix (the ucrt64 tree) into an absolute
+# Windows path with forward slashes and store it in ${out_var}.
+#
+# MSYS2 exports MSYSTEM_PREFIX as a POSIX-style path (e.g. "/ucrt64"). When
+# cmake is invoked directly from an MSYS2 shell, MSYS2 auto-translates that to
+# an absolute Windows path (relative to its own install root) before the native
+# cmake.exe process ever sees it, so it can be used as-is. Only if it is still
+# POSIX-style (translation didn't happen) do we resolve it ourselves against
+# OMDEV's msys tree.
+function(omc_get_msys_prefix out_var)
+  if(NOT DEFINED ENV{MSYSTEM_PREFIX})
+    message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
+  endif()
+
+  if("$ENV{MSYSTEM_PREFIX}" MATCHES "^[A-Za-z]:")
+    string(REPLACE "\\" "/" msys_prefix "$ENV{MSYSTEM_PREFIX}")
+  else()
+    if(NOT DEFINED ENV{OMDEV})
+      message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
+    endif()
+    string(REPLACE "\\" "/" msys_prefix "$ENV{OMDEV}\\tools\\msys\\$ENV{MSYSTEM_PREFIX}")
+  endif()
+
+  set(${out_var} "${msys_prefix}" PARENT_SCOPE)
+endfunction()

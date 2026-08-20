@@ -130,6 +130,8 @@ else()
 endif()
 
 if(MINGW)
+  omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
+
   # Find windeployqt6
   find_program(WINDEPLOYQT_EXECUTABLE
     NAMES windeployqt windeployqt6
