@@ -1,7 +1,7 @@
 // name: Issue14456.mos
 // keywords: fmu export and run
 // status: correct
-// teardown_command: rm -rf roomM370*.c roomM370*.h roomM370-tmp index.html roomM370.fmu roomM370_cs_systemCall.log model_res.mat
+// teardown_command: rm -rf roomM370*.c roomM370*.h roomM370-tmp index.html roomM370.fmu roomM370_cs_systemCall.log roomM370_res.mat roomM370_info.json model_res.mat
 
 setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
 loadFile("roomM370.mo"); getErrorString();
