@@ -31,39 +31,10 @@ pub(crate) fn emit_generic_assign(
     call_index: i32,
     scal_indices: &Arc<List<i32>>,
 ) -> Result<()> {
-    use we::Instruction as I;
     let call = lookup_call(ctx, call_index)?;
     let indices: Vec<i32> = (&**scal_indices).into_iter().copied().collect();
-    if indices.is_empty() {
-        return Ok(());
-    }
-    let table = emit_const_int_table(ctx, &indices)?;
-    let k = ctx.alloc_temp(WTy::I32);
-    ctx.emit(I::I32Const(0));
-    ctx.emit(I::LocalSet(k));
-    ctx.emit(I::Block(we::BlockType::Empty));
-    ctx.emit(I::Loop(we::BlockType::Empty));
-    ctx.emit(I::LocalGet(k));
-    ctx.emit(I::I32Const(indices.len() as i32));
-    ctx.emit(I::I32GeS);
-    ctx.emit(I::BrIf(1));
-    let idx = ctx.alloc_temp(WTy::I32);
-    ctx.emit(I::LocalGet(table));
-    ctx.emit(I::LocalGet(k));
-    ctx.emit(I::I32Const(4));
-    ctx.emit(I::I32Mul);
-    ctx.emit(I::I32Add);
-    ctx.emit(I::I32Load(mem_arg(0, 2)));
-    ctx.emit(I::LocalSet(idx));
-    emit_index_body(ctx, &call, idx)?;
-    ctx.emit(I::LocalGet(k));
-    ctx.emit(I::I32Const(1));
-    ctx.emit(I::I32Add);
-    ctx.emit(I::LocalSet(k));
-    ctx.emit(I::Br(0));
-    ctx.emit(I::End); // loop
-    ctx.emit(I::End); // block
-    Ok(())
+    let iters: Vec<BackendDAE::SimIterator> = (&**call_iters(&call)).into_iter().cloned().collect();
+    emit_index_list_loop(ctx, &iters, &indices, &mut |ctx, _| emit_call_body(ctx, &call))
 }
 
 /// `SES_ENTWINED_ASSIGN`: calls interleaved in `call_order`, each consuming its
@@ -110,16 +81,25 @@ fn lookup_call(ctx: &FnCtx, call_index: i32) -> Result<SimCode::SimGenericCall> 
         .ok_or("CodegenWasmJit: for-equation names an unknown generic call")
 }
 
-/// C's `genericIterator`: recover each iterator from `idx` by mixed-radix
-/// division (first listed iterator least significant), then run the body.
 fn emit_index_body(ctx: &mut FnCtx, call: &SimCode::SimGenericCall, idx: u32) -> Result<()> {
-    use we::Instruction as I;
     let iters: Vec<BackendDAE::SimIterator> = (&**call_iters(call)).into_iter().cloned().collect();
+    emit_decoded_iters(ctx, &iters, idx, &mut |ctx| emit_call_body(ctx, call))
+}
+
+/// C's `genericIterator`: recover each iterator from `idx` by mixed-radix
+/// division (first listed iterator least significant), then run `body`.
+pub(crate) fn emit_decoded_iters(
+    ctx: &mut FnCtx,
+    iters: &[BackendDAE::SimIterator],
+    idx: u32,
+    body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
     let tmp = ctx.alloc_temp(WTy::I32);
     ctx.emit(I::LocalGet(idx));
     ctx.emit(I::LocalSet(tmp));
     let mut bounds = Vec::new();
-    for iter in &iters {
+    for iter in iters {
         let it = ctx.alloc_temp(WTy::I32);
         let (name, size) = match iter {
             BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name, start, step, size, .. } => {
@@ -159,10 +139,51 @@ fn emit_index_body(ctx: &mut FnCtx, call: &SimCode::SimGenericCall, idx: u32) ->
         bounds.push(bind_iter(ctx, name, it, SigTy::Int)?);
         bounds.extend(emit_sub_iters(ctx, iter_sub_iter(iter), it)?);
     }
-    emit_call_body(ctx, call)?;
+    body(ctx)?;
     for b in bounds.into_iter().rev() {
         unbind_iter(ctx, b);
     }
+    Ok(())
+}
+
+/// C's `for(i_ …) { tmp = idx_lst[i_]; … }`: [`emit_decoded_iters`] per index in
+/// `scal_indices`, with `body` handed the local holding the position `i_`.
+pub(crate) fn emit_index_list_loop(
+    ctx: &mut FnCtx,
+    iters: &[BackendDAE::SimIterator],
+    scal_indices: &[i32],
+    body: &mut dyn FnMut(&mut FnCtx, u32) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    if scal_indices.is_empty() {
+        return Ok(());
+    }
+    let table = emit_const_int_table(ctx, scal_indices)?;
+    let k = ctx.alloc_temp(WTy::I32);
+    let idx = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(k));
+    ctx.emit(I::Block(we::BlockType::Empty));
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(k));
+    ctx.emit(I::I32Const(scal_indices.len() as i32));
+    ctx.emit(I::I32GeS);
+    ctx.emit(I::BrIf(1));
+    ctx.emit(I::LocalGet(table));
+    ctx.emit(I::LocalGet(k));
+    ctx.emit(I::I32Const(4));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Load(mem_arg(0, 2)));
+    ctx.emit(I::LocalSet(idx));
+    emit_decoded_iters(ctx, iters, idx, &mut |ctx| body(ctx, k))?;
+    ctx.emit(I::LocalGet(k));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(k));
+    ctx.emit(I::Br(0));
+    ctx.emit(I::End); // loop
+    ctx.emit(I::End); // block
     Ok(())
 }
 

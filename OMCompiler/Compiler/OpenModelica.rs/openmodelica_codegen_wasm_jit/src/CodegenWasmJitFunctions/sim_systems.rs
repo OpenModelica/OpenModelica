@@ -37,8 +37,9 @@ fn emit_residual_eval(
     Ok(())
 }
 
-/// A nonlinear system residual: a scalar `SES_RESIDUAL`, or a `SES_FOR_RESIDUAL`
-/// (a run `r[res_index + shift]` from iterating `exp` over integer ranges).
+/// A nonlinear system residual: a scalar `SES_RESIDUAL`, a `SES_FOR_RESIDUAL`
+/// (a run `r[res_index + shift]` from iterating `exp` over integer ranges), or a
+/// `SES_GENERIC_RESIDUAL` (the same over a list of flat indices).
 pub(crate) enum NlsResidual {
     Scalar { exp: Arc<DAE::Exp>, res_index: i32 },
     For {
@@ -46,6 +47,23 @@ pub(crate) enum NlsResidual {
         exp: Arc<DAE::Exp>,
         res_index: i32,
     },
+    Generic {
+        iterators: Vec<BackendDAE::SimIterator>,
+        scal_indices: Vec<i32>,
+        exp: Arc<DAE::Exp>,
+        res_index: i32,
+    },
+}
+
+impl NlsResidual {
+    /// Rows of `r` written; `None` for a for-residual (run-time ranges).
+    pub(crate) fn rows(&self) -> Option<usize> {
+        match self {
+            NlsResidual::Scalar { .. } => Some(1),
+            NlsResidual::Generic { scal_indices, .. } => Some(scal_indices.len()),
+            NlsResidual::For { .. } => None,
+        }
+    }
 }
 
 /// What closes a nonlinear system: residual expressions, or — for a lone
@@ -80,8 +98,8 @@ pub(crate) fn emit_nls_residual_body(
         }
     };
     lower_inner(ctx)?;
-    // All-scalar systems keep sequential `r[i]` addressing; a for-residual forces
-    // `res_index`-based addressing throughout (C's `res[res_index + shift]`).
+    // All-scalar systems keep sequential `r[i]` addressing; a for- or generic
+    // residual forces `res_index`-based addressing throughout.
     let all_scalar = residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }));
     for (i, res) in residuals.iter().enumerate() {
         match res {
@@ -95,9 +113,38 @@ pub(crate) fn emit_nls_residual_body(
             NlsResidual::For { iterators, exp, res_index } => {
                 emit_for_residual(ctx, iterators, exp, *res_index, &[])?;
             }
+            NlsResidual::Generic { iterators, scal_indices, exp, res_index } => {
+                emit_generic_residual(ctx, iterators, scal_indices, exp, *res_index)?;
+            }
         }
     }
     Ok(())
+}
+
+/// Emit a `SES_GENERIC_RESIDUAL`: `r[res_index + i] = exp` for the `i`-th flat
+/// index of `scal_indices`, with the iterators decoded from it.
+fn emit_generic_residual(
+    ctx: &mut FnCtx,
+    iterators: &[BackendDAE::SimIterator],
+    scal_indices: &[i32],
+    exp: &Arc<DAE::Exp>,
+    res_index: i32,
+) -> Result<()> {
+    use we::Instruction as I;
+    emit_index_list_loop(ctx, iterators, scal_indices, &mut |ctx, k| {
+        // addr = r + (res_index + k) * 8
+        ctx.emit(I::LocalGet(2)); // r
+        ctx.emit(I::I32Const(res_index));
+        ctx.emit(I::LocalGet(k));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::I32Const(8));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::I32Add);
+        let w = compile_exp(ctx, exp)?;
+        coerce(ctx, w, WTy::F64);
+        ctx.emit(I::F64Store(mem_arg(0, 3)));
+        Ok(())
+    })
 }
 
 /// C's `OLD_<i>` backup of the outputs an inverse algorithm must not change.
@@ -616,17 +663,10 @@ pub(crate) fn compile_linear_system(
     // Resolve each unknown to its (real) SimData slot offset.
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in iter_vars {
-        let key = sim_cref_key(cr)?;
-        let slot = ctx
-            .sim()?
-            .vars
-            .get(&key)
-            .copied()
-            .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
-        if slot.wty != WTy::F64 {
-            return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
-        }
-        slots.push(slot.off);
+        let sim = ctx.sim()?;
+        let off = crate::CodegenWasmJit::iteration_var_slot(&sim.vars, &sim.start_slots, cr)?
+            .ok_or("CodegenWasmJit: linear-system unknown has no slot")?;
+        slots.push(off);
     }
     let data = ctx.sim()?.data_local;
 

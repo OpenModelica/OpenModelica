@@ -6888,6 +6888,14 @@ fn nls_parts(
                     res_index: *res_index,
                 });
             }
+            E::SES_GENERIC_RESIDUAL { iterators, scal_indices, exp, res_index, .. } => {
+                residuals.push(NlsResidual::Generic {
+                    iterators: lst(iterators).cloned().collect(),
+                    scal_indices: lst(scal_indices).copied().collect(),
+                    exp: exp.clone(),
+                    res_index: *res_index,
+                });
+            }
             _ => inner.push(e.clone()),
         }
     }
@@ -6902,12 +6910,12 @@ fn nls_parts(
         }
         return Err("CodegenWasmJit: SES_NONLINEAR has no residual equations");
     }
-    // A for-residual's count is only known at run time, so validate the unknown
-    // count only for scalar-only systems. An adaptive approach appends
-    // `__HOM_LAMBDA` without a residual: the arc-length condition closes it.
-    let all_scalar = residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }));
+    // Only checkable when every residual's row count is static. An adaptive
+    // approach appends `__HOM_LAMBDA` without a residual: the arc-length
+    // condition closes it.
     let extra = usize::from(is_homotopy_lambda(iter_vars.last()));
-    if all_scalar && iter_vars.len() != residuals.len() + extra {
+    let rows = residuals.iter().try_fold(0usize, |acc, r| r.rows().map(|n| acc + n));
+    if rows.is_some_and(|rows| iter_vars.len() != rows + extra) {
         return Err("CodegenWasmJit: SES_NONLINEAR unknown/residual count mismatch");
     }
     Ok((inner, NlsResiduals::Explicit(residuals), iter_vars))
@@ -7342,6 +7350,28 @@ fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
     let n = lst(&nlsystem.crefs).count();
     let rows = n - nls_lambda_extra(nlsystem) as usize;
     n > 0 && count(&jm.seedVars) as usize == n && nls_jac_result_rows(jm, rows).is_some()
+}
+
+/// The `SimData` slot a torn system's iteration variable reads and writes. An
+/// initialization system can solve for a start value, and C's `cref` makes
+/// `$START.<var>` an lvalue into that variable's `attribute.start` — its start
+/// slot here. `Ok(None)` leaves naming the system to the caller.
+pub(crate) fn iteration_var_slot(
+    vars: &HashMap<String, SimSlot>,
+    start_slots: &HashMap<String, u32>,
+    cr: &Arc<DAE::ComponentRef>,
+) -> Result<Option<u32>> {
+    let key = sim_cref_key(cr)?;
+    if let Some(off) = key.strip_prefix("$START.").and_then(|k| start_slots.get(k)) {
+        return Ok(Some(*off));
+    }
+    match vars.get(&key) {
+        None => Ok(None),
+        Some(slot) if slot.wty != WTy::F64 => {
+            Err("CodegenWasmJit: torn-system unknown is not a Real variable")
+        }
+        Some(slot) => Ok(Some(slot.off)),
+    }
 }
 
 /// 1 when the last unknown is `__HOM_LAMBDA`, which has no residual row: C's
@@ -7940,16 +7970,9 @@ fn build_nls_fns(
             slots.push(var_map.lambda_off);
             continue;
         }
-        let key = sim_cref_key(cr)?;
-        let slot = var_map
-            .vars
-            .get(&key)
-            .copied()
-            .ok_or_else(|| "CodegenWasmJit: nonlinear-system unknown has no slot")?;
-        if slot.wty != WTy::F64 {
-            return Err("CodegenWasmJit: nonlinear-system unknown is not a Real variable");
-        }
-        slots.push(slot.off);
+        let off = iteration_var_slot(&var_map.vars, &var_map.start_slots, cr)?
+            .ok_or("CodegenWasmJit: nonlinear-system unknown has no slot")?;
+        slots.push(off);
     }
     let mk_sim = || sim_ctx(var_map);
     let finish = |ctx: FnCtx| -> we::Function {
