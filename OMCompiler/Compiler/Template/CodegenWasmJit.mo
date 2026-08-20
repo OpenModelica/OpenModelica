@@ -75,12 +75,16 @@ algorithm
 end runSimulation;
 
 function finishCompile
-  " Force the model's wasm modules to finish JIT-compiling. Called from
+  " Force the model's wasm modules to finish JIT-compiling and resolve its
+    external \"C\" implementations, building the Include C sources. Called from
     buildModel's compile phase (the wasm-jit counterpart of compiling the C
     executable) so the compile cost is attributed to timeCompile rather than
-    timeSimulation. Implemented in Rust. "
+    timeSimulation. Implemented in Rust; fails if an external \"C\"
+    implementation is unavailable. "
   input String fileNamePrefix;
 algorithm
+  Error.addInternalError("CodegenWasmJit.finishCompile: the wasm-jit target is only implemented in the Rust omc build", sourceInfo());
+  fail();
 end finishCompile;
 
 function emitStandalone

@@ -463,11 +463,12 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
 /// measured as `timeCompile` rather than leaking into `timeSimulation`. It joins
 /// the background model-module compile (started by `translateModel`) and forces
 /// the runtime module (compiled-once / AOT-cached), stashing the compiled model
-/// module for `runSimulation`. Errors are deferred — `runSimulation` recompiles
-/// and reports them — so this never fails the build by itself.
-pub fn finishCompile(fileNamePrefix: ArcStr) {
+/// module for `runSimulation`. A JIT-compile error is deferred — `runSimulation`
+/// recompiles and reports it — but the `external "C"` implementations are resolved
+/// here, so a broken `Include` fails the build rather than the run.
+pub fn finishCompile(fileNamePrefix: ArcStr) -> Result<()> {
     let model = sim_models().lock().unwrap_or_else(|e| e.into_inner()).get(&fileNamePrefix.to_string()).cloned();
-    let Some(model) = model else { return };
+    let Some(model) = model else { return Ok(()) };
     // Force the runtime module (so its compile/cache-load is in `timeCompile`).
     let _ = sim_runtime::runtime_module();
     // Join the background model-module compile and stash the result.
@@ -476,6 +477,12 @@ pub fn finishCompile(fileNamePrefix: ArcStr) {
         // Deferred: `runSimulation` recompiles and reports the error via the log.
         Err(_) => {}
     }
+    let missing = missing_ext_symbols(&model.ext_imports, &model.ext_libs);
+    if let Err(e) = sim_runtime::prepare_native_externals(&model, &missing) {
+        record_error(format!("CodegenWasmJit: the model's `external \"C\"` implementations are unavailable:\n{e}"));
+        return Err("CodegenWasmJit: external \"C\" implementation unavailable");
+    }
+    Ok(())
 }
 
 /// `CodegenWasmJit.emitStandalone`: the `wasm` simCodeTarget's counterpart of
@@ -1536,6 +1543,7 @@ pub(crate) fn compile_include_library(
     prefix: &str,
     includes: &[String],
     include_dirs: &[String],
+    cflags: &str,
     missing: &[ExtCallSig],
     notes: &mut Vec<String>,
 ) -> Result<Option<ExtLibrary>> {
@@ -1544,10 +1552,10 @@ pub(crate) fn compile_include_library(
     }
     let wrappers = openmodelica_wasm_jit::model::ext_wrappers(missing);
     let n = notes.len();
-    match compile_include_tu(prefix, includes, include_dirs, &wrappers, notes)? {
+    match compile_include_tu(prefix, includes, include_dirs, cflags, &wrappers, notes)? {
         None if !wrappers.is_empty() => {
             notes.truncate(n);
-            compile_include_tu(prefix, includes, include_dirs, "", notes)
+            compile_include_tu(prefix, includes, include_dirs, cflags, "", notes)
         }
         r => Ok(r),
     }
@@ -1558,6 +1566,7 @@ fn compile_include_tu(
     prefix: &str,
     includes: &[String],
     include_dirs: &[String],
+    cflags: &str,
     wrappers: &str,
     notes: &mut Vec<String>,
 ) -> Result<Option<ExtLibrary>> {
@@ -1568,14 +1577,15 @@ fn compile_include_tu(
     std::fs::create_dir_all(&dir).map_err(|_| "CodegenWasmJit: cannot create a temporary directory")?;
     let tu = dir.join(format!("{prefix}_includes.c"));
     let out = dir.join(format!("{prefix}_includes.wasm"));
-    let prologue = openmodelica_wasm_jit::model::INCLUDE_TU_PROLOGUE_WASM;
-    std::fs::write(&tu, prologue.to_owned() + &includes.join("\n") + "\n" + wrappers)
+    std::fs::write(&tu, includes.join("\n") + "\n" + wrappers)
         .map_err(|_| "CodegenWasmJit: cannot write the external \"C\" translation unit")?;
 
     let mut cmd = Command::new(&clang);
     cmd.args(["--target=wasm32-wasip1", "-O1", "-fPIC", "-shared", "-nodefaultlibs"])
         .arg(format!("--sysroot={}", sysroot.display()))
         .args(["-Wl,--export-all", "-Wl,--allow-undefined"]);
+    // Only the preprocessor part of `--cflags`: the rest is host code generation.
+    cmd.args(openmodelica_wasm_jit::model::cflags_cpp_args(cflags));
     // Compiled in a temporary directory, so `#include "x.h"` needs the model's own.
     if let Ok(cwd) = std::env::current_dir() {
         cmd.arg("-I").arg(cwd);
@@ -1600,7 +1610,8 @@ fn compile_include_tu(
     };
     if !output.status.success() {
         notes.push(format!(
-            "the `Include` C sources did not compile for the wasm target:\n{}",
+            "the `Include` C sources did not compile for the wasm target:\n{}\n{}",
+            openmodelica_wasm_jit::model::command_line(&cmd),
             String::from_utf8_lossy(&output.stderr)
         ));
         return Ok(None);
@@ -1615,6 +1626,7 @@ pub(crate) fn compile_include_library(
     _prefix: &str,
     includes: &[String],
     _include_dirs: &[String],
+    _cflags: &str,
     _missing: &[ExtCallSig],
     notes: &mut Vec<String>,
 ) -> Result<Option<ExtLibrary>> {
@@ -3999,7 +4011,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
                 ExtHost::Wasm => {
                     let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
                     if !missing.is_empty() {
-                        if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &missing, &mut ext_lib_notes)? {
+                        if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &mp.cflags, &missing, &mut ext_lib_notes)? {
                             ext_libs.wasm.push(l);
                         }
                     }

@@ -243,6 +243,12 @@ pub fn take_compiled_model(model: &SimModel) -> std::result::Result<wasmer::Modu
     }
 }
 
+/// Nothing to prepare: the `external "C"` implementations are in the
+/// ModelicaExternalC side module, built into omc.
+pub fn prepare_native_externals(_model: &SimModel, _sigs: &[crate::sig::ExtCallSig]) -> std::result::Result<(), String> {
+    Ok(())
+}
+
 type Store = wasmer::Store;
 
 /// `SimEngine`-trait / host-import errors: collapse to the crate `&'static str`
