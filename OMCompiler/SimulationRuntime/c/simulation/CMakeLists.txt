@@ -189,6 +189,7 @@ target_link_libraries(OpenModelicaRuntimeCSimulation
 )
 
 if(OM_OMC_ENABLE_PRIMME)
+  target_compile_definitions(OpenModelicaRuntimeCSimulation PRIVATE OMC_HAVE_PRIMME)
   target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::primme)
 endif()
 
