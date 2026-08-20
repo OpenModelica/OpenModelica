@@ -12,7 +12,7 @@
 #     if ScoreP should be used for performance analysis                            -DTARGET_PATH=PATH
 #
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 PROJECT(CppSolverInterface)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake")

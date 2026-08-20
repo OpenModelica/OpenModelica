@@ -33,7 +33,7 @@
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
-cmake_minimum_required(VERSION 3.5...4.3)
+cmake_minimum_required(VERSION 3.10...4.3)
 
 # OMSICPP_SOURCE_DIR is used by sub-CMakeLists.txt to reference paths relative
 # to the OMSICpp directory. In standalone mode it equals CMAKE_SOURCE_DIR; in
