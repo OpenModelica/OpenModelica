@@ -18,6 +18,7 @@ use core::cell::RefCell;
 
 use crate::omclog;
 use crate::simflags::JacobianMethod;
+use crate::sync::SYNC_EPS;
 use crate::{
     JacAInfo, Layout as SimLayout, MetaKind as ResultKind, Neg, REAL_OFF, SimMeta, SolveStats, StateSetInfo,
     TIME_OFF,
@@ -3150,9 +3151,8 @@ impl Samples {
     /// The samples due at `t` as `(k, start, interval)`, C's `handleEvents`
     /// `LOG_EVENTS` line.
     pub fn due(&self, t: f64) -> impl Iterator<Item = (usize, f64, f64)> + '_ {
-        let eps = t.abs().max(1.0) * 1e-10;
         (0..self.next.len())
-            .filter(move |&k| self.next[k] <= t + eps)
+            .filter(move |&k| self.next[k] <= t + SAMPLE_EPS)
             .map(move |k| (k, self.start[k], self.interval[k]))
     }
 
@@ -3168,10 +3168,9 @@ impl Samples {
     /// the current simulation time first.
     pub fn fire(&mut self, e: &mut dyn SimEngine, sim_data: u32, t: f64) -> Result<()> {
         rethrow_store::note_event();
-        let eps = t.abs().max(1.0) * 1e-10;
         let mut fired = vec![false; self.next.len()];
         for k in 0..self.next.len() {
-            if self.next[k] <= t + eps {
+            if self.next[k] <= t + SAMPLE_EPS {
                 fired[k] = true;
                 write_i32(e, self.active_off + k as u32 * 4, 1)?;
             }
@@ -3283,7 +3282,7 @@ pub fn fmi_handle_timers(
     sim_data: u32,
     time: f64,
 ) -> Result<bool> {
-    fire_clocks(e, sync, model, sim_data, time, time.abs().max(1.0) * 1e-10, None)
+    fire_clocks(e, sync, model, sim_data, time, SYNC_EPS, None)
 }
 
 /// Output point `row` of the equidistant grid, as C's `perform_simulation`
@@ -3325,9 +3324,8 @@ pub fn event_update(
     write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
 
-    let eps = time.abs().max(1.0) * 1e-10;
     let mut samples = samples;
-    let time_event = samples.as_ref().is_some_and(|s| s.next_time() <= time + eps);
+    let time_event = samples.as_ref().is_some_and(|s| s.next_time() <= time + SAMPLE_EPS);
     if time_event {
         if let Some(s) = samples.as_deref_mut() {
             fire_time_event(e, s, sim_data, layout, time)?;
@@ -4386,6 +4384,10 @@ fn no_equidistant_grid() -> bool {
     crate::simflags::with_flags(|f| f.no_equidistant_grid)
 }
 
+/// `perform_simulation`'s `currentStepSize < 1e-15`: an output point this close to
+/// a handled event is skipped.
+const GRID_SKIP_EPS: f64 = 1e-15;
+
 /// C's `-noEventEmit`: the rows a step that handled an event produces are dropped.
 fn no_event_emit() -> bool {
     crate::simflags::with_flags(|f| f.no_event_emit)
@@ -5396,6 +5398,9 @@ fn reached_eps(t: f64, span: f64) -> f64 {
 /// C's `DASSL_STEP_EPS` (`simulation/solver/epsilon.h`).
 const DASSL_STEP_EPS: f64 = 1e-13;
 
+/// C's `SAMPLE_EPS` (`simulation/solver/epsilon.h`).
+const SAMPLE_EPS: f64 = 1e-14;
+
 /// `dassl.c`'s floor on a step worth handing to DASKR.
 fn small_step_eps(span: f64) -> f64 {
     DASSL_STEP_EPS.max(DASSL_STEP_EPS * span)
@@ -5415,8 +5420,8 @@ enum Solved {
 /// How far [`SolverCore::integrate_to`] got.
 enum Step {
     /// `tout` reached; `grid_covered` when an event landed on it, so its rows are
-    /// already emitted.
-    Reached { grid_covered: bool },
+    /// already emitted; `event_step` is C's `didEventStep`.
+    Reached { grid_covered: bool, event_step: bool },
     Terminated,
     /// Located an event at `time`, discrete update left undone for the caller to
     /// report (CS Event Mode). Only returned under `stop_at_event`.
@@ -5433,6 +5438,9 @@ enum Step {
 struct EventsDriver {
     core: SolverCore,
     row: u32,
+    /// C's `currentTime` at the end of an output row: the grid point, or the event
+    /// that covered it.
+    reached: f64,
     pivots: Vec<StateSetPivot>,
     samp: Samples,
     sync: crate::sync::Sync,
@@ -5440,6 +5448,8 @@ struct EventsDriver {
     /// Resume state for a yield mid output row, so `grid_covered` is not reset.
     mid_row: bool,
     grid_covered: bool,
+    /// C's `didEventStep`.
+    did_event_step: bool,
     /// C's degenerate first iteration under `-noEquidistantTimeGrid` is emitted.
     no_grid_primed: bool,
     pending_terminate: bool,
@@ -5950,7 +5960,6 @@ impl SolverCore {
         let layout = &model.layout;
         let sim_data = self.sim_data;
         let t = self.t;
-        let eps = t.abs().max(1.0) * 1e-10;
         self.state_events += 1;
         log_state_event(t, flips, model);
         if let Some(r) = rows.as_deref_mut()
@@ -5969,7 +5978,7 @@ impl SolverCore {
         if terminated(e, sim_data, layout)? {
             return Ok(true);
         }
-        fire_clocks(e, sync, model, sim_data, t, eps, rows.as_deref_mut())?;
+        fire_clocks(e, sync, model, sim_data, t, SYNC_EPS, rows.as_deref_mut())?;
         store_operators(e, sim_data, layout)?;
         log_reinits(e, model);
         omclog::close(omclog::EVENTS);
@@ -6011,6 +6020,7 @@ impl SolverCore {
         let eps = reached_eps(tout, span);
         let step_eps = small_step_eps(span);
         let mut grid_covered = false;
+        let mut event_step = false;
 
         loop {
             // Yield at the loop boundary (before any state mutation).
@@ -6028,13 +6038,16 @@ impl SolverCore {
             // probes are smooth (C's `solveContinuous`); events/outputs refresh them.
             write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
             let te = samp.next_time();
-            // C's `checkForSynchronous`: never step past the next activation. Snapped
-            // onto `tout` (as samples are) so the last row's time is exactly `stop`.
-            let mut tc = sync.next_time();
-            if (tc - tout).abs() <= eps {
-                tc = tout;
+            let tc = sync.next_time();
+            // C's `checkForSynchronous` then `checkForSampleEvent`: each shortens the
+            // step onto its activation, or pulls one just past the end in.
+            let mut target = tout;
+            if tc >= self.t && tc <= target + SYNC_EPS {
+                target = tc;
             }
-            let target = tout.min(te).min(tc);
+            if te >= self.t && te <= target + SAMPLE_EPS {
+                target = te;
+            }
             self.sample_limit = te.min(tc);
             // Integrate from the current t toward `target` (the caller's time or the
             // next scheduled sample). DASKR may stop early at a zero-crossing root.
@@ -6092,6 +6105,7 @@ impl SolverCore {
                     let flips = save_zero_crossings(e, sim_data, layout)?;
                     if !flips.is_empty() {
                         *did_step = true;
+                        event_step = true;
                         self.note_chatter(model, flips[0])?;
                         if self.handle_zc_flips(e, model, ctx, sync, rows.as_deref_mut(), &flips)? {
                             return Ok(Step::Terminated);
@@ -6109,6 +6123,7 @@ impl SolverCore {
                         return Ok(Step::Event { time: troot });
                     }
                     self.state_events += 1;
+                    event_step = true;
                     let roots = self.roots_nonzero();
                     log_state_event(troot, &roots, model);
                     self.note_chatter(model, roots.first().copied().unwrap_or(0))?;
@@ -6132,7 +6147,7 @@ impl SolverCore {
                     if terminated(e, sim_data, layout)? {
                         return Ok(Step::Terminated);
                     }
-                    fire_clocks(e, sync, model, sim_data, troot, eps, rows.as_deref_mut())?;
+                    fire_clocks(e, sync, model, sim_data, troot, SYNC_EPS, rows.as_deref_mut())?;
                     // C's "add event to spatialDistribution": the post-event input
                     // jump becomes a discontinuity in the transported profile.
                     store_operators(e, sim_data, layout)?;
@@ -6147,6 +6162,9 @@ impl SolverCore {
                     self.refresh_yp(e)?;
                     self.restart()?;
                     self.dae_restart(e, ctx)?;
+                    if tout - troot < GRID_SKIP_EPS {
+                        grid_covered = true;
+                    }
                     continue;
                 }
                 // Reached the target with no state event: breaks a chattering run.
@@ -6165,12 +6183,9 @@ impl SolverCore {
             }
             // Reached `target`. Fire a sample event at `te` if it lands at or
             // before `tout` (pre-event row, fire, post-event row).
-            if te <= target + eps {
-                // Only the final row snaps onto `stop`; C reports every other sample
-                // at its accumulated time.
-                let last = (tout - model.stop_time).abs() <= eps;
-                let te = if last && (te - tout).abs() <= eps { tout } else { te };
+            if te <= target + SAMPLE_EPS {
                 *did_step = true;
+                event_step = true;
                 if stop_at_event {
                     self.t = te;
                     write_f64(e, sim_data + TIME_OFF, te)?;
@@ -6207,7 +6222,7 @@ impl SolverCore {
                     self.restart()?;
                     self.dae_restart(e, ctx)?;
                 }
-                if te >= tout - eps {
+                if tout - te < GRID_SKIP_EPS {
                     grid_covered = true;
                 }
             }
@@ -6216,11 +6231,12 @@ impl SolverCore {
                 write_f64(e, sim_data + TIME_OFF, target)?;
                 sync.take_fired(e, target)?;
             }
-            if sync.next_time() <= target + eps {
+            if sync.next_time() <= target + SYNC_EPS {
                 *did_step = true;
+                event_step = true;
                 write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                 eval_continuous(e, sim_data, layout)?;
-                if fire_clocks(e, sync, model, sim_data, target, eps, rows.as_deref_mut())? {
+                if fire_clocks(e, sync, model, sim_data, target, SYNC_EPS, rows.as_deref_mut())? {
                     if terminated(e, sim_data, layout)? {
                         return Ok(Step::Terminated);
                     }
@@ -6229,7 +6245,7 @@ impl SolverCore {
                     self.refresh_yp(e)?;
                     self.restart()?;
                     self.dae_restart(e, ctx)?;
-                    if target >= tout - eps {
+                    if tout - target < GRID_SKIP_EPS {
                         grid_covered = true;
                     }
                 }
@@ -6247,7 +6263,7 @@ impl SolverCore {
                         return Ok(Step::Terminated);
                     }
                 }
-                return Ok(Step::Reached { grid_covered });
+                return Ok(Step::Reached { grid_covered, event_step });
             }
         }
     }
@@ -6573,12 +6589,14 @@ impl EventsDriver {
         Ok(EventsDriver {
             core,
             row: 1,
+            reached: start,
             pivots,
             samp,
             sync,
             rows,
             mid_row: false,
             grid_covered: false,
+            did_event_step: false,
             no_grid_primed: false,
             pending_terminate,
             finished: false,
@@ -6616,9 +6634,13 @@ impl Driver for EventsDriver {
             self.no_grid_primed = true;
             emit_row(e, &mut self.rows, sim_data, layout, self.core.t, stop)?;
         }
-        let tout_of = |row: u32| {
-            if no_grid || row == n_steps { stop } else { grid(row) }
-        };
+        let tout_of = |row: u32| if no_grid { stop } else { grid(row) };
+        // C ends on `currentTime >= stopTime`, not on a row count, so a last grid
+        // point left short of `stop` gets one more step at `grid(n_steps + 1)`.
+        let more = |row: u32, t: f64| if no_grid || n_steps == 0 { row < n_rows } else { t < stop };
+        // C's `perform_simulation` skips an output point an event step already
+        // carried the run past (`currentStepSize < 1e-15`).
+        let skip_grid = |row: u32, t: f64, ev: bool| !no_grid && ev && grid(row) - t < GRID_SKIP_EPS;
 
         // No continuous states: nothing to integrate, but zero-crossings on `time`
         // (e.g. a timer `time >= t_start + waitTime`) are still continuous events
@@ -6634,7 +6656,11 @@ impl Driver for EventsDriver {
             if layout.n_zc > 0 {
                 read_zero_crossings(e, sim_data, layout, &mut zc0)?;
             }
-            while self.row < n_rows {
+            while more(self.row, self.reached) {
+                if skip_grid(self.row, self.reached, self.did_event_step) {
+                    self.row += 1;
+                    continue;
+                }
                 if did_step && past_deadline(deadline) {
                     return Ok(Advance::Running);
                 }
@@ -6644,18 +6670,22 @@ impl Driver for EventsDriver {
                 }
                 did_step = true;
                 let tout = tout_of(self.row);
-                let eps = tout.abs().max(1.0) * 1e-10;
+                let eps = reached_eps(tout, stop - start);
                 let mut grid_covered = false;
+                let mut event_step = false;
                 open_assert_window();
                 // Handle every event (state or sample) up to `tout`, earliest first.
                 loop {
                     save_old_real(e, sim_data, layout)?; // C's `rotateRingBuffer`
                     let te = self.samp.next_time();
-                    let mut tc = self.sync.next_time();
-                    if (tc - tout).abs() <= eps {
-                        tc = tout;
+                    let tc = self.sync.next_time();
+                    let mut subtarget = tout;
+                    if tc >= self.core.t && tc <= subtarget + SYNC_EPS {
+                        subtarget = tc;
                     }
-                    let subtarget = tout.min(te).min(tc);
+                    if te >= self.core.t && te <= subtarget + SAMPLE_EPS {
+                        subtarget = te;
+                    }
                     // A state event bracketed in (t, subtarget]?
                     let mut troot = None;
                     if layout.n_zc > 0 && subtarget - self.core.t > eps {
@@ -6676,6 +6706,7 @@ impl Driver for EventsDriver {
                         store_operators_at(e, sim_data, layout, tr)?;
                         event_update(e, sim_data, layout, None, tr)?;
                         self.core.state_events += 1;
+                        event_step = true;
                         if emit_post_event_row(model, tr) {
                             capture_row(e, &mut self.rows, sim_data, layout)?; // post-event row
                         }
@@ -6686,7 +6717,7 @@ impl Driver for EventsDriver {
                         }
                         self.core.t = tr;
                         // The discrete update may have fired an event clock.
-                        if fire_clocks(e, &mut self.sync, model, sim_data, tr, eps, Some(&mut self.rows))?
+                        if fire_clocks(e, &mut self.sync, model, sim_data, tr, SYNC_EPS, Some(&mut self.rows))?
                             && terminated(e, sim_data, layout)?
                         {
                             self.finished = true;
@@ -6699,14 +6730,16 @@ impl Driver for EventsDriver {
                         save_zc_pre(e, sim_data, layout)?;
                         log_reinits(e, model);
                         omclog::close(omclog::EVENTS);
+                        if tout - tr < GRID_SKIP_EPS {
+                            grid_covered = true;
+                        }
                         continue;
                     }
                     // No state event before the next sample time. Fire the sample if
                     // it is due at or before this grid point; otherwise the interval
                     // is clean up to `tout`.
-                    if te <= subtarget + eps {
-                        let last = (tout - stop).abs() <= eps;
-                        let te = if last && (te - tout).abs() <= eps { tout } else { te };
+                    if te <= subtarget + SAMPLE_EPS {
+                        event_step = true;
                         log_time_event(te, &self.samp, model);
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?; // held pre row
                         if !no_event_emit() {
@@ -6731,7 +6764,7 @@ impl Driver for EventsDriver {
                         }
                         log_reinits(e, model);
                         omclog::close(omclog::EVENTS);
-                        if te >= tout - eps {
+                        if tout - te < GRID_SKIP_EPS {
                             grid_covered = true;
                         }
                     }
@@ -6739,11 +6772,12 @@ impl Driver for EventsDriver {
                         write_f64(e, sim_data + TIME_OFF, subtarget)?;
                         self.sync.take_fired(e, subtarget)?;
                     }
-                    if self.sync.next_time() <= subtarget + eps {
+                    if self.sync.next_time() <= subtarget + SYNC_EPS {
+                        event_step = true;
                         self.core.t = subtarget;
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                         eval_continuous(e, sim_data, layout)?;
-                        if fire_clocks(e, &mut self.sync, model, sim_data, subtarget, eps, Some(&mut self.rows))? {
+                        if fire_clocks(e, &mut self.sync, model, sim_data, subtarget, SYNC_EPS, Some(&mut self.rows))? {
                             if terminated(e, sim_data, layout)? {
                                 self.finished = true;
                                 return Ok(Advance::Terminated);
@@ -6753,11 +6787,11 @@ impl Driver for EventsDriver {
                                 read_zero_crossings(e, sim_data, layout, &mut zc0)?;
                                 save_zc_pre(e, sim_data, layout)?;
                             }
-                            if subtarget >= tout - eps {
+                            if tout - subtarget < GRID_SKIP_EPS {
                                 grid_covered = true;
                             }
                         }
-                    } else if te > subtarget + eps {
+                    } else if te > subtarget + SAMPLE_EPS {
                         break;
                     }
                 }
@@ -6774,10 +6808,12 @@ impl Driver for EventsDriver {
                         read_zero_crossings(e, sim_data, layout, &mut zc0)?;
                         save_zc_pre(e, sim_data, layout)?;
                     }
+                    self.core.t = tout;
                 } else {
                     close_assert_window(e, sim_data)?;
                 }
-                self.core.t = tout;
+                self.reached = self.core.t;
+                self.did_event_step = event_step;
                 self.row += 1;
             }
             self.finished = true;
@@ -6790,8 +6826,12 @@ impl Driver for EventsDriver {
 
         let mut did_step = false;
         let outcome = loop {
-            if self.row >= n_rows {
+            if !self.mid_row && !more(self.row, self.reached) {
                 break Advance::Done;
+            }
+            if !self.mid_row && skip_grid(self.row, self.reached, self.did_event_step) {
+                self.row += 1;
+                continue;
             }
             if did_step && past_deadline(deadline) {
                 break Advance::Running;
@@ -6803,6 +6843,7 @@ impl Driver for EventsDriver {
             let tout = tout_of(self.row);
             if !self.mid_row {
                 self.grid_covered = false;
+                self.did_event_step = false;
             }
             // C's `simulationUpdate` window: until this row's events are handled,
             // the state the model is evaluated at may still be discarded.
@@ -6820,10 +6861,14 @@ impl Driver for EventsDriver {
                 Step::Terminated => break Advance::Terminated,
                 // `stop_at_event` is false here, so `Event` never arises.
                 Step::Event { .. } => unreachable!("stop_at_event is off for the output-grid driver"),
-                Step::Reached { grid_covered } => self.grid_covered |= grid_covered,
+                Step::Reached { grid_covered, event_step } => {
+                    self.grid_covered |= grid_covered;
+                    self.did_event_step |= event_step;
+                }
             }
             // Row's inner loop done; the rest is bounded — next yield is a clean boundary.
             self.mid_row = false;
+            self.reached = if self.grid_covered { self.core.t } else { tout };
             if !self.grid_covered {
                 write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                 did_step = true;
