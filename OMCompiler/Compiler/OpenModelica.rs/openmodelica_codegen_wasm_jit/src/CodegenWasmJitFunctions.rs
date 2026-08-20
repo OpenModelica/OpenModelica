@@ -453,9 +453,11 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // the fallback warning needs and whether a `rt_ls_check_step` follows.
     // Returns 0 ok, 1 singular.
     ("rt_linsolve", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
-    // The same `A` re-solved with total pivoting: (a_ptr, b_ptr, n) -> 0 ok / 1
-    // inconsistent. C's fallback for a method-1 step `rt_ls_check_step` rejected.
-    ("rt_linsolve_totalpivot", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // The same `A` re-solved with total pivoting: (a_ptr, b_ptr, n, index, time) ->
+    // 0 ok / 1 inconsistent. C's fallback for a step `rt_ls_check_step` rejected.
+    ("rt_linsolve_totalpivot", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
+    // C's `check_linear_solution` + throw for an unsolved system: (index, time).
+    ("rt_ls_failed", &[WTy::I32, WTy::F64], &[]),
     // Method-1 step test: (res_ptr, b_ptr, n, index, time, dense) -> 1 when the
     // step must be redone, `b` then holding `-res`. See `rt_ls_check_step`.
     ("rt_ls_check_step", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),

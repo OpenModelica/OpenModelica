@@ -2482,7 +2482,7 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, tim
             }
         }
     }
-    if nls::total_pivot_solve(a, b, n) { 0 } else { 1 }
+    ls_total_pivot(a, b, n, eq_index, time)
 }
 
 /// C's `solveTotalPivot` fallback for a step [`rt_ls_check_step`] rejected: the
@@ -2490,11 +2490,46 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, tim
 /// re-evaluation of it lands on the same numbers — against the negated residual.
 /// 0 ok, 1 inconsistent. Same `solve_linear_system` call, so not a new solve.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_linsolve_totalpivot(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
+pub extern "C" fn rt_linsolve_totalpivot(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64) -> i32 {
     let n = n as usize;
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
-    if nls::total_pivot_solve(a, b, n) { 0 } else { 1 }
+    ls_total_pivot(a, b, n, eq_index, time)
+}
+
+/// C's `solveTotalPivot`, whose under-determined return warns on stdout.
+fn ls_total_pivot(a: &[f64], b: &mut [f64], n: usize, eq_index: i32, time: f64) -> i32 {
+    if nls::total_pivot_solve(a, b, n) {
+        return 0;
+    }
+    omclog::warning(
+        omclog::STDOUT,
+        false,
+        &alloc::format!("Error solving linear system of equations (no. {eq_index}) at time {time:.6}."),
+    );
+    1
+}
+
+/// C's `check_linear_solution` for a system left unsolved, then the
+/// `throwStreamPrintWithEquationIndexes` the generated equation function runs into.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_ls_failed(eq_index: i32, time: f64) {
+    use openmodelica_sim_meta::driver::format_g;
+    if nls::throw_reports() {
+        omclog::warning(
+            omclog::STDOUT,
+            true,
+            &alloc::format!(
+                "Solving linear system {eq_index} fails at time {}. For more information use -lv LOG_LS.",
+                format_g(time, 6)
+            ),
+        );
+        omclog::close_warning(omclog::STDOUT);
+    }
+    nls::throw_stream(&alloc::format!(
+        "Solving linear system {eq_index} failed at time={}.\nFor more information please use -lv LOG_LS.",
+        format_g(time, 15)
+    ));
 }
 
 /// C's method-1 step test (`solveLapack`, `solveKlu`, …): the step `dx` only counts
