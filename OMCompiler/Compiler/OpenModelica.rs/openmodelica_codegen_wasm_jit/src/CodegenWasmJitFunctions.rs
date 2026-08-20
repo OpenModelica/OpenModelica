@@ -6689,7 +6689,11 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             emit_str_literal(ctx, string.as_bytes())?;
             Ok(WTy::I32)
         }
-        E::CREF { componentRef, .. } => {
+        E::CREF { componentRef, ty } => {
+            if let DAE::Type::T_FUNCTION_REFERENCE_FUNC { .. } = &**ty {
+                closures::compile_fnref_cref(ctx, componentRef, ty)?;
+                return Ok(WTy::I32);
+            }
             // Simulation mode: model variables (states, derivatives, algebraics,
             // parameters, `time`, `$START`/`$PRE`) live in the shared `SimData`
             // block, not in wasm locals. Resolve those first; `None` means an
