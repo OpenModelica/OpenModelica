@@ -207,6 +207,8 @@ struct State {
     level: [i16; N_STREAMS],
     last_type: [LogType; N_STREAMS],
     last_stream: Stream,
+    /// `-logFormat=xml`: C's `setStreamPrintXML(1)`.
+    xml: bool,
 }
 
 impl State {
@@ -218,6 +220,7 @@ impl State {
             level: [0; N_STREAMS],
             last_type: [0; N_STREAMS],
             last_stream: UNKNOWN,
+            xml: false,
         }
     }
 }
@@ -257,9 +260,16 @@ mod store {
 /// inherits an unclosed block.
 pub fn set_mask(m: Mask) {
     store::with(|s| {
+        let xml = s.xml;
         *s = State::new();
         s.use_stream = m;
+        s.xml = xml;
     });
+}
+
+/// C's `setStreamPrintXML`: write every message as a `<message …>` element.
+pub fn set_xml(v: bool) {
+    store::with(|s| s.xml = v);
 }
 
 pub fn mask() -> Mask {
@@ -334,26 +344,43 @@ pub fn error(stream: Stream, indent_next: bool, msg: &str) {
 
 /// C's `messageClose`: end a block opened with `indent_next`.
 pub fn close(stream: Stream) {
-    store::with(|s| {
-        if mask_has(s.use_stream, stream) {
+    let end = store::with(|s| {
+        if !mask_has(s.use_stream, stream) {
+            return false;
+        }
+        if !s.xml {
             s.level[stream as usize] -= 1;
         }
+        s.xml
     });
+    if end {
+        crate::driver::log_line("</message>\n");
+    }
 }
 
 /// C's `messageCloseWarning`: [`close`] for a block [`warning`] opened, so `-w`
 /// keeps the level balanced on an inactive stream.
 pub fn close_warning(stream: Stream) {
-    store::with(|s| {
-        if mask_has(s.use_stream, stream) || s.use_stream & SHOW_ALL_WARNINGS != 0 {
+    let end = store::with(|s| {
+        if !(mask_has(s.use_stream, stream) || s.use_stream & SHOW_ALL_WARNINGS != 0) {
+            return false;
+        }
+        if !s.xml {
             s.level[stream as usize] -= 1;
         }
+        s.xml
     });
+    if end {
+        crate::driver::log_line("</message>\n");
+    }
 }
 
 /// C's `messageText`. A newline in `msg` starts a `subline`: `|` in both header
 /// columns and no level indent, as C's recursive call gives.
 pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
+    if store::with(|s| s.xml) {
+        return message_xml(ty, stream, indent_next, msg);
+    }
     let mut out = String::new();
     store::with(|s| {
         let i = stream as usize;
@@ -384,6 +411,26 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
             s.level[i] += 1;
         }
     });
+    crate::driver::log_line(&out);
+}
+
+/// C's `messageXML`: the whole message as one element's `text` attribute, left
+/// open for [`close`] when `indent_next`.
+fn message_xml(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
+    let mut out = format!(
+        "<message stream=\"{}\" type=\"{}\" text=\"",
+        STREAM_NAME[stream as usize], TYPE_DESC[ty as usize]
+    );
+    for c in msg.chars() {
+        match c {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            '"' => out.push_str("&quot;"),
+            _ => out.push(c),
+        }
+    }
+    out.push_str(if indent_next { "\">\n" } else { "\" />\n" });
     crate::driver::log_line(&out);
 }
 

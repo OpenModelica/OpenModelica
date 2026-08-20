@@ -59,10 +59,25 @@ fn step_size() -> f64 {
 
 /// C's `threadData->currentErrorStage`, as two words the driver stores into: `[0]`
 /// the stage, `[1]` set when a model error was absorbed there.
-/// `ERROR_NONLINEARSOLVER` is [`NLS_DEPTH`], the runtime's own nesting, instead.
 pub const ERROR_SIMULATION: u32 = 0;
 pub const ERROR_INTEGRATOR: u32 = 1;
+/// `solve_nonlinear_system`'s own region, which begins after C's `updateInnerEquation`.
+pub const ERROR_NONLINEARSOLVER: u32 = 2;
 static ERROR_STAGE: [AtomicU32; 2] = [AtomicU32::new(ERROR_SIMULATION), AtomicU32::new(0)];
+
+/// C's `saveJumpState`: the stage held over the solver region and put back after.
+struct StageGuard(u32);
+
+impl Drop for StageGuard {
+    fn drop(&mut self) {
+        ERROR_STAGE[0].store(self.0, Ordering::Relaxed);
+    }
+}
+
+fn enter_nls_stage() -> StageGuard {
+    let saved = ERROR_STAGE[0].swap(ERROR_NONLINEARSOLVER, Ordering::Relaxed);
+    StageGuard(saved)
+}
 
 /// Address of [`ERROR_STAGE`], so the driver marks a region with a store rather than
 /// a wasm call per evaluation (as for [`rt_context_addr`]).
@@ -149,13 +164,74 @@ fn attempt_aborted() -> bool {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_recovering() -> i32 {
     (NLS_DEPTH.load(Ordering::Relaxed) > 0
-        || ERROR_STAGE[0].load(Ordering::Relaxed) == ERROR_INTEGRATOR) as i32
+        || matches!(ERROR_STAGE[0].load(Ordering::Relaxed), ERROR_INTEGRATOR | ERROR_NONLINEARSOLVER))
+        as i32
 }
 
 /// Model side: flag that a recoverable assert fired at the current trial point.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_note_assert() {
     note_slot().store(1, Ordering::Relaxed);
+}
+
+/// Model side (emitted by `emit_assert`): a failed `assert()` the solver absorbs.
+/// C's `omc_assert_simulation` logs it where it fires, before the `longjmp` the
+/// solver catches. `sim_data` is 0 outside a simulation; the three String handles
+/// are this call's to release.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_nls_assert_failed(
+    msg: i32,
+    file: i32,
+    sline: i32,
+    scol: i32,
+    eline: i32,
+    ecol: i32,
+    read_only: i32,
+    cond: i32,
+    initial: i32,
+    sim_data: i32,
+) {
+    // C's `longjmp` ends the evaluation at its first model error, so the asserts
+    // after it never run. Here every frame returns and the rest carries on, so
+    // report only what C's jump would have reached -- as [`throw_stream`] does.
+    let report = throw_reports() && assert_logged();
+    note_slot().store(1, Ordering::Relaxed);
+    if report {
+        use openmodelica_sim_meta::TIME_OFF;
+        use openmodelica_sim_meta::driver::{AssertInfo, log_assert_block};
+        let info = AssertInfo {
+            msg: rt_string(msg),
+            file: rt_string(file),
+            read_only: read_only != 0,
+            line_start: sline,
+            col_start: scol,
+            line_end: eline,
+            col_end: ecol,
+        };
+        let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
+        log_assert_block(&info, &rt_string(cond), time, initial != 0);
+    }
+    for h in [msg, file, cond] {
+        if h != 0 {
+            crate::rt_release(h as u32);
+        }
+    }
+}
+
+/// C's stage switch in `va_omc_assert_simulation_withEquationIndexes`.
+fn assert_logged() -> bool {
+    match ERROR_STAGE[0].load(Ordering::Relaxed) {
+        ERROR_NONLINEARSOLVER => crate::omclog::active(crate::omclog::NLS),
+        ERROR_INTEGRATOR => crate::omclog::active(crate::omclog::SOLVER),
+        _ => true,
+    }
+}
+
+fn rt_string(h: i32) -> alloc::string::String {
+    if h == 0 {
+        return alloc::string::String::new();
+    }
+    alloc::string::String::from_utf8_lossy(unsafe { crate::str_bytes(h as u32) }).into_owned()
 }
 
 /// Where [`rt_nls_note_assert`] records: the residual's own flag, or the
@@ -3286,6 +3362,8 @@ pub extern "C" fn rt_solve_nls(
     if log_nls {
         log_nls_enter(eq_index, time, &nlsx_old, &nominal);
     }
+    // C's `ERROR_NONLINEARSOLVER` region starts here, after `updateInnerEquation`.
+    let _stage = enter_nls_stage();
     let mut fvec = vec![0.0f64; n];
     let maxfev = n * 10000;
     // Last residual eval was at the returned `x`, so the epilogue need not repeat

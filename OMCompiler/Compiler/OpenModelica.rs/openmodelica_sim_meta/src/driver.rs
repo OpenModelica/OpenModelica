@@ -1516,7 +1516,7 @@ fn assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) -> Stri
     format!("{pos}\n{head}\n{body}")
 }
 
-fn log_assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) {
+pub fn log_assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) {
     let block = assert_block(info, cond, time, initial);
     // C's `assertCommonVar` (the math-domain guards, no condition and no source
     // position): the warning names the time, a debug line carries the message.
@@ -3951,6 +3951,7 @@ struct IdaCtx {
     sens: SensPush,
     /// `--daeMode` only; null for an explicit ODE.
     dae: *const DaeSolve,
+    ramp: LambdaRamp,
 }
 
 #[cfg(sundials)]
@@ -3961,7 +3962,32 @@ impl Default for IdaCtx {
             pattern: core::ptr::null(),
             sens: SensPush::default(),
             dae: core::ptr::null(),
+            ramp: LambdaRamp::default(),
         }
+    }
+}
+
+/// C's daeMode homotopy ramp (`ida_solver.c`): where the actual DAE Jacobian is
+/// singular at the start point, `lambda` is ramped 0 → 1 over the start of the
+/// interval with the integrator step capped. Armed only after IDA fails there.
+#[cfg(sundials)]
+#[derive(Clone, Copy, Default)]
+struct LambdaRamp {
+    /// `SimData` slot of `simulationInfo->lambda`.
+    off: u32,
+    start: f64,
+    /// Ramp window; 0 until armed.
+    tramp: f64,
+    active: bool,
+}
+
+#[cfg(sundials)]
+impl LambdaRamp {
+    fn lambda_at(&self, t: f64) -> Option<f64> {
+        if !self.active || self.tramp <= 0.0 {
+            return None;
+        }
+        Some(if t < self.start + self.tramp { (t - self.start) / self.tramp } else { 1.0 })
     }
 }
 
@@ -5211,7 +5237,10 @@ struct IdaState {
     atol: Vec<f64>,
     n_roots: usize,
     work_retries: u32,
+    /// C's `restartAfterLSFail`: the one `IDAReInit` retry a failed step gets.
+    restarted: bool,
     setup: IdaSetup,
+    stop_time: f64,
 }
 
 #[cfg(sundials)]
@@ -5266,6 +5295,7 @@ impl IdaState {
     ) -> Result<Progress> {
         self.ensure(e, sim_data, *t, y, yp, ctx)?;
         let ida = self.ida.as_mut().expect("built by `ensure`");
+        self.setup.finish_ramp(e, sim_data, ida, *t)?;
         unsafe { (*ctx).ida = self.setup.ctx(Some(ida)) };
         if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
             return Err("CodegenWasmJit: IDA setup failed");
@@ -5283,9 +5313,38 @@ impl IdaState {
                 self.work_retries += 1;
                 Progress::WorkQuota
             }
+            // C's `ida_solver_step`: one `IDAReInit` retry for a failed setup, or for
+            // the degenerate DAE start point the ramp recovers from.
+            crate::sundials::Stop::Failed(flag)
+                if !self.restarted
+                    && (flag == crate::sundials::IDA_LSETUP_FAIL
+                        || self.setup.ramp_recovers(flag, *t)) =>
+            {
+                if self.setup.ramp_recovers(flag, *t) {
+                    self.setup.arm_ramp(ida, self.stop_time);
+                    omclog::warning(
+                        omclog::SOLVER,
+                        false,
+                        &format!(
+                            "##IDA## degenerate DAE operating point at t = {} (flag {flag}); \
+                             activating homotopy ramp",
+                            format_g(*t, 15)
+                        ),
+                    );
+                }
+                ida.reinit(*t);
+                self.restarted = true;
+                omclog::warning(
+                    omclog::SOLVER,
+                    false,
+                    &format!("##IDA## solver failed, try once again at time = {}", format_g(*t, 15)),
+                );
+                Progress::WorkQuota
+            }
             crate::sundials::Stop::Failed(_) => Progress::Failed("CodegenWasmJit: IDA failed"),
             other => {
                 self.work_retries = 0;
+                self.restarted = false;
                 match other {
                     crate::sundials::Stop::Root => Progress::Root,
                     _ => Progress::Reached,
@@ -5493,7 +5552,9 @@ impl SolverCore {
                 atol,
                 n_roots: nrt as usize,
                 work_retries: 0,
+                restarted: false,
                 setup: IdaSetup::new(model)?,
+                stop_time: model.stop_time,
             }),
             _ => Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol)),
         };
@@ -7349,6 +7410,7 @@ struct IdaSetup {
     /// `--daeMode`: the residual and the unknown vector this IDA solves over;
     /// `None` for an explicit ODE.
     dae: Option<Box<DaeSolve>>,
+    ramp: LambdaRamp,
 }
 
 /// What the DAE-mode residual and Jacobian need beyond an ODE model's: the shape of
@@ -7511,6 +7573,7 @@ impl IdaSetup {
             sens_off: layout.sens_off,
             sens_scratch: vec![0.0; n_sens],
             dae,
+            ramp: LambdaRamp { off: layout.lambda_off, start: model.start_time, ..Default::default() },
         })
     }
 
@@ -7597,7 +7660,50 @@ impl IdaSetup {
                 None => SensPush::default(),
             },
             dae: self.dae.as_deref().map_or(core::ptr::null(), |d| d as *const DaeSolve),
+            ramp: self.ramp,
         }
+    }
+
+    /// C's `idaHomotopyRampRecovers`. The Jacobian is only singular to the accuracy
+    /// of the difference quotient, so a failed corrector counts as well as a failed
+    /// factorization.
+    fn ramp_recovers(&self, flag: core::ffi::c_int, t: f64) -> bool {
+        use crate::sundials::{IDA_CONV_FAIL, IDA_ERR_FAIL, IDA_LSETUP_FAIL};
+        self.dae.is_some()
+            && !self.ramp.active
+            && init_homotopy_steps() > 0
+            && matches!(flag, IDA_LSETUP_FAIL | IDA_CONV_FAIL | IDA_ERR_FAIL)
+            && t <= self.ramp.start
+    }
+
+    /// C's `idaActivateHomotopyRamp`.
+    fn arm_ramp(&mut self, ida: &mut crate::sundials::Ida, stop_time: f64) {
+        self.ramp.tramp = match env_var("OMC_DAE_HOMOTOPY_TRAMP").and_then(|v| v.parse().ok()) {
+            Some(v) => v,
+            None => 0.1 * (stop_time - self.ramp.start),
+        };
+        self.ramp.active = true;
+        if self.ramp.tramp > 0.0 {
+            ida.set_max_step(self.ramp.tramp / 50.0);
+        }
+    }
+
+    /// Past the ramp window: lift the step cap and pin lambda, as C does at the top
+    /// of `ida_solver_step`.
+    fn finish_ramp(
+        &mut self,
+        e: &mut dyn SimEngine,
+        sim_data: u32,
+        ida: &mut crate::sundials::Ida,
+        t: f64,
+    ) -> Result<()> {
+        if !(self.ramp.active && self.ramp.tramp > 0.0 && t >= self.ramp.start + self.ramp.tramp) {
+            return Ok(());
+        }
+        ida.set_max_step(0.0);
+        write_f64(e, sim_data + self.ramp.off, 1.0)?;
+        self.ramp.active = false;
+        Ok(())
     }
 }
 
@@ -7638,6 +7744,9 @@ unsafe fn ida_residual(ctx: &mut ResCtx, t: f64, y: *const f64, yp: *const f64, 
         e.call1("functionUpdateBoundParameters", ctx.sim_data)?;
     }
     write_f64(e, ctx.sim_data + TIME_OFF, t)?;
+    if let Some(lambda) = ctx.ida.ramp.lambda_at(t) {
+        write_f64(e, ctx.sim_data + ctx.ida.ramp.off, lambda)?;
+    }
     unsafe { ida_push_unknowns(ctx, y, yp) }?;
     if let Some(d) = unsafe { ctx.ida.dae.as_ref() } {
         e.call2(MODEL_FN_DAE, ctx.sim_data, eval_stage::DYNAMIC)?;

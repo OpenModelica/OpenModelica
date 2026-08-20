@@ -19,6 +19,16 @@ pub type NVector = *mut c_void;
 pub type SunMatrix = *mut c_void;
 type SunLinearSolver = *mut c_void;
 type SunContext = *mut c_void;
+type SunLogger = *mut c_void;
+type SunErrHandlerFn = unsafe extern "C" fn(
+    c_int,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    c_int,
+    *mut c_void,
+    SunContext,
+);
 
 /// `int f(realtype t, N_Vector y, N_Vector ydot, void *user_data)`.
 pub type RhsFn = unsafe extern "C" fn(f64, NVector, NVector, *mut c_void) -> c_int;
@@ -42,7 +52,55 @@ fn sun_context() -> SunContext {
     if unsafe { SUNContext_Create(SUN_COMM_NULL, &mut ctx) } != SUN_SUCCESS {
         return core::ptr::null_mut();
     }
+    silence_logger(ctx);
+    unsafe { SUNContext_PushErrHandler(ctx, err_handler, core::ptr::null_mut()) };
     ctx
+}
+
+/// C's `sundialsSilenceLogger`. An empty filename disables a stream.
+fn silence_logger(ctx: SunContext) {
+    let mut logger: SunLogger = core::ptr::null_mut();
+    if unsafe { SUNContext_GetLogger(ctx, &mut logger) } != SUN_SUCCESS || logger.is_null() {
+        return;
+    }
+    let empty = c"".as_ptr();
+    unsafe {
+        SUNLogger_SetErrorFilename(logger, empty);
+        SUNLogger_SetWarningFilename(logger, empty);
+        SUNLogger_SetInfoFilename(logger, empty);
+        SUNLogger_SetDebugFilename(logger, empty);
+    }
+}
+
+/// C's `sundialsErrorHandlerFunction`: the muted diagnostics, on `LOG_SOLVER`.
+unsafe extern "C" fn err_handler(
+    line: c_int,
+    func: *const core::ffi::c_char,
+    file: *const core::ffi::c_char,
+    msg: *const core::ffi::c_char,
+    err_code: c_int,
+    _user_data: *mut c_void,
+    _ctx: SunContext,
+) {
+    if !crate::omclog::active(crate::omclog::SOLVER) {
+        return;
+    }
+    let text = |p: *const core::ffi::c_char| match p.is_null() {
+        true => alloc::string::String::new(),
+        false => unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned(),
+    };
+    crate::omclog::info(crate::omclog::SOLVER, true, "#### SUNDIALS error message #####");
+    crate::omclog::info(
+        crate::omclog::SOLVER,
+        false,
+        &alloc::format!(
+            " -> error code {err_code}\n -> function {}\n -> at {}:{line}",
+            text(func),
+            text(file)
+        ),
+    );
+    crate::omclog::info(crate::omclog::SOLVER, false, &alloc::format!(" Message: {}", text(msg)));
+    crate::omclog::close(crate::omclog::SOLVER);
 }
 /// `mxstep` internal steps taken without reaching `tout`; resuming continues.
 pub const CV_TOO_MUCH_WORK: c_int = -1;
@@ -51,6 +109,12 @@ unsafe extern "C" {
     /// `SUNComm` is a plain `int` without MPI, and `SUN_COMM_NULL` is 0.
     fn SUNContext_Create(comm: c_int, ctx: *mut SunContext) -> c_int;
     fn SUNContext_Free(ctx: *mut SunContext) -> c_int;
+    fn SUNContext_GetLogger(ctx: SunContext, logger: *mut SunLogger) -> c_int;
+    fn SUNContext_PushErrHandler(ctx: SunContext, handler: SunErrHandlerFn, data: *mut c_void) -> c_int;
+    fn SUNLogger_SetErrorFilename(logger: SunLogger, name: *const core::ffi::c_char) -> c_int;
+    fn SUNLogger_SetWarningFilename(logger: SunLogger, name: *const core::ffi::c_char) -> c_int;
+    fn SUNLogger_SetInfoFilename(logger: SunLogger, name: *const core::ffi::c_char) -> c_int;
+    fn SUNLogger_SetDebugFilename(logger: SunLogger, name: *const core::ffi::c_char) -> c_int;
 
     fn N_VNew_Serial(vec_length: SunIndex, ctx: SunContext) -> NVector;
     fn N_VDestroy(v: NVector);
@@ -340,6 +404,11 @@ pub type IdaJacFn = unsafe extern "C" fn(
 
 /// `mxstep` internal steps taken without reaching `tout`; resuming continues.
 pub const IDA_TOO_MUCH_WORK: c_int = -1;
+/// Error test failures on one step, corrector convergence failures, and a failed
+/// linear-solver setup — what `ida_solver_step` restarts from.
+pub const IDA_ERR_FAIL: c_int = -3;
+pub const IDA_CONV_FAIL: c_int = -4;
+pub const IDA_LSETUP_FAIL: c_int = -6;
 
 const IDA_NORMAL: c_int = 1;
 const IDA_ONE_STEP: c_int = 2;
@@ -369,6 +438,7 @@ unsafe extern "C" {
     fn IDASetMaxConvFails(mem: *mut c_void, maxncf: c_int) -> c_int;
     fn IDASetNonlinConvCoef(mem: *mut c_void, epcon: f64) -> c_int;
     fn IDASetInitStep(mem: *mut c_void, hin: f64) -> c_int;
+    fn IDASetMaxStep(mem: *mut c_void, hmax: f64) -> c_int;
     fn IDASolve(mem: *mut c_void, tout: f64, tret: *mut f64, yret: NVector, ypret: NVector, itask: c_int) -> c_int;
     fn IDAGetCurrentStep(mem: *mut c_void, hcur: *mut f64) -> c_int;
 
@@ -600,6 +670,11 @@ impl Ida {
 
     pub fn set_init_step(&mut self, h: f64) -> bool {
         unsafe { IDASetInitStep(self.mem, h) == IDA_SUCCESS }
+    }
+
+    /// `IDASetMaxStep`; 0 lifts the cap.
+    pub fn set_max_step(&mut self, h: f64) -> bool {
+        unsafe { IDASetMaxStep(self.mem, h) == IDA_SUCCESS }
     }
 
     /// `IDACalcIC(IDA_YA_YDP_INIT)`: solve for the algebraic unknowns and every
