@@ -16738,7 +16738,9 @@ public function getCmakeSundialsLinkCode
 algorithm
   if cvodeFmiFlagIsSet(fmiSimulationFlags) then
     needCvode := "ON";
-    cvodeDirectory := "\"" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\"";
+    // ${DOCKER_VOL_DIR} so the path also resolves inside the container when cross compiling,
+    // see getCmakeLinkLibrariesCode. It is empty for a normal build.
+    cvodeDirectory := "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\"";
   end if;
 end getCmakeSundialsLinkCode;
 
