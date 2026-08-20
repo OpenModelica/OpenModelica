@@ -17,6 +17,7 @@ use alloc::vec::Vec;
 use core::cell::RefCell;
 
 use crate::omclog;
+use crate::simflags::JacobianMethod;
 use crate::{
     JacAInfo, Layout as SimLayout, MetaKind as ResultKind, Neg, REAL_OFF, SimMeta, SolveStats, StateSetInfo,
     TIME_OFF,
@@ -319,6 +320,8 @@ pub const MODEL_FNS: &[&str] = &[
     "linearJacD",
     "functionRemovedInitialEquations",
     "functionZeroCrossingsEquations",
+    "functionJacA_constantEqns",
+    "functionJacA_column",
 ];
 
 /// The model entry points that are not `fn(SimData*)`: `--daeMode`'s residual
@@ -404,6 +407,7 @@ pub const CONTEXT_ODE: i32 = 1;
 pub const CONTEXT_ALGEBRAIC: i32 = 2;
 pub const CONTEXT_EVENTS: i32 = 3;
 pub const CONTEXT_JACOBIAN: i32 = 4;
+pub const CONTEXT_SYM_JACOBIAN: i32 = 5;
 
 /// gbode's view of the three `setContext` calls it needs; the driver's own uses go
 /// through [`set_context`] directly.
@@ -3388,10 +3392,16 @@ pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
     }
 }
 
+/// The `-s` values C serves from `dassl.c`.
+fn is_dassl(method: &str) -> bool {
+    matches!(method, "dassl" | "dasslrt" | "dassljac" | "")
+}
+
 /// Whether this build's `SolverCore` can serve `method`. `dassljac` is dassl
 /// with a symbolic Jacobian and `""` the dassl default.
 fn check_method(method: &str) -> bool {
-    matches!(method, "dassl" | "dasslrt" | "dassljac" | "euler" | "rungekutta" | "gbode" | "qss" | "")
+    is_dassl(method)
+        || matches!(method, "euler" | "rungekutta" | "gbode" | "qss")
         || (matches!(method, "cvode" | "ida") && cfg!(sundials))
         // `optimize()`; `drive` handles it before the integrators, and reports
         // C's "Ipopt is needed but not available." when it was not linked.
@@ -3475,17 +3485,23 @@ pub fn make_driver(
     }
     let gbode = alloc_gbode(model, method)?;
 
-    // C's `setJacobianMethod` reports INTERNALNUMJAC in DAE mode (no symbolic `A` is
-    // generated) and announces the colored-FD fallback. C configures IDA before
-    // `initializeModel`, so this precedes the initialization messages.
+    // C configures the solver before `initializeModel`, so the method it settles on
+    // is announced here; the drivers resolve the same thing again, silently.
+    let jac_a_avail = match env_var("OMC_WASM_NO_ANALYTIC_JAC").is_some() {
+        true => None,
+        false => model.jac_a.as_ref(),
+    };
     #[cfg(sundials)]
-    if layout.dae_mode() && ida_linear_solver(layout) == crate::sundials::IdaLs::Klu {
-        omclog::warning(
-            omclog::STDOUT,
-            false,
-            "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. \
-             Colored numerical Jacobian will be used.",
-        );
+    if method == "ida" {
+        // In DAE mode the backend leaves `A` empty; C reads it all the same.
+        let avail = match layout.dae_mode() {
+            true => None,
+            false => jac_a_avail,
+        };
+        ida_jacobian_method(avail, ida_linear_solver(layout), true);
+    }
+    if is_dassl(method) {
+        set_jacobian_method(jac_a_avail, true);
     }
     // C's `solver_main` runs QSS from its own branch: it has no event handling and
     // no output grid, so it never reaches the standard solver interface. With no
@@ -3871,9 +3887,11 @@ struct ResCtx {
     /// A wasm trap / memory error captured inside the callback, surfaced after
     /// `ddaskr` returns (the C-style callback cannot return a `Result`).
     err: Option<&'static str>,
-    /// ODE Jacobian sparsity+coloring for the colored-FD `jacd`; null ⇒ the
-    /// analytic path is off and daskr's own numerical Jacobian is used.
+    /// What `dassl_jac` / `ida_jac` assemble from; null ⇒ the analytic path is off
+    /// and the integrator differences its own.
     jac: *const JacAInfo,
+    /// C's `dasslData->dasslJacobian` / `idaData->jacobianMethod`.
+    jac_method: JacobianMethod,
     /// Scratch reused across `dassl_jac` colors (sized by the unknown count):
     /// perturbed residual, saved states, reciprocal steps, and the der read buffer.
     jac_gp: Vec<f64>,
@@ -4071,6 +4089,161 @@ unsafe fn dassl_res(
     }
 }
 
+/// C's `JACOBIAN_AVAILABILITY` (`jacobian_util.h`).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum JacAvail {
+    NotAvailable,
+    OnlySparsity,
+    Available,
+}
+
+/// What the model carries for the requested method. The adjoint Jacobian is a matrix
+/// of its own, which this backend never emits, so asking for it finds nothing.
+fn jac_availability(jac: Option<&JacAInfo>, requested: Option<JacobianMethod>) -> JacAvail {
+    if requested == Some(JacobianMethod::ColoredSymJacAdj) {
+        return JacAvail::NotAvailable;
+    }
+    match jac {
+        None => JacAvail::NotAvailable,
+        Some(j) if j.sym.is_some() => JacAvail::Available,
+        Some(_) => JacAvail::OnlySparsity,
+    }
+}
+
+/// C's `setJacobianMethod` (`jacobian_util.c`): the `-jacobian` value against what
+/// the model carries. `log` prints the downgrade warnings and the `LOG_JAC` line,
+/// which only [`make_driver`]'s call — ordered as C's — does.
+fn set_jacobian_method(jac: Option<&JacAInfo>, log: bool) -> JacobianMethod {
+    use JacobianMethod as M;
+    let requested = crate::simflags::with_flags(|f| f.jacobian);
+    let warn = |m: &str| {
+        if log {
+            omclog::warning(omclog::STDOUT, false, m);
+        }
+    };
+    let method = match jac_availability(jac, requested) {
+        JacAvail::NotAvailable => {
+            if !matches!(requested, None | Some(M::InternalNumJac)) {
+                warn("Jacobian not available, switching to internal numerical Jacobian.");
+            }
+            M::InternalNumJac
+        }
+        JacAvail::OnlySparsity => match requested {
+            Some(M::ColoredSymJac) | Some(M::BicoloredSymJac) => {
+                warn("Symbolic Jacobian not available, only sparsity pattern. Switching to colored numerical Jacobian.");
+                M::ColoredNumJac
+            }
+            Some(M::SymJac) => {
+                warn("Symbolic Jacobian not available, only sparsity pattern. Switching to numerical Jacobian.");
+                M::NumJac
+            }
+            None => M::ColoredNumJac,
+            Some(m) => m,
+        },
+        JacAvail::Available => requested.unwrap_or(M::ColoredSymJac),
+    };
+    if log {
+        omclog::info(omclog::JAC, false, &format!("Using Jacobian method: {}", method.desc()));
+    }
+    // Never compiled bidirectionally here, so C's `evalJacobian` degenerates to the
+    // plain colored evaluation.
+    match method {
+        M::BicoloredSymJac => {
+            if log {
+                omclog::warning(
+                    omclog::SOLVER,
+                    false,
+                    "bicoloredSymbolical selected but Jacobian was not compiled bidirectionally; \
+                     falling back to standard colored symbolic evaluation.",
+                );
+            }
+            M::ColoredSymJac
+        }
+        m => m,
+    }
+}
+
+/// Whether the method assembles from the symbolic column equations.
+fn jac_method_symbolic(m: JacobianMethod) -> bool {
+    matches!(m, JacobianMethod::SymJac | JacobianMethod::ColoredSymJac)
+}
+
+/// Whether the method evaluates once per colour rather than once per column.
+fn jac_method_colored(m: JacobianMethod) -> bool {
+    matches!(m, JacobianMethod::ColoredNumJac | JacobianMethod::ColoredSymJac)
+}
+
+/// One symbolic assembly of `∂f/∂y`: C's
+/// `genericColoredSymbolicJacobianEvaluation` (`jacobianSymbolical.c`) when
+/// `colored`, else `jacA_sym`'s column-at-a-time loop, which reads every row and
+/// not just the pattern's. `set(row, col, k, value)` places one entry, `k` being
+/// its index within the column. SimData already holds the linearization point, as
+/// in C: the residual at `(t, y)` ran just before.
+fn eval_sym_jacobian(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    jac: &JacAInfo,
+    ctx_addr: u32,
+    colored: bool,
+    set: &mut dyn FnMut(usize, usize, usize, f64),
+) -> Result<()> {
+    let sym = jac.sym.as_ref().ok_or("CodegenWasmJit: no symbolic Jacobian to evaluate")?;
+    let n = jac.n as usize;
+    if sym.seed_offs.len() != n || sym.result_offs.len() != n {
+        return Err("CodegenWasmJit: symbolic Jacobian seed/result count does not match the states");
+    }
+    // C's `setContext(CONTEXT_SYM_JACOBIAN)`: lets a linear system inside a column
+    // reuse its matrix across one assembly.
+    set_context(e, ctx_addr, CONTEXT_SYM_JACOBIAN);
+    let per_column: Vec<Vec<u32>> = match colored {
+        true => Vec::new(),
+        false => (0..n as u32).map(|c| vec![c]).collect(),
+    };
+    let run = (|| -> Result<()> {
+        for &off in &sym.seed_offs {
+            write_f64(e, sim_data + off, 0.0)?;
+        }
+        if sym.has_constant {
+            e.call1("functionJacA_constantEqns", sim_data)?;
+        }
+        let groups: &[Vec<u32>] = if colored { &jac.colors } else { &per_column };
+        for group in groups {
+            for &c in group {
+                write_f64(e, sim_data + sym.seed_offs[c as usize], 1.0)?;
+            }
+            e.call1("functionJacA_column", sim_data)?;
+            for &c in group {
+                let col = c as usize;
+                let read = |e: &mut dyn SimEngine, row: usize| -> Result<f64> {
+                    match sym.result_offs[row] {
+                        u32::MAX => Ok(0.0),
+                        off => read_f64(e, sim_data + off),
+                    }
+                };
+                match colored {
+                    true => {
+                        for k in 0..jac.rows_by_col[col].len() {
+                            let row = jac.rows_by_col[col][k] as usize;
+                            let v = read(e, row)?;
+                            set(row, col, k, v);
+                        }
+                    }
+                    false => {
+                        for row in 0..n {
+                            let v = read(e, row)?;
+                            set(row, col, usize::MAX, v);
+                        }
+                    }
+                }
+                write_f64(e, sim_data + sym.seed_offs[col], 0.0)?;
+            }
+        }
+        Ok(())
+    })();
+    set_context(e, ctx_addr, CONTEXT_ALGEBRAIC);
+    run
+}
+
 /// DASSL direct-method Jacobian (`INFO(5)=1`, dense `mtype 1`): fill the iteration
 /// matrix `∂G/∂y + cj·∂G/∂y'` (G = y' − f) by a colored numerical FD, one
 /// `functionODE` per color, mirroring the C runtime's `jacA_numColored`.
@@ -4106,57 +4279,79 @@ unsafe fn dassl_jac(
     ctx.jac_ders.resize(n * 8, 0);
     // One assembly, however many colours it takes, as C's DASSL counts it.
     ctx.nje += 1;
-    set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
     // C holds `ERROR_INTEGRATOR` over the whole DDASKR call, and there is no `IRES`
     // here: a model error at a perturbed point leaves the assembly as it stands.
     set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
+    let colored = jac_method_colored(ctx.jac_method);
+    // C's `jacA_num` / `jacA_sym`: one column at a time, every row of it.
+    let per_column: Vec<Vec<u32>> = match colored {
+        true => Vec::new(),
+        false => (0..n as u32).map(|c| vec![c]).collect(),
+    };
+    let all_rows: Vec<u32> = match colored {
+        true => Vec::new(),
+        false => (0..n as u32).collect(),
+    };
     let run = (|| -> Result<()> {
         write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
-        for color in &jac.colors {
-            // Perturb every column in this colour; record del and the base value.
-            for &col in color {
-                let ci = col as usize;
-                let yi = unsafe { *y.add(ci) };
-                let hyp = h * unsafe { *yprime.add(ci) };
-                let nom = unsafe { *ctx.nominals.add(ci) };
-                let mut del = fd_step(yi, hyp, ctx.tol, nom, ctx.nominal_factor);
-                del = yi + del - yi; // floating-point rounding, as in the C runtime
-                if del == 0.0 {
-                    del = DELTA_X_SOLVER;
+        if jac_method_symbolic(ctx.jac_method) {
+            // C's `jacA_symColored` / `jacA_sym`. This residual is G = y' − f, the
+            // negative of C's F = f − y', so ∂f/∂y enters negated (and the `cj·I`
+            // below is added where C subtracts it).
+            eval_sym_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, colored, &mut |row, col, _, v| {
+                unsafe { *pd.add(col * n + row) = -v };
+            })?;
+        } else {
+            set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
+            let groups: &[Vec<u32>] = if colored { &jac.colors } else { &per_column };
+            for group in groups {
+                // Perturb every column in this colour; record del and the base value.
+                for &col in group {
+                    let ci = col as usize;
+                    let yi = unsafe { *y.add(ci) };
+                    let hyp = h * unsafe { *yprime.add(ci) };
+                    let nom = unsafe { *ctx.nominals.add(ci) };
+                    let mut del = fd_step(yi, hyp, ctx.tol, nom, ctx.nominal_factor);
+                    del = yi + del - yi; // floating-point rounding, as in the C runtime
+                    if del == 0.0 {
+                        del = DELTA_X_SOLVER;
+                    }
+                    ctx.jac_ysave[ci] = yi;
+                    ctx.jac_del[ci] = del;
+                    unsafe { *y.add(ci) = yi + del };
                 }
-                ctx.jac_ysave[ci] = yi;
-                ctx.jac_del[ci] = del;
-                unsafe { *y.add(ci) = yi + del };
+                // One residual evaluation at the perturbed point.
+                write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
+                let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
+                e.write_bytes(ctx.states_base, y_bytes)?;
+                e.call1("functionODE", ctx.sim_data)?;
+                e.read_bytes(ctx.ders_base, &mut ctx.jac_ders)?;
+                for row in 0..n {
+                    let f = f64::from_le_bytes(ctx.jac_ders[row * 8..row * 8 + 8].try_into().unwrap());
+                    ctx.jac_gp[row] = unsafe { *yprime.add(row) } - f;
+                }
+                // Scatter the finite difference into the affected rows, restore y.
+                for &col in group {
+                    let ci = col as usize;
+                    let del = ctx.jac_del[ci];
+                    let rows: &[u32] = if colored { &jac.rows_by_col[ci] } else { &all_rows };
+                    for &row in rows {
+                        let ri = row as usize;
+                        let d = ctx.jac_gp[ri] - unsafe { *base.add(ri) };
+                        unsafe { *pd.add(ci * n + ri) = d / del };
+                    }
+                    unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
+                }
             }
-            // One residual evaluation at the perturbed point.
-            write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
+            set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
+            // Restore the base states in SimData.
             let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
             e.write_bytes(ctx.states_base, y_bytes)?;
-            e.call1("functionODE", ctx.sim_data)?;
-            e.read_bytes(ctx.ders_base, &mut ctx.jac_ders)?;
-            for row in 0..n {
-                let f = f64::from_le_bytes(ctx.jac_ders[row * 8..row * 8 + 8].try_into().unwrap());
-                ctx.jac_gp[row] = unsafe { *yprime.add(row) } - f;
-            }
-            // Scatter the finite difference into the affected rows, restore y.
-            for &col in color {
-                let ci = col as usize;
-                let del = ctx.jac_del[ci];
-                for &row in &jac.rows_by_col[ci] {
-                    let ri = row as usize;
-                    let d = ctx.jac_gp[ri] - unsafe { *base.add(ri) };
-                    unsafe { *pd.add(ci * n + ri) = d / del };
-                }
-                unsafe { *y.add(ci) = ctx.jac_ysave[ci] };
-            }
         }
-        // cj·∂G/∂y' = cj·I — the diagonal the ∂G/∂y difference above does not carry.
+        // cj·∂G/∂y' = cj·I — the diagonal the ∂G/∂y assembly above does not carry.
         for col in 0..n {
             unsafe { *pd.add(col * n + col) += cj };
         }
-        // Restore the base states in SimData.
-        let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
-        e.write_bytes(ctx.states_base, y_bytes)?;
         Ok(())
     })();
     set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
@@ -4393,9 +4588,11 @@ struct DasslDriver {
     /// `terminate()` fired at the initial point; the first `advance` reports it.
     pending_terminate: bool,
     finished: bool,
-    /// Analytic-Jacobian sparsity+coloring (colored numerical FD); `None` ⇒
-    /// daskr's own numerical Jacobian.
+    /// The "A" Jacobian's sparsity, coloring and symbolic columns; `None` ⇒ daskr's
+    /// own numerical Jacobian.
     jac_a: Option<JacAInfo>,
+    /// C's `dasslData->dasslJacobian`.
+    jac_method: JacobianMethod,
     /// Jacobian evaluation count, accumulated across chunks (for the bench line).
     nje: u64,
     past: DaskrCounters,
@@ -4463,12 +4660,12 @@ impl DasslDriver {
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
         let lrw = (60 + 9 * neq + neq * neq + 3 * nrt + 64) as usize;
         let liw = (40 + neq + 64) as usize;
-        // Analytic (colored numerical-FD) Jacobian when the backend gave us the "A"
-        // sparsity+coloring: INFO(5)=1 selects daskr's dense user-Jacobian path.
+        // INFO(5)=1 selects daskr's dense user-Jacobian path.
         let jac_a = if env_var("OMC_WASM_NO_ANALYTIC_JAC").is_some() { None } else { model.jac_a.clone() };
+        let jac_method = set_jacobian_method(jac_a.as_ref(), false);
         let mut info = [0i32; 24];
-        if jac_a.is_some() {
-            info[4] = 1;
+        if jac_method != JacobianMethod::InternalNumJac {
+            info[4] = 1; // INFO(5)=1: a user Jacobian routine
         }
         // Per-state tolerances scaled by nominal, matching the C runtime
         // (`dassl.c`: INFO(2)=1, atol[i]=tol·max(|nominal_i|,1e-32)).
@@ -4516,6 +4713,7 @@ impl DasslDriver {
             pending_terminate,
             finished: false,
             jac_a,
+            jac_method,
             nje: 0,
             past: DaskrCounters::default(),
         })
@@ -4599,7 +4797,10 @@ impl Driver for DasslDriver {
         // used directly meanwhile); the guard clears the thread-local on any exit.
         // `nfe` carries over between chunks.
         let jac_ptr = self.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo);
-        let jacfn: solver::JacFn = if jac_ptr.is_null() { solver::dummy_jacd } else { dassl_jac };
+        let jacfn: solver::JacFn = match self.jac_method {
+            JacobianMethod::InternalNumJac => solver::dummy_jacd,
+            _ => dassl_jac,
+        };
         let mut ctx = ResCtx {
             engine: &mut *e as *mut dyn SimEngine,
             sim_data,
@@ -4612,6 +4813,7 @@ impl Driver for DasslDriver {
             n_zc: 0,
             err: None,
             jac: jac_ptr,
+            jac_method: self.jac_method,
             jac_gp: vec![0.0; n_states],
             jac_ysave: vec![0.0; n_states],
             jac_del: vec![0.0; n_states],
@@ -4816,9 +5018,11 @@ struct DaskrState {
     past: DaskrCounters,
     /// The in-progress target's DASKR continuation count (IDID=-1 work quota).
     ev_retries: i32,
-    /// Analytic-Jacobian sparsity+coloring (colored numerical FD); `None` ⇒
-    /// daskr's own numerical Jacobian.
+    /// The "A" Jacobian's sparsity, coloring and symbolic columns; `None` ⇒ daskr's
+    /// own numerical Jacobian.
     jac_a: Option<JacAInfo>,
+    /// C's `dasslData->dasslJacobian`.
+    jac_method: JacobianMethod,
 }
 
 /// What one call into the integrator did.
@@ -4838,9 +5042,10 @@ impl DaskrState {
         let lrw = (60 + 9 * neq + neq * neq + 3 * nrt + 64) as usize;
         let liw = (40 + neq + 64) as usize;
         let jac_a = if env_var("OMC_WASM_NO_ANALYTIC_JAC").is_some() { None } else { model.jac_a.clone() };
+        let jac_method = set_jacobian_method(jac_a.as_ref(), false);
         let mut info = [0i32; 24];
-        if jac_a.is_some() {
-            info[4] = 1; // INFO(5)=1: dense user (colored numerical-FD) Jacobian
+        if jac_method != JacobianMethod::InternalNumJac {
+            info[4] = 1; // INFO(5)=1: a dense user Jacobian routine
         }
         if n_states > 0 {
             info[1] = 1; // INFO(2)=1: per-state (vector) rtol/atol
@@ -4865,6 +5070,7 @@ impl DaskrState {
             past: DaskrCounters::default(),
             ev_retries: 0,
             jac_a,
+            jac_method,
         }
     }
 
@@ -4873,7 +5079,10 @@ impl DaskrState {
         let neq = y.len() as i32;
         let (lrw, liw) = (self.rwork.len(), self.iwork.len());
         let rt_fn: solver::RtFn = if self.nrt > 0 { dassl_rt } else { solver::dummy_rt };
-        let jacfn: solver::JacFn = if self.jac_a.is_none() { solver::dummy_jacd } else { dassl_jac };
+        let jacfn: solver::JacFn = match self.jac_method {
+            JacobianMethod::InternalNumJac => solver::dummy_jacd,
+            _ => dassl_jac,
+        };
         let mut tt = target;
         let logging = log_dassl();
         if logging {
@@ -5550,6 +5759,15 @@ impl SolverCore {
                 // from here; the fixed-step solvers need none.
                 Solver::Gbode(_) => self.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
                 Solver::Fixed(_) => core::ptr::null(),
+            },
+            jac_method: match &self.solver {
+                Solver::Daskr(d) => d.jac_method,
+                #[cfg(sundials)]
+                Solver::Ida(s) => s.setup.jac_method,
+                // None of these reach `dassl_jac`/`ida_jac`.
+                #[cfg(sundials)]
+                Solver::Cvode(_) => JacobianMethod::InternalNumJac,
+                Solver::Gbode(_) | Solver::Fixed(_) => JacobianMethod::InternalNumJac,
             },
             jac_gp: vec![0.0; self.n_unknowns],
             jac_ysave: vec![0.0; self.n_unknowns],
@@ -6890,6 +7108,7 @@ impl Driver for CvodeDriver {
             n_zc: 0,
             err: None,
             jac: core::ptr::null(),
+            jac_method: JacobianMethod::InternalNumJac,
             jac_gp: Vec::new(),
             jac_ysave: Vec::new(),
             jac_del: Vec::new(),
@@ -7067,9 +7286,11 @@ impl IdaPattern {
 #[cfg(sundials)]
 struct IdaSetup {
     ls: crate::sundials::IdaLs,
-    /// Sparsity + coloring for the FD Jacobian; `None` ⇒ IDA's own dense
+    /// Sparsity, coloring and symbolic columns; `None` ⇒ IDA's own dense
     /// difference-quotient Jacobian (C's `INTERNALNUMJAC`).
     jac_a: Option<JacAInfo>,
+    /// C's `idaData->jacobianMethod`, after IDA's own downgrades.
+    jac_method: JacobianMethod,
     /// Present exactly when `ls` is KLU.
     pattern: Option<IdaPattern>,
     opts: crate::sundials::IdaOptions,
@@ -7137,6 +7358,46 @@ fn ida_linear_solver(layout: &SimLayout) -> crate::sundials::IdaLs {
     if layout.n_states == 0 && !layout.dae_mode() && ls == IdaLs::Klu { IdaLs::Dense } else { ls }
 }
 
+/// `ida_solver.c`'s follow-up to [`set_jacobian_method`]: IDA has no uncolored
+/// evaluator, and with KLU no internal one, so those become their colored form; a
+/// Krylov solver assembles no matrix and C pins it to `INTERNALNUMJAC` last.
+#[cfg(sundials)]
+fn ida_jacobian_method(jac: Option<&JacAInfo>, ls: crate::sundials::IdaLs, log: bool) -> JacobianMethod {
+    use JacobianMethod as M;
+    let m = set_jacobian_method(jac, log);
+    let (m, msg) = match m {
+        M::SymJac => (
+            M::ColoredSymJac,
+            Some(
+                "Symbolic Jacobians without coloring are currently not supported by IDA. \
+                 Colored symbolical Jacobian will be used.",
+            ),
+        ),
+        M::NumJac => (
+            M::ColoredNumJac,
+            Some(
+                "Numerical Jacobians without coloring are currently not supported by IDA. \
+                 Colored numerical Jacobian will be used.",
+            ),
+        ),
+        M::InternalNumJac if ls == crate::sundials::IdaLs::Klu => (
+            M::ColoredNumJac,
+            Some(
+                "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. \
+                 Colored numerical Jacobian will be used.",
+            ),
+        ),
+        m => (m, None),
+    };
+    if log && let Some(msg) = msg {
+        omclog::warning(omclog::STDOUT, false, msg);
+    }
+    match ls.matrix_free() {
+        true => M::InternalNumJac,
+        false => m,
+    }
+}
+
 #[cfg(sundials)]
 impl IdaSetup {
     fn new(model: &SimModel) -> Result<IdaSetup> {
@@ -7173,6 +7434,14 @@ impl IdaSetup {
             (Some(j), IdaLs::Klu) => Some(IdaPattern::new(j, dae.is_none())),
             _ => None,
         };
+        // C decides the method from the ODE `A` even in DAE mode, where the backend
+        // leaves it empty — hence the `INTERNALNUMJAC`-with-KLU downgrade there.
+        // `jac_a` above is what the difference quotient runs over instead.
+        let avail = match dae.is_some() || env_var("OMC_WASM_NO_ANALYTIC_JAC").is_some() {
+            true => None,
+            false => model.jac_a.as_ref(),
+        };
+        let jac_method = ida_jacobian_method(avail, ls, false);
         let opts = crate::simflags::with_flags(|f| crate::sundials::IdaOptions {
             max_order: f.max_order,
             max_err_test_fails: f.ida_max_err_test_fails,
@@ -7189,6 +7458,7 @@ impl IdaSetup {
         Ok(IdaSetup {
             ls,
             jac_a,
+            jac_method,
             pattern,
             opts,
             sens_offs,
@@ -7237,7 +7507,9 @@ impl IdaSetup {
             (n_roots > 0).then_some(ida_root as crate::sundials::IdaRootFn),
             self.ls,
             self.pattern.as_ref().map_or(0, |p| p.nnz()),
-            self.jac_a.as_ref().map(|_| ida_jac as crate::sundials::IdaJacFn),
+            // Left out, IDA differences its own dense one (`INTERNALNUMJAC`).
+            (self.jac_method != JacobianMethod::InternalNumJac && self.jac_a.is_some())
+                .then_some(ida_jac as crate::sundials::IdaJacFn),
             &self.opts,
         )
         .ok_or("CodegenWasmJit: IDA initialization failed")?;
@@ -7434,6 +7706,30 @@ unsafe extern "C" fn ida_jac(
     };
     ctx.jac_gp.resize(n, 0.0);
     ctx.nje += 1;
+    // C's `jacColoredSymbolicalSparse` / `jacColoredSymbolicalDense`. IDA's residual
+    // is F = f − y', so a column result is `∂F/∂y` already.
+    if jac_method_symbolic(ctx.jac_method) {
+        let run = (|| -> Result<()> {
+            eval_sym_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, true, &mut |row, col, k, v| {
+                vals[match pattern {
+                    Some(p) => p.slots[col][k],
+                    None => col * n + row,
+                }] = v;
+            })?;
+            // -cj·∂F/∂y' = -cj·I, which the column equations do not carry.
+            for col in 0..n {
+                vals[pattern.map_or(col * n + col, |p| p.diag[col])] -= cj;
+            }
+            Ok(())
+        })();
+        return match run {
+            Err(err) => {
+                ctx.err = Some(err);
+                -1
+            }
+            Ok(()) => 0,
+        };
+    }
     set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
     let run = (|| -> Result<()> {
         for color in &jac.colors {
@@ -7663,6 +7959,7 @@ impl Driver for IdaDriver {
             n_zc: 0,
             err: None,
             jac: self.setup.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
+            jac_method: self.setup.jac_method,
             jac_gp: Vec::new(),
             jac_ysave: vec![0.0; n_states],
             jac_del: vec![0.0; n_states],

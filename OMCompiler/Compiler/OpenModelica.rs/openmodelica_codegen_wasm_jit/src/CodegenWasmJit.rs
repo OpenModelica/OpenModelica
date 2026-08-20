@@ -4127,7 +4127,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let nls_jac_infos = build_nls_jac_infos(&nls_systems, &layout, &mut var_map)?;
     // Same, for torn linear systems that assemble A analytically.
     build_lin_jac_infos(sim_code, &layout, &mut var_map)?;
-    // Same, for the `-l` linearization matrices.
+    // Same, for the `-l` matrices; "A" there is the ODE state Jacobian, so these
+    // are also the slots the integrators seed and read.
     let linz_jac_infos = build_linz_jac_infos(&linz, &layout, &mut var_map)?;
     var_map.nls_jobs = Arc::new(nls_jobs);
     var_map.generic_calls = Arc::new(
@@ -4317,7 +4318,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     apply_variable_filter(&mut result_vars, &settings.variableFilter);
     let model_name = openmodelica_frontend_dump::AbsynUtil::pathString(mi.name.clone(), arcstr::literal!("."), true, false)?.to_string();
     // Solver metadata, shared by the embedded blob and the host `SimModel`.
-    let jac_a = build_jac_a_info(sim_code, n_states);
+    let mut jac_a = build_jac_a_info(sim_code, n_states);
     // Build the driver metadata once: embedded in the module (for the in-wasm
     // driver / standalone) and kept on the `SimModel` (for the host driver).
     // Only the FMU export needs the vr table; a plain simulation would just carry
@@ -4357,10 +4358,26 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         .transpose()?;
     // Lowering the columns is what decides which matrices survive; everything below
     // reads `linz.jacs` after this.
-    let (linz_jac_fns, opt_jac_fns) = build_jac_fns(
+    let (linz_jac_fns, jac_a_fns, opt_jac_fns) = build_jac_fns(
         &mut linz, &linz_jac_infos, optimization::is_optimization(sim_code), &layout, &var_map,
         &eq_index, &by_name, &mut literals,
     )?;
+    // C's `JACOBIAN_AVAILABLE`: "A" lowered, at a shape indexable by state.
+    if let (Some(info), Some(sym_info)) = (jac_a.as_mut(), linz_jac_infos[0].as_ref())
+        && linz.jacs[0].is_some()
+        && sym_info.seed_offs.len() == n_states as usize
+        && sym_info.result_offs.len() == n_states as usize
+    {
+        info.sym = Some(openmodelica_sim_meta::JacSym {
+            seed_offs: sym_info.seed_offs.clone(),
+            // A row the backend left out is structurally zero, so it has no slot.
+            result_offs: sym_info.result_offs.iter().map(|o| o.unwrap_or(u32::MAX)).collect(),
+            has_constant: linz.jacs[0]
+                .as_ref()
+                .and_then(|jm| lst(&jm.columns).next())
+                .is_some_and(|c| lst(&c.constantEqns).next().is_some()),
+        });
+    }
     // `method="optimization"`: B, C and D with the slots the optimizer seeds and
     // reads, plus the problem's own metadata.
     let opt_info = {
@@ -4551,6 +4568,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         } else {
             build_stateset_jac_fn(&sim_code.stateSets, &var_map, &eq_index, &by_name, &mut literals)?
         });
+        idx
+    };
+    // C's `functionJacA_constantEqns` / `functionJacA_column`.
+    let jac_a_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.extend(jac_a_fns);
         idx
     };
     // The lambda-0 (simplified) initial system, for the homotopy continuation's
@@ -4749,6 +4772,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     functions.function(eqfn_type); // initSample: (i32) -> ()
     functions.function(eqfn_type); // functionZeroCrossings: (i32) -> ()
     functions.function(eqfn_type); // functionStateSetJacobians: (i32) -> ()
+    functions.function(eqfn_type); // functionJacA_constantEqns: (i32) -> ()
+    functions.function(eqfn_type); // functionJacA_column: (i32) -> ()
     functions.function(eqfn_type); // functionInitialEquations_lambda0: (i32) -> ()
     functions.function(eqfn_type); // functionCheckAsserts: (i32) -> ()
     functions.function(eqfn_type); // functionZeroCrossingsEquations: (i32) -> ()
@@ -4881,6 +4906,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     exports.export("functionZeroCrossings", we::ExportKind::Func, zc_idx);
     exports.export("functionZeroCrossingsEquations", we::ExportKind::Func, zc_equations_idx);
     exports.export("functionStateSetJacobians", we::ExportKind::Func, stateset_jac_idx);
+    exports.export("functionJacA_constantEqns", we::ExportKind::Func, jac_a_idx);
+    exports.export("functionJacA_column", we::ExportKind::Func, jac_a_idx + 1);
     exports.export("functionInitialEquations_lambda0", we::ExportKind::Func, init_lambda0_idx);
     exports.export("functionCheckAsserts", we::ExportKind::Func, check_asserts_idx);
     exports.export("functionUpdateRelations", we::ExportKind::Func, update_relations_idx);
@@ -4937,6 +4964,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         ("functionZeroCrossings", zc_idx),
         ("functionZeroCrossingsEquations", zc_equations_idx),
         ("functionStateSetJacobians", stateset_jac_idx),
+        ("functionJacA_constantEqns", jac_a_idx),
+        ("functionJacA_column", jac_a_idx + 1),
         ("functionInitialEquations_lambda0", init_lambda0_idx),
         ("functionCheckAsserts", check_asserts_idx),
         ("functionUpdateRelations", update_relations_idx),
@@ -5278,11 +5307,16 @@ fn nls_system_nnz(nlsystem: &SimCode::NonlinearSystem) -> usize {
     nls_jac_pattern(jm, n).map_or(0, |p| p.rowidx.len())
 }
 
+/// The ODE state Jacobian "A", if the backend emitted one at all.
+fn jac_a_matrix(sim_code: &SimCode::SimCode) -> Option<&SimCode::JacobianMatrix> {
+    lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == "A").map(|j| &**j)
+}
+
 fn build_jac_a_info(sim_code: &SimCode::SimCode, n_states: u32) -> Option<JacAInfo> {
     if n_states == 0 {
         return None;
     }
-    let jac = lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == "A")?;
+    let jac = jac_a_matrix(sim_code)?;
     let info = jac_pattern_info(jac, n_states as usize)?;
     if std::env::var("OMC_WASM_SIM_BENCH").is_ok() {
         let nnz: usize = info.rows_by_col.iter().map(|r| r.len()).sum();
@@ -5314,7 +5348,7 @@ fn jac_pattern_info(jac: &SimCode::JacobianMatrix, n: usize) -> Option<JacAInfo>
     {
         return None;
     }
-    Some(JacAInfo { n: n as u32, colors, rows_by_col })
+    Some(JacAInfo { n: n as u32, colors, rows_by_col, sym: None })
 }
 
 /// Map each result variable's display name to its unit (`h` -> `m`, `der(h)` ->
@@ -7575,11 +7609,13 @@ fn build_lin_info(
 /// A Jacobian the emitter cannot lower is not an error, so its attempt reports here.
 const JAC_CHECKPOINT: ArcStr = arcstr::literal!("wasm-jit symbolic Jacobian");
 
-/// Lower the symbolic Jacobians' columns: `linearJac<X>` for `-l`, and for an
+/// Lower the symbolic Jacobians' columns: `linearJac<X>` for `-l`, the
+/// `functionJacA_{constantEqns,column}` pair the integrators drive, and for an
 /// `optimization` model the `optJac<X>{_const,}` pair the optimizer drives one
 /// colour at a time. A matrix that does not lower is dropped from the plan, so
 /// `sym_mask` reports it unavailable and the run differentiates numerically —
-/// availability is what the emitter can lower, not a prediction of it.
+/// availability is what the emitter can lower, not a prediction of it. Returns
+/// `linearJac<X>`, A's pair, then B/C/D's.
 #[allow(clippy::too_many_arguments)]
 fn build_jac_fns(
     plan: &mut LinzPlan,
@@ -7590,8 +7626,8 @@ fn build_jac_fns(
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
-) -> Result<(Vec<we::Function>, Vec<we::Function>)> {
-    let (mut linz_fns, mut opt_fns) = (Vec::new(), Vec::new());
+) -> Result<(Vec<we::Function>, [we::Function; 2], Vec<we::Function>)> {
+    let (mut linz_fns, mut jac_a_fns, mut opt_fns) = (Vec::new(), None, Vec::new());
     let mut out_off = layout.linz_off;
     for k in 0..4 {
         let mut built = None;
@@ -7603,8 +7639,8 @@ fn build_jac_fns(
                     true => build_linz_jac_fn(plan, info, k, out_off, var_map, eq_index, by_name, literals)?,
                     false => empty_eqfn(),
                 };
-                // The optimizer never reads A, and no other run reads these at all.
-                if !is_optimization || k == 0 {
+                // A is the integrators'; only the optimizer reads B, C and D.
+                if k > 0 && !is_optimization {
                     return Ok((lin, [empty_eqfn(), empty_eqfn()]));
                 }
                 let (constant, column) = optimization::jac_eqns(&jm);
@@ -7624,14 +7660,15 @@ fn build_jac_fns(
                 }
             }
         }
-        let (lin, opt) = built.unwrap_or_else(|| (empty_eqfn(), [empty_eqfn(), empty_eqfn()]));
+        let (lin, pair) = built.unwrap_or_else(|| (empty_eqfn(), [empty_eqfn(), empty_eqfn()]));
         linz_fns.push(lin);
-        if k > 0 {
-            opt_fns.extend(opt);
+        match k {
+            0 => jac_a_fns = Some(pair),
+            _ => opt_fns.extend(pair),
         }
         out_off += plan.rows[k] * plan.cols[k] * 8;
     }
-    Ok((linz_fns, opt_fns))
+    Ok((linz_fns, jac_a_fns.unwrap_or_else(|| [empty_eqfn(), empty_eqfn()]), opt_fns))
 }
 
 /// Build one `linearJac<X>(SimData*)`: C's `functionJacX` loop moved into the

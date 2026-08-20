@@ -192,6 +192,8 @@ pub struct SimFlags {
     pub init_file: Option<String>,
     /// `-iim=<symbolic|none>`: C's `INIT_INIT_METHOD`.
     pub init_method: InitMethod,
+    /// `-jacobian=<method>`; `None` leaves it to C's `setJacobianMethod`.
+    pub jacobian: Option<JacobianMethod>,
     /// `-noEquidistantTimeGrid`: emit the integrator's own steps instead of
     /// interpolating onto the output grid.
     pub no_equidistant_grid: bool,
@@ -550,15 +552,42 @@ pub enum InitMethod {
 const INIT_METHODS: &[Value<InitMethod>] =
     &[("none", InitMethod::None, Offer::Always), ("symbolic", InitMethod::Symbolic, Offer::Always)];
 
+/// C's `JACOBIAN_METHOD` (`jacobian_util.h`).
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum JacobianMethod {
+    ColoredNumJac,
+    InternalNumJac,
+    ColoredSymJac,
+    ColoredSymJacAdj,
+    NumJac,
+    SymJac,
+    BicoloredSymJac,
+}
+
+impl JacobianMethod {
+    /// C's `setJacobianMethod` log line, one per enumerator.
+    pub fn desc(self) -> &'static str {
+        match self {
+            JacobianMethod::ColoredNumJac => "Colored numerical Jacobian.",
+            JacobianMethod::InternalNumJac => "Internal numerical Jacobian.",
+            JacobianMethod::ColoredSymJac => "Colored symbolical Jacobian.",
+            JacobianMethod::ColoredSymJacAdj => "Colored symbolical adjoint Jacobian.",
+            JacobianMethod::NumJac => "Numerical Jacobian.",
+            JacobianMethod::SymJac => "Symbolical Jacobian.",
+            JacobianMethod::BicoloredSymJac => "Bicolored (bidirectional) symbolical Jacobian.",
+        }
+    }
+}
+
 /// C's `JACOBIAN_METHOD_NAME` (`simulation_options.c`).
-const JACOBIAN_METHODS: &[&str] = &[
-    "coloredNumerical",
-    "internalNumerical",
-    "coloredSymbolical",
-    "coloredSymbolicalAdjoint",
-    "numerical",
-    "symbolical",
-    "bicoloredSymbolical",
+const JACOBIAN_METHODS: &[Value<JacobianMethod>] = &[
+    ("coloredNumerical", JacobianMethod::ColoredNumJac, Offer::Always),
+    ("internalNumerical", JacobianMethod::InternalNumJac, Offer::Always),
+    ("coloredSymbolical", JacobianMethod::ColoredSymJac, Offer::Always),
+    ("coloredSymbolicalAdjoint", JacobianMethod::ColoredSymJacAdj, Offer::Always),
+    ("numerical", JacobianMethod::NumJac, Offer::Always),
+    ("symbolical", JacobianMethod::SymJac, Offer::Always),
+    ("bicoloredSymbolical", JacobianMethod::BicoloredSymJac, Offer::Always),
 ];
 
 /// C flags deliberately let through.
@@ -697,14 +726,11 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 )
             }
             "noEventEmit" => f.no_event_emit = true,
-            // Every value this runtime can serve is the colored numerical one, which
-            // is also C's `setJacobianMethod` fallback where only the sparsity
-            // pattern is available -- which is all the wasm-jit backend emits.
+            // What it selects is settled by C's `setJacobianMethod`.
             "jacobian" => {
                 let v = value(name)?;
-                if !JACOBIAN_METHODS.contains(&v.as_str()) {
-                    return Err(format!("Unknown value `{v}` for flag `-jacobian`"));
-                }
+                let m = JACOBIAN_METHODS.iter().find(|(n, ..)| *n == v);
+                f.jacobian = Some(m.ok_or_else(|| format!("Unknown value `{v}` for flag `-jacobian`"))?.1);
             }
             "nlssMinSize" | "nlssMaxDensity" | "lssMinSize" | "lssMaxDensity" => {
                 f.deprecated_density_flag = true;
