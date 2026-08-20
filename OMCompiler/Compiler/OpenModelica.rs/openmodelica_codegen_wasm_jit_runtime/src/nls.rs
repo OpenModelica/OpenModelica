@@ -25,6 +25,7 @@ pub const CONTEXT_ODE: u32 = 1;
 pub const CONTEXT_ALGEBRAIC: u32 = 2;
 pub const CONTEXT_EVENTS: u32 = 3;
 pub const CONTEXT_JACOBIAN: u32 = 4;
+pub const CONTEXT_SYM_JACOBIAN: u32 = 5;
 
 static EVAL_CONTEXT: AtomicU32 = AtomicU32::new(CONTEXT_ALGEBRAIC);
 

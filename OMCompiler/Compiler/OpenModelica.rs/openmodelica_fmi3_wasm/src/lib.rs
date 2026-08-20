@@ -57,6 +57,8 @@ unsafe extern "C" {
     fn functionUpdateBoundParameters(sim_data: u32);
     fn functionUpdateBoundVariableAttributes(sim_data: u32);
     fn functionRemovedInitialEquations(sim_data: u32);
+    fn functionJacA_constantEqns(sim_data: u32);
+    fn functionJacA_column(sim_data: u32);
     fn initSample(sim_data: u32);
     fn functionInitSynchronous(sim_data: u32);
     fn functionUpdateSynchronous(sim_data: u32, base_idx: u32);
@@ -276,6 +278,8 @@ impl SimEngine for Engine {
                 "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
                 "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
                 "functionRemovedInitialEquations" => functionRemovedInitialEquations(arg),
+                "functionJacA_constantEqns" => functionJacA_constantEqns(arg),
+                "functionJacA_column" => functionJacA_column(arg),
                 "initSample" => initSample(arg),
                 "functionInitSynchronous" => functionInitSynchronous(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),

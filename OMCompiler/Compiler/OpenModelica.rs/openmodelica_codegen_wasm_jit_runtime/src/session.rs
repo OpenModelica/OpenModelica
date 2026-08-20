@@ -59,6 +59,9 @@ fn cancel_hook() -> bool {
 #[allow(dead_code)]
 pub const N_SLOTS: u32 = driver::MODEL_FNS.len() as u32;
 
+/// `present_mask` is a `u32` on both sides, so the list cannot outgrow it.
+const _: () = assert!(N_SLOTS <= 32);
+
 fn slot_of(name: &str) -> Option<u32> {
     driver::MODEL_FNS.iter().position(|&n| n == name).map(|i| i as u32)
 }

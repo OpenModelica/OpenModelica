@@ -643,6 +643,21 @@ pub struct JacAInfo {
     pub colors: Vec<Vec<u32>>,
     /// `rows_by_col[col]` = 0-based rows nonzero in column `col` (CSC).
     pub rows_by_col: Vec<Vec<u32>>,
+    /// The symbolic column evaluation — C's `JACOBIAN_AVAILABLE`; `None` is
+    /// `JACOBIAN_ONLY_SPARSITY`.
+    pub sym: Option<JacSym>,
+}
+
+/// What the host needs to drive `functionJacA_column`: C's `JACOBIAN` seed / result
+/// arrays, here plain `SimData` slots.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct JacSym {
+    /// Seed slot per differentiation column, in column order.
+    pub seed_offs: Vec<u32>,
+    /// Result slot per row; `u32::MAX` is a structural zero (no result variable).
+    pub result_offs: Vec<u32>,
+    /// `functionJacA_constantEqns` has a body (C's `jacobian->constantEqns`).
+    pub has_constant: bool,
 }
 
 /// `--daeMode` metadata the [`Layout`]'s scalars cannot carry.
@@ -1259,6 +1274,15 @@ fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
             put_u32(o, j.n);
             put_u32s2(o, &j.colors);
             put_u32s2(o, &j.rows_by_col);
+            match &j.sym {
+                None => o.push(0),
+                Some(s) => {
+                    o.push(1);
+                    put_u32s(o, &s.seed_offs);
+                    put_u32s(o, &s.result_offs);
+                    o.push(s.has_constant as u8);
+                }
+            }
         }
     }
 }
@@ -1547,7 +1571,19 @@ impl<'a> Reader<'a> {
     fn jac(&mut self) -> Result<Option<JacAInfo>, &'static str> {
         Ok(match self.u8()? {
             0 => None,
-            _ => Some(JacAInfo { n: self.u32()?, colors: self.u32s2()?, rows_by_col: self.u32s2()? }),
+            _ => Some(JacAInfo {
+                n: self.u32()?,
+                colors: self.u32s2()?,
+                rows_by_col: self.u32s2()?,
+                sym: match self.u8()? {
+                    0 => None,
+                    _ => Some(JacSym {
+                        seed_offs: self.u32s()?,
+                        result_offs: self.u32s()?,
+                        has_constant: self.u8()? != 0,
+                    }),
+                },
+            }),
         })
     }
     fn layout(&mut self) -> Result<Layout, &'static str> {
@@ -1934,6 +1970,11 @@ mod tests {
                 n: 2,
                 colors: vec![vec![0], vec![1]],
                 rows_by_col: vec![vec![0, 1], vec![1]],
+                sym: Some(JacSym {
+                    seed_offs: vec![300, 308],
+                    result_offs: vec![316, u32::MAX],
+                    has_constant: true,
+                }),
             }),
             state_sets: vec![StateSetInfo {
                 n_candidates: 3,
@@ -1977,6 +2018,7 @@ mod tests {
                     n: 4,
                     colors: vec![vec![0, 2], vec![1, 3]],
                     rows_by_col: vec![vec![0], vec![0, 1], vec![2], vec![2, 3]],
+                    sym: None,
                 }),
             }),
             clocks: vec![BaseClockMeta {
