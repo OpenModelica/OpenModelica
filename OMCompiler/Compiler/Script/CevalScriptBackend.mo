@@ -3930,6 +3930,7 @@ algorithm
       String cmd;
       String cmakeCall;
       String crossTriple, buildDir, fmiTarget;
+      String externalIncludeDirsFile;
       list<String> dockerImgArgs;
       ContainerImage.ContainerImage dockerImage;
       list<String> dockerArguments;
@@ -4025,8 +4026,15 @@ algorithm
         cmd := "docker cp " + defaultFmiIncludeDirectoy + " " + containerID + ":/data/fmiInclude";
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
-        // Copy the external library files to the container
+        // Copy the external library and include files to the container
         (locations,_) := SimCodeUtil.getDirectoriesForDLLsFromLinkLibs(externalLibLocations);
+        // SimCodeMain noted the external include directories of the model next to the
+        // generated sources. Without them the cross compiler can't find the headers of
+        // external libraries. See https://github.com/OpenModelica/OpenModelica/issues/9509
+        externalIncludeDirsFile := fmutmp + "/.external_include_dirs";
+        if System.regularFileExists(externalIncludeDirsFile) then
+          locations := listAppend(System.strtok(System.readFile(externalIncludeDirsFile), "\n"), locations);
+        end if;
         for loc in locations loop
           if System.directoryExists(loc) then
             // Create path
@@ -4050,7 +4058,7 @@ algorithm
         end if;
 
         if isOpenModelicaImage then
-          cmake_toolchain := "-DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/" + crossTriple + ".cmake -DRUNTIME_DEPENDENCIES_LEVEL=none ";
+          cmake_toolchain := "-DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/" + crossTriple + ".cmake ";
         else
           cmake_toolchain := "";
         end if;

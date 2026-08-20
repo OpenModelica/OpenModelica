@@ -272,7 +272,9 @@ The CMake compilation accepts the following settings:
     newer.
 
   CMake install TARGETS RUNTIME_DEPENDENCIES is not supported when cross compiling.
-  Use ``none`` when cross compiling FMUs.
+  When cross compiling the FMU CMake project therefore falls back to installing the
+  external libraries it linked against directly, which covers the Modelica libraries
+  a model depends on but not the system libraries of the target platform.
 
 * ``NEED_CVODE``:
   Boolean value to integrate CVODE integrator into CoSimulation FMU.
@@ -340,10 +342,12 @@ The ``platforms`` setting specifies for what target system the FMU is compiled:
   OpenModelica will add a matching ``CMAKE_TOOLCHAIN_FILE`` to the compilation
   process.
 
-  If your model depends on external C libraries cross compilation can be
-  difficult. Providing pre-compiled static libraries can be necessary.
-  Installing runtime dependencies using CMake isn't supported when
-  cross compiling.
+  If your model depends on external C libraries the library has to be available
+  for the target platform, e.g. in ``Resources/Library/win64`` when compiling for
+  ``x86_64-w64-mingw32``. OpenModelica searches the ``Resources/Library`` sub
+  directory matching the target platform and copies the library into the FMU next
+  to the model binary. If no binary for the target platform is shipped with the
+  Modelica library, providing a pre-compiled static library can be necessary.
 
 * ``<cpu>-<vendor>-<os> docker run <image>`` Host triple with Docker image:
   OpenModelica will use the specified Docker image to cross compile for given host triple.

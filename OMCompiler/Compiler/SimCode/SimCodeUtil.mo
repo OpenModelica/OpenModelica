@@ -16690,6 +16690,10 @@ algorithm
   locations := List.map(locations, addDockerVol);
   // Use target_link_directories when CMake 3.13 is available and skip the find_library part
   cmakeCode := cmakeCode + "set(EXTERNAL_LIBDIRECTORIES " + stringDelimitList(locations, "\n                            ") + ")\n";
+  /* The directories above were resolved for the platform omc is running on. When
+   * cross compiling add the Resources/Library sub directories of the target platform.
+   */
+  cmakeCode := cmakeCode + "om_add_target_library_directories(EXTERNAL_LIBDIRECTORIES)\n";
   /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12640
    * in windows cmake does not find .dll suffixes using find_library(), the default is ".lib" & ".a" we need to explicitly
    * specify to look for ".dll" suffix
@@ -16703,7 +16707,7 @@ algorithm
     elseif lib == "zlib" then
       cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
                   "             NAMES " + lib + "\n" +
-                  "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH)\n" +
+                  "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
                   "if(NOT " + lib + ")\n" +
                   "  message(WARNING \"Could not find library zlib\")" + "\n" +
                   "  message(STATUS \"zlib is referred by ModelicaMatIO, but not used by default. Try compiling without linking.\")" + "\n" +
@@ -16715,7 +16719,7 @@ algorithm
     else
       cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
                   "             NAMES " + lib + "\n" +
-                  "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH)\n" +
+                  "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
                   "if(NOT " + lib + ")\n" +
                   "  message(FATAL_ERROR \"Could not find library " + lib + "\")\n" +
                   "endif()\n" +
@@ -16778,10 +16782,12 @@ public function make2CMakeInclude
   input list<String> includes;
   output String cmakeCode = "";
 algorithm
-  //strip exactly the first 3 characters (e.g) "-IC:/FmuWithStaticLibEndsWithL" to C:/FmuWithStaticLibEndsWithL
+  // Each include is of the form "-I<directory>", quotes included. Strip exactly the
+  // first 3 characters and the trailing quote, e.g. "-IC:/FmuWithStaticLibEndsWithI"
+  // to C:/FmuWithStaticLibEndsWithI.
   for include in includes loop
     cmakeCode := cmakeCode + "\n                                               " +
-                 "\"" + System.trim(include, "\"-I") + "\"";
+                 "\"${DOCKER_VOL_DIR}" + substring(include, 4, stringLength(include)-1) + "\"";
   end for;
 end make2CMakeInclude;
 
