@@ -184,12 +184,17 @@ pub extern "C" fn rt_throw_stream(msg: u32) {
     throw_stream(core::str::from_utf8(unsafe { crate::str_bytes(msg) }).unwrap_or(""))
 }
 
+/// Whether the next [`throw_stream`] reports, for a caller with its own message.
+pub(crate) fn throw_reports() -> bool {
+    !(rt_nls_recovering() != 0 && note_slot().load(Ordering::Relaxed) != 0)
+}
+
 pub(crate) fn throw_stream(s: &str) {
     let recovering = rt_nls_recovering() != 0;
     // C's `longjmp` leaves the rest of the evaluation unreached, so it reports one
     // throw per evaluation. Here each frame returns and the ones above it carry on:
     // report only the throw C's jump would have carried out.
-    if !(recovering && note_slot().load(Ordering::Relaxed) != 0) {
+    if throw_reports() {
         if recovering {
             if crate::omclog::active(crate::omclog::ASSERT) {
                 crate::omclog::message_text(crate::omclog::DEBUG_TYPE, crate::omclog::ASSERT, false, s);

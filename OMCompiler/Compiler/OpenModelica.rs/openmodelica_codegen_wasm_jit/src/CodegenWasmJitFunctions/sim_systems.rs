@@ -750,21 +750,20 @@ fn emit_linsolve_context(ctx: &mut FnCtx, index: i32) -> Result<()> {
     Ok(())
 }
 
-/// Trap (runtime error) when the solver returned nonzero (singular) — consumes the
-/// i32 result on the stack.
-fn emit_singular_check(ctx: &mut FnCtx) -> Result<()> {
-    ctx.emit(we::Instruction::If(we::BlockType::Empty));
-    emit_runtime_error(ctx, "wasm-jit: linear system is singular (no unique solution)")?;
-    ctx.emit(we::Instruction::End);
-    Ok(())
-}
-
-/// C's `check_linear_solution` for a solver with no fallback left — consumes the
-/// i32 result on the stack.
-fn emit_lin_unsolved(ctx: &mut FnCtx, index: i32) -> Result<()> {
-    ctx.emit(we::Instruction::If(we::BlockType::Empty));
-    emit_runtime_error(ctx, &format!("Solving linear system {index} failed. For more information use -lv LOG_LS."))?;
-    ctx.emit(we::Instruction::End);
+/// C's `check_linear_solution` plus the `throwStreamPrintWithEquationIndexes` its
+/// generated equation function runs into — consumes the solver's i32 result on the
+/// stack. `rt_ls_failed` returns only inside a nonlinear-solver trial.
+fn emit_lin_unsolved(ctx: &mut FnCtx, index: i32, base: u32) -> Result<()> {
+    use we::Instruction as I;
+    ctx.emit(I::If(we::BlockType::Empty));
+    emit_linsolve_context(ctx, index)?;
+    ctx.emit(I::Call(rt_index("rt_ls_failed")?));
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::Call(rt_index("rt_free")?));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(I::Return);
+    ctx.emit(I::End);
     Ok(())
 }
 
@@ -904,15 +903,16 @@ fn emit_lin_step(
             ctx.emit(I::I32Const(b_off as i32));
             ctx.emit(I::I32Add);
             ctx.emit(I::I32Const(n as i32));
+            emit_linsolve_context(ctx, index)?;
             ctx.emit(I::Call(rt_index("rt_linsolve_totalpivot")?));
-            emit_singular_check(ctx)?;
+            emit_lin_unsolved(ctx, index, base)?;
             ctx.emit(I::I32Const(1));
             ctx.emit(I::LocalSet(retry));
             ctx.emit(I::Br(0));
             ctx.emit(I::End); // loop
             ctx.emit(I::End); // block
         }
-        None => emit_lin_unsolved(ctx, index)?,
+        None => emit_lin_unsolved(ctx, index, base)?,
     }
 
     ctx.emit(I::LocalGet(base));
@@ -947,7 +947,7 @@ fn emit_lin_solve_scatter(
         ctx.emit(I::I32Const(m1.is_some() as i32)); // a step check follows
     }
     ctx.emit(I::Call(rt_index(solver)?));
-    emit_singular_check(ctx)?;
+    emit_lin_unsolved(ctx, index, base)?;
     match &m1 {
         Some(m1) => emit_lin_step(ctx, base, b_off, n, slots, use_sparse, index, m1, lower_inner),
         None => emit_scatter_recover_free(ctx, base, b_off, n, slots, lower_inner),
@@ -1465,7 +1465,7 @@ pub(crate) fn compile_linear_system_analytic_csc(
     ctx.emit(I::I32Const(n as i32));
     ctx.emit(I::I32Const(nnz as i32));
     ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
-    emit_singular_check(ctx)?;
+    emit_lin_unsolved(ctx, handle, base)?;
     let m1 = Method1 { res_off, res_exps };
     emit_lin_step(ctx, base, b_off, n, &slots, true, handle, &m1, lower_inner)
 }
@@ -1639,9 +1639,7 @@ pub(crate) fn compile_linear_system_symbolic(
         ctx.emit(I::Call(rt_index("rt_linsolve")?));
     }
 
-    ctx.emit(I::If(we::BlockType::Empty)); // nonzero => singular
-    emit_runtime_error(ctx, "wasm-jit: linear system is singular (no unique solution)")?;
-    ctx.emit(I::End);
+    emit_lin_unsolved(ctx, index, base)?;
 
     // Scatter the solution into the unknown slots.
     for j in 0..n {
