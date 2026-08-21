@@ -479,8 +479,10 @@ class WelcomePageWidget : public QWidget
 public:
   WelcomePageWidget(QWidget *pParent = 0);
   void addRecentFilesListItems();
+  void addRecentModelsListItems();
   QFrame* getLatestNewsFrame();
   QSplitter* getSplitter();
+  QSplitter* getRecentSplitter();
 
   // QWidget interface
   /* This tells QMainWindow: "I'm happy with very little height",
@@ -492,16 +494,20 @@ public:
 private:
   Label *mpNoRecentFileLabel;
   QListWidget *mpRecentItemsListWidget;
+  Label *mpNoRecentModelLabel;
+  QListWidget *mpRecentModelItemsListWidget;
   QFrame *mpLatestNewsFrame;
   Label *mpNoLatestNewsLabel;
   QListWidget *mpLatestNewsListWidget;
   NetworkAccessManager *mpLatestNewsNetworkAccessManager;
   QSplitter *mpSplitter;
+  QSplitter *mpRecentSplitter;
 public slots:
   void addLatestNewsListItems();
 private slots:
   void readLatestNewsXML(QNetworkReply *pNetworkReply);
   void openRecentFileItem(QListWidgetItem *pItem);
+  void openRecentModelItem(QListWidgetItem *pItem);
   void openLatestNewsItem(QListWidgetItem *pItem);
 };
 

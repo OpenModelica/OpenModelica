@@ -230,8 +230,12 @@ public:
   void showModelingPerspectiveToolBars(ModelWidget *pModelWidget);
   void showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget);
   void addRecentFile(const QString &fileName, const QString &encoding);
+  void addRecentModel(const QString &nameStructure);
+  void showRecentModel(const QString &nameStructure, const QString &encoding, const QString &path);
   void updateRecentFileActionsAndList();
   void createRecentFileActions();
+  void updateRecentModelActionsAndList();
+  void createRecentModelActions();
   void closeEvent(QCloseEvent *event) override;
   int askForExit();
   void beforeClosingMainWindow();
@@ -371,6 +375,7 @@ private:
   QAction *mpUpgradeInstalledLibrariesAction;
   QAction *mpUpdateLibraryIndexAction;
   QAction *mpClearRecentFilesAction;
+  QAction *mpClearRecentModelsAction;
   QAction *mpPrintModelAction;
   QAction *mpQuitAction;
   // Edit Menu
@@ -474,6 +479,7 @@ private:
   QMenu *mpFileMenu;
   QMenu *mpNewModelMenu;
   QMenu *mpRecentFilesMenu;
+  QMenu *mpRecentModelsMenu;
   QMenu *mpLibrariesMenu;
   bool mRestoringState = false;
   QToolBar *mpFileToolBar;
@@ -520,6 +526,8 @@ public slots:
   void writeErrorFileData(QString data);
   void openRecentFile();
   void clearRecentFilesList();
+  void openRecentModel();
+  void clearRecentModelsList();
   void undo();
   void redo();
   void focusFilterClasses();

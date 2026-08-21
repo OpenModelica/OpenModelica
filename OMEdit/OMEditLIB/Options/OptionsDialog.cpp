@@ -1727,6 +1727,7 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->setValue("welcomePage/recentFilesSize", recentFilesAndLatestNewsSize);
   }
   MainWindow::instance()->updateRecentFileActionsAndList();
+  MainWindow::instance()->updateRecentModelActionsAndList();
 }
 
 /*!

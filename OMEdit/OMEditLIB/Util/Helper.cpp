@@ -154,6 +154,7 @@ QString Helper::newMOSScriptTip;
 QString Helper::libraries;
 QString Helper::elements;
 QString Helper::clearRecentFiles;
+QString Helper::clearRecentModels;
 QString Helper::encoding;
 QString Helper::fileLabel;
 QString Helper::file;
@@ -466,7 +467,7 @@ void Helper::initHelperVariables()
   Helper::newModelicaClass = tr("Modelica Class");
   Helper::newModelicaClassTip = tr("Create New Modelica Class");
   Helper::newModelicaClassLibraryBrowser = tr("New Modelica Class");
-  Helper::createNewModelicaClass = tr("Creates a new Modelica Class");
+  Helper::createNewModelicaClass = tr("Create a new Modelica Class");
   Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
   Helper::loadCompiledModel = tr("Load Compiled Model");
@@ -477,6 +478,7 @@ void Helper::initHelperVariables()
   Helper::libraries = tr("Libraries");
   Helper::elements = tr("Elements");
   Helper::clearRecentFiles = tr("Clear Recent Files");
+  Helper::clearRecentModels = tr("Clear Recent Models");
   Helper::encoding = tr("Encoding:");
   Helper::fileLabel = tr("File:");
   Helper::file = tr("File");
