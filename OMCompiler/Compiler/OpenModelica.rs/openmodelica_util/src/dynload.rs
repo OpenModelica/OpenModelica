@@ -51,9 +51,15 @@ pub(crate) mod dl {
 
     // dlopen flags mirror `SystemImpl__loadLibrary` in the C runtime.
     #[cfg(target_os = "linux")]
-    const FLAGS: c_int = libc::RTLD_LOCAL | libc::RTLD_NOW | libc::RTLD_DEEPBIND;
+    const LOCAL: c_int = libc::RTLD_LOCAL | libc::RTLD_DEEPBIND;
     #[cfg(not(target_os = "linux"))]
-    const FLAGS: c_int = libc::RTLD_LOCAL | libc::RTLD_NOW;
+    const LOCAL: c_int = libc::RTLD_LOCAL;
+
+    const FLAGS: c_int = LOCAL | libc::RTLD_NOW;
+
+    fn flags(lazy: bool) -> c_int {
+        LOCAL | if lazy { libc::RTLD_LAZY } else { libc::RTLD_NOW }
+    }
 
     // C-runtime shared objects external-function libraries link against
     // (DT_NEEDED), preloaded RTLD_GLOBAL so the loader resolves them.
@@ -70,10 +76,15 @@ pub(crate) mod dl {
     }
 
     pub fn open(path: &str) -> Result<usize> {
+        open_with_binding(path, false)
+    }
+
+    pub fn open_with_binding(path: &str, lazy: bool) -> Result<usize> {
         let c = CString::new(path).map_err(|_| "dynload: NUL byte in path")?;
         unsafe { libc::dlerror() }; // clear any stale error
-        let h = unsafe { libc::dlopen(c.as_ptr(), FLAGS) };
+        let h = unsafe { libc::dlopen(c.as_ptr(), flags(lazy)) };
         if h.is_null() {
+            super::record_load_error(last_error());
             return Err("dlopen `{path}`: {}");
         }
         Ok(h as usize)
@@ -158,9 +169,16 @@ pub(crate) mod dl {
     }
 
     pub fn open(path: &str) -> Result<usize> {
+        open_with_binding(path, false)
+    }
+
+    /// Windows resolves imports when the module is loaded and offers no way to
+    /// defer it, so `lazy` has nothing to select here.
+    pub fn open_with_binding(path: &str, _lazy: bool) -> Result<usize> {
         let c = CString::new(path).map_err(|_| "dynload: NUL byte in path")?;
         let h = unsafe { LoadLibraryA(c.as_ptr()) };
         if h.is_null() {
+            super::record_load_error(last_error());
             return Err("LoadLibrary `{path}`: {}");
         }
         Ok(h as usize)
@@ -377,14 +395,40 @@ fn ensure_runtime_solibs() {
 /// `System.loadLibrary`: open the shared object and return a handle.
 /// `relative` resolves the name against the current directory like the C
 /// runtime (`./name`); an empty name opens the running process.
+/// Why the last [`load_library`] failed, for a caller searching a list of
+/// candidate paths: the error it reports is about the whole list, so each
+/// path's reason has to survive until it gives up. Mirrors
+/// `last_load_library_error` in the C runtime.
+static LAST_LOAD_ERROR: Mutex<String> = Mutex::new(String::new());
+
+pub(crate) fn record_load_error(msg: String) {
+    *LAST_LOAD_ERROR.lock().unwrap() = msg;
+}
+
+/// `System.getLoadLibraryError`.
+pub fn last_load_error() -> String {
+    LAST_LOAD_ERROR.lock().unwrap().clone()
+}
+
 pub fn load_library(path: &str, relative: bool, debug: bool) -> Result<i32> {
+    load_library_with_binding(path, relative, debug, false)
+}
+
+/// `System.loadLibraryLazy`: as [`load_library`], but binds symbols when they
+/// are used rather than when the library is loaded.
+pub fn load_library_lazy(path: &str, relative: bool, debug: bool) -> Result<i32> {
+    load_library_with_binding(path, relative, debug, true)
+}
+
+fn load_library_with_binding(path: &str, relative: bool, debug: bool, lazy: bool) -> Result<i32> {
     ensure_runtime_solibs();
+    record_load_error(String::new());
     let handle = if path.is_empty() {
         dl::open_self()?
     } else if relative && !path.starts_with('/') {
-        dl::open(&format!("./{path}"))?
+        dl::open_with_binding(&format!("./{path}"), lazy)?
     } else {
-        dl::open(path)?
+        dl::open_with_binding(path, lazy)?
     };
     let mut reg = REGISTRY.lock().unwrap();
     let idx = reg.next_lib;

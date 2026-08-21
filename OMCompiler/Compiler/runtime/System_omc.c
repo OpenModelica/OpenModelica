@@ -630,6 +630,19 @@ extern int System_loadLibrary(const char *name, int relativePath, int printDebug
   return res;
 }
 
+extern int System_loadLibraryLazy(const char *name, int relativePath, int printDebug)
+{
+  int res = SystemImpl__loadLibraryLazy(name, relativePath, printDebug);
+  if (res == -1) MMC_THROW();
+  return res;
+}
+
+extern const char* System_getLoadLibraryError(void)
+{
+  const char *res = SystemImpl__getLoadLibraryError();
+  return strcpy(ModelicaAllocateString(strlen(res)), res);
+}
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
 void* System_subDirectories(const char *directory)
 {

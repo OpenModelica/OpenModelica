@@ -287,6 +287,25 @@ public function loadLibrary
   external "C" outLibHandle=System_loadLibrary(inLib, relativePath, printDebug) annotation(Library = "omcruntime");
 end loadLibrary;
 
+public function loadLibraryLazy
+  "As loadLibrary, but binds symbols when they are used instead of when the
+   library is loaded, so a library that has an unresolvable symbol somewhere
+   else in it can still be asked for a function."
+  input String inLib;
+  input Boolean relativePath "If the path is relative or absolute";
+  input Boolean printDebug;
+  output Integer outLibHandle;
+
+  external "C" outLibHandle=System_loadLibraryLazy(inLib, relativePath, printDebug) annotation(Library = "omcruntime");
+end loadLibraryLazy;
+
+public function getLoadLibraryError
+  "Why the last loadLibrary/loadLibraryLazy failed. Empty if it succeeded."
+  output String outError;
+
+  external "C" outError=System_getLoadLibraryError() annotation(Library = "omcruntime");
+end getLoadLibraryError;
+
 public function lookupFunction
   input Integer inLibHandle;
   input String inFunc;
