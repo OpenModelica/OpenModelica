@@ -1724,6 +1724,11 @@ fn init_model(
     // entered on the `a` side) is reached by nothing but the exact sweep.
     refresh_relations(e, sim_data, layout)?;
     iterate_discrete(e, sim_data, layout)?;
+    // C's position: a `sample(t0, p)` start that is a `fixed=false` parameter is
+    // only known once the initial equations have computed it.
+    if layout.n_samples > 0 {
+        e.call1("initSample", sim_data)?;
+    }
     store_relations(e, sim_data, layout)?;
     update_relations_pre(e, sim_data, layout)?;
     // Seed the delay buffers / transported profiles and snapshot `zeroCrossingsPre`
@@ -1976,9 +1981,6 @@ fn seed_start_values(
     // it reallocates, so a retried initialization starts from a clean profile.
     e.call1_if_present("functionInitSpatialDistribution", sim_data)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 2)?;
-    if layout.n_samples > 0 {
-        e.call1("initSample", sim_data)?;
-    }
     Ok(())
 }
 
@@ -3428,6 +3430,25 @@ fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str>
     Ok(method)
 }
 
+/// [`resolve_solver_method`] plus C's "no states present" swap, which lives in
+/// `startNonInteractiveSimulation` — an FMU steps with the method it was exported
+/// with, so only a standalone run applies it.
+fn resolve_sim_solver_method<'a>(method: &'a str, layout: &SimLayout) -> Result<&'a str> {
+    let method = resolve_solver_method(method, layout.dae_mode())?;
+    // C warns before the swap below.
+    crate::fixedstep::deprecation_warning(method);
+    // C exempts `optimization` and `symSolver`.
+    let nothing_to_solve = match layout.dae_mode() {
+        true => layout.n_dae_res + layout.n_dae_alg < 1,
+        false => layout.n_states < 1,
+    };
+    if nothing_to_solve && !matches!(method, "optimization" | "symSolver") {
+        omclog::info(omclog::SOLVER, false, "No states present, continuing without ODE solver.");
+        return Ok("euler");
+    }
+    Ok(method)
+}
+
 /// C allocates the solver before initializing the model, and gbode logs its setup
 /// there, so it is built outside the driver.
 fn alloc_gbode(
@@ -3452,13 +3473,16 @@ pub fn make_driver(
     sim_data: u32,
     method: &str,
 ) -> Result<(Box<dyn Driver>, &'static str)> {
+    let method = resolve_sim_solver_method(method, &model.layout)?;
+    make_driver_resolved(e, model, sim_data, method)
+}
+
+/// C's flag warnings and `initializeNonlinearSystems`, between resolving the
+/// solver flag and `initializeModel`. The in-wasm Euler loop builds no
+/// [`Driver`], so it calls this itself.
+fn solver_setup(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Result<()> {
     let layout = &model.layout;
-    let method = resolve_solver_method(method, layout.dae_mode())?;
-    // Both `drive` and the in-wasm `rt_sim_start` build their driver here.
     arm_alarm();
-    // C warns about a deprecated `-s=` while it resolves the flag, before it
-    // allocates the solver or initializes the model.
-    crate::fixedstep::deprecation_warning(method);
     // `dassl_initial`'s flag warnings, before initialization as in C.
     let (freq, out_time) =
         crate::simflags::with_flags(|f| (f.no_equidistant_freq, f.no_equidistant_time));
@@ -3482,6 +3506,20 @@ pub fn make_driver(
     for k in 0..layout.n_sens {
         write_f64(e, sim_data + layout.sens_off + k * 8, 0.0)?;
     }
+    Ok(())
+}
+
+/// [`make_driver`] over an already-resolved method, so `drive` does not announce
+/// the overrides twice.
+fn make_driver_resolved(
+    e: &mut (dyn SimEngine + 'static),
+    model: &SimModel,
+    sim_data: u32,
+    method: &str,
+) -> Result<(Box<dyn Driver>, &'static str)> {
+    let layout = &model.layout;
+    // Both `drive` and the in-wasm `rt_sim_start` build their driver here.
+    solver_setup(e, model, sim_data)?;
     let gbode = alloc_gbode(model, method)?;
 
     // C configures the solver before `initializeModel`, so the method it settles on
@@ -3503,16 +3541,9 @@ pub fn make_driver(
         set_jacobian_method(jac_a_avail, true);
     }
     // C's `solver_main` runs QSS from its own branch: it has no event handling and
-    // no output grid, so it never reaches the standard solver interface. With no
-    // states there is nothing to quantize, and C's `simulation_runtime.cpp` has
-    // already swapped in euler ("since it does nothing").
-    let mut method = method;
+    // no output grid, so it never reaches the standard solver interface.
     if method == "qss" {
-        if layout.n_states > 0 {
-            return Ok((Box::new(crate::qss::Qss::new(e, model, sim_data)?), "qss"));
-        }
-        omclog::info(omclog::SOLVER, false, "No states present, continuing without ODE solver.");
-        method = "euler";
+        return Ok((Box::new(crate::qss::Qss::new(e, model, sim_data)?), "qss"));
     }
     // DAE mode always takes the `SolverCore` path: the consistent-restart its
     // discrete update needs lives there.
@@ -3525,6 +3556,8 @@ pub fn make_driver(
             "ida" if events => "ida-events",
             "ida" => "ida",
             "gbode" => "gbode",
+            "euler" => "euler-events",
+            "rungekutta" => "rungekutta",
             _ => "dassl-events",
         };
         return Ok((Box::new(EventsDriver::new(e, model, sim_data, method, gbode)?), label));
@@ -3616,7 +3649,7 @@ pub fn drive(
 
     let mut stats = SolveStats::default();
     let use_events = layout.n_samples > 0 || layout.n_zc > 0 || !model.clocks.is_empty();
-    let method = resolve_solver_method(method, layout.dae_mode())?;
+    let method = resolve_sim_solver_method(method, layout)?;
 
     let mut label = "";
     let outcome = (|| -> Result<Vec<f64>> {
@@ -3631,7 +3664,7 @@ pub fn drive(
                 layout.n_states == 0 && model.opt.as_ref().is_none_or(|o| o.inputs.is_empty());
             if nothing_to_optimize {
                 label = "euler-host";
-                let (mut driver, _) = make_driver(e, model, sim_data, "euler")
+                let (mut driver, _) = make_driver_resolved(e, model, sim_data, "euler")
                     .map_err(|err| enrich_trap_init(e, err, model.start_time))?;
                 loop {
                     match driver.advance(e, model, f64::INFINITY).map_err(|err| enrich_trap(e, err))? {
@@ -3665,14 +3698,14 @@ pub fn drive(
         if !use_events && method == "euler" && !host_driven && !csv_input_given() {
             // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
             label = "euler-wasm";
-            set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
+            solver_setup(e, model, sim_data)?;
             let mut rows = run_wasm(e, sim_data, n_reals, n_rows, model, start, stop, &mut stats)?;
             emit_terminal_row(e, &mut rows, sim_data, layout, n_reals, None)?;
             return Ok(rows);
         }
         // enrich_trap: a trap in init/integration is usually a failed model assert().
         let (mut driver, l) =
-            make_driver(e, model, sim_data, method).map_err(|err| enrich_trap_init(e, err, model.start_time))?;
+            make_driver_resolved(e, model, sim_data, method).map_err(|err| enrich_trap_init(e, err, model.start_time))?;
         label = l;
         // C's bracket up to `externalInputFree`: from here on the file drives the
         // inputs. Initialization got its one application in `apply_external_input`.
@@ -5397,6 +5430,9 @@ struct SolverCore {
     nje: u64,
     state_events: u64,
     time_events: u64,
+    /// Steps of the no-unknowns walk, which never enters the integrator; C counts
+    /// its `euler_ex_step` calls there all the same.
+    walk_steps: u64,
     nominals: Vec<f64>,
     /// Relative tolerance, for the numerical Jacobian's first step.
     tol: f64,
@@ -5597,6 +5633,7 @@ impl SolverCore {
             nje: 0,
             state_events: 0,
             time_events: 0,
+            walk_steps: 0,
             nominals,
             tol,
             chatter_times: [0.0; CHATTER_LIMIT],
@@ -5983,6 +6020,10 @@ impl SolverCore {
                 stats.err_test_fails = s.err_test_failures;
                 stats.conv_test_fails = s.convergence_test_failures;
             }
+        }
+        if self.n_unknowns == 0 {
+            stats.steps = self.walk_steps;
+            stats.res_evals = self.walk_steps;
         }
         stats.state_events = self.state_events;
         stats.time_events = self.time_events;
@@ -6778,6 +6819,7 @@ impl Driver for EventsDriver {
                         store_operators_at(e, sim_data, layout, tr)?;
                         event_update(e, sim_data, layout, None, tr)?;
                         self.core.state_events += 1;
+                        self.core.walk_steps += 1;
                         event_step = true;
                         if emit_post_event_row(model, tr) {
                             capture_row(e, &mut self.rows, sim_data, layout)?; // post-event row
@@ -6821,6 +6863,7 @@ impl Driver for EventsDriver {
                         fire_time_event(e, &mut self.samp, sim_data, layout, te)?;
                         e.clean_nls_history(te);
                         self.core.time_events += 1;
+                        self.core.walk_steps += 1;
                         if emit_post_event_row(model, te) {
                             emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?;
                         }
@@ -6881,6 +6924,7 @@ impl Driver for EventsDriver {
                         save_zc_pre(e, sim_data, layout)?;
                     }
                     self.core.t = tout;
+                    self.core.walk_steps += 1;
                 } else {
                     close_assert_window(e, sim_data)?;
                 }

@@ -8401,12 +8401,14 @@ fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: Option<u32>
     f.instruction(&I::Call(rt_index("rt_alloc")?));
     f.instruction(&I::LocalSet(BUF));
 
-    // h = (stop - start) / n_steps   (n_steps converted to f64)
+    // h = (stop - start) / max(n_steps, 1): `stopTime <= startTime` takes no step.
     f.instruction(&I::LocalGet(STOP));
     f.instruction(&I::LocalGet(START));
     f.instruction(&I::F64Sub);
     f.instruction(&I::LocalGet(N_STEPS));
     f.instruction(&I::F64ConvertI32S);
+    f.instruction(&I::F64Const(1.0.into()));
+    f.instruction(&I::F64Max);
     f.instruction(&I::F64Div);
     f.instruction(&I::LocalSet(H));
 
