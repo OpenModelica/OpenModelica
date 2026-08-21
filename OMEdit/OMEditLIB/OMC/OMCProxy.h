@@ -175,7 +175,7 @@ public:
   bool createClass(QString type, QString className, LibraryTreeItem *pExtendsLibraryTreeItem);
   bool createSubClass(QString type, QString className, LibraryTreeItem *pParentLibraryTreeItem, LibraryTreeItem *pExtendsLibraryTreeItem);
   bool existClass(QString className);
-  bool renameClass(QString oldName, QString newName);
+  QList<QString> renameClass(QString oldName, QString newName);
   bool deleteClass(QString className);
   QString getSourceFile(QString className);
   bool setSourceFile(QString className, QString path);

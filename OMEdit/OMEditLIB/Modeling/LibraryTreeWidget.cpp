@@ -863,6 +863,28 @@ void LibraryTreeItem::updateChildrenNameStructure()
   }
 }
 
+/*!
+ * \brief LibraryTreeItem::updateChildrenNameStructureAndSourceFileName
+ * Updates the children name structure and source file name recursively.
+ * \param newNameStructure - the new name structure of this class.
+ */
+void LibraryTreeItem::updateChildrenNameStructureAndSourceFileName(const QString &nameStructure)
+{
+  for (int i = 0; i < childrenSize(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = child(i);
+    if (pChildLibraryTreeItem) {
+      // rename the child to use the new class name
+      const QString childNameStructure = QString("%1.%2").arg(nameStructure, pChildLibraryTreeItem->getName());
+      pChildLibraryTreeItem->setNameStructure(childNameStructure);
+      // reset the source file name of the child and update the OMCProxy.
+      pChildLibraryTreeItem->setFileName(childNameStructure);
+      pChildLibraryTreeItem->mClassInformation.fileName = childNameStructure;
+      MainWindow::instance()->getOMCProxy()->setSourceFile(pChildLibraryTreeItem->getNameStructure(), childNameStructure);
+      pChildLibraryTreeItem->updateChildrenNameStructureAndSourceFileName(childNameStructure);
+    }
+  }
+}
+
 QString LibraryTreeItem::getHTMLDescription() const
 {
   return QString("<b>%1</b> %2<br/>&nbsp;&nbsp;&nbsp;&nbsp;<i>\"%3\"</i><br/>...")

@@ -1275,9 +1275,10 @@ void RenameClassDialog::renameClass()
 
   if (!MainWindow::instance()->getOMCProxy()->existClass(QString(StringHandler::removeLastWordAfterDot(mNameStructure)).append(".").append(newName)))
   {
-    if (MainWindow::instance()->getOMCProxy()->renameClass(mNameStructure, newName))
+    QList<QString> classes = MainWindow::instance()->getOMCProxy()->renameClass(mNameStructure, newName);
+    if (!classes.isEmpty())
     {
-      newNameStructure = StringHandler::removeFirstLastCurlBrackets(MainWindow::instance()->getOMCProxy()->getResult());
+      newNameStructure = classes.first();
       // Change the name in tree
       //mpParentMainWindow->mpLibrary->updateNodeText(newName, newNameStructure);
       accept();
