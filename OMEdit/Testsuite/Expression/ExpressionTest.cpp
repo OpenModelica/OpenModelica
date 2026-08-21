@@ -197,6 +197,30 @@ void ExpressionTest::operators_data()
     << "1 + 4 * 5 / 2 + x"
     << "12";
 
+  /* Regression tests for #16270: the exponent of a number may be signed and may
+   * be written with an uppercase E. 1e-10 used to be read as 1e followed by -10,
+   * which the parser then took for a subtraction.
+   */
+  QTest::newRow("negative exponent")
+    << "1e-10 > 0"
+    << "true";
+
+  QTest::newRow("negative exponent value")
+    << "1e-10 == 0.0000000001"
+    << "true";
+
+  QTest::newRow("positive exponent value")
+    << "1e+10 == 10000000000.0"
+    << "true";
+
+  QTest::newRow("uppercase exponent")
+    << "1E-10 == 1e-10"
+    << "true";
+
+  QTest::newRow("negative exponent of a real")
+    << "2.220446049250313e-16 > 0"
+    << "true";
+
   QTest::newRow("array + array")
     << "{1, 2, 3} + {4, 5, 6}"
     << "{5,7,9}";
