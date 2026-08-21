@@ -7,8 +7,8 @@
   - [1.2 Linux/BSD](#12-linuxbsd)
   - [1.3 Rust toolchain](#13-rust-toolchain)
 - [2 Compile OpenModelica](#2-compile-openmodelica)
-  - [2.1 CMake build](#21-cmake-build)
-  - [2.2 Make build](#22-make-build)
+  - [2.1 Configure and build](#21-configure-and-build)
+  - [2.2 Install](#22-install)
 - [3 Test Suite](#3-test-suite)
 - [4 General Notes](#4-general-notes)
 
@@ -76,13 +76,14 @@ sudo apt-get build-dep openmodelica
 
 First you need to install the dependencies:
 
-- autoconf, autoreconf, automake, libtool, pkgconfig, g++, gfortran (pretty
+- [cmake](http://www.cmake.org) (>= 3.14), pkgconfig, g++, gfortran (pretty
   standard compilers)
-- boost (optional, used with configure --with-cppruntime)
+- boost (optional, used with `-DOM_OMC_ENABLE_CPP_RUNTIME=ON`)
 - [clang](http://clang.llvm.org/), clang++ (optional, but *highly recommended*;
   if you use gcc instead, use gcc 4.4 or 4.9+, not 4.5-4.8 as they are very
   slow)
-- [cmake](http://www.cmake.org)
+- ccache (optional, but *highly recommended*, see
+  [README.cmake.md](../README.cmake.md#2-ccache))
 - hwloc (optional; queries the number of hardware CPU cores instead of logical
   CPU cores)
 - Lapack/BLAS
@@ -139,19 +140,11 @@ the Rust port, which needs the pinned nightly toolchain described in
 
 ## 2 Compile OpenModelica
 
-There are two options to build OpenModelica:
+CMake is the only supported way to build OpenModelica.
+[README.cmake.md](../README.cmake.md) documents the configuration options in
+detail, the sections below are the short version.
 
-  1. Use new CMake build.
-  2. Use legacy Makefiles build.
-
-If you are new or unsure what to pick, choose the new CMake build. On OSX only
-the CMake build is supported. But most of our CI is still using the old
-Makefiles build, so use those if you need to reproduce some issue showing in the
-CI.
-
-### 2.1 CMake build
-
-Check [README.cmake.md](../README.cmake.md) for details, but in a nutshell run:
+### 2.1 Configure and build
 
 ```bash
 # (Optional) Install ccache for faster re-compilation and flex for omc-diff
@@ -160,36 +153,37 @@ sudo apt-get install ccache flex
 
 ```bash
 cd OpenModelica
-# Configure CMake, create Makefiles in build_cmake
+# Configure and generate the build system in build_cmake/
 cmake -S . -B build_cmake -DCMAKE_INSTALL_PREFIX=build
-# Compile with generated Makefiles
+# Compile and install
 cmake --build build_cmake --parallel <Nr. of cores> --target install
 ```
 
-### 2.2 Make build
+`omc` is then in `build/bin/omc`. If you do not pass `CMAKE_INSTALL_PREFIX`,
+the default install directory is `build_cmake/install_cmake`.
 
-Build OpenModelica compiler `omc` with C++ runtime, but without using (possibly)
-existing `omc` executable:
+Useful options (see [README.cmake.md](../README.cmake.md#4-configuration-options)
+for the full list):
 
 ```bash
-cd OpenModelica
-autoreconf --install # Or autoconf if you have autoconf <=2.69
-./configure --with-cppruntime --without-omc
-make -j<Nr. of cores>
+# Build the C++ simulation runtime as well
+cmake -S . -B build_cmake -DOM_OMC_ENABLE_CPP_RUNTIME=ON
+# Build only omc, without the Qt based GUI clients
+cmake -S . -B build_cmake -DOM_ENABLE_GUI_CLIENTS=OFF
+# No Fortran compiler available
+cmake -S . -B build_cmake -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF -DOM_OMC_ENABLE_MOO=OFF
 ```
 
-If you want to install OpenModelica for all users you need to run `make install`
-with root privileges:
+### 2.2 Install
+
+To install OpenModelica for all users, configure with a system-wide prefix and
+install with root privileges:
 
 ```bash
 cd OpenModelica
-autoreconf --install # Or autoconf if you have autoconf <=2.69
-# Skip some pieces of software to ease installation and only compile the base omc executable
-# If you have a working and compatible omc that is not on the PATH, you can use
-# --with-omc=path/to/omc to speed up compilation
-./configure --prefix=/usr/local --disable-modelica3d
-make
-sudo make install
+cmake -S . -B build_cmake -DCMAKE_INSTALL_PREFIX=/usr/local
+cmake --build build_cmake --parallel <Nr. of cores>
+sudo cmake --install build_cmake
 ```
 
 ## 3 Test suite
@@ -199,24 +193,31 @@ suite to check if everything is working. Some tests are a bit fragile and depend
 on the OS and versions of used 3rd-party tools. So a few failing tests don't
 have to be a major concern.
 
-### 3.1 CMake
-
-It's complicated and not yet working out of the box, see
-[README.cmake.md](../README.cmake.md).
-
-### 3.2 Make
-
-You'll need OMSimulator in your path and a few additional dependencies:
+You'll need a few additional dependencies:
 
 ```bash
-apt install flex zip
-make omsimulator
+sudo apt-get install flex zip
 ```
 
-And then start the test suite:
+Build the test suite dependencies (`omc-diff`, the reference files, the test
+libraries and the FFI test library) with the `testsuite-depends` target:
 
 ```bash
-make test
+cd OpenModelica
+cmake --build build_cmake --target testsuite-depends --parallel <Nr. of cores>
+```
+
+`rtest` finds `omc` automatically if you installed to `build/`,
+`build/install_cmake/` or `build_cmake/install_cmake/`. For any other
+`CMAKE_INSTALL_PREFIX`, adjust the `$OPENMODELICAHOME` lookup in
+`testsuite/rtest` (see
+[README.cmake.md](../README.cmake.md#6-running-tests-rtest)).
+
+Then run the test suite:
+
+```bash
+cd testsuite/partest
+./runtests.pl
 ```
 
 ## 4 General Notes

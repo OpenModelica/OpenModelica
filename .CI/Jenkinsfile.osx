@@ -41,11 +41,19 @@ pipeline {
       steps {
         script {
           env.PATH="${env.MACPORTS}/bin:${env.PATH}"
-          // Qt5 is MacOS 10.12+...
-          env.QTDIR="${env.MACPORTS}/libexec/qt4"
-          common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include")
+          // The GUI clients are part of the same CMake build, so there is no
+          // separate buildGUI step any more.
+          common.buildOMC_CMake([
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_INSTALL_PREFIX=build",
+            // Look in MacPorts first, to prefer its libraries over the system ones.
+            "-DCMAKE_PREFIX_PATH=${env.MACPORTS}",
+            // Always specify the compilers explicitly on macOS.
+            "-DCMAKE_C_COMPILER=gcc",
+            "-DCMAKE_CXX_COMPILER=g++",
+            "-DCMAKE_Fortran_COMPILER=gfortran",
+            "-DOM_QT_MAJOR_VERSION=5"])
           common.makeLibsAndCache()
-          common.buildGUI('')
           common.partest()
         }
       }

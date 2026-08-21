@@ -17,9 +17,8 @@ else ()
   endif()
 endif ()
 
-# Untagged revision, for build systems that append their own tag — the Rust omc
-# reports "…-rust" (see rust_omc.cmake).
-set(SOURCE_REVISION_BASE "${SOURCE_REVISION}")
-set(SOURCE_REVISION "${SOURCE_REVISION}-cmake")
+# No build-system tag is appended: CMake is the only way to build omc, so the
+# "-cmake" suffix this used to carry said nothing. The Rust omc still tags itself
+# "…-rust" on top of this (see rust_omc.cmake).
 
 omc_add_to_report(SOURCE_REVISION)
