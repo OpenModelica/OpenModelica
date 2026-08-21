@@ -3486,40 +3486,72 @@ protected function createResidualSetEquations
   input DAE.ComponentRef crJ;
   input Integer index;
   input Boolean applySubs;
-  output list<BackendDAE.Equation> oEqs;
+  output list<BackendDAE.Equation> oEqs = {};
 protected
   Integer idx = index;
+  DAE.ComponentRef crj, crj2;
+  DAE.Exp res, res2, e1, e2, expJ;
+  BackendDAE.Equation eqn;
+  DAE.ElementSource source;
+  BackendDAE.EquationAttributes eqAttr;
+  list<list<DAE.Subscript>> subs;
 algorithm
-  oEqs := list(match eq
-      local
-        DAE.ComponentRef crj;
-        DAE.Exp res, e1, e2, expJ;
-        BackendDAE.Equation eqn;
-        DAE.ElementSource source;
-        BackendDAE.EquationAttributes eqAttr;
-      case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr)
+  for eq in iEqs loop
+    () := match eq
+      case BackendDAE.EQUATION()
         algorithm
           crj := if applySubs then ComponentReference.subscriptCrefWithInt(crJ, idx) else crJ;
           expJ := Expression.crefExp(crj);
-          res := Expression.expSub(e1, e2);
-          eqn := BackendDAE.EQUATION(expJ, res, source, eqAttr);
-          idx := idx + 1;
-        then eqn;
+          res := Expression.expSub(eq.exp, eq.scalar);
+          oEqs := BackendDAE.EQUATION(expJ, res, eq.source, eq.attr) :: oEqs;
+        then
+          ();
 
-      case BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, attr=eqAttr)
+      case BackendDAE.ARRAY_EQUATION()
+        algorithm
+          crj := if applySubs then ComponentReference.subscriptCrefWithInt(crJ, idx) else crJ;
+          res := Expression.expSub(eq.left, eq.right);
+          subs := Expression.dimensionSizesSubscripts(eq.dimSize);
+          subs := Expression.rangesToSubscripts(subs);
+
+          for s in subs loop
+            crj2 := ComponentReference.subscriptCref(crj, s);
+            expJ := Expression.crefExp(crj2);
+            res2 := Expression.applyExpSubscripts(res, s);
+            oEqs := BackendDAE.EQUATION(expJ, res2, eq.source, eq.attr) :: oEqs;
+          end for;
+        then
+          ();
+
+      case BackendDAE.RESIDUAL_EQUATION()
         algorithm
           expJ := Expression.crefExp(ComponentReference.subscriptCrefWithInt(crJ, idx));
-          eqn := BackendDAE.EQUATION(expJ, e1, source, eqAttr);
-          idx := idx + 1;
-        then eqn;
+          oEqs := BackendDAE.EQUATION(expJ, eq.exp, eq.source, eq.attr) :: oEqs;
+        then
+          ();
 
-      case eqn
+      else
         algorithm
-          Error.addInternalError("function createResidualSetEquations failed for equation: " + BackendDump.equationString(eqn), sourceInfo());
+          Error.addInternalError("function createResidualSetEquations failed for equation: " + BackendDump.equationString(eq), sourceInfo());
         then
           fail();
-    end match for eq in iEqs);
+    end match;
+
+    idx := idx + 1;
+  end for;
+
+  oEqs := MetaModelica.Dangerous.listReverseInPlace(oEqs);
 end createResidualSetEquations;
+
+//
+//      case BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=eqAttr)
+//        algorithm
+//          crj := if applySubs then ComponentReference.subscriptCrefWithInt(crJ, idx) else crJ;
+//          expJ := Expression.crefExp(crj);
+//          res := Expression.expSub(e1, e2);
+//          eqn := BackendDAE.ARRAY_EQUATION(eq.dimSize, expJ, res, source, eqAttr, eq.recordSize);
+//          idx := idx + 1;
+//        then eqn;
 
 public function calculateJacobian "This function takes an array of equations and the variables of the equation
   and calculates the Jacobian of the equations."
