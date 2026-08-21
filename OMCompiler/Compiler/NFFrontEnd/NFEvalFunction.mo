@@ -1266,9 +1266,8 @@ function loadLibraryFunction
   input SourceInfo info;
   output Integer fnHandle = -1;
 protected
-  Integer lib_handle;
   SCode.Annotation ann;
-  list<String> libs = {}, dirs = {}, paths = {}, libs2 = {};
+  list<String> libs = {}, dirs = {}, paths = {}, libs2 = {}, failures = {};
   Boolean found = false;
   String installLibDir;
 algorithm
@@ -1339,42 +1338,112 @@ algorithm
     paths := "" :: paths;
   end if;
 
-  // Disable error messages, we don't care if some paths can't be found.
+  // The messages the search produces are about paths the user never asked for,
+  // so keep them out of the way; what went wrong is collected separately and
+  // reported below if nothing worked.
   ErrorExt.setCheckpoint(getInstanceName());
 
-  // Go through each path and try to find the function.
-  for path in paths loop
-    try
-      if not stringEmpty(path) then
-        path := uriToFilename(path);
-      end if;
+  // First ask for every symbol in the library to be resolved, which is what
+  // calling through it will need.
+  (fnHandle, found, failures) := searchLibraryPaths(paths, fnName, lazy = false, debug = debug);
 
-      lib_handle := lookupLibraryInCache(path);
-
-      if lib_handle == -1 then
-        lib_handle := System.loadLibrary(path, relativePath = false, printDebug = debug);
-        cacheLibrary(path, lib_handle);
-      end if;
-
-      fnHandle := System.lookupFunction(lib_handle, fnName);
-      found := true;
-    else
-    end try;
-
-    if found then
-      break;
-    end if;
-  end for;
+  if not found then
+    // Nothing. Try again binding lazily: a library that has an unresolvable
+    // symbol somewhere else in it can still provide this function.
+    (fnHandle, found, failures) := searchLibraryPaths(paths, fnName, lazy = true, debug = debug);
+  end if;
 
   ErrorExt.rollBack(getInstanceName());
 
   if not found then
-    paths := list("  " + Testsuite.friendly(uriToFilename(p)) for p guard not stringEmpty(p) in paths);
     Error.addSourceMessage(Error.EXTERNAL_FUNCTION_NOT_FOUND,
-      {fnName, stringDelimitList(paths, "\n")}, info);
+      {fnName, stringDelimitList(failures, "\n")}, info);
     fail();
   end if;
 end loadLibraryFunction;
+
+function searchLibraryPaths
+  "Tries each candidate path in turn, and says of each one why it did not
+   provide the function: there is nothing there, it would not load, or it
+   loaded and does not define it."
+  input list<String> paths;
+  input String fnName;
+  input Boolean lazy;
+  input Boolean debug;
+  output Integer fnHandle = -1;
+  output Boolean found = false;
+  output list<String> failures = {};
+protected
+  Integer lib_handle;
+  String file, reason;
+  Boolean resolved;
+algorithm
+  for path in paths loop
+    reason := "";
+    resolved := true;
+
+    try
+      file := if stringEmpty(path) then "" else uriToFilename(path);
+    else
+      file := path;
+      resolved := false;
+      reason := "not a usable file name";
+    end try;
+
+    if resolved then
+      lib_handle := lookupLibraryInCache(file);
+
+      if lib_handle == -1 then
+        try
+          lib_handle := if lazy then
+            System.loadLibraryLazy(file, relativePath = false, printDebug = debug) else
+            System.loadLibrary(file, relativePath = false, printDebug = debug);
+          cacheLibrary(file, lib_handle);
+        else
+          lib_handle := -1;
+          reason := System.getLoadLibraryError();
+          reason := if stringEmpty(reason) then "cannot be loaded" else
+                    "cannot be loaded: " + reason;
+        end try;
+      end if;
+
+      if lib_handle <> -1 then
+        try
+          fnHandle := System.lookupFunction(lib_handle, fnName);
+          found := true;
+        else
+          reason := "loaded, but does not define it";
+        end try;
+      end if;
+    end if;
+
+    if found then
+      break;
+    end if;
+
+    // The empty path means the compiler's own image, which is not a path worth
+    // listing back to the user.
+    if not stringEmpty(file) then
+      failures := describeLibraryFailure(file, reason) :: failures;
+    end if;
+  end for;
+
+  failures := listReverse(failures);
+end searchLibraryPaths;
+
+function describeLibraryFailure
+  input String file;
+  input String reason;
+  output String str;
+algorithm
+  str := "  " + Testsuite.friendly(file);
+
+  if not System.regularFileExists(file) then
+    str := str + " (no such file)";
+  elseif not stringEmpty(reason) then
+    str := str + " (" + Testsuite.friendly(reason) + ")";
+  end if;
+end describeLibraryFailure;
 
 function parseExternalAnnotation
   input String name;
