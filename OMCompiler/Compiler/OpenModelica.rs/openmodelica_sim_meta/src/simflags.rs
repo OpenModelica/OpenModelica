@@ -129,6 +129,8 @@ pub struct SimFlags {
     /// `-w`: print warnings whose stream is inactive. Carried in
     /// [`log_mask`](Self::log_mask) as [`omclog::SHOW_ALL_WARNINGS`](crate::omclog::SHOW_ALL_WARNINGS).
     pub show_all_warnings: bool,
+    /// `-logFormat=xml`, installed by [`set_flags`] (C's `setStreamPrintXML`).
+    pub log_xml: bool,
     /// `-daeMode`, deprecated in C: `--daeMode` at translation is what selects it.
     pub dae_mode: bool,
     pub nls: Option<Nls>,
@@ -181,6 +183,10 @@ pub struct SimFlags {
     /// puts in the quantity's `start` attribute; reading it is the variable class's
     /// job, and an unresolvable name still has to be reported.
     pub overrides: Vec<(String, String)>,
+    /// C's `overrideStr1`: the raw `-override=` value, which `doOverride` logs.
+    pub override_raw: Option<String>,
+    /// C's `overrideStr2`: `-overrideFile`'s `(path, lines joined with commas)`.
+    pub override_file: Option<(String, String)>,
     /// `-output=a,b,c`: variables printed at the stop time (C's
     /// `outputVariablesAtEnd` / `writeOutputVars`).
     pub output_vars: Vec<String>,
@@ -641,13 +647,13 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                         .map_err(|_| "-lvMaxWarn takes an integer argument".to_string())?,
                 )
             }
-            "override" => {
-                // C's `parseVariableStr` splits on commas outside `[]`.
-                for item in split_top_level(&value(name)?) {
-                    if let Some((n, v)) = item.split_once('=') {
-                        f.overrides.push((n.trim().to_string(), v.trim().to_string()));
-                    }
-                }
+            "override" => push_raw_str(f.override_raw.get_or_insert_with(String::new), value(name)?),
+            "overrideFile" => {
+                let path = value(name)?;
+                let joined = read_override_file(&path)?;
+                let (paths, lines) = f.override_file.get_or_insert_with(Default::default);
+                push_raw_str(paths, path);
+                push_raw_str(lines, joined);
             }
             "output" => f.output_vars = split_top_level(&value(name)?),
             "startTime" => f.start_time = Some(real(name, &value(name)?)?),
@@ -688,13 +694,12 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "steadyStateTol" => f.steady_state_tol = Some(real(name, &value(name)?)?),
             "w" => f.show_all_warnings = true,
             "daeMode" => f.dae_mode = true,
-            // C's only other formats are the XML ones its `-port` server speaks.
-            "logFormat" => {
-                let v = value(name)?;
-                if v != "text" {
-                    return Err(format!("-logFormat={v}: this runtime writes plain text logs only"));
-                }
-            }
+            // C's third format, `xmltcp`, belongs to its `-port` server.
+            "logFormat" => match value(name)?.as_str() {
+                "text" => f.log_xml = false,
+                "xml" => f.log_xml = true,
+                v => return Err(format!("-logFormat={v}: this runtime writes `text` or `xml` logs")),
+            },
             "emit_protected" => f.emit_protected = true,
             "ignoreHideResult" => f.ignore_hide_result = true,
             "variableFilter" => f.variable_filter = Some(value(name)?),
@@ -809,11 +814,52 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             }
         }
     }
+    // C's `doOverride` reads `-override` first, then the file; a later entry for the
+    // same name wins.
+    for raw in [f.override_raw.as_deref(), f.override_file.as_ref().map(|(_, j)| j.as_str())] {
+        for item in raw.into_iter().flat_map(split_top_level) {
+            if let Some((n, v)) = item.split_once('=') {
+                f.overrides.push((n.trim().to_string(), v.trim().to_string()));
+            }
+        }
+    }
     f.log_mask = crate::omclog::mask_from_streams(&f.log)?;
     if f.show_all_warnings {
         f.log_mask |= crate::omclog::SHOW_ALL_WARNINGS;
     }
     Ok(f)
+}
+
+/// C's `FLAG_REPEAT_POLICY_COMBINE` for a repeated `-override`/`-overrideFile`.
+fn push_raw_str(dst: &mut String, v: String) {
+    if !dst.is_empty() {
+        dst.push(',');
+    }
+    dst.push_str(&v);
+}
+
+/// C's `-overrideFile` read: every `\n`-terminated line, trimmed, `//`-comments
+/// dropped, joined with commas into one `-override` string.
+#[cfg(feature = "std")]
+fn read_override_file(path: &str) -> Result<String, String> {
+    let text = std::fs::read_to_string(path).map_err(|e| {
+        format!("simulation_input_xml.c: could not read overrideFile {path}: {e}")
+    })?;
+    let mut out = Vec::new();
+    for line in text.split_inclusive('\n').filter(|l| l.ends_with('\n')) {
+        let line = line.trim();
+        // C's comment test reads both characters whatever the first one is.
+        if line.is_empty() || line.starts_with('/') || line.as_bytes().get(1) == Some(&b'/') {
+            continue;
+        }
+        out.push(line);
+    }
+    Ok(out.join(","))
+}
+
+#[cfg(not(feature = "std"))]
+fn read_override_file(path: &str) -> Result<String, String> {
+    Err(format!("-overrideFile={path}: this runtime has no filesystem"))
 }
 
 /// C's `initializeResultData` formats. `mat`, `csv`, `plt` and `empty` are the
@@ -1207,6 +1253,7 @@ mod store {
 
 pub fn set_flags(f: SimFlags) {
     crate::omclog::set_mask(f.log_mask);
+    crate::omclog::set_xml(f.log_xml);
     store::set(f);
 }
 
@@ -1517,7 +1564,8 @@ mod tests {
         let msgs = notices(&f);
         assert_eq!(msgs.len(), 1);
         assert!(msgs.iter().all(|(ty, _)| *ty == crate::omclog::WARNING));
-        assert!(parse(&argv(&["-logFormat=xml"])).is_err());
+        assert!(parse(&argv(&["-logFormat=xml"])).expect("parses").log_xml);
+        assert!(parse(&argv(&["-logFormat=xmltcp"])).is_err());
     }
 
     // C's `-alarm=0` disables the alarm rather than setting a zero-second one.

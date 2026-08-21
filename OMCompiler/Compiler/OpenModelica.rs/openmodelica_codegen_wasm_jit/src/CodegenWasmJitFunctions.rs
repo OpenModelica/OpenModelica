@@ -501,6 +501,16 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_div_sim", &[WTy::F64, WTy::F64, WTy::I32, WTy::F64, WTy::I32], &[WTy::F64]),
     // System `k`'s solver state (address, size), for `rt_nls_clean_history`.
     ("rt_nls_register", &[WTy::I32, WTy::I32, WTy::I32], &[]),
+    // `rt_nls_note_assert` plus C's log line for the absorbed assertion:
+    // `(msg, file, sline, scol, eline, ecol, isReadOnly, cond, initial, sim_data)`.
+    (
+        "rt_nls_assert_failed",
+        &[
+            WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32,
+            WTy::I32,
+        ],
+        &[],
+    ),
 ];
 
 /// Model global holding the base index at which this module's per-system
@@ -4109,22 +4119,42 @@ fn emit_assert(
         ctx.emit(we::Instruction::End);
         return Ok(());
     }
-    emit_nls_recoverable_return(ctx)?;
+    // C evaluates the message (`preExpMsg`) once, ahead of either arm.
     let mw = compile_exp(ctx, msg)?; // owned message String handle
     if mw != WTy::I32 {
         return Err("CodegenWasmJit: assert message is not a String");
     }
-    emit_str_literal(ctx, file.as_bytes())?; // file String handle
-    ctx.emit(we::Instruction::I32Const(info.lineNumberStart));
-    ctx.emit(we::Instruction::I32Const(info.columnNumberStart));
-    ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
-    ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
-    ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
-    if in_function {
-        ctx.emit(we::Instruction::I32Const(0));
-    } else {
-        emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition, for the report
-    }
+    let msg_h = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(msg_h));
+    // Both arms take these; `initial` and `sim_data` follow.
+    let mut report_args = |ctx: &mut FnCtx| -> Result<()> {
+        ctx.emit(we::Instruction::LocalGet(msg_h));
+        emit_str_literal(ctx, file.as_bytes())?; // file String handle
+        ctx.emit(we::Instruction::I32Const(info.lineNumberStart));
+        ctx.emit(we::Instruction::I32Const(info.columnNumberStart));
+        ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
+        ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
+        ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
+        if in_function {
+            ctx.emit(we::Instruction::I32Const(0));
+        } else {
+            emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition, for the report
+        }
+        Ok(())
+    };
+    // A residual's own assert is C's `ERROR_NONLINEARSOLVER`: logged where it fires,
+    // then unwound into the solver.
+    ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    report_args(ctx)?;
+    emit_initial_flag(ctx);
+    emit_sim_data_or_zero(ctx);
+    ctx.emit(we::Instruction::Call(rt_index("rt_nls_assert_failed")?));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(we::Instruction::Return);
+    ctx.emit(we::Instruction::End);
+    report_args(ctx)?;
     emit_initial_flag(ctx);
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     // Trap unless the driver took it (suppressed during the event search).
@@ -4133,6 +4163,14 @@ fn emit_assert(
     ctx.emit(we::Instruction::End);
     ctx.emit(we::Instruction::End);
     Ok(())
+}
+
+/// The running `SimData` pointer, or 0 outside a simulation.
+fn emit_sim_data_or_zero(ctx: &mut FnCtx) {
+    match ctx.sim.as_ref().map(|s| s.data_local) {
+        Some(data) => ctx.emit(we::Instruction::LocalGet(data)),
+        None => ctx.emit(we::Instruction::I32Const(0)),
+    }
 }
 
 /// A model error inside a nonlinear-solver residual is recoverable in C

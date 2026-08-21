@@ -407,15 +407,17 @@ pub fn getCheckpointMessages() -> Arc<List<TotalMessage>> {
     })
 }
 
-/// Drain and return all queued messages, oldest first (the newest message
-/// is consed last in `ErrorImpl__getMessages`, ending up at the tail).
+/// `Error_getMessages`: `listReverse(ErrorImpl__getMessages())`, so newest first.
 pub fn getMessages() -> Arc<List<TotalMessage>> {
     with_state(|s| {
-        let mut out = nil::<TotalMessage>();
+        let mut newest_first = Vec::with_capacity(s.queue.len());
         while !s.queue.is_empty() {
-            let total = s.queue.last().unwrap().as_total();
-            out = cons(total, out);
+            newest_first.push(s.queue.last().unwrap().as_total());
             pop_message(s, false);
+        }
+        let mut out = nil::<TotalMessage>();
+        for total in newest_first.into_iter().rev() {
+            out = cons(total, out);
         }
         out
     })

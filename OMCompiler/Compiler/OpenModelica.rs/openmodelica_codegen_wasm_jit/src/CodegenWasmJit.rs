@@ -745,32 +745,74 @@ fn resolve_overrides(
     model: &SimModel,
     flags: &simflags::SimFlags,
 ) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>) {
-    let mut params = Vec::new();
-    let mut starts = Vec::new();
+    let raw = flags.override_raw.as_deref();
+    let file = flags.override_file.as_ref();
+    if let (Some(raw), Some((path, _))) = (raw, file) {
+        omclog::info(omclog::SOLVER, false, &format!("using -override={raw} and -overrideFile={path}"));
+    }
+    if let Some((path, _)) = file {
+        omclog::info(omclog::SOLVER, false, &format!("read override values from file: {path}"));
+    }
+    if raw.is_none() && file.is_none() {
+        omclog::info(omclog::SOLVER, false, "NO override given on the command line.");
+        return (Vec::new(), Vec::new());
+    }
+    let given = |v: Option<&str>| v.unwrap_or("[not given]").to_string();
+    omclog::info(omclog::SOLVER, false, &format!("-override={}", given(raw)));
+    omclog::info(omclog::SOLVER, false, &format!("-overrideFile={}", given(file.map(|(_, j)| j.as_str()))));
+
+    // C fills a hash map, so a repeated name keeps the last value and warns.
+    let mut map: Vec<(&str, &str)> = Vec::new();
     for (name, val) in &flags.overrides {
-        if let Some(p) = model.editable_params.iter().find(|p| &p.name == name) {
-            let v = p.read_value(val);
-            if p.is_start { &mut starts } else { &mut params }.push((p.off, p.wty, v));
+        match map.iter_mut().find(|(n, _)| *n == name) {
+            Some((_, old)) => {
+                omclog::warning(
+                    omclog::STDOUT,
+                    false,
+                    &format!("You are overriding variable: {name}={old} again with {name}={val}."),
+                );
+                *old = val;
+            }
+            None => map.push((name, val)),
         }
     }
-    let editable = |n: &str| model.editable_params.iter().any(|p| p.name == n);
-    let mut refused: Vec<&str> = Vec::new();
+
+    let mut params = Vec::new();
+    let mut starts = Vec::new();
+    let mut used: Vec<&str> = Vec::new();
+    // C's `singleOverride` walks the `_init.xml` quantities in class order.
     for v in &model.result_vars {
-        if flags.overrides.iter().any(|(o, _)| *o == v.name) && !editable(&v.name) {
-            refused.push(&v.name);
+        let Some(&(name, val)) = map.iter().find(|(n, _)| *n == v.name) else { continue };
+        used.push(name);
+        let Some(p) = model.editable_params.iter().find(|p| p.name == name) else {
             omclog::warning(
                 omclog::STDOUT,
                 false,
                 &format!(
-                    "It is not possible to override the following quantity: {}\nIt seems to be \
+                    "It is not possible to override the following quantity: {name}\nIt seems to be \
                      structural, final, protected or evaluated or has a non-constant binding.",
-                    v.name
+                ),
+            );
+            continue;
+        };
+        omclog::info(omclog::SOLVER, false, &format!("override {name} = {val}"));
+        // C warns only for the real and integer parameters (`warn_small_override`).
+        let numeric_param = !p.is_start && (p.wty == WTy::F64 || !p.is_bool);
+        if numeric_param && val.parse::<f64>().is_ok_and(|v| v.abs() < 1e-6) {
+            omclog::warning(
+                omclog::STDOUT,
+                false,
+                &format!(
+                    "You are overriding {name} with a small value or zero.\nThis could lead to \
+                     numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.",
                 ),
             );
         }
+        let v = p.read_value(val);
+        if p.is_start { &mut starts } else { &mut params }.push((p.off, p.wty, v));
     }
-    for (name, _) in &flags.overrides {
-        if !editable(name) && !refused.contains(&name.as_str()) {
+    for (name, _) in &map {
+        if !used.contains(name) {
             omclog::warning(
                 omclog::STDOUT,
                 false,
@@ -778,6 +820,7 @@ fn resolve_overrides(
             );
         }
     }
+    omclog::info(omclog::SOLVER, false, "override done!");
     (params, starts)
 }
 
