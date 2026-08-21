@@ -465,15 +465,24 @@ fmi3Status FMU3Wrapper::newDiscreteStates(FMU3EventInfo *eventInfo)
       _nclockTick = 0;
     }
   }
-  // Check if an Zero Crossings happend
+  // Update time event state and activate time conditions at current time
+  // so that sample events (when sample()) are detected
+  _model->computeNextTimeEvents(_model->getTime());
+  _model->computeTimeEventConditions(_model->getTime());
+  // Check if an Zero Crossings happened
   double f[NUMBER_OF_EVENT_INDICATORS + 1];
   bool events[NUMBER_OF_EVENT_INDICATORS + 1];
   _model->getZeroFunc(f);
   for (int i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
     events[i] = f[i] >= 0;
-  // Handle Zero Crossings if nessesary
+  // Handle events (zero crossings and time events)
   bool state_vars_reinitialized = _model->handleSystemEvents(events);
-  //time events
+  // Re-evaluate algebraic variables (including outputs) after event handling
+  // to ensure they reflect the updated discrete variable values
+  _model->evaluateAll();
+  // Reset time conditions for next step
+  _model->resetTimeConditions();
+  // Compute next event time after processing this event
   eventInfo->nextEventTime = _model->computeNextTimeEvents(_model->getTime());
   if ((eventInfo->nextEventTime != 0.0) && (eventInfo->nextEventTime != std::numeric_limits<double>::max()))
     eventInfo->nextEventTimeDefined = true;
