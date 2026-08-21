@@ -776,7 +776,6 @@ mod tests {
             sim_data: SIM_DATA,
             states_base: STATES,
             ders_base: DERS,
-            time_off: 0,
             nls_fail_off: NLS_FAIL_OFF,
             ctx_addr: 0,
             jac_a: None,

@@ -36,19 +36,6 @@ pub const AVAILABLE: bool = cfg!(all(ipopt, feature = "std"));
 pub use run::run_optimizer;
 
 #[cfg(all(ipopt, feature = "std"))]
-pub(crate) use crate::extinput::ExtInputHook;
-
-/// The driver's type-erased entry point into `-csvInput`'s hook, so the residual can
-/// re-read the external input without this module's types reaching `driver`.
-#[cfg(all(ipopt, feature = "std"))]
-pub(crate) const EXT_INPUT_APPLY: unsafe fn(
-    *mut core::ffi::c_void,
-    &mut dyn crate::driver::SimEngine,
-    u32,
-    f64,
-) = ExtInputHook::apply_erased;
-
-#[cfg(all(ipopt, feature = "std"))]
 mod run {
     use alloc::format;
     use alloc::string::String;

@@ -1,8 +1,9 @@
 //! `-csvInput`: the external input trajectory, C's `simulation/solver/external_input.c`.
 //!
-//! Read at initialization, where C lets the file set the inputs' start values
-//! (`initializeModel`), and by the optimizer's initial guess
-//! (`initial_guess_ipopt_sim`).
+//! Applied once at initialization, where C lets the file set the inputs' start
+//! values (`initializeModel`), then armed for the integration loop and for the
+//! optimizer's initial guess — but not for the Ipopt iterations, whose inputs
+//! come from `vopt`.
 
 use alloc::format;
 use alloc::string::String;
@@ -40,7 +41,7 @@ impl ExternalInput {
             _ => (',', &text[..]),
         };
         let mut lines = body.lines().filter(|l| !l.trim().is_empty());
-        let header: Vec<&str> = lines.next()?.split(sep).map(str::trim).collect();
+        let header: Vec<String> = lines.next()?.split(sep).map(unquote).collect();
         // Which csv column feeds each input; -1 in C, `None` here.
         let col: Vec<Option<usize>> =
             input_names.iter().map(|n| header.iter().position(|h| h == n)).collect();
@@ -48,7 +49,7 @@ impl ExternalInput {
         let mut u: Vec<Vec<f64>> = Vec::new();
         for line in lines {
             let row: Vec<f64> =
-                line.split(sep).map(|v| v.trim().parse::<f64>().unwrap_or(0.0)).collect();
+                line.split(sep).map(|v| unquote(v).parse::<f64>().unwrap_or(0.0)).collect();
             let Some(&time) = row.first() else { continue };
             t.push(time);
             u.push(col.iter().map(|c| c.and_then(|c| row.get(c).copied()).unwrap_or(0.0)).collect());
@@ -102,6 +103,15 @@ impl ExternalInput {
     }
 }
 
+/// One field as libcsv hands it to C's `read_csv`: unquoted, `""` collapsed.
+fn unquote(field: &str) -> String {
+    let f = field.trim();
+    match f.strip_prefix('"').and_then(|f| f.strip_suffix('"')) {
+        Some(inner) => inner.replace("\"\"", "\""),
+        None => String::from(f),
+    }
+}
+
 fn copy_row(row: &[f64], out: &mut [f64]) {
     for (o, v) in out.iter_mut().zip(row) {
         *o = *v;
@@ -120,34 +130,86 @@ pub(crate) fn empty(n: usize) -> Vec<f64> {
     vec![0.0; n]
 }
 
-/// The external input as the DASSL residual sees it: C's `functionODE_residual`
-/// calls `externalInputUpdate` + `input_function` at *every* evaluation, so the
-/// guess's integrator must too, not just at the step boundaries.
+/// Which slot of an input the file's value goes to.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Slot {
+    Start,
+    Live,
+}
+
+/// C's `externalInputUpdate` + `input_function` as one step.
 pub(crate) struct ExtInputHook {
     pub(crate) ext: ExternalInput,
-    /// `SimData` offsets of the input variables, in input order.
-    pub(crate) input_offs: Vec<u32>,
+    /// `SimData` offset and width of each input variable, in input order.
+    slots: Vec<(u32, crate::WTy)>,
     /// Scratch mirroring C's `simulationInfo->inputVars`.
-    pub(crate) inputs: Vec<f64>,
+    inputs: Vec<f64>,
 }
 
 impl ExtInputHook {
-    /// C's `externalInputUpdate` + `input_function` at time `t`.
-    fn apply(&mut self, e: &mut dyn crate::driver::SimEngine, sim_data: u32, t: f64) {
-        self.ext.update(t, &mut self.inputs);
-        for (k, &off) in self.input_offs.iter().enumerate() {
-            let _ = crate::driver::write_f64(e, sim_data + off, self.inputs[k]);
+    /// `None` when the flag is absent, the file unreadable or the model has no
+    /// input.
+    pub(crate) fn load(inputs: &[crate::InputVar], slot: Slot) -> Option<alloc::boxed::Box<Self>> {
+        if inputs.is_empty() {
+            return None;
         }
+        let file = crate::simflags::with_flags(|f| f.csv_input.clone())?;
+        let names: Vec<&str> = inputs.iter().map(|v| v.name.as_str()).collect();
+        let ext = ExternalInput::load(&file, &names)?;
+        let slots = inputs
+            .iter()
+            .map(|v| (if slot == Slot::Start { v.start_off } else { v.off }, v.wty))
+            .collect();
+        Some(alloc::boxed::Box::new(ExtInputHook { ext, slots, inputs: empty(inputs.len()) }))
     }
 
-    /// The type-erased entry point [`crate::driver::ResCtx`] holds, so the residual
-    /// can call it without this module's types leaking into the driver.
-    pub(crate) unsafe fn apply_erased(
-        this: *mut core::ffi::c_void,
-        e: &mut dyn crate::driver::SimEngine,
-        sim_data: u32,
-        t: f64,
-    ) {
-        unsafe { (*(this as *mut ExtInputHook)).apply(e, sim_data, t) }
+    /// The same for the optimizer, whose inputs are real `SimData` indices.
+    pub(crate) fn load_reals(indices: &[u32], names: &[&str]) -> Option<alloc::boxed::Box<Self>> {
+        let file = crate::simflags::with_flags(|f| f.csv_input.clone())?;
+        let ext = ExternalInput::load(&file, names)?;
+        Some(alloc::boxed::Box::new(ExtInputHook {
+            ext,
+            slots: indices.iter().map(|&i| (crate::REAL_OFF + i * 8, crate::WTy::F64)).collect(),
+            inputs: empty(indices.len()),
+        }))
+    }
+
+    /// C's `externalInputUpdate` + `input_function` at time `t`.
+    pub(crate) fn apply(&mut self, e: &mut dyn crate::driver::SimEngine, sim_data: u32, t: f64) {
+        self.ext.update(t, &mut self.inputs);
+        for (&(off, wty), &v) in self.slots.iter().zip(&self.inputs) {
+            let _ = match wty {
+                crate::WTy::F64 => crate::driver::write_f64(e, sim_data + off, v),
+                crate::WTy::I32 => crate::driver::write_i32(e, sim_data + off, v as i32),
+            };
+        }
+    }
+}
+
+/// The armed hook, consulted by every write of the model clock. A single global
+/// for the reason `RES_CTX` is one: runs are serialized per process.
+static ACTIVE: core::sync::atomic::AtomicPtr<ExtInputHook> =
+    core::sync::atomic::AtomicPtr::new(core::ptr::null_mut());
+
+/// C's `externalInputallocate` .. `externalInputFree` bracket. Boxed rather than
+/// borrowed because the caller keeps reading the trajectory while it is armed.
+pub(crate) struct Armed;
+
+pub(crate) fn arm(hook: &mut alloc::boxed::Box<ExtInputHook>) -> Armed {
+    ACTIVE.store(&mut **hook as *mut ExtInputHook, core::sync::atomic::Ordering::Relaxed);
+    Armed
+}
+
+impl Drop for Armed {
+    fn drop(&mut self) {
+        ACTIVE.store(core::ptr::null_mut(), core::sync::atomic::Ordering::Relaxed);
+    }
+}
+
+/// C's `externalInputUpdate` + `input_function`; nothing without `-csvInput`.
+pub(crate) fn apply(e: &mut dyn crate::driver::SimEngine, sim_data: u32, t: f64) {
+    let hook = ACTIVE.load(core::sync::atomic::Ordering::Relaxed);
+    if !hook.is_null() {
+        unsafe { (*hook).apply(e, sim_data, t) };
     }
 }
