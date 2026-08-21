@@ -2571,6 +2571,7 @@ uniontype MoveEnv
   record MOVE_ENV
     InstNode scope;
     Absyn.Path destinationPath;
+    InstNode destination;
   end MOVE_ENV;
 end MoveEnv;
 
@@ -2581,22 +2582,39 @@ function updateMovedClassPaths
   input Absyn.Path clsPath "The fully qualified path of the class";
   input Absyn.Within destination "The destination package (or top scope)";
 protected
-  InstNode top, cls_node;
+  InstNode top, src_node, dst_node = InstNode.EMPTY_NODE();
   MoveEnv env;
-  Absyn.Path dest_path;
+  Absyn.Path dst_path, p;
+  Boolean found = false;
 algorithm
   // Make a top node and look up the class in it.
   (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(clsPath));
-  cls_node := Inst.lookupRootClass(clsPath, top, FAST_CONTEXT);
-  Inst.expand(cls_node, FAST_CONTEXT);
+  src_node := Inst.lookupRootClass(clsPath, top, FAST_CONTEXT);
+  Inst.expand(src_node, FAST_CONTEXT);
 
   // Get the destination path including the class name.
-  dest_path := match destination
-    case Absyn.Within.WITHIN() then AbsynUtil.suffixPath(destination.path, InstNode.name(cls_node));
-    else Absyn.Path.IDENT(InstNode.name(cls_node));
+  dst_path := match destination
+    case Absyn.Within.WITHIN() then AbsynUtil.suffixPath(destination.path, InstNode.name(src_node));
+    else Absyn.Path.IDENT(InstNode.name(src_node));
   end match;
 
-  env := MOVE_ENV(cls_node, dest_path);
+  // Also look up the destination package, which is needed to resolve shadowing issues in some cases.
+  // The destination package might not exist yet, but in that case there's nothing to look up in it anyway,
+  // so the first existing enclosing scope also works.
+  dst_node := top;
+  p := dst_path;
+
+  while not found and not AbsynUtil.pathIsIdent(p) loop
+    try
+      p := AbsynUtil.pathPrefix(p);
+      dst_node := Lookup.lookupName(p, top, FAST_CONTEXT, false);
+      Inst.expand(dst_node, FAST_CONTEXT);
+      found := true;
+    else
+    end try;
+  end while;
+
+  env := MOVE_ENV(src_node, dst_path, dst_node);
   cls.body := updateMovedClassDef(cls.body, env);
 end updateMovedClassPaths;
 
@@ -2612,7 +2630,7 @@ algorithm
     // own scope (i.e. is a long class definition).
     cls_node := Lookup.lookupLocalSimpleName(cls.name, env.scope);
     Inst.expand(cls_node, FAST_CONTEXT);
-    cls_env := MoveEnv.MOVE_ENV(cls_node, AbsynUtil.suffixPath(env.destinationPath, cls.name));
+    cls_env := MoveEnv.MOVE_ENV(cls_node, AbsynUtil.suffixPath(env.destinationPath, cls.name), env.destination);
   else
     cls_env := env;
   end if;
@@ -2922,11 +2940,13 @@ algorithm
 end updateMovedTypeSpec;
 
 function updateMovedPath
-  input output Absyn.Path path;
+  input Absyn.Path path;
   input MoveEnv env;
+  output Absyn.Path outPath = path;
 protected
-  Absyn.Path qualified_path;
+  Absyn.Path qualified_path, new_path;
   Option<Absyn.Path> opt_path;
+  InstNode node;
 algorithm
   // Try to look up the qualified path needed to be able to find the name in
   // this scope even if the root class that contains the scope is moved elsewhere.
@@ -2938,29 +2958,39 @@ algorithm
     return;
   end try;
 
-  // If the path we found is fully qualified it means we need to update the original path.
+  // If the path we found is fully qualified it means it refers to an element
+  // outside the class' scope, and the original path needs to be updated so it
+  // can be found from the destination scope.
   if AbsynUtil.pathIsFullyQualified(qualified_path) then
+
     qualified_path := AbsynUtil.makeNotFullyQualified(qualified_path);
 
     if AbsynUtil.pathIsIdent(qualified_path) and
        AbsynUtil.pathFirstIdent(qualified_path) == AbsynUtil.pathFirstIdent(env.destinationPath) then
       // Special case, the path refers to the destination package, e.g. moving A.B.C into A.
-      path := AbsynUtil.pathRest(path);
+      outPath := AbsynUtil.pathRest(path);
     else
       // Remove any part of the qualified path that's the same as the destination.
       opt_path := AbsynUtil.pathStripSamePrefix(qualified_path, env.destinationPath);
 
       // Replace the first identifier in the original path with the remaining qualified path.
       if isSome(opt_path) then
-        SOME(qualified_path) := opt_path;
-
-        if AbsynUtil.pathIsQual(path) then
-          path := AbsynUtil.joinPaths(qualified_path, AbsynUtil.pathRest(path));
-        else
-          path := qualified_path;
-        end if;
+        SOME(new_path) := opt_path;
+        outPath := AbsynUtil.pathReplaceFirst(path, new_path);
       end if;
     end if;
+
+    // Make sure the new path still refers to the same element, and isn't shadowed by another
+    // element with the same name in the destination scope or any of its enclosing scopes.
+    try
+      // Look up the new path from the destination scope.
+      node := Lookup.lookupSimpleName(AbsynUtil.pathFirstIdent(outPath), env.destination, FAST_CONTEXT);
+      false := AbsynUtil.pathPrefixOf(InstNode.fullPath(node), qualified_path);
+      // If the wrong element was found, then return the fully qualified path instead.
+      outPath := AbsynUtil.pathReplaceFirst(path, qualified_path);
+      outPath := AbsynUtil.makeFullyQualified(outPath);
+    else
+    end try;
   end if;
 end updateMovedPath;
 
