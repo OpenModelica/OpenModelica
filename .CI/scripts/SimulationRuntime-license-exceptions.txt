@@ -136,7 +136,6 @@ OMCompiler/SimulationRuntime/c/util/jni_md_windows.h
 
 # Build manifest — not a compiled runtime source file.
 OMCompiler/SimulationRuntime/c/RuntimeSources.mo
-OMCompiler/SimulationRuntime/c/RuntimeSources.mo.tpl
 
 # =============================================================================
 # SimulationRuntime/fmi/
@@ -296,7 +295,6 @@ OMEdit/OMEditLIB/TransformationalDebugger/diff_match_patch.*
 # OMNotebook
 # =============================================================================
 
-OMNotebook/OMNotebook/OMNotebookGUI/OMNotebookGUI.pro
 
 # =============================================================================
 # OMParser
