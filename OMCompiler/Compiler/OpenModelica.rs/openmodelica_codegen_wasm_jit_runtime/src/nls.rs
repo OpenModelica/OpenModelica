@@ -433,22 +433,17 @@ pub(crate) fn lu_solve(a: &[f64], b: &mut [f64], n: usize) -> bool {
 }
 
 /// [`lu_solve`] reporting `dgesv`'s `info`: `None` on success, else the 0-based
-/// index of the first zero pivot on `U`'s diagonal.
+/// index of the first zero pivot, straight from `dgetrf`. `A` is copied because
+/// `dgetrf` factors in place and the caller keeps it for the total-pivot fallback.
 pub(crate) fn lu_solve_singular_pivot(a: &[f64], b: &mut [f64], n: usize) -> Option<usize> {
-    use nalgebra::{DMatrix, DVector};
-    let am = DMatrix::<f64>::from_column_slice(n, n, a);
-    let bv = DVector::<f64>::from_column_slice(b);
-    let lu = am.lu();
-    match lu.solve(&bv) {
-        Some(x) => {
-            b.copy_from_slice(x.as_slice());
-            None
-        }
-        None => {
-            let u = lu.u();
-            Some((0..n).find(|&i| u[(i, i)] == 0.0).unwrap_or(n.saturating_sub(1)))
-        }
+    let mut lu = a[..n * n].to_vec();
+    let mut ipiv = alloc::vec![0i32; n];
+    let info = openmodelica_lapack::dgetrf(n, n, &mut lu, n, &mut ipiv);
+    if info != 0 {
+        return Some((info.max(1) - 1) as usize);
     }
+    openmodelica_lapack::dgetrs("N", n, 1, &lu, n, &ipiv, b, n);
+    None
 }
 
 /// Total-pivot fallback for a singular / rank-deficient `A x = b`, a port of C's

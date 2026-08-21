@@ -1,3 +1,5 @@
+cargo-features = ["panic-immediate-abort"]
+
 # Model-agnostic FMI 3.0 Model-Exchange adapter, compiled ONCE to
 # wasm32-unknown-unknown and merged (wasm-merge) with a per-model kernel module
 # emitted by CodegenWasmJit, then componentized (wit-component) into an
@@ -30,7 +32,10 @@ openmodelica_sim_meta = { path = "../openmodelica_sim_meta", default-features = 
 [profile.release]
 opt-level = "s"
 lto = true
-panic = "abort"
+# Not just `abort`: a panic here can only become a wasm trap anyway (no stderr on
+# wasm32-unknown-unknown), so aborting at the site makes std's formatting/hook
+# machinery unreachable to LTO as well — ~61 KB per adapter.
+panic = "immediate-abort"
 strip = true
 
 [workspace]

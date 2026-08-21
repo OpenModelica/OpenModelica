@@ -303,7 +303,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     };
     // A session always has a host, which renders `read_experiment`'s notices from
     // the same flags; saying it again here would double every line.
-    driver::set_log_sink(|_| {});
+    driver::set_log_sink(|_, _, _| {});
     simflags::with_flags(|f| model.apply_flags(f));
     driver::set_log_sink(crate::omclog::sink);
 

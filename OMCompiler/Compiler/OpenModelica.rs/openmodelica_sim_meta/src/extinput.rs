@@ -66,7 +66,7 @@ impl ExternalInput {
                 }
             }
             out.push_str("\n========================================================\n");
-            crate::driver::log_line(&out);
+            crate::driver::log_line(omclog::SIMULATION, omclog::INFO, &out);
         }
         Some(ExternalInput { t, u, i: 0 })
     }

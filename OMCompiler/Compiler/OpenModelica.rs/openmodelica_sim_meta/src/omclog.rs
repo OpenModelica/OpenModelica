@@ -354,7 +354,7 @@ pub fn close(stream: Stream) {
         s.xml
     });
     if end {
-        crate::driver::log_line("</message>\n");
+        crate::driver::log_line(stream, INFO, "</message>\n");
     }
 }
 
@@ -371,7 +371,7 @@ pub fn close_warning(stream: Stream) {
         s.xml
     });
     if end {
-        crate::driver::log_line("</message>\n");
+        crate::driver::log_line(stream, INFO, "</message>\n");
     }
 }
 
@@ -411,7 +411,7 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
             s.level[i] += 1;
         }
     });
-    crate::driver::log_line(&out);
+    crate::driver::log_line(stream, ty, &out);
 }
 
 /// C's `messageXML`: the whole message as one element's `text` attribute, left
@@ -431,7 +431,7 @@ fn message_xml(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
         }
     }
     out.push_str(if indent_next { "\">\n" } else { "\" />\n" });
-    crate::driver::log_line(&out);
+    crate::driver::log_line(stream, ty, &out);
 }
 
 /// C's `%<width>.<prec>g`.
@@ -647,7 +647,7 @@ mod tests {
     std::thread_local! {
         static SINK: core::cell::RefCell<String> = const { core::cell::RefCell::new(String::new()) };
     }
-    fn sink(s: &str) {
+    fn sink(_stream: Stream, _ty: LogType, s: &str) {
         SINK.with(|c| c.borrow_mut().push_str(s));
     }
 

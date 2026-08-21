@@ -413,7 +413,7 @@ mod run {
                         if max_iter >= 0 {
                             nlp.int_option("max_iter", max_iter);
                         }
-                        driver::log_line(&format!(
+                        driver::log_line(omclog::STDOUT, omclog::INFO, &format!(
                             "\nmax_iter = {}",
                             v.parse::<i32>().unwrap_or(0)
                         ));
@@ -425,7 +425,7 @@ mod run {
                         if max_iter >= 0 {
                             nlp.int_option("max_iter", max_iter);
                         }
-                        driver::log_line(&format!(
+                        driver::log_line(omclog::STDOUT, omclog::INFO, &format!(
                             "\nmax_iter = (int) {} | (double) {}",
                             max_iter,
                             crate::driver::format_g(scaled, 6)
@@ -464,7 +464,7 @@ mod run {
         if max_iter >= 0 {
             data.iter_ = 0;
             data.index = 1;
-            driver::log_line(IPOPT_BANNER);
+            driver::log_line(omclog::STDOUT, omclog::INFO, IPOPT_BANNER);
             data.out = super::ipopt_out::Capture::begin();
             let mut vopt = core::mem::take(&mut data.ipop.vopt);
             let mut mult_g = core::mem::take(&mut data.ipop.mult_g);

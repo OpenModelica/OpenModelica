@@ -137,12 +137,34 @@ fn fmi_log(status: Status, cat: u32, msg: &str) {
     }
 }
 
-/// The runtime's and driver's log lines: whatever stream they came from is lost
-/// by here, so the category is `logAll` rather than a per-line one.
-fn log_sink(s: &str) {
-    if logger().on {
-        log_raw(Status::Ok, CAT_ALL, s);
+/// The runtime's and driver's log lines. The FMI logger is the FMU's only
+/// channel, so the stream and type become a category and an `fmi3Status` — the
+/// mapping C's FMU makes at each `FILTERED_LOG` site. Through [`fmi_log`], so the
+/// importer's category filter applies.
+fn log_sink(stream: omclog::Stream, ty: omclog::LogType, s: &str) {
+    if !logger().on {
+        return;
     }
+    let cat = match stream {
+        omclog::EVENTS | omclog::EVENTS_V | omclog::ZEROCROSSINGS => CAT_EVENTS,
+        omclog::NLS | omclog::NLS_V | omclog::NLS_HOMOTOPY | omclog::NLS_JAC
+        | omclog::NLS_RES | omclog::NLS_EXTRAPOLATE => CAT_NLS,
+        omclog::LS | omclog::LS_V => CAT_SINGULAR_LS,
+        omclog::DSS | omclog::DSS_JAC => CAT_DSS,
+        // An assert is C's `logStatusError` whatever type it carries.
+        omclog::ASSERT => CAT_ERROR,
+        _ => match ty {
+            omclog::ERROR => CAT_ERROR,
+            omclog::WARNING => CAT_WARNING,
+            _ => CAT_ALL,
+        },
+    };
+    let status = match ty {
+        omclog::ERROR => Status::Error,
+        omclog::WARNING => Status::Warning,
+        _ => Status::Ok,
+    };
+    fmi_log(status, cat, s);
 }
 
 /// The `-lv` streams the model-diagnostics categories stand for. Only
@@ -231,10 +253,10 @@ pub extern "C" fn rt_assert_warning(
     fmi_log(Status::Warning, CAT_WARNING, &assert_message(msg, file, sline));
 }
 
-/// The `print` builtin.
+/// The `print` builtin: model output, which C sends to stdout — not a `-lv` stream.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_print(str: i32) {
-    log_sink(&rt_string(str));
+    log_sink(omclog::STDOUT, omclog::INFO, &rt_string(str));
 }
 
 /// Per-row assert formatting: the FMI master steps the model instead of the emitted
