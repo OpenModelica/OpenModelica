@@ -5332,7 +5332,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // top frame pixmap
   Label *pPixmapLabel = new Label;
   QPixmap pixmap(":/Resources/icons/omedit.png");
-  pPixmapLabel->setPixmap(pixmap.scaled(75, 72, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+  pPixmapLabel->setPixmap(pixmap.scaled(40, 38, Qt::KeepAspectRatio, Qt::SmoothTransformation));
   pPixmapLabel->setStyleSheet("background-color : transparent;");
   // top frame heading
   Label *pHeadingLabel = Utilities::getHeadingLabel(QString(Helper::applicationName).append(" - ").append(Helper::applicationIntroText));
@@ -5344,6 +5344,8 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // top frame layout
   QHBoxLayout *pTopFrameLayout = new QHBoxLayout;
   pTopFrameLayout->setAlignment(Qt::AlignLeft);
+  // keep the top frame slim so that the recent lists and the news get the vertical space
+  pTopFrameLayout->setContentsMargins(9, 2, 9, 2);
   pTopFrameLayout->addWidget(pPixmapLabel);
   pTopFrameLayout->addWidget(pHeadingLabel);
   pTopFrame->setLayout(pTopFrameLayout);
@@ -5366,14 +5368,14 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   QPushButton *pClearRecentFilesListButton = new QPushButton(tr("Clear Recent Files"));
   pClearRecentFilesListButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
   connect(pClearRecentFilesListButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(clearRecentFilesList()));
-  // RecentFiles Frame layout
+  // RecentFiles Frame layout. The clear button sits in the heading row so that the list gets the whole frame.
+  QHBoxLayout *recentFilesHeadingHBLayout = new QHBoxLayout;
+  recentFilesHeadingHBLayout->addWidget(pRecentFilesLabel, 1, Qt::AlignLeft);
+  recentFilesHeadingHBLayout->addWidget(pClearRecentFilesListButton, 0, Qt::AlignRight);
   QVBoxLayout *recentFilesFrameVBLayout = new QVBoxLayout;
-  recentFilesFrameVBLayout->addWidget(pRecentFilesLabel);
+  recentFilesFrameVBLayout->addLayout(recentFilesHeadingHBLayout);
   recentFilesFrameVBLayout->addWidget(mpNoRecentFileLabel);
   recentFilesFrameVBLayout->addWidget(mpRecentItemsListWidget);
-  QHBoxLayout *recentFilesHBLayout = new QHBoxLayout;
-  recentFilesHBLayout->addWidget(pClearRecentFilesListButton, 0, Qt::AlignLeft);
-  recentFilesFrameVBLayout->addLayout(recentFilesHBLayout);
   pRecentFilesFrame->setLayout(recentFilesFrameVBLayout);
   // RecentModels Frame
   QFrame *pRecentModelsFrame = new QFrame;
@@ -5395,14 +5397,14 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   QPushButton *pClearRecentModelsListButton = new QPushButton(Helper::clearRecentModels);
   pClearRecentModelsListButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
   connect(pClearRecentModelsListButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(clearRecentModelsList()));
-  // RecentModels Frame layout
+  // RecentModels Frame layout. The clear button sits in the heading row so that the list gets the whole frame.
+  QHBoxLayout *recentModelsHeadingHBLayout = new QHBoxLayout;
+  recentModelsHeadingHBLayout->addWidget(pRecentModelsLabel, 1, Qt::AlignLeft);
+  recentModelsHeadingHBLayout->addWidget(pClearRecentModelsListButton, 0, Qt::AlignRight);
   QVBoxLayout *recentModelsFrameVBLayout = new QVBoxLayout;
-  recentModelsFrameVBLayout->addWidget(pRecentModelsLabel);
+  recentModelsFrameVBLayout->addLayout(recentModelsHeadingHBLayout);
   recentModelsFrameVBLayout->addWidget(mpNoRecentModelLabel);
   recentModelsFrameVBLayout->addWidget(mpRecentModelItemsListWidget);
-  QHBoxLayout *recentModelsHBLayout = new QHBoxLayout;
-  recentModelsHBLayout->addWidget(pClearRecentModelsListButton, 0, Qt::AlignLeft);
-  recentModelsFrameVBLayout->addLayout(recentModelsHBLayout);
   pRecentModelsFrame->setLayout(recentModelsFrameVBLayout);
   // LatestNews Frame
   mpLatestNewsFrame = new QFrame;
@@ -5494,6 +5496,8 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // bottom frame layout
   QHBoxLayout *pBottomFrameLayout = new QHBoxLayout;
   pBottomFrameLayout->setAlignment(Qt::AlignLeft);
+  // keep the bottom frame as slim as the top frame
+  pBottomFrameLayout->setContentsMargins(9, 2, 9, 2);
   pBottomFrameLayout->addWidget(pCreateModelButton);
   pBottomFrameLayout->addWidget(pOpenModelButton);
   pBottomFrameLayout->addWidget(pSystemLibrariesButton);
@@ -5511,6 +5515,8 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   pBottomScrollArea->setBackgroundRole(QPalette::Base);
   pBottomScrollArea->setWidgetResizable(true);
   pBottomScrollArea->setWidget(pBottomFrame);
+  // the buttons band is as slim as the band with the application name on top of the page
+  pBottomScrollArea->setFixedHeight(pTopFrame->sizeHint().height());
   verticalLayout->addWidget(pBottomScrollArea, 0, Qt::AlignBottom);
   // main frame layout
   pMainFrame->setLayout(verticalLayout);
