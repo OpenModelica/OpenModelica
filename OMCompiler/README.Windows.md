@@ -104,7 +104,7 @@ Additional remarks:
 
 # 2 Compile OpenModelica
 
-On Windows, CMake is the only supported way to build OpenModelica. Follow the
+CMake is the only supported way to build OpenModelica. Follow the
 instructions in [MSYS and CMake](#21-msys-and-cmake).
 
 ## 2.1 MSYS and CMake
@@ -155,4 +155,4 @@ If something does not work check the following:
 
 --------------
 
-Last updated 2026-08-18.
+Last updated 2026-08-21.

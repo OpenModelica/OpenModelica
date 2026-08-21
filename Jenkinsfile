@@ -65,28 +65,6 @@ pipeline {
     stage('setup') {
       parallel {
         // Linux build stages
-        stage('gcc') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args '''
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
-          }
-          environment {
-            QTDIR = "/usr/lib/qt4"
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script { common.buildGccOMC() }
-          }
-        }
         stage('clang') {
           agent {
             docker {
@@ -382,7 +360,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestCMakeStashed('omc-cmake-gcc', 1, 3)
+                common.partestStashed('omc-cmake-gcc', 1, 3)
               }
             }
           }
@@ -407,7 +385,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestCMakeStashed('omc-cmake-gcc', 2, 3)
+                common.partestStashed('omc-cmake-gcc', 2, 3)
               }
             }
           }
@@ -432,7 +410,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestCMakeStashed('omc-cmake-gcc', 3, 3)
+                common.partestStashed('omc-cmake-gcc', 3, 3)
               }
             }
           }
@@ -693,7 +671,7 @@ pipeline {
           }
         }
 
-        stage('16 build-gui-clang-qt5') {
+        stage('16 build-gui-clang-qt5 + omedit-testsuite') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -702,11 +680,18 @@ pipeline {
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
             }
           }
+          environment {
+            // makeLibsAndCache() only reads runtest.db from RUNTESTDB (and
+            // tolerates it being absent); the omlibrary cache is the one that
+            // matters here, so no runtest volume is mounted.
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
           options {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.buildGUIAndStash('omc-clang', 'qt5', 'omedit-testsuite-clang-qt5') }
+            script { common.buildGUI('qt5') }
           }
         }
 
@@ -723,7 +708,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.buildGUIAndStash('omc-clang', 'qt6', 'omedit-testsuite-clang-qt6') }
+            script { common.buildGUI('qt6') }
           }
         }
 
@@ -845,7 +830,7 @@ pipeline {
         }
       }
     }
-    stage('FMPy + OMEdit testsuite') {
+    stage('FMPy') {
       parallel {
         // Merge stages 10 + 10b into the published web zip.
         stage('assemble-web') {
@@ -880,50 +865,6 @@ pipeline {
           }
           steps {
             script { common.fmpyLinux() }
-          }
-        }
-        stage('clang-qt5-omedit-testsuite') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt5', 'qt5')
-            }
-          }
-        }
-        stage('clang-qt6-omedit-testsuite') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt6', 'qt6')
-            }
           }
         }
       }
@@ -1038,5 +979,5 @@ pipeline {
 
 /* Note: If getting "Unexpected end of /proc/mounts line" , flatten the docker image:
  * https://stackoverflow.com/questions/46138549/docker-openmpi-and-unexpected-end-of-proc-mounts-line
- * Or use a newer OS image with fixed hwloc, or disable hwloc in the configure script
+ * Or use a newer OS image with fixed hwloc.
  */

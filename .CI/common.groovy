@@ -138,9 +138,12 @@ void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
   """)
 
   } else {
-  sh "rm -f omc-diff.skip && ${makeCommand()} -C testsuite/difftool clean && ${makeCommand()} --output-sync=recurse -C testsuite/difftool"
+  sh "${makeCommand()} -C testsuite/difftool clean && ${makeCommand()} --output-sync=recurse -C testsuite/difftool"
   sh 'build/bin/omc-diff -v1.4'
 
+  // Susan's generated *.mo live in the CMake build tree; rtest's default guess
+  // (OMCompiler/Compiler/) is where the removed Autoconf build put them.
+  withEnv(["OMCOMPILERGENERATEDSOURCES=${generatedMoDir()}"]) {
   sh ("""#!/bin/bash -x
   ulimit -t 1500
   # On top of the cgroup limit, to catch a single runaway process early
@@ -160,61 +163,29 @@ void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
     cp ../runtest.db.* "${env.RUNTESTDB}/${cacheBranchEscape()}/"
   fi
   """ : ''))
+  }
 
   }
 
   junit 'testsuite/partest/result.xml'
 }
 
-void patchConfigStatus() {
-  if (isUnix())
-  {
-    // Running on nodes with different paths for the workspace
-    sh 'sed -i.bak -e "s,--with-ombuilddir=[A-Za-z0-9./_-]*,--with-ombuilddir=`pwd`/build," -e "s,--prefix=[A-Za-z0-9./_-]*,--prefix=`pwd`/install," config.status OMCompiler/config.status'
-  }
+// The Susan-generated *.mo files live in the CMake build tree, not next to the
+// templates they come from. Tests that load the compiler sources by path (the
+// bootstrapping tests, MatlabTranslator) read OMCOMPILERGENERATEDSOURCES to find
+// them; see testsuite/rtest and Compiler/.cmake/template_compilation.cmake.
+// env.WORKSPACE is null in the docker agent, so read the path from pwd.
+String generatedMoDir() {
+  def ws = sh(script: 'pwd', returnStdout: true).trim()
+  return "${ws}/build_cmake/OMCompiler/Compiler/generated-mo"
 }
 
-void makeLibsAndCache() {
-  if (isWindows())
-  {
-    // do nothing
-  } else {
-  sh "test ! -z '${env.LIBRARIES}'"
-  // If we don't have any result, copy to the master to get a somewhat decent cache
-  sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
-     "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
-  // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
-  sh label: 'Create directory for omlibrary cache', script: """
-  mkdir -p '${env.LIBRARIES}/om-pkg-cache'
-  # Remove the symbolic link, or if it's a directory there... the entire thing
-  rm libraries/.openmodelica/cache || rm -rf libraries/.openmodelica/cache
-  mkdir -p libraries/.openmodelica/
-  test ! -e libraries/.openmodelica/cache
-  ln -s '${env.LIBRARIES}/om-pkg-cache' libraries/.openmodelica/cache
-  ls -lh libraries/.openmodelica/cache/
-  """
-  generateTemplates()
-  sh "touch omc.skip"
-  def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse libs-for-testing ReferenceFiles omc-diff ffi-test-lib"
-  if (env.SHARED_LOCK) {
-    lock(env.SHARED_LOCK) {
-      sh cmd
-    }
-  } else {
-    sh cmd
-  }
-  }
-}
-
-// makeLibsAndCache()'s counterpart for a CMake-built omc (see
-// partestCMakeStashed). Produces the same testsuite dependencies, but without
-// the Autoconf machinery: a CMake build has no config.status, so the top-level
-// Makefile the other variant drives does not exist. Each dependency has a
-// standalone Makefile that only needs the installed omc in build/, which is
-// exactly what libraries/CMakeLists.txt and testsuite/CMakeLists.txt wrap in
+// Build the testsuite dependencies against an installed omc in build/.
+// Each dependency has a standalone Makefile that needs nothing but that omc,
+// which is what libraries/CMakeLists.txt and testsuite/CMakeLists.txt wrap in
 // their libs-for-testing / reference-files / ffi-test-lib targets. omc-diff is
 // not built here: partest() rebuilds it from testsuite/difftool anyway.
-void makeLibsAndCacheCMake() {
+void makeLibsAndCache() {
   sh "test ! -z '${env.LIBRARIES}'"
   // If we don't have any result, copy to the master to get a somewhat decent cache
   sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
@@ -315,26 +286,6 @@ void sanityCheck(String installDir, Boolean buildCpp) {
   }
 }
 
-void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
-  standardSetup()
-
-  sh 'autoreconf --install'
-  // Note: Do not use -march=native since we might use an incompatible machine in later stages
-  def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
-  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --with-omniORB --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
-  // OMSimulator requires HOME to be set and writeable
-  if (clean) {
-    sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} clean"
-  }
-  sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} omc omc-diff omsimulator"
-  sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
-
-  // Find unused imports
-  sh label: 'Find unused imports', script: 'cd OMCompiler/Compiler/boot && ./find-unused-import.sh ../*/*.mo'
-
-  sanityCheck('build', buildCpp)
-}
-
 /**
  * Configure and build OMC via CMake, and run the sanity check.
  *
@@ -349,8 +300,12 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
  *                   (not a pre-joined string); they are joined with spaces
  *                   before being passed to the cmake CLI.
  * @param cmake_exe  the cmake executable to invoke.
+ * @param testDeps   also build the 'testsuite-depends' target. Pass false when a
+ *                   later stage runs makeLibsAndCache() anyway: that one links the
+ *                   shared omlibrary cache first, so building the libraries here
+ *                   would just download them again uncached.
  */
-void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
+void buildOMC_CMake(List cmake_args, cmake_exe='cmake', Boolean testDeps=true) {
   echo "Running on: ${env.NODE_NAME}"
   standardSetup()
 
@@ -390,7 +345,9 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
       sh "${cmake_exe} --version"
       sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}"
       sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
-      sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
+      if (testDeps) {
+        sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
+      }
       sh "build/bin/omc --version"
       sanityCheck('build', true)
     }
@@ -400,7 +357,9 @@ void buildOMC_CMake(List cmake_args, cmake_exe='cmake') {
     sh "${cmake_exe} --version"
     sh "${cmake_exe} -S ./ -B ./build_cmake ${cmake_args_str}"
     sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
-    sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
+    if (testDeps) {
+      sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
+    }
     sh "build/bin/omc --version"
     sanityCheck('build', true)
   }
@@ -821,72 +780,54 @@ def getQtMajorVersion(qtVersion) {
   return OM_QT_MAJOR_VERSION
 }
 
-void buildGUI(stash, qtVersion) {
-  if (stash) {
-    standardSetup()
-    unstash stash
-  }
-  sh 'autoreconf --install'
-  if (stash) {
-    patchConfigStatus()
-  }
-  if (qtVersion.equals('qt6')) {
-    sh 'echo ./configure --with-qt6 `./config.status --config` > config.status.2 && bash ./config.status.2'
-  } else {
-    sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
-  }
-  // compile OMSens_Qt for Qt5 and Qt6
-  if (qtVersion.equals('qt6') || qtVersion.equals('qt5')) {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
-  } else {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
-  }
-  sh "${makeCommand()} -j${numPhysicalCPU()} ${outputSync()}" // Builds the GUI files
+// Build the whole tree against one Qt major version and, for Qt5, run the OMEdit
+// testsuite.
+//
+// This is a full CMake build rather than "build the GUI on top of an existing
+// omc": CMake has no equivalent of the Autoconf build's per-target .skip stamps,
+// and the OMEdit tests are CTest tests whose registered command lines hold
+// absolute paths into the build tree — so building them on one agent and running
+// them on another (which is what the old stash/unstash split did) is not safe.
+// ccache keeps the rebuild cheap.
+//
+// @param qtVersion 'qt5' or 'qt6'.
+void buildGUI(qtVersion) {
+  buildOMC_CMake([
+    // RelWithDebInfo, not Release: OMEdit's crash report shells out to gdb
+    // (CrashReport/GDBBacktrace.cpp — the in-process backtrace.c is _WIN32-only),
+    // and without -g that backtrace has no line numbers. The qmake build used to
+    // add -g to release builds for exactly this reason.
+    "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+    "-DCMAKE_INSTALL_PREFIX=build",
+    "-DCMAKE_C_COMPILER=clang",
+    "-DCMAKE_CXX_COMPILER=clang++",
+    "-D${getQtMajorVersion(qtVersion)}",
+    "-DOM_OMEDIT_ENABLE_TESTS=ON"], 'cmake', false)
 
-  // test make install after qt builds
-  sh label: 'install', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} install ${ignoreOnMac()}"
-}
-
-void buildAndRunOMEditTestsuite(stashName, qtVersion) {
-  if (stashName) {
-    standardSetup()
-    sh 'rm -rf OMEdit/common'
-    unstash stashName
-  }
-  sh 'autoreconf --install'
-  if (stashName) {
-    patchConfigStatus()
-  }
   if (qtVersion.equals('qt6')) {
-    sh 'echo ./configure --with-qt6 `./config.status --config` > config.status.2 && bash ./config.status.2'
-  } else {
-    sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+    // OMEdit compiled with Qt6 crashes in the webengine libs on ubuntu, so the
+    // Qt6 stage only checks that everything builds.
+    return
   }
-  if (stashName) {
-    makeLibsAndCache()
-  }
-  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
-  sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
-  if (qtVersion.equals('qt6')) {
-    // OMEdit compiled with Qt6 crashes in webengine libs on ubuntu
-  } else {
-    sh label: 'RunOMEditTestsuite', script: '''
-    HOME="\$PWD/libraries"
-    cd build/bin
-    xvfb-run ./RunOMEditTestsuite.sh
-    '''
-    }
-}
 
-void generateTemplates() {
-  if (isWindows()) {
-  // do nothing
-  } else {
-  patchConfigStatus()
-  // Runs Susan again, for bootstrapping tests, etc
-  sh "${makeCommand()} -C OMCompiler/Compiler/Template/ -f Makefile.in OMC=\$PWD/build/bin/omc"
-  sh 'cd OMCompiler && ./config.status'
-  sh './config.status'
+  // The tests browse the MSL, so they need the test libraries and a writable HOME.
+  makeLibsAndCache()
+  try {
+    // --repeat until-pass:5 replaces the retry loop the old RunOMEditTestsuite.sh
+    // had; these GUI tests are flaky.
+    sh label: 'RunOMEditTestsuite', script: """
+    # The test binaries live in the build tree, not in build/bin, so they cannot
+    # deduce the installation dir from their own path; and omc needs a writable
+    # HOME holding the test libraries.
+    export OPENMODELICAHOME="\$PWD/build"
+    export HOME="\$PWD/libraries"
+    xvfb-run ctest --test-dir build_cmake/OMEdit/Testsuite \
+                   --repeat until-pass:5 \
+                   --output-on-failure \
+                   --output-junit "\$PWD/omedit-testsuite.xml"
+    """
+  } finally {
+    junit testResults: 'omedit-testsuite.xml', allowEmptyResults: true
   }
 }
 
@@ -1087,35 +1028,14 @@ Map evaluateBuildFlags() {
   return flags
 }
 
-def outputSync()
-{
- def osync = sh(script: "${makeCommand()} --version | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\\+//'", returnStdout: true).toInteger() >= 4 ? "--output-sync=recurse" : ""
- return osync;
-}
-
-
-def ignoreOnMac() {
-  def uname = sh script: 'uname', returnStdout: true
-  def ignore = ""
-  if (uname.startsWith("Darwin")) {
-    ignore = "|| true"
-  }
-  return ignore;
-}
-
 // ----------------------------------------------------------------------------
 // Whole-stage step bodies. These live here rather than inline in the
 // Jenkinsfile so the declarative pipeline's single generated CPS method stays
 // under Groovy's 64kB method-size limit.
 // ----------------------------------------------------------------------------
 
-void buildGccOMC() {
-  buildOMC('gcc', 'g++', '', true, false)
-  stash name: 'omc-gcc', includes: 'build/**, **/config.status'
-}
-
 // The jammy CMake build of omc. Its install tree is what the testsuite-gcc
-// stages run against (partestCMakeStashed), so keep the flags in sync with what
+// stages run against (partestStashed), so keep the flags in sync with what
 // those tests need.
 void buildCMakeGccOMC() {
   buildOMC_CMake([
@@ -1124,7 +1044,7 @@ void buildCMakeGccOMC() {
     "-DCMAKE_INSTALL_PREFIX=build"])
 
   // Susan's *.mo and Autoconf.mo travel along because the bootstrapping tests
-  // load the compiler sources by path (see partestCMakeStashed).
+  // load the compiler sources by path (see partestStashed).
   stash name: 'omc-cmake-gcc',
         includes: 'build/**,' +
                   'build_cmake/OMCompiler/Compiler/generated-mo/**,' +
@@ -1132,11 +1052,24 @@ void buildCMakeGccOMC() {
 }
 
 void buildClangOMC() {
-  buildOMC('clang', 'clang++', '--without-hwloc', true, true)
+  buildOMC_CMake([
+    "-DCMAKE_BUILD_TYPE=Release",
+    "-DOM_USE_CCACHE=OFF",
+    "-DCMAKE_INSTALL_PREFIX=build",
+    "-DCMAKE_C_COMPILER=clang",
+    "-DCMAKE_CXX_COMPILER=clang++"], 'cmake', false)
+  sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
+  // Find unused imports
+  sh label: 'Find unused imports', script: 'cd OMCompiler/Compiler/boot && ./find-unused-import.sh ../*/*.mo'
   getVersion()
   // Resolve symbolic links to make Jenkins happy
   sh 'cp -Lr build build.new && rm -rf build && mv build.new build'
-  stash name: 'omc-clang', includes: 'build/**, **/config.status'
+  // Susan's *.mo and Autoconf.mo travel along because the bootstrapping and
+  // MatlabTranslator tests load the compiler sources by path (generatedMoDir()).
+  stash name: 'omc-clang',
+        includes: 'build/**,' +
+                  'build_cmake/OMCompiler/Compiler/generated-mo/**,' +
+                  'OMCompiler/Compiler/Util/Autoconf.mo'
   // The Rust omc build (GUI off, no full C++ runtime) lacks OMSimulator and
   // libomcruntime, which the rust testsuite shard needs. Hand the prebuilt
   // binaries over so partestRust doesn't have to rebuild them. Kept narrow so
@@ -1155,7 +1088,13 @@ void checks() {
   // It's really bad if we mess up the repo and can no longer build properly
   sh '! git submodule foreach --recursive git diff 2>&1 | grep CRLF'
   // TODO: trailing-whitespace-error tab-error
-  sh "make -f Makefile.in -j${numLogicalCPU()} --output-sync=recurse bom-error utf8-error thumbsdb-error spellcheck"
+  // These used to be Makefile.in targets; they are CMake targets now
+  // (cmake/omc_source_checks.cmake), but the scripts behind them need no
+  // configured build dir, so call them directly.
+  sh 'bash cmake/source_checks.sh bom-error .'
+  sh 'bash cmake/source_checks.sh utf8-error .'
+  sh 'bash cmake/source_checks.sh thumbsdb-error .'
+  sh 'bash cmake/spellcheck.sh . aspell'
   sh '''
   cd doc/bibliography
   mkdir -p openmodelica.org-bibgen
@@ -1164,26 +1103,13 @@ void checks() {
   stash name: 'bibliography', includes: 'doc/bibliography/openmodelica.org-bibgen/*.md'
 }
 
-// A partest shard against a stashed omc build (gcc/clang).
+// A partest shard against a stashed CMake install tree (see buildCMakeGccOMC,
+// buildClangOMC).
 void partestStashed(stashName, partition, partitionmodulo) {
   standardSetup()
   unstash stashName
   makeLibsAndCache()
   partest(partition, partitionmodulo)
-}
-
-// The same, for a stashed CMake install tree (see buildCMakeGccOMC). Only the
-// way the test dependencies are built differs; the run itself is the same
-// partest.
-void partestCMakeStashed(stashName, partition, partitionmodulo) {
-  standardSetup()
-  unstash stashName
-  makeLibsAndCacheCMake()
-  // Susan's generated *.mo files are in the build tree
-  def ws = sh(script: 'pwd', returnStdout: true).trim()
-  withEnv(["OMCOMPILERGENERATEDSOURCES=${ws}/build_cmake/OMCompiler/Compiler/generated-mo"]) {
-    partest(partition, partitionmodulo)
-  }
 }
 
 void crossBuildFMU() {
@@ -1232,11 +1158,6 @@ void buildUsersGuide() {
   stash name: 'usersguide', includes: "OpenModelicaUsersGuide-${tagName()}*.*"
 }
 
-void buildGUIAndStash(stashInput, qtVersion, outStash) {
-  buildGUI(stashInput, qtVersion)
-  stash name: outStash, includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
-}
-
 void partestParmod() {
   standardSetup()
   unstash 'omc-clang'
@@ -1252,8 +1173,9 @@ void testMetaModelica() {
 void testMatlabTranslator() {
   standardSetup()
   unstash 'omc-clang'
-  generateTemplates()
-  sh 'make -C testsuite/special/MatlabTranslator/ test'
+  withEnv(["OMCOMPILERGENERATEDSOURCES=${generatedMoDir()}"]) {
+    sh 'make -C testsuite/special/MatlabTranslator/ test'
+  }
 }
 
 void testIconGenerator() {

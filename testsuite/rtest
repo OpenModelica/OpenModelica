@@ -33,7 +33,7 @@ if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
       $OPENMODELICAHOME = "$1build_cmake/install_cmake";
       last;
     }
-    # Otherwise assume we are using the autoconf config and installing to OpenModelica/build
+    # Otherwise assume CMAKE_INSTALL_PREFIX was set to OpenModelica/build
     elsif (-e "$1build/bin/$OMCEXE") {
       $OPENMODELICAHOME = "$1build";
       last;
