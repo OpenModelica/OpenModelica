@@ -40,6 +40,12 @@ test:
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
 
+baseline:
+	@echo
+	@echo Updating badelines...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(TEST) -b $(TESTFILES)
 
 # Cleans all files that are not listed as dependencies
 clean:

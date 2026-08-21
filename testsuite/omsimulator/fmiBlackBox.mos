@@ -49,7 +49,9 @@ readFile("fmiblackbox_systemCall.log");
 // true
 // ""
 // "fmi_attributes_11.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // true
 // ""
 // 0

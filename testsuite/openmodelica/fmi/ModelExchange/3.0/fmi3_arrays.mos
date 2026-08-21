@@ -36,7 +36,9 @@ readFile("fmi3_arrays.xml"); getErrorString();
 // true
 // ""
 // "fmi3_arrays.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // 0

@@ -38,19 +38,21 @@ readFile("simpleLoop_me_systemCall.log");
 // true
 // ""
 // "simpleLoop.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // true
 // 0
 // ""
 // 0
 // "info: *** FMU Simulation Info ***
-//           - model     : simpleLoop (model exchange)
-//           - fmiVersion: 2.0
-//           - startTime : 0.000000
-//           - stopTime  : 1.000000
-//           - tolerance : 0.000001
-//           - stepSize  : 0.002000
+//      - model     : simpleLoop (model exchange)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 1.000000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.002
 // info:    model doesn't contain any continuous state
 // info:    maximum step size for 'simpleLoop.root': 0.002000
 // info:    Result file: simpleLoop_res.mat (bufferSize=10)

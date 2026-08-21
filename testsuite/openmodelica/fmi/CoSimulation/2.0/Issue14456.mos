@@ -1,7 +1,7 @@
 // name: Issue14456.mos
 // keywords: fmu export and run
 // status: correct
-// teardown_command: rm -rf roomM370*.c roomM370*.h roomM370-tmp index.html roomM370.fmu roomM370_cs_systemCall.log roomM370_res.mat roomM370_info.json model_res.mat
+// teardown_command: rm -rf roomM370*.c roomM370*.h roomM370-tmp index.html roomM370.fmu roomM370_cs_systemCall.log roomM370_res.mat roomM370_info.json model_res.mat roomM370.log
 
 setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
 loadFile("roomM370.mo"); getErrorString();
@@ -18,6 +18,8 @@ readFile("roomM370_cs_systemCall.log"); getErrorString();
 // ""
 // {"roomM370.fmu"}
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'dynamic' (1/1).
+// Notification: Finished FMU for platform 'dynamic' (1/1).
 // "
 // 0
 // ""

@@ -1,3 +1,4 @@
+*_res.csv
 *.bin
 *.c
 *.fmu
@@ -9,6 +10,6 @@
 *.makefile
 *.mat
 *.xml
-DualMassOscillator.CoupledSystem
-/temp-*/
 /temp_*/
+/temp-*/
+DualMassOscillator.CoupledSystem

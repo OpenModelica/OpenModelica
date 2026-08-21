@@ -51,7 +51,9 @@ system("unzip -cqq GfxPorts.fmu terminalsAndIcons/terminalsAndIcons.xml | grep -
 // true
 // ""
 // "GfxPorts.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // <rect
 // >GfxPorts<
 // 0

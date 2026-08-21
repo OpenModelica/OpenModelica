@@ -42,7 +42,9 @@ val(solution, 250.0, "stiffProblem_Dynamic_res.mat"); getErrorString();
 // true
 // ""
 // "stiffProblem.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // "{

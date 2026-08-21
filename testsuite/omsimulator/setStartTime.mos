@@ -37,15 +37,17 @@ val(u, 2.5, "start_time_res.mat");
 // true
 // ""
 // "setstartTime.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // "info: *** FMU Simulation Info ***
 //      - model     : setstartTime (model exchange)
 //      - fmiVersion: 2.0
 //      - startTime : 2.500000
 //      - stopTime  : 5.000000
-//      - tolerance : 0.000001
-//      - stepSize  : 0.002000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.002
 // info:    maximum step size for 'setstartTime.root': 0.002000
 // info:    Result file: start_time_res.mat (bufferSize=10)
 // info:    Parameter setstartTime.scheme.delimiter will not be stored in the result file, because the signal type is not supported

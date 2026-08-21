@@ -29,7 +29,9 @@ readFile("fmi3_array_attributes.dims"); getErrorString();
 // true
 // ""
 // "fmi3_array_attributes.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // ""

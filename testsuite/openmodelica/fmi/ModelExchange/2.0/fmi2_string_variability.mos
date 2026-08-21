@@ -35,48 +35,50 @@ readFile("fmi2_string_variability.xml"); getErrorString();
 // true
 // ""
 // "fmi2_string_variability.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // 0
 // ""
-// " <ModelVariables>
-// <!-- Index of variable = \"1\" -->
-// <ScalarVariable
-// name=\"y_real\"
-// valueReference=\"1\"
-// causality=\"output\"
-// >
-// <Real/>
-// </ScalarVariable>
-// <!-- Index of variable = \"2\" -->
-// <ScalarVariable
-// name=\"y_int\"
-// valueReference=\"1\"
-// variability=\"discrete\"
-// causality=\"output\"
-// >
-// <Integer/>
-// </ScalarVariable>
-// <!-- Index of variable = \"3\" -->
-// <ScalarVariable
-// name=\"y_bool\"
-// valueReference=\"1\"
-// variability=\"discrete\"
-// causality=\"output\"
-// >
-// <Boolean/>
-// </ScalarVariable>
-// <!-- Index of variable = \"4\" -->
-// <ScalarVariable
-// name=\"y_string\"
-// valueReference=\"1\"
-// variability=\"discrete\"
-// causality=\"output\"
-// >
-// <String/>
-// </ScalarVariable>
-// </ModelVariables>
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"y_real\"
+//     valueReference=\"1\"
+//     causality=\"output\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"y_int\"
+//     valueReference=\"1\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     >
+//     <Integer/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"y_bool\"
+//     valueReference=\"1\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     >
+//     <Boolean/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"y_string\"
+//     valueReference=\"1\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     >
+//     <String/>
+//   </ScalarVariable>
+//   </ModelVariables>
 // "
 // ""
 // endResult

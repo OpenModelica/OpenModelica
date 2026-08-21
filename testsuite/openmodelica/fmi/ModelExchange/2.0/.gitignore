@@ -1,1 +1,17 @@
+@/
+*_res.mat
+*.c
+*.fmu
+*.fmutmp/
+*.h
+*.json
+*.libs
+*.makefile
+*.tmp
+*.tmp*
+*.xml
 /QuotedIdentifier_tmp/
+binaries/
+documentation/
+resources/
+sources/

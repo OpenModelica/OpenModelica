@@ -31,7 +31,9 @@ diffSimulationResults("ClkDrive_fmpy.csv", "ClkDrive_ref_res.mat", "ClkDrive_dif
 // end SimulationResult;
 // ""
 // "ClkDrive.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // (true, {})

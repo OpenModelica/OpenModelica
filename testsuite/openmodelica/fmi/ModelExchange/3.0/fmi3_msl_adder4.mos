@@ -30,7 +30,9 @@ diffSimulationResults("Adder4_fmpy.csv", "Adder4_ref_res.mat", "Adder4_diff", va
 // end SimulationResult;
 // ""
 // "Adder4.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // (true, {})
