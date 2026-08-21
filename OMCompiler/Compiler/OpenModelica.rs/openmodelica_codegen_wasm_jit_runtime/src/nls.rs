@@ -63,6 +63,8 @@ pub const ERROR_SIMULATION: u32 = 0;
 pub const ERROR_INTEGRATOR: u32 = 1;
 /// `solve_nonlinear_system`'s own region, which begins after C's `updateInnerEquation`.
 pub const ERROR_NONLINEARSOLVER: u32 = 2;
+/// C's `MMC_TRY_INTERNAL(simulationJumpBuffer)`, which the driver holds over one step.
+pub const ERROR_SIMULATION_STEP: u32 = 3;
 static ERROR_STAGE: [AtomicU32; 2] = [AtomicU32::new(ERROR_SIMULATION), AtomicU32::new(0)];
 
 /// C's `saveJumpState`: the stage held over the solver region and put back after.
@@ -168,6 +170,13 @@ pub extern "C" fn rt_nls_recovering() -> i32 {
         as i32
 }
 
+/// Whether a `throwStreamPrint` model error unwinds into a catcher: the solver
+/// regions plus the step region. A failed `assert()` asks [`rt_nls_recovering`]
+/// alone -- `noThrowAsserts` suppresses it before any jump buffer sees it.
+fn error_caught() -> bool {
+    rt_nls_recovering() != 0 || ERROR_STAGE[0].load(Ordering::Relaxed) == ERROR_SIMULATION_STEP
+}
+
 /// Model side: flag that a recoverable assert fired at the current trial point.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_note_assert() {
@@ -245,7 +254,7 @@ fn note_slot() -> &'static AtomicU32 {
 /// `MMC_TRY_INTERNAL`, so inside a residual note the trial and let the caller return
 /// a dummy the solver discards. With neither stage open the error is fatal.
 pub(crate) fn model_error() {
-    if rt_nls_recovering() != 0 {
+    if error_caught() {
         rt_nls_note_assert();
         return;
     }
@@ -262,11 +271,11 @@ pub extern "C" fn rt_throw_stream(msg: u32) {
 
 /// Whether the next [`throw_stream`] reports, for a caller with its own message.
 pub(crate) fn throw_reports() -> bool {
-    !(rt_nls_recovering() != 0 && note_slot().load(Ordering::Relaxed) != 0)
+    !(error_caught() && note_slot().load(Ordering::Relaxed) != 0)
 }
 
 pub(crate) fn throw_stream(s: &str) {
-    let recovering = rt_nls_recovering() != 0;
+    let recovering = error_caught();
     // C's `longjmp` leaves the rest of the evaluation unreached, so it reports one
     // throw per evaluation. Here each frame returns and the ones above it carry on:
     // report only the throw C's jump would have carried out.

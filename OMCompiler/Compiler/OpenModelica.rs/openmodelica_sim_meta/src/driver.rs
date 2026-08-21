@@ -438,28 +438,134 @@ fn set_context(e: &mut dyn SimEngine, addr: u32, ctx: i32) {
 /// C's `threadData->currentErrorStage`, mirrored from the runtime's `nls.rs`.
 pub const ERROR_SIMULATION: i32 = 0;
 pub const ERROR_INTEGRATOR: i32 = 1;
+/// C's outer `MMC_TRY_INTERNAL(simulationJumpBuffer)`, held by [`StepRetry`].
+pub const ERROR_SIMULATION_STEP: i32 = 3;
+
+/// What a region displaced (C's `saveJumpState`), so regions nest.
+#[derive(Clone, Copy, Default)]
+struct StageSave {
+    stage: i32,
+    hit: i32,
+}
 
 /// Open C's `MMC_TRY_INTERNAL(simulationJumpBuffer)` around an integrator callback: a
 /// model error inside it is absorbed rather than trapping, and [`took_error_stage`]
 /// reports it. A no-op without the runtime slot, where such an error stays fatal.
-fn set_error_stage(e: &mut dyn SimEngine, addr: u32, stage: i32) {
-    if addr != 0 {
-        let _ = write_i32(e, addr, stage);
-        if stage != ERROR_SIMULATION {
-            let _ = write_i32(e, addr + 4, 0);
-        }
+fn set_error_stage(e: &mut dyn SimEngine, addr: u32, stage: i32) -> StageSave {
+    if addr == 0 {
+        return StageSave::default();
     }
+    let save =
+        StageSave { stage: read_i32(e, addr).unwrap_or(ERROR_SIMULATION), hit: read_i32(e, addr + 4).unwrap_or(0) };
+    let _ = write_i32(e, addr, stage);
+    let _ = write_i32(e, addr + 4, 0);
+    save
 }
 
-/// Close the region [`set_error_stage`] opened: back to `ERROR_SIMULATION`, and
-/// whether a model error was absorbed while it was open (C's `success == 0`).
-fn took_error_stage(e: &mut dyn SimEngine, addr: u32) -> bool {
+/// Close the region [`set_error_stage`] opened: put `save` back, and report whether a
+/// model error was absorbed in it (C's `success == 0`).
+fn took_error_stage(e: &mut dyn SimEngine, addr: u32, save: StageSave) -> bool {
     if addr == 0 {
         return false;
     }
     let hit = read_i32(e, addr + 4).unwrap_or(0) != 0;
-    let _ = write_i32(e, addr, ERROR_SIMULATION);
+    let _ = write_i32(e, addr, save.stage);
+    let _ = write_i32(e, addr + 4, save.hit);
     hit
+}
+
+/// C's `performSimulation` step guard: the `MMC_TRY_INTERNAL(simulationJumpBuffer)`
+/// around one step, the `storeOldValues` snapshot it falls back to, and the `retry`
+/// flag. A model error inside the region is recorded by the runtime instead of
+/// trapping.
+#[derive(Default)]
+struct StepRetry {
+    /// C's `simulationInfo->{timeValueOld,realVarsOld,integerVarsOld,booleanVarsOld}`.
+    time: f64,
+    real: Vec<u8>,
+    int: Vec<u8>,
+    bools: Vec<u8>,
+    stored: bool,
+    /// C's `retry`: a second throw on the same step ends the run.
+    armed: bool,
+    /// Output rows as of the step's start, so a step that throws leaves none.
+    rows_mark: usize,
+    /// The region is open; its close reported a model error absorbed in it.
+    in_step: bool,
+    threw: bool,
+    save: StageSave,
+}
+
+impl StepRetry {
+    fn open(&mut self, e: &mut dyn SimEngine, rows: usize) {
+        let addr = e.error_stage_addr();
+        self.rows_mark = rows;
+        self.in_step = true;
+        self.threw = false;
+        self.save = set_error_stage(e, addr, ERROR_SIMULATION_STEP);
+    }
+
+    fn close(&mut self, e: &mut dyn SimEngine) -> Result<()> {
+        if !self.end(e) {
+            return Ok(());
+        }
+        self.threw = true;
+        Err(ASSERT_ERR)
+    }
+
+    /// Leave the region, reporting whether a model error was absorbed in it.
+    fn end(&mut self, e: &mut dyn SimEngine) -> bool {
+        if !core::mem::take(&mut self.in_step) {
+            return false;
+        }
+        let addr = e.error_stage_addr();
+        took_error_stage(e, addr, self.save)
+    }
+
+    /// C's `storeOldValues`, at the end of every accepted step — where it also
+    /// clears `retry`.
+    fn store(&mut self, e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+        let regions = [
+            (REAL_OFF, layout.real_bytes()),
+            (layout.int_off, layout.n_int_alg() as usize * 4),
+            (layout.bool_off, layout.n_bool_alg() as usize * 4),
+        ];
+        for ((off, bytes), buf) in regions.into_iter().zip([&mut self.real, &mut self.int, &mut self.bools]) {
+            buf.resize(bytes, 0);
+            e.read_bytes(sim_data + off, buf)?;
+        }
+        self.time = read_f64(e, sim_data + TIME_OFF)?;
+        self.stored = true;
+        self.armed = false;
+        Ok(())
+    }
+
+    /// C's `retrySimulationStep`: restore the last accepted point and settle the
+    /// discrete system over it. `None` ⇒ the throw ends the run.
+    fn undo(&mut self, e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Option<f64>> {
+        // Only a model error the region absorbed reaches C's catch; a rethrown
+        // `assert()` is `MMC_THROW_INTERNAL`, which jumps past it.
+        let caught = self.end(e) || self.threw;
+        if !caught || !self.stored || self.armed {
+            return Ok(None);
+        }
+        self.armed = true;
+        // The throw is being retried, so nothing downstream may report it.
+        clear_runtime_error();
+        let _ = e.take_pending_assert();
+        write_f64(e, sim_data + TIME_OFF, self.time)?;
+        for (off, buf) in
+            [(REAL_OFF, &self.real), (layout.int_off, &self.int), (layout.bool_off, &self.bools)]
+        {
+            if !buf.is_empty() {
+                e.write_bytes(sim_data + off, buf)?;
+            }
+        }
+        save_old_real(e, sim_data, layout)?; // C's `overwriteOldSimulationData`
+        iterate_discrete(e, sim_data, layout)?;
+        omclog::warning(omclog::STDOUT, false, "Integrator attempt to handle a problem with a called assert.");
+        Ok(Some(self.time))
+    }
 }
 
 /// Must match the runtime's `N_STATS`.
@@ -615,6 +721,11 @@ pub trait Driver {
     /// finishes; `+inf` runs to completion. `e` is `'static` because the DASSL
     /// residual callback stashes a raw pointer to it in a thread-local.
     fn advance(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel, budget_ms: f64) -> Result<Advance>;
+    /// C's `performSimulation` catch: undo the step `advance` threw in and retake it at
+    /// half the size. `false` ⇒ the throw ends the run.
+    fn retry_step(&mut self, _e: &mut (dyn SimEngine + 'static), _model: &SimModel) -> Result<bool> {
+        Ok(false)
+    }
     fn take_rows(&mut self) -> Vec<f64>;
     fn fill_stats(&mut self, model: &SimModel, stats: &mut SolveStats);
     /// The time C's `finishSimulation` emits its terminal row at
@@ -1177,6 +1288,13 @@ pub const CHATTER_ABORT_ERR: &str = "CodegenWasmJit: aborting simulation due to 
 pub const ALARM_ABORT_ERR: &str = "CodegenWasmJit: simulation aborted (-alarm)";
 /// What [`enrich_trap`] returns for a trap that was a failed model `assert()`.
 pub const ASSERT_ERR: &str = "assertion failed";
+
+/// Whether an error out of a step is one of C's `longjmp`s; a solver failure, a
+/// cancelled run or a raw wasm trap is not. Which buffer it targeted, and so whether
+/// the step is retried, is [`StepRetry::undo`]'s.
+pub fn is_model_throw(err: &str) -> bool {
+    err == ASSERT_ERR
+}
 /// C's `initialization()` returning nonzero: the reason is already logged.
 pub const INIT_FAILED_ERR: &str = "initialization failed";
 
@@ -2453,6 +2571,9 @@ pub fn emit_terminal_row(
     n_reals: u32,
     at: Option<f64>,
 ) -> Result<()> {
+    // A run that ended mid-step left its `StepRetry` region open.
+    let addr = e.error_stage_addr();
+    set_error_stage(e, addr, ERROR_SIMULATION);
     let Some(time) = rows.len().checked_sub(n_reals as usize).map(|i| at.unwrap_or(rows[i])) else {
         return Ok(());
     };
@@ -3721,7 +3842,15 @@ pub fn drive(
             .and_then(|v| v.parse::<f64>().ok())
             .unwrap_or(f64::INFINITY);
         loop {
-            match driver.advance(e, model, budget_ms).map_err(|err| enrich_trap(e, err))? {
+            let advanced = match driver.advance(e, model, budget_ms) {
+                Ok(a) => a,
+                // C's `performSimulation` catch.
+                Err(err) => match is_model_throw(err) && driver.retry_step(e, model)? {
+                    true => continue,
+                    false => return Err(enrich_trap(e, err)),
+                },
+            };
+            match advanced {
                 Advance::Done | Advance::Terminated => break,
                 Advance::Cancelled => return Err("CodegenWasmJit: simulation cancelled"),
                 Advance::Running => continue,
@@ -3803,8 +3932,11 @@ struct EulerDriver {
     sim_data: u32,
     /// Next output row to produce (0-based).
     row: u32,
+    /// Where a retried step ends, short of this row's grid point.
+    pending_time: Option<f64>,
     pivots: Vec<StateSetPivot>,
     rows: Vec<f64>,
+    retry: StepRetry,
 }
 
 impl EulerDriver {
@@ -3815,11 +3947,15 @@ impl EulerDriver {
         run_initialization_model(e, sim_data, model)?;
         let n_rows = model.n_output_rows();
         let n_reals = model.layout.n_row_total();
+        let mut retry = StepRetry::default();
+        retry.store(e, sim_data, &model.layout)?;
         Ok(EulerDriver {
             sim_data,
             row: 0,
+            pending_time: None,
             pivots: init_state_pivots(&model.state_sets),
             rows: Vec::with_capacity((n_rows * n_reals) as usize),
+            retry,
         })
     }
 }
@@ -3849,7 +3985,9 @@ impl Driver for EulerDriver {
             }
             did_step = true;
             // The last row lands exactly on `stop`: the terminal step.
-            let time = if self.row == n_steps { stop } else { grid(self.row) };
+            let time =
+                self.pending_time.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+            self.retry.open(e, self.rows.len());
             // Euler locates no events, so a suppressed assert always throws; the
             // window is what gets it reported like C's.
             open_assert_window();
@@ -3860,6 +3998,8 @@ impl Driver for EulerDriver {
             };
             close_assert_window(e, sim_data).and(emitted)?;
             store_operators(e, sim_data, layout)?;
+            self.retry.close(e)?;
+            self.retry.store(e, sim_data, layout)?;
             check_nls(e, sim_data, layout)?; // Euler cannot back off — non-convergence is fatal
             // terminate() fired in functionAlgebraics: keep this row, stop the run.
             if terminated(e, sim_data, layout)? {
@@ -3884,7 +4024,7 @@ impl Driver for EulerDriver {
                 }
             }
             // Forward-Euler update of the states, over this row's own step.
-            let h = grid(self.row + 1) - grid(self.row);
+            let h = grid(self.row + 1) - time;
             for i in 0..n_states {
                 let s = read_f64(e, states_base + i * 8)?;
                 let d = read_f64(e, ders_base + i * 8)?;
@@ -3893,6 +4033,30 @@ impl Driver for EulerDriver {
             self.row += 1;
         }
         Ok(Advance::Done)
+    }
+
+    fn retry_step(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel) -> Result<bool> {
+        let Some(t) = self.retry.undo(e, self.sim_data, &model.layout)? else {
+            return Ok(false);
+        };
+        self.rows.truncate(self.retry.rows_mark);
+        let n_steps = model.n_output_rows() - 1;
+        let target = if self.row >= n_steps {
+            model.stop_time
+        } else {
+            grid_time(self.row, model.start_time, model.stop_time, n_steps)
+        };
+        // C's `euler_step` runs before the point is evaluated; redo it over half.
+        let h = (target - t) / 2.0;
+        let states_base = self.sim_data + REAL_OFF;
+        let ders_base = states_base + model.layout.n_states * 8;
+        for i in 0..model.layout.n_states {
+            let x = read_f64(e, states_base + i * 8)?;
+            let d = read_f64(e, ders_base + i * 8)?;
+            write_f64(e, states_base + i * 8, x + h * d)?;
+        }
+        self.pending_time = Some(t + h);
+        Ok(true)
     }
 
     fn take_rows(&mut self) -> Vec<f64> {
@@ -4117,13 +4281,13 @@ unsafe fn dassl_res(
     let ctx = unsafe { &mut *ctx };
     let e = unsafe { &mut *ctx.engine };
     let n = ctx.n_states;
+    let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
     let run = (|| -> Result<()> {
         write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?; // clear before the solve
         write_time(e, ctx.sim_data, unsafe { *t })?;
         let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
         e.write_bytes(ctx.states_base, y_bytes)?;
         set_context(e, ctx.ctx_addr, CONTEXT_ODE);
-        set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
         e.call1("functionODE", ctx.sim_data)?;
         set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
         // delta := yprime - f
@@ -4134,7 +4298,7 @@ unsafe fn dassl_res(
         }
         Ok(())
     })();
-    let model_error = took_error_stage(e, ctx.err_stage_addr);
+    let model_error = took_error_stage(e, ctx.err_stage_addr, save);
     ctx.nfe += 1;
     match run {
         Err(err) => {
@@ -4347,7 +4511,7 @@ unsafe fn dassl_jac(
     ctx.nje += 1;
     // C holds `ERROR_INTEGRATOR` over the whole DDASKR call, and there is no `IRES`
     // here: a model error at a perturbed point leaves the assembly as it stands.
-    set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
+    let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
     let colored = jac_method_colored(ctx.jac_method);
     // C's `jacA_num` / `jacA_sym`: one column at a time, every row of it.
     let per_column: Vec<Vec<u32>> = match colored {
@@ -4421,7 +4585,7 @@ unsafe fn dassl_jac(
         Ok(())
     })();
     set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
-    took_error_stage(e, ctx.err_stage_addr);
+    took_error_stage(e, ctx.err_stage_addr, save);
     if let Err(err) = run {
         ctx.err = Some(err);
     }
@@ -4666,6 +4830,7 @@ struct DasslDriver {
     /// Jacobian evaluation count, accumulated across chunks (for the bench line).
     nje: u64,
     past: DaskrCounters,
+    retry: StepRetry,
 }
 
 /// DASKR zeroes its IWORK counters on a fresh start, so the run totals are folded
@@ -4724,6 +4889,9 @@ impl DasslDriver {
             y = (0..n_states).map(|i| read_f64(e, states_base + (i as u32) * 8)).collect::<Result<_>>()?;
             yp = (0..n_states).map(|i| read_f64(e, ders_base + (i as u32) * 8)).collect::<Result<_>>()?;
         }
+        // C's `storeOldValues` in `solver_main`.
+        let mut retry = StepRetry::default();
+        retry.store(e, sim_data, layout)?;
 
         // --- DASKR work arrays / options (dense, numerical Jacobian). ---
         let neq = n_states as i32;
@@ -4787,6 +4955,7 @@ impl DasslDriver {
             jac_method,
             nje: 0,
             past: DaskrCounters::default(),
+            retry,
         })
     }
 
@@ -4844,11 +5013,16 @@ impl Driver for DasslDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
-                let time = if self.row == n_steps { stop } else { grid(self.row) };
+                let time =
+                    self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+                self.retry.open(e, self.rows.len());
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
                 store_operators(e, sim_data, layout)?;
+                self.retry.close(e)?;
+                self.t = time;
+                self.retry.store(e, sim_data, layout)?;
                 if terminated(e, sim_data, layout)? {
                     self.finished = true;
                     return Ok(Advance::Terminated);
@@ -4922,6 +5096,7 @@ impl Driver for DasslDriver {
                 break Advance::Cancelled;
             }
             did_step = true;
+            self.retry.open(e, self.rows.len());
             // IDID=-1: DASKR hit its per-call work quota before TOUT — resume with
             // INFO(1)=1 (a stiff interval hits this repeatedly), up to a cap.
             // `pending_tout`/`work_retries` persist an interval unfinished at a yield.
@@ -4937,6 +5112,8 @@ impl Driver for DasslDriver {
                     write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
                 }
                 emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)?;
+                self.retry.close(e)?;
+                self.retry.store(e, sim_data, layout)?;
                 self.row += 1;
                 continue;
             }
@@ -4969,6 +5146,7 @@ impl Driver for DasslDriver {
                 self.info[0] = 1;
                 self.work_retries += 1;
                 self.pending_tout = Some(tout);
+                self.retry.close(e)?;
                 continue;
             }
             if self.idid < 0 {
@@ -4991,6 +5169,8 @@ impl Driver for DasslDriver {
                         break Advance::Terminated;
                     }
                 }
+                self.retry.close(e)?;
+                self.retry.store(e, sim_data, layout)?;
                 continue;
             }
             // Interval complete: reset the resume state, write the interpolated state
@@ -5004,6 +5184,8 @@ impl Driver for DasslDriver {
             let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
             close_assert_window(e, sim_data).and(emitted)?;
             store_operators(e, sim_data, layout)?;
+            self.retry.close(e)?;
+            self.retry.store(e, sim_data, layout)?;
             if terminated(e, sim_data, layout)? {
                 break Advance::Terminated; // terminate() fired: keep this row, stop
             }
@@ -5024,6 +5206,32 @@ impl Driver for DasslDriver {
             self.finished = true;
         }
         Ok(outcome)
+    }
+
+    fn retry_step(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel) -> Result<bool> {
+        let layout = &model.layout;
+        let Some(t) = self.retry.undo(e, self.sim_data, layout)? else {
+            return Ok(false);
+        };
+        self.rows.truncate(self.retry.rows_mark);
+        // C halves `currentStepSize` without advancing `__currStepNo`: the same output
+        // step is retaken over half the interval and the next one catches up.
+        let n_steps = model.n_output_rows() - 1;
+        let target = self.pending_tout.unwrap_or(if self.row >= n_steps {
+            model.stop_time
+        } else {
+            grid_time(self.row, model.start_time, model.stop_time, n_steps)
+        });
+        self.t = t;
+        self.pending_tout = Some(t + (target - t) / 2.0);
+        self.work_retries = 0;
+        // C's `dassl_step` takes both from what `restoreOldValues` just put back.
+        for i in 0..self.n_states {
+            self.y[i] = read_f64(e, self.states_base + (i as u32) * 8)?;
+            self.yp[i] = read_f64(e, self.ders_base + (i as u32) * 8)?;
+        }
+        self.restart(); // C's `didEventStep`: DASKR restarts on the retried step
+        Ok(true)
     }
 
     fn take_rows(&mut self) -> Vec<f64> {
@@ -5562,6 +5770,9 @@ struct EventsDriver {
     no_grid_primed: bool,
     pending_terminate: bool,
     finished: bool,
+    /// Where a retried step ends, short of this row's grid point.
+    pending_tout: Option<f64>,
+    retry: StepRetry,
 }
 
 impl SolverCore {
@@ -6699,6 +6910,9 @@ impl EventsDriver {
             core.read_states(e)?;
         }
         let _ = states_base;
+        // C's `storeOldValues` in `solver_main`.
+        let mut retry = StepRetry::default();
+        retry.store(e, sim_data, layout)?;
         Ok(EventsDriver {
             core,
             row: 1,
@@ -6713,6 +6927,8 @@ impl EventsDriver {
             no_grid_primed: false,
             pending_terminate,
             finished: false,
+            pending_tout: None,
+            retry,
         })
     }
 }
@@ -6782,7 +6998,7 @@ impl Driver for EventsDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
-                let tout = tout_of(self.row);
+                let tout = self.pending_tout.take().unwrap_or_else(|| tout_of(self.row));
                 let eps = reached_eps(tout, stop - start);
                 let mut grid_covered = false;
                 let mut event_step = false;
@@ -6910,6 +7126,8 @@ impl Driver for EventsDriver {
                         break;
                     }
                 }
+                // Event handling is C's `ERROR_EVENTHANDLING`, never retried.
+                self.retry.open(e, self.rows.len());
                 if !grid_covered {
                     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                     let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
@@ -6928,6 +7146,8 @@ impl Driver for EventsDriver {
                 } else {
                     close_assert_window(e, sim_data)?;
                 }
+                self.retry.close(e)?;
+                self.retry.store(e, sim_data, layout)?;
                 self.reached = self.core.t;
                 self.did_event_step = event_step;
                 self.row += 1;
@@ -6956,7 +7176,7 @@ impl Driver for EventsDriver {
             if cancel_requested() {
                 break Advance::Cancelled;
             }
-            let tout = tout_of(self.row);
+            let tout = self.pending_tout.unwrap_or_else(|| tout_of(self.row));
             if !self.mid_row {
                 self.grid_covered = false;
                 self.did_event_step = false;
@@ -6985,6 +7205,8 @@ impl Driver for EventsDriver {
             // Row's inner loop done; the rest is bounded — next yield is a clean boundary.
             self.mid_row = false;
             self.reached = if self.grid_covered { self.core.t } else { tout };
+            // See the no-unknowns branch above.
+            self.retry.open(e, self.rows.len());
             if !self.grid_covered {
                 write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                 did_step = true;
@@ -7010,6 +7232,9 @@ impl Driver for EventsDriver {
                 self.core.read_states(e)?;
                 self.core.restart()?;
             }
+            self.retry.close(e)?;
+            self.retry.store(e, sim_data, layout)?;
+            self.pending_tout = None;
             self.row += 1;
         };
         self.core.nfe = ctx.nfe;
@@ -7017,6 +7242,29 @@ impl Driver for EventsDriver {
             self.finished = true;
         }
         Ok(outcome)
+    }
+
+    fn retry_step(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel) -> Result<bool> {
+        let layout = &model.layout;
+        let Some(t) = self.retry.undo(e, self.core.sim_data, layout)? else {
+            return Ok(false);
+        };
+        self.rows.truncate(self.retry.rows_mark);
+        let n_steps = model.n_output_rows() - 1;
+        let target = self.pending_tout.unwrap_or(if self.row >= n_steps {
+            model.stop_time
+        } else {
+            grid_time(self.row, model.start_time, model.stop_time, n_steps)
+        });
+        self.core.t = t;
+        self.reached = t;
+        self.mid_row = false;
+        self.grid_covered = false;
+        self.did_event_step = true; // C's `retrySimulationStep`
+        self.pending_tout = Some(t + (target - t) / 2.0);
+        self.core.read_states(e)?;
+        self.core.restart()?;
+        Ok(true)
     }
 
     fn take_rows(&mut self) -> Vec<f64> {
@@ -7148,6 +7396,9 @@ struct CvodeDriver {
     work_retries: u32,
     pending_terminate: bool,
     finished: bool,
+    /// Where a retried step ends, short of this row's grid point.
+    pending_tout: Option<f64>,
+    retry: StepRetry,
 }
 
 #[cfg(sundials)]
@@ -7188,6 +7439,9 @@ impl CvodeDriver {
             )
         };
 
+        // C's `storeOldValues` in `solver_main`.
+        let mut retry = StepRetry::default();
+        retry.store(e, sim_data, layout)?;
         Ok(CvodeDriver {
             sim_data,
             n_states,
@@ -7203,6 +7457,8 @@ impl CvodeDriver {
             work_retries: 0,
             pending_terminate,
             finished: false,
+            pending_tout: None,
+            retry,
         })
     }
 }
@@ -7240,11 +7496,16 @@ impl Driver for CvodeDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
-                let time = if self.row == n_steps { stop } else { grid(self.row) };
+                let time =
+                    self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+                self.retry.open(e, self.rows.len());
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
                 store_operators(e, sim_data, layout)?;
+                self.retry.close(e)?;
+                self.t = time;
+                self.retry.store(e, sim_data, layout)?;
                 if terminated(e, sim_data, layout)? {
                     self.finished = true;
                     return Ok(Advance::Terminated);
@@ -7301,13 +7562,17 @@ impl Driver for CvodeDriver {
                 break Advance::Cancelled;
             }
             did_step = true;
-            let tout = if self.row == n_steps { stop } else { grid(self.row) };
+            self.retry.open(e, self.rows.len());
+            let tout =
+                self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
                 for (i, v) in cv.y().iter().enumerate() {
                     write_f64(e, states_base + (i as u32) * 8, *v)?;
                 }
                 emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)?;
+                self.retry.close(e)?;
+                self.retry.store(e, sim_data, layout)?;
                 self.row += 1;
                 continue;
             }
@@ -7323,6 +7588,8 @@ impl Driver for CvodeDriver {
                     if flag == crate::sundials::CV_TOO_MUCH_WORK && self.work_retries < CVODE_WORK_RETRIES =>
                 {
                     self.work_retries += 1;
+                    self.pending_tout = Some(tout);
+                    self.retry.close(e)?;
                     continue;
                 }
                 crate::sundials::Stop::Failed(_) => return Err("CodegenWasmJit: CVODE failed"),
@@ -7335,6 +7602,8 @@ impl Driver for CvodeDriver {
             let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
             close_assert_window(e, sim_data).and(emitted)?;
             store_operators(e, sim_data, layout)?;
+            self.retry.close(e)?;
+            self.retry.store(e, sim_data, layout)?;
             if terminated(e, sim_data, layout)? {
                 break Advance::Terminated;
             }
@@ -7355,6 +7624,31 @@ impl Driver for CvodeDriver {
             self.finished = true;
         }
         Ok(outcome)
+    }
+
+    fn retry_step(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel) -> Result<bool> {
+        let Some(t) = self.retry.undo(e, self.sim_data, &model.layout)? else {
+            return Ok(false);
+        };
+        self.rows.truncate(self.retry.rows_mark);
+        let n_steps = model.n_output_rows() - 1;
+        let target = self.pending_tout.unwrap_or(if self.row >= n_steps {
+            model.stop_time
+        } else {
+            grid_time(self.row, model.start_time, model.stop_time, n_steps)
+        });
+        self.t = t;
+        self.pending_tout = Some(t + (target - t) / 2.0);
+        self.work_retries = 0;
+        if let Some(cv) = self.cv.as_mut() {
+            for i in 0..self.n_states {
+                cv.y_mut()[i] = read_f64(e, self.states_base + (i as u32) * 8)?;
+            }
+            if !cv.reinit(t) {
+                return Err("CodegenWasmJit: CVODE re-initialization failed");
+            }
+        }
+        Ok(true)
     }
 
     fn take_rows(&mut self) -> Vec<f64> {
@@ -8032,6 +8326,9 @@ struct IdaDriver {
     no_grid_primed: bool,
     pending_terminate: bool,
     finished: bool,
+    /// Where a retried step ends, short of this row's grid point.
+    pending_tout: Option<f64>,
+    retry: StepRetry,
 }
 
 #[cfg(sundials)]
@@ -8074,6 +8371,9 @@ impl IdaDriver {
             Some(setup.build(e, sim_data, start, &y, &yp, tol, &atol, 0)?)
         };
 
+        // C's `storeOldValues` in `solver_main`.
+        let mut retry = StepRetry::default();
+        retry.store(e, sim_data, layout)?;
         Ok(IdaDriver {
             sim_data,
             n_states,
@@ -8092,6 +8392,8 @@ impl IdaDriver {
             no_grid_primed: false,
             pending_terminate,
             finished: false,
+            pending_tout: None,
+            retry,
         })
     }
 }
@@ -8137,11 +8439,16 @@ impl Driver for IdaDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
-                let time = if self.row == n_steps { stop } else { grid(self.row) };
+                let time =
+                    self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+                self.retry.open(e, self.rows.len());
                 open_assert_window();
                 let emitted = emit_row(e, &mut self.rows, sim_data, layout, time, model.stop_time);
                 close_assert_window(e, sim_data).and(emitted)?;
                 store_operators(e, sim_data, layout)?;
+                self.retry.close(e)?;
+                self.t = time;
+                self.retry.store(e, sim_data, layout)?;
                 if terminated(e, sim_data, layout)? {
                     self.finished = true;
                     return Ok(Advance::Terminated);
@@ -8197,13 +8504,19 @@ impl Driver for IdaDriver {
                 break Advance::Cancelled;
             }
             did_step = true;
-            let tout = if no_grid || self.row == n_steps { stop } else { grid(self.row) };
+            self.retry.open(e, self.rows.len());
+            let tout = self
+                .pending_tout
+                .take()
+                .unwrap_or(if no_grid || self.row == n_steps { stop } else { grid(self.row) });
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
                 for (i, v) in ida.y().iter().enumerate() {
                     write_f64(e, states_base + (i as u32) * 8, *v)?;
                 }
                 emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)?;
+                self.retry.close(e)?;
+                self.retry.store(e, sim_data, layout)?;
                 self.row += 1;
                 continue;
             }
@@ -8220,6 +8533,8 @@ impl Driver for IdaDriver {
                     if flag == crate::sundials::IDA_TOO_MUCH_WORK && self.work_retries < IDA_WORK_RETRIES =>
                 {
                     self.work_retries += 1;
+                    self.pending_tout = Some(tout);
+                    self.retry.close(e)?;
                     continue;
                 }
                 crate::sundials::Stop::Failed(_) => return Err("CodegenWasmJit: IDA failed"),
@@ -8242,6 +8557,9 @@ impl Driver for IdaDriver {
                         break Advance::Terminated;
                     }
                 }
+                self.pending_tout = Some(tout);
+                self.retry.close(e)?;
+                self.retry.store(e, sim_data, layout)?;
                 continue;
             }
             self.setup.store_sens(e, sim_data, ida)?;
@@ -8252,6 +8570,8 @@ impl Driver for IdaDriver {
             let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
             close_assert_window(e, sim_data).and(emitted)?;
             store_operators(e, sim_data, layout)?;
+            self.retry.close(e)?;
+            self.retry.store(e, sim_data, layout)?;
             if terminated(e, sim_data, layout)? {
                 break Advance::Terminated;
             }
@@ -8271,6 +8591,32 @@ impl Driver for IdaDriver {
             self.finished = true;
         }
         Ok(outcome)
+    }
+
+    fn retry_step(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel) -> Result<bool> {
+        let Some(t) = self.retry.undo(e, self.sim_data, &model.layout)? else {
+            return Ok(false);
+        };
+        self.rows.truncate(self.retry.rows_mark);
+        let n_steps = model.n_output_rows() - 1;
+        let target = self.pending_tout.unwrap_or(if self.row >= n_steps {
+            model.stop_time
+        } else {
+            grid_time(self.row, model.start_time, model.stop_time, n_steps)
+        });
+        self.t = t;
+        self.pending_tout = Some(t + (target - t) / 2.0);
+        self.work_retries = 0;
+        if let Some(ida) = self.ida.as_mut() {
+            for i in 0..self.n_states {
+                ida.y_mut()[i] = read_f64(e, self.states_base + (i as u32) * 8)?;
+                ida.yp_mut()[i] = read_f64(e, self.ders_base + (i as u32) * 8)?;
+            }
+            if !ida.reinit(t) {
+                return Err("CodegenWasmJit: IDA re-initialization failed");
+            }
+        }
+        Ok(true)
     }
 
     fn take_rows(&mut self) -> Vec<f64> {
