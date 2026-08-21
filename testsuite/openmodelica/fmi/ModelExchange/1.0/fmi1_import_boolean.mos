@@ -47,7 +47,9 @@ val(fmu.bo3, 0.0);
 // true
 // ""
 // "BooleanImportFMU.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // "BooleanImportFMU_me_FMU.mo"
 // ""
 // true

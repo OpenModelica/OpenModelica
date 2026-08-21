@@ -45,7 +45,9 @@ val(fmu.ix, 0.0);
 // true
 // ""
 // "Issue16354FMU.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // "Issue16354FMU_me_FMU.mo"
 // ""
 // true
