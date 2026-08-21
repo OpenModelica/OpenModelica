@@ -1,6 +1,6 @@
 // name: fmi_attributes_17.mos
 // status: correct
-// teardown_command: rm -rf fmi_attributes_17.fmu fmi_attributes_17.log fmi_attributes_17.xml fmi_attributes_17_tmp.xml fmi_attributes_17.fmutmp/
+// teardown_command: rm -rf fmi_attributes_17.fmu fmi_attributes_17.log fmi_attributes_17.xml fmi_attributes_17_tmp.xml fmi_attributes_17.fmutmp/ fmi_attributes_17_info.json
 
 setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental");
 getErrorString();
@@ -58,6 +58,8 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 // "
 // "fmi_attributes_17.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // 0
 // ""

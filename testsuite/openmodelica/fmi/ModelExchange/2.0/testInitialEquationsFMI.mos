@@ -68,7 +68,9 @@ val(y, 0.0);
 // true
 // ""
 // "initial_equation1.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // "initial_equation1_me_FMU.mo"
 // ""
 // true
@@ -87,6 +89,8 @@ val(y, 0.0);
 // 5.0
 // "initial_equation2.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // "initial_equation2_me_FMU.mo"
 // ""
@@ -103,7 +107,9 @@ val(y, 0.0);
 // 5.0
 // 5.0
 // "initial_equation3.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // "initial_equation3_me_FMU.mo"
 // ""
 // true

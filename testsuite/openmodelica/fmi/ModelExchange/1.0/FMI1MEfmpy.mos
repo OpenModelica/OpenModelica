@@ -93,6 +93,8 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // ""
 // "ExpDecay.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // record SimulationResult
 //     resultFile = "ExpDecay_res.mat",
@@ -109,6 +111,8 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // ""
 // "SampleCount.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // record SimulationResult
 //     resultFile = "SampleCount_res.mat",
@@ -125,6 +129,8 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // ""
 // "Oscillator.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // record SimulationResult
 //     resultFile = "Oscillator_res.mat",
@@ -141,6 +147,8 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // ""
 // "StateEvent.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // record SimulationResult
 //     resultFile = "StateEvent_res.mat",
@@ -156,7 +164,9 @@ diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat",
 // (true, {})
 // ""
 // "DirectFeedthrough.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // record SimulationResult
 //     resultFile = "DirectFeedthrough_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DirectFeedthrough', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

@@ -184,6 +184,9 @@ static const char *select_from_dir = NULL;
 static volatile int cancelRequested = 0;
 static volatile int progressPermille = -1;
 static volatile int progressPhase = 0;
+/* Free-form label for the step in progress, shown by the host instead of the
+ * generic phase label. GC-allocated; NULL until something reports one. */
+static const char *progressMessage = NULL;
 /* Host event-pump invoked at each cancel check; keeps an in-process GUI live
  * during a long call. NULL for the CLI. */
 static void (*pumpCallback)(void) = NULL;

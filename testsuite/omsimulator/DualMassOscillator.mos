@@ -74,9 +74,13 @@ unloadOMSimulator();
 // Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
 // "
 // "DualMassOscillator.System1.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // "DualMassOscillator.System2.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // info:    maximum step size for 'DualMassOscillator.root': 0.001000
 // info:    Result file: DualMassOscillator.mat (bufferSize=100)
 // info:    Initialization

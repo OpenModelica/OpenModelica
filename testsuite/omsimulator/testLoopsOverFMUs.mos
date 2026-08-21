@@ -127,7 +127,15 @@ val(D.x_out, 0.1, "loopsOverFMUs.mat");
 // "loopsOverFMUs.C.fmu"
 // "loopsOverFMUs.D.fmu"
 // true
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // "info:    Alg. loop (size 3/7)

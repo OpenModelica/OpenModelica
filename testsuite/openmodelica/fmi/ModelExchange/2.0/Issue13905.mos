@@ -1,7 +1,7 @@
 // name: Issue13905
 // keywords: FMI 2.0 export memory pool function scope
 // status: correct
-// teardown_command: rm -rf Issue13905.fmu Issue13905.fmutmp/ Issue13905.scoped Issue13905.notscoped Issue13905.log Issue13905_info.json Issue13905_me_FMU* Issue13905_res.mat index.html binaries sources modelDescription.xml
+// teardown_command: rm -rf Issue13905.fmu Issue13905.fmutmp/ Issue13905.scoped Issue13905.notscoped Issue13905.log Issue13905_info.json Issue13905_me_FMU* Issue13905_res.mat index.html binaries sources modelDescription.xml resources
 //
 // Regression test for #13905. FMU functions allocate from the memory pool, which is only rolled
 // back at the FMI entry points, so a function that allocates in a loop accumulates for the whole
@@ -66,7 +66,9 @@ val(a, 0.0); getErrorString();
 // true
 // ""
 // "Issue13905.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // "2
@@ -82,10 +84,10 @@ val(a, 0.0); getErrorString();
 // true
 // ""
 // record SimulationResult
-// resultFile = "Issue13905_me_FMU_res.mat",
-// simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Issue13905_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-// messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS | info    | The simulation finished successfully.
+//     resultFile = "Issue13905_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Issue13905_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.

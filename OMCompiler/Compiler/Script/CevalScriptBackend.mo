@@ -85,6 +85,7 @@ import DAEQuery;
 import DAEUtil;
 import Debug;
 import DiffAlgorithm;
+import ContainerImage;
 import Dump;
 import Error;
 import ErrorExt;
@@ -3896,6 +3897,7 @@ protected function configureFMU_cmake
   input String logfile;
   input list<String> externalLibLocations;
   input Boolean isWindows;
+  input Boolean needs3rdPartyLibs;
 protected
   String fmuSourceDir;
   String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
@@ -3929,10 +3931,16 @@ algorithm
       String cmd;
       String cmakeCall;
       String crossTriple, buildDir, fmiTarget;
+      String externalIncludeDirsFile;
       list<String> dockerImgArgs;
+      ContainerImage.ContainerImage dockerImage;
+      list<String> dockerArguments;
+      String dockerRunArgs;
+      Boolean isTrustedImage;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
       String dockerLogFile;
+      String cmake_toolchain;
       list<String> locations;
     case {"dynamic"}
       algorithm
@@ -3974,6 +3982,12 @@ algorithm
         then();
     case crossTriple::"docker"::"run"::dockerImgArgs
       algorithm
+        (dockerImage, dockerArguments) := ContainerImage.parseWithArgs(dockerImgArgs);
+        dockerImage := ContainerImage.getDigestSha(dockerImage);
+        Error.addCompilerNotification("Using docker image '" + ContainerImage.toString(dockerImage) + "' for cross compilation.");
+        (_, isTrustedImage) := ContainerImage.isTrustedOpenModelicaImage(dockerImage);
+        dockerRunArgs := stringDelimitList(dockerArguments, " ") + " " + ContainerImage.toString(dockerImage);
+
         uid := System.getuid();
         cidFile := fmutmp+".cidfile";
 
@@ -3982,6 +3996,20 @@ algorithm
         // Remove old log file
         if System.regularFileExists(dockerLogFile) then
           System.removeFile(dockerLogFile);
+        end if;
+
+        // Only download trusted images automatically, and only if the signature
+        // can be verified. Images that are already on this machine are used as is.
+        if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage) then
+          if ContainerImage.isCosignAvailable() then
+            // Verify the image in the registry first, it's only downloaded if the signature is valid.
+            ContainerImage.assertSignature(dockerImage);
+            ContainerImage.pull(dockerImage);
+          else
+            Error.addCompilerError("Refusing to download container image '" + ContainerImage.toString(dockerImage) + "' without verifying its signature.");
+            Error.addCompilerNotification("Download the image manually with `" + ContainerImage.pullCommand(dockerImage) + "` and run the FMU export again.");
+            fail();
+          end if;
         end if;
 
         // Create a docker volume for the FMU since we can't forward volumes
@@ -4007,8 +4035,20 @@ algorithm
         cmd := "docker cp " + defaultFmiIncludeDirectoy + " " + containerID + ":/data/fmiInclude";
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
-        // Copy the external library files to the container
+        // Copy the external library and include files to the container
         (locations,_) := SimCodeUtil.getDirectoriesForDLLsFromLinkLibs(externalLibLocations);
+        // SimCodeMain noted the external include directories of the model next to the
+        // generated sources. Without them the cross compiler can't find the headers of
+        // external libraries. See https://github.com/OpenModelica/OpenModelica/issues/9509
+        externalIncludeDirsFile := fmutmp + "/.external_include_dirs";
+        if System.regularFileExists(externalIncludeDirsFile) then
+          locations := listAppend(System.strtok(System.readFile(externalIncludeDirsFile), "\n"), locations);
+        end if;
+        // CVODE_DIRECTORY is not one of the model's link directories, so nothing would
+        // copy it for a model that has no external libraries of its own.
+        if needs3rdPartyLibs then
+          locations := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc" :: locations;
+        end if;
         for loc in locations loop
           if System.directoryExists(loc) then
             // Create path
@@ -4030,12 +4070,20 @@ algorithm
         else
           fmiTarget := "";
         end if;
-        cmakeCall := "cmake -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
+
+        if isTrustedImage then
+          cmake_toolchain := "-DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/" + crossTriple + ".cmake ";
+        else
+          cmake_toolchain := "";
+        end if;
+
+        cmakeCall := "cmake " + cmake_toolchain +
+                            "-DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
                             "-DDOCKER_VOL_DIR=/fmu " +
                             fmiTarget +
                             CMAKE_BUILD_TYPE +
                             " ..";
-        cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu -e CROSS_TRIPLE=" + crossTriple + " " + stringDelimitList(dockerImgArgs," ") +
+        cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + dockerRunArgs +
                " sh -c " + dquote +
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
@@ -4049,21 +4097,26 @@ algorithm
         // Docker cp can't handle too long names on Windows.
         // Workaround: Zip it in the container, copy it to host, unzip it
         if isWindows then
-          cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + stringDelimitList(dockerImgArgs," ") +
+          cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + dockerRunArgs +
                  " tar -zcf comp-fmutmp.tar.gz " + fmutmp;
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
           cmd := "docker cp " + containerID + ":/data/comp-fmutmp.tar.gz .";
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
-          System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz");
+          if 0 <> System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz", outFile=dockerLogFile) then
+            // Otherwise the failure only surfaces later as "Build commands returned
+            // success, but <name>.fmu does not exist".
+            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to unpack comp-fmutmp.tar.gz:\n" + System.readFile(dockerLogFile)});
+            fail();
+          end if;
         else
           cmd := "docker cp " + containerID + ":/data/" + fmutmp + "/ .";
           runDockerCmd(cmd, dockerLogFile, cleanup=false, volumeID=volumeID, containerID=containerID);
         end if;
 
         // Cleanup
-        System.systemCall("docker rm " + containerID);
-        System.systemCall("docker volume rm " + volumeID);
+        System.systemCall("docker rm " + containerID, outFile=dockerLogFile);
+        System.systemCall("docker volume rm " + volumeID, outFile=dockerLogFile);
 
         // Copy log file into resources directory
         System.copyFile(dockerLogFile, logfile);
@@ -4094,10 +4147,10 @@ algorithm
 
     if cleanup then
       if not stringEqual(containerID, "") then
-        System.systemCall("docker rm " + containerID);
+        System.systemCall("docker rm " + containerID, outFile=logfile);
       end if;
       if not stringEqual(volumeID, "") then
-        System.systemCall("docker volume rm " + volumeID);
+        System.systemCall("docker volume rm " + volumeID, outFile=logfile);
       end if;
     end if;
 
@@ -4230,7 +4283,7 @@ algorithm
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
           // Cleanup
-          System.systemCall("docker volume rm " + volumeID);
+          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
           fail();
         elseif verbose then
            print(cmd + "\n" + System.readFile(logfile) +"\n");
@@ -4242,8 +4295,8 @@ algorithm
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
           // Cleanup
-          System.systemCall("docker rm " + containerID);
-          System.systemCall("docker volume rm " + volumeID);
+          System.systemCall("docker rm " + containerID, outFile=logfile);
+          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
           fail();
         elseif verbose then
            print(cmd + "\n" + System.readFile(logfile) +"\n");
@@ -4253,8 +4306,8 @@ algorithm
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
           // Cleanup
-          System.systemCall("docker rm " + containerID);
-          System.systemCall("docker volume rm " + volumeID);
+          System.systemCall("docker rm " + containerID, outFile=logfile);
+          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
           fail();
         elseif verbose then
            print(cmd + "\n" + System.readFile(logfile) +"\n");
@@ -4265,10 +4318,10 @@ algorithm
                nozip + dquote;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + ":\n" + System.readFile(logfile)});
-          System.removeFile(logfile);
           // Cleanup
-          System.systemCall("docker rm " + containerID);
-          System.systemCall("docker volume rm " + volumeID);
+          System.systemCall("docker rm " + containerID, outFile=logfile);
+          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
+          System.removeFile(logfile);
           fail();
         elseif verbose then
            print(cmd + "\n" + System.readFile(logfile) +"\n");
@@ -4282,8 +4335,8 @@ algorithm
            print(cmd + "\n" + System.readFile(logfile) +"\n");
         end if;
         // Cleanup
-        System.systemCall("docker rm " + containerID);
-        System.systemCall("docker volume rm " + volumeID);
+        System.systemCall("docker rm " + containerID, outFile=logfile);
+        System.systemCall("docker volume rm " + volumeID, outFile=logfile);
       then true;
     else
       algorithm
@@ -4728,6 +4781,8 @@ protected
   list<String> libs;
   Boolean isWindows;
   Boolean needs3rdPartyLibs;
+  Integer platformIndex, platformCount;
+  String platformName;
   String FMUType = inFMUType;
   // FMI 1.0 is deprecated and the wasm export does not serve it; such a request
   // is the C export's business even under the wasm simCodeTarget.
@@ -4867,18 +4922,34 @@ algorithm
   end if;
 
   // Configure the FMU Makefile
+  // Compiling for several platforms takes minutes per platform, so report which one is
+  // being built. Error.checkCancel() hands the thread to the host UI between platforms,
+  // which is what keeps OMEdit responsive and lets Cancel through.
+  platformCount := listLength(platforms);
+  platformIndex := 0;
   for platform in platforms loop
-    configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
+    platformIndex := platformIndex + 1;
+    platformName := listGet(Util.stringSplitAtChar(platform, " "), 1);
+    Error.checkCancel();
+    System.reportProgress(intDiv((platformIndex - 1) * 1000, platformCount), 4 /* PHASE_BACKEND */);
+    System.reportProgressMessage("Building FMU for " + platformName + " (" + String(platformIndex) + "/" + String(platformCount) + ")");
+    Error.addCompilerNotification("Building FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
+
+    configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(platformName,"/","-")+".log";
     if Flags.getConfigBool(Flags.FMU_CMAKE_BUILD) then
-      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows);
+      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows, needs3rdPartyLibs);
     else
       configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
     end if;
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
     end if;
+    Error.addCompilerNotification("Finished FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
     ExecStat.execStat("buildModelFMU: Generate platform " + platform);
   end for;
+  System.reportProgress(1000, 4 /* PHASE_BACKEND */);
+  System.reportProgressMessage("Packing FMU");
+  Error.checkCancel();
 
   // check for '--fmiSource=false' or '--fmiFilter=blackBox' and remove the sources directory before packing the fmu
   if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then

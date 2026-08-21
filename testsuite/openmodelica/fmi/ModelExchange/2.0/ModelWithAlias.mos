@@ -34,7 +34,9 @@ readFile("ModelWithAlias_me_systemCall.log");
 // true
 // ""
 // "ModelWithAlias.fmu"
-// ""
+// "Notification: Building FMU for platform 'dynamic' (1/1).
+// Notification: Finished FMU for platform 'dynamic' (1/1).
+// "
 // 0
 // ""
 // 0

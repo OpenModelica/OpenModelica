@@ -25,15 +25,17 @@ readFile("sinus_systemCall.log");
 // true
 // ""
 // "sinus.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // "info: *** FMU Simulation Info ***
 //      - model     : sinus (co-simulation)
 //      - fmiVersion: 2.0
 //      - startTime : 0.000000
 //      - stopTime  : 4.000000
-//      - tolerance : 0.000001
-//      - stepSize  : 0.002000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.002
 // info:    Result file: sinus_res.mat (bufferSize=10)
 // "
 // endResult

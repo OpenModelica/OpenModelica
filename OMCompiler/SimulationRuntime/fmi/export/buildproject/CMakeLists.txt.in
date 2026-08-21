@@ -10,6 +10,10 @@ project(${FMU_NAME_HASH} C)
 set(CMAKE_BUILD_TYPE @CMAKE_BUILD_TYPE@)
 
 # FMU compilation options
+set(COMPILE_MODELICA_EXTERNAL_C
+    @COMPILE_MODELICA_EXTERNAL_C@
+    CACHE BOOL
+    "Add Modelica External C sources to build target if 'ON'.")
 set(BUILD_SHARED_LIBS
     ON
     CACHE BOOL
@@ -33,6 +37,18 @@ set(CVODE_DIRECTORY
 
 if(NOT ${CMAKE_VERSION} VERSION_LESS "4.3")
   cmake_policy(SET CMP0207 NEW)
+endif()
+
+# CMake cannot resolve runtime dependencies of a foreign platform, it rejects
+# install(TARGETS ... RUNTIME_DEPENDENCIES) with "not supported when cross-compiling".
+# Install the external libraries we linked against directly instead, so a cross
+# compiled FMU still ships them.
+set(OM_INSTALL_LINKED_DEPENDENCIES OFF)
+if(CMAKE_CROSSCOMPILING AND NOT RUNTIME_DEPENDENCIES_LEVEL STREQUAL "none")
+  message(STATUS "Cross compiling: installing the linked external libraries instead of "
+                 "resolving runtime dependencies.")
+  set(OM_INSTALL_LINKED_DEPENDENCIES ON)
+  set(RUNTIME_DEPENDENCIES_LEVEL "none")
 endif()
 
 # Test if RUNTIME_DEPENDENCIES is needed and available
@@ -109,7 +125,14 @@ file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solve
                                       ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
-if (NOT ${NEED_CVODE})
+if(${COMPILE_MODELICA_EXTERNAL_C})
+  list(APPEND FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStandardTables.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/snprintf.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaIO.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaMatIO.c)
+endif()
+if(NOT ${NEED_CVODE})
   list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/sundials_error.c
                                        ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
 endif()
@@ -133,21 +156,23 @@ else()
   message(FATAL_ERROR "Unknown target system: ${CMAKE_SYSTEM_NAME}")
 endif()
 
+# Normalized target architecture, e.g. x86_64 or i686.
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" FMU_TARGET_ARCH)
+if(FMU_TARGET_ARCH STREQUAL "amd64")
+  set(FMU_TARGET_ARCH "x86_64")
+elseif(FMU_TARGET_ARCH STREQUAL "arm64")
+  set(FMU_TARGET_ARCH "aarch64")
+elseif(FMU_TARGET_ARCH STREQUAL "")
+  if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+    set(FMU_TARGET_ARCH "x86_64")
+  else()
+    set(FMU_TARGET_ARCH "i686")
+  endif()
+endif()
+
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi3")
   # FMI 3.0 uses the platform tuple "{architecture}-{os}" for the binaries folder
   # (e.g. x86_64-linux), unlike FMI 1.0/2.0 which use "{os}{bitness}" (e.g. linux64).
-  string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" FMU_TARGET_ARCH)
-  if(FMU_TARGET_ARCH STREQUAL "amd64")
-    set(FMU_TARGET_ARCH "x86_64")
-  elseif(FMU_TARGET_ARCH STREQUAL "arm64")
-    set(FMU_TARGET_ARCH "aarch64")
-  elseif(FMU_TARGET_ARCH STREQUAL "")
-    if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
-      set(FMU_TARGET_ARCH "x86_64")
-    else()
-      set(FMU_TARGET_ARCH "i686")
-    endif()
-  endif()
   set(FMU_TARGET_PLATFORM "${FMU_TARGET_ARCH}-${FMU_TARGET_SYSTEM_NAME}")
 elseif(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
   set(FMU_TARGET_PLATFORM "${FMU_TARGET_SYSTEM_NAME}64")
@@ -187,6 +212,12 @@ if(NOT ${CMAKE_VERSION} VERSION_LESS "3.13")
   if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     target_link_options(${FMU_NAME_HASH} PRIVATE "LINKER:SHELL:--no-undefined")
   endif()
+  # A cross compiled Windows FMU cannot collect the MinGW runtime DLLs (libgcc,
+  # libwinpthread) the way install(TARGETS ... RUNTIME_DEPENDENCIES) would, so link
+  # them statically. Otherwise the FMU only loads on machines that have MinGW installed.
+  if(MINGW AND CMAKE_CROSSCOMPILING)
+    target_link_options(${FMU_NAME_HASH} PRIVATE "-static-libgcc" "-static")
+  endif()
 endif()
 
 # If we have PThreads support, define OM_HAVE_PTHREADS and link to the imported threading library.
@@ -199,6 +230,65 @@ endif()
 if(NOT MSVC)
   target_link_libraries(${FMU_NAME_HASH} PRIVATE m)
 endif()
+
+# Directory names Modelica libraries use for platform specific binaries, both the
+# "{os}{bitness}" (win64) and the "{architecture}-{os}" (x86_64-windows) flavour.
+set(OM_LIBRARY_PLATFORM_DIR_REGEX
+    "^((win|linux|darwin)(32|64)|(x86_64|amd64|i386|i686|aarch64|arm)-(windows|linux|darwin))$")
+
+# The external library directories below were resolved for the platform the FMU
+# sources were generated on. When cross compiling we have to look into the
+# Resources/Library sub directory of the *target* platform instead, e.g.
+# Resources/Library/win64 instead of Resources/Library/linux64.
+# See https://github.com/OpenModelica/OpenModelica/issues/9509
+macro(om_add_target_library_directories _om_var)
+  set(_om_target_subdirs "${FMU_TARGET_PLATFORM}"
+                         "${FMU_TARGET_ARCH}-${FMU_TARGET_SYSTEM_NAME}")
+  if(WIN32)
+    list(APPEND _om_target_subdirs "${FMU_TARGET_ARCH}-windows")
+  endif()
+
+  # Library root directories to look into: every listed directory that is not
+  # platform specific, plus the parent of every platform specific one.
+  set(_om_roots "")
+  set(_om_keep "")
+  foreach(_om_dir IN LISTS ${_om_var})
+    string(REGEX REPLACE "/+$" "" _om_dir "${_om_dir}")
+    if(_om_dir STREQUAL "")
+      continue()
+    endif()
+    get_filename_component(_om_base "${_om_dir}" NAME)
+    if(_om_base MATCHES "${OM_LIBRARY_PLATFORM_DIR_REGEX}")
+      get_filename_component(_om_parent "${_om_dir}" DIRECTORY)
+      list(APPEND _om_roots "${_om_parent}")
+      if(CMAKE_CROSSCOMPILING AND NOT "${_om_base}" IN_LIST _om_target_subdirs)
+        # Binaries of a different platform, searching them would find the wrong library.
+        continue()
+      endif()
+    else()
+      list(APPEND _om_roots "${_om_dir}")
+    endif()
+    list(APPEND _om_keep "${_om_dir}")
+  endforeach()
+  list(REMOVE_DUPLICATES _om_roots)
+
+  set(_om_target_dirs "")
+  foreach(_om_root IN LISTS _om_roots)
+    foreach(_om_sub IN LISTS _om_target_subdirs)
+      if(IS_DIRECTORY "${_om_root}/${_om_sub}")
+        list(APPEND _om_target_dirs "${_om_root}/${_om_sub}")
+      endif()
+    endforeach()
+  endforeach()
+  if(_om_target_dirs)
+    list(REMOVE_DUPLICATES _om_target_dirs)
+    message(STATUS "Target platform library directories: ${_om_target_dirs}")
+  endif()
+
+  # Target specific directories take precedence over the generic ones.
+  set(${_om_var} ${_om_target_dirs} ${_om_keep})
+  list(REMOVE_DUPLICATES ${_om_var})
+endmacro()
 
 @FMU_ADDITIONAL_LIBS@
 
@@ -214,6 +304,7 @@ if(${NEED_CVODE})
                PATHS ${CVODE_DIRECTORY}
                NO_DEFAULT_PATH
                NO_SYSTEM_ENVIRONMENT_PATH
+               NO_CMAKE_FIND_ROOT_PATH
                REQUIRED)
   if(NOT SUNDIALS_CVODE_LIBRARY)
     message(FATAL_ERROR "Couldn't find library sundials_cvode in ${CVODE_DIRECTORY}")
@@ -225,6 +316,7 @@ if(${NEED_CVODE})
                PATHS ${CVODE_DIRECTORY}
                NO_DEFAULT_PATH
                NO_SYSTEM_ENVIRONMENT_PATH
+               NO_CMAKE_FIND_ROOT_PATH
                REQUIRED)
   if(NOT SUNDIALS_NVECSERIAL_LIBRARY)
     message(FATAL_ERROR "Couldn't find library sundials_nvecserial in ${CVODE_DIRECTORY}")
@@ -236,6 +328,7 @@ if(${NEED_CVODE})
                PATHS ${CVODE_DIRECTORY}
                NO_DEFAULT_PATH
                NO_SYSTEM_ENVIRONMENT_PATH
+               NO_CMAKE_FIND_ROOT_PATH
                REQUIRED)
   if(NOT SUNDIALS_CORE_LIBRARY)
     message(FATAL_ERROR "Couldn't find library sundials_core in ${CVODE_DIRECTORY}")
@@ -303,6 +396,29 @@ else()
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
+
+if(OM_INSTALL_LINKED_DEPENDENCIES)
+  # Only shared libraries, static ones are already part of the FMU binary.
+  set(OM_LINKED_SHARED_DEPENDENCIES "")
+  foreach(_om_dep IN LISTS RUNTIME_DEPENDS)
+    get_filename_component(_om_dep_name "${_om_dep}" NAME)
+    if(_om_dep_name MATCHES "\\.(dll|dylib|so)$" OR _om_dep_name MATCHES "\\.so\\.")
+      # The FMU binary references the library by its SONAME (libFoo.so.1.2.3), not by
+      # the link name (libFoo.so) find_library returned, so take the versioned
+      # siblings along as well.
+      get_filename_component(_om_dep_dir "${_om_dep}" DIRECTORY)
+      file(GLOB _om_dep_files "${_om_dep_dir}/${_om_dep_name}" "${_om_dep_dir}/${_om_dep_name}.*")
+      list(APPEND OM_LINKED_SHARED_DEPENDENCIES ${_om_dep_files})
+    endif()
+  endforeach()
+  if(OM_LINKED_SHARED_DEPENDENCIES)
+    list(REMOVE_DUPLICATES OM_LINKED_SHARED_DEPENDENCIES)
+    message(STATUS "Installing external libraries: ${OM_LINKED_SHARED_DEPENDENCIES}")
+    install(FILES ${OM_LINKED_SHARED_DEPENDENCIES}
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  endif()
 endif()
 
 # Zip target creating modelname.fmu

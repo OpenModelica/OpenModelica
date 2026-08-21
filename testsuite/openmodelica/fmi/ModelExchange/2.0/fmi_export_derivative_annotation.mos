@@ -70,5 +70,7 @@ buildModelFMU(MWE.MDerAnn, version="2.0", fmuType="me"); getErrorString();
 // true
 // ""
 // "MDerAnn.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // endResult
