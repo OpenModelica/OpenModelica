@@ -461,21 +461,44 @@ fn ensure_sim_libs() {
 /// target would have linked into the simulation executable. Loaded once per path (a
 /// model may be resimulated), into the global scope so they resolve against the C
 /// runtime's `ModelicaError` and each other. Returns why any that would not load did
-/// not, alongside the handles.
+/// not, alongside the handles, in the declared order.
+///
+/// One of them may leave a symbol a later one defines undefined, which the C target's
+/// single link resolves but a loader binding one library at a time does not, so retry
+/// the ones that would not load until a pass loads nothing new.
 pub fn load_external_libraries(paths: &[String]) -> (Vec<usize>, Vec<String>) {
-    static LOADED: LazyLock<Mutex<HashMap<String, std::result::Result<usize, String>>>> =
-        LazyLock::new(|| Mutex::new(HashMap::new()));
+    static LOADED: LazyLock<Mutex<HashMap<String, usize>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
     ensure_sim_libs();
     let mut loaded = LOADED.lock().unwrap();
-    let mut handles = Vec::new();
-    let mut errors = Vec::new();
-    for path in paths {
-        match loaded.entry(path.clone()).or_insert_with(|| dl::open_global_deferred(path)) {
-            Ok(h) => handles.push(*h),
-            Err(e) => errors.push(format!("`{path}` could not be loaded: {e}")),
+    let mut handles: Vec<Option<usize>> = paths.iter().map(|p| loaded.get(p).copied()).collect();
+    let mut errors: Vec<String> = vec![String::new(); paths.len()];
+    loop {
+        let mut progress = false;
+        for (i, path) in paths.iter().enumerate() {
+            if handles[i].is_some() {
+                continue;
+            }
+            match dl::open_global_deferred(path) {
+                Ok(h) => {
+                    loaded.insert(path.clone(), h);
+                    handles[i] = Some(h);
+                    progress = true;
+                }
+                Err(e) => errors[i] = e,
+            }
+        }
+        if !progress {
+            break;
         }
     }
-    (handles, errors)
+    let errors = paths
+        .iter()
+        .zip(&handles)
+        .zip(errors)
+        .filter(|((_, h), _)| h.is_none())
+        .map(|((path, _), e)| format!("`{path}` could not be loaded: {e}"))
+        .collect();
+    (handles.into_iter().flatten().collect(), errors)
 }
 
 /// Resolve against `handles` — the model's own libraries, which shadow a same-named
