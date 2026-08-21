@@ -44,9 +44,8 @@ AC_SUBST(PRIMME_LDFLAGS)
 AC_SUBST(PRIMME_TARGET)
 AC_SUBST(COLPACK_LDFLAGS)
 AC_SUBST(COLPACK_TARGET)
-AC_SUBST(MOO_LDFLAGS)
-AC_SUBST(MOO_CFLAGS)
-AC_SUBST(MOO_TARGET)
+AC_SUBST(OPTIMIZATION_LDFLAGS)
+AC_SUBST(OPTIMIZATION_TARGET)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(SOURCE_REVISION)
@@ -625,7 +624,10 @@ LIBS=""
 
 PRIMME_LDFLAGS="-lprimme"
 COLPACK_LDFLAGS="-lcolpack"
-MOO_LDFLAGS="-lipopt -ldmumps -lmumps_common -lseq"
+MOO_BUILD='$(top_builddir)/3rdParty/moo-0.1.0/build'
+OPTIMIZATION_MOO_LIBS="-L$MOO_BUILD/third-party/fmt -lfmt -L$MOO_BUILD/third-party/RADAU -lradau"
+OPTIMIZATION_IPOPT_LIBS="-L$MOO_BUILD/third-party/Ipopt.cmake/bin -lipopt -ldmumps -lmumps_common -lseq"
+OPTIMIZATION_LDFLAGS="$OPTIMIZATION_MOO_LIBS $OPTIMIZATION_IPOPT_LIBS -lgfortran -lpthread $LIBDL $LD_LAPACK"
 
 # check for SuiteSparse
 AC_ARG_WITH(SUITESPARSE, [  --without-SUITESPARSE              Disable compilation with SUITESPARSE (UMFPACK, KLU)],
@@ -649,16 +651,17 @@ LDFLAGS="$LDFLAGS -Wl,-Bstatic  -Wl,-Bdynamic"
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[BSTATIC="true"],[BSTATIC="false"; AC_MSG_RESULT(["Don't know the flags to force static linking"])])
 LDFLAGS="$OLD_LDFLAGS"
 
-# check for ipopt
-AC_ARG_WITH(ipopt, [  --without-ipopt              Disable compilation with IPOPT (only for bootstrapping; required for simulations)],
-[],[with_ipopt=yes])
+# check for dynamic optimization support
+AC_ARG_WITH(optimization, [  --without-optimization       Disable dynamic optimization support (MOO and the old IPOPT runtime)],
+[],[with_optimization=yes])
 
-AS_IF([test "x$with_ipopt" = xyes],
+AS_IF([test "x$with_optimization" = xyes],
 [
-  MOO_TARGET="moo";
+  OPTIMIZATION_TARGET="optimization";
   OMC_HAVE_IPOPT="#define OMC_HAVE_IPOPT"
 ],[
-  MOO_TARGET=""
+  OPTIMIZATION_TARGET=""
+  OPTIMIZATION_LDFLAGS=""
   OMC_HAVE_IPOPT="/* #define OMC_HAVE_IPOPT */ /* Without Ipopt*/"
 ])
 
@@ -715,7 +718,7 @@ if test "$DARWIN" = "1"; then
   LIBZMQLIB=libzmq.dylib
   CMINPACKLIB_SHARED=ON
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lexpat -lomcgc -lryu -lpthread -lm $LIBDL -lstdc++"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $COLPACK_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $OPTIMIZATION_LDFLAGS $PRIMME_LDFLAGS $COLPACK_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu -lm -lpthread $LIBDL -lstdc++"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL -liconv"
   # All libraries are dynamically linked; we don't need anything else
@@ -750,7 +753,7 @@ elif echo "$host" | grep -iq "mingw"; then
   LIBZMQLIB=libzmq.a
   CMINPACKLIB_SHARED=OFF
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lstdc++ -lomcgc -lryu -lexpat -lm"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $COLPACK_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcminpack"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $OPTIMIZATION_LDFLAGS $PRIMME_LDFLAGS $COLPACK_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu -lexpat -Wl,-Bstatic -lpthread -Wl,-Bdynamic -static-libgcc -lm"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
@@ -786,7 +789,7 @@ else
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
   RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $LIBRT -lexpat -lomcgc -lryu -lpthread -lm $LIBDL -lstdc++ -rdynamic"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $COLPACK_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $OPTIMIZATION_LDFLAGS $PRIMME_LDFLAGS $COLPACK_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   # All libraries are dynamically linked; we don't need anything else
