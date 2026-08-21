@@ -234,8 +234,13 @@ pub struct SimFlags {
     /// `-stateFile=<file>`: `name value` lines overriding start values.
     pub state_file: Option<String>,
     /// `-csvInput=<file>`: external input `time,u…` rows, interpolated for the
-    /// optimizer's initial guess (C's `external_input.c`).
+    /// optimizer's initial guess (C's `external_input.c`). `-inputPath` is folded
+    /// in by [`parse`].
     pub csv_input: Option<String>,
+    /// `-inputPath=<dir>`: where the run's *input* files are read from. C also
+    /// prefixes the `_init.xml`/`_info.json`/sparsity files, which this runtime
+    /// carries in the module, so [`parse`] folds it into the two file flags only.
+    pub input_path: Option<String>,
     /// `-csvOstep=<file>` / `-optDebugJac=<iter>`: the optimizer's debug dumps.
     pub csv_ostep: Option<String>,
     pub opt_debug_jac: Option<String>,
@@ -716,6 +721,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "keepHessian" => f.keep_hessian = Some(int(name, &value(name)?)?),
             "stateFile" => f.state_file = Some(value(name)?),
             "csvInput" => f.csv_input = Some(value(name)?),
+            "inputPath" => f.input_path = Some(value(name)?),
             "csvOstep" => f.csv_ostep = Some(value(name)?),
             "optDebugJac" => f.opt_debug_jac = Some(value(name)?),
             // C declares `-ipopt_jac` but never reads it; accept and ignore, as it does.
@@ -814,6 +820,18 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             }
         }
     }
+    // As C joins it at each read site: always for `-csvInput`, and for `-iif` only
+    // when the name does not already resolve on its own.
+    if let Some(dir) = f.input_path.clone() {
+        if let Some(csv) = &f.csv_input {
+            f.csv_input = Some(format!("{dir}/{csv}"));
+        }
+        if let Some(init) = &f.init_file
+            && !file_exists(init)
+        {
+            f.init_file = Some(format!("{dir}/{init}"));
+        }
+    }
     // C's `doOverride` reads `-override` first, then the file; a later entry for the
     // same name wins.
     for raw in [f.override_raw.as_deref(), f.override_file.as_ref().map(|(_, j)| j.as_str())] {
@@ -860,6 +878,18 @@ fn read_override_file(path: &str) -> Result<String, String> {
 #[cfg(not(feature = "std"))]
 fn read_override_file(path: &str) -> Result<String, String> {
     Err(format!("-overrideFile={path}: this runtime has no filesystem"))
+}
+
+/// C's `omc_file_exists`. False without a filesystem, so the prefix is applied and
+/// the read reports the one path it tried.
+#[cfg(feature = "std")]
+fn file_exists(path: &str) -> bool {
+    std::path::Path::new(path).exists()
+}
+
+#[cfg(not(feature = "std"))]
+fn file_exists(_path: &str) -> bool {
+    false
 }
 
 /// C's `initializeResultData` formats. `mat`, `csv`, `plt` and `empty` are the
@@ -1453,6 +1483,33 @@ mod tests {
         assert_eq!(f.no_equidistant_time, Some(0.5));
     }
 
+    // OMEdit passes `-inputPath=<working directory>` on every run.
+    #[test]
+    fn input_path_prefixes_the_input_files() {
+        let f = parse(&argv(&["-csvInput=u.csv", "-inputPath=/work/M"])).expect("parses");
+        assert_eq!(f.input_path.as_deref(), Some("/work/M"));
+        assert_eq!(f.csv_input.as_deref(), Some("/work/M/u.csv"));
+        // `-iif` names a file that does not resolve on its own, so it is joined too.
+        let f = parse(&argv(&["-inputPath=/work/M", "-iif=M_res.mat"])).expect("parses");
+        assert_eq!(f.init_file.as_deref(), Some("/work/M/M_res.mat"));
+        // Without the flag the names stand as given.
+        let f = parse(&argv(&["-csvInput=u.csv", "-iif=M_res.mat"])).expect("parses");
+        assert_eq!(f.csv_input.as_deref(), Some("u.csv"));
+        assert_eq!(f.init_file.as_deref(), Some("M_res.mat"));
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn input_path_leaves_an_iif_that_already_resolves() {
+        let dir = std::env::temp_dir().join("om_simflags_input_path");
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        let init = dir.join("seed_res.mat");
+        std::fs::write(&init, b"").expect("write");
+        let init = init.to_str().expect("utf-8").to_string();
+        let f = parse(&argv(&["-inputPath=/work/M", &format!("-iif={init}")])).expect("parses");
+        assert_eq!(f.init_file.as_deref(), Some(init.as_str()));
+    }
+
     #[test]
     fn a_rejected_options_value_is_not_read_as_a_flag() {
         let e = parse(&argv(&["-idaScaling", "-lv=LOG_STATS"])).expect_err("must reject");
@@ -1509,6 +1566,7 @@ mod tests {
             "-outputFormat=mat",
             "-variableFilter=.*",
             "-r=/tmp/M_res.mat",
+            "-inputPath=/tmp",
             "-jacobian=coloredNumerical",
             "-w",
         ]))
@@ -1517,6 +1575,7 @@ mod tests {
         assert_eq!((f.step_size, f.tolerance), (Some(0.002), Some(1e-6)));
         assert_eq!(f.output_format.as_deref(), Some("mat"));
         assert_eq!(f.result_file.as_deref(), Some("/tmp/M_res.mat"));
+        assert_eq!(f.input_path.as_deref(), Some("/tmp"));
         assert!(f.show_all_warnings && f.log_mask & crate::omclog::SHOW_ALL_WARNINGS != 0);
     }
 

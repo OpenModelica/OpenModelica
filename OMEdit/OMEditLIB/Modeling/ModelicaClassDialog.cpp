@@ -47,6 +47,9 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Commands.h"
 #include "Modeling/ItemDelegate.h"
+#if defined(__EMSCRIPTEN__)
+#include "OMEditGUI/wasm/WasmLocalFiles.h"
+#endif
 
 #include <QApplication>
 #include <QMessageBox>
@@ -1359,6 +1362,9 @@ void SaveTotalFileDialog::saveTotalModel()
       mpStripCommentsCheckBox->isChecked(),
       mpObfuscateOutputCheckBox->isChecked(),
       mpUseSimplifiedHeuristic->isChecked());
+#if defined(__EMSCRIPTEN__)
+    WasmLocalFiles::download(fileName);
+#endif
     accept();
   }
 }
