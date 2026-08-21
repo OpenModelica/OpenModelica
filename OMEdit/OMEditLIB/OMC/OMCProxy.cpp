@@ -2447,15 +2447,17 @@ bool OMCProxy::existClass(QString className)
 }
 
 /*!
-  Renames a class.
-  \param oldName - the class old name.
-  \param newName - the class new name.
-  \return true on success.
-  */
-bool OMCProxy::renameClass(QString oldName, QString newName)
+ * \brief OMCProxy::renameClass
+ * Renames a class and updates references to it.
+ * \param oldName - The path of the class to rename.
+ * \param newName - The new non-qualified name of the class.
+ * \return Returns a list of classes that were changed.
+ */
+QList<QString> OMCProxy::renameClass(QString oldName, QString newName)
 {
-  sendCommand("renameClass(" + oldName + ", " + newName + ")");
-  return StringHandler::unparseBool(getResult());
+  QList<QString> result = mpOMCInterface->renameClass(oldName, newName);
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!
