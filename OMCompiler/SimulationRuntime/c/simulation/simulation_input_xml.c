@@ -926,7 +926,6 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
             XML_ErrorString(XML_GetErrorCode(parser)),
             XML_GetCurrentLineNumber(parser));
         XML_ParserFree(parser);
-        freeModelInput(mi);
         throwStreamPrint(threadData, "see last warning");
       }
     } while(!done);
@@ -940,7 +939,6 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
               XML_ErrorString(XML_GetErrorCode(parser)),
               XML_GetCurrentLineNumber(parser));
       XML_ParserFree(parser);
-      freeModelInput(mi);
       throwStreamPrint(threadData, "see last warning");
     }
   }
