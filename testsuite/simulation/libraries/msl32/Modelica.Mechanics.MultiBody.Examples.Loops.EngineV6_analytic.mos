@@ -40,14 +40,14 @@ runScript(modelTesting);getErrorString();
 //  * Number of equations: 9016
 //  * Number of variables: 9016
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 1459
+//  * Number of independent subsystems: 1441
 //  * Number of states: 0 ()
 //  * Number of discrete variables: 333 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (2951):
-//  * Single equations (assignments): 2920
+// Notification: Strong component statistics for initialization (2967):
+//  * Single equations (assignments): 2936
 //  * Array equations: 30
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -61,14 +61,14 @@ runScript(modelTesting);getErrorString();
 //    {(3,519,77.8%)}
 //  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 112
+//  * Number of independent subsystems: 166
 //  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1391):
-//  * Single equations (assignments): 1390
+// Notification: Strong component statistics for simulation (1443):
+//  * Single equations (assignments): 1442
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
