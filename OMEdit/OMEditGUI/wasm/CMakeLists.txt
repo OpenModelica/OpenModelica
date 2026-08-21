@@ -119,8 +119,11 @@ list(APPEND OMEDITLIB_SOURCES
   # there is nothing left to stub here for the OMSimulator C API.)
   ${CMAKE_CURRENT_SOURCE_DIR}/sim_widget_stubs.cpp
   # QAbstractFileEngineHandler that serves worker-VFS files to main-thread QFile.
-  ${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp)
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp PROPERTIES SKIP_AUTOMOC ON)
+  ${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
+  # Browser file picker / download, for the user's own filesystem.
+  ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp)
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp PROPERTIES SKIP_AUTOMOC ON)
 # The simulation metadata tables OMCProxy reads (SOLVER_METHOD_NAME, FLAG_NAME,
 # OMC_LOG_STREAM_NAME, ...); native OMEdit gets them from libOpenModelicaCompiler.
 list(APPEND OMEDITLIB_SOURCES ${SIMRT}/util/simulation_options.c ${SIMRT}/util/omc_error.c)

@@ -441,6 +441,25 @@ QByteArray omcWorkerReadFile(const char *path) {
   return data;
 }
 
+// Worker-VFS file write, backing the QAbstractFileEngine's write side; entries are
+// overwritten, there is no remove. Deliberately does NOT wait for the reply: files
+// get written from anywhere (a QSettings sync, a destructor, code before exec()) and
+// blocking on the worker there corrupts Qt's pending-event machinery. Ordering holds
+// anyway — Module.__omcSend is one serialised queue.
+EM_JS(void, omedit_post_vfs_put, (const char *path, const char *bytes, int len), {
+  Module.__omcSend({ cmd: "vfsPut", path: UTF8ToString(path),
+                     bytes: HEAPU8.slice(bytes, bytes + len) })
+    .then((r) => { if (!r || !r.ok) console.error("[OMEdit-wasm] vfsPut refused", UTF8ToString(path)); })
+    .catch((e) => console.error("[OMEdit-wasm] vfsPut failed", e));
+});
+
+bool omcWorkerWriteFile(const char *path, const QByteArray &data)
+{
+  if (!omedit_worker_ready()) return false;
+  omedit_post_vfs_put(path, data.constData(), data.size());
+  return true;
+}
+
 // Worker-VFS directory listing (WASI fd_readdir), backing QDir over worker paths.
 // Returns the immediate child names of dir; directories carry a trailing '/'.
 EM_JS(int, omedit_post_vfs_list, (const char *path), {

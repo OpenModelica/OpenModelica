@@ -26,8 +26,7 @@ impl ExternalInput {
     /// C's `externalInputallocate`: read the csv and map its columns onto the input
     /// variables by name. `None` when there is no `-csvInput` (C's `active = 0`).
     pub(crate) fn load(file: &str, input_names: &[&str]) -> Option<Self> {
-        // C prefixes `-inputPath` when it is given; this runtime does not implement
-        // that flag, so the name is used as it stands.
+        // `-inputPath` is already folded in by `simflags::parse`.
         let path = String::from(file);
         let Some(text) = read_file(&path) else {
             omclog::error(omclog::STDOUT, false, &format!("Failed to read CSV-file {path}"));
