@@ -145,6 +145,7 @@ setExtendsModifierValue.mos \
 setExtendsModifier.mos \
 setParameterValue.mos \
 setSourceFileListFile.mos \
+setSourceFileMergeAST.mos \
 showDoc.mos \
 showStructuralAnnotations.mos \
 StateMachine.mos \
