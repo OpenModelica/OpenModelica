@@ -5347,6 +5347,35 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   recentFilesHBLayout->addWidget(pClearRecentFilesListButton, 0, Qt::AlignLeft);
   recentFilesFrameVBLayout->addLayout(recentFilesHBLayout);
   pRecentFilesFrame->setLayout(recentFilesFrameVBLayout);
+  // RecentModels Frame
+  QFrame *pRecentModelsFrame = new QFrame;
+  pRecentModelsFrame->setFrameShape(QFrame::StyledPanel);
+  pRecentModelsFrame->setStyleSheet("QFrame{background-color: white;}");
+  // recent models list. The models opened in the model view are kept in their own list so that
+  // the recent files list is not cluttered with them.
+  Label *pRecentModelsLabel = Utilities::getHeadingLabel(tr("Recent Models"));
+  mpNoRecentModelLabel = new Label(tr("No recent models found."));
+  mpRecentModelItemsListWidget = new QListWidget;
+  mpRecentModelItemsListWidget->setObjectName("RecentModelItemsList");
+  mpRecentModelItemsListWidget->setContentsMargins(0, 0, 0, 0);
+  mpRecentModelItemsListWidget->setFrameStyle(QFrame::NoFrame);
+  mpRecentModelItemsListWidget->setViewMode(QListView::ListMode);
+  mpRecentModelItemsListWidget->setMovement(QListView::Static);
+  mpRecentModelItemsListWidget->setIconSize(Helper::iconSize);
+  mpRecentModelItemsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
+  connect(mpRecentModelItemsListWidget, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openRecentModelItem(QListWidgetItem*)));
+  QPushButton *pClearRecentModelsListButton = new QPushButton(Helper::clearRecentModels);
+  pClearRecentModelsListButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
+  connect(pClearRecentModelsListButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(clearRecentModelsList()));
+  // RecentModels Frame layout
+  QVBoxLayout *recentModelsFrameVBLayout = new QVBoxLayout;
+  recentModelsFrameVBLayout->addWidget(pRecentModelsLabel);
+  recentModelsFrameVBLayout->addWidget(mpNoRecentModelLabel);
+  recentModelsFrameVBLayout->addWidget(mpRecentModelItemsListWidget);
+  QHBoxLayout *recentModelsHBLayout = new QHBoxLayout;
+  recentModelsHBLayout->addWidget(pClearRecentModelsListButton, 0, Qt::AlignLeft);
+  recentModelsFrameVBLayout->addLayout(recentModelsHBLayout);
+  pRecentModelsFrame->setLayout(recentModelsFrameVBLayout);
   // LatestNews Frame
   mpLatestNewsFrame = new QFrame;
   mpLatestNewsFrame->setFrameShape(QFrame::StyledPanel);
@@ -5403,11 +5432,20 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpSplitter->setChildrenCollapsible(false);
   mpSplitter->setHandleWidth(4);
   mpSplitter->setContentsMargins(0, 0, 0, 0);
-  mpSplitter->addWidget(pRecentFilesFrame);
+  // the recent files and the recent models are split by a horizontal line, one list above the other.
+  mpRecentSplitter = new QSplitter;
+  mpRecentSplitter->setOrientation(Qt::Vertical);
+  mpRecentSplitter->setChildrenCollapsible(false);
+  mpRecentSplitter->setHandleWidth(4);
+  mpRecentSplitter->setContentsMargins(0, 0, 0, 0);
+  mpRecentSplitter->addWidget(pRecentFilesFrame);
+  mpRecentSplitter->addWidget(pRecentModelsFrame);
+  mpSplitter->addWidget(mpRecentSplitter);
   mpSplitter->addWidget(mpLatestNewsFrame);
-  // Read the welcome page splitter state
+  // Read the welcome page splitters state
   QSettings *pSettings = Utilities::getApplicationSettings();
   mpSplitter->restoreState(pSettings->value("welcomePage/splitterState").toByteArray());
+  mpRecentSplitter->restoreState(pSettings->value("welcomePage/recentSplitterState").toByteArray());
   // bottom frame
   QFrame *pBottomFrame = new QFrame;
   pBottomFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
@@ -5472,12 +5510,38 @@ void WelcomePageWidget::addRecentFilesListItems()
     listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
     listItem->setText(recentFile.fileName);
     listItem->setData(Qt::UserRole, recentFile.encoding);
-    listItem->setData(Qt::UserRole + 1, recentFile.path);
   }
   if (numRecentFiles > 0) {
     mpNoRecentFileLabel->setVisible(false);
   } else {
     mpNoRecentFileLabel->setVisible(true);
+  }
+}
+
+/*!
+ * \brief WelcomePageWidget::addRecentModelsListItems
+ * Adds the recent models list items to list view.
+ */
+void WelcomePageWidget::addRecentModelsListItems()
+{
+  // remove list items first
+  mpRecentModelItemsListWidget->clear();
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QList<QVariant> models = pSettings->value("recentModelsList/models").toList();
+  int recentModelsSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
+  int numRecentModels = qMin(models.size(), recentModelsSize);
+  for (int i = 0; i < numRecentModels; ++i) {
+    RecentFile recentModel = qvariant_cast<RecentFile>(models[i]);
+    QListWidgetItem *listItem = new QListWidgetItem(mpRecentModelItemsListWidget);
+    listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
+    listItem->setText(recentModel.fileName);
+    listItem->setData(Qt::UserRole, recentModel.encoding);
+    listItem->setData(Qt::UserRole + 1, recentModel.path);
+  }
+  if (numRecentModels > 0) {
+    mpNoRecentModelLabel->setVisible(false);
+  } else {
+    mpNoRecentModelLabel->setVisible(true);
   }
 }
 
@@ -5489,6 +5553,11 @@ QFrame* WelcomePageWidget::getLatestNewsFrame()
 QSplitter* WelcomePageWidget::getSplitter()
 {
   return mpSplitter;
+}
+
+QSplitter* WelcomePageWidget::getRecentSplitter()
+{
+  return mpRecentSplitter;
 }
 
 void WelcomePageWidget::addLatestNewsListItems()
@@ -5579,7 +5648,12 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
 
 void WelcomePageWidget::openRecentFileItem(QListWidgetItem *pItem)
 {
-  MainWindow::instance()->openRecentFileOrModel(pItem->text(), pItem->data(Qt::UserRole).toString(), pItem->data(Qt::UserRole + 1).toString());
+  MainWindow::instance()->getLibraryWidget()->openFile(pItem->text(), pItem->data(Qt::UserRole).toString(), true, true);
+}
+
+void WelcomePageWidget::openRecentModelItem(QListWidgetItem *pItem)
+{
+  MainWindow::instance()->showRecentModel(pItem->text(), pItem->data(Qt::UserRole).toString(), pItem->data(Qt::UserRole + 1).toString());
 }
 
 void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)
