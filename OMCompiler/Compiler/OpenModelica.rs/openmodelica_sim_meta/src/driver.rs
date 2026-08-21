@@ -862,6 +862,17 @@ pub(crate) fn write_i32(e: &mut dyn SimEngine, addr: u32, v: i32) -> Result<()> 
     e.write_bytes(addr, &v.to_le_bytes())
 }
 
+/// Move the model clock. C pairs `timeValue = t` with `externalInputUpdate` +
+/// `input_function` in each solver's residual and root callback, in
+/// `updateContinuousSystem` and in the event bisection; every one of those goes
+/// through here, so `-csvInput` is applied once, for all of them.
+pub(crate) fn write_time(e: &mut dyn SimEngine, sim_data: u32, t: f64) -> Result<()> {
+    write_f64(e, sim_data + TIME_OFF, t)?;
+    #[cfg(feature = "std")]
+    crate::extinput::apply(e, sim_data, t);
+    Ok(())
+}
+
 /// Error out if a nonlinear system raised the `nls_fail` flag during the last
 /// equation call in a context that cannot back off (initialisation, an output
 /// point, the Euler loop). The DASSL residual handles this recoverably instead.
@@ -1694,7 +1705,7 @@ fn init_model(
     }
     // `functionInitDelay` reads `startTime` from `TIME_OFF`; init the buffers
     // before any equation function (`rt_delay_eval` traps on unallocated ones).
-    write_f64(e, sim_data + TIME_OFF, start_time)?;
+    write_time(e, sim_data, start_time)?;
     e.call1_if_present("functionInitDelay", sim_data)?;
     run_initialization_impl(e, sim_data, layout, inputs, model)?;
     if let Some(m) = model {
@@ -1927,7 +1938,7 @@ fn report_init_failure() -> &'static str {
 /// over a zeroed `SimData` can produce a NaN instead.
 pub fn seed_start_state(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
     // `functionInitDelay` before any equation function, as in `init_model`.
-    write_f64(e, sim_data + TIME_OFF, model.start_time)?;
+    write_time(e, sim_data, model.start_time)?;
     e.call1_if_present("functionInitDelay", sim_data)?;
     seed_start_values(e, sim_data, &model.layout, &model.inputs, Some(model))
 }
@@ -2369,7 +2380,7 @@ fn store_operators_at(
     if !layout.has_history_ops {
         return Ok(());
     }
-    write_f64(e, sim_data + TIME_OFF, time)?;
+    write_time(e, sim_data, time)?;
     eval_continuous(e, sim_data, layout)?;
     store_operators(e, sim_data, layout)
 }
@@ -2421,7 +2432,7 @@ fn emit_row(
     stop: f64,
 ) -> Result<()> {
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
-    write_f64(e, sim_data + TIME_OFF, time)?;
+    write_time(e, sim_data, time)?;
     eval_continuous(e, sim_data, layout)?;
     check_nls(e, sim_data, layout)?;
     capture_row(e, rows, sim_data, layout)?;
@@ -2447,7 +2458,7 @@ pub fn emit_terminal_row(
         return Ok(());
     }
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
-    write_f64(e, sim_data + TIME_OFF, time)?;
+    write_time(e, sim_data, time)?;
     write_i32(e, sim_data + layout.terminal_off, 1)?;
     // A discrete call, so relations are live (C's `updateDiscreteSystem`
     // prologue): a condition that only becomes true at `stop` flips here.
@@ -2538,7 +2549,7 @@ pub(crate) fn emit_initial_row(
     layout: &SimLayout,
     time: f64,
 ) -> Result<()> {
-    write_f64(e, sim_data + TIME_OFF, time)?;
+    write_time(e, sim_data, time)?;
     capture_row(e, rows, sim_data, layout)?;
     check_asserts(e, sim_data, layout, omclog::WARNING)
 }
@@ -2547,7 +2558,7 @@ pub(crate) fn emit_initial_row(
 /// `functionAlgebraics` for `has_when` models — there it saves `pre` early, which
 /// would break the post-event edge test.
 fn capture_pre(e: &mut dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout, time: f64) -> Result<()> {
-    write_f64(e, sim_data + TIME_OFF, time)?;
+    write_time(e, sim_data, time)?;
     if layout.has_when {
         eval_ode(e, sim_data, layout)?;
     } else {
@@ -2608,31 +2619,17 @@ fn seed_pre_from_live(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) 
 /// `-csvInput` at `t0`, and `input_function_updateStartValues` writes them back as
 /// the start attributes — so `setAllVarsToStart` puts the file's values on the
 /// inputs. Runs before the attribute equations and `-iif`, both of which C lets
-/// win over the file.
+/// win over the file. Armed for the integration loop separately, in [`drive`].
 #[cfg(feature = "std")]
 fn apply_external_input(
     e: &mut dyn SimEngine,
     sim_data: u32,
     inputs: &[crate::InputVar],
 ) -> Result<()> {
-    if inputs.is_empty() {
-        return Ok(());
-    }
-    let Some(file) = crate::simflags::with_flags(|f| f.csv_input.clone()) else { return Ok(()) };
-    let names: Vec<&str> = inputs.iter().map(|v| v.name.as_str()).collect();
-    let Some(mut ext) = crate::extinput::ExternalInput::load(&file, &names) else { return Ok(()) };
-    // C's `input_function_init`; `externalInputUpdate` rewrites every entry (a
-    // column the file lacks becomes 0, from its `calloc`ed rows), so this only
-    // matters for the shape.
-    let mut u = crate::extinput::empty(inputs.len());
+    let slot = crate::extinput::Slot::Start;
+    let Some(mut hook) = crate::extinput::ExtInputHook::load(inputs, slot) else { return Ok(()) };
     let t = read_f64(e, sim_data + TIME_OFF)?;
-    ext.update(t, &mut u);
-    for (input, v) in inputs.iter().zip(&u) {
-        match input.wty {
-            crate::WTy::F64 => write_f64(e, sim_data + input.off, *v)?,
-            crate::WTy::I32 => write_i32(e, sim_data + input.off, *v as i32)?,
-        }
-    }
+    hook.apply(e, sim_data, t);
     Ok(())
 }
 
@@ -2988,7 +2985,7 @@ fn read_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout,
 /// an assert outside it does not fire on every trial point of the root search.
 fn probe_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, time: f64, out: &mut [f64]) -> Result<()> {
     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-    write_f64(e, sim_data + TIME_OFF, time)?;
+    write_time(e, sim_data, time)?;
     eval_zc_equations(e, sim_data, layout)?;
     read_zero_crossings(e, sim_data, layout, out)
 }
@@ -3001,7 +2998,7 @@ fn update_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayou
     drain_asserts(e, sim_data, omclog::INFO)?;
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-    write_f64(e, sim_data + TIME_OFF, time)?;
+    write_time(e, sim_data, time)?;
     eval_continuous(e, sim_data, layout)?;
     let _ = e.take_pending_warnings();
     read_zero_crossings(e, sim_data, layout, out)
@@ -3179,7 +3176,7 @@ impl Samples {
                 write_i32(e, self.active_off + k as u32 * 4, 1)?;
             }
         }
-        write_f64(e, sim_data + TIME_OFF, t)?;
+        write_time(e, sim_data, t)?;
         if self.dae {
             e.call2(MODEL_FN_DAE, sim_data, eval_stage::DISCRETE)?;
         } else {
@@ -3210,7 +3207,7 @@ fn fire_time_event(
     layout: &SimLayout,
     te: f64,
 ) -> Result<()> {
-    write_f64(e, sim_data + TIME_OFF, te)?;
+    write_time(e, sim_data, te)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
     refresh_relations(e, sim_data, layout)?;
     samples.fire(e, sim_data, te)?;
@@ -3241,7 +3238,7 @@ fn fire_clocks(
     let mut did_event = false;
     for _ in 0..MAX_EVENT_ITER {
         sync.take_fired(e, time)?;
-        write_f64(e, sim_data + TIME_OFF, time)?;
+        write_time(e, sim_data, time)?;
         let fired = sync.handle_timers(e, time, eps, rows.as_deref_mut())?;
         if fired == Fired::None {
             break;
@@ -3324,7 +3321,7 @@ pub fn event_update(
         *v = read_f64(e, states_base + (i as u32) * 8)?;
     }
 
-    write_f64(e, sim_data + TIME_OFF, time)?;
+    write_time(e, sim_data, time)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
 
@@ -3547,6 +3544,14 @@ pub fn make_driver(
     }
 }
 
+/// Whether `-csvInput` was given; never in wasm, which has no filesystem.
+fn csv_input_given() -> bool {
+    #[cfg(feature = "std")]
+    return crate::simflags::with_flags(|f| f.csv_input.is_some());
+    #[cfg(not(feature = "std"))]
+    false
+}
+
 /// Listing what `make_driver` accepts; `simflags::check` rejects the rest earlier,
 /// so this is only reached by a `method=` the model was compiled with.
 const UNSUPPORTED_METHOD: &str = if cfg!(sundials) {
@@ -3655,7 +3660,9 @@ pub fn drive(
             #[cfg(not(all(ipopt, feature = "std")))]
             unreachable!("optimization::AVAILABLE is false");
         }
-        if !use_events && method == "euler" && !host_driven {
+        // `-csvInput` moves the inputs between steps, which the in-wasm loop cannot
+        // do: it never returns until it is done.
+        if !use_events && method == "euler" && !host_driven && !csv_input_given() {
             // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
             label = "euler-wasm";
             set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
@@ -3667,6 +3674,13 @@ pub fn drive(
         let (mut driver, l) =
             make_driver(e, model, sim_data, method).map_err(|err| enrich_trap_init(e, err, model.start_time))?;
         label = l;
+        // C's bracket up to `externalInputFree`: from here on the file drives the
+        // inputs. Initialization got its one application in `apply_external_input`.
+        #[cfg(feature = "std")]
+        let mut hook =
+            crate::extinput::ExtInputHook::load(&model.inputs, crate::extinput::Slot::Live);
+        #[cfg(feature = "std")]
+        let _armed = hook.as_mut().map(crate::extinput::arm);
         // Infinite budget runs to completion; the per-step cancel poll still lets a
         // native embedder interrupt. `OMC_WASM_SIM_YIELD_MS` forces a finite budget to
         // self-test yield/resume (must be `.mat`-identical to the un-yielded run).
@@ -3904,12 +3918,6 @@ struct ResCtx {
     jac_ypsave: Vec<f64>,
     /// Jacobian evaluations (colors summed over all Jacobian assemblies).
     nje: u64,
-    /// `-csvInput` for the optimizer's initial guess: C's `functionODE_residual`
-    /// re-reads the external input at *every* residual evaluation, so the hook is
-    /// applied here rather than only at the step boundaries. Null when there is none;
-    /// type-erased so the optimization module's types stay out of the driver.
-    ext_input: *mut core::ffi::c_void,
-    ext_apply: Option<unsafe fn(*mut core::ffi::c_void, &mut dyn SimEngine, u32, f64)>,
     /// Linear-memory address of the runtime's evaluation context (0 = unsupported).
     ctx_addr: u32,
     /// Linear-memory address of the runtime's error stage (0 = unsupported).
@@ -4021,7 +4029,7 @@ unsafe fn dassl_rt(
         // system can't converge; keep that transient failure from leaking into the
         // next checked evaluation by clearing the flag around this probe.
         write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
-        write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
+        write_time(e, ctx.sim_data, unsafe { *t })?;
         let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, ctx.n_states * 8) };
         e.write_bytes(ctx.states_base, y_bytes)?;
         set_context(e, ctx.ctx_addr, CONTEXT_EVENTS);
@@ -4078,10 +4086,7 @@ unsafe fn dassl_res(
     let n = ctx.n_states;
     let run = (|| -> Result<()> {
         write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?; // clear before the solve
-        write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
-        if let Some(f) = ctx.ext_apply {
-            unsafe { f(ctx.ext_input, e, ctx.sim_data, *t) };
-        }
+        write_time(e, ctx.sim_data, unsafe { *t })?;
         let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
         e.write_bytes(ctx.states_base, y_bytes)?;
         set_context(e, ctx.ctx_addr, CONTEXT_ODE);
@@ -4321,7 +4326,7 @@ unsafe fn dassl_jac(
         false => (0..n as u32).collect(),
     };
     let run = (|| -> Result<()> {
-        write_f64(e, ctx.sim_data + TIME_OFF, unsafe { *t })?;
+        write_time(e, ctx.sim_data, unsafe { *t })?;
         if jac_method_symbolic(ctx.jac_method) {
             // C's `jacA_symColored` / `jacA_sym`. This residual is G = y' − f, the
             // negative of C's F = f − y', so ∂f/∂y enters negated (and the `cj·I`
@@ -4857,8 +4862,6 @@ impl Driver for DasslDriver {
             jac_ders: Vec::new(),
             jac_ypsave: Vec::new(),
             nje: self.nje,
-            ext_input: core::ptr::null_mut(),
-            ext_apply: None,
             ctx_addr: e.context_addr(),
             err_stage_addr: e.error_stage_addr(),
             nominals: self.nominals.as_ptr(),
@@ -5431,7 +5434,6 @@ fn model_ode<'a>(
         sim_data: ctx.sim_data,
         states_base,
         ders_base,
-        time_off: TIME_OFF,
         nls_fail_off: ctx.nls_fail_off,
         ctx_addr: ctx.ctx_addr,
         jac_a: unsafe { ctx.jac.as_ref() },
@@ -5857,8 +5859,6 @@ impl SolverCore {
             jac_ders: Vec::new(),
             jac_ypsave: vec![0.0; self.n_unknowns],
             nje: self.nje,
-            ext_input: core::ptr::null_mut(),
-            ext_apply: None,
             ctx_addr: e.context_addr(),
             err_stage_addr: e.error_stage_addr(),
             nominals: self.nominals.as_ptr(),
@@ -6170,7 +6170,7 @@ impl SolverCore {
                     }
                     if !emitted {
                         // C's `updateContinuousSystem`.
-                        write_f64(e, sim_data + TIME_OFF, self.t)?;
+                        write_time(e, sim_data, self.t)?;
                         eval_continuous(e, sim_data, layout)?;
                     }
                     store_operators(e, sim_data, layout)?;
@@ -6191,7 +6191,7 @@ impl SolverCore {
                 if rooted {
                     let troot = self.t;
                     if stop_at_event {
-                        write_f64(e, sim_data + TIME_OFF, troot)?;
+                        write_time(e, sim_data, troot)?;
                         return Ok(Step::Event { time: troot });
                     }
                     self.state_events += 1;
@@ -6249,7 +6249,7 @@ impl SolverCore {
                 }
                 self.t = target;
                 self.write_states(e)?;
-                write_f64(e, sim_data + TIME_OFF, self.t)?;
+                write_time(e, sim_data, self.t)?;
                 self.refresh_yp(e)?;
                 *did_step = true;
             }
@@ -6260,7 +6260,7 @@ impl SolverCore {
                 event_step = true;
                 if stop_at_event {
                     self.t = te;
-                    write_f64(e, sim_data + TIME_OFF, te)?;
+                    write_time(e, sim_data, te)?;
                     return Ok(Step::Event { time: te });
                 }
                 log_time_event(te, samp, model);
@@ -6300,7 +6300,7 @@ impl SolverCore {
             }
             // C's `handleTimers`, plus any event clock a `when` body above just fired.
             if !sync.is_empty() {
-                write_f64(e, sim_data + TIME_OFF, target)?;
+                write_time(e, sim_data, target)?;
                 sync.take_fired(e, target)?;
             }
             if sync.next_time() <= target + SYNC_EPS {
@@ -6430,7 +6430,7 @@ impl CsDriver {
                 }
             }
             self.core.t = t_target;
-            write_f64(e, sim_data + TIME_OFF, t_target)?;
+            write_time(e, sim_data, t_target)?;
             e.call1_if_present("functionAlgebraics", sim_data)?;
             return Ok(CsStep::Reached);
         }
@@ -6449,7 +6449,7 @@ impl CsDriver {
         // Refresh the outputs at the communication point, and re-select states there
         // (see `DasslDriver`).
         write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-        write_f64(e, sim_data + TIME_OFF, t_target)?;
+        write_time(e, sim_data, t_target)?;
         e.call1("functionODE", sim_data)?;
         e.call1_if_present("functionAlgebraics", sim_data)?;
         if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
@@ -6491,11 +6491,11 @@ impl CsDriver {
             let te = self.samp.next_time();
             if te <= t_target + eps {
                 self.core.t = te;
-                write_f64(e, sim_data + TIME_OFF, te)?;
+                write_time(e, sim_data, te)?;
                 return Ok(CsStep::Event { time: te });
             }
             self.core.t = t_target;
-            write_f64(e, sim_data + TIME_OFF, t_target)?;
+            write_time(e, sim_data, t_target)?;
             e.call1_if_present("functionAlgebraics", sim_data)?;
             return Ok(CsStep::Reached);
         }
@@ -6511,7 +6511,7 @@ impl CsDriver {
         }
         // Communication point reached with no event: refresh outputs like `step_to`.
         write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-        write_f64(e, sim_data + TIME_OFF, t_target)?;
+        write_time(e, sim_data, t_target)?;
         e.call1("functionODE", sim_data)?;
         e.call1_if_present("functionAlgebraics", sim_data)?;
         if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
@@ -6841,7 +6841,7 @@ impl Driver for EventsDriver {
                         }
                     }
                     if !self.sync.is_empty() {
-                        write_f64(e, sim_data + TIME_OFF, subtarget)?;
+                        write_time(e, sim_data, subtarget)?;
                         self.sync.take_fired(e, subtarget)?;
                     }
                     if self.sync.next_time() <= subtarget + SYNC_EPS {
@@ -7013,7 +7013,7 @@ unsafe extern "C" fn cvode_rhs(
     let n = ctx.n_states;
     let run = (|| -> Result<()> {
         write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
-        write_f64(e, ctx.sim_data + TIME_OFF, t)?;
+        write_time(e, ctx.sim_data, t)?;
         let y_bytes = unsafe { core::slice::from_raw_parts(crate::sundials::nv_data(y) as *const u8, n * 8) };
         e.write_bytes(ctx.states_base, y_bytes)?;
         set_context(e, ctx.ctx_addr, CONTEXT_ODE);
@@ -7044,7 +7044,7 @@ unsafe extern "C" fn cvode_rhs(
 unsafe fn eval_roots(ctx: &mut ResCtx, t: f64, y: *const f64, yp: *const f64, gout: *mut f64) -> Result<()> {
     let e = unsafe { &mut *ctx.engine };
     write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
-    write_f64(e, ctx.sim_data + TIME_OFF, t)?;
+    write_time(e, ctx.sim_data, t)?;
     unsafe { ida_push_unknowns(ctx, y, yp) }?;
     set_context(e, ctx.ctx_addr, CONTEXT_EVENTS);
     if unsafe { ctx.ida.dae.as_ref() }.is_some() {
@@ -7232,8 +7232,6 @@ impl Driver for CvodeDriver {
             jac_ders: Vec::new(),
             jac_ypsave: Vec::new(),
             nje: 0,
-            ext_input: core::ptr::null_mut(),
-            ext_apply: None,
             ctx_addr: e.context_addr(),
             err_stage_addr: e.error_stage_addr(),
             nominals: self.nominals.as_ptr(),
@@ -7753,7 +7751,7 @@ unsafe fn ida_residual(ctx: &mut ResCtx, t: f64, y: *const f64, yp: *const f64, 
     if sens.n > 0 {
         e.call1("functionUpdateBoundParameters", ctx.sim_data)?;
     }
-    write_f64(e, ctx.sim_data + TIME_OFF, t)?;
+    write_time(e, ctx.sim_data, t)?;
     if let Some(lambda) = ctx.ida.ramp.lambda_at(t) {
         write_f64(e, ctx.sim_data + ctx.ida.ramp.off, lambda)?;
     }
@@ -8131,8 +8129,6 @@ impl Driver for IdaDriver {
             jac_ders: Vec::new(),
             jac_ypsave: Vec::new(),
             nje: 0,
-            ext_input: core::ptr::null_mut(),
-            ext_apply: None,
             ctx_addr: e.context_addr(),
             err_stage_addr: e.error_stage_addr(),
             nominals: self.nominals.as_ptr(),
@@ -8246,12 +8242,6 @@ impl Driver for IdaDriver {
 
 // ───────────────────── optimization: the initial guess's stepper ─────────────────────
 
-/// Publish the time the stepper jumped to (the no-state case).
-#[cfg(ipopt)]
-fn driver_write_time(e: &mut dyn SimEngine, sim_data: u32, t: f64) -> Result<()> {
-    write_f64(e, sim_data + TIME_OFF, t)
-}
-
 /// C's `smallIntSolverStep` (`optimization/DataManagement/InitialGuess.c`): DASSL
 /// stepped to a given time with no event handling and no output rows.
 ///
@@ -8262,8 +8252,6 @@ fn driver_write_time(e: &mut dyn SimEngine, sim_data: u32, t: f64) -> Result<()>
 #[cfg(ipopt)]
 pub(crate) struct GuessStepper {
     core: SolverCore,
-    /// `-csvInput`'s hook, applied at every residual evaluation like C's.
-    ext: Option<*mut core::ffi::c_void>,
 }
 
 #[cfg(ipopt)]
@@ -8279,13 +8267,7 @@ impl GuessStepper {
         daskr::auxiliary::xsetf(0); // DASKR's own printing would corrupt the log
         let mut core = SolverCore::new(e, model, sim_data, t0, "dassl", None)?;
         core.read_states(e)?;
-        Ok(GuessStepper { core, ext: None })
-    }
-
-    /// Install `-csvInput`'s external-input hook (a `*mut ExtInputHook`, kept alive
-    /// by the caller for as long as this stepper is used).
-    pub(crate) fn set_external_input(&mut self, hook: *mut core::ffi::c_void) {
-        self.ext = Some(hook);
+        Ok(GuessStepper { core })
     }
 
     pub(crate) fn time(&self) -> f64 {
@@ -8307,14 +8289,10 @@ impl GuessStepper {
         // with `NEQ = 0` would `STOP` inside its Fortran, taking omc down with it.
         if layout.n_states == 0 {
             self.core.t = tstop;
-            driver_write_time(e, self.core.sim_data, tstop)?;
+            write_time(e, self.core.sim_data, tstop)?;
             return eval_continuous(e, self.core.sim_data, layout);
         }
         let mut ctx = self.core.res_ctx(e, layout);
-        if let Some(hook) = self.ext {
-            ctx.ext_input = hook;
-            ctx.ext_apply = Some(crate::optimization::EXT_INPUT_APPLY);
-        }
         let _guard = ResCtxGuard;
         RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
         let mut did_step = false;
@@ -8347,8 +8325,9 @@ impl GuessStepper {
             }
         }
         self.core.write_states(e)?;
-        // C's `dassl_step` publishes the accepted time before `updateContinuousSystem`.
-        driver_write_time(e, self.core.sim_data, self.core.t)?;
+        // C's `dassl_step` publishes the accepted time before
+        // `updateContinuousSystem`, which re-reads the input there.
+        write_time(e, self.core.sim_data, self.core.t)?;
         eval_continuous(e, self.core.sim_data, layout)
     }
 }

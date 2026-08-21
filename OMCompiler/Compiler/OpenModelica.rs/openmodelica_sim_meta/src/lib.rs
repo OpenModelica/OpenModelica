@@ -963,12 +963,13 @@ pub struct SimMeta {
     pub inputs: Vec<InputVar>,
 }
 
-/// One `input` variable, as `-csvInput` reaches it: `off` is a real input's `start`
-/// attribute slot (published by `setAllVarsToStart`) and any other type's own slot,
-/// which is where C's `input_function` puts it.
+/// One `input` variable. C writes the file's value both to the `start` attribute,
+/// for `setAllVarsToStart` to publish (`start_off`), and to the variable itself
+/// before every evaluation (`off`); a non-real input has only the one slot.
 #[derive(Clone, Debug, PartialEq)]
 pub struct InputVar {
     pub off: u32,
+    pub start_off: u32,
     pub wty: WTy,
     /// The result name the file's column header has to match.
     pub name: String,
@@ -1518,6 +1519,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     put_u32(&mut o, m.inputs.len() as u32);
     for v in &m.inputs {
         put_u32(&mut o, v.off);
+        put_u32(&mut o, v.start_off);
         o.push(matches!(v.wty, WTy::F64) as u8);
         put_str(&mut o, &v.name);
     }
@@ -1927,8 +1929,9 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let mut inputs = Vec::new();
     for _ in 0..r.u32()? {
         let off = r.u32()?;
+        let start_off = r.u32()?;
         let wty = if r.u8()? != 0 { WTy::F64 } else { WTy::I32 };
-        inputs.push(InputVar { off, wty, name: r.string()? });
+        inputs.push(InputVar { off, start_off, wty, name: r.string()? });
     }
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
@@ -2065,7 +2068,7 @@ mod tests {
                 jac_c: None,
                 jac_d: None,
             }),
-            inputs: vec![InputVar { off: 96, wty: WTy::F64, name: "u".to_string() }],
+            inputs: vec![InputVar { off: 96, start_off: 104, wty: WTy::F64, name: "u".to_string() }],
         }
     }
 

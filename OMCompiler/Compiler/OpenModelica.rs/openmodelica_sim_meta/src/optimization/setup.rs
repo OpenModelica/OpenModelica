@@ -1055,15 +1055,10 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
         .iter()
         .map(|&i| data.names.get(i as usize).map(String::as_str).unwrap_or(""))
         .collect();
-    let mut ext = crate::simflags::with_flags(|f| f.csv_input.clone())
-        .and_then(|file| crate::extinput::ExternalInput::load(&file, &input_names))
-        .map(|ext| {
-            alloc::boxed::Box::new(crate::extinput::ExtInputHook {
-                ext,
-                input_offs: opt.inputs.iter().map(|&i| crate::REAL_OFF + i * 8).collect(),
-                inputs: crate::extinput::empty(nu),
-            })
-        });
+    let mut ext = crate::extinput::ExtInputHook::load_reals(&opt.inputs, &input_names);
+    // The file drives the inputs for the guess only; the Ipopt iterations take
+    // theirs from `vopt`.
+    let _armed = ext.as_mut().map(crate::extinput::arm);
     if ext.is_none() {
         let u0 = data.bounds.u0.clone();
         data.model.inputs.copy_from_slice(&u0);
@@ -1076,11 +1071,6 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
     let sim_data = data.model.sim_data;
     let e = unsafe { &mut *engine };
     let mut stepper = driver::GuessStepper::new(e, &meta, sim_data, data.start_time)?;
-    // C re-reads the external input at every residual evaluation
-    // (`functionODE_residual`), not just per step.
-    if let Some(hook) = ext.as_mut() {
-        stepper.set_external_input(&mut **hook as *mut _ as *mut core::ffi::c_void);
-    }
 
     // C's pre-simulation: when the Optimica `startTime` is beyond the experiment's,
     // simulate up to it first and emit those rows.

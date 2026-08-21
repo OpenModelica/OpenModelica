@@ -4461,22 +4461,26 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
             .collect();
         optimization::build_opt_info(sim_code, vars, &reals, jacs, &var_map)?
     };
-    // C's `inputNames` / `nInputVars`. A real input takes the file's value through
-    // its `start` attribute; another type has none here, so it takes it in its own
-    // slot, where C's `input_function` puts it. No slot ⇒ no column to receive.
+    // C's `inputNames` / `nInputVars`. No slot ⇒ no column to receive.
     let mut input_vars: Vec<openmodelica_sim_meta::InputVar> = Vec::new();
     for sv in lst(&vars.inputVars) {
         let key = sim_cref_key(&sv.name)?;
         let name = cref_display(&sv.name)?;
         match all_reals.iter().position(|r| sim_cref_key(&r.name).ok().as_deref() == Some(key.as_str())) {
             Some(i) => input_vars.push(openmodelica_sim_meta::InputVar {
-                off: layout.real_start_off(i as u32),
+                off: openmodelica_sim_meta::REAL_OFF + i as u32 * 8,
+                start_off: layout.real_start_off(i as u32),
                 wty: WTy::F64,
                 name,
             }),
             None => {
                 if let Some(slot) = var_map.vars.get(&key) {
-                    input_vars.push(openmodelica_sim_meta::InputVar { off: slot.off, wty: slot.wty, name });
+                    input_vars.push(openmodelica_sim_meta::InputVar {
+                        off: slot.off,
+                        start_off: slot.off,
+                        wty: slot.wty,
+                        name,
+                    });
                 }
             }
         }
