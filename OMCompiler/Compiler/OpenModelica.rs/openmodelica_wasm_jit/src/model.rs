@@ -109,6 +109,16 @@ impl ExtArchives {
 
     #[cfg(not(target_arch = "wasm32"))]
     fn link_uncached(&self) -> std::result::Result<String, String> {
+        match self.link_attempt(false) {
+            // A non-PIC member cannot reach an *imported* symbol from `.text`, so a
+            // runtime global it reads has to be defined in the library itself.
+            Err(e) => self.link_attempt(true).map_err(|_| e),
+            ok => ok,
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn link_attempt(&self, runtime_globals: bool) -> std::result::Result<String, String> {
         use std::process::Command;
         let dir = std::env::temp_dir().join(format!("om-extc-{}", std::process::id()));
         std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
@@ -119,6 +129,16 @@ impl ExtArchives {
             cmd.arg(format!("-Wl,-u,{sym}"));
         }
         cmd.args(&self.archives);
+        if runtime_globals {
+            let tu = dir.join(format!("{}_globals.c", self.prefix));
+            // `protected` binds the reference at link time — a non-PIC `.text`
+            // takes no dynamic relocation — yet keeps the symbol exported, so
+            // `dynload::register_rhs_final_flag` can find this copy.
+            let vis = if cfg!(windows) { "" } else { " __attribute__((visibility(\"protected\")))" };
+            std::fs::write(&tu, format!("int RHSFinalFlag{vis};\n"))
+                .map_err(|e| format!("cannot write {}: {e}", tu.display()))?;
+            cmd.arg("-fPIC").arg(&tu);
+        }
         let output = cmd
             .output()
             .map_err(|e| format!("`{}` could not be run to link the static libraries: {e}", self.ccompiler))?;
@@ -250,9 +270,9 @@ impl ExtIncludes {
 /// a wrapper handing back the address needs no prototype and reaches it anyway.
 pub const EXT_ADDR_PREFIX: &str = "omc_ext_addr_";
 
-/// A function-like macro has no address, so the *call* is what the unit provides
-/// — which is all the C target ever compiles, expanding the macro at its own
-/// call site.
+/// Calling through the unit is what the C target does: with the declaration in
+/// scope the compiler converts each argument to what the callee really takes
+/// (`ExternalMedia`'s `setState_ph` declares a `double` for a Modelica `Integer`).
 pub const EXT_CALL_PREFIX: &str = "omc_ext_call_";
 
 /// One wrapper per function still to be found. Taking the address of a function
@@ -263,10 +283,8 @@ pub fn ext_wrappers(sigs: &[ExtCallSig]) -> String {
     for sig in sigs {
         let name = &sig.name;
         match ext_call_wrapper(sig) {
-            Some(call) => out.push_str(&format!(
-                "#ifdef {name}\n{call}#else\n{}#endif\n",
-                ext_addr_wrapper(name)
-            )),
+            // A macro has no address to hand back.
+            Some(call) => out.push_str(&format!("{call}#ifndef {name}\n{}#endif\n", ext_addr_wrapper(name))),
             None => out.push_str(&ext_addr_wrapper(name)),
         }
     }
@@ -277,17 +295,17 @@ fn ext_addr_wrapper(name: &str) -> String {
     format!("void (*{EXT_ADDR_PREFIX}{name}(void))(void) {{ return (void (*)(void)) {name}; }}\n")
 }
 
-/// `T omc_ext_call_f(A a0, …) { return f(a0, …); }`. `None` when an argument has
-/// no C spelling the declaration alone fixes (a record's struct).
+/// `T omc_ext_call_f(A a0, …) { return f(a0, …); }`. `None` when the result has no
+/// C spelling the declaration alone fixes (a record returned by value).
 fn ext_call_wrapper(sig: &ExtCallSig) -> Option<String> {
     let byref = sig.lang == crate::sig::ExtLang::Fortran77;
     let mut params = String::new();
     for (i, (ty, is_out)) in sig.args.iter().enumerate() {
-        let ptr = *is_out || byref || matches!(ty, crate::sig::SigTy::Array { .. });
+        let ptr = *is_out || byref || matches!(ty, crate::sig::SigTy::Array { .. } | crate::sig::SigTy::Record { .. });
         params.push_str(&format!(
             "{}{}{} a{i}",
             if i == 0 { "" } else { ", " },
-            ext_c_type(ty)?,
+            ext_c_arg_type(ty)?,
             if ptr { "*" } else { "" }
         ));
     }
@@ -305,6 +323,15 @@ fn ext_call_wrapper(sig: &ExtCallSig) -> Option<String> {
     ))
 }
 
+/// [`ext_c_type`] for an *argument*: a record goes as a `void*`, which converts to
+/// whatever struct pointer the callee declares.
+fn ext_c_arg_type(ty: &crate::sig::SigTy) -> Option<&'static str> {
+    match ty {
+        crate::sig::SigTy::Record { .. } => Some("void"),
+        other => ext_c_type(other),
+    }
+}
+
 /// The C type the language specification maps a Modelica type to; an array is its
 /// element type, passed by pointer.
 fn ext_c_type(ty: &crate::sig::SigTy) -> Option<&'static str> {
@@ -317,6 +344,24 @@ fn ext_c_type(ty: &crate::sig::SigTy) -> Option<&'static str> {
         SigTy::Array { elem, .. } => ext_c_type(elem)?,
         SigTy::Record { .. } | SigTy::Func { .. } => return None,
     })
+}
+
+/// The `Include`'s call wrapper if it built one, else the symbol itself, else the
+/// address wrapper (a function with no external linkage). The wrapper first: only
+/// it carries the argument conversions ([`EXT_CALL_PREFIX`]).
+#[cfg(not(target_arch = "wasm32"))]
+pub fn external_symbol_or_wrapper(handles: &[usize], name: &str) -> Option<usize> {
+    use openmodelica_util::dynload::external_symbol_in;
+    if let Some(addr) = external_symbol_in(handles, &format!("{EXT_CALL_PREFIX}{name}")) {
+        return Some(addr);
+    }
+    if let Some(addr) = external_symbol_in(handles, name) {
+        return Some(addr);
+    }
+    let wrapper = external_symbol_in(handles, &format!("{EXT_ADDR_PREFIX}{name}"))?;
+    // Safety: the generated wrapper is `void (*w(void))(void)`.
+    let w: extern "C" fn() -> usize = unsafe { std::mem::transmute(wrapper) };
+    Some(w()).filter(|a| *a != 0)
 }
 
 /// omc's own C headers, plus the bundled `gc.h` that `openmodelica.h` reaches —

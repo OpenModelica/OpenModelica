@@ -10041,8 +10041,14 @@ fn release_temp_array(ctx: &mut FnCtx, t: u32) -> Result<()> {
 /// (the whole dimension vector, an `Integer[ndims]`). `a`'s owned handle is
 /// released after.
 fn compile_size(ctx: &mut FnCtx, exp: &DAE::Exp, sz: Option<&DAE::Exp>) -> Result<()> {
-    let SigTy::Array { rank, .. } = exp_sigty(exp)? else {
-        return Err("CodegenWasmJit: size() of a non-array expression");
+    // Only the whole-vector form needs the rank statically — as well, since the
+    // frontend leaves a dimension expression's operand `T_UNKNOWN`.
+    let rank = match sz {
+        Some(_) => 0,
+        None => match exp_sigty(exp)? {
+            SigTy::Array { rank, .. } => rank,
+            _ => return Err("CodegenWasmJit: size() of a non-array expression"),
+        },
     };
     compile_exp(ctx, exp)?; // owned array handle
     let arr_t = ctx.alloc_temp(WTy::I32);
@@ -10505,23 +10511,39 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
     if !ext_imports.is_empty() {
         let mut notes: Vec<String> = Vec::new();
         let resolved = crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, &mut notes)?;
-        let libs = resolved.wasm;
-        for lib in &libs {
+        let wasm_libs = resolved.wasm;
+        for lib in &wasm_libs {
             sig.push_str(&format!("lib\t{}\n", lib.name));
         }
-        // What the wasm modules do not define is called through libffi.
-        for lib in &resolved.native {
+        // C source: an `Include`, or a `Library` naming a `.c` file.
+        let sources: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.externalFunctionIncludes)
+            .map(|s| s.to_string())
+            .chain(resolved.sources)
+            .collect();
+        let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes).map(|s| s.to_string()).collect();
+        // A host build compiles them the way the C target does and calls them
+        // through libffi, as `build_sim_model` does: the in-wasm `Modelica*`
+        // callbacks are host imports, which cannot take C varargs, so a
+        // `ModelicaFormatMessage` there would lose its arguments. The browser has
+        // no host library to call, so there the wasm unit is all.
+        #[cfg(target_arch = "wasm32")]
+        {
+            let missing = crate::CodegenWasmJit::missing_ext_symbols(&ext_imports, &wasm_libs);
+            if let Some(l) = crate::CodegenWasmJit::compile_include_library(&base, &sources, &dirs, &fn_code.makefileParams.cflags, &missing, &mut notes)? {
+                let path = format!("{base}_includes.wasm");
+                openmodelica_wasi::fs::write(&path, &l.bytes)
+                    .map_err(|_| "CodegenWasmJitFunctions: cannot stage the compiled include library")?;
+                sig.push_str(&format!("lib\t{path}\n"));
+            }
+        }
+        // The model's own code first: it shadows a same-named symbol in a `Library`
+        // shared object, as the C target's own link order does.
+        #[cfg(not(target_arch = "wasm32"))]
+        for lib in native_fallbacks(&base, fn_code, &resolved.archives, &sources, &dirs, &ext_imports, &wasm_libs, &mut notes) {
             sig.push_str(&format!("nlib\t{lib}\n"));
         }
-        // An implementation given as C source in an `Include`.
-        let includes: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.externalFunctionIncludes).map(|s| s.to_string()).collect();
-        let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes).map(|s| s.to_string()).collect();
-        let missing = crate::CodegenWasmJit::missing_ext_symbols(&ext_imports, &libs);
-        if let Some(l) = crate::CodegenWasmJit::compile_include_library(&base, &includes, &dirs, &fn_code.makefileParams.cflags, &missing, &mut notes)? {
-            let path = format!("{base}_includes.wasm");
-            openmodelica_wasi::fs::write(&path, &l.bytes)
-                .map_err(|_| "CodegenWasmJitFunctions: cannot stage the compiled include library")?;
-            sig.push_str(&format!("lib\t{path}\n"));
+        for lib in &resolved.native {
+            sig.push_str(&format!("nlib\t{lib}\n"));
         }
         for e in &ext_imports {
             sig.push_str(&format!("ext\t{}\n", write_ext_sig(e)));
@@ -10535,6 +10557,56 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
     openmodelica_wasi::fs::write(&format!("{base}.wasm"), &bytes).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm")?;
     openmodelica_wasi::fs::write(&format!("{base}.wasm.sig"), sig.as_bytes()).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm.sig")?;
     Ok(())
+}
+
+/// Host libraries holding the `external "C"` implementations no module in
+/// `wasm_libs` defines: the `Library` archives linked into a loadable one, and the
+/// C sources compiled. Built in the compile phase, as the simulation's are.
+#[cfg(not(target_arch = "wasm32"))]
+fn native_fallbacks(
+    base: &str,
+    fn_code: &SimCodeFunction::FunctionCode,
+    archives: &[String],
+    sources: &[String],
+    dirs: &[String],
+    ext_imports: &[ExtCallSig],
+    wasm_libs: &[openmodelica_wasm_jit::model::ExtLibrary],
+    notes: &mut Vec<String>,
+) -> Vec<String> {
+    let missing = crate::CodegenWasmJit::missing_ext_symbols(ext_imports, wasm_libs);
+    if missing.is_empty() {
+        return Vec::new();
+    }
+    let mp = &fn_code.makefileParams;
+    let mut out = Vec::new();
+    if !sources.is_empty() {
+        let inc = openmodelica_wasm_jit::model::ExtIncludes {
+            sources: sources.to_vec(),
+            include_dirs: dirs.to_vec(),
+            ccompiler: mp.ccompiler.to_string(),
+            cflags: mp.cflags.to_string(),
+            dllext: mp.dllext.to_string(),
+            prefix: base.to_string(),
+        };
+        match inc.compile(&missing) {
+            Ok(path) => out.push(path),
+            Err(e) => notes.push(e),
+        }
+    }
+    if !archives.is_empty() {
+        let arch = openmodelica_wasm_jit::model::ExtArchives {
+            archives: archives.to_vec(),
+            symbols: ext_imports.iter().map(|s| s.name.clone()).collect(),
+            ccompiler: mp.ccompiler.to_string(),
+            dllext: mp.dllext.to_string(),
+            prefix: base.to_string(),
+        };
+        match arch.link() {
+            Ok(path) => out.push(path),
+            Err(e) => notes.push(e),
+        }
+    }
+    out
 }
 
 /// `CodegenWasmJitFunctions.loadAndExecute`: instantiate `<fileName>.wasm` and

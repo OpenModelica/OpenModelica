@@ -195,7 +195,7 @@ impl NativeExternals {
     }
 
     fn resolve(&self, name: &str) -> Option<usize> {
-        openmodelica_util::dynload::external_symbol_in(&self.handles, name)
+        openmodelica_wasm_jit::model::external_symbol_or_wrapper(&self.handles, name)
     }
 }
 
@@ -349,7 +349,9 @@ pub(super) fn load_and_execute(
     // Clear any stale pending assertion before the call (defensive — each call
     // consumes its own).
     openmodelica_wasm_jit::host::clear_pending_assert();
+    openmodelica_wasm_jit::host::flush_stdio();
     let call_res = func.call(&mut store, &params, &mut results);
+    openmodelica_wasm_jit::host::flush_stdio();
     if call_res.is_err() {
         // A failed `assert` records its message + source info via the `rt_assert`
         // host import, then traps. Route it to the error buffer (matching the C

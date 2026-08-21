@@ -38,6 +38,8 @@ unsafe extern "C" {
     fn rt_host_set_no_throw(v: i32);
     /// Initialization is over; the host splits its output capture there.
     fn rt_host_init_done();
+    /// C's `RHSFinalFlag`: the external "C" libraries are the host's, so is the flag.
+    fn rt_host_rhs_final(v: i32);
 }
 
 fn init_done_hook() {
@@ -174,6 +176,9 @@ impl SimEngine for InWasmEngine {
     }
     fn clean_nls_history(&mut self, time: f64) {
         crate::nls::rt_nls_clean_history(time);
+    }
+    fn set_rhs_final(&mut self, final_eval: bool) {
+        unsafe { rt_host_rhs_final(final_eval as i32) };
     }
 }
 

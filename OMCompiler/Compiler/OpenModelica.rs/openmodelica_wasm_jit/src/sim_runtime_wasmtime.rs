@@ -430,20 +430,8 @@ impl NativeExternals {
         loaded
     }
 
-    /// The symbol itself, else its `Include` wrapper: the call one for a macro,
-    /// the address one for a function with no external linkage.
     fn symbol(&self, name: &str) -> Option<usize> {
-        use openmodelica_util::dynload::external_symbol_in;
-        if let Some(addr) = external_symbol_in(&self.handles, name) {
-            return Some(addr);
-        }
-        if let Some(addr) = external_symbol_in(&self.handles, &format!("{}{name}", model::EXT_CALL_PREFIX)) {
-            return Some(addr);
-        }
-        let wrapper = external_symbol_in(&self.handles, &format!("{}{name}", model::EXT_ADDR_PREFIX))?;
-        // Safety: the generated wrapper is `void (*w(void))(void)`.
-        let w: extern "C" fn() -> usize = unsafe { std::mem::transmute(wrapper) };
-        Some(w()).filter(|a| *a != 0)
+        model::external_symbol_or_wrapper(&self.handles, name)
     }
 
     /// The model's own `usertab`: no `external "C"`, so never among `ext_imports`.
@@ -512,6 +500,8 @@ fn define_external_imports(
     // No `external "C"` means no `Include`/`Library`, hence no `usertab`.
     let usertab = (!model.ext_imports.is_empty()).then(|| native.usertab(model)).flatten();
     openmodelica_util::dynload::set_usertab(usertab);
+    // A library that had to define its own `RHSFinalFlag` reads that copy.
+    openmodelica_util::dynload::register_rhs_final_flag(&native.handles);
     Ok(())
 }
 
@@ -527,16 +517,11 @@ pub fn define_native_external(
 ) -> Result<()> {
     let name = sig.name.clone();
     let sig = sig.clone();
-    let rt_str_new = rt.str_new.clone();
-    let rt_str_data = rt.str_data.clone();
-    let rt_release = rt.release.clone();
-    let nls = rt.nls.clone();
+    let rt = rt.clone();
     wt(linker.func_new("ext", &name, functype, move |mut caller, args, rets| {
         // Safety: `addr` resolves `sig.name`; the `Cif` matches the validated sig.
-        unsafe {
-            call_external(addr, &sig, &mut caller, memory, &rt_str_new, &rt_str_data, &rt_release, &nls, args, rets)
-        }
-        .map_err(|e| wasmtime::Error::msg(format!("{e}")))
+        unsafe { call_external(addr, &sig, &mut caller, memory, &rt, args, rets) }
+            .map_err(|e| wasmtime::Error::msg(format!("{e}")))
     }))?;
     Ok(())
 }
@@ -575,8 +560,10 @@ const EXT_CHECKPOINT: arcstr::ArcStr = arcstr::literal!("wasm-jit external \"C\"
 /// cell's written value, in order — scalars directly, external-object pointers via
 /// the registry, and `char*` outputs copied into a fresh in-wasm String
 /// (`rt_str_new`+`rt_str_data`). A `String[…]` output array is written back
-/// element by element (C's `unpack_string_array`). The whole call is bracketed by
-/// `sim_external_begin/end` so any `ModelicaAllocateString` uses our arena.
+/// element by element (C's `unpack_string_array`); a record as a pointer to its
+/// [`host_c_record_layout`] struct, copied field by field both ways. The whole call
+/// is bracketed by `sim_external_begin/end` so any `ModelicaAllocateString` uses
+/// our arena.
 ///
 /// A `FORTRAN 77` external takes every argument by reference and its arrays
 /// column-major — the marshalling `extFunCallF77` puts in the generated wrapper.
@@ -585,10 +572,7 @@ unsafe fn call_external(
     sig: &crate::sig::ExtCallSig,
     caller: &mut wasmtime::Caller<'_, WasiCtx>,
     memory: wasmtime::Memory,
-    rt_str_new: &wasmtime::TypedFunc<u32, u32>,
-    rt_str_data: &wasmtime::TypedFunc<u32, u32>,
-    rt_release: &wasmtime::TypedFunc<u32, ()>,
-    nls: &Option<NlsHooks>,
+    rt: &crate::dylink_engine::ExtRt,
     args: &[wasmtime::Val],
     rets: &mut [wasmtime::Val],
 ) -> Result<()> {
@@ -596,6 +580,8 @@ unsafe fn call_external(
     use core::ffi::c_void;
     use libffi::middle::{Cif, Type};
     use wasmtime::Val;
+
+    let (rt_str_new, rt_str_data, rt_release, nls) = (&rt.str_new, &rt.str_data, &rt.release, &rt.nls);
 
     // Raw libffi call, declared `C-unwind` so a Rust panic raised by the
     // ModelicaError interception (`omrs_runtime_abort`) can unwind back through
@@ -623,9 +609,11 @@ unsafe fn call_external(
     // Output `String[…]`: (index into `str_arrays`, wasm element-area offset).
     let mut str_out_arrays: Vec<(usize, usize)> = Vec::new();
     let mut types: Vec<Type> = Vec::with_capacity(sig.args.len());
-    // One 8-byte native cell per `_Out_` pointer arg (fits int/double/pointer),
-    // in output order; the C call writes through the pointer we pass.
-    let mut out_cells: Vec<(SigTy, Box<[u8; 8]>)> = Vec::new();
+    // One native cell per `_Out_` pointer arg, in output order; the C call writes
+    // through the pointer we pass.
+    let mut out_cells: Vec<OutCell> = Vec::new();
+    // Record arguments' C structs, kept alive for the call.
+    let mut in_records: Vec<Vec<u64>> = Vec::new();
     // Fortran by-reference input cells, kept alive for the call.
     let mut in_cells: Vec<Box<[u8; 8]>> = Vec::new();
     // (buffer, wasm element-area offset, dims, element size, is output).
@@ -640,15 +628,23 @@ unsafe fn call_external(
             // pre-allocated on the wasm side and passed by pointer (filled in place,
             // like an input array — handled by the `Array` arm below).
             if *is_out && !matches!(ty, SigTy::Array { .. }) {
-                // The cell is one C value wide, and a record output is a struct
-                // whose layout only its own C declaration fixes.
+                // A record output is a struct the callee fills in place.
+                if let SigTy::Record { fields, .. } = ty {
+                    let layout = host_c_record_layout(fields)
+                        .ok_or("CodegenWasmJit: external \"C\" : record field type not marshalled")?;
+                    let mut buf: Vec<u64> = vec![0; layout.words()];
+                    slots.push(Slot::P(buf.as_mut_ptr() as *mut c_void));
+                    types.push(Type::pointer());
+                    out_cells.push(OutCell::Record { fields: fields.clone(), layout, buf });
+                    continue;
+                }
                 if !matches!(ty, SigTy::Real | SigTy::Int | SigTy::Bool | SigTy::Str | SigTy::Ptr) {
                     return Err("CodegenWasmJit: external \"C\" : output argument type not marshalled");
                 }
                 let mut cell: Box<[u8; 8]> = Box::new([0u8; 8]);
                 slots.push(Slot::P(cell.as_mut_ptr() as *mut c_void));
                 types.push(Type::pointer());
-                out_cells.push((ty.clone(), cell));
+                out_cells.push(OutCell::Scalar(ty.clone(), cell));
                 continue;
             }
             let v = &args[in_i];
@@ -742,6 +738,16 @@ unsafe fn call_external(
                     }
                     types.push(Type::pointer());
                 }
+                // The language specification maps a record to a struct pointer.
+                SigTy::Record { fields, .. } => {
+                    let layout = host_c_record_layout(fields)
+                        .ok_or("CodegenWasmJit: external \"C\" : record field type not marshalled")?;
+                    let mut buf: Vec<u64> = vec![0; layout.words()];
+                    record_to_c_host(mem, fields, &layout, v.unwrap_i32() as usize, &mut buf, &mut cstrings)?;
+                    slots.push(Slot::P(buf.as_mut_ptr() as *mut c_void));
+                    types.push(Type::pointer());
+                    in_records.push(buf);
+                }
                 other => return Err("CodegenWasmJit: external \"C\" : input argument type not yet marshalled"),
             }
         }
@@ -788,11 +794,16 @@ unsafe fn call_external(
             wt(nls.note(caller))?;
             return wt(zero_results(sig, caller, rt_str_new, rets));
         }
-        // The run reports itself through its log alone, as C's separate executable
-        // does, so the buffer the message also went to is rolled back.
         let msg = openmodelica_error::ErrorExt::take_last_runtime_error();
-        openmodelica_error::ErrorExt::rollBack(EXT_CHECKPOINT);
-        sim_driver::note_runtime_error(&msg.unwrap_or_else(|| format!("external \"C\" `{}` failed", sig.name)));
+        // A run reports itself through its log alone, as C's separate executable
+        // does. The `-d=gen` function JIT (no solver, hence no `nls`) has no log:
+        // there the buffer is how the error reaches `getErrorString`.
+        if nls.is_some() {
+            openmodelica_error::ErrorExt::rollBack(EXT_CHECKPOINT);
+            sim_driver::note_runtime_error(&msg.unwrap_or_else(|| format!("external \"C\" `{}` failed", sig.name)));
+        } else {
+            openmodelica_error::ErrorExt::delCheckpoint(EXT_CHECKPOINT);
+        }
         return Err("CodegenWasmJit: external \"C\" raised a runtime error");
     }
     openmodelica_error::ErrorExt::delCheckpoint(EXT_CHECKPOINT);
@@ -830,6 +841,18 @@ unsafe fn call_external(
     }
     drop(cstrings);
 
+    // A filled `_Out_` record becomes a fresh in-wasm record object; done before
+    // the string closure below, which takes `caller`.
+    let mut out_handles: Vec<Option<u32>> = Vec::with_capacity(out_cells.len());
+    for cell in &out_cells {
+        out_handles.push(match cell {
+            OutCell::Record { fields, layout, buf } => {
+                Some(record_from_c_host(&mut *caller, memory, rt, fields, layout, buf)?)
+            }
+            OutCell::Scalar(..) => None,
+        });
+    }
+
     // Build an in-wasm String from a native `char*` (NUL-terminated), returning its
     // offset. Re-enters the runtime (`rt_str_new` may grow memory, so `data_mut` is
     // re-fetched after).
@@ -855,14 +878,208 @@ unsafe fn call_external(
         rets[ri] = result_val(ret_ty, rvalue, &mut make_string)?;
         ri += 1;
     }
-    for (ty, cell) in &out_cells {
-        rets[ri] = result_val(ty, **cell, &mut make_string)?;
+    for (cell, handle) in out_cells.iter().zip(&out_handles) {
+        rets[ri] = match cell {
+            OutCell::Scalar(ty, raw) => result_val(ty, **raw, &mut make_string)?,
+            OutCell::Record { .. } => Val::I32(handle.unwrap_or(0) as i32),
+        };
         ri += 1;
     }
     openmodelica_modelica_utilities::sim_external_end();
     Ok(())
 }
 
+/// One `_Out_` pointer argument's native cell, in output order.
+enum OutCell {
+    Scalar(crate::sig::SigTy, Box<[u8; 8]>),
+    Record { fields: std::sync::Arc<Vec<(arcstr::ArcStr, crate::sig::SigTy)>>, layout: HostCRecord, buf: Vec<u64> },
+}
+
+/// The C struct a record maps to on the *host* ABI — not the wasm32 one
+/// `dylink_wasmtime` builds, where `modelica_integer` is 4 bytes, nor the record
+/// object's own layout.
+struct HostCRecord {
+    size: usize,
+    align: usize,
+    offsets: Vec<usize>,
+}
+
+impl HostCRecord {
+    fn words(&self) -> usize {
+        self.size.div_ceil(8).max(1)
+    }
+}
+
+/// `openmodelica_types.h`: `modelica_integer` is a `long`, `modelica_boolean` an
+/// `int`, a `String`/external object a pointer.
+fn host_c_size_align(t: &crate::sig::SigTy) -> Option<(usize, usize)> {
+    use crate::sig::SigTy;
+    use std::mem::{align_of, size_of};
+    Some(match t {
+        SigTy::Real => (8, 8),
+        SigTy::Int => (size_of::<std::os::raw::c_long>(), align_of::<std::os::raw::c_long>()),
+        SigTy::Bool => (size_of::<std::os::raw::c_int>(), align_of::<std::os::raw::c_int>()),
+        SigTy::Str | SigTy::Ptr | SigTy::Array { .. } => (size_of::<usize>(), align_of::<usize>()),
+        SigTy::Record { fields, .. } => {
+            let l = host_c_record_layout(fields)?;
+            (l.size, l.align)
+        }
+        SigTy::Func { .. } => return None,
+    })
+}
+
+fn host_c_record_layout(fields: &[(arcstr::ArcStr, crate::sig::SigTy)]) -> Option<HostCRecord> {
+    let mut off = 0usize;
+    let mut align = 1usize;
+    let mut offsets = Vec::with_capacity(fields.len());
+    for (_, t) in fields {
+        let (sz, a) = host_c_size_align(t)?;
+        off = off.next_multiple_of(a);
+        offsets.push(off);
+        off += sz;
+        align = align.max(a);
+    }
+    Some(HostCRecord { size: off.next_multiple_of(align), align, offsets })
+}
+
+fn as_bytes_mut(buf: &mut [u64]) -> &mut [u8] {
+    // Safety: `u64` has no invalid bit patterns and the slice covers the same bytes.
+    unsafe { std::slice::from_raw_parts_mut(buf.as_mut_ptr() as *mut u8, buf.len() * 8) }
+}
+
+/// Copy the record object at `handle` in wasm memory into the C struct `buf`.
+fn record_to_c_host(
+    mem: &[u8],
+    fields: &[(arcstr::ArcStr, crate::sig::SigTy)],
+    layout: &HostCRecord,
+    handle: usize,
+    buf: &mut [u64],
+    cstrings: &mut Vec<std::ffi::CString>,
+) -> Result<()> {
+    use crate::sig::SigTy;
+    let obj = crate::sig::record_layout(fields);
+    let base = handle + obj.data_off as usize;
+    let dst = as_bytes_mut(buf);
+    for (i, (_, ty)) in fields.iter().enumerate() {
+        let src = base + obj.field_off[i] as usize;
+        let at = layout.offsets[i];
+        let handle_of = || u32::from_le_bytes(mem[src..src + 4].try_into().unwrap()) as usize;
+        match ty {
+            SigTy::Real => dst[at..at + 8].copy_from_slice(&mem[src..src + 8]),
+            SigTy::Int => {
+                let v = i32::from_le_bytes(mem[src..src + 4].try_into().unwrap()) as std::os::raw::c_long;
+                dst[at..at + std::mem::size_of::<std::os::raw::c_long>()].copy_from_slice(&v.to_le_bytes());
+            }
+            SigTy::Bool => dst[at..at + 4].copy_from_slice(&mem[src..src + 4]),
+            SigTy::Str => {
+                let h = handle_of();
+                let bytes: &[u8] = if h == 0 {
+                    &[]
+                } else {
+                    let len = u32::from_le_bytes(mem[h + 4..h + 8].try_into().unwrap()) as usize;
+                    &mem[h + 8..h + 8 + len]
+                };
+                let cs = std::ffi::CString::new(bytes)
+                    .map_err(|_| "external \"C\" : string field has an interior NUL")?;
+                let p = cs.as_ptr() as usize;
+                cstrings.push(cs);
+                dst[at..at + std::mem::size_of::<usize>()].copy_from_slice(&p.to_le_bytes());
+            }
+            SigTy::Ptr => {
+                let p = registry_get(i32::from_le_bytes(mem[src..src + 4].try_into().unwrap()));
+                dst[at..at + std::mem::size_of::<usize>()].copy_from_slice(&p.to_le_bytes());
+            }
+            // The element data, so the callee reads/writes the model's own array.
+            SigTy::Array { .. } => {
+                let h = handle_of();
+                let (_, data_off) = crate::host::array_abi::dims_and_data(mem, h)
+                    .ok_or("external \"C\" : malformed array field")?;
+                let p = mem.as_ptr() as usize + h + data_off;
+                dst[at..at + std::mem::size_of::<usize>()].copy_from_slice(&p.to_le_bytes());
+            }
+            SigTy::Record { fields: inner, .. } => {
+                let h = handle_of();
+                let inner_layout =
+                    host_c_record_layout(inner).ok_or("external \"C\" : record field type not marshalled")?;
+                // Inlined at `at`, so built apart and copied in.
+                let mut tmp: Vec<u64> = vec![0; inner_layout.words()];
+                record_to_c_host(mem, inner, &inner_layout, h, &mut tmp, cstrings)?;
+                let size = inner_layout.size;
+                dst[at..at + size].copy_from_slice(&as_bytes_mut(&mut tmp)[..size]);
+            }
+            SigTy::Func { .. } => return Err("external \"C\" : record field type not marshalled"),
+        }
+    }
+    Ok(())
+}
+
+/// The inverse of [`record_to_c_host`]: a fresh in-wasm record object holding what
+/// the callee wrote into the C struct.
+fn record_from_c_host(
+    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    memory: wasmtime::Memory,
+    rt: &crate::dylink_engine::ExtRt,
+    fields: &[(arcstr::ArcStr, crate::sig::SigTy)],
+    layout: &HostCRecord,
+    buf: &[u64],
+) -> Result<u32> {
+    use crate::sig::SigTy;
+    let obj = crate::sig::record_layout(fields);
+    let handle = wt(rt.record_new.call(&mut *caller, (obj.heap.len() as u32, obj.size)))?;
+    // The inline table the runtime releases the record's heap fields by.
+    for (k, (kind, off)) in obj.heap.iter().enumerate() {
+        let at = (handle + 8 + k as u32 * 8) as usize;
+        let mem = memory.data_mut(&mut *caller);
+        mem[at..at + 4].copy_from_slice(&kind.to_le_bytes());
+        mem[at + 4..at + 8].copy_from_slice(&off.to_le_bytes());
+    }
+    // Safety: as in `as_bytes_mut`.
+    let src = unsafe { std::slice::from_raw_parts(buf.as_ptr() as *const u8, buf.len() * 8) };
+    for (i, (_, ty)) in fields.iter().enumerate() {
+        let at = layout.offsets[i];
+        let dst = (handle + obj.data_off + obj.field_off[i]) as usize;
+        match ty {
+            SigTy::Real => memory.data_mut(&mut *caller)[dst..dst + 8].copy_from_slice(&src[at..at + 8]),
+            SigTy::Int => {
+                let v = std::os::raw::c_long::from_le_bytes(
+                    src[at..at + std::mem::size_of::<std::os::raw::c_long>()].try_into().unwrap(),
+                ) as i32;
+                memory.data_mut(&mut *caller)[dst..dst + 4].copy_from_slice(&v.to_le_bytes());
+            }
+            SigTy::Bool => memory.data_mut(&mut *caller)[dst..dst + 4].copy_from_slice(&src[at..at + 4]),
+            SigTy::Ptr => {
+                let p = usize::from_le_bytes(src[at..at + std::mem::size_of::<usize>()].try_into().unwrap());
+                let h = registry_put(p);
+                memory.data_mut(&mut *caller)[dst..dst + 4].copy_from_slice(&h.to_le_bytes());
+            }
+            SigTy::Str => {
+                let p = usize::from_le_bytes(src[at..at + std::mem::size_of::<usize>()].try_into().unwrap())
+                    as *const std::os::raw::c_char;
+                let bytes: &[u8] =
+                    if p.is_null() { &[] } else { unsafe { std::ffi::CStr::from_ptr(p) }.to_bytes() };
+                let soff = wt(rt.str_new.call(&mut *caller, bytes.len() as u32))?;
+                let doff = wt(rt.str_data.call(&mut *caller, soff))? as usize;
+                let mem = memory.data_mut(&mut *caller);
+                mem[doff..doff + bytes.len()].copy_from_slice(bytes);
+                mem[dst..dst + 4].copy_from_slice(&soff.to_le_bytes());
+            }
+            SigTy::Record { fields: inner, .. } => {
+                let inner_layout =
+                    host_c_record_layout(inner).ok_or("external \"C\" : record field type not marshalled")?;
+                let words: Vec<u64> = src[at..at + inner_layout.words() * 8]
+                    .chunks_exact(8)
+                    .map(|c| u64::from_le_bytes(c.try_into().unwrap()))
+                    .collect();
+                let h = record_from_c_host(&mut *caller, memory, rt, inner, &inner_layout, &words)?;
+                memory.data_mut(&mut *caller)[dst..dst + 4].copy_from_slice(&h.to_le_bytes());
+            }
+            // An array field is the model's own object, filled in place.
+            SigTy::Array { .. } => {}
+            SigTy::Func { .. } => return Err("external \"C\" : record field type not marshalled"),
+        }
+    }
+    Ok(handle)
+}
 
 pub fn run(model: &SimModel, meta: &SimMeta) -> std::result::Result<sim_driver::RunResult, String> {
     let bench = crate::model::sim_bench_enabled();
@@ -1283,6 +1500,9 @@ impl sim_driver::SimEngine for WasmtimeEngine {
         if let Ok(f) = self.rt_inst.get_typed_func::<f64, ()>(&mut self.store, "rt_nls_clean_history") {
             let _ = f.call(&mut self.store, time);
         }
+    }
+    fn set_rhs_final(&mut self, final_eval: bool) {
+        openmodelica_util::dynload::set_rhs_final_flag(final_eval);
     }
 }
 

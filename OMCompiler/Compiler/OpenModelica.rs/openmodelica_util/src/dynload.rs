@@ -490,6 +490,40 @@ pub fn symbol_in(handles: &[usize], name: &str) -> Option<usize> {
     handles.iter().find_map(|&h| dl::sym(h, name))
 }
 
+/// C's `RHSFinalFlag` (`dassl.c`). External C source declares it `extern` and
+/// reads it, so it has to be a real exported symbol of the compiler image.
+#[unsafe(no_mangle)]
+pub static mut RHSFinalFlag: libc::c_int = 0;
+
+/// A library the linker could only build with a definition of its own (see
+/// `ExtArchives::link_attempt`) reads a different `int` from the one above, so
+/// every copy is kept in step.
+static RHS_FINAL_COPIES: Mutex<Vec<usize>> = Mutex::new(Vec::new());
+
+/// Record the `RHSFinalFlag` each of `handles` exports, if it is not ours.
+pub fn register_rhs_final_flag(handles: &[usize]) {
+    let mine = (&raw const RHSFinalFlag) as usize;
+    let mut copies = RHS_FINAL_COPIES.lock().unwrap();
+    copies.clear();
+    for &h in handles {
+        if let Some(addr) = dl::sym(h, "RHSFinalFlag")
+            && addr != mine
+            && !copies.contains(&addr)
+        {
+            copies.push(addr);
+        }
+    }
+}
+
+/// Set [`RHSFinalFlag`] and every copy [`register_rhs_final_flag`] found.
+pub fn set_rhs_final_flag(value: bool) {
+    let v = value as libc::c_int;
+    unsafe { RHSFinalFlag = v };
+    for &addr in RHS_FINAL_COPIES.lock().unwrap().iter() {
+        unsafe { *(addr as *mut libc::c_int) = v };
+    }
+}
+
 static USERTAB: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 type UsertabFn = unsafe extern "C-unwind" fn(

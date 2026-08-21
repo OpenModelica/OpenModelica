@@ -1783,7 +1783,9 @@ enum NativeLib {
 }
 
 fn is_link_input(name: &str) -> bool {
-    name.ends_with(".a") || name.ends_with(".o")
+    // `gcc -c -o x.lib` spells an object file the MSVC way. On Windows the suffix
+    // is a real static/import library, which no `cc -shared` makes loadable.
+    name.ends_with(".a") || name.ends_with(".o") || (!cfg!(windows) && (name.ends_with(".lib") || name.ends_with(".obj")))
 }
 
 /// The platform library a host linker spec names. A `-lfoo` nothing under `dirs`
@@ -1801,7 +1803,7 @@ fn find_native_library(spec: &str, dirs: &[String]) -> Option<NativeLib> {
         None => spec,
     };
     // `.lib` is both spellings on Windows, with no `cc -shared` to sort them out.
-    if name.ends_with(".obj") || name.ends_with(".lib") {
+    if cfg!(windows) && (name.ends_with(".obj") || name.ends_with(".lib")) {
         return None;
     }
     let found = |p: String| Some(if is_link_input(&p) { NativeLib::Archive(p) } else { NativeLib::Shared(p) });
