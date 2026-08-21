@@ -78,21 +78,15 @@ It is available for Linux (of course) and, fortunately, for MSYS/UCRT64 as well
   cmake .. -Wno-dev
   ```
 
- - Your build directory should NOT be a directory named `build` in the root OpenModelica
-   directory.
-
-   The reason for this suggestion is that the `autotools + Makefile` build system we have
-   now uses this `build` directory for _installation_. Therefore, if you plan to fallback
-   to the autotools build at some point or you want to switch back and forth between the
-   CMake and autotools build systems (perhaps to cross check something), then it is
-   probably a good idea to make sure that they do not overwrite eachother's outputs.
+ - CMake is the only supported build system for OpenModelica. The `autotools + Makefile`
+   build (`configure`, `Makefile.in`, ...) has been removed.
 
 ## 3.2. Linux
 
 There is nothing special to be done for linux. Once you have installed all the
 dependencies (If you need help, follow the instructions
-[here](https://github.com/OpenModelica/OpenModelica/blob/master/OMCompiler/README.Linux.md)
-**excluding** the configuration steps, `autoconf`, ...), you can follow the instruction in
+[here](https://github.com/OpenModelica/OpenModelica/blob/master/OMCompiler/README.Linux.md)),
+you can follow the instruction in
 [quick start](#1-quick-start) section above or choose your own combination of
 [configuration options](#4-configuration-options) (e.g. build type, generator, install dir ...).
 
@@ -122,7 +116,7 @@ Next install `MacPorts` by following the instructions on https://guide.macports.
 Once XCode and macports are installed, you need to install the dependencies for OpenModelica using `MacPorts`:
 
   ```sh
-  sudo port install curl libiconv gettext flex cmake ccache qt5 qt5-qtwebkit autoconf boost OpenSceneGraph openjdk11
+  sudo port install curl libiconv gettext flex cmake ccache qt5 qt5-qtwebkit boost OpenSceneGraph openjdk11
   ```
 
 #### 3.3.1.2 Homebrew
@@ -130,7 +124,7 @@ Once XCode and macports are installed, you need to install the dependencies for 
 If you want to use only `homebrew` instead of `MacPorts` (remember that you will not be able to build the GUI clients this way), then follow the instructions on https://brew.sh/ to install homebrew. Once that is done, install the dependencies for OpenModelica using `homebrew`:
 
   ```sh
-  brew install autoconf automake openjdk pkg-config cmake make ccache
+  brew install openjdk pkg-config cmake make ccache
   echo 'export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"' >> ~/.zshrc
   ```
 
@@ -341,8 +335,8 @@ Note that this is different from the Qt based OMShell GUI application.
 
 ### 4.1.4. Other OpenModleica specific Options
 
-There are also some additional options that are kept as a migration step to maintain the
-similarity with the `autotools` build system.
+There are also some additional options that are left over from the removed `autotools`
+build system.
 
 ```cmake
 OM_OMC_USE_CORBA=OFF
@@ -416,22 +410,35 @@ So there is no `ctest` support yet and CMake does not run any tests for you.
 In other words, you can not expect to test the sanity of your compilation by doing
 something like `make test`.
 
-However, you can and should modify `rtest` to pick up the omc compiled by your CMake build
-system.
-By default `rtest` will look for omc in `<OpenModelica>/build/`. Therefore it needs to be
-modified to look for omc in your specified `CMAKE_INSTALL_PREFIX` which by default will be
-`<OpenModelica>/<build_dir>/install_cmake/` if you have not specified another
-`CMAKE_INSTALL_PREFIX`.
+What CMake does provide is the `testsuite-depends` target, which builds everything the
+testsuite needs: `omc-diff`, the reference files, the test libraries and the FFI test
+library.
 
-Find the line
+```sh
+cmake --build build_cmake --target testsuite-depends --parallel <Nr. of cores>
+```
+
+Afterwards run the tests with `rtest`:
+
+```sh
+cd testsuite/partest
+./runtests.pl
+```
+
+`rtest` locates `omc` itself as long as you installed into one of the usual places
+relative to the OpenModelica root: `build/`, `build/install_cmake/` or
+`build_cmake/install_cmake/`.
+
+If you configured a different `CMAKE_INSTALL_PREFIX`, adjust the `$OPENMODELICAHOME`
+lookup in `testsuite/rtest`. Find the line
 
 ```perl
-$OPENMODELICAHOME="$1build_cmake/install_cmake";
+$OPENMODELICAHOME = "$1build_cmake/install_cmake";
 ```
 
 and adjust it to point to the installation directory you have specified when configuring
 OpenModelica, e.g.,
 
 ```perl
-$OPENMODELICAHOME="$1build_cmake_release/install_cmake";
+$OPENMODELICAHOME = "$1build_cmake_release/install_cmake";
 ```

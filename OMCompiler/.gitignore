@@ -12,14 +12,6 @@
 *.tmp
 *.lo
 
-# autoconf
-autom4te.cache/
-config.guess
-config.log
-config.status
-config.sub
-configure
-install-sh
 
 # Windows image file caches
 Thumbs.db
@@ -86,24 +78,18 @@ build_cmake/
 .vscode/
 revision.h
 omc_config.unix.h
-SimulationRuntime/c/Makefile
-SimulationRuntime/OMSICpp/Makefile
-SimulationRuntime/OMSICpp/Makefile.env
+# autoconf output of the FMU source-export build project, generated at
+# CMake configure time (SimulationRuntime/fmi/export/buildproject/CMakeLists.txt)
+SimulationRuntime/fmi/export/buildproject/configure
+SimulationRuntime/fmi/export/buildproject/autom4te.cache/
 SimulationRuntime/OMSICpp/Build_*/
 SimulationRuntime/OMSICpp/Debug/
 SimulationRuntime/OMSICpp/.cproject
 SimulationRuntime/OMSICpp/confdefs.h
-SimulationRuntime/cpp/Makefile
-SimulationRuntime/cpp/Makefile.env
 SimulationRuntime/cpp/Build_*/
 SimulationRuntime/cpp/Debug/
 SimulationRuntime/cpp/.cproject
 SimulationRuntime/cpp/confdefs.h
-SimulationRuntime/ParModelica/Makefile
-SimulationRuntime/ParModelica/auto/Makefile
-SimulationRuntime/ParModelica/auto/Makefile.dependencies
-SimulationRuntime/ParModelica/explicit/Makefile
-SimulationRuntime/ParModelica/explicit/openclrt/Makefile
 SimulationRuntime/build_c/
 SimulationRuntime/opc/ua/open62541.h
 SimulationRuntime/opc/ua/open62541.c
@@ -115,25 +101,6 @@ SimulationRuntime/OMSI/Build_MSVC_static/
 SimulationRuntime/OMSIC/Build_dynamic/
 SimulationRuntime/OMSIC/Build_static/
 
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/.libs/
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/AUTHORS
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/COPYING
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/ChangeLog
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/INSTALL
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/Makefile
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/Makefile.in
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/NEWS
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/aclocal.m4
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/compile
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/config.guess
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/config.sub
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/configure
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/depcomp
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/install-sh
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/libtool
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/ltmain.sh
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/m4/
-SimulationRuntime/ModelicaExternalC/BuildProjects/autotools/missing
 SimulationRuntime/ModelicaExternalC/C-Sources/.deps/
 SimulationRuntime/ModelicaExternalC/C-Sources/.dirstamp
 SimulationRuntime/ModelicaExternalC/C-Sources/zlib/.deps/
@@ -144,10 +111,8 @@ SimulationRuntime/ModelicaExternalC/C-Sources/zlib/.dirstamp
 # OpenModelicaSetup
 Compiler/OpenModelicaSetup
 # Compiler files
-Compiler/Makefile
 Compiler/OpenModelicaBootstrappingHeader.h
 Compiler/OpenModelicaBootstrappingHeader.h.log
-Compiler/Script/Makefile
 Compiler/Script/OpenModelicaScriptingAPI.mo
 Compiler/Script/OpenModelicaScriptingAPIQt.cpp
 Compiler/Script/OpenModelicaScriptingAPIQt.h
@@ -160,7 +125,6 @@ Compiler/Template/ExpressionDumpTpl.mo
 Compiler/Template/GenerateAPIFunctionsTpl.mo
 Compiler/Template/GraphMLDumpTpl.mo
 Compiler/Template/GraphvizDump.mo
-Compiler/Template/Makefile
 Compiler/Template/MMToJulia.mo
 Compiler/Template/NFInstDumpTpl.mo
 Compiler/Template/SCodeDumpTpl.mo
@@ -169,17 +133,11 @@ Compiler/Template/Unparsing.mo
 Compiler/Template/VisualXMLTpl.mo
 Compiler/Template/*.err.mo
 Compiler/boot/LoadCompilerInterface.mos
-Compiler/boot/Makefile
-Compiler/boot/Makefile.depends
-Compiler/boot/Makefile.sources
 Compiler/boot/patches/*.patch
-Compiler/runtime/Makefile
 Compiler/runtime/omc_communication.cc
 Compiler/runtime/omc_communication.h
 Compiler/susan_codegen/TplCodegen.mo
-Makefile
 # Parser files
-Parser/Makefile
 Parser/MetaModelica_Lexer.c
 Parser/MetaModelica_Lexer.h
 Parser/MetaModelica_Lexer_BaseModelica_Lexer.c
