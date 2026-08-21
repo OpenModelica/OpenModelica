@@ -765,9 +765,11 @@ SPARSE_PATTERN* getJacobianCscPattern(JACOBIAN* jac)
   if (jac == NULL || jac->sparsePattern == NULL) {
     return NULL;
   }
+  // If the Jacobian is not row-evaluated, it already has a CSC pattern.
   if (!jac->isRowEval) {
     return jac->sparsePattern;
   }
+  // If the Jacobian is row-evaluated, we need to transpose the CSR pattern to get CSC and store it in jac->cscPattern.
   if (jac->cscPattern == NULL) {
     unsigned int* map = NULL;
     /* sparsePattern is CSC of J^T, transposing gives CSC of J */
@@ -1192,6 +1194,7 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
     getJacobianCscPattern(jacobian);
   }
 
+  // Check that the requested Jacobian method can be used and log it.
   *jacobianMethod = checkJacobianMethod(threadData, jacobian->availability, *jacobianMethod);
 
   if (jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
@@ -1201,6 +1204,7 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
     messageClose(OMC_LOG_SIMULATION);
   }
 
+  // Store the selected Jacobian in the simulation info for later retrieval.
   data->simulationInfo->odeJacobian = jacobian;
   return jacobian;
 }

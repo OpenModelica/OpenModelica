@@ -1162,7 +1162,7 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   rt_tick(SIM_TIMER_JACOBIAN);
 
-  /* Initialize dense Jacobian buffer since sparse/colored evaluators only write structural non-zeros. */
+  /* Initialize dense Jacobian buffer. */
   memset(pd, 0, dasslData->N * dasslData->N * sizeof(double));
 
   /* Compute J = (∂F)/(∂y) */

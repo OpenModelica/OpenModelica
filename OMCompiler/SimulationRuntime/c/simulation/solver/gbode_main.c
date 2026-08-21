@@ -129,6 +129,8 @@ static JACOBIAN_METHOD getGbodeJacobianMethod(threadData_t* threadData, enum GB_
 {
   JACOBIAN_METHOD jacobianMethod = getRequestedJacobianMethod(threadData);
 
+  /* non-internal non-linear solvers cannot use the adjoint or bidirectional Jacobian evaluation methods,
+   * because they only request single columns of the ODE Jacobian and not the whole matrix at once. */
   if ((jacobianMethod == COLOREDSYMJACADJ || jacobianMethod == BICOLOREDSYMJAC)
       && nlsSolverMethod != GB_NLS_INTERNAL) {
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Jacobian method %s requires the internal non-linear solver of GBODE. "

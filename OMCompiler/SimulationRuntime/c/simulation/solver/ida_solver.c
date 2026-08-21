@@ -368,7 +368,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
    * the forward / adjoint / bidirectional Jacobian is shared with DASSL and GBODE. */
   idaData->jacobianMethod = getRequestedJacobianMethod(threadData);
   JACOBIAN* jacobian = initSymbolicOdeJacobian(data, threadData, &idaData->jacobianMethod, FALSE);
-  /* IDA always needs a column oriented pattern, even for adjoint Jacobians. */
+  /* IDA always needs a column oriented pattern. */
   const SPARSE_PATTERN* cscPattern = getJacobianCscPattern(jacobian);
 
   // change IDA specific jacobian method
@@ -394,6 +394,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   if (idaData->daeMode) {
     idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->nnz;
   } else {
+    // could also be jacobian->sparsePattern->nnz but the cscPattern is the one that is actually used.
     idaData->NNZ = cscPattern->nnz;
   }
 
