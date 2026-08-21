@@ -2780,7 +2780,11 @@ algorithm
   Absyn.CLASS(info = SOURCEINFO(fileName = outFilename)) := inClass;
 end classFilename;
 
-public function setClassFilename "Sets the filename where the class is stored."
+public function setClassFilename
+  "Sets the filename where the class is stored. The elements that were stored in
+   the same file as the class are updated too, since they are stored in the new
+   file as well. Elements that come from another file, like the classes of a
+   package stored with a folder structure, keep their filename."
   input Absyn.Class inClass;
   input String fileName;
   output Absyn.Class outClass;
@@ -2789,13 +2793,141 @@ algorithm
     local
       SourceInfo info;
       Absyn.Class cl;
-    case cl as Absyn.CLASS(info=info as SOURCEINFO())
+      String old_filename;
+    case cl as Absyn.CLASS(info=info as SOURCEINFO(fileName = old_filename))
+      guard not stringEq(old_filename, fileName)
       algorithm
         info.fileName := fileName;
         cl.info := info;
+        cl.body := setClassDefFilename(cl.body, old_filename, fileName);
       then cl;
+    else inClass;
   end match;
 end setClassFilename;
+
+protected function setClassDefFilename
+  "Helper to setClassFilename, updates the filename of the elements that were
+   stored in the given file."
+  input output Absyn.ClassDef body;
+  input String oldFilename;
+  input String newFilename;
+algorithm
+  () := match body
+    case Absyn.PARTS()
+      algorithm
+        body.classParts := list(setClassPartFilename(part, oldFilename, newFilename)
+                                for part in body.classParts);
+      then ();
+
+    case Absyn.CLASS_EXTENDS()
+      algorithm
+        body.parts := list(setClassPartFilename(part, oldFilename, newFilename)
+                           for part in body.parts);
+      then ();
+
+    else ();
+  end match;
+end setClassDefFilename;
+
+protected function setClassPartFilename
+  "Helper to setClassDefFilename."
+  input output Absyn.ClassPart part;
+  input String oldFilename;
+  input String newFilename;
+algorithm
+  () := match part
+    case Absyn.PUBLIC()
+      algorithm
+        part.contents := list(setElementItemFilename(e, oldFilename, newFilename)
+                              for e in part.contents);
+      then ();
+
+    case Absyn.PROTECTED()
+      algorithm
+        part.contents := list(setElementItemFilename(e, oldFilename, newFilename)
+                              for e in part.contents);
+      then ();
+
+    else ();
+  end match;
+end setClassPartFilename;
+
+protected function setElementItemFilename
+  "Helper to setClassPartFilename."
+  input output Absyn.ElementItem item;
+  input String oldFilename;
+  input String newFilename;
+algorithm
+  () := match item
+    case Absyn.ELEMENTITEM()
+      algorithm
+        item.element := setElementFilename(item.element, oldFilename, newFilename);
+      then ();
+
+    else ();
+  end match;
+end setElementItemFilename;
+
+protected function setElementFilename
+  "Helper to setElementItemFilename, only updates elements that were stored in
+   the old file."
+  input output Absyn.Element element;
+  input String oldFilename;
+  input String newFilename;
+algorithm
+  () := match element
+    local
+      SourceInfo info;
+
+    case Absyn.ELEMENT(info = info as SOURCEINFO())
+      guard stringEq(info.fileName, oldFilename)
+      algorithm
+        info.fileName := newFilename;
+        element.info := info;
+        element.specification := setElementSpecFilename(element.specification, newFilename);
+      then ();
+
+    case Absyn.DEFINEUNIT(info = info as SOURCEINFO())
+      guard stringEq(info.fileName, oldFilename)
+      algorithm
+        info.fileName := newFilename;
+        element.info := info;
+      then ();
+
+    case Absyn.TEXT(info = info as SOURCEINFO())
+      guard stringEq(info.fileName, oldFilename)
+      algorithm
+        info.fileName := newFilename;
+        element.info := info;
+      then ();
+
+    else ();
+  end match;
+end setElementFilename;
+
+protected function setElementSpecFilename
+  "Helper to setElementFilename."
+  input output Absyn.ElementSpec spec;
+  input String newFilename;
+algorithm
+  () := match spec
+    local
+      SourceInfo info;
+
+    case Absyn.CLASSDEF()
+      algorithm
+        spec.class_ := setClassFilename(spec.class_, newFilename);
+      then ();
+
+    case Absyn.IMPORT(info = info as SOURCEINFO())
+      algorithm
+        info.fileName := newFilename;
+        spec.info := info;
+      then ();
+
+    else ();
+  end match;
+end setElementSpecFilename;
 
 public function setClassName "author: BZ
   Sets the name of the class"
