@@ -1158,39 +1158,9 @@ fn ext_result(
 
 // ─────────────────── records across the C boundary ───────────────────
 
-/// The C type an `external "C"` prototype gives a value.
-fn c_size_align(t: &crate::sig::SigTy) -> (u32, u32) {
-    use crate::sig::SigTy;
-    match t {
-        SigTy::Real => (8, 8),
-        SigTy::Record { fields, .. } => {
-            let l = c_record_layout(fields);
-            (l.size, l.align)
-        }
-        _ => (4, 4),
-    }
-}
-
-/// The C struct the callee declares. Not the record object's own layout: a
-/// `String` member is a `char*` and a nested record is inlined, not referenced.
-struct CRecord {
-    size: u32,
-    align: u32,
-    offsets: Vec<u32>,
-}
-
-fn c_record_layout(fields: &[(arcstr::ArcStr, crate::sig::SigTy)]) -> CRecord {
-    let mut off = 0u32;
-    let mut align = 1u32;
-    let mut offsets = Vec::with_capacity(fields.len());
-    for (_, t) in fields {
-        let (sz, a) = c_size_align(t);
-        off = dylink::align_up(off, a);
-        offsets.push(off);
-        off += sz;
-        align = align.max(a);
-    }
-    CRecord { size: dylink::align_up(off, align), align, offsets }
+/// The C struct the callee declares, in the side module's wasm32 ABI.
+fn c_record_layout(fields: &[(arcstr::ArcStr, crate::sig::SigTy)]) -> crate::sig::CRecordLayout {
+    crate::sig::c_record_layout(fields, 4)
 }
 
 /// How the wasm C ABI passes a value.

@@ -1806,7 +1806,12 @@ fn find_native_library(spec: &str, dirs: &[String]) -> Option<NativeLib> {
     if cfg!(windows) && (name.ends_with(".obj") || name.ends_with(".lib")) {
         return None;
     }
-    let found = |p: String| Some(if is_link_input(&p) { NativeLib::Archive(p) } else { NativeLib::Shared(p) });
+    // A bare name is what the loader searches its own path for, not the working
+    // directory `dirs[0]` matched it in.
+    let found = |p: String| {
+        let p = if p.contains(['/', '\\']) { p } else { format!("./{p}") };
+        Some(if is_link_input(&p) { NativeLib::Archive(p) } else { NativeLib::Shared(p) })
+    };
     if is_link_input(name) || name.contains(suffix) || name.contains(std::path::MAIN_SEPARATOR) {
         return dirs.iter().map(|d| format!("{d}{name}")).find(|p| std::path::Path::new(p).exists()).and_then(found);
     }

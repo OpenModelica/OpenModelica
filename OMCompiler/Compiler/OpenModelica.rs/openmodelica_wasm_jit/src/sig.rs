@@ -243,3 +243,37 @@ pub fn record_layout(fields: &[(ArcStr, SigTy)]) -> RecordLayout {
     RecordLayout { data_off, size: data_off + align_up(off, 8), field_off, heap }
 }
 
+/// The layout of C's `<record>_external`: `double`, `int`, a `ptr`-wide pointer
+/// for a String/external object/array, a nested record inlined.
+pub struct CRecordLayout {
+    pub size: u32,
+    pub align: u32,
+    pub offsets: Vec<u32>,
+}
+
+pub fn c_size_align(t: &SigTy, ptr: u32) -> (u32, u32) {
+    match t {
+        SigTy::Real => (8, 8),
+        SigTy::Int | SigTy::Bool => (4, 4),
+        SigTy::Record { fields, .. } => {
+            let l = c_record_layout(fields, ptr);
+            (l.size, l.align)
+        }
+        _ => (ptr, ptr),
+    }
+}
+
+pub fn c_record_layout(fields: &[(ArcStr, SigTy)], ptr: u32) -> CRecordLayout {
+    let mut off = 0u32;
+    let mut align = 1u32;
+    let mut offsets = Vec::with_capacity(fields.len());
+    for (_, t) in fields {
+        let (sz, a) = c_size_align(t, ptr);
+        off = align_up(off, a);
+        offsets.push(off);
+        off += sz;
+        align = align.max(a);
+    }
+    CRecordLayout { size: align_up(off, align), align, offsets }
+}
+
