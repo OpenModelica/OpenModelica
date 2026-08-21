@@ -355,10 +355,19 @@ pub extern "C" fn rt_sim_advance(budget_ms: f64) -> i32 {
     if s.finished {
         return 1;
     }
-    let adv = {
+    let mut adv = {
         let Session { engine, driver, model, .. } = &mut *s;
         driver.advance(engine, model, budget_ms)
     };
+    // C's `performSimulation` catch, here rather than in the host loop: only
+    // `advance` knows where the step boundary is.
+    while let Err(err) = adv {
+        let Session { engine, driver, model, .. } = &mut *s;
+        if !driver::is_model_throw(err) || !driver.retry_step(engine, model).unwrap_or(false) {
+            return -2;
+        }
+        adv = driver.advance(engine, model, budget_ms);
+    }
     match adv {
         Ok(Advance::Running) => 0,
         Ok(done @ (Advance::Done | Advance::Terminated)) => {
