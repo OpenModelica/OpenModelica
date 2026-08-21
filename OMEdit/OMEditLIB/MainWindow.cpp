@@ -460,6 +460,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // Create an object of WelcomePageWidget
   mpWelcomePageWidget = new WelcomePageWidget(this);
   updateRecentFileActionsAndList();
+  updateRecentModelActionsAndList();
   // OMSens plugin
   mpOMSensPlugin = 0;
   // create the Git commands instance
@@ -745,32 +746,22 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
  * \param fileName
  * \param encoding
  */
-void MainWindow::addRecentFile(const QString &fileName, const QString &encoding, const QString &path)
+void MainWindow::addRecentFile(const QString &fileName, const QString &encoding)
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
   // remove the already present RecentFile instance from the list.
-  // model:// (open model) and plain file entries are kept independent of each other: explicitly opening a
-  // file and having a model open in the model view are different intents, so both are remembered.
   foreach (QVariant file, files) {
     RecentFile recentFile = qvariant_cast<RecentFile>(file);
-    // model:// entries point to a loaded Modelica class, compare them as plain strings.
-    if (fileName.startsWith(Helper::modelUriScheme) || recentFile.fileName.startsWith(Helper::modelUriScheme)) {
-      if (recentFile.fileName.compare(fileName) == 0) {
-        files.removeOne(file);
-      }
-    } else {
-      QFileInfo file1(recentFile.fileName);
-      QFileInfo file2(fileName);
-      if (file1.absoluteFilePath().compare(file2.absoluteFilePath()) == 0) {
-        files.removeOne(file);
-      }
+    QFileInfo file1(recentFile.fileName);
+    QFileInfo file2(fileName);
+    if (file1.absoluteFilePath().compare(file2.absoluteFilePath()) == 0) {
+      files.removeOne(file);
     }
   }
   RecentFile recentFile;
   recentFile.fileName = fileName;
   recentFile.encoding = encoding;
-  recentFile.path = path;
   files.prepend(QVariant::fromValue(recentFile));
   pSettings->setValue("recentFilesList/files", files);
   updateRecentFileActionsAndList();
@@ -778,8 +769,9 @@ void MainWindow::addRecentFile(const QString &fileName, const QString &encoding,
 
 /*!
  * \brief MainWindow::addRecentModel
- * Adds the currently opened Modelica model to the recentFilesList settings as a
- * model URI of the form model://Path.To.Model.
+ * Adds the Modelica class to the recentModelsList settings.
+ * The recent models have their own list so that the recent files list does not get cluttered
+ * with the models opened in the model view e.g. when working with the MSL.
  * \param nameStructure - the dotted Modelica class name e.g. Path.To.Model
  */
 void MainWindow::addRecentModel(const QString &nameStructure)
@@ -787,8 +779,8 @@ void MainWindow::addRecentModel(const QString &nameStructure)
   if (nameStructure.isEmpty()) {
     return;
   }
-  // Store the file of the top level class so that the library can be reloaded with loadFile()
-  // if the class is no longer loaded when the recent entry is opened again.
+  // Store the file of the top level class so that the library can be loaded again
+  // if the class is not loaded when the recent model is opened.
   QString path;
   LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem) {
@@ -797,7 +789,22 @@ void MainWindow::addRecentModel(const QString &nameStructure)
       path = pTopLevelLibraryTreeItem->getFileName();
     }
   }
-  addRecentFile(Helper::modelUriScheme + nameStructure, Helper::utf8, path);
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QList<QVariant> models = pSettings->value("recentModelsList/models").toList();
+  // remove the already present RecentFile instance from the list.
+  foreach (QVariant model, models) {
+    RecentFile recentModel = qvariant_cast<RecentFile>(model);
+    if (recentModel.fileName.compare(nameStructure) == 0) {
+      models.removeOne(model);
+    }
+  }
+  RecentFile recentModel;
+  recentModel.fileName = nameStructure;
+  recentModel.encoding = Helper::utf8;
+  recentModel.path = path;
+  models.prepend(QVariant::fromValue(recentModel));
+  pSettings->setValue("recentModelsList/models", models);
+  updateRecentModelActionsAndList();
 }
 
 /*!
@@ -839,10 +846,56 @@ void MainWindow::createRecentFileActions()
     QAction *pRecentFileAction = new QAction(this);
     pRecentFileAction->setText(recentFile.fileName);
     QStringList dataList;
-    dataList << recentFile.fileName << recentFile.encoding << recentFile.path;
+    dataList << recentFile.fileName << recentFile.encoding;
     pRecentFileAction->setData(dataList);
     connect(pRecentFileAction, SIGNAL(triggered()), this, SLOT(openRecentFile()));
     mpRecentFilesMenu->addAction(pRecentFileAction);
+  }
+}
+
+/*!
+ * \brief MainWindow::updateRecentModelActionsAndList
+ * Updates the actions of the recent models menu and the recent models list on the welcome page.
+ */
+void MainWindow::updateRecentModelActionsAndList()
+{
+  /* read the new recent models list */
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QList<QVariant> models = pSettings->value("recentModelsList/models").toList();
+  int recentModelsSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
+  while (models.size() > recentModelsSize) {
+    models.removeLast();
+  }
+  pSettings->setValue("recentModelsList/models", models);
+  /* Clear the recent models menu. This will also delete the actions.
+   * void QMenu::clear()
+   * Removes all the menu's actions. Actions owned by the menu and not shown in any other widget are deleted.
+   */
+  mpRecentModelsMenu->clear();
+  createRecentModelActions();
+  mpWelcomePageWidget->addRecentModelsListItems();
+}
+
+/*!
+ * \brief MainWindow::createRecentModelActions
+ * Creates the recent model actions.
+ */
+void MainWindow::createRecentModelActions()
+{
+  /* read the new recent models list */
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QList<QVariant> models = pSettings->value("recentModelsList/models").toList();
+  int recentModelsSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
+  int numRecentModels = qMin(models.size(), recentModelsSize);
+  for (int i = 0; i < numRecentModels; ++i) {
+    RecentFile recentModel = qvariant_cast<RecentFile>(models[i]);
+    QAction *pRecentModelAction = new QAction(this);
+    pRecentModelAction->setText(recentModel.fileName);
+    QStringList dataList;
+    dataList << recentModel.fileName << recentModel.encoding << recentModel.path;
+    pRecentModelAction->setData(dataList);
+    connect(pRecentModelAction, SIGNAL(triggered()), this, SLOT(openRecentModel()));
+    mpRecentModelsMenu->addAction(pRecentModelAction);
   }
 }
 
@@ -891,8 +944,8 @@ int MainWindow::askForExit()
 void MainWindow::beforeClosingMainWindow()
 {
   mpAutoSaveTimer->stop();
-  // Add the models currently open in the model view to the recent files list as model://Path.To.Model
-  // so that they can be reopened from the recent files list in the next session.
+  // Add the models currently open in the model view to the recent models list
+  // so that they can be reopened from the recent models list in the next session.
   if (mpModelWidgetContainer) {
     // iterate in activation history order so that the most recently used model ends up on top of the list.
     foreach (QMdiSubWindow *pSubWindow, mpModelWidgetContainer->subWindowList(QMdiArea::ActivationHistoryOrder)) {
@@ -969,8 +1022,9 @@ void MainWindow::beforeClosingMainWindow()
   pSettings->setValue("lastOpenDirectory", StringHandler::getLastOpenDirectory());
   // save the grid lines
   pSettings->setValue("modeling/gridLines", mpShowGridLinesAction->isChecked());
-  // save the splitter state of welcome page
+  // save the splitters state of welcome page
   pSettings->setValue("welcomePage/splitterState", mpWelcomePageWidget->getSplitter()->saveState());
+  pSettings->setValue("welcomePage/recentSplitterState", mpWelcomePageWidget->getRecentSplitter()->saveState());
   // Delete the FMU directories we created while importing
   if (OptionsDialog::instance()->getFMIPage()->getDeleteFMUDirectoryAndModelCheckBox()->isChecked()) {
     foreach (QString fmuDirectory, mFMUDirectoriesList) {
@@ -2585,42 +2639,47 @@ void MainWindow::openRecentFile()
   QAction *pAction = qobject_cast<QAction*>(sender());
   if (pAction) {
     QStringList dataList = pAction->data().toStringList();
-    const QString path = dataList.size() > 2 ? dataList.at(2) : QString();
-    openRecentFileOrModel(dataList.at(0), dataList.at(1), path);
+    mpLibraryWidget->openFile(dataList.at(0), dataList.at(1), true, true);
   }
 }
 
 /*!
- * \brief MainWindow::openRecentFileOrModel
- * Opens a recent files list entry. Entries of the form model://Path.To.Model refer to a Modelica
- * class and are shown by locating their LibraryTreeItem. If the class is not loaded yet and a path
- * was stored with the entry, the library file is loaded first and the class is looked up again.
- * Everything else is treated as a file path and opened from disk.
- * \param fileName
- * \param encoding
- * \param path - file to load when a model:// class is not loaded yet
+ * \brief MainWindow::openRecentModel
+ * Opens the recent model.
  */
-void MainWindow::openRecentFileOrModel(const QString &fileName, const QString &encoding, const QString &path)
+void MainWindow::openRecentModel()
 {
-  if (fileName.startsWith(Helper::modelUriScheme)) {
-    const QString nameStructure = fileName.mid(Helper::modelUriScheme.length());
-    LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
-    // if the class is not loaded yet, try to load the library file it belongs to.
-    // skipAddRecentFile is true so that loading the library does not add its file to the recent files list,
-    // the model:// entry already represents it.
-    if (!pLibraryTreeItem && !path.isEmpty() && QFile::exists(path)) {
-      mpLibraryWidget->openFile(path, encoding, true, true, false, true);
-      pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
-    }
-    if (pLibraryTreeItem) {
-      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-    } else {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                            tr("Unable to find the class <b>%1</b>. It might not be loaded.").arg(nameStructure),
-                                                            Helper::scriptingKind, Helper::errorLevel));
-    }
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  if (pAction) {
+    QStringList dataList = pAction->data().toStringList();
+    showRecentModel(dataList.at(0), dataList.at(1), dataList.at(2));
+  }
+}
+
+/*!
+ * \brief MainWindow::showRecentModel
+ * Shows the Modelica class of a recent models list entry. If the class is not loaded and a path was
+ * stored with the entry then the library file is loaded first and the class is looked up again.
+ * \param nameStructure - the dotted Modelica class name e.g. Path.To.Model
+ * \param encoding
+ * \param path - file to load when the class is not loaded yet
+ */
+void MainWindow::showRecentModel(const QString &nameStructure, const QString &encoding, const QString &path)
+{
+  LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
+  // if the class is not loaded yet, try to load the library file it belongs to.
+  // skipAddRecentFile is true so that loading the library does not add its file to the recent files list,
+  // the recent models list entry already represents it.
+  if (!pLibraryTreeItem && !path.isEmpty() && QFile::exists(path)) {
+    mpLibraryWidget->openFile(path, encoding, true, true, false, true);
+    pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(nameStructure);
+  }
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
   } else {
-    mpLibraryWidget->openFile(fileName, encoding, true, true);
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          tr("Unable to find the class <b>%1</b>. It might not be loaded.").arg(nameStructure),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -2644,6 +2703,37 @@ void MainWindow::clearRecentFilesList()
         QSettings *pSettings = Utilities::getApplicationSettings();
         pSettings->remove("recentFilesList/files");
         updateRecentFileActionsAndList();
+      }
+      break;
+    case QMessageBox::No:
+      // No was clicked.
+      break;
+    default:
+      // should never be reached
+      break;
+  }
+}
+
+/*!
+ * \brief MainWindow::clearRecentModelsList
+ * Clears the recent models list. Asks the user for confirmation.
+ */
+void MainWindow::clearRecentModelsList()
+{
+  QMessageBox *pMessageBox = new QMessageBox(this);
+  pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::question));
+  pMessageBox->setIcon(QMessageBox::Question);
+  pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+  pMessageBox->setText(tr("Are you sure you want to clear recent models?"));
+  pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+  pMessageBox->setDefaultButton(QMessageBox::Yes);
+  int answer = pMessageBox->exec();
+  switch (answer) {
+    case QMessageBox::Yes:
+      {
+        QSettings *pSettings = Utilities::getApplicationSettings();
+        pSettings->remove("recentModelsList/models");
+        updateRecentModelActionsAndList();
       }
       break;
     case QMessageBox::No:
@@ -4445,6 +4535,9 @@ void MainWindow::createActions()
   mpClearRecentFilesAction = new QAction(Helper::clearRecentFiles, this);
   mpClearRecentFilesAction->setStatusTip(tr("Clears the recent files list"));
   connect(mpClearRecentFilesAction, SIGNAL(triggered()), SLOT(clearRecentFilesList()));
+  mpClearRecentModelsAction = new QAction(Helper::clearRecentModels, this);
+  mpClearRecentModelsAction->setStatusTip(tr("Clears the recent models list"));
+  connect(mpClearRecentModelsAction, SIGNAL(triggered()), SLOT(clearRecentModelsList()));
   // print  action
   mpPrintModelAction = new QAction(QIcon(":/Resources/icons/print.svg"), tr("Print..."), this);
   mpPrintModelAction->setShortcut(QKeySequence("Ctrl+p"));
@@ -4886,6 +4979,12 @@ void MainWindow::createMenus()
   // we don't create the recent files actions here. It will be done when WelcomePageWidget is created and updateRecentFileActionsAndList() is called.
   mpFileMenu->addMenu(mpRecentFilesMenu);
   mpFileMenu->addAction(mpClearRecentFilesAction);
+  mpRecentModelsMenu = new QMenu(menuBar());
+  mpRecentModelsMenu->setObjectName("RecentModelsMenu");
+  mpRecentModelsMenu->setTitle(tr("Recent &Models"));
+  // we don't create the recent models actions here. It will be done when WelcomePageWidget is created and updateRecentModelActionsAndList() is called.
+  mpFileMenu->addMenu(mpRecentModelsMenu);
+  mpFileMenu->addAction(mpClearRecentModelsAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpPrintModelAction);
   mpFileMenu->addSeparator();

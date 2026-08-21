@@ -317,8 +317,8 @@ protected:
  * We must register this struct as a meta type since we need to use it as a QVariant.
  * This is used to store the recent files information in omedit.ini file.
  * The QDataStream also needed to be defined for this struct.
- * For model URI entries (fileName starting with model://) the path field holds the file that
- * has to be loaded with loadFile() to make the class available before it can be shown.
+ * It is also used to store the recent models information where fileName holds the Modelica class
+ * name and path holds the file that has to be loaded to make the class available before it can be shown.
  */
 struct RecentFile
 {

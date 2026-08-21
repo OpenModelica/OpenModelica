@@ -113,7 +113,6 @@ public:
   static QString structuredOutput;
   static QString textOutput;
   static QString utf8;
-  static QString modelUriScheme;
   static const char * const fmuPlatformNamePropertyId;
   static QFontInfo systemFontInfo;
   static QFontInfo monospacedFontInfo;
@@ -161,6 +160,7 @@ public:
   static QString libraries;
   static QString elements;
   static QString clearRecentFiles;
+  static QString clearRecentModels;
   static QString encoding;
   static QString fileLabel;
   static QString file;
