@@ -31,7 +31,7 @@ use openmodelica_sim_meta::driver::{
     SimEngine,
 };
 #[cfg(feature = "cs")]
-use openmodelica_sim_meta::driver::{CsDriver, CsStep};
+use openmodelica_sim_meta::driver::{CsDefer, CsDriver, CsStep};
 use openmodelica_sim_meta::{decode, omclog, FmiVr, Layout, Neg, WTy, REAL_OFF, TIME_OFF};
 
 // ── Model kernel imports ─────────────────────────────────────────────────────
@@ -70,10 +70,43 @@ unsafe extern "C" {
 }
 
 // ── Messages ─────────────────────────────────────────────────────────────────
-// A component has no stdout, so the `log-message` callback (`fmi3LogMessage`) is
-// the FMU's only channel: `print`, assertions and the `-lv` solver lines all leave
-// through it, with the statuses and categories C's FMU gives them
-// (`fmu3_model_interface.c`).
+// Two channels, as C's FMU has: `messageText` prints the `-lv` streams to stdout,
+// and the `log-message` callback (`fmi3LogMessage`) carries what
+// `fmu3_model_interface.c` sends through `FILTERED_LOG`.
+
+/// The FMU's stdout, which for a component is WASI's: `fd_write` on the preview1
+/// descriptor, which the adapter `CodegenWasmJit::link_fmu_component` composes in
+/// bridges to `wasi:cli/stdout`.
+mod stdio {
+    const STDOUT: i32 = 1;
+
+    #[repr(C)]
+    struct Ciovec {
+        buf: *const u8,
+        len: usize,
+    }
+
+    #[link(wasm_import_module = "wasi_snapshot_preview1")]
+    unsafe extern "C" {
+        #[link_name = "fd_write"]
+        fn fd_write(fd: i32, iovs: *const Ciovec, iovs_len: usize, nwritten: *mut usize) -> i32;
+    }
+
+    /// C's `printf` + `fflush(NULL)`: written whole and now, so it interleaves
+    /// with the importer's own output in the order the two produced it.
+    pub fn print(bytes: &[u8]) {
+        let mut rest = bytes;
+        while !rest.is_empty() {
+            let iov = Ciovec { buf: rest.as_ptr(), len: rest.len() };
+            let mut n = 0usize;
+            let rc = unsafe { fd_write(STDOUT, &iov, 1, &mut n) };
+            if rc != 0 || n == 0 || n > rest.len() {
+                return;
+            }
+            rest = &rest[n..];
+        }
+    }
+}
 
 /// C's `logCategoriesNames`, which is also what `CodegenFMU3` declares in
 /// `modelDescription.xml`. `logFmi3Call` is unused: the adapter logs no call trace.
@@ -90,10 +123,6 @@ const CATEGORIES: [&str; 11] = [
     "logAll",
     "logFmi3Call",
 ];
-const CAT_EVENTS: u32 = 0;
-const CAT_SINGULAR_LS: u32 = 1;
-const CAT_NLS: u32 = 2;
-const CAT_DSS: u32 = 3;
 const CAT_WARNING: u32 = 4;
 const CAT_ERROR: u32 = 6;
 const CAT_ALL: u32 = 9;
@@ -101,13 +130,11 @@ const CAT_ALL: u32 = 9;
 struct Logger {
     /// `instanceName`, which the callback reports alongside the message.
     name: String,
-    /// `loggingOn`.
-    on: bool,
-    /// Bit per [`CATEGORIES`] index.
+    /// Bit per [`CATEGORIES`] index; empty until `loggingOn`.
     cats: u32,
 }
 
-static mut LOGGER: Logger = Logger { name: String::new(), on: false, cats: 0 };
+static mut LOGGER: Logger = Logger { name: String::new(), cats: 0 };
 
 /// The sink is a bare `fn(&str)`, so its context is a static (wasm, single-threaded).
 fn logger() -> &'static mut Logger {
@@ -137,52 +164,11 @@ fn fmi_log(status: Status, cat: u32, msg: &str) {
     }
 }
 
-/// The runtime's and driver's log lines. The FMI logger is the FMU's only
-/// channel, so the stream and type become a category and an `fmi3Status` — the
-/// mapping C's FMU makes at each `FILTERED_LOG` site. Through [`fmi_log`], so the
-/// importer's category filter applies.
-fn log_sink(stream: omclog::Stream, ty: omclog::LogType, s: &str) {
-    if !logger().on {
-        return;
-    }
-    let cat = match stream {
-        omclog::EVENTS | omclog::EVENTS_V | omclog::ZEROCROSSINGS => CAT_EVENTS,
-        omclog::NLS | omclog::NLS_V | omclog::NLS_HOMOTOPY | omclog::NLS_JAC
-        | omclog::NLS_RES | omclog::NLS_EXTRAPOLATE => CAT_NLS,
-        omclog::LS | omclog::LS_V => CAT_SINGULAR_LS,
-        omclog::DSS | omclog::DSS_JAC => CAT_DSS,
-        // An assert is C's `logStatusError` whatever type it carries.
-        omclog::ASSERT => CAT_ERROR,
-        _ => match ty {
-            omclog::ERROR => CAT_ERROR,
-            omclog::WARNING => CAT_WARNING,
-            _ => CAT_ALL,
-        },
-    };
-    let status = match ty {
-        omclog::ERROR => Status::Error,
-        omclog::WARNING => Status::Warning,
-        _ => Status::Ok,
-    };
-    fmi_log(status, cat, s);
-}
-
-/// The `-lv` streams the model-diagnostics categories stand for. Only
-/// `set-debug-logging` reaches this: C's FMU leaves every stream but stdout and
-/// assert off.
-fn stream_mask(cats: u32) -> omclog::Mask {
-    let mut streams: Vec<&str> = Vec::new();
-    for (cat, stream) in [
-        (CAT_EVENTS, "LOG_EVENTS"),
-        (CAT_SINGULAR_LS, "LOG_LS"),
-        (CAT_NLS, "LOG_NLS"),
-        (CAT_DSS, "LOG_DSS"),
-    ] {
-        if cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
-            streams.push(stream);
-        }
-    }
-    omclog::mask_from_streams(&streams).unwrap_or(omclog::ALWAYS_ON)
+/// The runtime's and driver's log lines. C's `messageText` prints every type with
+/// `printf`, so they go to stdout with the stream and type in the header, not to
+/// the logger.
+fn log_sink(_stream: omclog::Stream, _ty: omclog::LogType, s: &str) {
+    stdio::print(s.as_bytes());
 }
 
 /// C's `omcInstantiate`: every category follows `loggingOn` until
@@ -190,10 +176,9 @@ fn stream_mask(cats: u32) -> omclog::Mask {
 fn init_logging(name: String, logging_on: bool) {
     let l = logger();
     l.name = name;
-    l.on = logging_on;
     l.cats = if logging_on { !0 } else { 0 };
     driver::set_log_sink(log_sink);
-    omclog::set_mask(omclog::ALWAYS_ON);
+    omclog::set_mask(omclog::FMU_STREAMS);
 }
 
 /// The runtime `String` behind a handle, empty for the null handle.
@@ -253,10 +238,11 @@ pub extern "C" fn rt_assert_warning(
     fmi_log(Status::Warning, CAT_WARNING, &assert_message(msg, file, sline));
 }
 
-/// The `print` builtin: model output, which C sends to stdout — not a `-lv` stream.
+/// The `print` builtin: model output, which C sends to stdout unformatted — not a
+/// `-lv` stream.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_print(str: i32) {
-    log_sink(omclog::STDOUT, omclog::INFO, &rt_string(str));
+    stdio::print(rt_string(str).as_bytes());
 }
 
 /// Per-row assert formatting: the FMI master steps the model instead of the emitted
@@ -389,8 +375,10 @@ struct MeState {
     cs: Option<CsDriver>,
     /// `eventModeUsed` from instantiation: `do-step` stops at and reports each event
     /// for the master, rather than handling it internally.
+    /// FMI's `eventModeUsed`/`earlyReturnAllowed`, folded into who resolves an
+    /// event and where the step may stop.
     #[cfg(feature = "cs")]
-    event_mode: bool,
+    defer: openmodelica_sim_meta::driver::CsDefer,
     vrs: Vrs,
     mode: Mode,
     /// C's `_need_update`, consumed by `update_if_needed`.
@@ -576,7 +564,7 @@ fn new_state() -> Option<MeState> {
         #[cfg(feature = "cs")]
         cs: None,
         #[cfg(feature = "cs")]
-        event_mode: false,
+        defer: CsDefer::None,
         mode: Mode::Instantiated,
         need_update: true,
         init_overrides: Vec::new(),
@@ -616,12 +604,8 @@ macro_rules! shared_instance_methods {
                 None => unknown.push(c),
             }
         }
-        {
-            let l = logger();
-            l.on = logging_on;
-            l.cats = cats;
-        }
-        omclog::set_mask(stream_mask(cats));
+        // The `FILTERED_LOG` filter only: C leaves the `-lv` streams alone here.
+        logger().cats = cats;
         for c in unknown {
             log_raw(
                 Status::Warning,
@@ -674,10 +658,10 @@ macro_rules! shared_instance_methods {
         // action after init is an event iteration (`update-discrete-states`), which
         // must run through the driver's sample schedule, so build it eagerly.
         #[cfg(feature = "cs")]
-        if st.event_mode {
+        if st.defer != CsDefer::None {
             let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
-            let meta = st.meta.clone();
-            match CsDriver::new(&mut Engine, &meta, sim_data, t) {
+            let (meta, defer) = (st.meta.clone(), st.defer);
+            match CsDriver::new(&mut Engine, &meta, sim_data, t, defer) {
                 Ok(d) => st.cs = Some(d),
                 Err(_) => return Status::Error,
             }
@@ -699,7 +683,7 @@ macro_rules! shared_instance_methods {
         let mut e = Engine;
 
         #[cfg(feature = "cs")]
-        let up = if st.event_mode {
+        let up = if st.defer != CsDefer::None {
             // Route through the driver so its sample schedule advances in step with
             // the integrator (see `CsDriver::do_event_update`).
             let meta = st.meta.clone();
@@ -1274,7 +1258,7 @@ impl GuestCoSimulationInstance for Instance {
         _visible: bool,
         logging_on: bool,
         event_mode_used: bool,
-        _early_return_allowed: bool,
+        early_return_allowed: bool,
         _required_intermediate_variables: Vec<u32>,
     ) -> Option<CoSimulationInstance> {
         init_logging(instance_name, logging_on);
@@ -1282,13 +1266,18 @@ impl GuestCoSimulationInstance for Instance {
         // the FMU's `resources/` as this component's root, not the host path.
         openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
         let mut st = new_state()?;
-        st.event_mode = event_mode_used;
+        st.defer = match (event_mode_used, early_return_allowed) {
+            (false, _) => CsDefer::None,
+            (true, false) => CsDefer::AtTarget,
+            (true, true) => CsDefer::Any,
+        };
+        // C's `fmi2Instantiate` sets the internal solver up here, CS only.
+        driver::log_cs_solver_setup(&st.meta, st.defer);
         Some(CoSimulationInstance::new(Instance { st: RefCell::new(st) }))
     }
 
-    /// Integrate to the communication point. Under `eventModeUsed` it stops at the
-    /// first event and returns `event-handling-needed`; otherwise events are handled
-    /// internally.
+    /// Integrate to the communication point, reporting the events the instance's
+    /// [`CsDefer`] leaves to the master and resolving the rest.
     fn do_step(
         &self,
         current_communication_point: f64,
@@ -1297,7 +1286,7 @@ impl GuestCoSimulationInstance for Instance {
     ) -> Result<DoStepResult, Status> {
         let mut st = self.st.borrow_mut();
         let target = current_communication_point + communication_step_size;
-        let event_mode = st.event_mode;
+        let defer = st.defer;
         let meta = st.meta.clone();
         let mut e = Engine;
         // Build the driver on first use, over the initialized state at the start
@@ -1305,17 +1294,13 @@ impl GuestCoSimulationInstance for Instance {
         // Event Mode already built it in exit-initialization-mode.
         if st.cs.is_none() {
             let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
-            match CsDriver::new(&mut e, &meta, sim_data, t) {
+            match CsDriver::new(&mut e, &meta, sim_data, t, defer) {
                 Ok(d) => st.cs = Some(d),
                 Err(e) => return Err(err_status(e)),
             }
         }
         let Some(mut driver) = st.cs.take() else { return Err(Status::Error) };
-        let outcome = if event_mode {
-            driver.step_to_event(&mut e, &meta, target)
-        } else {
-            driver.step_to(&mut e, &meta, target)
-        };
+        let outcome = driver.step_to(&mut e, &meta, target, defer);
         let last = driver.time();
         st.cs = Some(driver);
         // C's `fmi2DoStep`: the getters now report the new time's values.

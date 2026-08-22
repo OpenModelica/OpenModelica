@@ -130,6 +130,11 @@ pub type Mask = u64;
 /// The three streams C activates without `-lv`, and which [`deactivate`] leaves.
 pub const ALWAYS_ON: Mask = (1 << STDOUT) | (1 << ASSERT) | (1 << SUCCESS);
 
+/// What an FMU has on for its whole life: `initDumpSystem` never runs there, so
+/// `omc_useStream` is a zeroed static and `fmi2Instantiate` turns these two on.
+/// `fmi2SetDebugLogging` does not touch them.
+pub const FMU_STREAMS: Mask = (1 << STDOUT) | (1 << ASSERT);
+
 /// C's `omc_showAllWarnings` (`-w`): a warning prints even on an inactive stream.
 /// It rides in the mask, above every stream index, so the single value a run pushes
 /// into the wasm runtime carries it too.
