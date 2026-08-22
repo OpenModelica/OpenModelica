@@ -15,7 +15,7 @@ loadString("model Mst Real x(start = 1.0); equation der(x) = -x; end Mst;"); get
 buildModelFMU(Mst, version="3.0", fmuType="me"); getErrorString();
 
 system("unzip -cqq Mst.fmu modelDescription.xml > Mst_md.xml"); getErrorString();
-system("grep -E 'canGetAndSetFMUState|canSerializeFMUState' Mst_md.xml | sed 's/^ *//'"); getErrorString();
+system("grep -E \"canGetAndSetFMUState|canSerializeFMUState\" Mst_md.xml | sed \"s/^ *//\""); getErrorString();
 
 // Result:
 // true
