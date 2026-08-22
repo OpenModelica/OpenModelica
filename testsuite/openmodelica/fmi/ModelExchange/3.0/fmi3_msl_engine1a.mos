@@ -14,7 +14,10 @@ simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a, stopTime=5.0, fil
 
 buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a, version="3.0", fmuType="me", fileNamePrefix="Engine1a"); getErrorString();
 
-system("python3 ../../simulate_fmu_fmpy.py Engine1a.fmu Engine1a_fmpy.csv 5.0 inertia.phi inertia.w"); getErrorString();
+// Which interpreter can import fmpy is a property of the machine, not of the
+// test, so rtest hands it over in FMPY_TOOL; python3 is the default. Kept as one
+// expression so the script prints nothing extra.
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py Engine1a.fmu Engine1a_fmpy.csv 5.0 inertia.phi inertia.w"); getErrorString();
 diffSimulationResults("Engine1a_fmpy.csv", "Engine1a_ref_res.mat", "Engine1a_diff", vars={"inertia.phi","inertia.w"}); getErrorString();
 
 // Result:
