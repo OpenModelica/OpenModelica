@@ -621,8 +621,13 @@ int runProcess(const char* cmd, const char* outFile)
   startupInfo.cb         = sizeof(startupInfo);   // Size of struct in bytes
   startupInfo.dwFlags    |= STARTF_USESTDHANDLES; // Additional handles in hStdInput, hStdOutput and hStdError elements
   startupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
-  startupInfo.hStdError  = logFileHandle;
-  startupInfo.hStdOutput = logFileHandle;
+  /* Without an output file the child writes where we write, as it does on Unix
+   * where systemCall simply lets the fork inherit. STARTF_USESTDHANDLES with a
+   * NULL handle does not mean "inherit", it hands the child an invalid stdout:
+   * anything that checks its writes then fails, e.g. system("... | grep ...")
+   * returns grep's write-error status 2 and prints nothing. */
+  startupInfo.hStdError  = logFileHandle ? logFileHandle : GetStdHandle(STD_ERROR_HANDLE);
+  startupInfo.hStdOutput = logFileHandle ? logFileHandle : GetStdHandle(STD_OUTPUT_HANDLE);
 
   BOOL bSuccess = CreateProcessW(NULL,
     unicodeCommand,
