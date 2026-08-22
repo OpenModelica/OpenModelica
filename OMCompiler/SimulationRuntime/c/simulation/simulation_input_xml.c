@@ -199,6 +199,74 @@ typedef struct omc_ModelInput
   omc_ModelVariables**  lastCT; /* type (classification) */
 } omc_ModelInput;
 
+/* Free all entries and the uthash table (buckets, bloom filter, table struct)
+ * of a hash map. hash_string_string* entries own id and val strings. */
+static inline void freeHashStringString(hash_string_string *ht)
+{
+  if (ht) {
+    hash_string_string *it = ht, *tmp;
+    HASH_CLEAR(hh, ht); /* frees table and buckets, keeps entry list intact */
+    while (it) {
+      tmp = it->hh.next;
+      free((char*)it->id);
+      free((char*)it->val);
+      free(it);
+      it = tmp;
+    }
+  }
+}
+
+static inline void freeHashStringLong(hash_string_long *ht)
+{
+  if (ht) {
+    hash_string_long *it = ht, *tmp;
+    HASH_CLEAR(hh, ht);
+    while (it) {
+      tmp = it->hh.next;
+      free((char*)it->id);
+      free(it);
+      it = tmp;
+    }
+  }
+}
+
+static inline void freeHashLongVar(hash_long_var *ht)
+{
+  if (ht) {
+    hash_long_var *it = ht, *tmp;
+    HASH_CLEAR(hh, ht);
+    while (it) {
+      tmp = it->hh.next;
+      freeHashStringString(it->val);
+      free(it);
+      it = tmp;
+    }
+  }
+}
+
+static inline void freeModelInput(omc_ModelInput *mi)
+{
+  if (!mi) return;
+  freeHashStringString(mi->md);
+  freeHashStringString(mi->de);
+  freeHashLongVar(mi->rSta);
+  freeHashLongVar(mi->rDer);
+  freeHashLongVar(mi->rAlg);
+  freeHashLongVar(mi->rPar);
+  freeHashLongVar(mi->rAli);
+  freeHashLongVar(mi->rSen);
+  freeHashLongVar(mi->iAlg);
+  freeHashLongVar(mi->iPar);
+  freeHashLongVar(mi->iAli);
+  freeHashLongVar(mi->bAlg);
+  freeHashLongVar(mi->bPar);
+  freeHashLongVar(mi->bAli);
+  freeHashLongVar(mi->sAlg);
+  freeHashLongVar(mi->sPar);
+  freeHashLongVar(mi->sAli);
+  free(mi);
+}
+
 // a map for overrides
 typedef hash_string_string omc_CommandLineOverrides;
 // a map to find out which names were used
@@ -813,7 +881,7 @@ char* getXMLfileName(const char* modelFilePrefix, threadData_t* threadData) {
  * @param filename          Name to init XML file. If no file is available set `initXMLData` with the content of the file instead.
  * @param initXMLData       [Optional] Content of input XML file.
  * @param threadData        For error handling, can be NULL.
- * @return omc_ModelInput*  Hash map with all data read from XML. Needs to be freed by caller with `free`.
+ * @return omc_ModelInput*  Hash map with all data read from XML. Needs to be freed by caller with `freeModelInput`.
  */
 omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, threadData_t* threadData) {
   XML_Parser parser = NULL;
@@ -825,7 +893,7 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   parser = XML_ParserCreate(NULL);
   if(!parser)
   {
-    free(mi);
+    freeModelInput(mi);
     throwStreamPrint(threadData, "simulation_input_xml.c: Error: couldn't allocate memory for the XML parser!");
   }
 
@@ -838,7 +906,7 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   if(initXMLData == NULL) {
     file = omc_fopen(filename, "r");
     if(!file) {
-      free(mi);
+      freeModelInput(mi);
       XML_ParserFree(parser);
       throwStreamPrint(threadData, "simulation_input_xml.c: Error: can not read file %s as setup file to the generated simulation code.", filename);
     }
@@ -874,6 +942,8 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
       throwStreamPrint(threadData, "see last warning");
     }
   }
+
+  XML_ParserFree(parser);
 
   return mi;
 }
@@ -1135,8 +1205,11 @@ void read_input_xml(MODEL_DATA* modelData,
 
   calculateAllScalarLength(modelData);
 
+  freeHashStringLong(mapAlias);
+  freeHashStringLong(mapAliasParam);
+  freeHashStringLong(mapAliasSen);
   free((char*)filename);
-  free(mi);
+  freeModelInput(mi);
 }
 
 /**
@@ -1526,6 +1599,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
         warningStreamPrint(OMC_LOG_STDOUT, 0, "simulation_input_xml.c: override variable name not found in model: %s\n", it->id);
       }
     }
+    freeHashStringLong(mOverridesUses);
 
     infoStreamPrint(OMC_LOG_SOLVER, 0, "override done!");
   } else {
