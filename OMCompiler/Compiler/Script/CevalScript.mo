@@ -2348,6 +2348,20 @@ algorithm
           libHandle := System.loadLibrary(fileName + Autoconf.dllExt, relativePath = true, printDebug = print_debug);
           funcHandle := System.lookupFunction(libHandle, stringAppend("in_", funcstr));
           newval := DynLoad.executeFunction(funcHandle, vallst, print_debug);
+          // lookupFunction takes a reference on the library, so freeing the
+          // library alone only drops the count from two to one and the shared
+          // object is never unloaded. On Windows that keeps the file locked, and
+          // the next call to the same function cannot relink its .dll: the code
+          // generation fails and the call silently evaluates to nothing.
+          //
+          // Only Windows needs the unload. Unix can relink a loaded .so, since
+          // that just replaces the inode, and unloading there would change
+          // behaviour: a generated function's shared object carries static state
+          // that currently survives between calls in a session, e.g. the seed
+          // behind System.realRand (openmodelica/bootstrapping/System.mos).
+          if Autoconf.os == "Windows_NT" then
+            System.freeFunction(funcHandle, print_debug);
+          end if;
           System.freeLibrary(libHandle, print_debug);
         end if;
         execStat("executeFunction("+AbsynUtil.pathString(funcpath)+")");
