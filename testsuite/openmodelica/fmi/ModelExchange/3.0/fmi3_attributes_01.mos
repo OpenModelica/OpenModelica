@@ -1,6 +1,12 @@
 // name: fmi3_attributes_01.mos
 // keywords: FMI 3.0 export
 // status: correct
+// suite: disabled-windows
+// The FMU is simulated back with FMPy. The Windows build node has no python3
+// that can import fmpy: OMDev's python cannot install it (rpds-py has no wheel
+// for MSYS2 python and wants Rust to build), and the native Python that does
+// have it ships no python3.exe. Re-enable once a python3 with fmpy is available
+// there.
 // teardown_command: rm -rf fmi3_attributes_01.fmu fmi3_attributes_01.xml fmi3_attributes_01_tmp.xml fmi3_attributes_01.fmutmp/ fmi3_attributes_01_res.mat fmi3_attributes_01_fmpy.csv fmi3_attributes_01_diff.*.csv fmi3_attributes_01_info.json fmi3_attributes_01.log fmi3_attributes_01_*.bin index.html fmi3_attributes_01_FMU.libs fmi3_attributes_01_FMU.makefile fmi3_attributes_01_external_functions.json resources
 
 setCommandLineOptions("-d=newInst"); getErrorString();

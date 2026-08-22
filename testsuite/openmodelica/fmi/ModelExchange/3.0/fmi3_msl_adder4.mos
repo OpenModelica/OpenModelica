@@ -1,6 +1,12 @@
 // name: fmi3_msl_adder4
 // keywords: FMI 3.0 export MSL Digital enumeration FMPy
 // status: correct
+// suite: disabled-windows
+// The FMU is simulated back with FMPy. The Windows build node has no python3
+// that can import fmpy: OMDev's python cannot install it (rpds-py has no wheel
+// for MSYS2 python and wants Rust to build), and the native Python that does
+// have it ships no python3.exe. Re-enable once a python3 with fmpy is available
+// there.
 // teardown_command: rm -rf Adder4.fmu Adder4.fmutmp/ Adder4_ref* Adder4_fmpy.csv Adder4_diff.*.csv Adder4_info.json *.log Adder4_FMU.libs Adder4_FMU.makefile Adder4_external_functions.json resources
 //
 // MSL 4.1.0 round-trip check (discrete/digital model with enumeration variables):
