@@ -32,11 +32,9 @@
 //! heap elements before freeing. Records will follow the same pattern with an
 //! `rt_record_release` when they land.
 
-// `no_std` on the JIT runtime target (`wasm32-unknown-unknown`, no std). The
-// standalone-export target (`wasm32-wasip1`) has std — needed for the in-wasm
-// driver / `write_mat4` / `_start` to do file I/O over WASI — so std is left
-// enabled there, and the custom panic handler (std provides one) is dropped.
-#![cfg_attr(all(not(target_os = "wasi"), not(test)), no_std)]
+// std on every target: wasip1 needs it for the in-wasm driver's file I/O, and on
+// wasm32-unknown-unknown it costs little (its OS half is stubs) while letting this
+// share `openmodelica_lapack` with the compiler instead of a second dense solver.
 // `global_asm!` on wasm32, for the two shadow-stack accessors below.
 #![feature(asm_experimental_arch)]
 
@@ -64,16 +62,6 @@ use core::alloc::{GlobalAlloc, Layout};
 // one heap. (It builds for wasip1 too.)
 #[global_allocator]
 static GLOBAL: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
-
-/// A wasm trap on panic (e.g. allocation failure or a bad substring range),
-/// which the host surfaces as `Values.META_FAIL` exactly like a runtime error.
-/// Only on the `no_std` JIT runtime target; std supplies the handler on wasip1
-/// and on the host `cargo test` build.
-#[cfg(all(not(target_os = "wasi"), not(test)))]
-#[panic_handler]
-fn panic(_: &core::panic::PanicInfo) -> ! {
-    trap()
-}
 
 /// Abort into a wasm trap; on the host `cargo test` build (no wasm intrinsics)
 /// this is an ordinary unreachable — the numeric paths under test never hit it.
@@ -2871,4 +2859,118 @@ fn solve_lin_sparse_cached_inwasm(handle: u32, colptr: u32, rowidx: u32, values:
 pub extern "C" fn rt_call1_indirect(idx: u32, arg: u32) {
     let f: extern "C" fn(u32) = unsafe { core::mem::transmute(idx as usize) };
     f(arg);
+}
+
+// ─────────────────── external "FORTRAN 77" marshalling ───────────────────
+//
+// Only the shared-memory path (a wasm FMU) uses these: there is no host
+// trampoline to convert, so the generated wrapper builds the Fortran argument
+// list itself. The native and web simulation paths keep marshalling on the host
+// (`call_external_in_wasm`), which is where the same rules are implemented for
+// the trampoline. Fortran passes every argument by reference and stores arrays
+// column-major, so a scalar needs a cell and a multi-dimensional array needs a
+// transposed copy — C's `convert_alloc_*_to_f77` / `_from_f77`.
+
+/// A cell holding one `Real`, for a by-reference Fortran argument.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_f77_cell_r(v: f64) -> u32 {
+    let cell = rt_alloc(8);
+    unsafe { store_f64(cell, v) };
+    cell
+}
+
+/// A cell holding one `Integer`/`Boolean`. 8 bytes, so the same `rt_free` path
+/// serves both cell kinds.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_f77_cell_i(v: u32) -> u32 {
+    let cell = rt_alloc(8);
+    unsafe {
+        store_u32(cell, v);
+        store_u32(cell + 4, 0);
+    }
+    cell
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_f77_cell_get_r(cell: u32) -> f64 {
+    unsafe { load_f64(cell) }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_f77_cell_get_i(cell: u32) -> u32 {
+    unsafe { load_u32(cell) }
+}
+
+/// The address a Fortran callee should see for `arr`. A vector is already
+/// contiguous in the order Fortran wants, so its own elements are passed; a
+/// 2-or-more-dimensional array gets a fresh column-major copy, which
+/// [`rt_f77_arr_out`] releases (and copies back for an output).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_f77_arr_in(arr: u32) -> u32 {
+    if arr == 0 {
+        return 0;
+    }
+    if rt_array_ndims(arr) < 2 {
+        return arr_data(arr);
+    }
+    let kind = unsafe { load_u32(arr + ARR_KIND_OFF) };
+    let stride = elem_stride(kind);
+    let total = rt_array_total(arr);
+    let scratch = rt_alloc(total * stride);
+    f77_reorder(arr, arr_data(arr), scratch, stride, true);
+    scratch
+}
+
+/// Undo [`rt_f77_arr_in`]: for an output, copy the callee's column-major result
+/// back into the array's row-major elements; then release the scratch. A no-op
+/// when the callee was handed the elements directly.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_f77_arr_out(arr: u32, ptr: u32, copy_back: u32) {
+    if arr == 0 || ptr == 0 || ptr == arr_data(arr) {
+        return;
+    }
+    if copy_back != 0 {
+        let kind = unsafe { load_u32(arr + ARR_KIND_OFF) };
+        f77_reorder(arr, ptr, arr_data(arr), elem_stride(kind), false);
+    }
+    rt_free(ptr);
+}
+
+/// Transpose between the row-major element order the runtime uses and the
+/// column-major order Fortran expects. `to_f77` picks the direction; `src`/`dst`
+/// are element areas, and `arr` supplies the dimensions.
+fn f77_reorder(arr: u32, src: u32, dst: u32, stride: u32, to_f77: bool) {
+    let ndims = rt_array_ndims(arr);
+    let total = rt_array_total(arr);
+    if total == 0 {
+        return;
+    }
+    // Per-axis sizes, and the row-major stride of each axis in elements.
+    let mut dim = [1u32; 8];
+    let n = (ndims as usize).min(dim.len());
+    for (axis, d) in dim[..n].iter_mut().enumerate() {
+        *d = unsafe { load_u32(arr + ARR_DIMS_OFF + axis as u32 * 4) };
+    }
+    for i in 0..total {
+        // Decompose the row-major position into subscripts, then recompose it
+        // column-major (last axis slowest becomes first axis slowest).
+        let mut rest = i;
+        let mut sub = [0u32; 8];
+        for axis in (0..n).rev() {
+            sub[axis] = rest % dim[axis];
+            rest /= dim[axis];
+        }
+        let mut col = 0u32;
+        for axis in (0..n).rev() {
+            col = col * dim[axis] + sub[axis];
+        }
+        let (from, to) = if to_f77 { (i, col) } else { (col, i) };
+        unsafe {
+            core::ptr::copy_nonoverlapping(
+                (src + from * stride) as *const u8,
+                (dst + to * stride) as *mut u8,
+                stride as usize,
+            );
+        }
+    }
 }

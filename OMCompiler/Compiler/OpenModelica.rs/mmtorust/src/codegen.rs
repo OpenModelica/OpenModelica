@@ -106,8 +106,8 @@ const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     // Rust in `openmodelica_script_util/src/UnitParserExt.rs`.
     "UnitParserExt",
     // All bodies are `external "C"` wrappers over LAPACK (`runtime/lapackimpl.c`);
-    // hand-written in `openmodelica_util/src/Lapack.rs` using the `lapack` crate
-    // bound to the system LAPACK/BLAS.
+    // hand-written in `openmodelica_util/src/Lapack.rs`, whose Fortran-ABI
+    // declarations bind `openmodelica_lapack`.
     "Lapack",
     // All bodies are `external "C"` wrappers over
     // `runtime/HpcOmBenchmarkExt.cpp` (hardcoded op/comm cost estimates plus
@@ -1958,26 +1958,15 @@ const WASM_GATED_TOP_MODULES: &[(&str, Option<&str>)] = &[
     ("Curl", Some("Curl_wasm.rs")),
     // OMSimulator scripting API; drives the dropped OMSimulatorExt (libOMSimulator).
     ("CevalScriptOMSimulator", Some("CevalScriptOMSimulator_wasm.rs")),
-    // FFI to system LAPACK/BLAS (d*_ routines); the pure-Rust nalgebra fallback
-    // replaces it on wasm (no LAPACK to link), on Windows (no MSVC-ABI LAPACK)
-    // and under the `lapack-nalgebra` feature (see stub_active_cfg).
-    ("Lapack", Some("Lapack_nalgebra.rs")),
 ];
 
 /// The cfg predicate under which a gated module's hand-written stub is used
-/// instead of its native implementation. The default is "wasm only"; a few
-/// modules also fall back on Windows (no buildable native dependency there):
-///   * `Lapack` — no MSVC-ABI LAPACK; also opt-in on any target via the
-///     `lapack-nalgebra` feature (lets the fallback be testsuite-validated).
-/// (FFI uses the system libffi on Windows — built from the GNU-syntax `win64.S`
-/// with clang-cl — so it keeps the native module there.)
-fn stub_active_cfg(name: &str) -> &'static str {
-    match name {
-        "Lapack" => {
-            "any(target_arch = \"wasm32\", target_os = \"windows\", feature = \"lapack-nalgebra\")"
-        }
-        _ => "target_arch = \"wasm32\"",
-    }
+/// instead of its native implementation: every one of them is native-only because
+/// of a C dependency wasm cannot link. (`FFI` uses the system libffi on Windows —
+/// built from the GNU-syntax `win64.S` with clang-cl — so it keeps the native
+/// module there.)
+fn stub_active_cfg(_name: &str) -> &'static str {
+    "target_arch = \"wasm32\""
 }
 
 /// Emit a top-level `pub mod NAME;`, cfg-gating the native-only modules listed

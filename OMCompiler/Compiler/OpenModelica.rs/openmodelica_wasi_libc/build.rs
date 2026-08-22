@@ -39,20 +39,30 @@ fn main() {
         .unwrap_or_else(|e| panic!("failed to build the PIC usertab dummy dylink module: {e}"));
     copy(&usertab, &out_dir.join("usertab_dylink.wasm"));
 
-    // Only a CVODE/IDA Co-Simulation FMU needs this, so an absent sundials tree
-    // leaves an empty blob rather than failing the build.
+    // Only a CVODE/IDA Co-Simulation FMU needs this, so a build that never asked
+    // for sundials leaves an empty blob. Asking and failing is a hard error: the
+    // omc would look healthy and just refuse `-s=cvode` at export.
+    println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_SOURCES");
     let sundials_dest = out_dir.join("sundials_dylink.wasm");
-    match build_sundials_dylink(&out_dir, &sysroot, triple) {
-        Ok(m) => copy(&m, &sundials_dest),
-        Err(e) => {
-            println!("cargo:warning=no SUNDIALS dylink module ({e}); a wasm FMU cannot use -s=cvode/ida");
-            std::fs::write(&sundials_dest, []).expect("write empty sundials blob");
-        }
+    if std::env::var_os("OMC_SUNDIALS_SOURCES").is_none() {
+        std::fs::write(&sundials_dest, []).expect("write empty sundials blob");
+    } else {
+        let module = build_sundials_dylink(&out_dir, &sysroot, triple).unwrap_or_else(|e| {
+            panic!(
+                "failed to build the SUNDIALS dylink module: {e}\n\
+                 This build asked for sundials (OMC_SUNDIALS_SOURCES is set), so the omc it \
+                 produces must be able to export a wasm FMU with -s=cvode/ida. Build it \
+                 without sundials if that is not wanted."
+            )
+        });
+        copy(&module, &sundials_dest);
     }
 }
 
-/// The SUNDIALS/KLU API the drivers call. wasm-ld GCs from this list, which is what
-/// keeps the module ~220 KB rather than the archives' 1.5 MB.
+/// The SUNDIALS/KLU API the drivers call. wasm-ld GCs from this list, keeping the
+/// module ~220 KB rather than the archives' 1.5 MB — so a driver calling something
+/// new gets an unresolved import at FMU-export time until it is added here. The
+/// wasip1 runtime links the archives instead and never notices.
 const SUNDIALS_EXPORTS: &[&str] = &[
     "CVodeCreate", "CVodeInit", "CVodeReInit", "CVodeFree", "CVode", "CVodeSVtolerances",
     "CVodeRootInit", "CVodeGetRootInfo", "CVodeSetUserData", "CVodeSetLinearSolver",
@@ -65,7 +75,7 @@ const SUNDIALS_EXPORTS: &[&str] = &[
     "IDASVtolerances", "IDARootInit", "IDAGetRootInfo", "IDASetUserData",
     "IDASetLinearSolver", "IDASetJacFn", "IDASetId", "IDASetSuppressAlg",
     "IDASetInitStep", "IDASetMaxOrd", "IDASetMaxNonlinIters", "IDASetMaxConvFails",
-    "IDASetMaxErrTestFails", "IDASetNonlinConvCoef", "IDASetLineSearchOffIC",
+    "IDASetMaxErrTestFails", "IDASetNonlinConvCoef", "IDASetLineSearchOffIC", "IDASetMaxStep",
     "IDASetMaxNumItersIC", "IDASetMaxNumJacsIC", "IDASetMaxNumStepsIC",
     "IDAGetConsistentIC", "IDAGetCurrentStep", "IDAGetActualInitStep", "IDAGetNumSteps",
     "IDAGetNumResEvals", "IDAGetNumJacEvals", "IDAGetNumErrTestFails",
@@ -77,6 +87,12 @@ const SUNDIALS_EXPORTS: &[&str] = &[
     "SUNSparseMatrix_IndexPointers", "SUNSparseMatrix_IndexValues", "SUNMatDestroy",
     "SUNLinSol_Dense", "SUNLinSol_KLU", "SUNLinSol_SPGMR", "SUNLinSol_SPBCGS",
     "SUNLinSol_SPTFQMR", "SUNLinSolFree",
+    // SUNDIALS 6 moved every object onto a SUNContext and added SUNLogger; the
+    // drivers create one per instance and route its four streams.
+    "SUNContext_Create", "SUNContext_Free", "SUNContext_GetLogger",
+    "SUNContext_PushErrHandler",
+    "SUNLogger_SetErrorFilename", "SUNLogger_SetWarningFilename",
+    "SUNLogger_SetInfoFilename", "SUNLogger_SetDebugFilename",
 ];
 
 /// Compile SUNDIALS (CVODE + IDAS), its matrices/linear solvers and SuiteSparse/KLU to
@@ -95,8 +111,10 @@ fn build_sundials_dylink(out_dir: &Path, sysroot: &Path, triple: &str) -> Result
         return Err(format!("{} has no sundials/sundials_config.h", config.display()));
     }
 
-    // `f*.c` are the Fortran interfaces (duplicate `F2C_*_nonlinsol` symbols) and
-    // `sundials_xbraid.c` needs braid.h; neither belongs in the module.
+    // `f*.c` are the Fortran interfaces (duplicate `F2C_*_nonlinsol` symbols),
+    // `sundials_xbraid.c` needs braid.h, and `*mpi*.c` includes `mpi.h`
+    // unconditionally: none belongs in a host-free wasm module. (`sundials_logger.c`
+    // also reaches for `mpi.h`, but behind `#if SUNDIALS_MPI_ENABLED`.)
     let src = sundials.join("src");
     let mut srcs = Vec::new();
     for dir in [
@@ -108,7 +126,7 @@ fn build_sundials_dylink(out_dir: &Path, sysroot: &Path, triple: &str) -> Result
         let mut found = collect_c_files(&src.join(dir));
         found.retain(|p| {
             let n = p.file_name().and_then(|s| s.to_str()).unwrap_or("");
-            !n.starts_with('f') && n != "sundials_xbraid.c"
+            !n.starts_with('f') && n != "sundials_xbraid.c" && !n.contains("mpi")
         });
         if found.is_empty() {
             return Err(format!("no sources in {}", src.join(dir).display()));

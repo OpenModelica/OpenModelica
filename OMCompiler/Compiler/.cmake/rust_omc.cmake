@@ -924,14 +924,6 @@ function(omc_rust_setup_codegen)
   if(RUST_OMC_SCRIPTING_API)
     list(APPEND _rust_omc_features scripting_api)
   endif()
-  # Force the pure-Rust nalgebra LAPACK fallback over the system-LAPACK FFI on a
-  # native build, to validate it against the testsuite. openmodelica_util is a
-  # direct dependency of the cdylib, so its feature can be enabled by the
-  # `<dep>/<feature>` form. (wasm and Windows select it unconditionally already.)
-  option(RUST_OMC_LAPACK_NALGEBRA "Build the native omc with the pure-Rust nalgebra LAPACK fallback instead of system LAPACK (for testsuite validation)." OFF)
-  if(RUST_OMC_LAPACK_NALGEBRA)
-    list(APPEND _rust_omc_features openmodelica_util/lapack-nalgebra)
-  endif()
   # Run the wasm-jit simulations on wasmer rather than wasmtime: the web target's
   # own host code (`sim_runtime_wasmer.rs`, the ModelicaExternalC side module),
   # which is otherwise reachable only from a browser.

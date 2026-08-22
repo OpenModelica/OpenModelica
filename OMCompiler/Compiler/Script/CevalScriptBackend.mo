@@ -1269,6 +1269,7 @@ algorithm
     case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::Values.BOOL(_)::Values.STRING(str3)::_)
       algorithm
         simSettings := fmuSimulationSettings(className, filenameprefix, str3);
+        fmuMethodToSimulationFlag(str3);
         (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars), SOME(simSettings));
       then
         ret_val;
@@ -4707,6 +4708,57 @@ protected function OMGraphics_writePlacedConnectorIconPNG
   external "C" ok = OMGraphics_writePlacedConnectorIconPNG(handle, index, path) annotation(Library = "omcruntime");
 end OMGraphics_writePlacedConnectorIconPNG;
 
+protected function fmuMethodToSimulationFlag
+  "`buildModelFMU(method=...)` names the integrator a Co-Simulation FMU embeds,
+   but an FMU reads its solver from `resources/<prefix>_flags.json`, which only
+   `--fmiFlags` writes. So fold an explicit method in there, unless the caller
+   already said `s:`.
+
+   Only `euler` and `cvode`: those are the values an FMU's `s` flag accepts, and a
+   model's own `dassl` default must not become an `s:dassl` the FMU rejects at
+   instantiation. `buildModelFMU` restores the flag store afterwards."
+  input String method;
+protected
+  list<String> fmiFlags;
+algorithm
+  if method == "<default>" or not (method == "euler" or method == "cvode") then
+    return;
+  end if;
+  fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
+  for f in fmiFlags loop
+    if StringUtil.startsWith(f, "s:") then
+      return;
+    end if;
+  end for;
+  // `none` and a `*.json` path are whole-value settings, not a list to extend.
+  if not listEmpty(fmiFlags) and not stringEq(listHead(fmiFlags), "default") then
+    return;
+  end if;
+  FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, {"s:" + method});
+end fmuMethodToSimulationFlag;
+
+protected function reportFMUPlatformsBuilt
+  "The platform progress the C export reports around each platform's compile.
+   A wasm FMU is already linked by the time `translateModel` returns, so the pair
+   is reported once the .fmu is there — which is where the C export's own
+   messages land relative to the translation's, so the log reads the same either
+   way."
+  input list<String> platforms;
+protected
+  Integer platformIndex = 0, platformCount = listLength(platforms);
+  String platformName;
+algorithm
+  for platform in platforms loop
+    platformIndex := platformIndex + 1;
+    platformName := listGet(Util.stringSplitAtChar(platform, " "), 1);
+    System.reportProgress(intDiv((platformIndex - 1) * 1000, platformCount), 4 /* PHASE_BACKEND */);
+    System.reportProgressMessage("Building FMU for " + platformName + " (" + String(platformIndex) + "/" + String(platformCount) + ")");
+    Error.addCompilerNotification("Building FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
+    Error.addCompilerNotification("Finished FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
+  end for;
+  System.reportProgress(1000, 4 /* PHASE_BACKEND */);
+end reportFMUPlatformsBuilt;
+
 protected function fmuSimulationSettings
   "The SimulationSettings an FMU export runs with: the model's experiment defaults,
    with `method` folded in when it is not \"<default>\" (a Co-Simulation FMU embeds
@@ -4873,7 +4925,9 @@ algorithm
     if not System.regularFileExists(fmuTargetName + ".fmu") then
       Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"wasm FMU export produced no " + fmuTargetName + ".fmu"});
       outValue := Values.STRING("");
+      return;
     end if;
+    reportFMUPlatformsBuilt(platforms);
     return;
   end if;
 

@@ -1489,12 +1489,14 @@ fn merge_standalone(model_wasm: &[u8]) -> Result<Vec<u8>> {
 /// The model-agnostic FMI3 adapters, built + embedded by build.rs as dylink side
 /// modules: one per FMU type (the same crate, two WIT worlds).
 use openmodelica_wasm_jit::FMI3_ME_ADAPTER;
-use openmodelica_wasm_jit::FMI3_CS_ADAPTER;
 /// The combined me_cs component (both interfaces, one binary, one modelIdentifier).
 use openmodelica_wasm_jit::FMI3_MECS_ADAPTER;
-/// The CS worlds with CVODE/IDA in the embedded driver; their SUNDIALS calls are
+/// The me_cs world with CVODE/IDA in the embedded driver; its SUNDIALS calls are
 /// resolved by [`SUNDIALS_DYLINK`].
-use openmodelica_wasm_jit::{FMI3_CS_SUNDIALS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER};
+use openmodelica_wasm_jit::FMI3_MECS_SUNDIALS_ADAPTER;
+/// LAPACK for the `external "FORTRAN 77"` calls of `Modelica.Math.Matrices`, which
+/// a host-free FMU has no system library to resolve.
+use openmodelica_wasm_jit::LAPACK_DYLINK;
 
 /// The external-"C" FMU artifacts, linked in only when the model uses `external
 /// "C"`. Any is empty when that omc was built without the toolchain.
@@ -1723,11 +1725,7 @@ fn wasm_builtins(sysroot: &std::path::Path) -> Option<std::path::PathBuf> {
 pub(crate) fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> Vec<ExtCallSig> {
     let mut defined: HashSet<&str> = HashSet::new();
     for bytes in libs.iter().map(|l| &l.bytes[..]).chain([LIBC_PIC, EXTERNAL_C_DYLINK]) {
-        for payload in wasmparser::Parser::new(0).parse_all(bytes).flatten() {
-            if let wasmparser::Payload::ExportSection(exports) = payload {
-                defined.extend(exports.into_iter().flatten().map(|e| e.name));
-            }
-        }
+        defined.extend(wasm_exports(bytes));
     }
     ext_imports.iter().filter(|s| !defined.contains(s.name.as_str())).cloned().collect()
 }
@@ -1970,28 +1968,62 @@ fn drop_redundant_initialize(lib: &[u8]) -> Vec<u8> {
     }
 }
 
-/// The first `external "C"` import (module `ext`) in the model, if any. A
-/// host-free FMU has no host to provide these, so the export names the function
-/// rather than failing later inside `wit_component`.
-fn first_external_import(model_wasm: &[u8]) -> Option<String> {
+/// The `external` functions (import module `ext`) the model calls.
+fn external_imports(model_wasm: &[u8]) -> Vec<String> {
     use wasmparser::Imports;
+    let mut out = Vec::new();
     for payload in wasmparser::Parser::new(0).parse_all(model_wasm).flatten() {
         if let wasmparser::Payload::ImportSection(reader) = payload {
             for group in reader.into_iter().flatten() {
                 match group {
-                    Imports::Single(_, imp) if imp.module == "ext" => return Some(imp.name.to_string()),
+                    Imports::Single(_, imp) if imp.module == "ext" => out.push(imp.name.to_string()),
                     Imports::Compact1 { module: "ext", items } => {
-                        return Some(items.into_iter().flatten().next().map_or_else(|| "ext".to_string(), |it| it.name.to_string()));
+                        out.extend(items.into_iter().flatten().map(|it| it.name.to_string()));
                     }
                     Imports::Compact2 { module: "ext", names, .. } => {
-                        return Some(names.into_iter().flatten().next().map_or("ext", |n| n).to_string());
+                        out.extend(names.into_iter().flatten().map(|n| n.to_string()));
                     }
                     _ => {}
                 }
             }
         }
     }
-    None
+    out
+}
+
+/// The first `external "C"` import (module `ext`) in the model, if any. A
+/// host-free FMU has no host to provide these, so the export names the function
+/// rather than failing later inside `wit_component`.
+fn first_external_import(model_wasm: &[u8]) -> Option<String> {
+    external_imports(model_wasm).into_iter().next()
+}
+
+/// Whether the FMU has to carry [`LAPACK_DYLINK`]: the model calls a routine only
+/// it defines. A model whose own `Library` resolved to a `liblapack.wasm` brings
+/// its own, and then that one is linked instead of this 1.3 MB.
+fn needs_lapack(model_wasm: &[u8], ext_libs: &[ExtLibrary]) -> bool {
+    if LAPACK_DYLINK.is_empty() {
+        return false;
+    }
+    let mut wanted: HashSet<String> = external_imports(model_wasm).into_iter().collect();
+    if wanted.is_empty() {
+        return false;
+    }
+    for bytes in ext_libs.iter().map(|l| &l.bytes[..]).chain([LIBC_PIC, EXTERNAL_C_DYLINK]) {
+        for name in wasm_exports(bytes) {
+            wanted.remove(name);
+        }
+    }
+    wasm_exports(LAPACK_DYLINK).any(|name| wanted.contains(name))
+}
+
+/// The names a wasm module exports.
+fn wasm_exports(bytes: &[u8]) -> impl Iterator<Item = &str> {
+    wasmparser::Parser::new(0).parse_all(bytes).flatten().filter_map(|p| match p {
+        wasmparser::Payload::ExportSection(exports) => Some(exports),
+        _ => None,
+    })
+    .flat_map(|exports| exports.into_iter().flatten().map(|e| e.name))
 }
 
 /// Link the adapter + model into an fmi-ls-wasm component (pure Rust, so it runs in
@@ -2016,6 +2048,9 @@ fn link_fmu_component(
         // CVODE reaches the residual through a C function pointer, which works because
         // every library here imports the one `env.__indirect_function_table`.
         l = l.library("sundials", SUNDIALS_DYLINK, false).map_err(link_err)?;
+    }
+    if needs_lapack(model_wasm, ext_libs) {
+        l = l.library("lapack", LAPACK_DYLINK, false).map_err(link_err)?;
     }
     if has_ext || sundials {
         // modelicaexternalc before libc; the coexisting allocator (libc dlmalloc +
@@ -2270,6 +2305,11 @@ pub fn emitMeFmu(
 }
 
 /// Co-Simulation: the FMU integrates itself, so the adapter embeds the driver.
+///
+/// Served by the me_cs component, which substitutes for a `co-simulation-fmu`:
+/// identical imports, a superset of its exports. `modelDescription.xml` still
+/// declares CoSimulation alone; the unused ME exports cost ~38 KB against the
+/// 1.28 MB a fourth adapter blob costs every omc.
 pub fn emitCsFmu(
     sim_code: SimCode::SimCode,
     fmu_path: ArcStr,
@@ -2278,7 +2318,7 @@ pub fn emitCsFmu(
     extra_files: Arc<List<(ArcStr, ArcStr)>>,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, extra_files, simulation_flags_json, (FMI3_CS_ADAPTER, FMI3_CS_SUNDIALS_ADAPTER), "CS")
+    emit_fmu(sim_code, fmu_path, model_description, extra_files, simulation_flags_json, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "CS")
 }
 
 /// me_cs: one component exporting both interfaces (the wasm equivalent of a
@@ -3834,6 +3874,19 @@ impl ExtHost {
     const SIM: ExtHost = if cfg!(target_arch = "wasm32") { ExtHost::Wasm } else { ExtHost::Native };
 }
 
+/// The wasm signature an `ext.*` import is declared with. A `FORTRAN 77` external
+/// in a shared-memory module binds directly to the real symbol, so it takes the
+/// Fortran argument list (everything by reference) rather than the
+/// host-trampoline shape.
+fn ext_import_sig(sig: &ExtCallSig) -> openmodelica_wasm_jit::sig::FnSig {
+    use openmodelica_wasm_jit::sig::ExtLang;
+    if sig.lang == ExtLang::Fortran77 && crate::CodegenWasmJitFunctions::externals_shared() {
+        sig.wasm_sig_f77_shared()
+    } else {
+        sig.wasm_sig()
+    }
+}
+
 /// `fmi_vrs`: also record the FMI value-reference table (FMU export only).
 fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost) -> Result<SimModel> {
     crate::CodegenWasmJitFunctions::set_record_decls(&sim_code.recordDecls)?;
@@ -4082,7 +4135,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let import_base = ext_base + ext_imports.len() as u32;
     let mut by_name: HashMap<String, FnInfo> = HashMap::new();
     for (i, sig) in ext_imports.iter().enumerate() {
-        by_name.insert(format!("ext.{}", sig.name), FnInfo { index: ext_base + i as u32, sig: sig.wasm_sig() });
+        by_name.insert(format!("ext.{}", sig.name), FnInfo { index: ext_base + i as u32, sig: ext_import_sig(sig) });
     }
     for (id, f) in model_fns.iter().enumerate() {
         let (name, sig) = function_signature(f)?;
@@ -4208,9 +4261,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let mut ext_type: Vec<u32> = Vec::with_capacity(ext_imports.len());
     for sig in &ext_imports {
         let ti = types.len();
+        let s = ext_import_sig(sig);
         types.ty().function(
-            sig.wasm_params().iter().map(|s| s.wty().val()),
-            sig.wasm_results().iter().map(|s| s.wty().val()),
+            s.params.iter().map(|s| s.wty().val()),
+            s.results.iter().map(|s| s.wty().val()),
         );
         ext_type.push(ti);
     }
@@ -8875,9 +8929,7 @@ mod link_tests {
     fn fmu_component_links_without_a_host() {
         for (label, adapter, sundials) in [
             ("ME", FMI3_ME_ADAPTER, false),
-            ("CS", FMI3_CS_ADAPTER, false),
             ("me_cs", FMI3_MECS_ADAPTER, false),
-            ("CS+SUNDIALS", FMI3_CS_SUNDIALS_ADAPTER, true),
             ("me_cs+SUNDIALS", FMI3_MECS_SUNDIALS_ADAPTER, true),
         ] {
             if adapter.is_empty() || (sundials && !sundials_available()) {

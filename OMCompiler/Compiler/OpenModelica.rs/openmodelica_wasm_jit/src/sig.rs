@@ -200,6 +200,18 @@ impl ExtCallSig {
     pub fn wasm_sig(&self) -> FnSig {
         FnSig { params: self.wasm_params(), results: self.wasm_results() }
     }
+    /// The signature of a [`ExtLang::Fortran77`] import in a *shared-memory*
+    /// module (a wasm FMU): Fortran passes every argument by reference, and with
+    /// no host trampoline the generated code builds that argument list itself — so
+    /// every argument is a pointer and nothing comes back as a multi-value result
+    /// except a by-value function return (`DLANGE`). This is the real symbol's
+    /// signature, which is what the module must import to bind directly to it.
+    pub fn wasm_sig_f77_shared(&self) -> FnSig {
+        FnSig {
+            params: vec![SigTy::Ptr; self.args.len()],
+            results: self.ret.iter().cloned().collect(),
+        }
+    }
 }
 
 // ─────────────────────────── record objects ───────────────────────────

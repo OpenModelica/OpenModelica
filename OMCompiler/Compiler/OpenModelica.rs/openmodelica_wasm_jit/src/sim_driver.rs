@@ -41,7 +41,13 @@ fn report_assert(info: &AssertInfo) {
 /// driver. Idempotent; call before entering the driver.
 /// The driver's log lines join the model's captured stdout, so the run's log has
 /// them in the order they happened.
-fn log_to_stdout(s: &str) {
+/// A real stdout takes the line as formatted; the stream and type are already in
+/// its header columns.
+fn log_to_stdout(
+    _stream: openmodelica_sim_meta::omclog::Stream,
+    _ty: openmodelica_sim_meta::omclog::LogType,
+    s: &str,
+) {
     openmodelica_wasi::wasi::stdout_write(s.as_bytes());
 }
 

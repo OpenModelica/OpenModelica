@@ -21,15 +21,15 @@ unsafe extern "C" {
 }
 
 #[cfg(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone")))]
-pub(crate) fn sink(s: &str) {
+pub(crate) fn sink(_stream: Stream, _ty: LogType, s: &str) {
     unsafe { rt_host_log(s.as_ptr() as u32, s.len() as u32) };
 }
 
 #[cfg(all(target_arch = "wasm32", not(feature = "host_log"), not(feature = "standalone")))]
-pub(crate) fn sink(_s: &str) {}
+pub(crate) fn sink(_stream: Stream, _ty: LogType, _s: &str) {}
 
 #[cfg(all(target_arch = "wasm32", feature = "standalone"))]
-pub(crate) fn sink(s: &str) {
+pub(crate) fn sink(_stream: Stream, _ty: LogType, s: &str) {
     use std::io::Write;
     let mut out = std::io::stdout();
     let _ = out.write_all(s.as_bytes());

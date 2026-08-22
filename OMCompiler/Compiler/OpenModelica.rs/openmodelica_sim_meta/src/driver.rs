@@ -910,15 +910,20 @@ fn set_no_throw(v: bool) {
 
 // Where the driver's own log lines go. The model's `print` output shares the
 // channel, so the two interleave in the order C prints them.
+//
+// The stream and type come along for a host whose only channel is the FMI logger:
+// it has to map them to a category and an `fmi3Status`. One writing to a stdout
+// ignores both — they are already in the line's header columns.
+pub type LogSink = fn(crate::omclog::Stream, crate::omclog::LogType, &str);
 static LOG_SINK: AtomicUsize = AtomicUsize::new(0);
-pub fn set_log_sink(f: fn(&str)) {
+pub fn set_log_sink(f: LogSink) {
     LOG_SINK.store(f as usize, Ordering::Relaxed);
 }
-pub(crate) fn log_line(s: &str) {
+pub(crate) fn log_line(stream: crate::omclog::Stream, ty: crate::omclog::LogType, s: &str) {
     let p = LOG_SINK.load(Ordering::Relaxed);
     if p != 0 {
-        let f: fn(&str) = unsafe { core::mem::transmute(p) };
-        f(s);
+        let f: LogSink = unsafe { core::mem::transmute(p) };
+        f(stream, ty, s);
     }
 }
 
@@ -2430,7 +2435,8 @@ fn report_terminate(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, at_ini
     let file = read_rt_string(e, w(1)?)?;
     if !file.is_empty() {
         let ro = if w(6)? != 0 { "readonly" } else { "writable" };
-        log_line(&format!("[{file}:{}:{}-{}:{}:{ro}]\n", w(2)?, w(3)?, w(4)?, w(5)?));
+        log_line(crate::omclog::STDOUT, crate::omclog::INFO,
+                 &format!("[{file}:{}:{}-{}:{}:{ro}]\n", w(2)?, w(3)?, w(4)?, w(5)?));
     }
     let time = format_f(read_f64(e, sim_data + TIME_OFF)?);
     let at = if at_init { format!("at initialization (time {time})") } else { format!("at time {time}") };
@@ -2658,7 +2664,7 @@ fn write_output_vars(
         }
     }
     out.push('\n');
-    log_line(&out);
+    log_line(crate::omclog::STDOUT, crate::omclog::INFO, &out);
     Ok(())
 }
 

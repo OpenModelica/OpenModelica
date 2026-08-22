@@ -2,9 +2,8 @@
 //
 // Rust port of `OMCompiler/Compiler/Util/Lapack.mo`'s `external "C"`
 // declarations, which are thin FFI shims into `runtime/lapackimpl.c`. Like the
-// C runtime, we bind the system LAPACK directly through its Fortran ABI (the
-// `d*_` symbols, linked via `build.rs`) and reproduce the matrix/vector
-// marshalling that `lapackimpl.c` performs:
+// C runtime, we call LAPACK through its Fortran ABI (the `d*_` symbols) and
+// reproduce the matrix/vector marshalling that `lapackimpl.c` performs:
 //
 //   * MetaModelica matrices are `list<list<Real>>` (a list of rows). LAPACK
 //     expects column-major storage with leading dimension equal to the row
@@ -18,10 +17,16 @@
 // `CHARACTER*1` arguments (`trans`, `jobvl`, …) are passed without the hidden
 // Fortran string-length argument, exactly as `lapackimpl.c` does — LAPACK only
 // inspects the first character via `LSAME` and never reads the length. The
-// LAPACK `integer` type is 32-bit on the system (reference/OpenBLAS LP64
-// build), matching the port's `Integer`.
+// LAPACK `integer` type is 32-bit, matching the port's `Integer`.
+//
+// The `d*_` symbols come from `openmodelica_lapack` on every target, not from a
+// system `liblapack.so` (wasm has none, Windows has no MSVC-ABI build).
+// `extern crate` because nothing here *names* that crate, so rustc would
+// otherwise have no reason to link the rlib they live in.
 
 #![allow(non_snake_case)]
+
+extern crate openmodelica_lapack;
 
 use std::sync::Arc;
 
@@ -174,6 +179,25 @@ fn ch(s: &ArcStr) -> c_char {
     *s.as_bytes().first().unwrap_or(&b' ') as c_char
 }
 
+/// Hold the oxiblas kernels to what `-n` allows, before the first routine that
+/// reaches them. Read once: a later `setCommandLineOptions("-n=…")` applies to
+/// the next omc run rather than resizing a pool with work in it.
+///
+/// `--running-testsuite` pins it to one whatever `-n` says — oxiblas splits its
+/// reductions by thread count, so a result would otherwise depend on the core
+/// count of whichever machine ran the test.
+fn init_thread_limit() {
+    static ONCE: std::sync::Once = std::sync::Once::new();
+    ONCE.call_once(|| {
+        let n = if crate::Testsuite::isRunning().unwrap_or(false) {
+            1
+        } else {
+            crate::Flags::getConfigInt(crate::Flags::NUM_PROC.clone()).unwrap_or(0).max(0) as usize
+        };
+        openmodelica_lapack::parallel::set_max_threads(n);
+    });
+}
+
 pub fn dgeev(
     inJOBVL: ArcStr,
     inJOBVR: ArcStr,
@@ -292,6 +316,7 @@ pub fn dgelsx(
     inRCOND: Real,
     inWORK: Vec64,
 ) -> (Mat, Mat, IVec, i32, i32) {
+    init_thread_limit();
     let mut a = mat_in(inLDA, inN, &inA);
     let mut b = mat_in(inLDB, inNRHS, &inB);
     let mut jpvt = ivec_in(inN, &inJPVT);
@@ -324,6 +349,7 @@ pub fn dgelsy(
     inWORK: Vec64,
     inLWORK: i32,
 ) -> (Mat, Mat, IVec, i32, Vec64, i32) {
+    init_thread_limit();
     let mut a = mat_in(inLDA, inN, &inA);
     let mut b = mat_in(inLDB, inNRHS, &inB);
     let mut work = vec_in(inLWORK, &inWORK);
@@ -450,6 +476,7 @@ pub fn dgesvd(
     inWORK: Vec64,
     inLWORK: i32,
 ) -> (Mat, Vec64, Mat, Mat, Vec64, i32) {
+    init_thread_limit();
     let lds = inM.min(inN);
     let ucol = match ch(&inJOBU) as u8 {
         b'A' => inM,
