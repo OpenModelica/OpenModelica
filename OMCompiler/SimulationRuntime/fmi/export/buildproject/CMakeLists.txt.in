@@ -173,7 +173,14 @@ endif()
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/isfmi3")
   # FMI 3.0 uses the platform tuple "{architecture}-{os}" for the binaries folder
   # (e.g. x86_64-linux), unlike FMI 1.0/2.0 which use "{os}{bitness}" (e.g. linux64).
-  set(FMU_TARGET_PLATFORM "${FMU_TARGET_ARCH}-${FMU_TARGET_SYSTEM_NAME}")
+  # The two schemes do not spell Windows the same way: FMI 1.0/2.0 want "win"
+  # (win64), FMI 3.0 wants it in full (x86_64-windows). Linux and darwin are the
+  # same word in both, so only this one has to be translated.
+  set(FMU_TARGET_SYSTEM_TUPLE "${FMU_TARGET_SYSTEM_NAME}")
+  if(FMU_TARGET_SYSTEM_NAME STREQUAL "win")
+    set(FMU_TARGET_SYSTEM_TUPLE "windows")
+  endif()
+  set(FMU_TARGET_PLATFORM "${FMU_TARGET_ARCH}-${FMU_TARGET_SYSTEM_TUPLE}")
 elseif(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
   set(FMU_TARGET_PLATFORM "${FMU_TARGET_SYSTEM_NAME}64")
 else()
