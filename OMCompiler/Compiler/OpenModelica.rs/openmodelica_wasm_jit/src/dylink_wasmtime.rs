@@ -19,6 +19,24 @@ type Result<T> = std::result::Result<T, String>;
 pub struct Library {
     pub name: String,
     pub bytes: Vec<u8>,
+    /// Worth an on-disk AOT artifact: a built-in library or one a `Library`
+    /// annotation named, so every run loads the same bytes. One compiled from a
+    /// model's own `Include` sources is not — caching it would leave a file per
+    /// model behind, and only that process ever reloads it.
+    pub fixed: bool,
+}
+
+impl Library {
+    pub fn model(name: &str, bytes: Vec<u8>) -> Self {
+        Library { name: name.to_string(), bytes, fixed: false }
+    }
+    fn ext(l: &crate::model::ExtLibrary) -> Self {
+        Library { name: l.name.clone(), bytes: l.bytes.clone(), fixed: l.fixed }
+    }
+    /// One of the libraries built into omc, which also takes the on-disk artifact.
+    pub fn builtin(name: &str, bytes: &'static [u8]) -> Self {
+        Library { name: name.to_string(), bytes: bytes.to_vec(), fixed: true }
+    }
 }
 
 pub struct Loaded {
@@ -127,8 +145,21 @@ pub fn load(
     let mut wasi = wasmtime::Linker::new(engine);
     crate::wasi_shim::add_to_linker(&mut wasi).map_err(|e| format!("dylink: {e}"))?;
 
-    let mut weak: std::collections::HashSet<String> = std::collections::HashSet::new();
+    // Every library's exports before any is placed: a PIC library reaches even its
+    // own exported symbols through `env`, so they can be interposed, and one may
+    // call what a later one defines. Such an import gets a trampoline, bound below.
+    let mut modules = Vec::with_capacity(libs.len());
+    let mut defined: std::collections::HashSet<String> = std::collections::HashSet::new();
     for lib in libs {
+        let module = crate::sim_runtime::library_module(engine, &lib.name, &lib.bytes, lib.fixed)
+            .map_err(|e| format!("external \"C\" library `{}` is not valid wasm: {e}", lib.name))?;
+        defined.extend(module.exports().filter(|e| e.ty().func().is_some()).map(|e| e.name().to_string()));
+        modules.push(module);
+    }
+    let mut deferred: HashMap<String, DeferredTarget> = HashMap::new();
+
+    let mut weak: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for (lib, module) in libs.iter().zip(&modules) {
         let dl = dylink::parse(&lib.bytes).ok_or_else(|| {
             format!(
                 "external \"C\" library `{}` is not a shared library (no dylink.0 section) \
@@ -139,9 +170,8 @@ pub fn load(
         weak.extend(dl.weak_imports.iter().cloned());
         place(
             store,
-            engine,
+            module,
             &lib.name,
-            &lib.bytes,
             &dl,
             memory,
             table,
@@ -149,10 +179,17 @@ pub fn load(
             &stack_pointer,
             &wasi,
             host_imports,
+            &defined,
+            &mut deferred,
             &mut got_mem,
             &mut got_func,
             &mut loaded,
         )?;
+    }
+    for (sym, target) in &deferred {
+        if let Some(f) = loaded.funcs.get(sym) {
+            let _ = target.set(*f);
+        }
     }
 
     for (sym, g) in &got_mem {
@@ -191,8 +228,35 @@ pub fn load(
                 .map_err(|e| format!("external \"C\" library `{}` failed to initialise: {e}", lib.name))?;
         }
     }
+    set_guest_cwd(store, rt_alloc, memory, &loaded)?;
     unbuffer_stdout(store, &loaded)?;
     Ok(loaded)
+}
+
+/// Give libc the process's own working directory: `__wasilibc_find_relpath`
+/// resolves every path a library opens against `__wasilibc_cwd`, which is `"/"` out
+/// of the box. A later `chdir` frees only a buffer libc allocated itself.
+fn set_guest_cwd(
+    store: &mut wasmtime::Store<WasiCtx>,
+    rt_alloc: &wasmtime::TypedFunc<u32, u32>,
+    memory: Memory,
+    loaded: &Loaded,
+) -> Result<()> {
+    let (Some(&slot), Ok(cwd)) = (loaded.data.get("__wasilibc_cwd"), openmodelica_wasi::fs::cwd()) else {
+        return Ok(());
+    };
+    let bytes = cwd.as_bytes();
+    let p = rt_alloc
+        .call(&mut *store, bytes.len() as u32 + 1)
+        .map_err(|e| format!("rt_alloc: {e}"))?;
+    let data = memory.data_mut(&mut *store);
+    let too_small = "dylink: the shared memory is too small for the working directory";
+    let dst = data.get_mut(p as usize..p as usize + bytes.len() + 1).ok_or(too_small)?;
+    dst[..bytes.len()].copy_from_slice(bytes);
+    dst[bytes.len()] = 0;
+    let ptr = data.get_mut(slot as usize..slot as usize + 4).ok_or(too_small)?;
+    ptr.copy_from_slice(&p.to_le_bytes());
+    Ok(())
 }
 
 /// Nothing flushes libc's buffer — the module is torn down, not exited — so a
@@ -255,9 +319,8 @@ fn func_slot(store: &mut wasmtime::Store<WasiCtx>, loaded: &mut Loaded, sym: &st
 #[allow(clippy::too_many_arguments)]
 fn place(
     store: &mut wasmtime::Store<WasiCtx>,
-    engine: &wasmtime::Engine,
+    module: &wasmtime::Module,
     lib_name: &str,
-    bytes: &[u8],
     dl: &Dylink,
     memory: Memory,
     table: Table,
@@ -265,13 +328,12 @@ fn place(
     stack_pointer: &Global,
     wasi: &wasmtime::Linker<WasiCtx>,
     host_imports: &HashMap<String, Func>,
+    defined: &std::collections::HashSet<String>,
+    deferred: &mut HashMap<String, DeferredTarget>,
     got_mem: &mut HashMap<String, Global>,
     got_func: &mut HashMap<String, Global>,
     loaded: &mut Loaded,
 ) -> Result<()> {
-    let module = wasmtime::Module::new(engine, bytes)
-        .map_err(|e| format!("external \"C\" library `{lib_name}` is not valid wasm: {e}"))?;
-
     let memory_base = alloc_aligned(store, rt_alloc, dl.mem.mem_size, dl.mem.mem_align())?;
     let table_base = if dl.mem.table_size == 0 {
         table.size(&*store)
@@ -294,7 +356,7 @@ fn place(
             ("GOT.mem", sym) => Extern::Global(got_entry(store, got_mem, sym)?),
             ("GOT.func", sym) => Extern::Global(got_entry(store, got_func, sym)?),
             ("env", sym) => {
-                // Another library's export, else a host import, else undefined.
+                // A placed library's export, else a host import, else deferred.
                 let ty = imp
                     .ty()
                     .func()
@@ -302,6 +364,7 @@ fn place(
                     .ok_or_else(|| format!("external \"C\" library `{lib_name}` imports env.{sym}, which is not a function"))?;
                 match loaded.funcs.get(sym).or_else(|| host_imports.get(sym)) {
                     Some(f) => Extern::Func(*f),
+                    None if defined.contains(sym) => Extern::Func(deferred_import(store, &ty, deferred, sym)),
                     None => Extern::Func(missing_symbol_stub(store, &ty, lib_name, sym)),
                 }
             }
@@ -402,6 +465,27 @@ fn missing_symbol_stub(
         Err(wasmtime::Error::msg(msg.clone()))
     })
 }
+
+/// Where a deferred `env` import ends up, once every library is instantiated.
+type DeferredTarget = std::sync::Arc<std::sync::OnceLock<Func>>;
+
+/// A trampoline over the [`DeferredTarget`] `load` fills in; one target per symbol.
+fn deferred_import(
+    store: &mut wasmtime::Store<WasiCtx>,
+    ty: &FuncType,
+    deferred: &mut HashMap<String, DeferredTarget>,
+    sym: &str,
+) -> Func {
+    let target = deferred.entry(sym.to_string()).or_default().clone();
+    let sym = sym.to_string();
+    Func::new(&mut *store, ty.clone(), move |mut caller: Caller<'_, WasiCtx>, args, rets| {
+        match target.get() {
+            Some(f) => f.call(&mut caller, args, rets),
+            None => Err(wasmtime::Error::msg(format!("external \"C\": `{sym}` was never defined"))),
+        }
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -434,8 +518,8 @@ mod tests {
             return None;
         }
         Some([
-            Library { name: "libc.so".into(), bytes: openmodelica_wasi_libc::LIBC_PIC.to_vec() },
-            Library { name: name.into(), bytes },
+            Library::builtin("libc.so", openmodelica_wasi_libc::LIBC_PIC),
+            Library::model(name, bytes),
         ])
     }
 
@@ -443,7 +527,7 @@ mod tests {
     fn runtime() -> (wasmtime::Store<WasiCtx>, wasmtime::Engine, wasmtime::Instance) {
         let engine = wasmtime::Engine::default();
         let module = wasmtime::Module::new(&engine, crate::RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, WasiCtx::new(".", Vec::new()));
+        let mut store = wasmtime::Store::new(&engine, WasiCtx::new("/", Vec::new()));
         let mut linker = wasmtime::Linker::new(&engine);
         crate::host::add_host_builtins(&mut linker).unwrap();
         let inst = linker.instantiate(&mut store, &module).unwrap();
@@ -597,7 +681,7 @@ mod tests {
         let memory = rt_inst.get_memory(&mut store, "memory").unwrap();
         let table = rt_inst.get_table(&mut store, "__indirect_function_table").unwrap();
         let alloc = rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc").unwrap();
-        let libs = [Library { name: "obj.o".into(), bytes: std::fs::read(&o).unwrap() }];
+        let libs = [Library::model("obj.o", std::fs::read(&o).unwrap())];
         let err = match load(&mut store, &engine, memory, table, &alloc, &libs, &HashMap::new()) {
             Err(e) => e,
             Ok(_) => panic!("an object file was accepted as a library"),
@@ -621,7 +705,7 @@ pub fn load_ext_libraries(
     let table = rt_inst
         .get_table(&mut *store, "__indirect_function_table")
         .ok_or_else(|| "CodegenWasmJit: runtime has no __indirect_function_table export".to_string())?;
-    if model.ext_libs.is_empty() {
+    if model.ext_libs.is_empty() && !model.ext_builtin {
         return load(store, engine, memory, table, &rt.alloc, &[], &HashMap::new());
     }
     let libc = openmodelica_wasi_libc::LIBC_PIC;
@@ -630,10 +714,21 @@ pub fn load_ext_libraries(
                     load an external \"C\" library"
             .to_string());
     }
-    let mut libs = Vec::with_capacity(model.ext_libs.len() + 1);
-    libs.push(Library { name: "libc.so".to_string(), bytes: libc.to_vec() });
+    let mut libs = Vec::with_capacity(model.ext_libs.len() + 3);
+    libs.push(Library::builtin("libc.so", libc));
     for l in &model.ext_libs {
-        libs.push(Library { name: l.name.clone(), bytes: l.bytes.clone() });
+        libs.push(Library::ext(l));
+    }
+    // After the model's own libraries, so those still define a symbol they share.
+    // Binding an `external "C"` here makes the call wasm->wasm; the dlopen
+    // fallback costs a host trampoline and libffi marshalling per call.
+    if model.ext_builtin {
+        libs.push(Library::builtin("modelicaexternalc", openmodelica_wasi_libc::EXTERNAL_C_DYLINK));
+        // The dummy `usertab` ModelicaExternalC imports; last, so a `usertab` from
+        // the model's own libraries wins.
+        if !openmodelica_wasi_libc::USERTAB_DYLINK.is_empty() {
+            libs.push(Library::builtin("usertab", openmodelica_wasi_libc::USERTAB_DYLINK));
+        }
     }
     let host = modelica_utilities_imports(store, rt);
     load(store, engine, memory, table, &rt.alloc, &libs, &host)
@@ -648,14 +743,20 @@ fn shared_cstr(caller: &mut wasmtime::Caller<'_, WasiCtx>, ptr: i32) -> String {
     String::from_utf8_lossy(&rest[..len]).into_owned()
 }
 
+/// A message without its trailing newline; the log adds its own, as C does.
+fn trim_eol(msg: &str) -> &str {
+    msg.strip_suffix('\n').unwrap_or(msg)
+}
+
 /// The ModelicaUtilities a library may call: host imports, because the messages
-/// belong in omc's error buffer. A formatted variant gets `(format, va_list)` and
-/// is not interpolated, as on the web target.
+/// belong in the run's log (or, outside a run, in omc's error buffer). A formatted
+/// variant gets `(format, va_list)` and is not interpolated, as on the web target.
 pub fn modelica_utilities_imports(
     store: &mut wasmtime::Store<WasiCtx>,
     rt: &ExtRt,
 ) -> HashMap<String, wasmtime::Func> {
     use wasmtime::{Caller, Func};
+    use openmodelica_sim_meta::omclog;
     let mut m: HashMap<String, Func> = HashMap::new();
 
     let nls = rt.nls.clone();
@@ -671,33 +772,54 @@ pub fn modelica_utilities_imports(
             raise_model_error(&nls, &mut caller, fmt)
         },
     );
-    let warning = |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
+    // C sends both to `OMC_LOG_STDOUT`. The `-d=gen` function JIT has no run and no
+    // such log, and neither does the compiler process in C.
+    let in_run = rt.nls.is_some();
+    let warning = move |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
         let msg = shared_cstr(&mut caller, ptr);
-        openmodelica_error::ErrorExt::runtime_warning(&msg);
+        if in_run {
+            omclog::warning(omclog::STDOUT, false, trim_eol(&msg));
+        } else {
+            openmodelica_error::ErrorExt::runtime_warning(&msg);
+        }
     };
-    let warning_fmt = |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| {
+    let warning_fmt = move |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| {
         let msg = shared_cstr(&mut caller, fmt);
-        openmodelica_error::ErrorExt::runtime_warning(&msg);
+        if in_run {
+            omclog::warning(omclog::STDOUT, false, trim_eol(&msg));
+        } else {
+            openmodelica_error::ErrorExt::runtime_warning(&msg);
+        }
     };
 
-    let message = |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
-        let msg = shared_cstr(&mut caller, ptr);
-        openmodelica_wasi::wasi::stdout_write(msg.as_bytes());
+    let message = move |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
+        if in_run {
+            let msg = shared_cstr(&mut caller, ptr);
+            omclog::info(omclog::STDOUT, false, trim_eol(&msg));
+        }
     };
-    let message_fmt = |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| {
-        let msg = shared_cstr(&mut caller, fmt);
-        openmodelica_wasi::wasi::stdout_write(msg.as_bytes());
+    let message_fmt = move |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| {
+        if in_run {
+            let msg = shared_cstr(&mut caller, fmt);
+            omclog::info(omclog::STDOUT, false, trim_eol(&msg));
+        }
     };
 
     m.insert("ModelicaError".into(), err_fn(&mut *store, nls.clone()));
     m.insert("ModelicaFormatError".into(), err_fmt_fn(&mut *store, nls.clone()));
-    m.insert("ModelicaVFormatError".into(), err_fmt_fn(&mut *store, nls));
+    m.insert("ModelicaVFormatError".into(), err_fmt_fn(&mut *store, nls.clone()));
     m.insert("ModelicaWarning".into(), Func::wrap(&mut *store, warning));
     m.insert("ModelicaFormatWarning".into(), Func::wrap(&mut *store, warning_fmt));
     m.insert("ModelicaVFormatWarning".into(), Func::wrap(&mut *store, warning_fmt));
     m.insert("ModelicaMessage".into(), Func::wrap(&mut *store, message));
     m.insert("ModelicaFormatMessage".into(), Func::wrap(&mut *store, message_fmt));
     m.insert("ModelicaVFormatMessage".into(), Func::wrap(&mut *store, message_fmt));
+
+    // A side module carrying `external_c_callbacks.c` has the `Modelica*` entry
+    // points itself, so what arrives here is already through `vsnprintf`.
+    m.insert("rt_ext_error".into(), err_fn(&mut *store, nls));
+    m.insert("rt_ext_message".into(), Func::wrap(&mut *store, message));
+    m.insert("rt_ext_warning".into(), Func::wrap(&mut *store, warning));
 
     // The simulation's allocator, so a string the callee builds is readable from
     // the model's memory.

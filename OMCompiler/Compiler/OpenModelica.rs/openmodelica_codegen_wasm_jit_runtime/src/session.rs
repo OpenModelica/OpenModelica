@@ -46,7 +46,7 @@ fn init_done_hook() {
     unsafe { rt_host_init_done() };
 }
 
-fn now_ms_hook() -> f64 {
+pub(crate) fn now_ms_hook() -> f64 {
     unsafe { rt_host_now_ms() }
 }
 fn cancel_hook() -> bool {
@@ -95,7 +95,7 @@ impl SimEngine for InWasmEngine {
         dst.copy_from_slice(buf);
         Ok(())
     }
-    fn call1(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+    fn call1_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         let slot = slot_of(name).ok_or("in-wasm engine: unknown model function")?;
         if !self.present(slot) {
             return Err("in-wasm engine: required model function not exported");
@@ -105,17 +105,17 @@ impl SimEngine for InWasmEngine {
         f(arg);
         Ok(())
     }
-    fn call1_if_present(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+    fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         let slot = match slot_of(name) {
             Some(s) => s,
             None => return Ok(()),
         };
         if self.present(slot) {
-            self.call1(name, arg)?;
+            self.call1_raw(name, arg)?;
         }
         Ok(())
     }
-    fn call2(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
+    fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
         let slot = slot_of(name).ok_or("in-wasm engine: unknown model function")?;
         if !self.present(slot) {
             return Err("in-wasm engine: required model function not exported");
@@ -316,6 +316,18 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     });
 
     driver::set_clock(now_ms_hook);
+    // This session runs its own start/advance/finish instead of `drive`, so the
+    // run's clocks start (and, in `finish`, stop) here.
+    use openmodelica_sim_meta::rtclock;
+    rtclock::reset(
+        openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::STATS)
+            || openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::STATS_V),
+    );
+    rtclock::tick(rtclock::TOTAL);
+    rtclock::tick(rtclock::PREINIT);
+    crate::sysstats::enable(openmodelica_sim_meta::omclog::active(
+        openmodelica_sim_meta::omclog::STATS_V,
+    ));
     driver::set_cancel_hook(cancel_hook);
     driver::set_init_done_hook(init_done_hook);
     driver::set_no_throw_hook(|v| unsafe { rt_host_set_no_throw(v as i32) });
@@ -402,6 +414,9 @@ fn finish(s: &mut Session) {
         s.lin.extend_from_slice(f.content.as_bytes());
     }
     s.params = driver::finalize_run(&mut s.engine, &s.model, s.sim_data).unwrap_or_default();
+    use openmodelica_sim_meta::rtclock;
+    rtclock::accumulate(rtclock::TOTAL);
+    (s.stats.timers, s.stats.tcalls) = rtclock::snapshot();
     s.finished = true;
 }
 
@@ -461,6 +476,14 @@ pub extern "C" fn rt_sim_stat(which: u32) -> u64 {
         5 => s.stats.state_events,
         6 => s.stats.time_events,
         7 => crate::lin_solves(),
-        _ => 0,
+        // The `LOG_STATS` timers: seconds as `f64` bits, then the call counts.
+        n => {
+            use openmodelica_sim_meta::rtclock::{N, STAT_SLOT_BASE};
+            match (n - STAT_SLOT_BASE) as usize {
+                i if i < N => s.stats.timers[i].to_bits(),
+                i if i < 2 * N => s.stats.tcalls[i - N],
+                _ => 0,
+            }
+        }
     })
 }

@@ -129,13 +129,56 @@ const REAL_OFF: u32 = 8;
 pub(crate) use openmodelica_sim_meta::SolveStats;
 
 
+/// C's `SOLVER_METHOD_NAME` names the integrator, not the driver running it:
+/// `dassl-events` is `dassl`.
+fn solver_method_name(label: &str) -> &str {
+    label.split('-').next().unwrap_or(label)
+}
+
 /// Render the `LOG_STATS` block the C runtime emits at simulation end, so it shows
 /// in the simulation log (and thus the OMEdit output widget). Host-only: the
 /// in-wasm driver only fills the counters; formatting is a host concern.
+///
+/// Same lines, order and quantities as `solver_main.c`'s `### STATISTICS ###`,
+/// off the [`rtclock`] snapshot the driver leaves in `SolveStats`.
 fn log_stats_block(s: &SolveStats) -> String {
-    format!(
-        "LOG_STATS         | info    | ### STATISTICS ###\n\
-         LOG_STATS         | info    | events\n\
+    use openmodelica_sim_meta::driver::format_g;
+    use openmodelica_sim_meta::rtclock;
+    let t = |ix: usize| s.timers[ix];
+    let total = t(rtclock::TOTAL);
+    // C's `total100`; a zero total (clocks off) would make every share NaN.
+    let pct = |v: f64| if total > 0.0 { v * 100.0 / total } else { 0.0 };
+    let line = |v: f64, what: &str| {
+        format!("LOG_STATS         | info    | | {:>12}s [{:5.1}%] {what}\n", format_g(v, 6), pct(v))
+    };
+    // C's "simulation": what none of the other clocks claimed.
+    let sim = total
+        - t(rtclock::OVERHEAD)
+        - t(rtclock::EVENT)
+        - t(rtclock::OUTPUT)
+        - t(rtclock::STEP)
+        - t(rtclock::INIT)
+        - t(rtclock::PREINIT)
+        - t(rtclock::SOLVER);
+    let mut out = String::from("LOG_STATS         | info    | ### STATISTICS ###\n");
+    out.push_str("LOG_STATS         | info    | timer\n");
+    for (v, what) in [(t(rtclock::INIT_XML), "reading init.xml"), (t(rtclock::INFO_XML), "reading info.xml")] {
+        out.push_str(&format!("LOG_STATS         | info    | | {:>12}s          {what}\n", format_g(v, 6)));
+    }
+    out.push_str(&line(t(rtclock::PREINIT), "pre-initialization"));
+    out.push_str(&line(t(rtclock::INIT), "initialization"));
+    out.push_str(&line(t(rtclock::STEP), "steps"));
+    out.push_str(&line(t(rtclock::SOLVER), "solver (excl. callbacks)"));
+    out.push_str(&line(t(rtclock::OUTPUT), "creating output-file"));
+    out.push_str(&line(t(rtclock::EVENT), "event-handling"));
+    out.push_str(&line(t(rtclock::OVERHEAD), "overhead"));
+    out.push_str(&line(sim, "simulation"));
+    out.push_str(&format!(
+        "LOG_STATS         | info    | | {:>12}s [100.0%] total\n",
+        format_g(total, 6)
+    ));
+    out.push_str(&format!(
+        "LOG_STATS         | info    | events\n\
          LOG_STATS         | info    | |   {:5} state events\n\
          LOG_STATS         | info    | |   {:5} time events\n\
          LOG_STATS         | info    | solver: {}\n\
@@ -144,10 +187,93 @@ fn log_stats_block(s: &SolveStats) -> String {
          LOG_STATS         | info    | |   {:5} evaluations of jacobian\n\
          LOG_STATS         | info    | |   {:5} error test failures\n\
          LOG_STATS         | info    | |   {:5} convergence test failures\n\
-         LOG_STATS         | info    | |   {:5} linear system solves\n",
-        s.state_events, s.time_events, s.method, s.steps,
-        s.res_evals, s.jac_evals, s.err_test_fails, s.conv_test_fails, s.lin_solves,
-    )
+         LOG_STATS         | info    | | {}s time of jacobian evaluation\n",
+        s.state_events, s.time_events, solver_method_name(s.method), s.steps,
+        s.res_evals, s.jac_evals, s.err_test_fails, s.conv_test_fails,
+        format_g(t(rtclock::JACOBIAN), 6),
+    ));
+    if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::STATS_V) {
+        out.push_str(&log_stats_v_block(s));
+    }
+    out
+}
+
+/// `solver_main.c`'s `LOG_STATS_V` sections: how often each model entry point ran
+/// and what share of the run it took, then the systems.
+fn log_stats_v_block(s: &SolveStats) -> String {
+    use openmodelica_sim_meta::driver::format_g;
+    use openmodelica_sim_meta::rtclock;
+    let total = s.timers[rtclock::TOTAL];
+    let pct = |v: f64| if total > 0.0 { v * 100.0 / total } else { 0.0 };
+    let mut out = String::from("LOG_STATS_V       | info    | function calls\n");
+    let mut timed = |n: u64, what: &str, v: f64, out: &mut String| {
+        if n == 0 {
+            return;
+        }
+        out.push_str(&format!("LOG_STATS_V       | info    | | {n:5} {what}\n"));
+        out.push_str(&format!(
+            "LOG_STATS_V       | info    | | | {:>12}s [{:5.1}%]\n",
+            format_g(v, 6),
+            pct(v)
+        ));
+    };
+    for (ix, what) in [
+        (rtclock::DAE, "calls of functionDAE"),
+        (rtclock::FUNCTION_ODE, "calls of functionODE"),
+        (rtclock::RESIDUALS, "calls of functionODE_residual"),
+        (rtclock::ALGEBRAICS, "calls of functionAlgebraics"),
+        (rtclock::JACOBIAN, "evaluations of jacobian"),
+    ] {
+        timed(s.tcalls[ix], what, s.timers[ix], &mut out);
+    }
+    out.push_str(&format!(
+        "LOG_STATS_V       | info    | | {:5} calls of updateDiscreteSystem\n\
+         LOG_STATS_V       | info    | | {:5} calls of functionZeroCrossingsEquations\n",
+        s.tcalls[rtclock::DISCRETE], s.tcalls[rtclock::ZC_EQUATIONS],
+    ));
+    timed(s.tcalls[rtclock::ZC], "calls of functionZeroCrossings", s.timers[rtclock::ZC], &mut out);
+    out.push_str(&sys_stats_section(s, false));
+    out.push_str(&sys_stats_section(s, true));
+    out
+}
+
+/// `printLinearSystemSolvingStatistics` / `printNonLinearSystemSolvingStatistics`
+/// for every system of one kind, in equation-index order as C stores them.
+fn sys_stats_section(s: &SolveStats, nonlinear: bool) -> String {
+    use openmodelica_sim_meta::driver::format_g;
+    let head = if nonlinear { "non-linear systems" } else { "linear systems" };
+    let mut out = format!("LOG_STATS_V       | info    | {head}\n");
+    let mut systems: Vec<_> = s.systems.iter().filter(|x| x.nonlinear == nonlinear).collect();
+    systems.sort_by_key(|x| x.eq_index);
+    for x in systems {
+        let calls = x.calls.max(1) as f64;
+        if nonlinear {
+            out.push_str(&format!(
+                "LOG_STATS_V       | info    | | Non-linear system {} of size {} solver statistics:\n\
+                 LOG_STATS_V       | info    | | |  number of calls                : {}\n\
+                 LOG_STATS_V       | info    | | |  number of iterations           : {}\n\
+                 LOG_STATS_V       | info    | | |  number of function evaluations : {}\n\
+                 LOG_STATS_V       | info    | | |  number of jacobian evaluations : {}\n\
+                 LOG_STATS_V       | info    | | |  time of jacobian evaluations   : {:.6}\n\
+                 LOG_STATS_V       | info    | | |  average time per call          : {:.6}\n\
+                 LOG_STATS_V       | info    | | |  total time                     : {:.6}\n",
+                x.eq_index, x.size, x.calls, x.iters, x.res_evals, x.jac_evals,
+                x.jac, x.total / calls, x.total,
+            ));
+        } else {
+            let density = 100.0 * f64::from(x.nnz) / f64::from(x.size * x.size).max(1.0);
+            out.push_str(&format!(
+                "LOG_STATS_V       | info    | | Linear system {} with (size = {}, nonZeroElements = {}, density = {:.2} %) solver statistics:\n\
+                 LOG_STATS_V       | info    | | |  number of calls                : {}\n\
+                 LOG_STATS_V       | info    | | |  average time per call          : {}\n\
+                 LOG_STATS_V       | info    | | |  time of jacobian evaluations   : {}\n\
+                 LOG_STATS_V       | info    | | |  total time                     : {}\n",
+                x.eq_index, x.size, x.nnz, density, x.calls,
+                format_g(x.total / calls, 6), format_g(x.jac, 6), format_g(x.total, 6),
+            ));
+        }
+    }
+    out
 }
 
 
@@ -1549,12 +1675,23 @@ pub(crate) fn resolve_ext_libraries(
     }
     let mut out = ExtLibraries::default();
     let mut seen: HashSet<String> = HashSet::new();
+    // A `Library` yields `<name>.wasm` and the `-l<name>` a native host falls back
+    // to, both naming the same file. Placing one twice re-runs its `_initialize`.
+    let mut placed: HashSet<String> = HashSet::new();
     for lib in lst(&mp.libs) {
         let lib = lib.to_string();
         if !seen.insert(lib.clone()) {
             continue;
         }
         if !lib.ends_with(".wasm") {
+            // A wasm build installed beside the native one: its functions bind
+            // wasm->wasm, where the native one costs a host trampoline per call.
+            if let Some((path, bytes)) = find_wasm_library(&lib, &dirs) {
+                if placed.insert(path.clone()) {
+                    out.wasm.push(ExtLibrary { name: path, bytes, fixed: true });
+                }
+                continue;
+            }
             if let Some(path) = find_source_library(&lib, &dirs) {
                 out.sources.push(format!("#include \"{}\"", path.replace('\\', "/")));
             } else {
@@ -1575,7 +1712,9 @@ pub(crate) fn resolve_ext_libraries(
             ));
             continue;
         };
-        out.wasm.push(ExtLibrary { name: path, bytes });
+        if placed.insert(path.clone()) {
+            out.wasm.push(ExtLibrary { name: path, bytes, fixed: true });
+        }
     }
     Ok(out)
 }
@@ -1663,7 +1802,7 @@ fn compile_include_tu(
     }
     let bytes = std::fs::read(&out).map_err(|_| "CodegenWasmJit: cannot read the compiled include library")?;
     let _ = std::fs::remove_dir_all(&dir);
-    Ok(Some(ExtLibrary { name: format!("{prefix}_includes.wasm"), bytes }))
+    Ok(Some(ExtLibrary { name: format!("{prefix}_includes.wasm"), bytes, fixed: false }))
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -1836,6 +1975,37 @@ fn find_ext_library(name: &str, dirs: &[String]) -> Option<(String, Vec<u8>)> {
         }
     }
     None
+}
+
+/// [`find_ext_library`] for a linker spec (`-lFoo`, `Foo`, `dir/Foo.wasm`).
+fn find_wasm_library(spec: &str, dirs: &[String]) -> Option<(String, Vec<u8>)> {
+    let name = match spec.strip_prefix("-l") {
+        Some(n) => n,
+        // Any other linker flag (`-L`, `-Wl,…`, `-pthread`) names no library.
+        None if spec.starts_with('-') => return None,
+        None => spec,
+    };
+    find_ext_library(name, dirs)
+}
+
+/// Whether the built-in ModelicaExternalC side module defines an `external "C"`
+/// the model's own libraries leave open ([`SimModel::ext_builtin`]). It carries
+/// the whole MSL C set, which no installed `.wasm` names, so it is matched by
+/// symbol rather than by `Library` name.
+///
+/// It does not join `ext_libs`: those are the model's *own*, and the FMU link adds
+/// this one itself.
+fn builtin_wasm_needed(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> bool {
+    if EXTERNAL_C_DYLINK.is_empty() {
+        return false;
+    }
+    let mut open: HashSet<&str> = ext_imports.iter().map(|s| s.name.as_str()).collect();
+    for l in libs {
+        for n in wasm_exports(&l.bytes) {
+            open.remove(n);
+        }
+    }
+    !open.is_empty() && wasm_exports(EXTERNAL_C_DYLINK).any(|n| open.contains(n))
 }
 
 /// Renames the model's `rt`/`ext` import modules → `env`, the dylink convention
@@ -4082,8 +4252,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let mut ext_libs = ExtLibraries::default();
     let mut ext_includes = None;
     let mut ext_archives = None;
+    let mut ext_builtin = false;
     if !ext_imports.is_empty() {
         ext_libs = resolve_ext_libraries(&sim_code.makefileParams, &mut ext_lib_notes)?;
+        ext_builtin = builtin_wasm_needed(&ext_imports, &ext_libs.wasm);
         // What the `Library` annotations did not provide may come from an `Include`
         // carrying the C source, though most carry only the declarations.
         let mp = &sim_code.makefileParams;
@@ -5220,6 +5392,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         layout,
         result_vars,
         ext_libs: ext_libs.wasm,
+        ext_builtin,
         ext_native_libs: ext_libs.native,
         ext_archives,
         ext_includes,
@@ -6678,6 +6851,19 @@ pub(crate) fn lower_equation(
 /// The residual-probing path ([`compile_linear_system`]) is the fallback for the
 /// rare system without a usable `simJac`.
 fn lower_linear_system(
+    ctx: &mut FnCtx,
+    lsystem: &SimCode::LinearSystem,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+) -> Result<()> {
+    // C measures `solve_linear_system` from before the `A`/`b` assembly, which here
+    // is emitted code rather than a runtime call, so the bracket spans the system.
+    let n = lst(&lsystem.vars).count() as i32;
+    crate::CodegenWasmJitFunctions::emit_ls_bracket(ctx, lsystem.index, n, lin_system_nnz(lsystem) as i32, true)?;
+    lower_linear_system_body(ctx, lsystem, eq_index)?;
+    crate::CodegenWasmJitFunctions::emit_ls_bracket(ctx, lsystem.index, n, 0, false)
+}
+
+fn lower_linear_system_body(
     ctx: &mut FnCtx,
     lsystem: &SimCode::LinearSystem,
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,

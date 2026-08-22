@@ -740,7 +740,7 @@ mod tests {
             self.mem[a..a + buf.len()].copy_from_slice(buf);
             Ok(())
         }
-        fn call1(&mut self, name: &str, _arg: u32) -> Result<()> {
+        fn call1_raw(&mut self, name: &str, _arg: u32) -> Result<()> {
             match name {
                 "functionODE" => {
                     let v = self.f64_at(STATES + 8);
@@ -756,10 +756,10 @@ mod tests {
             }
             Ok(())
         }
-        fn call1_if_present(&mut self, _name: &str, _arg: u32) -> Result<()> {
+        fn call1_if_present_raw(&mut self, _name: &str, _arg: u32) -> Result<()> {
             Ok(())
         }
-        fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> Result<()> {
+        fn call2_raw(&mut self, _name: &str, _a: u32, _b: u32) -> Result<()> {
             Err("unused")
         }
         fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {

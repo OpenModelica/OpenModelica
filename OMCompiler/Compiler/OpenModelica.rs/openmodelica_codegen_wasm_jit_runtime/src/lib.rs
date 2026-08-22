@@ -47,6 +47,7 @@ pub use nls::{rt_nls_clean_history, rt_set_step_size};
 #[cfg(test)]
 mod nls_c_trace;
 mod solvers;
+mod sysstats;
 mod spatial;
 // SUNDIALS/KLU. The archives are wasip1-only (they need a libc) and only linked
 // when the build script found them, so `cfg(sundials)` gates the calls; the module
@@ -2415,6 +2416,43 @@ pub extern "C" fn rt_lin_solves() -> u64 {
     lin_solves()
 }
 
+/// Enter a linear system, C's `solve_linear_system`: the generated code assembles
+/// `A` and `b`, so the bracket starts there. [`rt_ls_end`] closes it.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_ls_begin(eq_index: i32, size: u32, nnz: u32) {
+    sysstats::begin(eq_index, false, size, nnz);
+}
+
+/// Leave the linear system [`rt_ls_begin`] entered. Iterations and evaluations are
+/// a nonlinear system's statistics; C leaves them at zero here too.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_ls_end() {
+    sysstats::end([0; 3]);
+}
+
+/// The host's wall clock. Same rule as `rt_reinit_note`: the `env` import only
+/// where a host binds it (`host_log`). The standalone command installs its own;
+/// the FMI3 adapter has neither, and leaves its timers at zero.
+#[cfg(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone")))]
+mod host_clock {
+    #[link(wasm_import_module = "env")]
+    unsafe extern "C" {
+        fn rt_host_now_ms() -> f64;
+    }
+    pub(crate) fn now_ms() -> f64 {
+        unsafe { rt_host_now_ms() }
+    }
+}
+
+/// Install the host clock and arm (or disarm) the per-system statistics for a run;
+/// the host-driven path has no session to do it.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_stats_start(on: u32) {
+    #[cfg(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone")))]
+    openmodelica_sim_meta::driver::set_clock(host_clock::now_ms);
+    sysstats::enable(on != 0);
+}
+
 /// Solve the dense `n`×`n` system `A x = b` in place: `A` is `a_ptr` as `n*n`
 /// f64 in **column-major** order, `b` is `b_ptr` as `n` f64. On success `b ← x`
 /// and 0 is returned; 1 only when the system is genuinely unsolvable. `A` is left
@@ -2427,6 +2465,7 @@ pub extern "C" fn rt_lin_solves() -> u64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64, method1: i32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    sysstats::mark_assembly_done();
     let n = n as usize;
     #[cfg(sundials)]
     match solvers::ls() {
@@ -2623,6 +2662,7 @@ pub fn reset_ls_failures() {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: u32, nnz: u32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    sysstats::mark_assembly_done();
     let n = n as usize;
     let nnz = nnz as usize;
     let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
@@ -2669,6 +2709,7 @@ pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_p
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    sysstats::mark_assembly_done();
     let n = n as usize;
     #[cfg(sundials)]
     match solvers::lss() {
@@ -2748,6 +2789,7 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
     nnz: u32,
 ) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    sysstats::mark_assembly_done();
     let backend = match solvers::lss() {
         solvers::Lss::Klu => solvers::Sparse::Klu,
         solvers::Lss::Umfpack => solvers::Sparse::Umfpack,

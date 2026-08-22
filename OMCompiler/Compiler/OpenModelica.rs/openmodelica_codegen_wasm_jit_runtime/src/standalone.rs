@@ -98,7 +98,7 @@ impl SimEngine for StandaloneEngine {
         dst.copy_from_slice(buf);
         Ok(())
     }
-    fn call1(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+    fn call1_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         unsafe {
             match name {
                 "functionParameters" => functionParameters(arg),
@@ -133,15 +133,15 @@ impl SimEngine for StandaloneEngine {
         }
         Ok(())
     }
-    fn call1_if_present(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+    fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         // Every entry point is always exported (empty stub if unused), so a plain
         // call is a no-op when the feature is absent.
-        self.call1(name, arg)
+        self.call1_raw(name, arg)
     }
     // Importing `evaluateDAEResiduals` (or the two synchronous dispatchers) would
     // leave every model without that feature with an unresolved `model.*` import,
     // so the standalone export supports neither.
-    fn call2(&mut self, name: &str, _a: u32, _b: u32) -> driver::Result<()> {
+    fn call2_raw(&mut self, name: &str, _a: u32, _b: u32) -> driver::Result<()> {
         Err(match name {
             driver::MODEL_FN_DAE => {
                 "wasm-jit standalone: --daeMode models are not supported by the standalone export"

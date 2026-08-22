@@ -34,8 +34,10 @@ pub mod omclog;
 pub(crate) mod extinput;
 pub mod optimization;
 pub(crate) mod qss;
+pub mod rtclock;
 pub mod simflags;
 pub mod sync;
+pub mod sysstat;
 #[cfg(sundials)]
 pub mod sundials;
 
@@ -868,6 +870,13 @@ pub struct SolveStats {
     pub state_events: u64,
     pub time_events: u64,
     pub lin_solves: u64,
+    /// [`rtclock`] at the end of the run: seconds per clock, and how often each was
+    /// opened. Travels with the stats so an in-wasm run's timers reach the host.
+    pub timers: [f64; rtclock::N],
+    pub tcalls: [u64; rtclock::N],
+    /// Per linear/nonlinear system, for `LOG_STATS_V`. Read out of the wasm runtime
+    /// (which solves them) by the host after the run; empty unless it was on.
+    pub systems: alloc::vec::Vec<sysstat::SysStat>,
 }
 
 /// One FMI value reference and the `SimData` slot it names. The value references

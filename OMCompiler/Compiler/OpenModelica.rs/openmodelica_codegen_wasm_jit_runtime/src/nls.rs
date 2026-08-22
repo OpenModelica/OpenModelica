@@ -1962,6 +1962,16 @@ fn note_jac_eval() {
     JAC_EVALS.fetch_add(1, Ordering::Relaxed);
 }
 
+/// C's `numberOfIterations`, `numberOfFEval` and `numberOfJEval` as run totals; a
+/// solve's own share is the difference across it, less what a nested solve took.
+fn sys_counts() -> [u64; 3] {
+    [
+        crate::rt_stat(STAT_NLS_ITER),
+        crate::rt_stat(STAT_NLS_RES),
+        JAC_EVALS.load(Ordering::Relaxed),
+    ]
+}
+
 fn counters_of(eq_index: u32) -> &'static mut [u64; 3] {
     let v = unsafe { &mut *COUNTERS.0.get() };
     let pos = match v.iter().position(|(i, _)| *i == eq_index) {
@@ -2260,6 +2270,7 @@ fn newton_c(
                     eval: &mut dyn FnMut(&[f64], &mut [f64]),
                     jaceval: &mut dyn FnMut(&[f64], &mut [f64])| {
         arm_attempt();
+        let t0 = crate::sysstats::tick();
         JAC_DEPTH.fetch_add(1, Ordering::Relaxed);
         if !has_jac {
             note_jac_eval();
@@ -2290,6 +2301,7 @@ fn newton_c(
             }
         }
         JAC_DEPTH.fetch_sub(1, Ordering::Relaxed);
+        crate::sysstats::add_jacobian_time(crate::sysstats::tick() - t0);
         !attempt_aborted()
     };
 
@@ -3163,6 +3175,9 @@ pub extern "C" fn rt_solve_nls(
         && (hom_method == HOM_GLOBAL_ADAPTIVE || hom_method == HOM_LOCAL_ADAPTIVE)
         && n > 1;
     let n = n as usize - usize::from(lambda_unknown);
+    // C's `solve_nonlinear_system` opens the system's clock before anything else.
+    crate::sysstats::begin(eq_index as i32, true, n as u32, nnz);
+    let sys0 = sys_counts();
     // Relation mode (C's hysteresis): Newton always holds relations (mode 0) so it
     // is smooth; mode 2 (init) is fresh throughout; mode 1 (event) re-solves with
     // fresh relations until the discrete state stabilizes (mixed-system iteration).
@@ -3470,10 +3485,12 @@ pub extern "C" fn rt_solve_nls(
                 // `discrete_call` (which is only about holding relations).
                 let t =
                     HomotopyTrace { eq_index, time, discrete: saved_rel_fresh != 0, initial: saved_rel_fresh == 2 };
+                // C wraps `newtonAlgorithm`'s reporting in `OMC_ACTIVE_STREAM(LOG_NLS_V)`.
+                let trace = crate::omclog::active(crate::omclog::NLS_V).then_some(&t);
                 if homotopy_solver {
                     (converged, settled) = newton_c(
                         n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
-                        has_jac, Some(&t),
+                        has_jac, trace,
                     );
                     if !converged {
                         stat_inc(STAT_NLS_NEWTON_FAIL);
@@ -3732,6 +3749,8 @@ pub extern "C" fn rt_solve_nls(
     NLS_ASSERT_SEEN.store(saved_assert_seen, Ordering::Relaxed);
     NLS_THROW_SEEN.store(saved_throw_seen, Ordering::Relaxed);
 
+    let now = sys_counts();
+    crate::sysstats::end([now[0] - sys0[0], now[1] - sys0[1], now[2] - sys0[2]]);
     rt_free(x_ptr);
     rt_free(r_ptr);
     if has_jac {

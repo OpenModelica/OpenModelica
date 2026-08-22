@@ -458,6 +458,10 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_linsolve_totalpivot", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
     // C's `check_linear_solution` + throw for an unsolved system: (index, time).
     ("rt_ls_failed", &[WTy::I32, WTy::F64], &[]),
+    // `LOG_STATS_V`'s per-system bracket, C's `solve_linear_system`: the generated
+    // code assembles `A`/`b` itself, so it has to open the clock. (index, size, nnz).
+    ("rt_ls_begin", &[WTy::I32, WTy::I32, WTy::I32], &[]),
+    ("rt_ls_end", &[], &[]),
     // Method-1 step test: (res_ptr, b_ptr, n, index, time, dense) -> 1 when the
     // step must be redone, `b` then holding `-res`. See `rt_ls_check_step`.
     ("rt_ls_check_step", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
@@ -6941,7 +6945,7 @@ pub(crate) use sim_systems::{
     backup_known_outputs, restore_known_outputs,
     compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
     compile_linear_system_symbolic, emit_linz_jac_body, emit_nls_jac_body, emit_nls_jac_csc_body,
-    emit_nls_load_body, emit_nls_residual_body, emit_solve_nls_call, lin_jac_coloring,
+    emit_ls_bracket, emit_nls_load_body, emit_nls_residual_body, emit_solve_nls_call, lin_jac_coloring,
     lin_use_sparse, nls_use_sparse,
 };
 
