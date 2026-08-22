@@ -182,6 +182,42 @@ sub setup_command_toolchain
   }
 }
 
+# A setup_command/teardown_command is a POSIX shell line, and it spells the
+# toolchain as $OMC_CC/$OMC_CFLAGS/... so a test does not hardcode gcc. Perl's
+# system() on Win32 hands such a line to cmd.exe, which does not expand $VAR: the
+# command then ran with the names taken literally and the compiler was never
+# invoked, leaving "'$OMC_CC' is not recognized as an internal or external
+# command" in the log. Run it under sh instead, the shell these commands are
+# written for and the one the Windows testsuite already runs under.
+#
+# The log is redirected from Perl rather than by appending ">>$log 2>&1" to the
+# command, because $log is a native Windows path and sh would eat its backslashes
+# as escapes (C:\OMDev\tools -> C:OMDevtools). Other platforms keep the plain
+# shell redirection they always had.
+sub run_test_command
+{
+  my $cmd = shift;
+  my $logfile = shift;
+
+  if ($^O ne 'MSWin32') {
+    $cmd = "$cmd >>$logfile 2>&1" if defined $logfile;
+    return system($cmd);
+  }
+
+  return system('sh', '-c', $cmd) unless defined $logfile;
+
+  open(my $saved_out, '>&', \*STDOUT) or die "cannot save STDOUT: $!";
+  open(my $saved_err, '>&', \*STDERR) or die "cannot save STDERR: $!";
+  my $rc = 1;
+  if (open(STDOUT, '>>', $logfile)) {
+    open(STDERR, '>&', \*STDOUT);
+    $rc = system('sh', '-c', $cmd);
+  }
+  open(STDOUT, '>&', $saved_out);
+  open(STDERR, '>&', $saved_err);
+  return $rc;
+}
+
 sub isMinGW_UCRT {
   my $temp = $ENV{'MSYSTEM'};
   if (defined $temp) {
@@ -228,7 +264,7 @@ sub setbaselineone
     $log = "$tmpdir/log-$f";
     system "rm -f $log";
     if ($setup_command) {
-      if ( system "$setup_command" ) {
+      if ( run_test_command($setup_command) ) {
         my $end_t = time-$start_t;
         print "== Failed to set baseline for $f (system $setup_command failed)";
         print " [time: $end_t]\n";
@@ -254,7 +290,7 @@ sub setbaselineone
     }
     unlink "$testTempFile$f";
     if ($teardown_command) {
-      system $teardown_command;
+      run_test_command($teardown_command);
     }
 
     open(RES,">$baseline");
@@ -323,7 +359,7 @@ sub runone
     $log = "$tmpdir/log-$f";
     system "rm -f $log";
     if ($setup_command) {
-      if ( system "$setup_command >>$log 2>&1" ) {
+      if ( run_test_command($setup_command, $log) ) {
         print " setup_command failed";
         return 1;
       }
@@ -348,7 +384,7 @@ sub runone
     }
     unlink "$testTempFile$f";
     if ($teardown_command) {
-      system "$teardown_command >>$log 2>&1";
+      run_test_command($teardown_command, $log);
     }
     my $end_t = time-$start_t;
 
