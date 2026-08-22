@@ -546,11 +546,40 @@ impl Walk {
         }
     }
 
+    /// A subscripted reference (`a[i]`) is fallible: it lowers to
+    /// `arrayGet`/`listGet`, which fail out of range. Must agree with codegen's
+    /// [`crate::codegen`] `emit_index`, or `GenCtx::q` panics on the mismatch.
+    fn scan_cref(&mut self, cr: &Absyn::ComponentRef) {
+        use Absyn::ComponentRef::*;
+        let mut cur = cr;
+        loop {
+            let (subs, next) = match cur {
+                CREF_FULLYQUALIFIED { componentRef } => (None, Some(componentRef)),
+                CREF_QUAL { subscripts, componentRef, .. } => (Some(subscripts), Some(componentRef)),
+                CREF_IDENT { subscripts, .. } => (Some(subscripts), None),
+                WILD | ALLWILD => (None, None),
+            };
+            if let Some(subs) = subs {
+                for s in &**subs {
+                    if let Absyn::Subscript::SUBSCRIPT { subscript } = &**s {
+                        self.has_fail = true;
+                        self.scan_exp(subscript);
+                    }
+                }
+            }
+            match next {
+                Some(n) => cur = n,
+                None => return,
+            }
+        }
+    }
+
     fn scan_exp(&mut self, e: &Absyn::Exp) {
         use Absyn::Exp::*;
         match e {
             INTEGER { .. } | REAL { .. } | STRING { .. } | BOOL { .. } | END | BREAK => {}
-            CREF { .. } | CODE { .. } => {}
+            CREF { componentRef } => self.scan_cref(componentRef),
+            CODE { .. } => {}
             BINARY { exp1, op, exp2 } => {
                 // `/` (and its element-wise form `./`) is Real division, whose
                 // zero-divisor case is a recoverable MetaModelica failure — the
