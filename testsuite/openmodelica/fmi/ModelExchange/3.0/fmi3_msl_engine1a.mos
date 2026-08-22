@@ -1,6 +1,12 @@
 // name: fmi3_msl_engine1a
 // keywords: FMI 3.0 export MSL MultiBody FMPy
 // status: correct
+// suite: disabled-windows
+// The FMU is simulated back with FMPy. The Windows build node has no python3
+// that can import fmpy: OMDev's python cannot install it (rpds-py has no wheel
+// for MSYS2 python and wants Rust to build), and the native Python that does
+// have it ships no python3.exe. Re-enable once a python3 with fmpy is available
+// there.
 // teardown_command: rm -rf Engine1a.fmu Engine1a.fmutmp/ Engine1a_ref* Engine1a_fmpy.csv Engine1a_diff.*.csv Engine1a_info.json *.log Engine1a_FMU.libs Engine1a_FMU.makefile Engine1a_external_functions.json resources
 //
 // MSL 4.1.0 round-trip check (continuous MultiBody model): export

@@ -87,6 +87,9 @@ $skipped=0;
 # or need a setup nobody has. They are only run when asked for, with -disabled or
 # RTEST_RUN_DISABLED=1 (which is what partest's disabled suite and the makefiles'
 # failingtest targets set).
+#
+# 'disabled-windows' is the same thing but only where the setup is missing, i.e.
+# a test that is fine on Unix and has nothing to run on with on Windows.
 $run_disabled=($ENV{'RTEST_RUN_DISABLED'} ? 1 : 0);
 $setbaseline=0;
 $verbose="yes";
@@ -552,7 +555,7 @@ sub dofile
     }
 
     # A disabled test is neither run nor counted, it is only reported as skipped.
-    if (!$run_disabled and grep { $_ eq "disabled" } split(/[,\s]+/, $info{"suite"})) {
+    if (!$run_disabled and grep { $_ eq "disabled" or ($_ eq "disabled-windows" and $^O eq 'MSWin32') } split(/[,\s]+/, $info{"suite"})) {
       printf(" %s %-82s... disabled\n", '.', $info{'name'});
       $skipped = $skipped + 1;
       return 0;
