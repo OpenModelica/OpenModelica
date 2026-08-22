@@ -101,6 +101,20 @@ pub fn arrayUpdate<A: Clone>(arr: Array<A>, index: i32, new_value: A) -> Result<
     Ok(arr)
 }
 
+/// 1-based element read for a subscripted reference (`a[i]`), with `arrayGet`
+/// semantics: out of range is a catchable failure, not a panic. Non-positive
+/// indices wrap to a huge `usize` and `get` rejects them.
+#[inline(always)]
+pub fn index_checked<A>(v: &[A], index: i32) -> Result<&A> {
+    v.get((index - 1) as usize).ok_or("array index out of bounds")
+}
+
+/// [`index_checked`] for a subscripted assignment (`a[i] := v`).
+#[inline(always)]
+pub fn index_mut_checked<A>(v: &mut [A], index: i32) -> Result<&mut A> {
+    v.get_mut((index - 1) as usize).ok_or("array index out of bounds")
+}
+
 /// Creates a (deep, by-element) copy of the array. O(n).
 /// The returned array does NOT share storage with the input.
 pub fn arrayCopy<A: Clone>(arr: Array<A>) -> Array<A> {

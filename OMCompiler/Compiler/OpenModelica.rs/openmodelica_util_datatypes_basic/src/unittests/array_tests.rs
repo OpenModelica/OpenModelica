@@ -337,28 +337,29 @@ fn test_get_range() -> Result<()> {
     Ok(())
 }
 
-// heapSort returns Array<i32>, not Result
 #[test]
-fn test_heap_sort() {
+fn test_heap_sort() -> Result<()> {
     let a = arr(vec![3, 1, 4, 1, 5, 9, 2, 6]);
-    let result = Array::heapSort(a);
+    let result = Array::heapSort(a)?;
     assert_eq!(*result.borrow(), vec![1, 1, 2, 3, 4, 5, 6, 9]);
+    Ok(())
 }
 
 #[test]
-fn test_heap_sort_empty() {
+fn test_heap_sort_empty() -> Result<()> {
     let a: metamodelica::Array<i32> = arrayFromVec(vec![]);
-    let result = Array::heapSort(a);
+    let result = Array::heapSort(a)?;
     assert!(result.borrow().is_empty());
+    Ok(())
 }
 
-// insertList returns Array<T>, not Result
 #[test]
-fn test_insert_list() {
+fn test_insert_list() -> Result<()> {
     let a = arr(vec![0, 0, 0, 0, 0]);
     let lst = list![1i32, 2, 3];
-    let result = Array::insertList(a, Arc::clone(&lst), 2);
+    let result = Array::insertList(a, Arc::clone(&lst), 2)?;
     assert_eq!(*result.borrow(), vec![0, 1, 2, 3, 0]);
+    Ok(())
 }
 
 #[test]
@@ -504,17 +505,18 @@ fn test_min_element() {
     assert_eq!(result, 1);
 }
 
-// position returns i32, not Result
 #[test]
-fn test_position_found() {
+fn test_position_found() -> Result<()> {
     let a = arr(vec![1, 2, 3, 4, 5]);
-    assert_eq!(Array::position(a, 3, 5), 3);
+    assert_eq!(Array::position(a, 3, 5)?, 3);
+    Ok(())
 }
 
 #[test]
-fn test_position_not_found() {
+fn test_position_not_found() -> Result<()> {
     let a = arr(vec![1, 2, 3]);
-    assert_eq!(Array::position(a, 99, 3), 0);
+    assert_eq!(Array::position(a, 99, 3)?, 0);
+    Ok(())
 }
 
 #[test]

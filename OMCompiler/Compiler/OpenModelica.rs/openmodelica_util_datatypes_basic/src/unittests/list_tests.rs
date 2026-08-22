@@ -269,7 +269,7 @@ fn test_count() {
 #[test]
 fn test_counting_sort() -> Result<()> {
     let lst = list![3i32, 1, 4, 1, 5, 9, 2, 6];
-    let result = L::countingSort(Arc::clone(&lst), 9);
+    let result = L::countingSort(Arc::clone(&lst), 9)?;
     assert_eq!(result, list![1i32, 1, 2, 3, 4, 5, 6, 9]);
     Ok(())
 }
@@ -721,11 +721,12 @@ fn test_from_option_none() -> Result<()> {
 
 // ── GetAtIndexLst ──
 #[test]
-fn test_get_at_index_lst() {
+fn test_get_at_index_lst() -> Result<()> {
     let lst = list![10i32, 20, 30];
     let positions = list![1i32, 2, 3];
-    let result = L::getAtIndexLst(Arc::clone(&lst), Arc::clone(&positions), false);
+    let result = L::getAtIndexLst(Arc::clone(&lst), Arc::clone(&positions), false)?;
     assert_eq!(result, list![10i32, 20, 30]);
+    Ok(())
 }
 
 // ── GetIndexFirst ──
@@ -784,7 +785,7 @@ fn test_has_several_elements_false() -> Result<()> {
 #[test]
 fn test_heap_sort_int_list() -> Result<()> {
     let lst = list![3i32, 1, 4, 1, 5, 9, 2, 6];
-    let result = L::heapSortIntList(Arc::clone(&lst));
+    let result = L::heapSortIntList(Arc::clone(&lst))?;
     assert_eq!(result, list![1i32, 1, 2, 3, 4, 5, 6, 9]);
     Ok(())
 }

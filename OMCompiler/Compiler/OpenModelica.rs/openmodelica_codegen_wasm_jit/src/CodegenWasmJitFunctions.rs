@@ -1172,7 +1172,16 @@ pub(crate) fn sig_ty_quiet(ty: &DAE::Type) -> Result<SigTy> {
             closures::reference_sigty(ty)?
         }
         DAE::Type::T_SUBTYPE_BASIC { .. } => return Err("CodegenWasmJit: subtype-basic types not yet supported"),
-        _ => return Err("CodegenWasmJit: type not supported"),
+        // Name the variant: `Err` is `&'static str`, and a quiet probe never
+        // reaches `record_error`'s unparsed form.
+        DAE::Type::T_UNKNOWN { .. } => return Err("CodegenWasmJit: type not supported: T_UNKNOWN"),
+        DAE::Type::T_CLOCK { .. } => return Err("CodegenWasmJit: type not supported: Clock"),
+        DAE::Type::T_NORETCALL { .. } => return Err("CodegenWasmJit: type not supported: T_NORETCALL"),
+        DAE::Type::T_FUNCTION { .. } => return Err("CodegenWasmJit: type not supported: T_FUNCTION"),
+        DAE::Type::T_TUPLE { .. } => return Err("CodegenWasmJit: type not supported: T_TUPLE"),
+        DAE::Type::T_CODE { .. } => return Err("CodegenWasmJit: type not supported: T_CODE"),
+        DAE::Type::T_ANYTYPE { .. } => return Err("CodegenWasmJit: type not supported: T_ANYTYPE"),
+        _ => return Err("CodegenWasmJit: type not supported: MetaModelica type"),
     })
 }
 
@@ -7245,8 +7254,10 @@ fn exp_wty_hint(ctx: &FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         // The CREF carries its (possibly field) type directly — handles a plain
         // local and a `r.field` reference alike.
         E::CREF { ty, .. } => sig_ty(ty)?.wty(),
-        E::BINARY { operator, .. } => operator_wty(operator)?,
-        E::UNARY { operator, .. } => operator_wty(operator)?,
+        // Through `exp_sigty` for its operand fallback: taking the operator's
+        // own type made the hint fail on `T_UNKNOWN` operators that
+        // `compile_binary` compiles fine.
+        E::BINARY { .. } | E::UNARY { .. } => exp_sigty(exp)?.wty(),
         E::IFEXP { expThen, .. } => exp_wty_hint(ctx, expThen)?,
         E::CALL { attr, .. } => match identity_builtin_arg(exp) {
             Some(inner) if sig_ty_quiet(&call_value_ty(&attr.ty)).is_err() => exp_wty_hint(ctx, &inner)?,
@@ -7264,10 +7275,6 @@ fn exp_wty_hint(ctx: &FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         E::UNBOX { ty, .. } => sig_ty(ty)?.wty(),
         _ => WTy::F64,
     })
-}
-
-fn operator_wty(op: &DAE::Operator) -> Result<WTy> {
-    Ok(operator_sigty(op)?.wty())
 }
 
 /// The integer value of a `Real` literal exponent, or `None` if it is not an
@@ -7291,9 +7298,9 @@ fn exp_is_half(e: &DAE::Exp) -> bool {
     matches!(e, DAE::Exp::RCONST { real } if real.into_inner() == 0.5)
 }
 
-/// The `SigTy` an arithmetic operator works on / produces. Unlike
-/// [`operator_wty`] this distinguishes Integer/Boolean and, crucially, String
-/// (so `+` on Strings can be lowered to `rt_concat` rather than `i32.add`).
+/// The `SigTy` an arithmetic operator works on / produces. Unlike a bare
+/// `WTy` this distinguishes Integer/Boolean and, crucially, String (so `+` on
+/// Strings can be lowered to `rt_concat` rather than `i32.add`).
 fn operator_sigty(op: &DAE::Operator) -> Result<SigTy> {
     use DAE::Operator as O;
     let ty = match op {
@@ -7453,7 +7460,12 @@ fn compile_unary(ctx: &mut FnCtx, op: &DAE::Operator, exp: &DAE::Exp) -> Result<
     let DAE::Operator::UMINUS { ty } = op else {
         return Err("CodegenWasmJit: unsupported unary operator");
     };
-    let wty = sig_ty_quiet(ty)?.wty();
+    // C's `daeExpUnary` lets the operand's type decide; fall back the same way
+    // `compile_binary` does when the frontend left the operator `T_UNKNOWN`.
+    let wty = match sig_ty_quiet(ty) {
+        Ok(s) => s.wty(),
+        Err(_) => exp_sigty(exp)?.wty(),
+    };
     let w = compile_exp(ctx, exp)?;
     coerce(ctx, w, wty);
     match wty {
