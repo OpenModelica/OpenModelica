@@ -7714,9 +7714,9 @@ fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
 
 fn compile_relation(
     ctx: &mut FnCtx,
-    e1: &DAE::Exp,
+    e1: &Arc<DAE::Exp>,
     op: &DAE::Operator,
-    e2: &DAE::Exp,
+    e2: &Arc<DAE::Exp>,
     index: i32,
     asub: &Option<(Arc<DAE::Exp>, i32, i32)>,
 ) -> Result<WTy> {
@@ -7768,9 +7768,9 @@ fn compile_relation(
 /// (`0 <= index < n_relations`).
 fn compile_relation_indexed(
     ctx: &mut FnCtx,
-    e1: &DAE::Exp,
+    e1: &Arc<DAE::Exp>,
     op: &DAE::Operator,
-    e2: &DAE::Exp,
+    e2: &Arc<DAE::Exp>,
     index: i32,
     asub: &Option<(Arc<DAE::Exp>, i32, i32)>,
 ) -> Result<WTy> {
@@ -7855,16 +7855,19 @@ fn compile_relation_indexed(
 /// `tolZC` is read from `SimData` (`zctol_off`).
 fn compile_relation_hyst(
     ctx: &mut FnCtx,
-    e1: &DAE::Exp,
+    e1: &Arc<DAE::Exp>,
     op: &DAE::Operator,
-    e2: &DAE::Exp,
+    e2: &Arc<DAE::Exp>,
     slot: u32,
     dir_off: u32,
 ) -> Result<()> {
     use we::Instruction as I;
     let data = ctx.sim()?.data_local;
     let zctol_off = ctx.sim()?.zctol_off;
-    let nom = nominal_const(e1).max(nominal_const(e2));
+
+    let nom = ctx.alloc_temp(WTy::F64);
+    emit_relation_nominal(ctx, e1, e2)?;
+    ctx.emit(I::LocalSet(nom));
 
     let a = ctx.alloc_temp(WTy::F64);
     let wa = compile_exp(ctx, e1)?;
@@ -7882,7 +7885,7 @@ fn compile_relation_hyst(
     ctx.emit(I::LocalGet(b));
     ctx.emit(I::F64Abs);
     ctx.emit(I::F64Max);
-    ctx.emit(I::F64Const(nom.into()));
+    ctx.emit(I::LocalGet(nom));
     ctx.emit(I::F64Add);
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::F64Load(mem_arg(zctol_off, 3)));
@@ -7930,13 +7933,37 @@ fn emit_hyst_cmp(ctx: &mut FnCtx, op: &DAE::Operator, diff: u32, eps: u32, dir: 
     Ok(())
 }
 
-/// A relation operand's nominal magnitude for the hysteresis band: the literal's
-/// magnitude for a constant, else the default nominal `1.0`.
-fn nominal_const(e: &DAE::Exp) -> f64 {
+/// Leave `max(|nominal(e1)|, |nominal(e2)|)` — the scale term of the hysteresis
+/// band — on the stack as an f64, from the same `getExpNominal` derivation C's
+/// `daeExpNominalTmp` uses.
+fn emit_relation_nominal(ctx: &mut FnCtx, e1: &Arc<DAE::Exp>, e2: &Arc<DAE::Exp>) -> Result<()> {
+    let n1 = nominal_exp(e1);
+    let n2 = nominal_exp(e2);
+    match (nominal_const(&n1), nominal_const(&n2)) {
+        (Some(c1), Some(c2)) => ctx.emit(we::Instruction::F64Const(c1.max(c2).into())),
+        _ => {
+            let w1 = compile_exp(ctx, &n1)?;
+            coerce(ctx, w1, WTy::F64);
+            ctx.emit(we::Instruction::F64Abs);
+            let w2 = compile_exp(ctx, &n2)?;
+            coerce(ctx, w2, WTy::F64);
+            ctx.emit(we::Instruction::F64Abs);
+            ctx.emit(we::Instruction::F64Max);
+        }
+    }
+    Ok(())
+}
+
+fn nominal_exp(e: &Arc<DAE::Exp>) -> Arc<DAE::Exp> {
+    openmodelica_backend::SimCodeUtil::getExpNominal(Arc::clone(e))
+        .unwrap_or_else(|_| Arc::new(DAE::Exp::RCONST { real: 1.0.into() }))
+}
+
+fn nominal_const(e: &DAE::Exp) -> Option<f64> {
     match e {
-        DAE::Exp::RCONST { real } => real.into_inner().abs(),
-        DAE::Exp::ICONST { integer } => (*integer as f64).abs(),
-        _ => 1.0,
+        DAE::Exp::RCONST { real } => Some(real.into_inner().abs()),
+        DAE::Exp::ICONST { integer } => Some((*integer as f64).abs()),
+        _ => None,
     }
 }
 
