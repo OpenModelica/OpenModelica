@@ -234,7 +234,10 @@ sub enter_sandbox {
     elsif (/loadFile.*\(\"(.*)\"\)/)   { make_link($1); }
     elsif (/runScript.*\(\"(.*)\"\)/)  { make_link($1); }
     elsif (/importFMU.*\(\"(.*)\"\)/)  { make_link($1); }
-    elsif (/system\(\"\s*python[0-9]*\s+(\S+\.py)/) { make_external_link($1); }
+    # The interpreter is not always spelled out: a test may take it from the
+    # environment, e.g. system("\"" + getEnvironmentVar("FMPY_TOOL") + "\" ../../x.py").
+    # Link whatever .py the command names, however it is invoked.
+    elsif (/system\(.*?[\s\"]([\w.\/-]+\.py)\b/) { make_external_link($1); }
     elsif (/system\(\"(gcc|g\+\+).*\s(\w*\.\w*)\s(\w*\.\w*)/) {
       my $header = lib_to_header($2);
       make_link($header);
