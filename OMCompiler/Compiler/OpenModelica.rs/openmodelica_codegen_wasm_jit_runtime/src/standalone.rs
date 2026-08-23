@@ -42,7 +42,7 @@ unsafe extern "C" {
     fn functionODE(sim_data: u32);
     fn functionAlgebraics(sim_data: u32);
     fn functionStateSetJacobians(sim_data: u32);
-    fn functionZeroCrossings(sim_data: u32);
+    fn functionZeroCrossings(sim_data: u32, gout: u32);
     fn functionZeroCrossingsEquations(sim_data: u32);
     fn functionUpdateRelations(sim_data: u32);
     fn functionCheckAsserts(sim_data: u32);
@@ -108,7 +108,6 @@ impl SimEngine for StandaloneEngine {
                 "functionODE" => functionODE(arg),
                 "functionAlgebraics" => functionAlgebraics(arg),
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
-                "functionZeroCrossings" => functionZeroCrossings(arg),
                 "functionZeroCrossingsEquations" => functionZeroCrossingsEquations(arg),
                 "functionUpdateRelations" => functionUpdateRelations(arg),
                 "functionCheckAsserts" => functionCheckAsserts(arg),
@@ -138,10 +137,14 @@ impl SimEngine for StandaloneEngine {
         // call is a no-op when the feature is absent.
         self.call1_raw(name, arg)
     }
-    // Importing `evaluateDAEResiduals` (or the two synchronous dispatchers) would
-    // leave every model without that feature with an unresolved `model.*` import,
-    // so the standalone export supports neither.
-    fn call2_raw(&mut self, name: &str, _a: u32, _b: u32) -> driver::Result<()> {
+    fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
+        if name == driver::MODEL_FN_ZC {
+            unsafe { functionZeroCrossings(a, b) };
+            return Ok(());
+        }
+        // Importing `evaluateDAEResiduals` (or the two synchronous dispatchers) would
+        // leave every model without that feature with an unresolved `model.*` import,
+        // so the standalone export supports neither.
         Err(match name {
             driver::MODEL_FN_DAE => {
                 "wasm-jit standalone: --daeMode models are not supported by the standalone export"

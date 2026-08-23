@@ -199,6 +199,10 @@ pub struct Layout {
     /// per crossing). `delayZeroCrossing` reads it; the driver snapshots it from
     /// `zc_off` at init and after each accepted point/event.
     pub zc_pre_off: u32,
+    /// Where an integrator's root callback writes its g-values (one f64 per
+    /// crossing): C's `gout`, kept apart from `zc_off` so a probe never overwrites
+    /// the accepted-point snapshot.
+    pub zc_probe_off: u32,
     /// Number of indexed relations (hysteresis count).
     pub n_rel: u32,
     /// Base of the held relation values (one i32 per indexed relation).
@@ -359,7 +363,8 @@ impl Layout {
         let sample_active_off = sample_off + n_samples * 16;
         let zc_off = (sample_active_off + n_samples * 4 + 7) & !7;
         let zc_pre_off = zc_off + n_zc * 8;
-        let relations_off = zc_pre_off + n_zc * 8;
+        let zc_probe_off = zc_pre_off + n_zc * 8;
+        let relations_off = zc_probe_off + n_zc * 8;
         let rel_fresh_off = relations_off + n_rel * 4;
         let stored_rel_off = rel_fresh_off + 4;
         let relations_pre_off = stored_rel_off + n_rel * 4;
@@ -391,7 +396,7 @@ impl Layout {
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, homotopy_method, has_init_lambda0, has_history_ops, has_old_real, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off, old_real_off,
-            terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
+            terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off, zc_probe_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
             mathevents_off, zctol_off, start_off, real_nom_off, state_nom_off, state_max_off, n_sens, sens_off,
             n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off,
@@ -1227,7 +1232,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 13;
+const VERSION: u32 = 14;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1256,7 +1261,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.n_states, l.n_real_alg, l.lambda_off, l.rparam_off, l.int_off, l.iparam_off, l.bool_off,
         l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off, l.old_real_off,
         l.terminate_off, l.terminal_off, l.initial_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
-        l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
+        l.n_zc, l.zc_off, l.zc_pre_off, l.zc_probe_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
         l.real_nom_off, l.state_nom_off, l.state_max_off, l.n_sens, l.sens_off,
         l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off,
@@ -1626,6 +1631,7 @@ impl<'a> Reader<'a> {
             n_zc: self.u32()?,
             zc_off: self.u32()?,
             zc_pre_off: self.u32()?,
+            zc_probe_off: self.u32()?,
             n_rel: self.u32()?,
             relations_off: self.u32()?,
             rel_fresh_off: self.u32()?,

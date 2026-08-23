@@ -4846,7 +4846,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         bodies.push(if zero_crossings.is_empty() {
             empty_eqfn()
         } else {
-            build_zero_crossings_fn(&zero_crossings, &layout, &var_map, &by_name, &mut literals)?
+            build_zero_crossings_fn(&zero_crossings, &var_map, &by_name, &mut literals)?
         });
         idx
     };
@@ -5075,7 +5075,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         }
     }
     functions.function(eqfn_type); // initSample: (i32) -> ()
-    functions.function(eqfn_type); // functionZeroCrossings: (i32) -> ()
+    functions.function(sync_fn_type); // functionZeroCrossings: (i32 SimData, i32 gout) -> ()
     functions.function(eqfn_type); // functionStateSetJacobians: (i32) -> ()
     functions.function(eqfn_type); // functionJacA_constantEqns: (i32) -> ()
     functions.function(eqfn_type); // functionJacA_column: (i32) -> ()
@@ -6642,19 +6642,17 @@ fn build_update_bound_attrs_fn(
     Ok(func)
 }
 
-/// Build the `functionZeroCrossings(SimData*)` function: evaluate each crossing's
-/// `lhs - rhs` into the zero-crossing region (see [`FnCtx::emit_zero_crossings`]).
-/// Called by the driver's DASKR root callback.
+/// Build `functionZeroCrossings(SimData*, gout)`: evaluate each crossing into
+/// `gout` (see [`FnCtx::emit_zero_crossings`]).
 fn build_zero_crossings_fn(
     crossings: &[ZcInfo],
-    layout: &SimLayout,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
     let sim = SimCtx { zc_context: true, ..sim_ctx(var_map) };
-    let mut ctx = FnCtx::new_sim(sim, by_name, literals);
-    ctx.emit_zero_crossings(crossings, layout.zc_off)?;
+    let mut ctx = FnCtx::new_sim_params(sim, by_name, literals, 2);
+    ctx.emit_zero_crossings(crossings, 1)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -8599,13 +8597,13 @@ fn eq_index_of(eq: &SimCode::SimEqSystem) -> i32 {
     }
 }
 
-/// An empty `(i32) -> ()` function body. Used for the optional equation functions
-/// (`initSample`, `functionZeroCrossings`, `functionStateSetJacobians`,
-/// `functionInitialEquations_lambda0`) when a model lacks that feature, so the
-/// model still *exports* every driver entry point. The standalone `wasm-merge`
-/// (and the interactive shared table) then always resolve them; the shared driver
-/// only calls one when the corresponding metadata count is nonzero, so the stub is
-/// never entered.
+/// An empty function body, valid for any void signature. Used for the optional
+/// equation functions (`initSample`, `functionZeroCrossings`,
+/// `functionStateSetJacobians`, `functionInitialEquations_lambda0`) when a model
+/// lacks that feature, so the model still *exports* every driver entry point. The
+/// standalone `wasm-merge` (and the interactive shared table) then always resolve
+/// them; the shared driver only calls one when the corresponding metadata count is
+/// nonzero, so the stub is never entered.
 fn empty_eqfn() -> we::Function {
     let mut f = we::Function::new([]);
     f.instruction(&we::Instruction::End);
@@ -9026,14 +9024,18 @@ mod link_tests {
         // `evaluateDAEResiduals` is left out with `simulate`: the standalone runtime
         // imports neither with this shape (the DAE residual takes two arguments and
         // only a `--daeMode` model has one).
+        let two_arg = [
+            openmodelica_sim_meta::driver::MODEL_FN_UPDATE_SYNC,
+            openmodelica_sim_meta::driver::MODEL_FN_EQS_SYNC,
+            openmodelica_sim_meta::driver::MODEL_FN_ZC,
+        ];
         let one_arg: Vec<&str> = openmodelica_sim_meta::driver::MODEL_FNS
             .iter()
             .copied()
             .filter(|n| {
                 *n != "simulate"
                     && *n != openmodelica_sim_meta::driver::MODEL_FN_DAE
-                    && *n != openmodelica_sim_meta::driver::MODEL_FN_UPDATE_SYNC
-                    && *n != openmodelica_sim_meta::driver::MODEL_FN_EQS_SYNC
+                    && !two_arg.contains(n)
             })
             .collect();
 
@@ -9044,8 +9046,9 @@ mod link_tests {
         funcs.function(2); // om_meta_ptr
         funcs.function(2); // om_meta_len
         funcs.function(3); // simulate
-        funcs.function(4); // functionUpdateSynchronous
-        funcs.function(4); // functionEquationsSynchronous
+        for _ in &two_arg {
+            funcs.function(4);
+        }
         funcs.function(5); // om_throw_model_error
         m.section(&funcs);
 
@@ -9058,17 +9061,14 @@ mod link_tests {
         exports.export("om_meta_ptr", we::ExportKind::Func, meta_ptr_idx);
         exports.export("om_meta_len", we::ExportKind::Func, meta_ptr_idx + 1);
         exports.export("simulate", we::ExportKind::Func, meta_ptr_idx + 2);
+        for (i, name) in two_arg.iter().enumerate() {
+            exports.export(name, we::ExportKind::Func, meta_ptr_idx + 3 + i as u32);
+        }
         exports.export(
-            openmodelica_sim_meta::driver::MODEL_FN_UPDATE_SYNC,
+            "om_throw_model_error",
             we::ExportKind::Func,
-            meta_ptr_idx + 3,
+            meta_ptr_idx + 3 + two_arg.len() as u32,
         );
-        exports.export(
-            openmodelica_sim_meta::driver::MODEL_FN_EQS_SYNC,
-            we::ExportKind::Func,
-            meta_ptr_idx + 4,
-        );
-        exports.export("om_throw_model_error", we::ExportKind::Func, meta_ptr_idx + 5);
         m.section(&exports);
 
         let mut code = we::CodeSection::new();
@@ -9093,14 +9093,12 @@ mod link_tests {
         sim.instruction(&I::I32Const(0));
         sim.instruction(&I::End);
         code.function(&sim);
-        // functionUpdateSynchronous(_, _): noop.
-        let mut sync_update = we::Function::new([]);
-        sync_update.instruction(&I::End);
-        code.function(&sync_update);
-        // functionEquationsSynchronous(_, _): noop.
-        let mut sync_eqs = we::Function::new([]);
-        sync_eqs.instruction(&I::End);
-        code.function(&sync_eqs);
+        // The two-argument entry points: noop.
+        for _ in &two_arg {
+            let mut f = we::Function::new([]);
+            f.instruction(&I::End);
+            code.function(&f);
+        }
         // om_throw_model_error(): the emitter's no-external-"C" body.
         let mut throw = we::Function::new([]);
         throw.instruction(&I::Unreachable);

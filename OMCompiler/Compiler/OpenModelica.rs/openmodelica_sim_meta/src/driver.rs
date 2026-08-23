@@ -344,11 +344,13 @@ fn model_fn_clock(name: &str) -> Option<usize> {
 }
 
 /// The model entry points that are not `fn(SimData*)`: `--daeMode`'s residual
-/// takes the evaluation stage as a second argument (C's `currentEvalStage`), and
-/// the two synchronous dispatchers take a clock index.
+/// takes the evaluation stage as a second argument (C's `currentEvalStage`), the
+/// two synchronous dispatchers take a clock index, and the crossing function takes
+/// where to put its g-values (C's `gout`).
 pub const MODEL_FN_DAE: &str = "evaluateDAEResiduals";
 pub const MODEL_FN_UPDATE_SYNC: &str = "functionUpdateSynchronous";
 pub const MODEL_FN_EQS_SYNC: &str = "functionEquationsSynchronous";
+pub const MODEL_FN_ZC: &str = "functionZeroCrossings";
 
 /// C's `EVAL_*` (`dae_mode.c`): which stage of the step an equation belongs to.
 /// `evaluateDAEResiduals` runs exactly those whose `evalStages` intersect it.
@@ -1908,7 +1910,7 @@ fn init_model(
     if layout.n_zc > 0 {
         write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
         save_zc_pre(e, sim_data, layout)?;
-        e.call1("functionZeroCrossings", sim_data)?;
+        e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)?;
     }
     write_i32(e, sim_data + layout.initial_off, 0)?;
     // C's `initializeModel` ends with `checkForAsserts` — before the
@@ -2928,7 +2930,7 @@ fn save_zero_crossings(
         return Ok(Vec::new());
     }
     save_zc_pre(e, sim_data, layout)?;
-    e.call1("functionZeroCrossings", sim_data)?;
+    e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)?;
     zc_sign_changed(e, sim_data, layout)
 }
 
@@ -2942,7 +2944,7 @@ fn save_zero_crossings_after_event(
     if layout.n_zc == 0 {
         return Ok(());
     }
-    e.call1("functionZeroCrossings", sim_data)?;
+    e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)?;
     save_zc_pre(e, sim_data, layout)
 }
 
@@ -3160,7 +3162,7 @@ fn update_relations_pre(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout
 /// re-evaluates relations regardless of the flag.
 fn read_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, out: &mut [f64]) -> Result<()> {
     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-    e.call1("functionZeroCrossings", sim_data)?;
+    e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)?;
     for (i, v) in out.iter_mut().enumerate() {
         *v = read_f64(e, sim_data + layout.zc_off + (i as u32) * 8)?;
     }
@@ -4174,7 +4176,10 @@ struct ResCtx {
     nls_fail_off: u32,
     /// Number of residual (right-hand-side) evaluations, for the bench line.
     nfe: u64,
-    /// `SimData` offset of the zero-crossing value region (for the root callback).
+    /// `SimData` offset of the root callback's own g-value buffer (C's `gout`).
+    zc_probe_off: u32,
+    /// `SimData` offset of the accepted-point g-values, which the hand-written
+    /// solvers probe through, as `gbode_events.c` does.
     zc_off: u32,
     /// Number of zero-crossings (root functions).
     n_zc: usize,
@@ -4313,10 +4318,10 @@ unsafe fn dassl_rt(
         e.write_bytes(ctx.states_base, y_bytes)?;
         set_context(e, ctx.ctx_addr, CONTEXT_EVENTS);
         e.call1("functionZeroCrossingsEquations", ctx.sim_data)?;
-        e.call1("functionZeroCrossings", ctx.sim_data)?;
+        e.call2(MODEL_FN_ZC, ctx.sim_data, ctx.sim_data + ctx.zc_probe_off)?;
         set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
         let rval_bytes = unsafe { core::slice::from_raw_parts_mut(rval as *mut u8, ctx.n_zc * 8) };
-        e.read_bytes(ctx.sim_data + ctx.zc_off, rval_bytes)?;
+        e.read_bytes(ctx.sim_data + ctx.zc_probe_off, rval_bytes)?;
         Ok(())
     })();
     if let Err(err) = run {
@@ -5142,6 +5147,7 @@ impl Driver for DasslDriver {
             n_states,
             nls_fail_off: layout.nls_fail_off,
             nfe: self.nfe,
+            zc_probe_off: 0,
             zc_off: 0,
             n_zc: 0,
             err: None,
@@ -6199,6 +6205,7 @@ impl SolverCore {
             n_states: self.n_states,
             nls_fail_off: layout.nls_fail_off,
             nfe: self.nfe,
+            zc_probe_off: layout.zc_probe_off,
             zc_off: layout.zc_off,
             n_zc: layout.n_zc as usize,
             err: None,
@@ -7486,10 +7493,10 @@ unsafe fn eval_roots(ctx: &mut ResCtx, t: f64, y: *const f64, yp: *const f64, go
     } else {
         e.call1("functionZeroCrossingsEquations", ctx.sim_data)?;
     }
-    e.call1("functionZeroCrossings", ctx.sim_data)?;
+    e.call2(MODEL_FN_ZC, ctx.sim_data, ctx.sim_data + ctx.zc_probe_off)?;
     set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
     let out = unsafe { core::slice::from_raw_parts_mut(gout as *mut u8, ctx.n_zc * 8) };
-    e.read_bytes(ctx.sim_data + ctx.zc_off, out)
+    e.read_bytes(ctx.sim_data + ctx.zc_probe_off, out)
 }
 
 /// `CVRootFn`.
@@ -7668,6 +7675,7 @@ impl Driver for CvodeDriver {
             n_states,
             nls_fail_off: layout.nls_fail_off,
             nfe: 0,
+            zc_probe_off: 0,
             zc_off: 0,
             n_zc: 0,
             err: None,
@@ -8611,6 +8619,7 @@ impl Driver for IdaDriver {
             n_states,
             nls_fail_off: layout.nls_fail_off,
             nfe: 0,
+            zc_probe_off: 0,
             zc_off: 0,
             n_zc: 0,
             err: None,

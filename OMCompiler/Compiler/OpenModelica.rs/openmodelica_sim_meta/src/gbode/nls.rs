@@ -126,7 +126,7 @@ impl Ode<'_> {
         crate::driver::set_context_events(self.e, self.ctx_addr);
         let run = (|| -> Result<()> {
             self.eval(t, y, &mut f)?;
-            self.e.call1("functionZeroCrossings", self.sim_data)?;
+            self.e.call2(crate::driver::MODEL_FN_ZC, self.sim_data, self.sim_data + self.zc_off)?;
             let mut bytes = vec![0u8; zc.len() * 8];
             self.e.read_bytes(self.sim_data + self.zc_off, &mut bytes)?;
             for (i, v) in zc.iter_mut().enumerate() {

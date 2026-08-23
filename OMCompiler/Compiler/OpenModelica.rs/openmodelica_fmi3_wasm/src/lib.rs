@@ -47,7 +47,7 @@ unsafe extern "C" {
     fn functionAlgebraics(sim_data: u32);
     fn functionOutputs(sim_data: u32);
     fn functionStateSetJacobians(sim_data: u32);
-    fn functionZeroCrossings(sim_data: u32);
+    fn functionZeroCrossings(sim_data: u32, gout: u32);
     fn functionZeroCrossingsEquations(sim_data: u32);
     fn functionUpdateRelations(sim_data: u32);
     fn functionCheckAsserts(sim_data: u32);
@@ -277,7 +277,6 @@ impl SimEngine for Engine {
                 "functionAlgebraics" => functionAlgebraics(arg),
                 "functionOutputs" => functionOutputs(arg),
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
-                "functionZeroCrossings" => functionZeroCrossings(arg),
                 "functionZeroCrossingsEquations" => functionZeroCrossingsEquations(arg),
                 "functionUpdateRelations" => functionUpdateRelations(arg),
                 "functionCheckAsserts" => functionCheckAsserts(arg),
@@ -301,6 +300,7 @@ impl SimEngine for Engine {
     fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
         unsafe {
             match name {
+                driver::MODEL_FN_ZC => functionZeroCrossings(a, b),
                 driver::MODEL_FN_UPDATE_SYNC => functionUpdateSynchronous(a, b),
                 driver::MODEL_FN_EQS_SYNC => functionEquationsSynchronous(a, b),
                 // Importing `evaluateDAEResiduals` would leave every non-DAE model
@@ -1194,7 +1194,7 @@ impl GuestModelExchangeInstance for Instance {
         if st.layout.n_zc == 0 {
             return Ok(Vec::new());
         }
-        if e.call1("functionZeroCrossings", st.sim_data).is_err() {
+        if e.call2(driver::MODEL_FN_ZC, st.sim_data, st.sim_data + st.layout.zc_off).is_err() {
             return Err(Status::Error);
         }
         Ok((0..st.layout.n_zc).map(|i| st.read_f64(st.layout.zc_off + i * 8)).collect())
