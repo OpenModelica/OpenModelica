@@ -172,6 +172,7 @@ openmodelica_codegen_wasm_jit_runtime/src/solvers.rs
 openmodelica_codegen_wasm_jit_runtime/src/spatial.rs
 openmodelica_codegen_wasm_jit_runtime/src/standalone.rs
 openmodelica_codegen_wasm_jit_runtime/src/sundials.rs
+openmodelica_codegen_wasm_jit_runtime/src/sysstats.rs
 openmodelica_codegen_wasm_jit_runtime/src/uri.rs
 openmodelica_fmi3_wasm/Cargo.lock
 openmodelica_fmi3_wasm/Cargo.toml
@@ -288,9 +289,11 @@ openmodelica_sim_meta/src/optimization/mod.rs
 openmodelica_sim_meta/src/optimization/model.rs
 openmodelica_sim_meta/src/optimization/setup.rs
 openmodelica_sim_meta/src/qss.rs
+openmodelica_sim_meta/src/rtclock.rs
 openmodelica_sim_meta/src/simflags.rs
 openmodelica_sim_meta/src/sundials.rs
 openmodelica_sim_meta/src/sync.rs
+openmodelica_sim_meta/src/sysstat.rs
 openmodelica_simcode_types/Cargo.toml
 openmodelica_simcode_util/Cargo.toml
 openmodelica_susan/Cargo.toml

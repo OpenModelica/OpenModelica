@@ -171,9 +171,24 @@ pub fn create_dir_all(path: &str) -> io::Result<()> {
 
 pub fn rename(from: &str, to: &str) -> io::Result<()> {
     if IN_MEMORY {
-        let bytes = crate::read(from).ok_or_else(|| not_found(from))?;
-        crate::write(to, bytes);
-        crate::remove(from);
+        if let Some(bytes) = crate::read(from) {
+            crate::write(to, bytes);
+            crate::remove(from);
+            return Ok(());
+        }
+        // A directory: every key beneath it moves.
+        let prefix = format!("{}/", from.trim_end_matches('/'));
+        let moved: Vec<(String, Vec<u8>)> = crate::list()
+            .into_iter()
+            .filter_map(|k| k.strip_prefix(&prefix).map(|r| (r.to_string(), crate::read(&k).unwrap_or_default())))
+            .collect();
+        if moved.is_empty() {
+            return Err(not_found(from));
+        }
+        for (rest, bytes) in moved {
+            crate::remove(&format!("{prefix}{rest}"));
+            crate::write(&format!("{}/{rest}", to.trim_end_matches('/')), bytes);
+        }
         Ok(())
     } else {
         std::fs::rename(from, to)

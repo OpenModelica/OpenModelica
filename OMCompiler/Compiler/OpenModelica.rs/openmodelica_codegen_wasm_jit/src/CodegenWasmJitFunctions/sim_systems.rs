@@ -1714,6 +1714,21 @@ fn emit_b_exps(
     Ok(())
 }
 
+/// `rt_ls_begin` / `rt_ls_end` around a lowered linear system, C's
+/// `solve_linear_system` bracket for the `LOG_STATS_V` per-system statistics.
+pub(crate) fn emit_ls_bracket(ctx: &mut FnCtx, index: i32, n: i32, nnz: i32, begin: bool) -> Result<()> {
+    use we::Instruction as I;
+    if !begin {
+        ctx.emit(I::Call(rt_index("rt_ls_end")?));
+        return Ok(());
+    }
+    ctx.emit(I::I32Const(index));
+    ctx.emit(I::I32Const(n));
+    ctx.emit(I::I32Const(nnz));
+    ctx.emit(I::Call(rt_index("rt_ls_begin")?));
+    Ok(())
+}
+
 /// Emit the call to the runtime nonlinear solver `rt_solve_nls` for one
 /// `SES_NONLINEAR` system. The Newton driver (forward-difference Jacobian +
 /// `rt_linsolve` + damped line search) lives in the runtime (`nls.rs`); this

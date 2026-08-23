@@ -585,14 +585,19 @@ pub fn debug_string(stream: Stream, msg: &str) {
     info(stream, false, msg);
 }
 
-/// C's `debugInt`: `"%s %d"`.
+/// C's `debugInt`: `"%s %d"`. Built only when the stream is on, as C's variadic
+/// `infoStreamPrint` is — the nonlinear solver calls these per iteration.
 pub fn debug_int(stream: Stream, msg: &str, v: i32) {
-    info(stream, false, &format!("{msg} {v}"));
+    if active(stream) {
+        info(stream, false, &format!("{msg} {v}"));
+    }
 }
 
-/// C's `debugDouble`: `"%s %18.10e"`.
+/// C's `debugDouble`: `"%s %18.10e"`; guarded as [`debug_int`] is.
 pub fn debug_double(stream: Stream, msg: &str, v: f64) {
-    info(stream, false, &format!("{msg} {}", e(v, 18, 10)));
+    if active(stream) {
+        info(stream, false, &format!("{msg} {}", e(v, 18, 10)));
+    }
 }
 
 /// C's `debugVectorDouble`: a `name [n-dim]` block holding one line of

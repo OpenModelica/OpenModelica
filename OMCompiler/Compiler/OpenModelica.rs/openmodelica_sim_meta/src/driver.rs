@@ -17,6 +17,7 @@ use alloc::vec::Vec;
 use core::cell::RefCell;
 
 use crate::omclog;
+use crate::rtclock;
 use crate::simflags::JacobianMethod;
 use crate::sync::SYNC_EPS;
 use crate::{
@@ -326,6 +327,22 @@ pub const MODEL_FNS: &[&str] = &[
     "functionJacA_column",
 ];
 
+/// The clock a model entry point runs under, where `CodegenC.tpl` ticks one inside
+/// the generated function of the same name. `None` leaves the call unmeasured, as
+/// every entry point is once the clocks are off.
+fn model_fn_clock(name: &str) -> Option<usize> {
+    if !rtclock::enabled() {
+        return None;
+    }
+    match name {
+        "functionODE" => Some(rtclock::FUNCTION_ODE),
+        "functionAlgebraics" => Some(rtclock::ALGEBRAICS),
+        "functionZeroCrossings" => Some(rtclock::ZC),
+        "functionZeroCrossingsEquations" => Some(rtclock::ZC_EQUATIONS),
+        _ => None,
+    }
+}
+
 /// The model entry points that are not `fn(SimData*)`: `--daeMode`'s residual
 /// takes the evaluation stage as a second argument (C's `currentEvalStage`), and
 /// the two synchronous dispatchers take a clock index.
@@ -353,13 +370,38 @@ pub trait SimEngine {
     fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()>;
     /// Call the exported `fn(u32) -> ()` `name` (an equation function). Backends
     /// cache the resolved function; a missing export is an error.
-    fn call1(&mut self, name: &str, arg: u32) -> Result<()>;
-    /// Like [`call1`] but a no-op if `name` is not exported (optional teardown
-    /// hooks such as `callExternalObjectDestructors`).
-    fn call1_if_present(&mut self, name: &str, arg: u32) -> Result<()>;
+    fn call1_raw(&mut self, name: &str, arg: u32) -> Result<()>;
+    /// Like [`SimEngine::call1_raw`] but a no-op if `name` is not exported (optional
+    /// teardown hooks such as `callExternalObjectDestructors`).
+    fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> Result<()>;
     /// Call the exported `fn(u32, u32) -> ()` `name` — only [`MODEL_FN_DAE`],
     /// whose second argument is the evaluation stage.
-    fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()>;
+    fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> Result<()>;
+    /// [`SimEngine::call1_raw`] under the clock C's generated entry point ticks
+    /// around its own body ([`model_fn_clock`]); every driver goes through here.
+    fn call1(&mut self, name: &str, arg: u32) -> Result<()> {
+        let Some(ix) = model_fn_clock(name) else { return self.call1_raw(name, arg) };
+        rtclock::tick(ix);
+        let out = self.call1_raw(name, arg);
+        rtclock::accumulate(ix);
+        out
+    }
+    fn call1_if_present(&mut self, name: &str, arg: u32) -> Result<()> {
+        let Some(ix) = model_fn_clock(name) else { return self.call1_if_present_raw(name, arg) };
+        rtclock::tick(ix);
+        let out = self.call1_if_present_raw(name, arg);
+        rtclock::accumulate(ix);
+        out
+    }
+    fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
+        if name != MODEL_FN_DAE {
+            return self.call2_raw(name, a, b);
+        }
+        rtclock::tick(rtclock::DAE);
+        let out = self.call2_raw(name, a, b);
+        rtclock::accumulate(rtclock::DAE);
+        out
+    }
     /// Call the exported `simulate(sim_data, start, stop, n_steps) -> buf`, the
     /// in-wasm Euler driver; returns the result-buffer pointer.
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32>;
@@ -387,6 +429,11 @@ pub trait SimEngine {
     /// The runtime's `rt_stat` counters, in slot order. Default: none.
     fn rt_stats(&mut self) -> [u64; RT_STATS] {
         [0; RT_STATS]
+    }
+    /// The per-system solver statistics the runtime recorded for `LOG_STATS_V`
+    /// (`rt_sys_stats_ptr`). Default: none — a backend with no runtime to ask.
+    fn sys_stats(&mut self) -> Vec<crate::sysstat::SysStat> {
+        Vec::new()
     }
     /// Address of the runtime's evaluation context, or 0 when the backend has no
     /// such export.
@@ -1826,6 +1873,7 @@ fn init_model(
             omclog::warning(omclog::STDOUT, false, w);
         }
     }
+    rtclock::enter_init();
     // `functionInitDelay` reads `startTime` from `TIME_OFF`; init the buffers
     // before any equation function (`rt_delay_eval` traps on unallocated ones).
     write_time(e, sim_data, start_time)?;
@@ -1866,6 +1914,7 @@ fn init_model(
     // C's `initializeModel` ends with `checkForAsserts` — before the
     // initialization-success line.
     check_asserts(e, sim_data, layout, omclog::WARNING)?;
+    rtclock::accumulate(rtclock::INIT);
     Ok(())
 }
 
@@ -2395,6 +2444,14 @@ impl HomotopyPath {
 /// assigns. Used by the host-driven drivers; the in-wasm `simulate` emits the
 /// same layout.
 pub(crate) fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    // C's `emit` — the result writer's share of the run (`SIM_TIMER_OUTPUT`).
+    rtclock::tick(rtclock::OUTPUT);
+    let out = capture_row_values(e, rows, sim_data, layout);
+    rtclock::accumulate(rtclock::OUTPUT);
+    out
+}
+
+fn capture_row_values(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
     for i in 0..layout.n_reals_row() {
         rows.push(read_f64(e, sim_data + i * 8)?);
     }
@@ -3203,6 +3260,7 @@ fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
 /// consistent set and chatter on the integrator instead. Assumes the event time is
 /// already written.
 pub(crate) fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    rtclock::tick(rtclock::DISCRETE); // C's `callStatistics.updateDiscreteSystem`
     // Each pass freezes `relationsPre = relations` so the NLS in `functionODE` holds
     // this pass's relations, then re-evaluates the continuous system; the discrete
     // state settles across passes. Comparing the snapshot before and after the
@@ -3782,6 +3840,12 @@ pub fn drive(
     let start = model.start_time;
     let stop = model.stop_time;
 
+    // C's `measure_time_flag`: the clocks run only when the block that renders
+    // them will be printed.
+    rtclock::reset(omclog::active(omclog::STATS) || omclog::active(omclog::STATS_V));
+    rtclock::tick(rtclock::TOTAL);
+    rtclock::tick(rtclock::PREINIT);
+
     let mut stats = SolveStats::default();
     let use_events = layout.n_samples > 0 || layout.n_zc > 0 || !model.clocks.is_empty();
     let method = resolve_sim_solver_method(method, layout)?;
@@ -3901,6 +3965,9 @@ pub fn drive(
 
     let lin = crate::linearize::linearize(e, model, sim_data)?;
     let params = finalize_run(e, model, sim_data)?;
+    rtclock::accumulate(rtclock::TOTAL);
+    (stats.timers, stats.tcalls) = rtclock::snapshot();
+    stats.systems = e.sys_stats();
     Ok((RunResult { rows, n_reals, params, stats, lin }, label))
 }
 
@@ -4235,6 +4302,7 @@ unsafe fn dassl_rt(
     }
     let ctx = unsafe { &mut *ctx };
     let e = unsafe { &mut *ctx.engine };
+    let _clock = rtclock::Handover::new(rtclock::SOLVER, rtclock::EVENT);
     let run = (|| -> Result<()> {
         // A root probe may sit at an awkward candidate state where a nonlinear
         // system can't converge; keep that transient failure from leaking into the
@@ -4295,6 +4363,7 @@ unsafe fn dassl_res(
     let ctx = unsafe { &mut *ctx };
     let e = unsafe { &mut *ctx.engine };
     let n = ctx.n_states;
+    let _clock = rtclock::Handover::new(rtclock::SOLVER, rtclock::RESIDUALS);
     let save = set_error_stage(e, ctx.err_stage_addr, ERROR_INTEGRATOR);
     let run = (|| -> Result<()> {
         write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?; // clear before the solve
@@ -4521,6 +4590,7 @@ unsafe fn dassl_jac(
     let cj = unsafe { *cj };
     let h = unsafe { *h };
     ctx.jac_ders.resize(n * 8, 0);
+    let _clock = rtclock::Handover::new(rtclock::SOLVER, rtclock::JACOBIAN);
     // One assembly, however many colours it takes, as C's DASSL counts it.
     ctx.nje += 1;
     // C holds `ERROR_INTEGRATOR` over the whole DDASKR call, and there is no `IRES`
@@ -5385,6 +5455,7 @@ impl DaskrState {
         if logging {
             log_dassl_step(*t);
         }
+        rtclock::tick(rtclock::SOLVER);
         unsafe {
             solver::ddaskr(
                 dassl_res, neq, t, y.as_mut_ptr(), yp.as_mut_ptr(), &mut tt,
@@ -5395,6 +5466,7 @@ impl DaskrState {
                 self.jroot.as_mut_ptr(),
             );
         }
+        rtclock::accumulate(rtclock::SOLVER);
         if logging && self.idid != -1 {
             log_dassl_stats(self.idid, *t, &self.rwork, &self.iwork);
         }

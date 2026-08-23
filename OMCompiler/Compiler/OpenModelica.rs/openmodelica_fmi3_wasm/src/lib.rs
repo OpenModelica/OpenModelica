@@ -266,7 +266,7 @@ impl SimEngine for Engine {
         dst.copy_from_slice(buf);
         Ok(())
     }
-    fn call1(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+    fn call1_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         unsafe {
             match name {
                 "functionParameters" => functionParameters(arg),
@@ -298,7 +298,7 @@ impl SimEngine for Engine {
         }
         Ok(())
     }
-    fn call2(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
+    fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
         unsafe {
             match name {
                 driver::MODEL_FN_UPDATE_SYNC => functionUpdateSynchronous(a, b),
@@ -311,8 +311,8 @@ impl SimEngine for Engine {
         Ok(())
     }
     /// A name this adapter does not import is a function the model does not have.
-    fn call1_if_present(&mut self, name: &str, arg: u32) -> driver::Result<()> {
-        match self.call1(name, arg) {
+    fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+        match self.call1_raw(name, arg) {
             Err(UNKNOWN_MODEL_FN) => Ok(()),
             r => r,
         }

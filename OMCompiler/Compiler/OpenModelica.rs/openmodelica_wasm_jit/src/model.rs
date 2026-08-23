@@ -26,6 +26,10 @@ pub struct SimModel {
     /// The model's own `external "C"` libraries, loaded into the simulation's
     /// memory, where they define the `ext_imports` the runtime cannot resolve.
     pub ext_libs: Vec<ExtLibrary>,
+    /// The model reaches an `external "C"` its own libraries leave open that the
+    /// built-in ModelicaExternalC side module defines. The JIT host loads that
+    /// module too, so those bind wasm->wasm rather than through the path below.
+    pub ext_builtin: bool,
     /// The same implementations as platform shared libraries, for a symbol no wasm
     /// library defines: a native host dlopens them and calls in through libffi.
     /// Empty in the browser.
@@ -76,6 +80,10 @@ impl SimModel {
 pub struct ExtLibrary {
     pub name: String,
     pub bytes: Vec<u8>,
+    /// A prebuilt library a `Library` annotation named, so every run loads the same
+    /// bytes: worth an on-disk AOT artifact. False for one compiled out of a
+    /// model's own `Include` sources.
+    pub fixed: bool,
 }
 
 /// The static archives and object files a `Library` annotation resolved to

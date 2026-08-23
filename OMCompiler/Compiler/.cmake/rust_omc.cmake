@@ -758,8 +758,19 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
 # ---------------------------------------------------------------------------
 # Step 1+2: build mmtorust (release), transpile the Susan subset, build susan.
 # A stamp file marks completion; cargo itself handles incremental rebuilds, so
-# the command always runs but is a fast no-op when nothing changed.
+# the command is a fast no-op when only some of its inputs changed.
+#
+# The stamp has to name those inputs: a stamp rule with no DEPENDS is up to date
+# the moment the file exists, so the rule never runs a second time and every
+# later build compiles the templates with the `susan` of the first one.
 # ---------------------------------------------------------------------------
+file(GLOB_RECURSE SUSAN_TOOL_SOURCES CONFIGURE_DEPENDS ${RUST_OMC_DIR}/mmtorust/src/*.rs)
+list(APPEND SUSAN_TOOL_SOURCES
+     ${RUST_OMC_DIR}/mmtorust/Cargo.toml
+     ${RUST_OMC_DIR}/openmodelica_susan/Cargo.toml
+     ${RUST_OMC_DIR}/openmodelica_susan/src/main.rs)
+# The subset's *.mo: the rest of openmodelica_susan/src is transpiled from them.
+file(STRINGS ${RUST_SUSAN_SOURCES} SUSAN_SUBSET_MO REGEX "\\.mo$")
 set(SUSAN_STAMP ${CMAKE_CURRENT_BINARY_DIR}/rust_susan.stamp)
 add_custom_command(
   OUTPUT ${SUSAN_STAMP}
@@ -774,6 +785,7 @@ add_custom_command(
   COMMAND ${MMTORUST_BIN} --sources ${RUST_SUSAN_SOURCES}
   COMMAND ${CARGO_BUILD} --release -p openmodelica_susan --bin susan
   COMMAND ${CMAKE_COMMAND} -E touch ${SUSAN_STAMP}
+  DEPENDS ${SUSAN_TOOL_SOURCES} ${SUSAN_SUBSET_MO} ${RUST_SUSAN_SOURCES}
   COMMENT "Rust: building mmtorust + Susan template compiler (release)"
   VERBATIM)
 add_custom_target(rust_susan DEPENDS ${SUSAN_STAMP})

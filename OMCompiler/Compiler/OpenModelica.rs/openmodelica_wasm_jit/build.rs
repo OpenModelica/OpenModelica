@@ -738,7 +738,8 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
         "no libclang_rt.builtins-wasm32.a found (need libclang-rt-*-dev-wasm32)"
     }).unwrap_or_else(|e| panic!("{e}"));
     let mut cmd = Command::new(&clang);
-    cmd.args(["--target=wasm32-wasip1", "-O2", "-mexec-model=reactor",
+    // `-D_POSIX_VERSION` as for the dylink build; see `openmodelica_wasi_libc`.
+    cmd.args(["--target=wasm32-wasip1", "-O2", "-mexec-model=reactor", "-D_POSIX_VERSION=200809L",
                "-nodefaultlibs", "-DNO_MUTEX", "-DHAVE_ZLIB", "-DOM_EXT_HOST_ALLOC",
                "-Wno-error=implicit-function-declaration"])
         .arg(format!("--sysroot={sysroot}"))

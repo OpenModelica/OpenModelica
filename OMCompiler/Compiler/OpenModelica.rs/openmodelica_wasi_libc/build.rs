@@ -11,6 +11,11 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+/// What wasi-libc's `<unistd.h>` says, given to the ModelicaExternalC sources
+/// directly: they reach that header only for `__unix__`/`__linux__`/`__APPLE_CC__`,
+/// so on wasm they derive no `_POSIX_` and give up on functions wasi-libc has.
+const POSIX_VERSION: &str = "-D_POSIX_VERSION=200809L";
+
 fn main() {
     let crate_dir = PathBuf::from(env("CARGO_MANIFEST_DIR"));
     let out_dir = PathBuf::from(env("OUT_DIR"));
@@ -247,7 +252,7 @@ fn build_external_c_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, tri
     let status = Command::new(&clang)
         .arg(format!("--target={triple}"))
         .arg(format!("--sysroot={}", sysroot.display()))
-        .args(["-O2", "-fPIC", "-nodefaultlibs", "-mexec-model=reactor",
+        .args(["-O2", "-fPIC", "-nodefaultlibs", "-mexec-model=reactor", POSIX_VERSION,
                "-DNO_MUTEX", "-DHAVE_ZLIB", "-Wno-error=implicit-function-declaration"])
         .arg("-I").arg(&c_sources)
         .arg("-I").arg(&zlib_dir)
