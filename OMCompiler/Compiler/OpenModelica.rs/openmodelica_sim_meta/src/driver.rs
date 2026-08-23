@@ -5416,39 +5416,47 @@ struct CvodeState {
     atol: Vec<f64>,
     n_roots: usize,
     work_retries: u32,
+    /// Whether building the block still logs the banner; an FMU already did, at
+    /// `fmi2Instantiate`.
+    banner: bool,
+}
+
+/// `cvode_solver_initial`'s `LOG_SOLVER` banner. Every line but the tolerance and
+/// the root-finding answer reports a configuration this port fixes.
+#[cfg(sundials)]
+fn log_cvode_configuration(rtol: f64, root_finding: bool) {
+    for line in [
+        "CVODE linear multistep method CV_BDF",
+        "CVODE maximum integration order CV_ITER_NEWTON",
+        "CVODE use equidistant time grid YES",
+    ] {
+        omclog::info(omclog::SOLVER, false, line);
+    }
+    omclog::info(
+        omclog::SOLVER,
+        false,
+        &format!("CVODE Using relative error tolerance {}", format_e(rtol)),
+    );
+    omclog::info(omclog::SOLVER, false, "CVODE Using dense internal linear solver SUNLinSol_Dense.");
+    omclog::info(omclog::SOLVER, false, "CVODE Use internal dense numeric jacobian method.");
+    omclog::info(
+        omclog::SOLVER,
+        false,
+        &format!("CVODE uses internal root finding method {}", if root_finding { "YES" } else { "NO" }),
+    );
+    for line in [
+        "CVODE maximum absolut step size 0",
+        "CVODE initial step size is set automatically",
+        "CVODE maximum integration order 5",
+        "CVODE maximum number of nonlinear convergence failures permitted during one step 10",
+        "CVODE BDF stability limit detection algorithm OFF",
+    ] {
+        omclog::info(omclog::SOLVER, false, line);
+    }
 }
 
 #[cfg(sundials)]
 impl CvodeState {
-    /// `cvode_solver.c`'s `LOG_SOLVER` banner. The configuration is fixed here, so
-    /// every line but the tolerance is constant.
-    fn log_configuration(&self) {
-        for line in [
-            "CVODE linear multistep method CV_BDF",
-            "CVODE maximum integration order CV_ITER_NEWTON",
-            "CVODE use equidistant time grid YES",
-        ] {
-            omclog::info(omclog::SOLVER, false, line);
-        }
-        omclog::info(
-            omclog::SOLVER,
-            false,
-            &format!("CVODE Using relative error tolerance {}", format_e(self.rtol)),
-        );
-        for line in [
-            "CVODE Using dense internal linear solver SUNLinSol_Dense.",
-            "CVODE Use internal dense numeric jacobian method.",
-            "CVODE uses internal root finding method NO",
-            "CVODE maximum absolut step size 0",
-            "CVODE initial step size is set automatically",
-            "CVODE maximum integration order 5",
-            "CVODE maximum number of nonlinear convergence failures permitted during one step 10",
-            "CVODE BDF stability limit detection algorithm OFF",
-        ] {
-            omclog::info(omclog::SOLVER, false, line);
-        }
-    }
-
     /// The CVODE block is built on the first step, when `y` first holds the state
     /// to start from. `ctx` is the callbacks' `user_data`; it lives on the stack of
     /// one `advance`, so it is rebound on every call rather than stored.
@@ -5461,7 +5469,9 @@ impl CvodeState {
                     *t, y, self.rtol, &self.atol, self.n_roots, cvode_rhs, root,
                 )
                 .ok_or("CodegenWasmJit: CVODE initialization failed")?;
-                self.log_configuration();
+                if self.banner {
+                    log_cvode_configuration(self.rtol, self.n_roots > 0);
+                }
                 self.cv.insert(cv)
             }
         };
@@ -5746,7 +5756,7 @@ enum Step {
     Reached { grid_covered: bool, event_step: bool },
     Terminated,
     /// Located an event at `time`, discrete update left undone for the caller to
-    /// report (CS Event Mode). Only returned under `stop_at_event`.
+    /// report (CS Event Mode). Only returned when [`CsDefer`] asks for it.
     Event { time: f64 },
     /// Out of budget mid-target; call again with the same `tout`.
     Yielded,
@@ -5809,7 +5819,14 @@ impl SolverCore {
         #[cfg(sundials)]
         let solver = match method {
             "cvode" => {
-                Solver::Cvode(CvodeState { cv: None, rtol: tol, atol, n_roots: nrt as usize, work_retries: 0 })
+                Solver::Cvode(CvodeState {
+                    cv: None,
+                    rtol: tol,
+                    atol,
+                    n_roots: nrt as usize,
+                    work_retries: 0,
+                    banner: true,
+                })
             }
             "ida" => Solver::Ida(IdaState {
                 ida: None,
@@ -5972,6 +5989,20 @@ impl SolverCore {
             return Err(CHATTER_ABORT_ERR);
         }
         Ok(())
+    }
+
+    /// C's `cvode_solver_initial` under `isFMI`, whose banner
+    /// [`log_cs_solver_setup`] has already logged.
+    fn fmi_cs_solver_setup(&mut self, defer: CsDefer) {
+        #[cfg(sundials)]
+        if let Solver::Cvode(c) = &mut self.solver {
+            c.banner = false;
+            if defer != CsDefer::Any {
+                c.n_roots = 0;
+            }
+        }
+        #[cfg(not(sundials))]
+        let _ = defer;
     }
 
     /// Restart the integrator at the current `(t, y)`, banking the run totals its
@@ -6326,7 +6357,7 @@ impl SolverCore {
     /// samples due on the way. `rows` collects the pre/post-event rows when the
     /// caller wants them; CS passes `None`. A `Yielded` return resumes on the same
     /// `tout` (the integrator continues where it left off), so yields are safe points.
-    /// `stop_at_event` (CS Event Mode) stops at the first event and returns
+    /// `defer` (CS Event Mode) stops at an event the master owns and returns
     /// [`Step::Event`] instead of updating in place.
     #[allow(clippy::too_many_arguments)]
     fn integrate_to(
@@ -6340,7 +6371,7 @@ impl SolverCore {
         deadline: f64,
         mut rows: Option<&mut Vec<f64>>,
         did_step: &mut bool,
-        stop_at_event: bool,
+        defer: CsDefer,
     ) -> Result<Step> {
         let layout = &model.layout;
         let sim_data = self.sim_data;
@@ -6351,6 +6382,11 @@ impl SolverCore {
         let step_eps = small_step_eps(span);
         let mut grid_covered = false;
         let mut event_step = false;
+        let defers = |t: f64| match defer {
+            CsDefer::None => false,
+            CsDefer::AtTarget => t >= tout - eps,
+            CsDefer::Any => true,
+        };
 
         loop {
             // Yield at the loop boundary (before any state mutation).
@@ -6437,6 +6473,9 @@ impl SolverCore {
                         *did_step = true;
                         event_step = true;
                         self.note_chatter(model, flips[0])?;
+                        if defers(self.t) {
+                            return Ok(Step::Event { time: self.t });
+                        }
                         if self.handle_zc_flips(e, model, ctx, sync, rows.as_deref_mut(), &flips)? {
                             return Ok(Step::Terminated);
                         }
@@ -6448,7 +6487,7 @@ impl SolverCore {
                 // crossing, so the root itself is the event.
                 if rooted {
                     let troot = self.t;
-                    if stop_at_event {
+                    if defers(troot) {
                         write_time(e, sim_data, troot)?;
                         return Ok(Step::Event { time: troot });
                     }
@@ -6516,7 +6555,7 @@ impl SolverCore {
             if te <= target + SAMPLE_EPS {
                 *did_step = true;
                 event_step = true;
-                if stop_at_event {
+                if defers(te) {
                     self.t = te;
                     write_time(e, sim_data, te)?;
                     return Ok(Step::Event { time: te });
@@ -6588,9 +6627,16 @@ impl SolverCore {
                 // exactly when the caller writes that row and stores after it.
                 if rows.is_none() {
                     store_operators_at(e, sim_data, layout, self.t)?;
+                    // `fmi2DoStep`'s own detection: the only one an FMU without
+                    // root finding has, and it lands on the communication point.
                     let flips = save_zero_crossings(e, sim_data, layout)?;
-                    if !flips.is_empty() && self.handle_zc_flips(e, model, ctx, sync, None, &flips)? {
-                        return Ok(Step::Terminated);
+                    if !flips.is_empty() {
+                        if defers(self.t) {
+                            return Ok(Step::Event { time: self.t });
+                        }
+                        if self.handle_zc_flips(e, model, ctx, sync, None, &flips)? {
+                            return Ok(Step::Terminated);
+                        }
                     }
                 }
                 return Ok(Step::Reached { grid_covered, event_step });
@@ -6600,10 +6646,9 @@ impl SolverCore {
 }
 
 /// Co-Simulation: the FMU owns the integration, the importer picks the
-/// communication points. Unlike [`EventsDriver`] there is no output grid and
-/// no rows. [`step_to`](CsDriver::step_to) handles events internally
-/// (`eventModeUsed = false`); [`step_to_event`](CsDriver::step_to_event) stops at
-/// each event and reports it for the master to drive (`eventModeUsed = true`).
+/// communication points. Unlike [`EventsDriver`] there is no output grid and no
+/// rows. [`step_to`](CsDriver::step_to) takes a [`CsDefer`] saying which events it
+/// reports for the master to drive instead of resolving them itself.
 ///
 /// The caller initializes the model (`run_initialization`) before building this,
 /// since FMI does that in its own Initialization Mode.
@@ -6615,12 +6660,26 @@ pub struct CsDriver {
     /// The step `euler`/`rungekutta` take (the model's own output step); `None` for a
     /// variable-step method, which is handed the whole interval.
     fixed_h: Option<f64>,
-    /// A `do_event_update` ran since the last step, so `step_to_event` must re-read
+    /// A `do_event_update` ran since the last step, so `step_to` must re-read
     /// states and restart DASKR.
     resume_reinit: bool,
 }
 
-/// What [`CsDriver::step_to`] / [`step_to_event`](CsDriver::step_to_event) did.
+/// Which events the FMU reports to the master instead of resolving itself: C's
+/// `doStepInternal` gate `eventModeUsed && (earlyReturnAllowed || t >= tEnd)`.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum CsDefer {
+    /// `eventModeUsed = false`: the FMU resolves every event. Also the standalone
+    /// drivers, which have no master.
+    None,
+    /// Event Mode without early return: the step must still reach the
+    /// communication point, so only an event landing there is reported.
+    AtTarget,
+    /// Event Mode with `earlyReturnAllowed`: any event is reported where it happens.
+    Any,
+}
+
+/// What [`CsDriver::step_to`] did.
 pub enum CsStep {
     /// Reached the requested time.
     Reached,
@@ -6630,10 +6689,45 @@ pub enum CsStep {
     Terminated,
 }
 
+/// C's `FMI2CS_initializeSolverData`: an FMU's solver is set up in
+/// `fmi2Instantiate`, and for CVODE `LOG_SOLVER` is forced on across
+/// `cvode_solver_initial` so the banner reaches the log either way. `defer` decides
+/// the root-finding line — see [`CsDriver::new`].
+pub fn log_cs_solver_setup(model: &SimModel, defer: CsDefer) {
+    let Ok(method) = resolve_solver_method(&model.method, model.layout.dae_mode()) else { return };
+    // "No states present, continuing without ODE solver": C falls back to euler,
+    // which has nothing to set up and nothing to say.
+    if method != "cvode" || model.layout.n_states == 0 {
+        return;
+    }
+    #[cfg(sundials)]
+    {
+        let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
+        let mask = omclog::mask();
+        omclog::set_mask(mask | (1 << omclog::SOLVER));
+        log_cvode_configuration(tol, defer == CsDefer::Any);
+        omclog::set_mask(mask);
+    }
+    #[cfg(not(sundials))]
+    let _ = defer;
+}
+
 impl CsDriver {
     /// Build over an already-initialized model at time `t`, integrating with the
     /// method the FMU was exported with (`buildModelFMU`'s `method=`).
-    pub fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32, t: f64) -> Result<Self> {
+    ///
+    /// The integrator watches event indicators only under [`CsDefer::Any`], the one
+    /// mode whose master can be handed the crossing time (Event Mode with early
+    /// return). Otherwise the FMU resolves the event itself, and does it as C's
+    /// `fmi2DoStep` does: no root finding (`cvodeGetConfig(…, isFMI)`) and the sign
+    /// change picked up at the communication point.
+    pub fn new(
+        e: &mut (dyn SimEngine + 'static),
+        model: &SimModel,
+        sim_data: u32,
+        t: f64,
+        defer: CsDefer,
+    ) -> Result<Self> {
         daskr::auxiliary::xsetf(0);
         let layout = &model.layout;
         let method = resolve_solver_method(&model.method, layout.dae_mode())?;
@@ -6647,6 +6741,7 @@ impl CsDriver {
         let mut sync = crate::sync::Sync::new(e, model, sim_data)?;
         sync.take_fired(e, t)?;
         let mut core = SolverCore::new(&*e, model, sim_data, t, method, alloc_gbode(model, method)?)?;
+        core.fmi_cs_solver_setup(defer);
         let mut pivots = init_state_pivots(&model.state_sets);
         if core.n_states > 0 {
             if !model.state_sets.is_empty() && run_state_selection_initial(e, sim_data, &model.state_sets, &mut pivots)? {
@@ -6664,21 +6759,42 @@ impl CsDriver {
         self.core.t
     }
 
-    /// Advance to `t_target`, handling events on the way. No budget: an importer's
-    /// `do-step` runs to completion.
+    /// Advance to `t_target`. `defer` decides which events are reported to the
+    /// master rather than resolved here. No budget: an importer's `do-step` runs to
+    /// completion.
     pub fn step_to(
         &mut self,
         e: &mut (dyn SimEngine + 'static),
         model: &SimModel,
         t_target: f64,
+        defer: CsDefer,
     ) -> Result<CsStep> {
         let layout = &model.layout;
         let sim_data = self.core.sim_data;
+        // A reinit or discrete change in the master's update needs a DASKR restart.
+        if self.resume_reinit {
+            if self.core.n_states > 0 {
+                e.call1("functionODE", sim_data)?;
+                self.core.read_states(e)?;
+                self.core.restart()?;
+            }
+            self.resume_reinit = false;
+        }
         // No continuous states: only the samples move the model along.
         if self.core.n_states == 0 {
             let eps = t_target.abs().max(1.0) * 1e-10;
+            let defers = |t: f64| match defer {
+                CsDefer::None => false,
+                CsDefer::AtTarget => t >= t_target - eps,
+                CsDefer::Any => true,
+            };
             while self.samp.next_time() <= t_target + eps {
                 let te = self.samp.next_time();
+                if defers(te) {
+                    self.core.t = te;
+                    write_time(e, sim_data, te)?;
+                    return Ok(CsStep::Event { time: te });
+                }
                 write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
                 event_update(e, sim_data, layout, Some(&mut self.samp), te)?;
                 self.core.time_events += 1;
@@ -6694,14 +6810,12 @@ impl CsDriver {
         }
 
         self.refresh_ders(e)?;
-        let outcome = self.integrate_chunked(e, model, t_target, false)?;
+        let outcome = self.integrate_chunked(e, model, t_target, defer)?;
         match outcome {
             Step::Terminated => return Ok(CsStep::Terminated),
-            // `deadline` is +inf, CS does not cancel, and `stop_at_event` is off on
-            // this path, so none of these can arise.
-            Step::Yielded | Step::Cancelled | Step::Event { .. } => {
-                return Err("CodegenWasmJit: CS step yielded unexpectedly")
-            }
+            Step::Event { time } => return Ok(CsStep::Event { time }),
+            // `deadline` is +inf and CS does not cancel.
+            Step::Yielded | Step::Cancelled => return Err("CodegenWasmJit: CS step yielded unexpectedly"),
             Step::Reached { .. } => {}
         }
         // Refresh the outputs at the communication point, and re-select states there
@@ -6721,69 +6835,7 @@ impl CsDriver {
         Ok(CsStep::Reached)
     }
 
-    /// Event Mode step (`eventModeUsed = true`): integrate toward `t_target`,
-    /// stopping at the first event and returning [`CsStep::Event`] without the
-    /// discrete update — the master runs that via [`do_event_update`] and resumes.
-    ///
-    /// [`do_event_update`]: CsDriver::do_event_update
-    pub fn step_to_event(
-        &mut self,
-        e: &mut (dyn SimEngine + 'static),
-        model: &SimModel,
-        t_target: f64,
-    ) -> Result<CsStep> {
-        let layout = &model.layout;
-        let sim_data = self.core.sim_data;
-        // A reinit or discrete change in the master's update needs a DASKR restart.
-        if self.resume_reinit {
-            if self.core.n_states > 0 {
-                e.call1("functionODE", sim_data)?;
-                self.core.read_states(e)?;
-                self.core.restart()?;
-            }
-            self.resume_reinit = false;
-        }
-        // No continuous states: stop at the next sample in the step for the master.
-        if self.core.n_states == 0 {
-            let eps = t_target.abs().max(1.0) * 1e-10;
-            let te = self.samp.next_time();
-            if te <= t_target + eps {
-                self.core.t = te;
-                write_time(e, sim_data, te)?;
-                return Ok(CsStep::Event { time: te });
-            }
-            self.core.t = t_target;
-            write_time(e, sim_data, t_target)?;
-            e.call1_if_present("functionAlgebraics", sim_data)?;
-            return Ok(CsStep::Reached);
-        }
-
-        self.refresh_ders(e)?;
-        let outcome = self.integrate_chunked(e, model, t_target, true)?;
-        match outcome {
-            Step::Terminated => return Ok(CsStep::Terminated),
-            Step::Event { time } => return Ok(CsStep::Event { time }),
-            // `deadline` is +inf and CS does not cancel.
-            Step::Yielded | Step::Cancelled => return Err("CodegenWasmJit: CS step yielded unexpectedly"),
-            Step::Reached { .. } => {}
-        }
-        // Communication point reached with no event: refresh outputs like `step_to`.
-        write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-        write_time(e, sim_data, t_target)?;
-        e.call1("functionODE", sim_data)?;
-        e.call1_if_present("functionAlgebraics", sim_data)?;
-        if !model.state_sets.is_empty() && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)? {
-            e.call1("functionODE", sim_data)?;
-            self.core.read_states(e)?;
-            self.core.restart()?;
-        }
-        if terminated(e, sim_data, layout)? {
-            return Ok(CsStep::Terminated);
-        }
-        Ok(CsStep::Reached)
-    }
-
-    /// The master's `update-discrete-states` at the event `step_to_event` stopped on.
+    /// The master's `update-discrete-states` at the event `step_to` stopped on.
     /// Fires any sample through the driver's own schedule so it stays in step with
     /// the integrator, and flags a DASKR restart for the next step.
     pub fn do_event_update(
@@ -6826,7 +6878,7 @@ impl CsDriver {
         e: &mut (dyn SimEngine + 'static),
         model: &SimModel,
         t_target: f64,
-        stop_at_event: bool,
+        defer: CsDefer,
     ) -> Result<Step> {
         let layout = &model.layout;
         let eps = t_target.abs().max(1.0) * 1e-12;
@@ -6851,7 +6903,7 @@ impl CsDriver {
             let t_before = self.core.t;
             let outcome = self.core.integrate_to(
                 e, model, &mut ctx, &mut self.samp, &mut self.sync, target, f64::INFINITY, None,
-                &mut did_step, stop_at_event,
+                &mut did_step, defer,
             )?;
             // On the chunk that asked for the caller's target, wherever rounding left
             // `t`: a tighter test on `t` asks for the same chunk forever.
@@ -7192,7 +7244,7 @@ impl Driver for EventsDriver {
             open_assert_window();
             match self.core.integrate_to(
                 e, model, &mut ctx, &mut self.samp, &mut self.sync, tout, deadline,
-                Some(&mut self.rows), &mut did_step, false,
+                Some(&mut self.rows), &mut did_step, CsDefer::None,
             )? {
                 Step::Yielded => {
                     // Resume on the same row; `mid_row` keeps `grid_covered`.
@@ -7201,8 +7253,8 @@ impl Driver for EventsDriver {
                 }
                 Step::Cancelled => return Ok(Advance::Cancelled),
                 Step::Terminated => break Advance::Terminated,
-                // `stop_at_event` is false here, so `Event` never arises.
-                Step::Event { .. } => unreachable!("stop_at_event is off for the output-grid driver"),
+                // Nothing is deferred here, so `Event` never arises.
+                Step::Event { .. } => unreachable!("the output-grid driver defers no event"),
                 Step::Reached { grid_covered, event_step } => {
                     self.grid_covered |= grid_covered;
                     self.did_event_step |= event_step;

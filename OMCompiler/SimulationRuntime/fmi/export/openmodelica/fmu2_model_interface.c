@@ -2413,6 +2413,13 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   {
     /* fprintf(stderr, "DoStep %g -> %g State: %s\n", comp->fmuData->localData[0]->timeValue, tNext, stateToString(comp)); */
 
+    /* Both describe this sub-step only. Left set, a time event or zero
+       crossing in an earlier sub-step would make every later one end in a
+       spurious event iteration (and, in Event Mode, report an event that
+       is not there). */
+    zc_event = 0;
+    time_event = 0;
+
     // set the real Inputs with output_derivative values
 #if NUMBER_OF_REAL_INPUTS > 0
     for (int i = 0; i < NUMBER_OF_REALS; ++i)

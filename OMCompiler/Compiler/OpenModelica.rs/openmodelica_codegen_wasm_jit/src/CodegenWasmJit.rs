@@ -2028,8 +2028,9 @@ fn wasm_exports(bytes: &[u8]) -> impl Iterator<Item = &str> {
 
 /// Link the adapter + model into an fmi-ls-wasm component (pure Rust, so it runs in
 /// the browser omc too). When the model uses `external "C"`, ModelicaExternalC +
-/// PIC `libc.so` are added as shared-everything libraries and libc's preview1
-/// imports bridged to the component's preview2 WASI by the reactor adapter.
+/// PIC `libc.so` are added as shared-everything libraries. The reactor adapter
+/// bridges preview1 to the component's preview2 WASI: libc's calls, and the FMI
+/// adapter's own `fd_write` for the simulation log.
 fn link_fmu_component(
     model_wasm: &[u8],
     adapter: &[u8],
@@ -2070,8 +2071,10 @@ fn link_fmu_component(
             // Last, so a `usertab` from the model's own libraries wins.
             l = l.library("usertab", USERTAB_DYLINK, false).map_err(link_err)?;
         }
-        l = l.adapter("wasi_snapshot_preview1", WASI_P1_ADAPTER).map_err(link_err)?;
     }
+    // Unconditional: the adapter is also what gives the FMU the stdout its
+    // simulation log goes to.
+    l = l.adapter("wasi_snapshot_preview1", WASI_P1_ADAPTER).map_err(link_err)?;
     l.encode().map_err(link_err)
 }
 
