@@ -56,28 +56,32 @@ equation
 end DirectFeedthrough;
 "); getErrorString();
 
+// Which interpreter can import fmpy is a property of the machine, not of the
+// test, so rtest hands it over in FMPY_TOOL; python3 is the default. Kept as one
+// expression so the script prints nothing extra.
+
 // ExpDecay: a single continuous state.
 buildModelFMU(ExpDecay, version="1.0", fmuType="me"); getErrorString();
 simulate(ExpDecay, stopTime=1.0); getErrorString();
-system("python3 ../../simulate_fmu_fmpy.py ExpDecay.fmu ExpDecay_fmpy.csv 1.0 x"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py ExpDecay.fmu ExpDecay_fmpy.csv 1.0 x"); getErrorString();
 diffSimulationResults("ExpDecay_fmpy.csv", "ExpDecay_res.mat", "ExpDecay_diff", vars={"x"}); getErrorString();
 
 // SampleCount: a continuous state plus a time event (sample) driving a counter.
 buildModelFMU(SampleCount, version="1.0", fmuType="me"); getErrorString();
 simulate(SampleCount, stopTime=1.0); getErrorString();
-system("python3 ../../simulate_fmu_fmpy.py SampleCount.fmu SampleCount_fmpy.csv 1.0 x n"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py SampleCount.fmu SampleCount_fmpy.csv 1.0 x n"); getErrorString();
 diffSimulationResults("SampleCount_fmpy.csv", "SampleCount_res.mat", "SampleCount_diff", vars={"x","n"}); getErrorString();
 
 // Oscillator: two coupled continuous states.
 buildModelFMU(Oscillator, version="1.0", fmuType="me"); getErrorString();
 simulate(Oscillator, stopTime=3.141592653589793); getErrorString();
-system("python3 ../../simulate_fmu_fmpy.py Oscillator.fmu Oscillator_fmpy.csv 3.141592653589793 x v"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py Oscillator.fmu Oscillator_fmpy.csv 3.141592653589793 x v"); getErrorString();
 diffSimulationResults("Oscillator_fmpy.csv", "Oscillator_res.mat", "Oscillator_diff", vars={"x","v"}); getErrorString();
 
 // StateEvent: a continuous state with a state event (the b = x > 0.5 crossing).
 buildModelFMU(StateEvent, version="1.0", fmuType="me"); getErrorString();
 simulate(StateEvent, stopTime=2.0); getErrorString();
-system("python3 ../../simulate_fmu_fmpy.py StateEvent.fmu StateEvent_fmpy.csv 2.0 x y"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py StateEvent.fmu StateEvent_fmpy.csv 2.0 x y"); getErrorString();
 diffSimulationResults("StateEvent_fmpy.csv", "StateEvent_res.mat", "StateEvent_diff", vars={"x","y"}); getErrorString();
 
 // DirectFeedthrough: a stateless algebraic output y = 2*time. With no continuous states an FMI 1.0
@@ -86,7 +90,7 @@ diffSimulationResults("StateEvent_fmpy.csv", "StateEvent_res.mat", "StateEvent_d
 // y = 0 for all time. See #15838.
 buildModelFMU(DirectFeedthrough, version="1.0", fmuType="me"); getErrorString();
 simulate(DirectFeedthrough, stopTime=1.0); getErrorString();
-system("python3 ../../simulate_fmu_fmpy.py DirectFeedthrough.fmu DirectFeedthrough_fmpy.csv 1.0 y"); getErrorString();
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py DirectFeedthrough.fmu DirectFeedthrough_fmpy.csv 1.0 y"); getErrorString();
 diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat", "DirectFeedthrough_diff", vars={"y"}); getErrorString();
 // Result:
 // true
