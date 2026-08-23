@@ -25,6 +25,7 @@ use crate::omclog;
 /// The relation evaluation modes `rt_spatial_eval` is handed (`SimLayout`'s
 /// `rel_fresh`): continuous integration, an event update, the initial system.
 const MODE_CONTINUOUS: u32 = 0;
+#[cfg(test)]
 const MODE_EVENT: u32 = 1;
 
 /// C `SPATIAL_EPS` (`epsilon.h`).
@@ -564,9 +565,7 @@ impl Spatial {
         in1: f64,
         pos_x: f64,
         positive: bool,
-        // `mode` is the relation evaluation mode; C's `discreteCall` is
-        // `mode != MODE_CONTINUOUS`, but only a genuine event update announces a
-        // discontinuity.
+        // C's `discreteCall` is `mode != MODE_CONTINUOUS`.
         mode: u32,
     ) -> (f64, f64) {
         let pos_x = self.shift(pos_x);
@@ -600,11 +599,6 @@ impl Spatial {
                 "x got reinitialized during an event at time {}. OpenModelica can't handle that.",
                 f(time)
             ));
-        }
-
-        // This event update is announcing the discontinuities at the output edge.
-        if mode == MODE_EVENT {
-            self.consume_events(pos_x, positive);
         }
 
         let (out0, out1) = if delta < pos_eps(self.old_pos_x, pos_x) {
@@ -674,41 +668,6 @@ impl Spatial {
         omclog::close(omclog::SPATIALDISTR);
         self.out1 = out1;
         (out0, out1)
-    }
-
-    /// Drop the discontinuities that have reached the output edge: the event call
-    /// this is made from is announcing them, and the accepted step's
-    /// [`Spatial::store`] has already cut their jump into the output. Keeping them
-    /// would leave [`Spatial::zc`] reporting the pre-event value at the located root,
-    /// and an integrator that re-primes its root finder from the value *at* that root
-    /// reports the same crossing again a step later.
-    fn consume_events(&mut self, pos_x: f64, positive: bool) {
-        let read = Self::out_pos(pos_x, positive);
-        loop {
-            let ev = match if positive { self.events.back() } else { self.events.front() } {
-                Some(ev) => *ev,
-                None => return,
-            };
-            let reached = if positive {
-                ev.pos > read - pos_eps(ev.pos, read)
-            } else {
-                ev.pos < read + pos_eps(ev.pos, read)
-            };
-            if !reached {
-                return;
-            }
-            self.last_event_sign = ev.sign;
-            if positive {
-                self.events.pop_back();
-            } else {
-                self.events.pop_front();
-            }
-            omclog::info(
-                omclog::SPATIALDISTR,
-                false,
-                &format!("Announced event ({},{}) leaves the event list.", e(ev.pos), e(ev.sign)),
-            );
-        }
     }
 
     /// C `spatialDistributionZeroCrossing`: flips sign every time a stored
@@ -933,38 +892,17 @@ mod tests {
     }
 
     #[test]
-    fn an_announced_crossing_is_not_reported_twice() {
-        // The discontinuity at 0.5 reaches the output edge at x = 0.5. Reproduce what
-        // a root-finding integrator does: locate it, store the accepted point, run the
-        // event update — after which the crossing function must already read the
-        // post-event value, or the next step reports the same crossing again.
-        // Two of them, so the list is not left empty (which would hold the previous
-        // value for a different reason).
+    fn an_announced_crossing_leaves_the_list_only_in_prune() {
+        // C removes a discontinuity in `pruneSpatialDistribution` alone; evaluating
+        // the operator never touches the event list.
         let mut s = belt(&[0.0, 0.3, 0.3, 0.5, 0.5, 1.0], &[3.0, 3.0, 2.0, 2.0, 1.0, 1.0]);
         let before = s.zc(0.0, true, 0.0);
         assert_eq!(s.zc(0.5, true, 0.0), before, "not flipped yet at the root");
         s.eval(0, 0.5, 0.0, 0.0, 0.5, true, MODE_CONTINUOUS);
         s.store(0, 0.5, 0.0, 0.0, 0.5, true);
         s.eval(0, 0.5, 0.0, 0.0, 0.5, true, MODE_EVENT);
-        // No sign change is left for the integrator to find at or past the root, so
-        // the crossing is reported once instead of again a step later.
-        let after = s.zc(0.5, true, before);
-        assert_eq!(after, -before, "announced: the value has moved on");
-        assert_eq!(s.zc(0.5001, true, after), after, "and stays there");
-        assert_eq!(s.zc(0.55, true, after), after);
-    }
-
-    #[test]
-    fn the_last_announced_crossing_holds_its_value() {
-        // With nothing left in the list the crossing function holds the previous
-        // value, which is again no sign change for the integrator to re-find.
-        let mut s = belt(&[0.0, 0.5, 0.5, 1.0], &[2.0, 2.0, 1.0, 1.0]);
-        let before = s.zc(0.0, true, 0.0);
-        s.eval(0, 0.5, 0.0, 0.0, 0.5, true, MODE_CONTINUOUS);
-        s.store(0, 0.5, 0.0, 0.0, 0.5, true);
-        s.eval(0, 0.5, 0.0, 0.0, 0.5, true, MODE_EVENT);
-        assert_eq!(s.zc(0.5, true, before), before);
-        assert_eq!(s.zc(0.6, true, before), before);
+        assert_eq!(s.zc(0.5, true, before), before, "the event update left the list alone");
+        assert_eq!(s.zc(0.5001, true, before), -before, "flipped once x is past it");
     }
 
     #[test]

@@ -747,11 +747,6 @@ mod tests {
                     self.set_f64(DERS, v);
                     self.set_f64(DERS + 8, -G);
                 }
-                // The codegen emits crossings as ±1, not the relation expression.
-                "functionZeroCrossings" => {
-                    let h = self.f64_at(STATES);
-                    self.set_f64(SIM_DATA + ZC_OFF, if h > 0.0 { 1.0 } else { -1.0 });
-                }
                 _ => return Err("unexpected model function"),
             }
             Ok(())
@@ -759,8 +754,14 @@ mod tests {
         fn call1_if_present_raw(&mut self, _name: &str, _arg: u32) -> Result<()> {
             Ok(())
         }
-        fn call2_raw(&mut self, _name: &str, _a: u32, _b: u32) -> Result<()> {
-            Err("unused")
+        fn call2_raw(&mut self, name: &str, _a: u32, gout: u32) -> Result<()> {
+            // The codegen emits crossings as ±1, not the relation expression.
+            if name != crate::driver::MODEL_FN_ZC {
+                return Err("unexpected model function");
+            }
+            let h = self.f64_at(STATES);
+            self.set_f64(gout, if h > 0.0 { 1.0 } else { -1.0 });
+            Ok(())
         }
         fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
             Err("unused")

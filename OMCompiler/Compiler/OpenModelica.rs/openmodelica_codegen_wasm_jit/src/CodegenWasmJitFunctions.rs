@@ -2058,20 +2058,17 @@ impl<'a> FnCtx<'a> {
         Ok(())
     }
 
-    /// Emit `functionZeroCrossings`: for each crossing `k`, store its `g` value as
-    /// f64 at `zc_off + k*8`. A `Diff` crossing stores the continuous `lhs - rhs`;
-    /// a `Bool` crossing stores `expr ? 1 : -1`, matching the C target's
-    /// `gout[k] = (relation_) ? 1 : -1`. The driver's DASKR root callback reads
-    /// these; a sign change locates the event.
+    /// Emit `functionZeroCrossings`: store each crossing `k`'s g-value as f64 at
+    /// `gout + k*8`, `gout` being the second parameter. A `Bool` crossing stores
+    /// `expr ? 1 : -1`, as C's `gout[k] = (relation_) ? 1 : -1`.
     pub(crate) fn emit_zero_crossings(
         &mut self,
         crossings: &[crate::CodegenWasmJit::ZcInfo],
-        zc_off: u32,
+        gout_local: u32,
     ) -> Result<()> {
         use crate::CodegenWasmJit::ZcInfo;
-        let data = self.sim()?.data_local;
         for (k, zc) in crossings.iter().enumerate() {
-            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::LocalGet(gout_local));
             match zc {
                 ZcInfo::Bool { expr } => {
                     // `select` picks `1.0` when the condition (top of stack) is
@@ -2092,7 +2089,7 @@ impl<'a> FnCtx<'a> {
                     self.emit(we::Instruction::Select);
                 }
             }
-            self.emit(we::Instruction::F64Store(mem_arg(zc_off + k as u32 * 8, 3)));
+            self.emit(we::Instruction::F64Store(mem_arg(k as u32 * 8, 3)));
         }
         Ok(())
     }
