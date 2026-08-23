@@ -177,6 +177,12 @@ sub setup_command_toolchain
   for my $k (keys %tc) {
     $ENV{$k} = $tc{$k} unless defined $ENV{$k};
   }
+  # The FMU round-trip tests drive FMPy through simulate_fmu_fmpy.py, and which
+  # interpreter can import fmpy is a property of the machine rather than of the
+  # test: on Windows OMDev's python cannot install it, while a native Python
+  # often already has it. Let the tests ask for the interpreter instead of
+  # hardcoding python3, so a node only has to set FMPY_TOOL.
+  $ENV{'FMPY_TOOL'} = 'python3' unless defined $ENV{'FMPY_TOOL'};
   if ($wasm && !$ENV{'OMC_EXTLIB_LIBS'}) {
     print "Warning: no libclang_rt.builtins-wasm32.a found; external \"C\" setup_commands may fail to link.\n";
   }
