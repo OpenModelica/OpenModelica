@@ -3144,33 +3144,41 @@ fn zc_crossed_idx(a: &[f64], b: &[f64]) -> Vec<usize> {
     a.iter().zip(b).enumerate().filter(|(_, (x, y))| (**x < 0.0) != (**y < 0.0)).map(|(i, _)| i).collect()
 }
 
-/// Bisect `(t0, t1]` for the earliest zero-crossing, given the values `zc0` at `t0`
-/// and a known sign change by `t1`. Holds the discrete state fixed (only `time`
-/// varies), as the crossing is a continuous function of time. Returns the located
-/// event time; `scratch` is reused for the probe evaluations.
+/// C's `findRoot`/`bisection` (`events.c`) with only `time` varying. Returns the
+/// bracket's right end, C's event time.
 fn locate_zc_root(
     e: &mut dyn SimEngine,
     sim_data: u32,
     layout: &SimLayout,
-    mut t0: f64,
-    mut t1: f64,
-    zc0: &[f64],
-    scratch: &mut [f64],
+    mut a: f64,
+    mut b: f64,
+    zc_left: &[f64],
+    zc_right: &[f64],
 ) -> Result<f64> {
-    let tol = t1.abs().max(1.0) * 1e-12;
-    while t1 - t0 > tol {
-        let tm = 0.5 * (t0 + t1);
-        if tm <= t0 || tm >= t1 {
-            break;
-        }
-        probe_zero_crossings(e, sim_data, layout, tm, scratch)?;
-        if zc_crossed(zc0, scratch) {
-            t1 = tm;
+    let hunted = zc_crossed_idx(zc_left, zc_right);
+    let ttol = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE * libm::fabs(b - a);
+    let mut iters = bisection_iterations(b - a, ttol);
+    let mut pre = zc_left.to_vec();
+    let mut cur = zc_right.to_vec();
+    let mut backup = cur.clone();
+    while libm::fabs(b - a) > MINIMAL_STEP_SIZE && iters > 0 {
+        iters -= 1;
+        let c = 0.5 * (a + b);
+        probe_zero_crossings(e, sim_data, layout, c, &mut cur)?;
+        // C's `checkZeroCrossings`
+        let in_left = hunted
+            .iter()
+            .any(|&i| (cur[i] == -1.0 && pre[i] == 1.0) || (cur[i] == 1.0 && pre[i] == -1.0));
+        if in_left {
+            b = c;
+            backup.copy_from_slice(&cur);
         } else {
-            t0 = tm;
+            a = c;
+            pre.copy_from_slice(&cur);
+            cur.copy_from_slice(&backup);
         }
     }
-    Ok(t1)
+    Ok(b)
 }
 
 /// Snapshot of the discrete state — boolean/integer algebraics and held relations
@@ -5733,6 +5741,10 @@ const DASSL_STEP_EPS: f64 = 1e-13;
 /// C's `SAMPLE_EPS` (`simulation/solver/epsilon.h`).
 const SAMPLE_EPS: f64 = 1e-14;
 
+/// C's `MINIMAL_STEP_SIZE` (`simulation/solver/epsilon.h`), the bisection's
+/// absolute tolerance.
+pub(crate) const MINIMAL_STEP_SIZE: f64 = 1e-12;
+
 /// `dassl.c`'s floor on a step worth handing to DASKR.
 fn small_step_eps(span: f64) -> f64 {
     DASSL_STEP_EPS.max(DASSL_STEP_EPS * span)
@@ -7079,7 +7091,7 @@ impl Driver for EventsDriver {
                         update_zero_crossings(e, sim_data, layout, subtarget, &mut scratch)?;
                         if zc_crossed(&zc0, &scratch) {
                             troot = Some(locate_zc_root(
-                                e, sim_data, layout, self.core.t, subtarget, &zc0, &mut scratch,
+                                e, sim_data, layout, self.core.t, subtarget, &zc0, &scratch,
                             )?);
                         }
                     }

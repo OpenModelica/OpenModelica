@@ -10,7 +10,7 @@
 use alloc::vec;
 use alloc::vec::Vec;
 
-use crate::driver::Result;
+use crate::driver::{Result, MINIMAL_STEP_SIZE};
 use crate::gbode::Ode;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -237,9 +237,6 @@ pub fn deprecation_warning(method: &str) {
     );
     omclog::close(omclog::STDOUT);
 }
-
-/// C's `MINIMAL_STEP_SIZE` (`epsilon.h`).
-const MINIMAL_STEP_SIZE: f64 = 1e-12;
 
 fn sign(v: f64) -> i32 {
     if v > 0.0 {
