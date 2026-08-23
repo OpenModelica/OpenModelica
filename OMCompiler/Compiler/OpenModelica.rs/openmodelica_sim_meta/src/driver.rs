@@ -447,6 +447,11 @@ pub trait SimEngine {
     fn error_stage_addr(&mut self) -> u32 {
         0
     }
+    /// Address of the runtime's `noThrowDivZero` word, or 0 when the backend has no
+    /// such export.
+    fn no_throw_div_zero_addr(&mut self) -> u32 {
+        0
+    }
     /// C's `cleanUpOldValueListAfterEvent`. Default: none (an engine that never
     /// integrates).
     fn clean_nls_history(&mut self, _time: f64) {}
@@ -690,7 +695,7 @@ static RUNTIME_ERROR: core::sync::atomic::AtomicBool = core::sync::atomic::Atomi
 pub fn note_runtime_error(msg: &str) {
     // The whole `vsnprintf` buffer is one message, so a format ending in a
     // newline must not turn into a blank line.
-    omclog::message_text(omclog::DEBUG_TYPE, omclog::ASSERT, false, msg.trim_end());
+    omclog::debug(omclog::ASSERT, false, msg.trim_end());
     note_runtime_error_flag();
 }
 
@@ -1064,8 +1069,7 @@ fn report_nls_failure_at(e: &dyn SimEngine, sim_data: u32, nls_fail_off: u32) {
         return;
     }
     let time = read_f64(e, sim_data + TIME_OFF).unwrap_or(0.0);
-    omclog::message_text(
-        omclog::DEBUG_TYPE,
+    omclog::debug(
         omclog::ASSERT,
         false,
         &format!(
@@ -1651,15 +1655,18 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType) -
             col_end: ec,
         };
         let line = assert_block(&info, &cond, time, w[9] != 0);
-        let ty = if suppressed { omclog::INFO } else { level };
         if suppressed {
-            omclog::message_text(ty, omclog::ASSERT, false, &line);
+            omclog::info(omclog::ASSERT, false, &line);
             rethrow_store::arm(info);
             armed = true;
         } else {
             let key = format!("{}:{sl}:{sc}-{el}:{ec}|{cond}", info.file);
             if assert_warn_store::first_time(key) {
-                omclog::message_text(ty, omclog::ASSERT, false, &line);
+                if level == omclog::WARNING {
+                    omclog::warning(omclog::ASSERT, false, &line);
+                } else {
+                    omclog::info(omclog::ASSERT, false, &line);
+                }
             }
         }
     }
@@ -1708,7 +1715,7 @@ pub fn log_assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool)
     // position): the warning names the time, a debug line carries the message.
     if cond.is_empty() && info.file.is_empty() {
         omclog::warning(omclog::ASSERT, false, &block);
-        omclog::message_text(omclog::DEBUG_TYPE, omclog::ASSERT, false, &info.msg);
+        omclog::debug(omclog::ASSERT, false, &info.msg);
         return;
     }
     // C's generated guard for a backend variable warns (`omc_assert_warning`); one
@@ -3283,8 +3290,7 @@ pub(crate) fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &Si
         }
         iter += 1;
         if iter > max {
-            omclog::message_text(
-                omclog::DEBUG_TYPE,
+            omclog::debug(
                 omclog::ASSERT,
                 false,
                 &format!(
@@ -3294,6 +3300,23 @@ pub(crate) fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &Si
             return Err(ASSERT_ERR);
         }
     }
+}
+
+/// C's `updateDiscreteSystem` as a whole: the exact relation sweep, the event
+/// iteration and the held snapshot it leaves behind. The relations are live for the
+/// evaluations in between — C's `discreteCall`, which `functionDAE` sets on entry
+/// and clears on exit.
+pub(crate) fn update_discrete_system(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+) -> Result<()> {
+    write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
+    let r = refresh_relations(e, sim_data, layout)
+        .and_then(|_| iterate_discrete(e, sim_data, layout))
+        .and_then(|_| store_relations(e, sim_data, layout));
+    write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
+    r
 }
 
 /// Per-sample time-event state: each sample's next firing time and its interval,
@@ -3689,6 +3712,10 @@ fn solver_setup(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Resul
              are in opposition to each other. The flag \"noEquidistantOutputFrequency\" superiors.",
         );
     }
+    // C's `initializeLinearSystems`.
+    omclog::info(omclog::LS, true, "initialize linear system solvers");
+    omclog::info(omclog::LS, false, &format!("{} linear systems", model.n_lin_systems));
+    omclog::close(omclog::LS);
     // C's `initializeNonlinearSystems`.
     omclog::info(omclog::NLS, true, "initialize non-linear system solvers");
     omclog::info(
@@ -3886,6 +3913,9 @@ pub fn drive(
             }
             #[cfg(all(ipopt, feature = "std"))]
             {
+                // C's `initialize{Linear,Nonlinear}Systems` run whatever the
+                // method; the others reach them through `make_driver_resolved`.
+                solver_setup(e, model, sim_data)?;
                 run_initialization_model(e, sim_data, model)
                     .map_err(|err| enrich_trap_init(e, err, start))?;
                 return crate::optimization::run_optimizer(e, model, sim_data)
@@ -6069,8 +6099,7 @@ impl SolverCore {
             ),
         );
         if chatter_store::abort() {
-            omclog::message_text(
-                omclog::DEBUG_TYPE,
+            omclog::debug(
                 omclog::ASSERT,
                 false,
                 "Aborting simulation due to chattering being detected and the simulation flags \

@@ -168,6 +168,9 @@ impl SimEngine for StandaloneEngine {
     fn error_stage_addr(&mut self) -> u32 {
         crate::nls::rt_error_stage_addr()
     }
+    fn no_throw_div_zero_addr(&mut self) -> u32 {
+        crate::nls::rt_no_throw_div_zero_addr()
+    }
     fn clean_nls_history(&mut self, time: f64) {
         crate::nls::rt_nls_clean_history(time);
     }

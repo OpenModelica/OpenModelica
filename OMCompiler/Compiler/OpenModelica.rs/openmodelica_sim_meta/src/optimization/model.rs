@@ -188,7 +188,7 @@ impl Model {
     /// C's `updateDiscreteSystem`: the discrete update run to a fixed point.
     pub fn update_discrete_system(&mut self) {
         let (sim_data, layout) = (self.sim_data, self.layout);
-        let r = driver::iterate_discrete(self.e(), sim_data, &layout);
+        let r = driver::update_discrete_system(self.e(), sim_data, &layout);
         self.note(r);
     }
 

@@ -472,8 +472,8 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // Solve `A x = b` from dense column-major A via the sparse solver; see
     // `rt_solve_lin_dense_sparse`. (a_ptr, b_ptr, n) -> 0 ok / 1 singular.
     ("rt_solve_lin_dense_sparse", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
-    // (handle, colptr, rowidx, values, b, n, nnz) -> 0 ok / 1 singular; cached analysis.
-    ("rt_solve_lin_sparse_cached", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // (handle, colptr, rowidx, values, b, n, nnz, time) -> 0 ok / 1 singular; cached analysis.
+    ("rt_solve_lin_sparse_cached", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
     // Raw deallocation (frees a block from `rt_alloc`); used to release the
     // `SES_LINEAR` scratch (A/b/residual buffers) after each solve.
     ("rt_free", &[WTy::I32], &[]),

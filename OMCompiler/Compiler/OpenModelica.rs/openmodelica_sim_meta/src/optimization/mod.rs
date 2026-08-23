@@ -274,6 +274,23 @@ mod run {
         };
         // C sets `noThrowDivZero` for the whole optimization: a division by zero at a
         // trial point must not abort the solve.
+        let div_flag = e.no_throw_div_zero_addr();
+        if div_flag != 0 {
+            driver::write_i32(e, div_flag, 1)?;
+        }
+        let res = run_solve(e, meta, sim_data, opt);
+        if div_flag != 0 {
+            driver::write_i32(e, div_flag, 0)?;
+        }
+        res
+    }
+
+    fn run_solve(
+        e: &mut (dyn SimEngine + 'static),
+        meta: &SimMeta,
+        sim_data: u32,
+        opt: OptInfo,
+    ) -> Result<Vec<f64>> {
         let mut data = setup::pick_up_model_data(e, meta, sim_data, opt)?;
         setup::initial_guess(&mut data)?;
         setup::allocate_der_struct(&mut data)?;

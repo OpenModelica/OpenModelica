@@ -281,9 +281,7 @@ pub(crate) fn throw_stream(s: &str) {
     // report only the throw C's jump would have carried out.
     if throw_reports() {
         if recovering {
-            if crate::omclog::active(crate::omclog::ASSERT) {
-                crate::omclog::message_text(crate::omclog::DEBUG_TYPE, crate::omclog::ASSERT, false, s);
-            }
+            crate::omclog::debug(crate::omclog::ASSERT, false, s);
         } else {
             // Also arms the trap below to report as an assertion, not a crash.
             crate::note_runtime_error(s);
@@ -295,10 +293,19 @@ pub(crate) fn throw_stream(s: &str) {
     rt_nls_note_assert();
 }
 
+/// The same flag raised by a driver rather than a solve: C's `runOptimizer` holds
+/// it over the whole optimization.
+static NO_THROW_DIV_ZERO: AtomicU32 = AtomicU32::new(0);
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_no_throw_div_zero_addr() -> u32 {
+    (&NO_THROW_DIV_ZERO) as *const AtomicU32 as u32
+}
+
 /// C's `noThrowDivZero`, which `solve_nonlinear_system` holds over a solve: a
 /// division by zero at a trial point is the solver's to walk away from.
 fn no_throw_div_zero() -> bool {
-    NLS_DEPTH.load(Ordering::Relaxed) > 0
+    NLS_DEPTH.load(Ordering::Relaxed) > 0 || NO_THROW_DIV_ZERO.load(Ordering::Relaxed) != 0
 }
 
 /// The slow half of C's `__OMC_DIV_SIM` (util/division.h): the emitted code divides

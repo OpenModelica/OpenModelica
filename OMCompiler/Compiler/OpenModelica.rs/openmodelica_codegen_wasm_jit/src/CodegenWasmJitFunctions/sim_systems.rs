@@ -782,11 +782,16 @@ pub(crate) fn compile_linear_system(
 
 /// The `(index, time)` a solver's warnings need.
 fn emit_linsolve_context(ctx: &mut FnCtx, index: i32) -> Result<()> {
+    ctx.emit(we::Instruction::I32Const(index));
+    emit_sim_time(ctx)
+}
+
+/// Push `SimData`'s `time` (offset 0).
+fn emit_sim_time(ctx: &mut FnCtx) -> Result<()> {
     use we::Instruction as I;
     let data = ctx.sim()?.data_local;
-    ctx.emit(I::I32Const(index));
     ctx.emit(I::LocalGet(data));
-    ctx.emit(I::F64Load(mem_arg(0, 3))); // `time` — `SimData` offset 0
+    ctx.emit(I::F64Load(mem_arg(0, 3)));
     Ok(())
 }
 
@@ -1504,6 +1509,7 @@ pub(crate) fn compile_linear_system_analytic_csc(
     ctx.emit(I::I32Add);
     ctx.emit(I::I32Const(n as i32));
     ctx.emit(I::I32Const(nnz as i32));
+    emit_sim_time(ctx)?;
     ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
     emit_lin_unsolved(ctx, handle, base)?;
     let m1 = Method1 { res_off, res_exps };
@@ -1644,6 +1650,7 @@ pub(crate) fn compile_linear_system_symbolic(
         ctx.emit(I::I32Add);
         ctx.emit(I::I32Const(n as i32));
         ctx.emit(I::I32Const(nnz as i32));
+        emit_sim_time(ctx)?;
         ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
     } else {
         // Dense layout: A (n*n column-major) | b (n).

@@ -962,6 +962,8 @@ pub struct SimMeta {
     /// solver order — C reads the same list out of the `_info.json` `defines` array
     /// to name the unknowns in its `-lv=LOG_NLS` blocks.
     pub nls_vars: Vec<NlsVars>,
+    /// C's `modelData->nLinearSystems`, which `initializeLinearSystems` announces.
+    pub n_lin_systems: u32,
     /// `--daeMode` solver metadata; `Some` exactly when [`Layout::dae_mode`].
     pub dae: Option<DaeInfo>,
     /// Synchronous base clocks in `base_idx` order; empty for a model with no
@@ -1438,6 +1440,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
             put_str(&mut o, n);
         }
     }
+    put_u32(&mut o, m.n_lin_systems);
     match &m.dae {
         None => o.push(0),
         Some(d) => {
@@ -1819,6 +1822,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         }
         nls_vars.push(NlsVars { eq_index, names });
     }
+    let n_lin_systems = r.u32()?;
     let dae = match r.u8()? {
         0 => None,
         _ => Some(DaeInfo { alg_offs: r.u32s()?, sparsity: r.jac()? }),
@@ -1951,7 +1955,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, params, attr_log,
-        removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, dae, clocks, lin, opt, inputs,
+        removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs,
     })
 }
 
@@ -2030,6 +2034,7 @@ mod tests {
                 eq_index: 1074,
                 names: vec!["pipe.medium.T".to_string(), "pipe.medium.p".to_string()],
             }],
+            n_lin_systems: 2,
             dae: Some(DaeInfo {
                 alg_offs: vec![32, 40],
                 sparsity: Some(JacAInfo {
