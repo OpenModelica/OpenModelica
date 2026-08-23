@@ -5934,7 +5934,10 @@ case BINARY(__) then
     let tmpStr = tempDecl("modelica_metatype", &varDecls)
     let &preExp += '<%tmpStr%> = stringAppend(<%e1%>,<%e2%>);<%\n%>'
     tmpStr
-  case ADD(__) then '<%e1%> + <%e2%>'
+  case ADD(__) then
+    if isAtomic(exp2)
+      then '<%e1%> + <%e2%>'
+      else '<%e1%> + (<%e2%>)'
   case SUB(__) then
     if isAtomic(exp2)
       then '<%e1%> - <%e2%>'

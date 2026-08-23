@@ -343,6 +343,13 @@ pub fn warning_with_limit(stream: Stream, n_displayed: u64, max_displayed: u64, 
     }
 }
 
+/// C's `va_throwStreamPrint`: unlike [`error`], gated on `-lv`.
+pub fn debug(stream: Stream, indent_next: bool, msg: &str) {
+    if active(stream) {
+        message_text(DEBUG_TYPE, stream, indent_next, msg);
+    }
+}
+
 pub fn error(stream: Stream, indent_next: bool, msg: &str) {
     message_text(ERROR, stream, indent_next, msg);
 }

@@ -10,7 +10,8 @@
 loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadModel(ThermoSysPro); getErrorString();
 
-simulate(ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump, stopTime=1000); getErrorString();
+// -lv=-LOG_ASSERT: with the pump off, the sign of a ~1e-14 residual decides which falling edge trips hn's min guard.
+simulate(ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump, stopTime=1000, simflags="-lv=-LOG_ASSERT"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump_res.mat",
@@ -28,11 +29,8 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // ""
 // record SimulationResult
 //     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=-LOG_ASSERT'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_ASSERT        | info    | [ThermoSysPro 3.2.0/WaterSteam/Machines/StaticCentrifugalPump.mo:47:3-47:51:writable]
-// |                 | |       | The following assertion has been violated at time 200.000000
-// |                 | |       | ((StaticCentrifugalPump1.hn >= 0.0)) --> \"Variable violating min constraint: 0.0 <= StaticCentrifugalPump1.hn, has value: -1.7295e-29\"
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

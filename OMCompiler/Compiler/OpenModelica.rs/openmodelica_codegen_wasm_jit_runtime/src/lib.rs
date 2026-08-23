@@ -2467,6 +2467,13 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, tim
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     sysstats::mark_assembly_done();
     let n = n as usize;
+    // C prints this from the solver it dispatched to; `solveTotalPivot` prints its own.
+    match solvers::ls() {
+        solvers::Ls::TotalPivot => {}
+        solvers::Ls::Klu => ls_start_log(eq_index, n, time, "Klu"),
+        solvers::Ls::Umfpack => ls_start_log(eq_index, n, time, "UMFPACK"),
+        solvers::Ls::Lapack => ls_start_log(eq_index, n, time, "Lapack"),
+    }
     #[cfg(sundials)]
     match solvers::ls() {
         solvers::Ls::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
@@ -2524,8 +2531,21 @@ pub extern "C" fn rt_linsolve_totalpivot(a_ptr: u32, b_ptr: u32, n: u32, eq_inde
     ls_total_pivot(a, b, n, eq_index, time)
 }
 
+/// C's per-solver `Start solving Linear System …` line.
+fn ls_start_log(eq_index: i32, size: usize, time: f64, solver: &str) {
+    omclog::info(
+        omclog::LS,
+        false,
+        &alloc::format!(
+            "Start solving Linear System {eq_index} (size {size}) at time {} with {solver} Solver",
+            openmodelica_sim_meta::driver::format_g(time, 6)
+        ),
+    );
+}
+
 /// C's `solveTotalPivot`, whose under-determined return warns on stdout.
 fn ls_total_pivot(a: &[f64], b: &mut [f64], n: usize, eq_index: i32, time: f64) -> i32 {
+    ls_start_log(eq_index, n, time, "Total Pivot");
     if nls::total_pivot_solve(a, b, n) {
         return 0;
     }
@@ -2787,14 +2807,17 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
     b_ptr: u32,
     n: u32,
     nnz: u32,
+    time: f64,
 ) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     sysstats::mark_assembly_done();
-    let backend = match solvers::lss() {
-        solvers::Lss::Klu => solvers::Sparse::Klu,
-        solvers::Lss::Umfpack => solvers::Sparse::Umfpack,
-        solvers::Lss::Rsparse => solvers::Sparse::Rsparse,
+    let (backend, name) = match solvers::lss() {
+        solvers::Lss::Klu => (solvers::Sparse::Klu, "Klu"),
+        solvers::Lss::Umfpack => (solvers::Sparse::Umfpack, "UMFPACK"),
+        // rsparse stands in for KLU where SuiteSparse is absent; C's name for it.
+        solvers::Lss::Rsparse => (solvers::Sparse::Rsparse, "Klu"),
     };
+    ls_start_log(handle as i32, n as usize, time, name);
     lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz, backend)
 }
 
