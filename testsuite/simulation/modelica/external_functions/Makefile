@@ -13,6 +13,7 @@ ImplicitArray.mos \
 LapackInverse.mos \
 Matrix.mos \
 MDD_test.mos \
+ModelicaIOMatrix.mos \
 ModelicaUtilities.mos \
 QualifiedCrefArg.mos \
 RecordMemberArguments.mos \
