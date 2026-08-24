@@ -23,12 +23,12 @@ thread_local! {
 /// console on the web target.
 pub fn start_stdout_capture() {
     STDOUT_CAPTURE.with(|c| *c.borrow_mut() = Some(Vec::new()));
-    NATIVE_CAPTURE.with(|h| h.get().map(|(begin, _)| begin()));
+    NATIVE_CAPTURE.with(|h| h.get().map(|n| (n.begin)()));
 }
 
 /// End capture and return the accumulated bytes as a lossy-UTF-8 string.
 pub fn take_stdout_capture() -> String {
-    let native = NATIVE_CAPTURE.with(|h| h.get().map(|(_, end)| end())).unwrap_or_default();
+    let native = NATIVE_CAPTURE.with(|h| h.get().map(|n| (n.end)())).unwrap_or_default();
     STDOUT_CAPTURE
         .with(|c| c.borrow_mut().take())
         .map(|mut v| {
@@ -38,16 +38,26 @@ pub fn take_stdout_capture() -> String {
         .unwrap_or_default()
 }
 
+/// While the redirect is in place the process's fds *are* the capture, so
+/// [`write_std`] writes there too and the run's log stays one stream, as the C
+/// simulation executable's is. `write` is false with no redirect in place.
+#[derive(Clone, Copy)]
+pub struct NativeCapture {
+    pub begin: fn(),
+    pub write: fn(&[u8], bool) -> bool,
+    pub end: fn() -> Vec<u8>,
+}
+
 thread_local! {
-    static NATIVE_CAPTURE: std::cell::Cell<Option<(fn(), fn() -> Vec<u8>)>> = const { std::cell::Cell::new(None) };
+    static NATIVE_CAPTURE: std::cell::Cell<Option<NativeCapture>> = const { std::cell::Cell::new(None) };
 }
 
 /// Extend the capture over the *process's* stdout, which a `dlopen`ed external "C"
 /// library's `printf` reaches directly — past the WASI shim, past `ModelicaMessage`.
 /// C's simulation executable has a stdout of its own, so that output belongs in the
 /// run's log too.
-pub fn set_native_capture(begin: fn(), end: fn() -> Vec<u8>) {
-    NATIVE_CAPTURE.with(|h| h.set(Some((begin, end))));
+pub fn set_native_capture(n: NativeCapture) {
+    NATIVE_CAPTURE.with(|h| h.set(Some(n)));
 }
 
 /// Write to stdout (fd 1) through the same capture/host routing as a guest
@@ -57,8 +67,12 @@ pub fn stdout_write(bytes: &[u8]) {
     write_std(bytes, false);
 }
 
-/// Route a stdout/stderr write to the capture buffer if active, else to the host.
+/// Route a stdout/stderr write to the redirected process fds, else to the capture
+/// buffer if active, else to the host.
 fn write_std(bytes: &[u8], is_err: bool) {
+    if NATIVE_CAPTURE.with(|h| h.get()).is_some_and(|n| (n.write)(bytes, is_err)) {
+        return;
+    }
     let captured = STDOUT_CAPTURE.with(|c| match c.borrow_mut().as_mut() {
         Some(buf) => { buf.extend_from_slice(bytes); true }
         None => false,

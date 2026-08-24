@@ -97,6 +97,28 @@ fn host_runtime_error() {
 #[cfg(not(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone"))))]
 fn host_runtime_error() {}
 
+/// C's `omc_assert` with no thread context. A simulation installs
+/// `omc_assert_simulation`: `LOG_ASSERT` at error level, then unwind.
+#[cfg(not(all(target_arch = "wasm32", not(feature = "host_log"), not(feature = "standalone"))))]
+pub(crate) fn omc_assert(msg: &str) -> ! {
+    omclog::error(omclog::ASSERT, false, msg);
+    openmodelica_sim_meta::driver::note_runtime_error_flag();
+    host_runtime_error();
+    trap()
+}
+
+/// The FMI3 adapter's build, the only one with no simulation, keeps C's
+/// `omc_assert_fmi`: thread-less, so stderr rather than the FMI logger.
+#[cfg(all(target_arch = "wasm32", not(feature = "host_log"), not(feature = "standalone")))]
+pub(crate) fn omc_assert(msg: &str) -> ! {
+    unsafe extern "C" {
+        fn rt_stderr_write(ptr: *const u8, len: usize);
+    }
+    let line = format!("[:0:0-0:0:writable]Modelica Assert: {msg}!\n");
+    unsafe { rt_stderr_write(line.as_ptr(), line.len()) };
+    trap()
+}
+
 // `rt_reinit_note(state_off, value)`: the model records an executed `reinit` for
 // the driver's `LOG_EVENTS` block. Every generated model imports it, so every
 // host-free consumer must define it — the standalone export and the FMI3 adapter
@@ -1984,13 +2006,38 @@ struct FmtSpec {
     conv: u8,
 }
 
+/// The `omc_assert`s in `modelica_string_format_to_c_string_format`.
+enum FmtParseError {
+    LengthModifier,
+    /// 0 for a directive that ends before its specifier.
+    InvalidSpecifier(u8),
+    TrailingData,
+}
+
+/// The `omc_assert` `modelica_string_format_to_c_string_format` reaches for `err`.
+fn assert_format_error(bytes: &[u8], err: FmtParseError) -> ! {
+    let str = String::from_utf8_lossy(bytes);
+    let msg = match err {
+        FmtParseError::LengthModifier => {
+            format!("Length modifiers are not legal in Modelica format strings: {str}")
+        }
+        FmtParseError::InvalidSpecifier(c) => {
+            // C's `%c` of the terminating NUL contributes nothing.
+            let c = match c { 0 => String::new(), c => String::from(c as char) };
+            format!("Could not parse format string: invalid conversion specifier: {c} in {str}")
+        }
+        FmtParseError::TrailingData => {
+            "Could not parse format string: trailing data after the format directive".to_string()
+        }
+    };
+    omc_assert(&msg)
+}
+
 /// Parse a Modelica format directive (the body after the implicit leading `%`)
 /// into a [`FmtSpec`], mirroring `modelica_string_format_to_c_string_format`:
 /// flags, optional width, optional `.precision`, then a single conversion
-/// specifier. Returns `None` for an unparseable directive (length modifiers,
-/// unknown specifier, trailing data) — the caller traps, matching the C
-/// runtime's `omc_assert`.
-fn parse_modelica_format(bytes: &[u8]) -> Option<FmtSpec> {
+/// specifier. An unparseable directive is the caller's [`assert_format_error`].
+fn parse_modelica_format(bytes: &[u8]) -> Result<FmtSpec, FmtParseError> {
     let mut spec = FmtSpec {
         minus: false, zero: false, plus: false, space: false, hash: false,
         width: 0, prec: None, conv: 0,
@@ -2023,23 +2070,21 @@ fn parse_modelica_format(bytes: &[u8]) -> Option<FmtSpec> {
         }
         spec.prec = Some(p);
     }
-    // Conversion specifier (single character; length modifiers are rejected, as
-    // in the C runtime).
     if i >= bytes.len() {
-        return None;
+        return Err(FmtParseError::InvalidSpecifier(0));
     }
     let conv = bytes[i];
     match conv {
         b'f' | b'e' | b'E' | b'g' | b'G' | b'c' | b'd' | b'i' | b'o' | b'x' | b'X' | b'u' => {}
-        _ => return None, // length modifier / unknown specifier
+        b'h' | b'l' | b'L' | b'q' | b'j' | b'z' | b't' => return Err(FmtParseError::LengthModifier),
+        _ => return Err(FmtParseError::InvalidSpecifier(conv)),
     }
     spec.conv = conv;
     i += 1;
-    // No trailing data after the directive.
     if i != bytes.len() {
-        return None;
+        return Err(FmtParseError::TrailingData);
     }
-    Some(spec)
+    Ok(spec)
 }
 
 /// Apply a [`FmtSpec`]'s sign flag and field width to an already-rendered numeric
@@ -2115,9 +2160,10 @@ fn format_float_body(r: f64, spec: &FmtSpec) -> String {
 /// parse the directive, render the double, apply sign/width.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_string_format_real(r: f64, fmt: u32) -> u32 {
-    let spec = match parse_modelica_format(unsafe { str_bytes(fmt) }) {
-        Some(s) => s,
-        None => trap(),
+    let bytes = unsafe { str_bytes(fmt) };
+    let spec = match parse_modelica_format(bytes) {
+        Ok(s) => s,
+        Err(e) => assert_format_error(bytes, e),
     };
     let body = format_float_body(r, &spec);
     new_str_from(&apply_sign_width(body, &spec))
@@ -2130,9 +2176,10 @@ pub extern "C" fn rt_string_format_real(r: f64, fmt: u32) -> u32 {
 /// precision is the minimum digit count (zero-padded), as in C printf.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_string_format_int(i: i32, fmt: u32) -> u32 {
-    let spec = match parse_modelica_format(unsafe { str_bytes(fmt) }) {
-        Some(s) => s,
-        None => trap(),
+    let bytes = unsafe { str_bytes(fmt) };
+    let spec = match parse_modelica_format(bytes) {
+        Ok(s) => s,
+        Err(e) => assert_format_error(bytes, e),
     };
     match spec.conv {
         b'f' | b'F' | b'e' | b'E' | b'g' | b'G' => {
