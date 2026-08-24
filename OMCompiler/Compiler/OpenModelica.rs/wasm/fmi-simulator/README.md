@@ -1,40 +1,60 @@
 # FMI Simulator
 
-A browser FMI 3.0 master for wasm FMUs following the [FMI Layered Standard
+A browser master for FMI 3.0 wasm FMUs following the [FMI Layered Standard
 WebAssembly](https://github.com/modelica/fmi-ls-wasm) draft: open an `.fmu`
 whose binary is a WebAssembly component, simulate it, plot the results. Both
 Co-Simulation and Model Exchange are driven. Nothing is uploaded anywhere and no
 server is involved — the FMU is unpacked, compiled and run inside the page.
 
-## How it runs a component
+## What runs the FMU
 
-FMI-LS-WASM FMUs ship a Component Model binary (`binaries/wasm32-wasip2/*.wasm`),
-which browsers cannot instantiate directly: `WebAssembly.instantiate` only takes
-core modules. Hosts normally transpile the component to JS ahead of time with
-[jco](https://github.com/bytecodealliance/jco), but that would restrict the page
-to FMUs known at build time.
+The masters are OpenModelica's own, in Rust: `openmodelica_fmi_driver`, built for
+`wasm32-wasip1` as `openmodelica_fmi_web.wasm`. Model Exchange integrates with
+the same solvers a compiled Modelica model runs under (`openmodelica_solvers`:
+gbode and the fixed-step ones), so an FMU is stepped, error-controlled and
+root-searched exactly like a model; Co-Simulation drives `fmi3DoStep` and takes
+the FMU up on early return, handling each event at the time the FMU stopped at
+rather than at the next communication point.
 
-Instead the page runs jco's transpiler *itself* — `js-component-bindgen` is
-distributed as a wasm component with a pre-transpiled JS wrapper, so it runs in
-the browser. Loading an FMU therefore means:
+A run is one call into that module and cannot be interrupted, so it happens in a
+worker (`fmi-worker.js`); the Cancel button drops the worker, after which the
+FMU has to be opened again.
 
-1. `fmu.js` unpacks the ZIP (central directory + `DecompressionStream`) and parses
-   `modelDescription.xml` with `DOMParser`.
-2. `js-component-bindgen` transpiles the FMU component to JS plus core modules,
-   in `instantiation: async` mode so the page supplies the imports and compiles
-   the cores itself.
-3. The generated JS is imported from a blob URL and instantiated with the WASI
-   preview2 shim, the `fmi:fmi3/callbacks` imports, and the FMU's own
-   `resources/` directory mounted as the guest filesystem.
+## How it reaches the FMU
 
-Each run instantiates the component afresh, so a second run cannot inherit the
-first one's state.
+FMI-LS-WASM FMUs ship a Component Model binary
+(`binaries/wasm32-wasip2/*.wasm`), which browsers cannot instantiate directly:
+`WebAssembly.instantiate` only takes core modules. Hosts normally transpile the
+component to JS ahead of time with [jco](https://github.com/bytecodealliance/jco),
+but that would restrict the page to FMUs known at build time. Instead the page
+runs jco's transpiler *itself* — `js-component-bindgen` is distributed as a wasm
+component with a pre-transpiled JS wrapper, so it runs in the browser.
 
-`vendor/` holds the transpiler and the WASI shim. It is not in git: the CMake web
-target downloads both pinned npm tarballs (see `Compiler/.cmake/rust_omc.cmake`)
-and stages them next to the page, which `install(DIRECTORY web/)` then installs
-along with the rest of the bundle. To work on the page without a full web build,
-serve this directory with `vendor/` populated the same way.
+The wrappers jco generates are not what the run calls, though: each costs about
+4 µs, which a solver taking millions of steps cannot pay. `fmu-core.js` patches
+the generated module with one extra export that hands out its internals, and the
+driver's FMI calls then go straight to the component's *core* exports — 238 ns
+for `fmi3SetTime` instead of 7684. What each call's lowering looks like is read
+out of jco's own wrappers, so the two cannot drift.
+
+## Files
+
+| file | |
+| --- | --- |
+| `index.html` | the page: the FMU's variables, the run options, the plots |
+| `session.js` | the page's side of the worker |
+| `fmi-worker.js` | owns the driver and the FMU for the length of a run |
+| `driver.js` | the driver module, and the FMI calls it imports |
+| `fmu-core.js` | jco transpilation, and the core exports past its glue |
+| `fmu.js` | the ZIP and `modelDescription.xml`, for what the page displays |
+| `wasi.js` | a WASI preview1 host, so the result file is written like any other |
+| `selftest.html` | `?fmu=<url>&interface=me|cs` — the whole path, headless |
+
+`vendor/` holds the transpiler and the WASI preview2 shim. It is not in git: the
+CMake web target downloads both pinned npm tarballs (see
+`Compiler/.cmake/rust_omc.cmake`) and stages them next to the page. To work on
+the page without a full web build, serve this directory with `vendor/` populated
+the same way, and put a built `openmodelica_fmi_web.wasm` beside it.
 
 The launcher's sidebar icon (`../icons/fmi.svg`) is the Modelica Association's
 FMI logo, copied unmodified from
@@ -42,43 +62,27 @@ FMI logo, copied unmodified from
 usage terms forbid altering it and ask for a white background, which is why the
 launcher gives that one icon a white chip instead of recolouring the artwork.
 
-## Masters
+## Results
 
-`master.js` has no DOM dependency and drives the instance API jco generates from
-the WIT worlds.
+Samples are recorded for every numeric variable that can change, and the run
+writes the usual OpenModelica `.mat` through WASI, which the page offers as a
+download — the same file OMPlot and `omc-diff` read for a simulated model.
 
-* **Co-Simulation** — `do-step` to the stop time, feeding inputs at each
-  communication point. When the model description sets `hasEventMode`, event
-  handling runs the `enter-event-mode` / `update-discrete-states` /
-  `enter-step-mode` cycle.
-* **Model Exchange** — Dormand-Prince 5(4) with tolerance-driven step size.
-  State events are found by bisecting the step until the event indicators change
-  sign, then stepping exactly onto the crossing; time events land on
-  `next-event-time` exactly. Zeno models (the bouncing ball is the classic one)
-  stop with a warning once events keep arriving with no time between them,
-  keeping the samples collected up to that point.
-
-Inputs are expressions in `t` (`sin(2*PI*t)`, `t < 1 ? 0 : 1`) evaluated at every
-time point; parameters are constants applied during initialization only, which is
-the only mode FMI allows them to be set in.
-
-## Verified against
-
-* `adder-rust-fmu` and `adder-wat-fmu` from fmi-ls-wasm `examples/`, in Chrome:
-  load, transpile, instantiate, Co-Simulation run, plot.
-* The Model Exchange master, against a JS mock of the instance API (bouncing
-  ball, harmonic oscillator): event location, step adaptivity and the Zeno guard.
-  **It has not yet run against a real Model Exchange wasm FMU** — no example
-  exists upstream; every fmi-ls-wasm example is a Co-Simulation adder.
+Inputs are expressions in `t` (`sin(2*PI*t)`, `t < 1 ? 0 : 1`) evaluated by the
+driver wherever the solver asks for a value; parameters are constants applied
+during initialization, which is the only mode FMI allows them to be set in.
 
 ## Gaps
 
 * Scheduled Execution is not driven; such an FMU is reported as unsupported.
-* `get-fmu-state` / `set-fmu-state` are unused: no rollback, so a Co-Simulation
-  FMU that discards a step fails the run rather than retrying it smaller.
-* `intermediate-update` always declines early return.
-* The layered-standard manifest (`extra/org.modelica.fmi-ls-wasm/manifest.xml`)
-  is not required — the upstream example archives do not ship one.
+* String and binary variables are shown but cannot be set.
+* `fmi3GetFMUState`/`fmi3SetFMUState` are unused: no rollback, so a
+  Co-Simulation FMU that discards a step fails the run rather than retrying it
+  smaller.
+* `intermediate-update` always declines early return; the FMU's own early
+  returns are honoured.
+* Samples arrive only when the run ends — the progress line moves, the plot does
+  not.
 * ZIP64 archives are rejected.
 
 ## For the OpenModelica FMI export

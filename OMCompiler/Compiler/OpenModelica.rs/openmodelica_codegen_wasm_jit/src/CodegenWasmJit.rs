@@ -2208,6 +2208,15 @@ fn link_fmu_component(
     ext_libs: &[ExtLibrary],
 ) -> Result<Vec<u8>> {
     if adapter.is_empty() {
+        // The plain adapter is always built; the SUNDIALS one only where the
+        // wasm SUNDIALS archives were, so name which is missing.
+        if sundials {
+            record_error(
+                "CodegenWasmJit: this omc has no SUNDIALS FMI3 adapter, so a Co-Simulation FMU                  cannot embed CVODE or IDA. Export with `--fmiFlags=s:dassl` (or euler), or                  rebuild omc with RUST_OMC_ENABLE_SUNDIALS=ON."
+                    .to_string(),
+            );
+            return Err("CodegenWasmJit: no SUNDIALS FMI3 adapter in this omc");
+        }
         return Err("CodegenWasmJit: FMI3 adapter unavailable (build wasm32-unknown-unknown + -Z build-std)");
     }
     let has_ext = first_external_import(model_wasm).is_some();
@@ -2507,6 +2516,23 @@ pub fn emitMeCsFmu(
     emit_fmu(sim_code, fmu_path, model_description, extra_files, simulation_flags_json, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "me_cs")
 }
 
+/// Say that the FMU answers `fmi3GetDirectionalDerivative` when the model was
+/// compiled with its symbolic Jacobian, which the adapter answers from.
+///
+/// The shared template only sets the attribute from `<ModelStructure>`'s
+/// `continuousPartialDerivatives`, which the C export needs and this one does
+/// not: what matters here is whether the metadata carries the Jacobian.
+fn announce_directional_derivatives(model_description: &str, model: &SimModel) -> String {
+    let has_symbolic = model.jac_a.as_ref().is_some_and(|j| j.sym.is_some());
+    if !has_symbolic {
+        return model_description.to_string();
+    }
+    model_description.replace(
+        "providesDirectionalDerivatives=\"false\"",
+        "providesDirectionalDerivatives=\"true\"",
+    )
+}
+
 /// The FMI version being exported, `"3.0"` unless `buildModelFMU` asked otherwise.
 fn fmi_version() -> String {
     let v = openmodelica_util::Flags::getConfigString(openmodelica_util::Flags::FMI_VERSION.clone())
@@ -2677,7 +2703,7 @@ fn emit_fmu(
         // an importer resolves `binaries/<platform>/<modelIdentifier>`.
         let model_id = model_name_prefix(&sim_code);
         let mut entries = vec![
-            ("modelDescription.xml".to_string(), model_description.as_bytes().to_vec()),
+            ("modelDescription.xml".to_string(), announce_directional_derivatives(&model_description, &model).into_bytes()),
         ];
         // terminalsAndIcons/, documentation/ — whatever the caller rendered.
         for (name, content) in lst(&extra_files) {

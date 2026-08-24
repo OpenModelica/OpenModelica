@@ -24,8 +24,7 @@ use alloc::vec::Vec;
 
 use super::tableau::{GmType, Tableau};
 use crate::gbode::math::{abs, pow, sqrt};
-use crate::JacAInfo;
-use crate::driver::{Result, SimEngine};
+use crate::{Ode, Result};
 
 /// C's `DBL_ABSORPTION`.
 const DBL_ABSORPTION: f64 = 10.0 * f64::EPSILON;
@@ -75,68 +74,6 @@ pub(super) struct GbNls {
     /// Newton iterations and Jacobian evaluations, for the solver statistics.
     pub n_iters: u64,
     pub n_jac_evals: u64,
-}
-
-/// What the residual needs from the integrator to evaluate one candidate.
-pub struct Ode<'a> {
-    pub e: &'a mut (dyn SimEngine + 'static),
-    pub sim_data: u32,
-    pub states_base: u32,
-    pub ders_base: u32,
-    pub nls_fail_off: u32,
-    pub ctx_addr: u32,
-    /// Sparsity + coloring for the finite-difference Jacobian; `None` ⇒ dense
-    /// column-by-column differencing.
-    pub jac_a: Option<&'a JacAInfo>,
-    pub nominals: &'a [f64],
-    pub nominal_factor: f64,
-    /// Base of the zero-crossing value region.
-    pub zc_off: u32,
-    /// `functionODE` calls made through this handle, for the solver statistics.
-    pub calls: u64,
-}
-
-impl Ode<'_> {
-    pub fn eval(&mut self, t: f64, y: &[f64], f: &mut [f64]) -> Result<()> {
-        crate::driver::write_time(self.e, self.sim_data, t)?;
-        let mut bytes = vec![0u8; y.len() * 8];
-        for (i, v) in y.iter().enumerate() {
-            bytes[i * 8..i * 8 + 8].copy_from_slice(&v.to_le_bytes());
-        }
-        self.e.write_bytes(self.states_base, &bytes)?;
-        self.e.call1("functionODE", self.sim_data)?;
-        self.calls += 1;
-        self.e.read_bytes(self.ders_base, &mut bytes)?;
-        for (i, v) in f.iter_mut().enumerate() {
-            *v = f64::from_le_bytes(bytes[i * 8..i * 8 + 8].try_into().unwrap());
-        }
-        Ok(())
-    }
-
-    /// Evaluate the zero-crossing functions at `(t, y)`. Like the driver's DASKR
-    /// root callback: the continuous equations first, so any algebraic a crossing
-    /// depends on is current. A nonlinear system that fails at this probe must not
-    /// leak into the next checked evaluation, so the flag is cleared around it.
-    pub fn eval_zc(&mut self, t: f64, y: &[f64], zc: &mut [f64]) -> Result<()> {
-        if zc.is_empty() {
-            return Ok(());
-        }
-        crate::driver::write_i32(self.e, self.sim_data + self.nls_fail_off, 0)?;
-        let mut f = vec![0.0; y.len()];
-        crate::driver::set_context_events(self.e, self.ctx_addr);
-        let run = (|| -> Result<()> {
-            self.eval(t, y, &mut f)?;
-            self.e.call2(crate::driver::MODEL_FN_ZC, self.sim_data, self.sim_data + self.zc_off)?;
-            let mut bytes = vec![0u8; zc.len() * 8];
-            self.e.read_bytes(self.sim_data + self.zc_off, &mut bytes)?;
-            for (i, v) in zc.iter_mut().enumerate() {
-                *v = f64::from_le_bytes(bytes[i * 8..i * 8 + 8].try_into().unwrap());
-            }
-            Ok(())
-        })();
-        crate::driver::set_context_algebraic(self.e, self.ctx_addr);
-        run
-    }
 }
 
 impl GbNls {
@@ -231,30 +168,36 @@ impl GbNls {
     /// The ODE Jacobian at `(time, y)` by (colored) finite differences — C's
     /// `gbInternal_evalNumericalJacobian`, which is `-jacobian=coloredNumerical`.
     /// Stored column-major so it can feed `dgefa` directly.
-    fn eval_jacobian(&mut self, ode: &mut Ode, time: f64, y: &[f64]) -> Result<()> {
+    fn eval_jacobian(&mut self, ode: &mut dyn Ode, time: f64, y: &[f64]) -> Result<()> {
         let n = self.n_states;
         self.n_jac_evals += 1;
         // Anything factorized from the old `J` is now stale, whatever the step size.
         self.lu_step_size = 0.0;
         self.defect_step_size = 0.0;
-        crate::driver::set_context_jacobian(ode.e, ode.ctx_addr);
+        // The colouring outlives the evaluations below, which borrow `ode`.
+        let colors: Vec<Vec<u32>> = match ode.jac_colors() {
+            [] => (0..n as u32).map(|c| vec![c]).collect(),
+            c => c.to_vec(),
+        };
+        let rows_by_col: Vec<Vec<u32>> = match ode.jac_rows_by_col() {
+            [] => (0..n).map(|_| (0..n as u32).collect()).collect(),
+            r => r.to_vec(),
+        };
+        let nominals: Vec<f64> = ode.nominals().to_vec();
+        let nominal_factor = ode.nominal_factor();
+        ode.set_context_jacobian();
         let run = (|| -> Result<()> {
             ode.eval(time, y, &mut self.fbase)?;
             self.ysave.copy_from_slice(y);
             let mut probe = self.ysave.clone();
-            let dense: Vec<Vec<u32>> = (0..n as u32).map(|c| vec![c]).collect();
-            let colors: &[Vec<u32>] = match ode.jac_a {
-                Some(j) => &j.colors,
-                None => &dense,
-            };
             for ci in 0..colors.len() {
                 let mut inv_del = vec![0.0; n];
                 for &col in &colors[ci] {
                     let c = col as usize;
                     // C's `numericalDifferentiationDeltaXsolver` step, floored at the
                     // scaled nominal so a zero state still gets a usable difference.
-                    let mag = DELTA_X_SOLVER
-                        * abs(y[c]).max(ode.nominal_factor * abs(ode.nominals[c]));
+                    let nominal = nominals.get(c).copied().unwrap_or(1.0);
+                    let mag = DELTA_X_SOLVER * abs(y[c]).max(nominal_factor * abs(nominal));
                     let mut del = if mag > 0.0 { mag } else { DELTA_X_SOLVER };
                     del = y[c] + del - y[c];
                     if del == 0.0 {
@@ -267,22 +210,18 @@ impl GbNls {
                 ode.eval(time, &probe, &mut fp)?;
                 for &col in &colors[ci] {
                     let c = col as usize;
-                    let rows: Vec<u32> = match ode.jac_a {
-                        Some(j) => j.rows_by_col[c].clone(),
-                        None => (0..n as u32).collect(),
-                    };
-                    for r in rows {
+                    for &r in &rows_by_col[c] {
                         let r = r as usize;
                         self.j[c * n + r] = (fp[r] - self.fbase[r]) * inv_del[c];
                     }
                     probe[c] = y[c];
                 }
             }
-            // Leave SimData holding the base point again.
+            // Leave the model holding the base point again.
             ode.eval(time, y, &mut self.fbase)?;
             Ok(())
         })();
-        crate::driver::set_context_algebraic(ode.e, ode.ctx_addr);
+        ode.set_context_algebraic();
         run
     }
 
@@ -330,7 +269,7 @@ impl GbNls {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn solve_dirk(
         &mut self,
-        ode: &mut Ode,
+        ode: &mut dyn Ode,
         t: &Tableau,
         stage: usize,
         time: f64,
@@ -369,7 +308,7 @@ impl GbNls {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn solve_multistep(
         &mut self,
-        ode: &mut Ode,
+        ode: &mut dyn Ode,
         t: &Tableau,
         stage_time: f64,
         step_size: f64,
@@ -404,7 +343,7 @@ impl GbNls {
     #[allow(clippy::too_many_arguments)]
     fn newton_scalar(
         &mut self,
-        ode: &mut Ode,
+        ode: &mut dyn Ode,
         stage: usize,
         stage_time: f64,
         fac: f64,
@@ -465,7 +404,7 @@ impl GbNls {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn solve_firk(
         &mut self,
-        ode: &mut Ode,
+        ode: &mut dyn Ode,
         t: &Tableau,
         time: f64,
         step_size: f64,
@@ -576,7 +515,7 @@ impl GbNls {
         y_old: &[f64],
         z: &mut [f64],
         k: &mut [f64],
-        ode: &mut Ode,
+        ode: &mut dyn Ode,
     ) -> Result<()> {
         let n = self.n_states;
         let s = self.n_stages;
@@ -633,7 +572,7 @@ impl GbNls {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn contractive_defect(
         &mut self,
-        ode: &mut Ode,
+        ode: &mut dyn Ode,
         t: &Tableau,
         time: f64,
         step_size: f64,

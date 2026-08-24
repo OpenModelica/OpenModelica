@@ -7,14 +7,14 @@ use alloc::vec;
 use super::conf::CtrlMethod;
 use super::tableau::{GmType, SvpType};
 use super::{ctrl, interp, Gbode, GbStep, Ode, GB_MINIMAL_STEP_SIZE};
-use crate::driver::Result;
+use crate::Result;
 use crate::gbode::math::{abs, pow, sqrt};
 use crate::omclog;
 
 impl Gbode {
     /// C's `expl_diag_impl_RK`: stage by stage, explicitly where the diagonal
     /// entry of `A` is zero and through the nonlinear solver where it is not.
-    fn step_expl_diag_impl(&mut self, ode: &mut Ode) -> Result<bool> {
+    fn step_expl_diag_impl(&mut self, ode: &mut dyn Ode) -> Result<bool> {
         let n = self.n_states;
         let n_stages = self.n_stages();
         for stage in 0..n_stages {
@@ -166,7 +166,7 @@ impl Gbode {
     }
 
     /// C's `full_implicit_RK`: all stages coupled in one nonlinear system.
-    fn step_full_implicit(&mut self, ode: &mut Ode) -> Result<bool> {
+    fn step_full_implicit(&mut self, ode: &mut dyn Ode) -> Result<bool> {
         let n = self.n_states;
         let n_stages = self.n_stages();
         let mut z = vec![0.0; n * n_stages];
@@ -241,7 +241,7 @@ impl Gbode {
 
     /// C's `full_implicit_MS`: the `adams` multi-step method, predictor + one
     /// implicit corrector solve. The signed error estimate lands in `yt`.
-    fn step_full_implicit_ms(&mut self, ode: &mut Ode) -> Result<bool> {
+    fn step_full_implicit_ms(&mut self, ode: &mut dyn Ode) -> Result<bool> {
         let n = self.n_states;
         let n_stages = self.n_stages();
         let last = n_stages - 1;
@@ -311,7 +311,7 @@ impl Gbode {
 
     /// C's `gbode_richardson`: two half steps and one full step, extrapolated to
     /// the signed error estimate in `yt`.
-    fn step_richardson(&mut self, ode: &mut Ode) -> Result<bool> {
+    fn step_richardson(&mut self, ode: &mut dyn Ode) -> Result<bool> {
         let n = self.n_states;
         let time_value = self.time;
         let step_size = self.step_size;
@@ -369,7 +369,7 @@ impl Gbode {
     }
 
     /// The ring-buffer push C's Richardson step does between the two half steps.
-    fn rotate_ring_for_richardson(&mut self, ode: &mut Ode, t: f64) -> Result<()> {
+    fn rotate_ring_for_richardson(&mut self, ode: &mut dyn Ode, t: f64) -> Result<()> {
         let n = self.n_states;
         let mut f = vec![0.0; n];
         let y = self.y.clone();
@@ -386,7 +386,7 @@ impl Gbode {
     }
 
     /// C's `gbData->step_fun`.
-    fn dispatch_step(&mut self, ode: &mut Ode) -> Result<bool> {
+    fn dispatch_step(&mut self, ode: &mut dyn Ode) -> Result<bool> {
         match self.tableau.gm_type {
             GmType::Explicit | GmType::Dirk => self.step_expl_diag_impl(ode),
             GmType::Implicit => self.step_full_implicit(ode),
@@ -424,7 +424,7 @@ impl Gbode {
     #[allow(clippy::too_many_arguments)]
     pub fn step(
         &mut self,
-        ode: &mut Ode,
+        ode: &mut dyn Ode,
         target: f64,
         limit: f64,
         t: &mut f64,
@@ -436,7 +436,7 @@ impl Gbode {
         let no_grid = crate::simflags::with_flags(|f| f.no_equidistant_grid);
         let const_step = self.conf.ctrl_method == CtrlMethod::Const;
         let int_with_err_ctrl = !const_step && self.conf.interpolation.is_err_ctrl();
-        let calls_before = ode.calls;
+        let calls_before = ode.calls();
 
         // C's `targetTime = fmin(gbData->eventTime, targetTime)`: an event located in
         // an earlier step but still ahead of the grid caps this call, so the run stops
@@ -649,7 +649,7 @@ impl Gbode {
             if no_grid {
                 *t = self.time;
                 y[..n].copy_from_slice(&self.y);
-                self.stats.calls_ode += ode.calls - calls_before;
+                self.stats.calls_ode += ode.calls() - calls_before;
                 return Ok(GbStep::Stepped);
             }
             if stop_time - self.time < GB_MINIMAL_STEP_SIZE {
@@ -665,7 +665,7 @@ impl Gbode {
             y[..n].copy_from_slice(&self.y_old);
             let event_time = self.event_time;
             self.event_time = f64::MAX;
-            self.stats.calls_ode += ode.calls - calls_before;
+            self.stats.calls_ode += ode.calls() - calls_before;
             if self.no_restart {
                 self.time_right = self.time;
                 self.y_right.copy_from_slice(&self.y_old);
@@ -690,7 +690,7 @@ impl Gbode {
         self.interpolate_step(out_time, &mut out);
         *t = out_time;
         y[..n].copy_from_slice(&out);
-        self.stats.calls_ode += ode.calls - calls_before;
+        self.stats.calls_ode += ode.calls() - calls_before;
         Ok(GbStep::Reached)
     }
 }
@@ -705,85 +705,32 @@ const GBODE_MIN_INTERP_ERROR: &str = "CodegenWasmJit: gbode reached the minimum 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::driver::SimEngine;
 
-    /// A bouncing ball as a bare linear memory plus the two model functions gbode
-    /// calls.
+    /// A bouncing ball as the two functions gbode calls.
     struct Ball {
-        mem: [u8; 64],
+        calls: u64,
+        nominals: [f64; 2],
     }
 
-    const SIM_DATA: u32 = 0;
-    const STATES: u32 = 8;
-    const DERS: u32 = 24;
-    const ZC_OFF: u32 = 40;
-    const NLS_FAIL_OFF: u32 = 56;
     const G: f64 = 9.81;
 
-    impl Ball {
-        fn f64_at(&self, addr: u32) -> f64 {
-            f64::from_le_bytes(self.mem[addr as usize..addr as usize + 8].try_into().unwrap())
-        }
-        fn set_f64(&mut self, addr: u32, v: f64) {
-            self.mem[addr as usize..addr as usize + 8].copy_from_slice(&v.to_le_bytes());
-        }
-    }
-
-    impl SimEngine for Ball {
-        fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> Result<()> {
-            let a = addr as usize;
-            buf.copy_from_slice(&self.mem[a..a + buf.len()]);
+    impl Ode for Ball {
+        fn eval(&mut self, _t: f64, y: &[f64], f: &mut [f64]) -> Result<()> {
+            self.calls += 1;
+            f[0] = y[1];
+            f[1] = -G;
             Ok(())
         }
-        fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()> {
-            let a = addr as usize;
-            self.mem[a..a + buf.len()].copy_from_slice(buf);
-            Ok(())
-        }
-        fn call1_raw(&mut self, name: &str, _arg: u32) -> Result<()> {
-            match name {
-                "functionODE" => {
-                    let v = self.f64_at(STATES + 8);
-                    self.set_f64(DERS, v);
-                    self.set_f64(DERS + 8, -G);
-                }
-                _ => return Err("unexpected model function"),
-            }
-            Ok(())
-        }
-        fn call1_if_present_raw(&mut self, _name: &str, _arg: u32) -> Result<()> {
-            Ok(())
-        }
-        fn call2_raw(&mut self, name: &str, _a: u32, gout: u32) -> Result<()> {
+        fn eval_zc(&mut self, _t: f64, y: &[f64], zc: &mut [f64]) -> Result<()> {
             // The codegen emits crossings as ±1, not the relation expression.
-            if name != crate::driver::MODEL_FN_ZC {
-                return Err("unexpected model function");
-            }
-            let h = self.f64_at(STATES);
-            self.set_f64(gout, if h > 0.0 { 1.0 } else { -1.0 });
+            zc[0] = if y[0] > 0.0 { 1.0 } else { -1.0 };
             Ok(())
         }
-        fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
-            Err("unused")
+        fn nominals(&self) -> &[f64] {
+            &self.nominals
         }
-        fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
-            None
-        }
-    }
-
-    fn ode<'a>(e: &'a mut Ball, nominals: &'a [f64]) -> Ode<'a> {
-        Ode {
-            e,
-            sim_data: SIM_DATA,
-            states_base: STATES,
-            ders_base: DERS,
-            nls_fail_off: NLS_FAIL_OFF,
-            ctx_addr: 0,
-            jac_a: None,
-            nominals,
-            nominal_factor: 1.0,
-            zc_off: ZC_OFF,
-            calls: 0,
+        fn calls(&self) -> u64 {
+            self.calls
         }
     }
 
@@ -796,16 +743,14 @@ mod tests {
         let mut gb = Gbode::new(2, 1e-6, 1, 0).expect("allocate");
         gb.set_experiment(0.0, 1.0, dt);
         gb.set_nominals(&[1.0, 1.0]);
-        let nominals = [1.0, 1.0];
-        let mut e = Ball { mem: [0; 64] };
+        let mut e = Ball { calls: 0, nominals: [1.0, 1.0] };
         let mut y = [1.0, 0.0]; // h = 1, v = 0
         let mut t = 0.0;
         let mut events = alloc::vec::Vec::new();
         for k in 1..=500 {
             let target = k as f64 * dt;
             while t < target - 1e-12 {
-                let mut o = ode(&mut e, &nominals);
-                match gb.step(&mut o, target, f64::INFINITY, &mut t, &mut y).expect("step") {
+                match gb.step(&mut e, target, f64::INFINITY, &mut t, &mut y).expect("step") {
                     GbStep::Root(te) => {
                         events.push(te);
                         y[1] = -0.7 * y[1]; // the model's reinit at the bounce

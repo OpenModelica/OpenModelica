@@ -28,13 +28,13 @@ use alloc::vec::Vec;
 
 pub use conf::GbConf;
 use conf::{Interpolation, NlsMethod};
-pub use nls::Ode;
+pub use crate::Ode;
 pub(crate) use nls::Solved;
 use nls::GbNls;
 use tableau::{Estimator, GmType, Tableau};
 
-pub(crate) use crate::driver::MINIMAL_STEP_SIZE;
-use crate::driver::Result;
+pub(crate) use crate::MINIMAL_STEP_SIZE;
+use crate::Result;
 use crate::omclog;
 use math::{abs, pow, sqrt};
 
@@ -389,7 +389,7 @@ impl Gbode {
     /// C's `getInitStepSize`, called at the start of the simulation and after an
     /// event. See Hairer, Nørsett & Wanner, "Solving Ordinary Differential
     /// Equations I, Nonstiff Problems", p. 169.
-    fn init_step_size(&mut self, ode: &mut Ode, time: f64, y: &[f64], step_size: f64) -> Result<()> {
+    fn init_step_size(&mut self, ode: &mut dyn Ode, time: f64, y: &[f64], step_size: f64) -> Result<()> {
         let n = self.n_states;
         let old_step = self.step_size;
         self.initial_failures += 1;
@@ -448,7 +448,7 @@ impl Gbode {
 
     /// C's `gbode_init`: reset the ring buffers and statistics at a (re)start. The
     /// model must be at `(time, y_old)` with the derivative evaluated.
-    fn init(&mut self, ode: &mut Ode) -> Result<()> {
+    fn init(&mut self, ode: &mut dyn Ode) -> Result<()> {
         let n = self.n_states;
         for i in 0..self.ring_buffer_size {
             self.err_values[i] = 0.0;

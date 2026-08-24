@@ -1,0 +1,28 @@
+# Reading FMUs: the archive, `modelDescription.xml` of FMI 1.0, 2.0 and 3.0, and
+# the fmi-ls-wasm layered standard. Import side only — nothing here executes an
+# FMU; `openmodelica_fmi_driver` does that. Pure Rust with no host dependency
+# beyond `std`, so the browser omc reads an FMU the same way the native one does.
+[package]
+name = "openmodelica_fmi"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Same reader the package manager uses; `deflate` is the only method an FMU may
+# use besides `store`.
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+roxmltree.workspace = true
+# fmi-ls-wasm component inspection: which core modules a component carries and
+# what they import/export, which is what the driver needs to link against one.
+wasmparser = { version = "0.252", optional = true }
+# The component's `component-type` custom section decodes back to the WIT world
+# it implements, which is how an FMU is checked against fmi:fmi3.
+wit-component = { version = "0.252", optional = true }
+# `WorldKey`, to name the interfaces a decoded component imports and exports.
+wit-parser = { version = "0.252", optional = true }
+
+[features]
+default = ["component"]
+# Look inside `binaries/wasm32-wasip2/*.wasm`. Off for a build that only needs
+# the model description; no wasm-tools crate is pulled in then.
+component = ["dep:wasmparser", "dep:wit-component", "dep:wit-parser"]

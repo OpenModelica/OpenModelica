@@ -1,7 +1,8 @@
-// Loading of FMI-LS-WASM FMUs: ZIP extraction, modelDescription.xml parsing and
-// instantiation of the wasm component. The component is transpiled to JS in the
-// browser by jco's js-component-bindgen (vendor/), then instantiated with the
-// host imports the fmi:fmi3 worlds require.
+// Loading of FMI-LS-WASM FMUs: ZIP extraction and modelDescription.xml parsing.
+// Instantiating the component — transpiling it with jco and reaching its core
+// exports — is `fmu-core.js`; what the page shows about an FMU is parsed here.
+
+import { loadComponent } from './fmu-core.js';
 
 async function inflateRaw(bytes) {
   const s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
@@ -275,124 +276,16 @@ export function findComponent(files, md) {
   throw new Error(`no component matching modelIdentifier ${ids.join('/')} in ${dir}`);
 }
 
-let bindgen = null;
-async function loadBindgen() {
-  if (!bindgen) {
-    const m = await import('./vendor/js-component-bindgen-component.js');
-    await m.$init;
-    bindgen = m;
-  }
-  return bindgen;
-}
-
-// The FMU's resources/ directory, mounted read-only for the guest's WASI filesystem.
-function resourceTree(files) {
-  const root = { dir: {} };
-  let any = false;
-  for (const [name, bytes] of files) {
-    if (!name.startsWith('resources/')) continue;
-    any = true;
-    const parts = name.slice('resources/'.length).split('/');
-    let node = root;
-    for (const p of parts.slice(0, -1)) node = node.dir[p] = node.dir[p] || { dir: {} };
-    node.dir[parts.at(-1)] = { source: bytes };
-  }
-  return any ? root : null;
-}
-
-async function wasiImports(files, onLog) {
-  const [cli, io, clocks, random, filesystem] = await Promise.all([
-    import('@bytecodealliance/preview2-shim/cli'),
-    import('@bytecodealliance/preview2-shim/io'),
-    import('@bytecodealliance/preview2-shim/clocks'),
-    import('@bytecodealliance/preview2-shim/random'),
-    import('@bytecodealliance/preview2-shim/filesystem'),
-  ]);
-  const dec = new TextDecoder();
-  const sink = (tag) => ({
-    write: (c) => onLog(tag, dec.decode(c).replace(/\n$/, '')),
-    blockingFlush() {}, blockingWriteAndFlush: (c) => onLog(tag, dec.decode(c).replace(/\n$/, '')),
-    [Symbol.dispose || Symbol.for('dispose')]() {},
-  });
-  cli._setStdout(sink('stdout'));
-  cli._setStderr(sink('stderr'));
-
-  const tree = resourceTree(files);
-  let resourcePath = '';
-  if (tree) {
-    filesystem._setPreopens({ '/': tree });
-    resourcePath = '/';
-  }
-  return {
-    resourcePath,
-    imports: {
-      'wasi:cli/environment': cli.environment, 'wasi:cli/exit': cli.exit,
-      'wasi:cli/stdin': cli.stdin, 'wasi:cli/stdout': cli.stdout, 'wasi:cli/stderr': cli.stderr,
-      'wasi:cli/terminal-input': cli.terminalInput, 'wasi:cli/terminal-output': cli.terminalOutput,
-      'wasi:cli/terminal-stdin': cli.terminalStdin, 'wasi:cli/terminal-stdout': cli.terminalStdout,
-      'wasi:cli/terminal-stderr': cli.terminalStderr,
-      'wasi:clocks/monotonic-clock': clocks.monotonicClock, 'wasi:clocks/wall-clock': clocks.wallClock,
-      'wasi:filesystem/preopens': filesystem.preopens, 'wasi:filesystem/types': filesystem.types,
-      'wasi:io/error': io.error, 'wasi:io/poll': io.poll, 'wasi:io/streams': io.streams,
-      'wasi:random/random': random.random, 'wasi:random/insecure': random.insecure,
-      'wasi:random/insecure-seed': random.insecureSeed,
-    },
-  };
-}
-
-const find = (exports, prefix, camel) =>
-  exports[Object.keys(exports).find((k) => k.startsWith(prefix))] ?? exports[camel];
-
-export async function loadFmu(buf, { onLog }) {
+// Read an FMU. `withComponent` transpiles and instantiates the wasm component
+// here as well, which the page does not need: it shows what the model
+// description says and leaves running the FMU to the worker.
+export async function loadFmu(buf, { onLog, withComponent = false } = {}) {
   const files = await readZip(buf);
   const mdFile = files.get('modelDescription.xml');
   if (!mdFile) throw new Error('modelDescription.xml is missing from the archive');
   const md = parseModelDescription(new TextDecoder().decode(mdFile));
-  const component = findComponent(files, md);
-
-  const { generate } = await loadBindgen();
-  const gen = generate(new Uint8Array(component), {
-    name: 'fmu', map: [], instantiation: { tag: 'async' },
-    validLiftingOptimization: false, tracing: false, noNodejsCompat: true,
-    noTypescript: true, tlaCompat: false, base64Cutoff: 0,
-    noNamespacedExports: false, multiMemory: false,
-  });
-
-  const cores = new Map(gen.files.filter(([n]) => n.endsWith('.wasm')));
-  const jsFile = gen.files.find(([n]) => n.endsWith('.js'));
-  const url = URL.createObjectURL(new Blob([jsFile[1]], { type: 'text/javascript' }));
-  let instantiate;
-  try { ({ instantiate } = await import(url)); } finally { URL.revokeObjectURL(url); }
-
-  const { imports, resourcePath } = await wasiImports(files, onLog);
-  const callbacks = {
-    logMessage: (instanceName, status, category, message) =>
-      onLog(status, `[${instanceName}] ${category ? category + ': ' : ''}${message}`),
-    clockUpdate() {}, lockPreemption() {}, unlockPreemption() {},
-  };
-  imports['fmi:fmi3/callbacks'] = callbacks;
-  imports['fmi:fmi3/intermediate-update-callbacks'] = {
-    intermediateUpdate: () => ({ earlyReturnRequested: false, earlyReturnTime: 0 }),
-  };
-
-  const missing = gen.imports.filter((n) => !imports[n]);
-  if (missing.length) throw new Error(`FMU needs imports this host does not provide: ${missing.join(', ')}`);
-
-  // Each instantiation gets its own wasm memory, so every run starts from a
-  // clean FMU rather than inheriting whatever the previous one left behind.
-  const modules = new Map();
-  const compile = async (n) => {
-    if (!modules.has(n)) modules.set(n, await WebAssembly.compile(cores.get(n)));
-    return modules.get(n);
-  };
-  const instance = async () => {
-    const exports = await instantiate(compile, imports);
-    return {
-      md, resourcePath, exports,
-      common: find(exports, 'fmi:fmi3/common', 'common'),
-      cs: find(exports, 'fmi:fmi3/co-simulation', 'coSimulation'),
-      me: find(exports, 'fmi:fmi3/model-exchange', 'modelExchange'),
-    };
-  };
-  return { md, files, instance };
+  if (!withComponent) return { md, files, component: null, instance: null };
+  const component = await loadComponent(findComponent(files, md), { files, onLog });
+  const instance = async () => ({ md, ...(await component.probe()) });
+  return { md, files, component, instance };
 }

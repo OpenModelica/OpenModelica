@@ -30,6 +30,13 @@ use crate::{
 /// (it compiles into the runtime wasm) so it can't depend on the compiler crates.
 pub type Result<T> = core::result::Result<T, &'static str>;
 
+// Moved to `openmodelica_solvers`, which the solvers themselves use; re-exported
+// so `driver::format_g` and the rest keep naming them.
+pub use openmodelica_solvers::{
+    LogSink, MINIMAL_STEP_SIZE, format_e, format_g, log_line, set_log_sink,
+};
+pub(crate) use openmodelica_solvers::bisection_iterations;
+
 /// The driver reads a model purely through its shared metadata blob, so the host
 /// (native/wasmer) and in-wasm drivers share one model view.
 type SimModel = SimMeta;
@@ -962,25 +969,6 @@ fn set_no_throw(v: bool) {
     }
 }
 
-// Where the driver's own log lines go. The model's `print` output shares the
-// channel, so the two interleave in the order C prints them.
-//
-// The stream and type come along for a host whose only channel is the FMI logger:
-// it has to map them to a category and an `fmi3Status`. One writing to a stdout
-// ignores both — they are already in the line's header columns.
-pub type LogSink = fn(crate::omclog::Stream, crate::omclog::LogType, &str);
-static LOG_SINK: AtomicUsize = AtomicUsize::new(0);
-pub fn set_log_sink(f: LogSink) {
-    LOG_SINK.store(f as usize, Ordering::Relaxed);
-}
-pub(crate) fn log_line(stream: crate::omclog::Stream, ty: crate::omclog::LogType, s: &str) {
-    let p = LOG_SINK.load(Ordering::Relaxed);
-    if p != 0 {
-        let f: LogSink = unsafe { core::mem::transmute(p) };
-        f(stream, ty, s);
-    }
-}
-
 // C's `importStartValues`, which `-ipopt_init=file` repeats at every collocation
 // point. Opening a result file is the host's job (on the web it has to go through
 // the VFS), so the host installs the reader. `out` arrives holding the current
@@ -1584,36 +1572,6 @@ pub(crate) fn format_f(v: f64) -> String {
 
 fn format_g15(v: f64) -> String {
     format_g(v, 15)
-}
-
-/// C's `%.<p>g`: `p` significant digits, `%e` outside `[1e-4, 10^p)`, trailing
-/// zeros and a bare decimal point trimmed.
-pub fn format_g(v: f64, p: i32) -> String {
-    if !v.is_finite() || v == 0.0 {
-        return format!("{v}");
-    }
-    let exp = libm::floor(libm::log10(libm::fabs(v))) as i32;
-    let trim = |s: String| -> String {
-        if !s.contains('.') {
-            return s;
-        }
-        s.trim_end_matches('0').trim_end_matches('.').to_string()
-    };
-    if exp < -4 || exp >= p {
-        let m = trim(format!("{:.*}", (p - 1) as usize, v / libm::pow(10.0, exp as f64)));
-        return format!("{m}e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.abs());
-    }
-    trim(format!("{:.*}", (p - 1 - exp).max(0) as usize, v))
-}
-
-/// C's `%e`: six decimals on the mantissa, a two-digit exponent.
-pub fn format_e(v: f64) -> String {
-    if !v.is_finite() {
-        return format!("{v}");
-    }
-    let exp = if v == 0.0 { 0 } else { libm::floor(libm::log10(libm::fabs(v))) as i32 };
-    let m = v / libm::pow(10.0, exp as f64);
-    format!("{m:.6}e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.abs())
 }
 
 /// Evaluate `functionCheckAsserts` (C's `checkForAsserts`) at the current point and
@@ -2880,15 +2838,6 @@ const MAX_EVENT_ITER: usize = 20;
 
 fn max_event_iter() -> usize {
     crate::simflags::with_flags(|f| f.max_event_iter).map_or(MAX_EVENT_ITER, |n| n as usize)
-}
-
-/// C's `bisection` iteration bound (`events.c`, `gbode_events.c`): `-mbi` when it is
-/// set to a positive value, else what halving the bracket down to `ttol` takes.
-pub(crate) fn bisection_iterations(width: f64, ttol: f64) -> i64 {
-    match crate::simflags::with_flags(|f| f.max_bisection_iter) {
-        Some(n) if n > 0 => n as i64,
-        _ => 1 + libm::ceil(libm::log(libm::fabs(width) / ttol) / libm::log(2.0)) as i64,
-    }
 }
 
 /// Hold the zero-crossing g-values as `pre(zeroCrossing)`.
@@ -4527,7 +4476,12 @@ fn jac_method_colored(m: JacobianMethod) -> bool {
 /// not just the pattern's. `set(row, col, k, value)` places one entry, `k` being
 /// its index within the column. SimData already holds the linearization point, as
 /// in C: the residual at `(t, y)` ran just before.
-fn eval_sym_jacobian(
+/// The model's symbolic ODE Jacobian, column by column (or colour by colour),
+/// reported to `set` as `(row, column, index within the column, value)`.
+///
+/// Public because an exported FMU answers `fmi3GetDirectionalDerivative` from
+/// it.
+pub fn eval_sym_jacobian(
     e: &mut dyn SimEngine,
     sim_data: u32,
     jac: &JacAInfo,
@@ -5798,14 +5752,106 @@ const CHATTER_LIMIT: usize = 100;
 
 /// The model-call handle the hand-written solvers (gbode, the fixed-step ones)
 /// evaluate through, built from the `ResCtx` the integrator already has.
+/// The model in wasm linear memory as an [`openmodelica_solvers::Ode`]: the
+/// solvers set the time and the states, call `functionODE`, and read the
+/// derivatives back out of `SimData`.
+pub struct EngineOde<'a> {
+    pub e: &'a mut (dyn SimEngine + 'static),
+    pub sim_data: u32,
+    pub states_base: u32,
+    pub ders_base: u32,
+    pub nls_fail_off: u32,
+    pub ctx_addr: u32,
+    /// Sparsity + coloring for the finite-difference Jacobian; `None` ⇒ dense
+    /// column-by-column differencing.
+    pub jac_a: Option<&'a JacAInfo>,
+    pub nominals: &'a [f64],
+    pub nominal_factor: f64,
+    /// Base of the zero-crossing value region.
+    pub zc_off: u32,
+    /// `functionODE` calls made through this handle, for the solver statistics.
+    pub calls: u64,
+}
+
+impl openmodelica_solvers::Ode for EngineOde<'_> {
+    fn eval(&mut self, t: f64, y: &[f64], f: &mut [f64]) -> Result<()> {
+        write_time(self.e, self.sim_data, t)?;
+        let mut bytes = vec![0u8; y.len() * 8];
+        for (i, v) in y.iter().enumerate() {
+            bytes[i * 8..i * 8 + 8].copy_from_slice(&v.to_le_bytes());
+        }
+        self.e.write_bytes(self.states_base, &bytes)?;
+        self.e.call1("functionODE", self.sim_data)?;
+        self.calls += 1;
+        self.e.read_bytes(self.ders_base, &mut bytes)?;
+        for (i, v) in f.iter_mut().enumerate() {
+            *v = f64::from_le_bytes(bytes[i * 8..i * 8 + 8].try_into().unwrap());
+        }
+        Ok(())
+    }
+
+    /// Like the driver's DASKR root callback: the continuous equations first, so
+    /// any algebraic a crossing depends on is current. A nonlinear system that
+    /// fails at this probe must not leak into the next checked evaluation, so the
+    /// flag is cleared around it.
+    fn eval_zc(&mut self, t: f64, y: &[f64], zc: &mut [f64]) -> Result<()> {
+        if zc.is_empty() {
+            return Ok(());
+        }
+        write_i32(self.e, self.sim_data + self.nls_fail_off, 0)?;
+        let mut f = vec![0.0; y.len()];
+        set_context_events(self.e, self.ctx_addr);
+        let run = (|| -> Result<()> {
+            openmodelica_solvers::Ode::eval(self, t, y, &mut f)?;
+            self.e.call2(MODEL_FN_ZC, self.sim_data, self.sim_data + self.zc_off)?;
+            let mut bytes = vec![0u8; zc.len() * 8];
+            self.e.read_bytes(self.sim_data + self.zc_off, &mut bytes)?;
+            for (i, v) in zc.iter_mut().enumerate() {
+                *v = f64::from_le_bytes(bytes[i * 8..i * 8 + 8].try_into().unwrap());
+            }
+            Ok(())
+        })();
+        set_context_algebraic(self.e, self.ctx_addr);
+        run
+    }
+
+    fn nominals(&self) -> &[f64] {
+        self.nominals
+    }
+
+    fn nominal_factor(&self) -> f64 {
+        self.nominal_factor
+    }
+
+    fn jac_colors(&self) -> &[Vec<u32>] {
+        self.jac_a.map_or(&[], |j| &j.colors)
+    }
+
+    fn jac_rows_by_col(&self) -> &[Vec<u32>] {
+        self.jac_a.map_or(&[], |j| &j.rows_by_col)
+    }
+
+    fn set_context_jacobian(&mut self) {
+        set_context_jacobian(self.e, self.ctx_addr);
+    }
+
+    fn set_context_algebraic(&mut self) {
+        set_context_algebraic(self.e, self.ctx_addr);
+    }
+
+    fn calls(&self) -> u64 {
+        self.calls
+    }
+}
+
 fn model_ode<'a>(
     e: &'a mut (dyn SimEngine + 'static),
     ctx: &'a ResCtx,
     states_base: u32,
     ders_base: u32,
     nominals: &'a [f64],
-) -> crate::gbode::Ode<'a> {
-    crate::gbode::Ode {
+) -> EngineOde<'a> {
+    EngineOde {
         e,
         sim_data: ctx.sim_data,
         states_base,
@@ -5849,9 +5895,6 @@ const DASSL_STEP_EPS: f64 = 1e-13;
 /// C's `SAMPLE_EPS` (`simulation/solver/epsilon.h`).
 const SAMPLE_EPS: f64 = 1e-14;
 
-/// C's `MINIMAL_STEP_SIZE` (`simulation/solver/epsilon.h`), the bisection's
-/// absolute tolerance.
-pub(crate) const MINIMAL_STEP_SIZE: f64 = 1e-12;
 
 /// `dassl.c`'s floor on a step worth handing to DASKR.
 fn small_step_eps(span: f64) -> f64 {

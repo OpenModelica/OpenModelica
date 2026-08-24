@@ -10,8 +10,8 @@
 use alloc::vec;
 use alloc::vec::Vec;
 
-use crate::driver::{Result, MINIMAL_STEP_SIZE};
-use crate::gbode::Ode;
+use crate::{Result, MINIMAL_STEP_SIZE};
+use crate::Ode;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum FixedKind {
@@ -88,7 +88,7 @@ impl FixedStep {
     /// on return it holds the derivative at the point reported.
     pub fn step(
         &mut self,
-        ode: &mut Ode,
+        ode: &mut dyn Ode,
         t: &mut f64,
         y: &mut [f64],
         yp: &mut [f64],
@@ -152,10 +152,10 @@ impl FixedStep {
     /// narrower than `MINIMAL_STEP_SIZE`, keeping the half the crossing flips in.
     /// `y_left`/`y_right` end up as the bracket's ends and the right one is the
     /// reported event state.
-    fn find_root(&mut self, ode: &mut Ode, mut a: f64, mut b: f64) -> Result<f64> {
+    fn find_root(&mut self, ode: &mut dyn Ode, mut a: f64, mut b: f64) -> Result<f64> {
         let n = self.n_states;
         let ttol = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE * abs(b - a);
-        let mut iters = crate::driver::bisection_iterations(b - a, ttol);
+        let mut iters = crate::bisection_iterations(b - a, ttol);
         self.zc_backup.copy_from_slice(&self.zc);
         let mut mid = vec![0.0; n];
         while abs(b - a) > MINIMAL_STEP_SIZE && iters > 0 {
@@ -166,8 +166,8 @@ impl FixedStep {
             }
             ode.eval_zc(c, &mid, &mut self.zc)?;
             let in_left = self.event_ids.iter().any(|&i| {
-                (self.zc[i] == -1.0 && self.zc_pre[i] == 1.0)
-                    || (self.zc[i] == 1.0 && self.zc_pre[i] == -1.0)
+                let (a, b) = (sign(self.zc[i]), sign(self.zc_pre[i]));
+                (a == -1 && b == 1) || (a == 1 && b == -1)
             });
             if in_left {
                 self.y_right.copy_from_slice(&mid);
