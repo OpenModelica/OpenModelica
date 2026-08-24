@@ -241,6 +241,17 @@ pub struct SimFlags {
     /// prefixes the `_init.xml`/`_info.json`/sparsity files, which this runtime
     /// carries in the module, so [`parse`] folds it into the two file flags only.
     pub input_path: Option<String>,
+    /// `-reconcile` / `-reconcileBoundaryConditions` / `-reconcileState`: the three
+    /// data-reconciliation procedures (VDI 2048 D.1, D.2 and their combination).
+    pub reconcile: bool,
+    pub reconcile_boundary: bool,
+    pub reconcile_state: bool,
+    /// `-sx=<file>`: the measurement input file (D.1) / reconciled values (D.2).
+    pub recon_sx: Option<String>,
+    /// `-cx=<file>`: correlation coefficients (D.1) / reconciled covariance (D.2).
+    pub recon_cx: Option<String>,
+    /// `-eps=<x>`: the convergence bound on `J*/r`; C's default is `1e-10`.
+    pub recon_eps: Option<String>,
     /// `-csvOstep=<file>` / `-optDebugJac=<iter>`: the optimizer's debug dumps.
     pub csv_ostep: Option<String>,
     pub opt_debug_jac: Option<String>,
@@ -722,6 +733,12 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "stateFile" => f.state_file = Some(value(name)?),
             "csvInput" => f.csv_input = Some(value(name)?),
             "inputPath" => f.input_path = Some(value(name)?),
+            "reconcile" => f.reconcile = true,
+            "reconcileBoundaryConditions" => f.reconcile_boundary = true,
+            "reconcileState" => f.reconcile_state = true,
+            "sx" => f.recon_sx = Some(value(name)?),
+            "cx" => f.recon_cx = Some(value(name)?),
+            "eps" => f.recon_eps = Some(value(name)?),
             "csvOstep" => f.csv_ostep = Some(value(name)?),
             "optDebugJac" => f.opt_debug_jac = Some(value(name)?),
             // C declares `-ipopt_jac` but never reads it; accept and ignore, as it does.

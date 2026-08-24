@@ -1216,12 +1216,12 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
     let table = wts(rt_inst.exports.get_table("__indirect_function_table"))?.clone();
     let n_slots = crate::model::INWASM_SLOT_NAMES.len() as u32;
     let fn_base = wts(table.grow(&mut store, n_slots, wasmer::Value::FuncRef(None)))?;
-    let mut present_mask: u32 = 0;
+    let mut present_mask: u64 = 0;
     for (slot, name) in crate::model::INWASM_SLOT_NAMES.iter().enumerate() {
         if let Ok(f) = instance.exports.get_function(name) {
             let f = f.clone();
             wts(table.set(&mut store, fn_base + slot as u32, wasmer::Value::FuncRef(Some(f))))?;
-            present_mask |= 1 << slot;
+            present_mask |= 1u64 << slot;
         }
     }
 
@@ -1250,7 +1250,7 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         return Err("CodegenWasmJit: the runtime rejected the simulation flags".to_string());
     }
 
-    let start: wasmer::TypedFunction<(u32, u32, u32, u32), i32> =
+    let start: wasmer::TypedFunction<(u32, u32, u32, u64), i32> =
         wts(rt_inst.exports.get_typed_function(&store, "rt_sim_start"))?;
     let gf = |store: &Store, name: &'static str| -> std::result::Result<wasmer::TypedFunction<(), u32>, String> {
         wts(rt_inst.exports.get_typed_function(store, name))

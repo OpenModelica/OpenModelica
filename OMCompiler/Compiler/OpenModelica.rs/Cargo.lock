@@ -6814,6 +6814,7 @@ version = "0.1.0"
 dependencies = [
  "daskr",
  "libm",
+ "openmodelica_lapack",
  "openmodelica_mat_writer",
  "openmodelica_solvers",
 ]

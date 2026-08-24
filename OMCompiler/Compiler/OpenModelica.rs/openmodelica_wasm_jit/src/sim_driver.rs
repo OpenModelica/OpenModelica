@@ -51,8 +51,17 @@ fn log_to_stdout(
     openmodelica_wasi::wasi::stdout_write(s.as_bytes());
 }
 
+/// C's `OpenModelica_uriToFilename`, which `-reconcile`'s input files may use.
+fn uri_to_filename(uri: &str) -> String {
+    match metamodelica::uriToFilename(arcstr::ArcStr::from(uri)) {
+        Ok(path) => path.to_string(),
+        Err(_) => uri.to_string(),
+    }
+}
+
 pub fn init_host_hooks() {
     set_cancel_hook(metamodelica::cancel::check_cancel);
+    openmodelica_sim_meta::driver::set_uri_resolver(uri_to_filename);
     openmodelica_sim_meta::driver::set_log_sink(log_to_stdout);
     set_assert_reporter(report_assert);
     // The host driver shares this process with `rt_assert`, so it sets the flag

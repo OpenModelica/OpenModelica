@@ -33,6 +33,9 @@ pub use openmodelica_solvers::{fixedstep, gbode, omclog, simflags};
 /// `-csvInput`, which needs a filesystem: host builds only.
 #[cfg(feature = "std")]
 pub(crate) mod extinput;
+/// `-reconcile*`, which needs a filesystem too.
+#[cfg(feature = "std")]
+pub mod datarecon;
 pub mod optimization;
 pub(crate) mod qss;
 pub mod rtclock;
@@ -736,6 +739,51 @@ pub struct LinInfo {
     pub jac_cols: [u32; 4],
 }
 
+/// One variable a data-reconciliation list names, C's `dataReconciliationInputNames`
+/// / `dataReconciliationUnmeasuredVariables` entry paired with its `SimData` slot.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct ReconVar {
+    pub off: u32,
+    pub negate: Neg,
+    pub name: String,
+    /// C's `attribute.displayUnit` and `info.comment`, quoted by the reports.
+    pub unit: String,
+    pub comment: String,
+}
+
+/// A symbolic Jacobian the reconciliation drives (C's `INDEX_JAC_F` / `INDEX_JAC_H`).
+/// `off` is where the matching export writes the finished `rows * cols` matrix,
+/// column-major, as C's `getJacobianMatrixF` assembles it.
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
+pub struct ReconJac {
+    pub rows: u32,
+    pub cols: u32,
+    pub off: u32,
+}
+
+/// What `-reconcile`/`-reconcileBoundaryConditions`/`-reconcileState` need: the
+/// three variable lists C's `data_function`/`setc_function`/`setb_function` copy
+/// between `SimData` and `simulationInfo`, and the two Jacobians.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct ReconInfo {
+    /// C's `datainputVars`: the measured variables of interest, written before
+    /// each `functionDAE` and named in the reports.
+    pub input_vars: Vec<ReconVar>,
+    /// C's `setcVars`: the auxiliary conditions' residuals, read after it.
+    pub setc_vars: Vec<ReconVar>,
+    /// C's `setbVars`: the unmeasured variables of interest.
+    pub setb_vars: Vec<ReconVar>,
+    pub jac_f: Option<ReconJac>,
+    pub jac_h: Option<ReconJac>,
+    /// C's `modelData->nRelatedBoundaryConditions`, counted by the code generator.
+    pub n_related_boundary: u32,
+    /// C's `modelData->modelFileName` and `modelDir`, quoted by the HTML reports.
+    pub model_file: String,
+    pub model_dir: String,
+    /// C's `CONFIG_VERSION`, which the reports sign themselves with.
+    pub version: String,
+}
+
 /// The compile-time half of C's `SUBCLOCK_DATA` (its `CLOCK_STATS` live in `SimData`).
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub struct SubClockMeta {
@@ -977,6 +1025,9 @@ pub struct SimMeta {
     /// C's `modelData->nInputVars` / `inputNames`: each `input` variable in
     /// declaration order. `-csvInput` matches its columns against the names.
     pub inputs: Vec<InputVar>,
+    /// What the `-reconcile*` procedures need; `None` unless the model was
+    /// translated with `--preOptModules+=dataReconciliation`.
+    pub recon: Option<ReconInfo>,
 }
 
 /// One `input` variable. C writes the file's value both to the `start` attribute,
@@ -1540,6 +1591,37 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         o.push(matches!(v.wty, WTy::F64) as u8);
         put_str(&mut o, &v.name);
     }
+    match &m.recon {
+        None => o.push(0),
+        Some(rc) => {
+            o.push(1);
+            for list in [&rc.input_vars, &rc.setc_vars, &rc.setb_vars] {
+                put_u32(&mut o, list.len() as u32);
+                for v in list {
+                    put_u32(&mut o, v.off);
+                    o.push(v.negate.code());
+                    put_str(&mut o, &v.name);
+                    put_str(&mut o, &v.unit);
+                    put_str(&mut o, &v.comment);
+                }
+            }
+            for jac in [&rc.jac_f, &rc.jac_h] {
+                match jac {
+                    None => o.push(0),
+                    Some(j) => {
+                        o.push(1);
+                        put_u32(&mut o, j.rows);
+                        put_u32(&mut o, j.cols);
+                        put_u32(&mut o, j.off);
+                    }
+                }
+            }
+            put_u32(&mut o, rc.n_related_boundary);
+            put_str(&mut o, &rc.model_file);
+            put_str(&mut o, &rc.model_dir);
+            put_str(&mut o, &rc.version);
+        }
+    }
     o
 }
 
@@ -1952,10 +2034,48 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         let wty = if r.u8()? != 0 { WTy::F64 } else { WTy::I32 };
         inputs.push(InputVar { off, start_off, wty, name: r.string()? });
     }
+    let recon = match r.u8()? {
+        0 => None,
+        _ => {
+            let mut lists = [Vec::new(), Vec::new(), Vec::new()];
+            for list in &mut lists {
+                for _ in 0..r.u32()? {
+                    let off = r.u32()?;
+                    let negate = Neg::from_code(r.u8()?);
+                    list.push(ReconVar {
+                        off,
+                        negate,
+                        name: r.string()?,
+                        unit: r.string()?,
+                        comment: r.string()?,
+                    });
+                }
+            }
+            let mut jac = |r: &mut Reader| -> core::result::Result<Option<ReconJac>, &'static str> {
+                Ok(match r.u8()? {
+                    0 => None,
+                    _ => Some(ReconJac { rows: r.u32()?, cols: r.u32()?, off: r.u32()? }),
+                })
+            };
+            let (jac_f, jac_h) = (jac(&mut r)?, jac(&mut r)?);
+            let [input_vars, setc_vars, setb_vars] = lists;
+            Some(ReconInfo {
+                input_vars,
+                setc_vars,
+                setb_vars,
+                jac_f,
+                jac_h,
+                n_related_boundary: r.u32()?,
+                model_file: r.string()?,
+                model_dir: r.string()?,
+                version: r.string()?,
+            })
+        }
+    };
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, params, attr_log,
-        removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs,
+        removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon,
     })
 }
 
@@ -2089,6 +2209,35 @@ mod tests {
                 jac_d: None,
             }),
             inputs: vec![InputVar { off: 96, start_off: 104, wty: WTy::F64, name: "u".to_string() }],
+            recon: Some(ReconInfo {
+                input_vars: vec![ReconVar {
+                    off: 16,
+                    negate: Neg::None,
+                    name: "x".to_string(),
+                    unit: "K".to_string(),
+                    comment: "measured".to_string(),
+                }],
+                setc_vars: vec![ReconVar {
+                    off: 24,
+                    negate: Neg::Arith,
+                    name: "c".to_string(),
+                    unit: String::new(),
+                    comment: String::new(),
+                }],
+                setb_vars: vec![ReconVar {
+                    off: 32,
+                    negate: Neg::Not,
+                    name: "b".to_string(),
+                    unit: "1".to_string(),
+                    comment: "unmeasured".to_string(),
+                }],
+                jac_f: Some(ReconJac { rows: 1, cols: 2, off: 200 }),
+                jac_h: None,
+                n_related_boundary: 1,
+                model_file: "MyModel.mo".to_string(),
+                model_dir: "/tmp".to_string(),
+                version: "v1.25.0".to_string(),
+            }),
         }
     }
 
