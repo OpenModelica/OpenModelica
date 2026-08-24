@@ -1,3 +1,5 @@
 # Files removed from the source tree that should be cleaned from synced copies.
 # One relative path per line (relative to OpenModelica.rs/).
 openmodelica_codegen_wasm_jit/build.rs
+openmodelica_lapack/src/parallel.rs
+openmodelica_lapack/tests/parallel.rs

@@ -46,10 +46,9 @@ minpack = { path = "../minpack", default-features = false }
 # never crosses the wasm↔host boundary per element.
 libm = "0.2"
 # The dense LU/solve behind `SES_LINEAR`, in-wasm so a solve never crosses the
-# host boundary. `default-features = false` drops the oxiblas half. The same crate
-# omc itself calls, so a linear system gets LAPACK's pivot order and `INFO`
-# whichever side factors it.
-openmodelica_lapack = { path = "../openmodelica_lapack", default-features = false }
+# host boundary. The same crate omc itself calls, so a linear system gets
+# LAPACK's pivot order and `INFO` whichever side factors it.
+openmodelica_lapack = { path = "../openmodelica_lapack" }
 
 # In-wasm session driver (`src/session.rs`) for the no_std JIT runtime
 # (wasm32-unknown-unknown): the shared driver + solver compiled in-wasm so the

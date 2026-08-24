@@ -179,25 +179,6 @@ fn ch(s: &ArcStr) -> c_char {
     *s.as_bytes().first().unwrap_or(&b' ') as c_char
 }
 
-/// Hold the oxiblas kernels to what `-n` allows, before the first routine that
-/// reaches them. Read once: a later `setCommandLineOptions("-n=…")` applies to
-/// the next omc run rather than resizing a pool with work in it.
-///
-/// `--running-testsuite` pins it to one whatever `-n` says — oxiblas splits its
-/// reductions by thread count, so a result would otherwise depend on the core
-/// count of whichever machine ran the test.
-fn init_thread_limit() {
-    static ONCE: std::sync::Once = std::sync::Once::new();
-    ONCE.call_once(|| {
-        let n = if crate::Testsuite::isRunning().unwrap_or(false) {
-            1
-        } else {
-            crate::Flags::getConfigInt(crate::Flags::NUM_PROC.clone()).unwrap_or(0).max(0) as usize
-        };
-        openmodelica_lapack::parallel::set_max_threads(n);
-    });
-}
-
 pub fn dgeev(
     inJOBVL: ArcStr,
     inJOBVR: ArcStr,
@@ -316,7 +297,6 @@ pub fn dgelsx(
     inRCOND: Real,
     inWORK: Vec64,
 ) -> (Mat, Mat, IVec, i32, i32) {
-    init_thread_limit();
     let mut a = mat_in(inLDA, inN, &inA);
     let mut b = mat_in(inLDB, inNRHS, &inB);
     let mut jpvt = ivec_in(inN, &inJPVT);
@@ -349,7 +329,6 @@ pub fn dgelsy(
     inWORK: Vec64,
     inLWORK: i32,
 ) -> (Mat, Mat, IVec, i32, Vec64, i32) {
-    init_thread_limit();
     let mut a = mat_in(inLDA, inN, &inA);
     let mut b = mat_in(inLDB, inNRHS, &inB);
     let mut work = vec_in(inLWORK, &inWORK);
@@ -476,7 +455,6 @@ pub fn dgesvd(
     inWORK: Vec64,
     inLWORK: i32,
 ) -> (Mat, Vec64, Mat, Mat, Vec64, i32) {
-    init_thread_limit();
     let lds = inM.min(inN);
     let ucol = match ch(&inJOBU) as u8 {
         b'A' => inM,
