@@ -98,6 +98,27 @@ pub fn dtrsm(
     b: &mut [f64],
     ldb: usize,
 ) {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dtrsm(side, uplo, transa, diag, m, n, alpha, a, lda, b, ldb);
+    #[cfg(not(feature = "faer-backend"))]
+    dtrsm_ref(side, uplo, transa, diag, m, n, alpha, a, lda, b, ldb)
+}
+
+/// The port of `DTRSM`, kept as the faer-free fallback.
+#[allow(clippy::too_many_arguments)]
+pub fn dtrsm_ref(
+    side: &str,
+    uplo: &str,
+    transa: &str,
+    diag: &str,
+    m: usize,
+    n: usize,
+    alpha: f64,
+    a: &[f64],
+    lda: usize,
+    b: &mut [f64],
+    ldb: usize,
+) {
     let left = opt(side) == b'L';
     let upper = opt(uplo) == b'U';
     let trans = opt(transa) != b'N';

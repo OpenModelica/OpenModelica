@@ -1,9 +1,10 @@
-//! The generalized eigenproblem `A*x = λ*B*x`: `DGEGV`.
+//! The generalized eigenproblem `A*x = λ*B*x`: `DGGEV` and the deprecated
+//! `DGEGV`.
 //!
-//! **A nonsingular `B` only**, unlike LAPACK: the general case needs a QZ
-//! factorization, which nothing here has. So this reduces to `B⁻¹A` and returns
-//! `INFO > 0` where LAPACK would report a `β = 0` infinite eigenvalue. MSL 3.2.3
-//! declares `dgegv` but never calls it, and MSL 4 dropped it.
+//! With `faer-backend` both are a real QZ, so a singular `B` gives the `β = 0`
+//! infinite eigenvalues LAPACK reports and the eigenvectors are available.
+//! Without it there is no QZ here: the fallback reduces to `B⁻¹A`, which needs a
+//! nonsingular `B` and cannot produce left eigenvectors.
 
 use crate::{abs, opt, pack};
 
@@ -14,6 +15,60 @@ use crate::{abs, opt, pack};
 /// `jobvl`/`jobvr` must be `"N"`; `"V"` returns `-1`/`-2`, the argument position.
 #[allow(clippy::too_many_arguments)]
 pub fn dgegv(
+    jobvl: &str,
+    jobvr: &str,
+    n: usize,
+    a: &[f64],
+    lda: usize,
+    b: &[f64],
+    ldb: usize,
+    alphar: &mut [f64],
+    alphai: &mut [f64],
+    beta: &mut [f64],
+) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dggev(
+        jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, &mut [], 1, &mut [], 1,
+    );
+    #[cfg(not(feature = "faer-backend"))]
+    dgegv_ref(jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta)
+}
+
+/// `DGGEV`: the generalized eigenvalues of `(A, B)` and, for `jobvl`/`jobvr` of
+/// `"V"`, the left and right eigenvectors. Needs `faer-backend`; without it
+/// there is no QZ and only the eigenvalues of a nonsingular pencil can be had,
+/// so `"V"` reports the argument position as LAPACK does for a bad option.
+#[allow(clippy::too_many_arguments)]
+pub fn dggev(
+    jobvl: &str,
+    jobvr: &str,
+    n: usize,
+    a: &[f64],
+    lda: usize,
+    b: &[f64],
+    ldb: usize,
+    alphar: &mut [f64],
+    alphai: &mut [f64],
+    beta: &mut [f64],
+    vl: &mut [f64],
+    ldvl: usize,
+    vr: &mut [f64],
+    ldvr: usize,
+) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dggev(
+        jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, vl, ldvl, vr, ldvr,
+    );
+    #[cfg(not(feature = "faer-backend"))]
+    {
+        let _ = (vl, ldvl, vr, ldvr);
+        dgegv_ref(jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta)
+    }
+}
+
+/// The `B⁻¹A` reduction, kept as the fallback when faer is not linked.
+#[allow(clippy::too_many_arguments)]
+pub fn dgegv_ref(
     jobvl: &str,
     jobvr: &str,
     n: usize,

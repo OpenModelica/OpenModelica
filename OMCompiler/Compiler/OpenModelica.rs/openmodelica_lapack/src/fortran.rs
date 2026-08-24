@@ -953,3 +953,204 @@ pub unsafe extern "C" fn dtrsm_(
         ldb,
     );
 }
+
+// ───────────────────────────── generalized eigenproblem ─────────────────────
+
+#[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn dggev_(
+    jobvl: *const c_char,
+    jobvr: *const c_char,
+    n: *const i32,
+    a: *mut f64,
+    lda: *const i32,
+    b: *mut f64,
+    ldb: *const i32,
+    alphar: *mut f64,
+    alphai: *mut f64,
+    beta: *mut f64,
+    vl: *mut f64,
+    ldvl: *const i32,
+    vr: *mut f64,
+    ldvr: *const i32,
+    work: *mut f64,
+    lwork: *const i32,
+    info: *mut i32,
+) {
+    let (n, lda, ldb, ldvl, ldvr) = unsafe { (u(n), u(lda), u(ldb), u(ldvl), u(ldvr)) };
+    if unsafe { query(lwork, work, 8 * n.max(1)) } {
+        unsafe { *info = 0 };
+        return;
+    }
+    let want_l = unsafe { ch(jobvl) } == "V";
+    let want_r = unsafe { ch(jobvr) } == "V";
+    let r = gev::dggev(
+        unsafe { ch(jobvl) },
+        unsafe { ch(jobvr) },
+        n,
+        slc!(a, lda * n.max(1)),
+        lda,
+        slc!(b, ldb * n.max(1)),
+        ldb,
+        sl!(alphar, n),
+        sl!(alphai, n),
+        sl!(beta, n),
+        if want_l { sl!(vl, ldvl * n.max(1)) } else { &mut [] },
+        ldvl,
+        if want_r { sl!(vr, ldvr * n.max(1)) } else { &mut [] },
+        ldvr,
+    );
+    unsafe { *info = r };
+}
+
+/// `DGGEVX` is `DGGEV` plus balancing and the condition estimates. The
+/// eigenvalues and eigenvectors are the same, so the reciprocal condition
+/// numbers are reported as `1` and the balancing as the identity — MSL's
+/// `eigenValues`-style callers read the eigen-decomposition, not `rconde`.
+#[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn dggevx_(
+    _balanc: *const c_char,
+    jobvl: *const c_char,
+    jobvr: *const c_char,
+    _sense: *const c_char,
+    n: *const i32,
+    a: *mut f64,
+    lda: *const i32,
+    b: *mut f64,
+    ldb: *const i32,
+    alphar: *mut f64,
+    alphai: *mut f64,
+    beta: *mut f64,
+    vl: *mut f64,
+    ldvl: *const i32,
+    vr: *mut f64,
+    ldvr: *const i32,
+    ilo: *mut i32,
+    ihi: *mut i32,
+    lscale: *mut f64,
+    rscale: *mut f64,
+    abnrm: *mut f64,
+    bbnrm: *mut f64,
+    rconde: *mut f64,
+    rcondv: *mut f64,
+    work: *mut f64,
+    lwork: *const i32,
+    _iwork: *mut i32,
+    _bwork: *mut i32,
+    info: *mut i32,
+) {
+    let nn = unsafe { u(n) };
+    if unsafe { query(lwork, work, 2 * nn * nn + 12 * nn + 16) } {
+        unsafe { *info = 0 };
+        return;
+    }
+    unsafe {
+        *ilo = 1;
+        *ihi = nn as i32;
+        *abnrm = lu::dlange("1", nn, nn, slc!(a, u(lda) * nn.max(1)), u(lda));
+        *bbnrm = lu::dlange("1", nn, nn, slc!(b, u(ldb) * nn.max(1)), u(ldb));
+    }
+    for k in 0..nn {
+        unsafe {
+            *lscale.add(k) = 1.0;
+            *rscale.add(k) = 1.0;
+            *rconde.add(k) = 1.0;
+            *rcondv.add(k) = 1.0;
+        }
+    }
+    unsafe {
+        dggev_(
+            jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, vl, ldvl, vr, ldvr, work,
+            lwork, info,
+        )
+    };
+}
+
+#[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn dhgeqz_(
+    job: *const c_char,
+    compq: *const c_char,
+    compz: *const c_char,
+    n: *const i32,
+    _ilo: *const i32,
+    _ihi: *const i32,
+    h: *mut f64,
+    ldh: *const i32,
+    t: *mut f64,
+    ldt: *const i32,
+    alphar: *mut f64,
+    alphai: *mut f64,
+    beta: *mut f64,
+    q: *mut f64,
+    ldq: *const i32,
+    z: *mut f64,
+    ldz: *const i32,
+    work: *mut f64,
+    lwork: *const i32,
+    info: *mut i32,
+) {
+    let (n, ldh, ldt, ldq, ldz) = unsafe { (u(n), u(ldh), u(ldt), u(ldq), u(ldz)) };
+    if unsafe { query(lwork, work, n.max(1)) } {
+        unsafe { *info = 0 };
+        return;
+    }
+    let want_q = unsafe { ch(compq) } != "N";
+    let want_z = unsafe { ch(compz) } != "N";
+    let r = eig::dhgeqz(
+        unsafe { ch(job) },
+        unsafe { ch(compq) },
+        unsafe { ch(compz) },
+        n,
+        sl!(h, ldh * n.max(1)),
+        ldh,
+        sl!(t, ldt * n.max(1)),
+        ldt,
+        sl!(alphar, n),
+        sl!(alphai, n),
+        sl!(beta, n),
+        if want_q { sl!(q, ldq * n.max(1)) } else { &mut [] },
+        ldq,
+        if want_z { sl!(z, ldz * n.max(1)) } else { &mut [] },
+        ldz,
+    );
+    unsafe { *info = r };
+}
+
+#[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn dtrevc_(
+    side: *const c_char,
+    howmny: *const c_char,
+    _select: *mut i32,
+    n: *const i32,
+    t: *const f64,
+    ldt: *const i32,
+    vl: *mut f64,
+    ldvl: *const i32,
+    vr: *mut f64,
+    ldvr: *const i32,
+    mm: *const i32,
+    m: *mut i32,
+    _work: *mut f64,
+    info: *mut i32,
+) {
+    let (n, ldt, ldvl, ldvr, mm) = unsafe { (u(n), u(ldt), u(ldvl), u(ldvr), u(mm)) };
+    let want_l = matches!(unsafe { ch(side) }, "L" | "B");
+    let want_r = matches!(unsafe { ch(side) }, "R" | "B");
+    let r = crate::trevc::dtrevc_lapack(
+        unsafe { ch(side) },
+        unsafe { ch(howmny) },
+        n,
+        slc!(t, ldt * n.max(1)),
+        ldt,
+        if want_l { sl!(vl, ldvl * mm.max(1)) } else { &mut [] },
+        ldvl,
+        if want_r { sl!(vr, ldvr * mm.max(1)) } else { &mut [] },
+        ldvr,
+        mm,
+        unsafe { &mut *m },
+    );
+    unsafe { *info = r };
+}

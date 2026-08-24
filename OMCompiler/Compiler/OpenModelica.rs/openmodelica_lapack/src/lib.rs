@@ -53,6 +53,10 @@ pub mod fortran;
 pub mod gev;
 pub mod hqr;
 pub mod lu;
+#[cfg(feature = "faer-backend")]
+pub mod faer_backend;
+#[cfg(feature = "faer-backend")]
+mod faer_real_schur;
 pub mod qr;
 pub mod rz;
 pub mod svd;

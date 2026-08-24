@@ -11,6 +11,15 @@ debug = false
 # MetaModelica wrapping semantics.
 overflow-checks = false
 
+# cranelift drops `global_asm!` (pulp, private-gemm-x86) and cannot compile
+# pulp's `#[inline]` `_mm256` asm wrappers openmodelica_lapack instantiates.
+[profile.dev.package.openmodelica_lapack]
+codegen-backend = "llvm"
+[profile.dev.package.pulp]
+codegen-backend = "llvm"
+[profile.dev.package.private-gemm-x86]
+codegen-backend = "llvm"
+
 [workspace]
 resolver = "3"
 members = ["mmtorust", "openmodelica", "openmodelica_util", "openmodelica_revision", "metamodelica", "metamodelica_derive", "openmodelica_frontend", "openmodelica_frontend_base", "openmodelica_backend", "openmodelica_backend_tools", "openmodelica_backend_types", "openmodelica_simcode_types", "openmodelica_backend_util", "openmodelica_nbackend", "openmodelica_susan", "openmodelica_tpl", "openmodelica_codegen_graphml", "openmodelica_nf_frontend", "openmodelica_util_datatypes_basic", "openmodelica_ast", "openmodelica_error", "openmodelica_frontend_types", "openmodelica_frontend_dump", "openmodelica_ast_collections", "openmodelica_dump_extra", "openmodelica_frontend_inst", "openmodelica_script_util", "openmodelica_program_util", "openmodelica_simcode_util", "openmodelica_codegen_cfunctions", "openmodelica_codegen_c", "openmodelica_codegen_fmu", "openmodelica_codegen_fmu_c", "openmodelica_codegen_fmu_omsi", "openmodelica_codegen_xml", "openmodelica_codegen", "openmodelica_codegen_cpp_common", "openmodelica_codegen_cpp_omsi", "openmodelica_codegen_cpp_ext", "openmodelica_codegen_cpp_omsi_ext", "openmodelica_codegen_cpp", "openmodelica_codegen_wasm_jit", "openmodelica_wasm_jit", "openmodelica_mat_writer", "openmodelica_plt_writer", "openmodelica_sim_meta", "openmodelica_backend_main", "openmodelica_scripting_qt", "openmodelica_modelica_utilities", "libopenmodelica_compiler", "daskr", "minpack", "openmodelica_wasi", "openmodelica_wasi_libc", "openmodelica_animation", "openmodelica_animation_wasm", "openmodelica_scripting_api_gen", "omshell_core", "omshell_omc", "omshell_wgpu", "omshell_egui", "omshell_dioxus", "openmodelica_fmi", "openmodelica_solvers", "openmodelica_fmi_driver"]

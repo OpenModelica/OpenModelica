@@ -694,11 +694,14 @@ endif()
 # `strip` drops the target_features custom section binaryen would auto-detect
 # from — so it defaults to MVP and rejects the bulk-memory/sign-ext/etc. ops.
 # Enable exactly the set rustc reports (`rustc --print cfg --target
-# wasm32-unknown-unknown`); blindly enabling all features could let wasm-opt emit
-# instructions the JIT/browser consumers don't support.
+# wasm32-unknown-unknown`), plus `simd`: faer's kernels are
+# `#[target_feature(enable = "simd128")]`, so every module linking them carries
+# v128 ops. Blindly enabling the rest could let wasm-opt emit instructions the
+# JIT/browser consumers don't support.
 set(WASM_OPT_FEATURES
     --enable-bulk-memory --enable-multivalue --enable-mutable-globals
-    --enable-nontrapping-float-to-int --enable-reference-types --enable-sign-ext)
+    --enable-nontrapping-float-to-int --enable-reference-types --enable-sign-ext
+    --enable-simd)
 set(RUST_OMC_WASM_RUNTIME "" CACHE FILEPATH
     "Prebuilt wasm-jit runtime.wasm to embed (empty = build it). In CI stage 2, point at the rust_wasm_runtime artifact from stage 1.")
 set(RUST_OMC_WASM_RUNTIME_OUT ${RUST_OMC_TARGET_DIR}/runtime.wasm CACHE PATH

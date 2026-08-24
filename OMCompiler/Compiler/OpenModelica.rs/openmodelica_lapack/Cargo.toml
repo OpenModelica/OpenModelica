@@ -12,6 +12,12 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
+# faer's decompositions instead of the ports here, wherever faer has one and the
+# problem is big enough (see `FAER_LU_MIN`). On by default: it is faster, it is
+# what the QZ routines (`dggev`, `dhgeqz`) and `dtrevc` need at all, and the ports
+# it replaces stay compiled as `*_ref` so `--no-default-features` still builds a
+# faer-free crate.
+default = ["faer-backend"]
 # `extern "C"` entry points with LAPACK's Fortran ABI (`dgesv_(&n, …)`), for the
 # `liblapack.wasm` side module a generated module's `external "FORTRAN 77"` calls
 # bind to. Off for the rlib consumers, which call the Rust API directly.
@@ -19,9 +25,18 @@ fortran-abi = []
 # `tests/vs_reference.rs`, which needs a system `liblapack.so`. Must not be
 # combined with `fortran-abi`: both define the `d*_` symbols.
 reference-lapack = []
+# The faer port: `dgetrf`, `dpotrf`, `dgesvd`, `dgeev`, `dhseqr` over faer's
+# decompositions. The ports stay compiled as `*_ref`, which the LU pair still
+# takes for a small matrix.
+faer-backend = ["dep:faer"]
 
 [dependencies]
 libm = "0.2"
+# `~0.24.4`, not `0.24`: `src/faer_real_schur.rs` is a vendored copy of faer's
+# own `real_schur.rs` (faer keeps it `pub(crate)`), so it is tied to internals a
+# minor bump may move. A patch bump is fine; a minor one means re-running
+# `vendor-faer-real-schur.sh`.
+faer = { version = "~0.24.4", default-features = false, features = ["linalg", "std"], optional = true }
 
 [lib]
 # `cdylib` for the `liblapack.wasm` side module, `rlib` for openmodelica_util.
