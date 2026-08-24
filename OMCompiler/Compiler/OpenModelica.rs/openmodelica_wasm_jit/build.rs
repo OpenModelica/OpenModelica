@@ -434,8 +434,8 @@ fn build_native_loader(
 /// for an FMU whose model calls `external "FORTRAN 77"` LAPACK. Mandatory like
 /// the FMI3 adapter: a failure means a broken build environment.
 ///
-/// `build-std=std` because oxiblas needs std and the precompiled `libstd` is
-/// non-PIC; `+simd128` for oxiblas's wasm kernels.
+/// `build-std=std` because the precompiled `libstd` is not PIC and a dylink side
+/// module has to be.
 fn build_lapack_dylink(crate_dir: &Path, out_dir: &Path) {
     let dest = out_dir.join("liblapack.wasm");
     let stamp = out_dir.join("liblapack.wasm.hash");
@@ -468,8 +468,8 @@ fn build_lapack_dylink(crate_dir: &Path, out_dir: &Path) {
             "failed to build the LAPACK dylink module: {e}\n\
              A wasm FMU whose model calls Modelica.Math.Matrices needs it. Needs the wasm \
              target and std sources (`rustup target add wasm32-unknown-unknown`, \
-             `rustup component add rust-src`) and the crates.io registry for oxiblas; set \
-             OMC_LAPACK_WASM to a prebuilt .wasm to skip the build."
+             `rustup component add rust-src`); set OMC_LAPACK_WASM to a prebuilt .wasm to \
+             skip the build."
         ),
     }
 }

@@ -2391,11 +2391,11 @@ pub extern "C" fn rt_sim_store_row(buf: u32, row: u32, sim_data: u32, n_reals: u
 }
 
 // ---------------------------------------------------------------------------
-// Dense linear solve (LU with partial pivoting), used by `SES_LINEAR` and,
-// later, the `Modelica.Math.Matrices.*` LAPACK externals. Backed by `nalgebra`
+// Dense linear solve (LU with partial pivoting), used by `SES_LINEAR` and the
+// `Modelica.Math.Matrices.*` LAPACK externals. Backed by `openmodelica_lapack`
 // (no_std, dlmalloc-backed `alloc`, `libm` floats) so the solve stays in-wasm —
-// no per-step host boundary crossing. LU with partial pivoting is the same
-// algorithm class as LAPACK's `dgesv`, so results track the C target closely.
+// no per-step host boundary crossing. It is the `dgetrf`/`dgetrs` omc itself
+// calls, so the pivot order and `INFO` match whichever side factors it.
 // ---------------------------------------------------------------------------
 
 /// Count of linear-system solves in the current run (every dense + sparse path).

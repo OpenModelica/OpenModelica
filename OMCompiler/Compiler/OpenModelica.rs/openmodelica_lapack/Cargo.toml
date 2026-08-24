@@ -3,24 +3,15 @@
 # wasm-jit runtime's dense solve, and `liblapack.wasm` for `external "FORTRAN 77"`
 # inside a wasm FMU.
 #
-# The LU / Cholesky / QR families are hand-written rather than taken from oxiblas:
-# LAPACK's packed factors and its `INFO` convention are load-bearing (MSL reads
-# both), and oxiblas's `Err(Singular)` on a relative tolerance cannot express
-# them. See `src/lib.rs` for where each routine comes from.
+# Every routine is a port of the reference LAPACK kernel: the packed factors and
+# the `INFO` convention are load-bearing (MSL reads both), which no
+# decomposition-shaped crate API can express. See `src/lib.rs`.
 [package]
 name = "openmodelica_lapack"
 version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["decompositions"]
-# The SVD family, the only routines oxiblas still provides. Off for the wasm-jit
-# runtime, which wants the LU and has no use for oxiblas's compile time.
-# Everything else is unconditional.
-decompositions = ["dep:oxiblas-lapack", "dep:oxiblas-matrix"]
-# Multi-threaded oxiblas kernels through rayon. Native only: no wasm threads.
-# `src/parallel.rs` holds the count to what OpenModelica's `-n` allows.
-parallel = ["decompositions", "oxiblas-lapack/parallel", "dep:rayon", "dep:oxiblas-core"]
 # `extern "C"` entry points with LAPACK's Fortran ABI (`dgesv_(&n, …)`), for the
 # `liblapack.wasm` side module a generated module's `external "FORTRAN 77"` calls
 # bind to. Off for the rlib consumers, which call the Rust API directly.
@@ -30,24 +21,7 @@ fortran-abi = []
 reference-lapack = []
 
 [dependencies]
-# The SVD, with wasm32 simd128 kernels beneath it. Not its Schur, QZ or trevc:
-# the first two do not converge reliably and the eigenvalue path is ported from
-# the reference LAPACK instead, because the order it reports is observable.
-oxiblas-lapack = { version = "0.2.2", optional = true }
-# `default-features = false`: only `Mat` is used, and its default pulls std.
-# Optional: nothing outside the SVD needs it any more.
-oxiblas-matrix = { version = "0.2.2", default-features = false, optional = true }
-# Only to size and install the pool oxiblas's kernels run in; the crate itself
-# parallelizes nothing.
-rayon = { version = "1", optional = true }
-# Its `disable_global_parallelism` is the switch oxiblas's kernels consult before
-# every parallel decision, for the paths `parallel::install` does not wrap.
-oxiblas-core = { version = "0.2.2", optional = true }
 libm = "0.2"
-
-[dev-dependencies]
-# `tests/parallel.rs` asks rayon which pool it landed in.
-rayon = "1"
 
 [lib]
 # `cdylib` for the `liblapack.wasm` side module, `rlib` for openmodelica_util.

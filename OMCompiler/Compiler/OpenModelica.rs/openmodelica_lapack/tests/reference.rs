@@ -80,7 +80,7 @@ fn dgetrf_packed_factors_and_pivots() {
 }
 
 /// A singular matrix must come back as `INFO > 0` *with* the factors, which is
-/// what `rcond` depends on and what oxiblas's `Err(Singular)` cannot express.
+/// what `rcond` depends on.
 #[test]
 fn dgetrf_singular_reports_info_and_keeps_going() {
     // Row 2 = 2 * row 0, so U(2,2) is exactly zero.
@@ -94,7 +94,7 @@ fn dgetrf_singular_reports_info_and_keeps_going() {
 }
 
 /// A tiny-but-nonzero pivot is a valid factorization, not a singularity — the
-/// case oxiblas's relative tolerance rejects.
+/// case a relative-tolerance singularity test would reject.
 #[test]
 fn dgetrf_accepts_a_badly_scaled_matrix() {
     let mut a = cm(&[&[1e-300, 1.0], &[0.0, 1e-300]]);
@@ -102,7 +102,7 @@ fn dgetrf_accepts_a_badly_scaled_matrix() {
     assert_eq!(dgetrf(2, 2, &mut a, 2, &mut ipiv), 0);
 }
 
-/// Rectangular LU, which oxiblas's `Lu::compute` rejects outright.
+/// Rectangular LU.
 #[test]
 fn dgetrf_handles_rectangular() {
     let mut a = cm(&[&[1.0, 2.0, 3.0], &[4.0, 5.0, 6.0]]);
@@ -260,6 +260,48 @@ fn dgesvd_orders_a_nondiagonal_matrix() {
     assert!(s[0] >= s[1], "not descending: {s:?}");
     assert!(close(s[0], 9.525518091565107), "sigma1 = {}", s[0]);
     assert!(close(s[1], 0.5143005806586446), "sigma2 = {}", s[1]);
+}
+
+/// ModelicaTest.Math.TestMatrices2: `singularValues` on a 3x4 matrix.
+#[test]
+fn dgesvd_testmatrices2_a7() {
+    let (m, n) = (3, 4);
+    let mut a = cm(&[&[1.0, 2.0, 3.0, 4.0], &[3.0, 4.0, 5.0, -2.0], &[-1.0, 2.0, -3.0, 5.0]]);
+    let mut s = vec![0.0f64; 3];
+    let mut u = vec![0.0f64; 9];
+    let mut vt = vec![0.0f64; 16];
+    let info = dgesvd("A", "A", m, n, &mut a, m, &mut s, &mut u, m, &mut vt, n);
+    assert_eq!(info, 0, "dgesvd did not converge");
+    assert_vec(
+        &s,
+        &[8.335191299810445, 6.941425143662197, 2.3111042751244524],
+        "singular values of A7",
+    );
+}
+
+/// The same model's `Matrices.norm`: the 2-norm of a residual whose entries are
+/// all a few ulp from zero. The singular values are those of the two disjoint
+/// blocks the pattern leaves, so they are checkable by hand.
+#[test]
+fn dgesvd_residual_that_is_numerically_zero() {
+    let (m, n) = (5, 5);
+    let mut a = cm(&[
+        &[0.0, 0.0, -2.7755575615628914e-17, 0.0, 0.0],
+        &[0.0, 0.0, -3.4694469519536142e-18, -8.6736173798840355e-19, 0.0],
+        &[-2.7755575615628914e-17, 0.0, 0.0, 0.0, 0.0],
+        &[0.0, 0.0, 0.0, 0.0, 0.0],
+        &[0.0, 0.0, 0.0, 0.0, 0.0],
+    ]);
+    let mut s = vec![0.0f64; 5];
+    let mut u = vec![0.0f64; 25];
+    let mut vt = vec![0.0f64; 25];
+    let info = dgesvd("A", "A", m, n, &mut a, m, &mut s, &mut u, m, &mut vt, n);
+    assert_eq!(info, 0, "dgesvd did not converge");
+    assert_vec(
+        &s,
+        &[2.797178265633934e-17, 2.7755575615628914e-17, 8.606574918951206e-19, 0.0, 0.0],
+        "singular values of a near-zero matrix",
+    );
 }
 
 #[test]

@@ -480,27 +480,119 @@ fn dgglse_matches() {
 
 // ───────────────────────────── SVD ─────────────────────────────
 
+/// Every `jobu`/`jobvt` pair, over shapes and matrix families that stress the
+/// deflation and shift logic: rank deficiency (repeated singular values), the
+/// underflow and overflow ends of the scaling, a matrix that is entirely zero,
+/// and one whose columns are graded across 200 decades.
+///
+/// The singular values are compared with LAPACK's; the vectors are compared
+/// against the decomposition itself, since a repeated singular value fixes only
+/// the span its vectors lie in.
 #[test]
-fn dgesvd_matches() {
-    for (m, n) in [(6, 4), (4, 6), (5, 5)] {
-        let a0 = rand_mat(m, n, 151 + m as u64);
-        let k = m.min(n);
-        let (mut a, mut wa) = (a0.clone(), a0.clone());
-        let (mut s, mut ws) = (vec![0.0f64; k], vec![0.0f64; k]);
-        let (mut u, mut wu) = (vec![0.0f64; m * m], vec![0.0f64; m * m]);
-        let (mut vt, mut wvt) = (vec![0.0f64; n * n], vec![0.0f64; n * n]);
-        let (mut work, mut winfo) = (vec![0.0f64; 64 * (m + n)], 0);
-        let info = om::dgesvd("A", "A", m, n, &mut a, m, &mut s, &mut u, m, &mut vt, n);
-        unsafe {
-            dgesvd_(&c("A"), &c("A"), &i(m), &i(n), wa.as_mut_ptr(), &i(m), ws.as_mut_ptr(),
-                    wu.as_mut_ptr(), &i(m), wvt.as_mut_ptr(), &i(n), work.as_mut_ptr(),
-                    &i(64 * (m + n)), &mut winfo)
-        };
-        assert_eq!(info, winfo, "dgesvd {m}x{n}: INFO");
-        same(&s, &ws, &format!("dgesvd {m}x{n}: singular values"));
-        // A singular vector is fixed only up to sign, and only the first k are
-        // determined at all (the rest complete an arbitrary orthonormal basis).
-        same_up_to_sign(&u[..m * k], &wu[..m * k], m, k, &format!("dgesvd {m}x{n}: U"));
+fn dgesvd_every_job_matches() {
+    const SHAPES: &[(usize, usize)] = &[
+        (1, 1), (1, 3), (3, 1), (2, 2), (3, 2), (2, 3), (4, 4), (5, 3), (3, 5), (6, 6),
+        (8, 3), (3, 8), (9, 7), (7, 9), (12, 12), (20, 4), (4, 20), (37, 25), (25, 37),
+    ];
+    const JOBS: &[&str] = &["A", "S", "O", "N"];
+
+    for kind in 0..8u32 {
+        for (si, &(m, n)) in SHAPES.iter().enumerate() {
+            let a0 = svd_input(m, n, (si as u64 + 1) * 97 + kind as u64 * 7919, kind);
+            for &ju in JOBS {
+                for &jvt in JOBS {
+                    if ju == "O" && jvt == "O" {
+                        continue; // LAPACK forbids overwriting A with both
+                    }
+                    let k = m.min(n);
+                    let (mut a, mut wa) = (a0.clone(), a0.clone());
+                    let (mut s, mut ws) = (vec![0.0f64; k], vec![0.0f64; k]);
+                    let (mut u, mut wu) = (vec![0.0f64; m * m], vec![0.0f64; m * m]);
+                    let (mut vt, mut wvt) = (vec![0.0f64; n * n], vec![0.0f64; n * n]);
+                    let lw = 64 * (m + n) + 100;
+                    let (mut work, mut winfo) = (vec![0.0f64; lw], 0);
+                    let info = om::dgesvd(ju, jvt, m, n, &mut a, m, &mut s, &mut u, m, &mut vt, n);
+                    unsafe {
+                        dgesvd_(&c(ju), &c(jvt), &i(m), &i(n), wa.as_mut_ptr(), &i(m),
+                                ws.as_mut_ptr(), wu.as_mut_ptr(), &i(m), wvt.as_mut_ptr(),
+                                &i(n), work.as_mut_ptr(), &i(lw), &mut winfo)
+                    };
+                    let what = format!("dgesvd {ju}/{jvt} {m}x{n} kind {kind}");
+                    assert_eq!(info, winfo, "{what}: INFO");
+                    same(&s, &ws, &format!("{what}: singular values"));
+
+                    if ju == "N" || jvt == "N" {
+                        continue;
+                    }
+                    // Whichever factor a job wrote over A is read back from there.
+                    let uu = |t: usize, r: usize| if ju == "O" { a[r + t * m] } else { u[r + t * m] };
+                    let vv = |t: usize, cl: usize| if jvt == "O" { a[t + cl * m] } else { vt[t + cl * n] };
+                    let scale = a0.iter().fold(1.0f64, |x, v| x.max(v.abs()));
+                    for r in 0..m {
+                        for cl in 0..n {
+                            let got: f64 = (0..k).map(|t| uu(t, r) * s[t] * vv(t, cl)).sum();
+                            assert!((got - a0[r + cl * m]).abs() <= TOL * scale,
+                                "{what}: (U*S*VT)[{r},{cl}] = {got}, A = {}", a0[r + cl * m]);
+                        }
+                    }
+                    if ju == "A" {
+                        orthonormal_columns(&u, m, m, &format!("{what}: U"));
+                    }
+                    if jvt == "A" {
+                        let v: Vec<f64> = (0..n * n).map(|idx| vt[(idx / n) + (idx % n) * n]).collect();
+                        orthonormal_columns(&v, n, n, &format!("{what}: VT"));
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// The matrix families `dgesvd_every_job_matches` runs over.
+fn svd_input(m: usize, n: usize, seed: u64, kind: u32) -> Vec<f64> {
+    let mut a = rand_mat(m, n, seed);
+    match kind {
+        1 => for j in (1..n).step_by(2) {
+            // Repeated singular values.
+            for k in 0..m {
+                a[k + j * m] = a[k + (j - 1) * m];
+            }
+        },
+        2 => for v in a.iter_mut() {
+            *v *= 1e-300; // below DGESVD's scaling threshold
+        },
+        3 => for v in a.iter_mut() {
+            *v *= 1e300; // above it
+        },
+        4 => for (k, v) in a.iter_mut().enumerate() {
+            if k % 3 != 0 {
+                *v = 0.0;
+            }
+        },
+        5 => a.fill(0.0),
+        6 => for j in 0..n {
+            for k in 0..m {
+                a[k + j * m] *= libm::pow(10.0, (j as f64 / n as f64) * 200.0 - 100.0);
+            }
+        },
+        7 => {
+            // A single entry, a few ulp from zero: the case
+            // ModelicaTest.Math.TestMatrices2 hit.
+            a.fill(0.0);
+            a[m / 2 + (n / 2) * m] = 3.5e-17;
+        }
+        _ => {}
+    }
+    a
+}
+
+fn orthonormal_columns(q: &[f64], m: usize, n: usize, what: &str) {
+    for c1 in 0..n {
+        for c2 in 0..n {
+            let dot: f64 = (0..m).map(|t| q[t + c1 * m] * q[t + c2 * m]).sum();
+            let want = if c1 == c2 { 1.0 } else { 0.0 };
+            assert!((dot - want).abs() <= TOL, "{what}: columns {c1},{c2} dot to {dot}");
+        }
     }
 }
 

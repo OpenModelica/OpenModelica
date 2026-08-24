@@ -32,9 +32,6 @@ openmodelica_lapack.workspace = true
 # `zeromq` feature must not be enabled for wasm builds (ZeroMQ.rs then uses its
 # feature-off fallback that reports the interactive ZMQ mode unavailable).
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-# Threads for the oxiblas kernels under the SVD-backed routines; no wasm threads.
-# `Lapack::init_thread_limit` holds the count to what `-n` allows.
-openmodelica_lapack = { workspace = true, features = ["parallel"] }
 zmq = { workspace = true, optional = true }
 # System::launchParallelTasksThreaded; absent on wasm32 (no OS threads).
 rayon.workspace = true

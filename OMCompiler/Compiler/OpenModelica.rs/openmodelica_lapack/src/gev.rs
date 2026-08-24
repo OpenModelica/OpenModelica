@@ -1,10 +1,9 @@
 //! The generalized eigenproblem `A*x = λ*B*x`: `DGEGV`.
 //!
 //! **A nonsingular `B` only**, unlike LAPACK: the general case needs a QZ
-//! factorization, which nothing here has — oxiblas's does not converge on most
-//! pencils. So this reduces to `B⁻¹A` and returns `INFO > 0` where LAPACK would
-//! report a `β = 0` infinite eigenvalue. MSL 3.2.3 declares `dgegv` but never
-//! calls it, and MSL 4 dropped it.
+//! factorization, which nothing here has. So this reduces to `B⁻¹A` and returns
+//! `INFO > 0` where LAPACK would report a `β = 0` infinite eigenvalue. MSL 3.2.3
+//! declares `dgegv` but never calls it, and MSL 4 dropped it.
 
 use crate::{abs, opt, pack};
 
