@@ -69,7 +69,7 @@ pipeline {
     stage('setup') {
       parallel {
         // Linux build stages
-        stage('clang') {
+        stage('jammy-clang') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -88,7 +88,7 @@ pipeline {
             script { common.buildClangOMC() }
           }
         }
-        stage('cmake-jammy-gcc') {
+        stage('jammy-gcc') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -104,10 +104,10 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.buildCMakeGccOMC() }
+            script { common.buildGccOMC() }
           }
         }
-        stage('cmake-alpine-clang') {
+        stage('alpine-clang') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:alpine-3.24'
@@ -128,16 +128,11 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-DOM_USE_CCACHE=OFF",
-                "-DCMAKE_INSTALL_PREFIX=build",
-                "-DCMAKE_C_COMPILER=clang",
-                "-DCMAKE_CXX_COMPILER=clang++"])
+              common.buildClangOMC()
             }
           }
         }
-        stage('cmake-enterprise-linux-gcc') {
+        stage('enterprise-linux-gcc') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:almalinux-10'
@@ -158,7 +153,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
+              common.buildOMC([
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOM_USE_CCACHE=OFF",
                 "-DCMAKE_INSTALL_PREFIX=build",
@@ -169,7 +164,7 @@ pipeline {
             }
           }
         }
-        stage('cmake-fedora-gcc') {
+        stage('fedora-gcc') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:fedora-44'
@@ -190,18 +185,13 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-DOM_USE_CCACHE=OFF",
-                "-DCMAKE_INSTALL_PREFIX=build",
-                "-DCMAKE_C_COMPILER=gcc",
-                "-DCMAKE_CXX_COMPILER=g++"])
+              common.buildGccOMC()
             }
           }
         }
 
         // macOS build stages
-        stage('cmake-macos-arm64-gcc') {
+        stage('macos-arm64-gcc') {
           agent {
             node {
               label 'M1'
@@ -216,7 +206,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
+              common.buildOMC([
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOM_USE_CCACHE=OFF",
                 "-DCMAKE_INSTALL_PREFIX=build",
@@ -231,7 +221,7 @@ pipeline {
         }
 
         // Windows build stages
-        stage('cmake-OMDev-gcc') {
+        stage('OMDev-gcc') {
           agent {
             node {
               label 'windows-no-release'
@@ -246,7 +236,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
+              common.buildOMC([
                 '-DCMAKE_BUILD_TYPE=Release',
                 '-DCMAKE_INSTALL_PREFIX=build',
                 '-G "MSYS Makefiles"'])
@@ -256,7 +246,7 @@ pipeline {
 
         // The Rust (mmtorust) omc port, GUI off; the GUI is built in parallel
         // with the tests by the 'build-gui-rust' stage. See common.buildRustOMC().
-        stage('cmake-rust-clang') {
+        stage('rust-clang') {
           agent {
             docker {
               alwaysPull true
@@ -346,7 +336,7 @@ pipeline {
           }
         }
 
-        stage('04 testsuite-cmake-gcc 1/3') {
+        stage('04 testsuite-gcc 1/3') {
           agent {
             label 'linux'
           }
@@ -365,13 +355,13 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestStashed('omc-cmake-gcc', 1, 3)
+                common.partestStashed('omc-gcc', 1, 3)
               }
             }
           }
         }
 
-        stage('05 testsuite-cmake-gcc 2/3') {
+        stage('05 testsuite-gcc 2/3') {
           agent {
             label 'linux'
           }
@@ -390,13 +380,13 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestStashed('omc-cmake-gcc', 2, 3)
+                common.partestStashed('omc-gcc', 2, 3)
               }
             }
           }
         }
 
-        stage('06 testsuite-cmake-gcc 3/3') {
+        stage('06 testsuite-gcc 3/3') {
           agent {
             label 'linux'
           }
@@ -415,7 +405,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestStashed('omc-cmake-gcc', 3, 3)
+                common.partestStashed('omc-gcc', 3, 3)
               }
             }
           }
@@ -497,7 +487,7 @@ pipeline {
         }
 
         // The WebAssembly/web bundle, embedding the wasm-jit runtime built by
-        // the cmake-rust-clang stage (OM_OMC_WASM forces the Rust port and a
+        // the rust-clang stage (OM_OMC_WASM forces the Rust port and a
         // wasm32 build of just the browser/Node deliverable).
         stage('10 web target') {
           agent {

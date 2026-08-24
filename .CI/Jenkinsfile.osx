@@ -43,7 +43,7 @@ pipeline {
           env.PATH="${env.MACPORTS}/bin:${env.PATH}"
           // The GUI clients are part of the same CMake build, so there is no
           // separate buildGUI step any more.
-          common.buildOMC_CMake([
+          common.buildOMC([
             "-DCMAKE_BUILD_TYPE=Release",
             "-DCMAKE_INSTALL_PREFIX=build",
             // Look in MacPorts first, to prefer its libraries over the system ones.
@@ -52,7 +52,7 @@ pipeline {
             "-DCMAKE_C_COMPILER=gcc",
             "-DCMAKE_CXX_COMPILER=g++",
             "-DCMAKE_Fortran_COMPILER=gfortran",
-            "-DOM_QT_MAJOR_VERSION=5"])
+            "-DOM_QT_MAJOR_VERSION=5"], 'cmake', false)
           common.makeLibsAndCache()
           common.partest()
         }
