@@ -4,11 +4,6 @@ msl31.log \
 msl40simulation.log \
 msl32simulation.log \
 msl32simulation_cpp_mini.log \
-simulationmodelicamsl22.log \
-msl22electrical.log \
-msl22mechanics.log \
-msl22flattening.log \
-msl22additions.log \
 msl31simulation.log \
 msl31mediasimulation.log \
 siemens_nosim.log \
@@ -50,8 +45,6 @@ visualization.log \
 SIMULATIONLOGS = \
 linearization.log \
 modelicaML.log \
-msl22electrical.log \
-msl22mechanics.log \
 simulationalgorithms-functions.log \
 simulationarrays.log \
 simulationasserts.log \
@@ -100,7 +93,6 @@ simulationsolver_gbode.log \
 simulationBuiltin_delay.log \
 simulationBuiltin_spatialDistribution.log \
 simulationtypes.log \
-simulationmodelicamsl22.log \
 msl31mediasimulation.log \
 msl31simulation.log \
 flatteningExercises.log \
@@ -225,7 +217,7 @@ omc-diff :
 	$(MAKE) -C difftool
 test : slow.logs fast.logs
 	@cat `ls $(FASTLOGS) $(SLOWLOGS) | sort`
-	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/libraries/msl22,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records,openmodelica/java,openmodelica/interactive-API,openmodelica/instance-API,flattening/modelica/mosfiles}/*.{dll,so,exe};
+	@rm -f {flattening/modelica/asserts,flattening/modelica/algorithms-functions,flattening/modelica/arrays,flattening/modelica/others,flattening/modelica/external-functions,flattening/modelica/equations,flattening/modelica/built-in-functions,flattening/modelica/extends,flattening/modelica/operators,flattening/modelica/packages,flattening/modelica/declarations,flattening/modelica/enums,flattening/modelica/synchronous,flattening/modelica/statemachines,flattening/modelica/scoping,flattening/modelica/types,flattening/modelica/modification,flattening/modelica/connectors,flattening/modelica/blocks,flattening/modelica/streams,flattening/modelica/msl,metamodelica/meta,flattening/modelica/records,openmodelica/java,openmodelica/interactive-API,openmodelica/instance-API,flattening/modelica/mosfiles}/*.{dll,so,exe};
 test-oldresult:
 	@cat `ls $(FASTLOGS) $(SLOWLOGS) | sort`
 test-oldresult-summary:
@@ -486,9 +478,6 @@ simulationBuiltin_spatialDistribution.log: omc-diff
 simulationtypes.log: omc-diff
 	$(MAKE) -C simulation/modelica/types -f Makefile test > $@
 	@echo $@ done
-simulationmodelicamsl22.log: omc-diff
-	$(MAKE) -C simulation/modelica/msl22 -f Makefile test > $@
-	@echo $@ done
 flatteningmosfiles.log: omc-diff
 	$(MAKE) -C flattening/modelica/mosfiles -f Makefile test > $@
 	@echo $@ done
@@ -560,12 +549,6 @@ openmodelicajava.log: omc-diff
 	@echo $@ done
 bootstrapping.log: omc-diff
 	$(MAKE) -C openmodelica/bootstrapping -f Makefile test > $@
-	@echo $@ done
-msl22electrical.log: omc-diff
-	$(MAKE) -C simulation/libraries/msl22/Electrical -f Makefile test > $@
-	@echo $@ done
-msl22mechanics.log: omc-diff
-	$(MAKE) -C simulation/libraries/msl22/Mechanics -f Makefile test > $@
 	@echo $@ done
 biochem.log: omc-diff
 	$(MAKE) -C flattening/libraries/biochem -f Makefile test > $@
@@ -756,9 +739,6 @@ failingtest: omc-diff
 	cd mofiles; $(MAKE) -f Makefile failingtest; \
 	cd mosfiles; $(MAKE) -f Makefile failingtest; \
 	cd ../flattening/modelica/msl; $(MAKE) -f Makefile failingtest; \
-	cd ../flattening/libraries/msl22; $(MAKE) -f Makefile failingtest; \
-	cd ../flattening/libraries/msl22; $(MAKE) -f Makefile failingtest; \
-	cd ../msl22/modelicaAdditions; $(MAKE) -f Makefile failingtest; \
 	cd ../../biochem; $(MAKE) -f Makefile failingtest; \
 	cd ../multibody; $(MAKE) -f Makefile failingtest; \
 	cd ../msl31; $(MAKE) -f Makefile failingtest;
@@ -836,7 +816,6 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/tearing -f Makefile clean
 	$(MAKE) -C simulation/modelica/japaneselanguage -f Makefile clean
 	$(MAKE) -C simulation/modelica/linear_system -f Makefile clean
-	$(MAKE) -C simulation/modelica/msl22 -f Makefile clean
 	$(MAKE) -C simulation/modelica/nonlinear_system -f Makefile clean
 	$(MAKE) -C simulation/modelica/others -f Makefile clean
 	$(MAKE) -C simulation/modelica/packages -f Makefile clean
@@ -846,17 +825,11 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/unitcheck/OFunitcheck -f Makefile clean
 
 clean_g_3 :
-	if [ -d "flattening/libraries/msl22/" ]; then \
-	  $(MAKE) -C flattening/libraries/msl22/modelicaAdditions -f Makefile clean \
-	  $(MAKE) -C flattening/libraries/msl22 -f Makefile clean; \
-	fi
 	$(MAKE) -C flattening/libraries/biochem -f Makefile clean
 	$(MAKE) -C simulation/libraries/msl40 -f Makefile clean
 	$(MAKE) -C openmodelica/bootstrapping -f Makefile clean
 	$(MAKE) -C openmodelica/linearization -f Makefile clean
 	$(MAKE) -C openmodelica/modelicaML -f Makefile clean
-	$(MAKE) -C simulation/libraries/msl22/Electrical -f Makefile clean
-	$(MAKE) -C simulation/libraries/msl22/Mechanics -f Makefile clean
 
 clean_g_4:
 	$(MAKE) -C flattening/libraries/3rdParty/PlanarMechanics -f Makefile clean
