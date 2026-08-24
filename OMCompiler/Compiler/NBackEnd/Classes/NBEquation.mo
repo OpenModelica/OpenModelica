@@ -3346,7 +3346,7 @@ public
           SOME(new_exp) := Equation.getRHS(Pointer.access(eqn_ptr));
           if isSome(body.else_if) then
             (new_exp2, success) := getRHS(Util.getOption(body.else_if));
-            if success then 
+            if success then
               new_exp := Expression.IF(Expression.typeOf(new_exp), body.condition, new_exp, new_exp2);
             else
               new_exp := Expression.END();
