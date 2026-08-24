@@ -4108,6 +4108,12 @@ package Expression
     output Boolean outBoolean;
   end isAtomic;
 
+  function isDeeperThan
+    input DAE.Exp inExp;
+    input Integer inDepth;
+    output Boolean outDeeper;
+  end isDeeperThan;
+
   function isHalf
     input DAE.Exp inExp;
     output Boolean outBoolean;
