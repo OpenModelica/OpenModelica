@@ -1,0 +1,7 @@
+*.bin
+*.c
+*.fmu
+*.h
+*.json
+*.libs
+*.makefile

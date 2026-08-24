@@ -54,7 +54,9 @@ readFile("directionalDerivatives_systemCall.log");
 // true
 // ""
 // "Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // true
 // ""
 // 0

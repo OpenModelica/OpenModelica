@@ -57,7 +57,9 @@ readFile("initialization2_systemCall.log");
 // true
 // ""
 // "initialization2.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // true
 // ""
 // true

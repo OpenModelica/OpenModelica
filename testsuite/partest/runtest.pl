@@ -110,6 +110,27 @@ sub make_external_link {
   }
 }
 
+# Windows cannot hard-link a directory, and Perl's symlink() needs a privilege
+# the build nodes do not hold, so a directory dependency is reproduced as an
+# NTFS junction instead - any user may create one, and both MSYS and native
+# tools follow it like a real directory.
+sub windows_junction {
+  my $src = shift;
+  my $dst = shift;
+
+  my $abs = Cwd::abs_path($src);
+  return 0 unless defined $abs;
+  # /mnt/c/... (WSL) and /c/... (MSYS) both name the drive C:.
+  $abs =~ s{^/mnt/([A-Za-z])/}{$1:/};
+  $abs =~ s{^/([A-Za-z])/}{$1:/};
+  return 0 unless $abs =~ m{^[A-Za-z]:/};
+  $abs =~ s{/}{\\}g;
+  my $win_dst = $dst;
+  $win_dst =~ s{/}{\\}g;
+  system("cmd /c mklink /J \"$win_dst\" \"$abs\" > nul 2>&1");
+  return (-d $dst) ? 1 : 0;
+}
+
 # Creates a symbolic link to a file, but only if the file exists.
 sub symlink_if_exists {
   my $src = shift;
@@ -117,7 +138,11 @@ sub symlink_if_exists {
 
   if (-e $src) {
     if ($isWSL or ($osname eq 'MSWin32')) {
-      link($src, $dst);
+      if (-d $src) {
+        windows_junction($src, $dst);
+      } else {
+        link($src, $dst);
+      }
     } else {
       symlink($src, $dst);
     }
@@ -209,7 +234,10 @@ sub enter_sandbox {
     elsif (/loadFile.*\(\"(.*)\"\)/)   { make_link($1); }
     elsif (/runScript.*\(\"(.*)\"\)/)  { make_link($1); }
     elsif (/importFMU.*\(\"(.*)\"\)/)  { make_link($1); }
-    elsif (/system\(\"\s*python[0-9]*\s+(\S+\.py)/) { make_external_link($1); }
+    # The interpreter is not always spelled out: a test may take it from the
+    # environment, e.g. system("\"" + getEnvironmentVar("FMPY_TOOL") + "\" ../../x.py").
+    # Link whatever .py the command names, however it is invoked.
+    elsif (/system\(.*?[\s\"]([\w.\/-]+\.py)\b/) { make_external_link($1); }
     elsif (/system\(\"(gcc|g\+\+).*\s(\w*\.\w*)\s(\w*\.\w*)/) {
       my $header = lib_to_header($2);
       make_link($header);
@@ -295,11 +323,19 @@ open(my $test_log, "<", "$test.test_log") or die "Couldn't open test log $test.l
 
 my $exit_status = 1;
 my $erroneous = 0;
+my $disabled = 0;
 my $time = 0;
 my $nfailed = 1;
 
 while(<$test_log>) {
-  if(/\.\.\. erroneous/) {
+  if(/^ \. .*\.\.\. disabled\s*$/) {
+    # rtest refuses to run a test tagged '// suite: disabled'; neither a pass nor
+    # a failure. Only reachable via -file=, since the suite filtering in
+    # runtests.pl drops these tests before they get here.
+    $disabled = 1;
+    $nfailed = 0;
+  }
+  elsif(/\.\.\. erroneous/) {
     $erroneous = 1;
   }
   elsif(/== (\d) out of 1 tests failed.*time: (\d*)/) {
@@ -317,7 +353,9 @@ while(<$test_log>) {
 }
 
 if (!$no_colour) {
-  if($nfailed =~ /0/) {
+  if($disabled) {
+    print color 'yellow';
+  } elsif($nfailed =~ /0/) {
     if ($test_baseline) {
 	  print color 'blue';
 	} else {
@@ -335,13 +373,17 @@ if (!$no_colour) {
   }
   print " ";
 }
-if ($test_baseline) {
+if ($disabled) {
+  print "[$test:disabled]";
+} elsif ($test_baseline) {
   print "[Baselining $test:$time]";
 } else {
   print "[$test:$time]";
 }
 if ($no_colour) {
-  if($nfailed =~ /0/) {
+  if($disabled) {
+    print " Disabled\n";
+  } elsif($nfailed =~ /0/) {
     print " OK\n";
   } else {
     if($erroneous == 0) {
@@ -369,7 +411,10 @@ if ($withxml) {
   $classname =~ s,/,_,g;
 
   print $XMLOUT "<testcase classname=\"$classname\" name=\"$test\" time=\"$time\">";
-  if ($erroneous == 1) {
+  if ($disabled == 1) {
+    print $XMLOUT '<skipped message="disabled test" />';
+  }
+  elsif ($erroneous == 1) {
     print $XMLOUT '<skipped />';
   }
   elsif ($exit_status == 0) {

@@ -86,9 +86,8 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
   memcpy(nonlinsys->min, gbData->mins, nonlinsys->size * sizeof(double));
   memcpy(nonlinsys->max, gbData->maxs, nonlinsys->size * sizeof(double));
 
-  /* Initialize sparsity pattern */
   if (initSparsePattern) {
-    nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
+    nonlinsys->sparsePattern = gbData->sparsePattern_NLS;
   }
 }
 
@@ -113,9 +112,8 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
   memcpy(nonlinsys->min, gbData->mins, nonlinsys->size * sizeof(double));
   memcpy(nonlinsys->max, gbData->maxs, nonlinsys->size * sizeof(double));
 
-  /* Initialize sparsity pattern, First guess (all states are fast states) */
   if (initSparsePattern) {
-    nonlinsys->sparsePattern = initializeSparsePattern_SR(data, nonlinsys);
+    nonlinsys->sparsePattern = gbData->gbfData->sparsePattern_NLS;
   }
 }
 
@@ -143,9 +141,8 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
     nonlinsys->max[i]     = gbData->maxs[ii];
   }
 
-  /* Initialize sparsity pattern */
   if (initSparsePattern) {
-    nonlinsys->sparsePattern = initializeSparsePattern_IRK(data, nonlinsys);
+    nonlinsys->sparsePattern = gbData->sparsePattern_NLS;
   }
 }
 
@@ -191,6 +188,7 @@ void freeNlsDataGB(NONLINEAR_SYSTEM_DATA* nlsData)
   free(nlsData->nominal);
   free(nlsData->min);
   free(nlsData->max);
+  /* sparsePattern is a view of DATA_GBODE / DATA_GBODEF. */
   free(nlsData);
 }
 
@@ -216,7 +214,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   nlsData->equationIndex = -1;
 
   modelica_boolean useInternal = gbData->nlsSolverMethod == GB_NLS_INTERNAL;
-  modelica_boolean useInternalTransform = useInternal && gbData->tableau->t_transform != NULL;
 
   switch (gbData->type)
   {
@@ -257,7 +254,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     throwStreamPrint(NULL, "Residual function for NLS type %i not yet implemented.", gbData->type);
   }
 
-  nlsData->initializeStaticNLSData(data, threadData, nlsData, !useInternalTransform, TRUE);
+  nlsData->initializeStaticNLSData(data, threadData, nlsData, !useInternal, TRUE);
 
   if (!useInternal)
   {
@@ -340,7 +337,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
   NONLINEAR_SYSTEM_DATA* nlsData;
 
-  nlsData = allocNlsDataGB(threadData, gbfData->nStates);
+  nlsData = allocNlsDataGB(threadData, gbfData->nlSystemSize);
   nlsData->equationIndex = -1;
 
   switch (gbfData->type)
@@ -368,17 +365,16 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
     break;
   case GM_TYPE_IMPLICIT:
-    // Only works for -gbnls=internal (error should be caught beforehand, if we are not in -gbnls=internal)
-    // As -gbnls=internal does all the stuff from scratch and only really requires the nlsxOld, nlsxExtrapolation and nlsx fields
-    // we must do nothing here except check that pattern is available
-    assertStreamPrint(threadData, nlsData->sparsePattern, "Sparsity pattern not available.");
+    /* Fully implicit MR uses the internal method and the GBODEF I + J pattern. */
     nlsData->initializeStaticNLSData = NULL;
     break;
   default:
     throwStreamPrint(NULL, "Residual function for NLS type %i not yet implemented.", gbfData->type);
   }
 
-  if (nlsData->initializeStaticNLSData) nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE, TRUE);
+  if (nlsData->initializeStaticNLSData) {
+    nlsData->initializeStaticNLSData(data, threadData, nlsData, gbfData->nlsSolverMethod != GB_NLS_INTERNAL, TRUE);
+  }
 
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   gbfData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));

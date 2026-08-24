@@ -61,6 +61,20 @@ void ModelInstanceTest::initTestCase()
   if (!MainWindow::instance()->getOMCProxy()->existClass("RestrictedVariabilityParamDialog")) {
     QFAIL(QString("Failed to load file %1").arg(restrictedVariabilityParamDialogFileName).toStdString().c_str());
   }
+
+  // load ModifierDisplayUnit.mo
+  const QString modifierDisplayUnitFileName = QFINDTESTDATA("ModifierDisplayUnit.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(modifierDisplayUnitFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("ModifierDisplayUnit")) {
+    QFAIL(QString("Failed to load file %1").arg(modifierDisplayUnitFileName).toStdString().c_str());
+  }
+
+  // load Modifiers.mo
+  const QString modifiersFileName = QFINDTESTDATA("Modifiers.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(modifiersFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("Modifiers")) {
+    QFAIL(QString("Failed to load file %1").arg(modifiersFileName).toStdString().c_str());
+  }
 }
 
 void ModelInstanceTest::classAnnotations()
@@ -219,6 +233,137 @@ void ModelInstanceTest::referencePathEquivalence()
   }
 
   pMainWindow->setNewApiNoJson(savedFlag);
+}
+
+void ModelInstanceTest::modifiertoString()
+{
+  QFETCH(QString, model);
+  QFETCH(QString, element);
+  QFETCH(QString, result);
+
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(model));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  auto pElement = pModelInstance->lookupElement(element);
+  if (!pElement) {
+    QFAIL(QString("Failed to find element %1.").arg(element).toStdString().c_str());
+  }
+
+  auto *pModifier = pElement->getModifier();
+  if (!pModifier) {
+    QFAIL(QString("Failed to find element %1 modifier.").arg(element).toStdString().c_str());
+  }
+
+  QCOMPARE(pModifier->toString(true, true), result);
+
+  delete pModelInstance;
+}
+
+void ModelInstanceTest::modifiertoString_data()
+{
+  QTest::addColumn<QString>("model");
+  QTest::addColumn<QString>("element");
+  QTest::addColumn<QString>("result");
+
+  QTest::newRow("Element modifier toString 1")
+      << "ModifierDisplayUnit"
+      << "spring"
+      << "(c = 35, f(displayUnit = \"kN\"), s_rel(displayUnit = \"cm\"))";
+
+  QTest::newRow("Element modifier toString 2")
+      << "Modifiers.M"
+      << "a"
+      << "(R = 1, V(start = 2), X = sin(time), Y(min = 2) = if time < 1 then 0 else 1)";
+}
+
+void ModelInstanceTest::subModifiertoString()
+{
+  QFETCH(QString, model);
+  QFETCH(QString, element);
+  QFETCH(QString, modifier);
+  QFETCH(QString, result);
+
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(model));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  auto pElement = pModelInstance->lookupElement(element);
+  if (!pElement) {
+    QFAIL(QString("Failed to find element %1.").arg(element).toStdString().c_str());
+  }
+
+  auto *pModifier = pElement->getModifier();
+  if (!pModifier) {
+    QFAIL(QString("Failed to find element %1 modifier.").arg(element).toStdString().c_str());
+  }
+
+  bool found = false;
+  foreach (auto *pSubModifier, pModifier->getModifiers()) {
+    if (pSubModifier->getName() == modifier) {
+      found = true;
+      QCOMPARE(pSubModifier->toString(true, true), result);
+      break;
+    }
+  }
+
+  if (!found) {
+    QFAIL(QString("Failed to find sub-modifier %1.").arg(modifier).toStdString().c_str());
+  }
+
+  delete pModelInstance;
+}
+
+void ModelInstanceTest::subModifiertoString_data()
+{
+  QTest::addColumn<QString>("model");
+  QTest::addColumn<QString>("element");
+  QTest::addColumn<QString>("modifier");
+  QTest::addColumn<QString>("result");
+
+  QTest::newRow("Sub modifier toString 1")
+      << "ModifierDisplayUnit"
+      << "spring"
+      << "c"
+      << "35";
+
+  QTest::newRow("Sub modifier toString 2")
+      << "ModifierDisplayUnit"
+      << "spring"
+      << "f"
+      << "(displayUnit = \"kN\")";
+
+  QTest::newRow("Sub modifier toString 3")
+      << "ModifierDisplayUnit"
+      << "spring"
+      << "s_rel"
+      << "(displayUnit = \"cm\")";
+
+  QTest::newRow("Sub modifier toString 4")
+      << "Modifiers.M"
+      << "a"
+      << "R"
+      << "1";
+
+  QTest::newRow("Sub modifier toString 5")
+      << "Modifiers.M"
+      << "a"
+      << "V"
+      << "(start = 2)";
+
+  QTest::newRow("Sub modifier toString 6")
+      << "Modifiers.M"
+      << "a"
+      << "X"
+      << "sin(time)";
+
+  QTest::newRow("Sub modifier toString 7")
+      << "Modifiers.M"
+      << "a"
+      << "Y"
+      << "(min = 2) = if time < 1 then 0 else 1";
 }
 
 void ModelInstanceTest::cleanupTestCase()

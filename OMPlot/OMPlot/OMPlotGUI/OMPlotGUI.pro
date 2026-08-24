@@ -52,13 +52,12 @@ SOURCES += main.cpp
 
 win32 {
   _cxx = $$(CXX)
-  contains(_cxx, clang++) {
+  equals(_cxx, clang++) {
     message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
     QMAKE_CFLAGS -= -fno-keep-inline-dllexport
     QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
     QMAKE_CXXFLAGS_EXCEPTIONS_ON -= -mthreads
   } else {
-    # -Wno-clobbered is not recognized by clang
     QMAKE_CXXFLAGS += -Wno-clobbered
   }
 
@@ -83,12 +82,6 @@ INCLUDEPATH += .
 
 # Please read the warnings. They are like vegetables; good for you even if you hate them.
 CONFIG += warn_on
-win32 {
-  # -Wno-clobbered is not recognized by clang
-  !contains(_cxx, clang++) {
-    QMAKE_CXXFLAGS += -Wno-clobbered
-  }
-}
 
 DESTDIR = ../bin
 

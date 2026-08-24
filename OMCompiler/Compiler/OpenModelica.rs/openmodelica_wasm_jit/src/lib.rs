@@ -12,16 +12,20 @@ pub static RUNTIME_WASM_INTERACTIVE_WASIP1: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/runtime_wasip1_interactive.wasm"));
 pub static EXTERNAL_C_WASM: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/modelicaexternalc.wasm"));
 pub static FMI3_ME_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_me_adapter.wasm"));
-pub static FMI3_CS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_cs_adapter.wasm"));
+/// Both interfaces in one component, and what a Co-Simulation FMU carries too: its
+/// imports are a `co-simulation-fmu`'s exactly and its exports a superset, so it
+/// substitutes for one — cheaper than a fourth adapter blob in every omc.
 pub static FMI3_MECS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_adapter.wasm"));
 
-/// The same two worlds with CVODE/IDA in the embedded driver, for an FMU exported with
+/// The me_cs world with CVODE/IDA in the embedded driver, for an FMU exported with
 /// `method="cvode"`/`"ida"`; the calls are imports
 /// `openmodelica_wasi_libc::SUNDIALS_DYLINK` resolves.
-pub static FMI3_CS_SUNDIALS_ADAPTER: &[u8] =
-    include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_cs_sundials_adapter.wasm"));
 pub static FMI3_MECS_SUNDIALS_ADAPTER: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_sundials_adapter.wasm"));
+
+/// `openmodelica_lapack` as a PIC dylink side module, linked into an FMU only when
+/// the model's `external "FORTRAN 77"` calls need it.
+pub static LAPACK_DYLINK: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/liblapack.wasm"));
 
 /// Whether the wasip1 runtimes above have the real SUNDIALS/KLU linked in (the
 /// build script cross-compiled the archives), so a `-lss=klu` run can be served.

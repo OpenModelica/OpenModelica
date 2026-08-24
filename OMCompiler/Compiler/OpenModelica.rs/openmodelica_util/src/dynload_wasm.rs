@@ -10,6 +10,16 @@ pub fn load_library(_path: &str, _relative: bool, _debug: bool) -> Result<i32> {
     return Err("System.loadLibrary: dynamic loading (dlopen) is unavailable on wasm")
 }
 
+pub fn load_library_lazy(_path: &str, _relative: bool, _debug: bool) -> Result<i32> {
+    return Err("System.loadLibraryLazy: dynamic loading (dlopen) is unavailable on wasm")
+}
+
+/// `System.getLoadLibraryError`. No library is ever loaded here, so there is
+/// never a reason to report for one.
+pub fn last_load_error() -> String {
+    String::new()
+}
+
 pub fn lookup_function(_lib: i32, _name: &str) -> Result<i32> {
     return Err("System.lookupFunction: dynamic loading is unavailable on wasm")
 }

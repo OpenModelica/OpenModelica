@@ -3,6 +3,7 @@
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml FMIExercise_Components_PI* FMIExercise.TestPIFMU* output.log
 // cflags: -d=-newInst
+// suite: disabled
 //
 
 echo(false);

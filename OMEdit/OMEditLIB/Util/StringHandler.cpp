@@ -44,6 +44,9 @@
 #include "Utilities.h"
 #include "Util/ResourceCache.h"
 #include "om_format.h"
+#if defined(__EMSCRIPTEN__)
+#include "OMEditGUI/wasm/WasmLocalFiles.h"
+#endif
 
 #include <QtCore/qmath.h>
 #include <QDir>
@@ -1262,11 +1265,17 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
     }
   }
 
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(filter)
+  Q_UNUSED(selectedFilter)
+  fileName = WasmLocalFiles::saveFileName(parent, caption, dir_str, proposedFileName);
+#else
   if (!proposedFileName.isEmpty()) {
     fileName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(proposedFileName), filter, selectedFilter);
   } else {
     fileName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
   }
+#endif
 
   if (!fileName.isEmpty()) {
     QFileInfo fileInfo(fileName);
@@ -1287,11 +1296,18 @@ QString StringHandler::getSaveFolderName(QWidget* parent, const QString &caption
   }
 
   QString proposedFileName = *proposedName;
+#if defined(__EMSCRIPTEN__)
+  // A browser cannot receive a directory, so each file written is downloaded alone.
+  Q_UNUSED(filter)
+  Q_UNUSED(selectedFilter)
+  folderName = WasmLocalFiles::saveFileName(parent, caption, dir_str, proposedFileName);
+#else
   if (!proposedFileName.isEmpty()) {
     folderName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(proposedFileName), filter, selectedFilter);
   } else {
     folderName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
   }
+#endif
   if (!folderName.isEmpty()) {
     StringHandler::setLastOpenDirectory(folderName);
   }
@@ -1309,7 +1325,14 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
   }
 
   QString fileName = "";
-#if defined(_WIN32)
+#if defined(__EMSCRIPTEN__)
+  // The picker hands over bytes, not a path: they are staged and that path returned.
+  Q_UNUSED(dir_str)
+  Q_UNUSED(caption)
+  Q_UNUSED(parent)
+  Q_UNUSED(selectedFilter)
+  fileName = WasmLocalFiles::openFiles(filter, false).value(0);
+#elif defined(_WIN32)
   fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
 #else
   Q_UNUSED(selectedFilter)
@@ -1342,7 +1365,13 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
   }
 
   QStringList fileNames;
-#if defined(_WIN32)
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(dir_str)
+  Q_UNUSED(caption)
+  Q_UNUSED(parent)
+  Q_UNUSED(selectedFilter)
+  fileNames = WasmLocalFiles::openFiles(filter, true);
+#elif defined(_WIN32)
   fileNames = QFileDialog::getOpenFileNames(parent, caption, dir_str, filter, selectedFilter);
 #else
   Q_UNUSED(selectedFilter);
@@ -1630,28 +1659,26 @@ QProcessEnvironment StringHandler::simulationProcessEnvironment()
 QProcessEnvironment StringHandler::modelicaSimulationProcessEnvironment(const QString pathsFileName, QString *errorMsg)
 {
   QProcessEnvironment environment = StringHandler::simulationProcessEnvironment();
-
   // Parse the fileName.bat file to get the necessary paths.
   // Return errorMsg if fails to parse the file as expected.
   QFile batFile(pathsFileName);
-  batFile.open(QIODevice::ReadOnly | QIODevice::Text);
+  if (batFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QString line;
+    // first line is supposed to be '@echo off'
+    line = batFile.readLine();
+    // Second line is where the PATH is set. We want that.
+    line = batFile.readLine();
 
-  QString line;
-  // first line is supposed to be '@echo off'
-  line = batFile.readLine();
-  // Second line is where the PATH is set. We want that.
-  line = batFile.readLine();
-
-  if (!line.toLower().startsWith("set path=")) {
-    *errorMsg = "Failed to read the neccesary PATH values from '" + pathsFileName + "'\n"
-                + "If simulation fails please check that you have the bat file and it is formatted correctly\n";
-  } else {
-    // Strip the 'set PATH='
-    line.remove(0, 9);
-    environment.insert("PATH", line + ";" + environment.value("PATH"));
+    if (!line.toLower().startsWith("set path=")) {
+      *errorMsg = "Failed to read the neccesary PATH values from '" + pathsFileName + "'\n"
+                  + "If simulation fails please check that you have the bat file and it is formatted correctly\n";
+    } else {
+      // Strip the 'set PATH='
+      line.remove(0, 9);
+      environment.insert("PATH", line + ";" + environment.value("PATH"));
+    }
+    batFile.close();
   }
-  batFile.close();
-
   return environment;
 }
 #endif

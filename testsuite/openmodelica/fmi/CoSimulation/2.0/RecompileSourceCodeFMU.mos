@@ -26,18 +26,18 @@ setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
 buildModelFMU(Test.SinSource, version="2.0", fmuType ="cs", fileNamePrefix="Test.SinSource", platforms={"static"}); getErrorString();
 
 // Check if CMake can re-compile a static library
-system("rm -rf Test_SinSource_FMU && unzip -qq Test.SinSource.fmu -d Test_SinSource_FMU && mkdir Test_SinSource_FMU/sources/build_cmake", outputFile="reCompile.log"); getErrorString();
-//readFile("reCompile.log");
-system("cd Test_SinSource_FMU/sources/build_cmake && cmake .. -DBUILD_SHARED_LIBS=OFF && cmake --build . && make install", outputFile="reCompile.log"); getErrorString();
-//readFile("reCompile.log");
+system("rm -rf Test_SinSource_FMU && unzip -qq Test.SinSource.fmu -d Test_SinSource_FMU", outputFile="reCompile.log"); getErrorString();
+// readFile("reCompile.log");
+system("cmake -S Test_SinSource_FMU/sources -B Test_SinSource_FMU/sources/build_cmake -DBUILD_SHARED_LIBS=OFF && cmake --build Test_SinSource_FMU/sources/build_cmake --target install", outputFile="reCompile.log"); getErrorString();
+// readFile("reCompile.log");
 
 // Check if static library was compiled and that it used FMI2_FUNCTION_PREFIX=Test_SinSource_FMU for function names
 // Has to return "Test_SinSource_fmi2GetReal"
-system("nm Test_SinSource_FMU/binaries/linux64/Test_SinSource.a | grep -wo Test_SinSource_fmi2GetReal"); getErrorString();
+system("nm Test_SinSource_FMU/binaries/*64/Test_SinSource.a | grep -wo Test_SinSource_fmi2GetReal"); getErrorString();
 
 // Repack Test.SinSource.fmu
-system("rm -rf Test.SinSource.fmu && cd Test_SinSource_FMU/sources/build_cmake && cmake --build . && make create_fmu", outputFile="reCompile.log"); getErrorString();
-//readFile("reCompile.log");
+system("rm -rf Test.SinSource.fmu && cmake --build Test_SinSource_FMU/sources/build_cmake --target create_fmu", outputFile="reCompile.log"); getErrorString();
+// readFile("reCompile.log");
 regularFileExists("Test.SinSource.fmu"); getErrorString();
 
 // Result:
@@ -48,7 +48,9 @@ regularFileExists("Test.SinSource.fmu"); getErrorString();
 // true
 // ""
 // "Test.SinSource.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // 0

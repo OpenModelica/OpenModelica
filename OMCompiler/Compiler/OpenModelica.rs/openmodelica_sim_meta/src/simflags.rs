@@ -26,6 +26,8 @@ pub enum Solver {
     RungeKutta,
     SymSolver,
     SymSolverSsc,
+    /// C's deprecated experimental QSS1 (`perform_qss_simulation.c.inc`).
+    Qss,
     /// `optimize()`'s collocation solver; only selectable where Ipopt is linked.
     Optimization,
 }
@@ -63,6 +65,7 @@ pub enum Ls {
     Lapack = 2,
     TotalPivot = 3,
     Klu = 4,
+    Umfpack = 5,
 }
 
 /// `-lss`. `Rsparse` is wasm-jit's own solver, not a C runtime value.
@@ -72,6 +75,7 @@ pub enum Lss {
     Default = 1,
     Klu = 2,
     Rsparse = 3,
+    Umfpack = 4,
 }
 
 /// `-idaLS`, the linear solver IDA's Newton iteration uses.
@@ -96,6 +100,10 @@ pub struct SimFlags {
     pub output_format: Option<String>,
     /// `-noemit`: no result file, C's `sim_noemit` (which it treats as `empty`).
     pub noemit: bool,
+    /// `-single`: store the `.mat` real data (`data_1`/`data_2`) as 4-byte single
+    /// precision (C's `FLAG_SINGLE_PRECISION`). The simulation itself always runs
+    /// in double; this only narrows the result file.
+    pub single_precision: bool,
     /// `-outputPath=<dir>`: holds `<prefix>_res.<format>` unless `-r` names a file.
     pub output_path: Option<String>,
     /// `-iit=<t>`: where `-iif`'s result file is read (C's `init_time`, default the
@@ -107,6 +115,8 @@ pub struct SimFlags {
     /// `-mbi`: bisection steps allowed when locating a state event, 0 = C's own
     /// bound from the bracket width (`maxBisectionIterations`).
     pub max_bisection_iter: Option<u32>,
+    /// The `-hom*` tuning of the arc-length homotopy solver (C's `model_help.c`).
+    pub hom: HomFlags,
     /// `-newtonFTol` / `-newtonXTol` / `-newtonMaxStepFactor`: C's `newtonFTol`,
     /// `newtonXTol` and `maxStepFactor`, shared by the homotopy Newton and KINSOL.
     pub newton_ftol: Option<f64>,
@@ -119,11 +129,10 @@ pub struct SimFlags {
     /// `-w`: print warnings whose stream is inactive. Carried in
     /// [`log_mask`](Self::log_mask) as [`omclog::SHOW_ALL_WARNINGS`](crate::omclog::SHOW_ALL_WARNINGS).
     pub show_all_warnings: bool,
+    /// `-logFormat=xml`, installed by [`set_flags`] (C's `setStreamPrintXML`).
+    pub log_xml: bool,
     /// `-daeMode`, deprecated in C: `--daeMode` at translation is what selects it.
     pub dae_mode: bool,
-    /// `-jacobianThreads`: this runtime evaluates Jacobians single-threaded, as a C
-    /// runtime built without `--enable-parjac` does.
-    pub jacobian_threads: Option<i32>,
     pub nls: Option<Nls>,
     pub nls_ls: Option<NlsLs>,
     pub ls: Option<Ls>,
@@ -134,6 +143,8 @@ pub struct SimFlags {
     /// name fails at parse time as in C and no reader re-derives the implications.
     /// [`parse`] fills it; a default-constructed `SimFlags` has no stream on.
     pub log_mask: crate::omclog::Mask,
+    /// `-lvMaxWarn`: C's `maxWarnDisplays`, how often a repeating warning shows.
+    pub max_warn: Option<u32>,
     pub abort_slow: bool,
     /// `-alarm`: seconds after which the run is aborted (C's `FLAG_ALARM`, where
     /// it is a `SIGALRM` on the simulation executable). 0 disables it, as in C.
@@ -168,8 +179,14 @@ pub struct SimFlags {
     /// homotopy.
     pub homotopy_on_first_try: Option<bool>,
     /// `-override=name=value,…` unresolved: mapping a name to its `SimData` slot
-    /// needs the model, which only the caller has.
-    pub overrides: Vec<(String, f64)>,
+    /// needs the model, which only the caller has. The value stays the string C
+    /// puts in the quantity's `start` attribute; reading it is the variable class's
+    /// job, and an unresolvable name still has to be reported.
+    pub overrides: Vec<(String, String)>,
+    /// C's `overrideStr1`: the raw `-override=` value, which `doOverride` logs.
+    pub override_raw: Option<String>,
+    /// C's `overrideStr2`: `-overrideFile`'s `(path, lines joined with commas)`.
+    pub override_file: Option<(String, String)>,
     /// `-output=a,b,c`: variables printed at the stop time (C's
     /// `outputVariablesAtEnd` / `writeOutputVars`).
     pub output_vars: Vec<String>,
@@ -181,6 +198,8 @@ pub struct SimFlags {
     pub init_file: Option<String>,
     /// `-iim=<symbolic|none>`: C's `INIT_INIT_METHOD`.
     pub init_method: InitMethod,
+    /// `-jacobian=<method>`; `None` leaves it to C's `setJacobianMethod`.
+    pub jacobian: Option<JacobianMethod>,
     /// `-noEquidistantTimeGrid`: emit the integrator's own steps instead of
     /// interpolating onto the output grid.
     pub no_equidistant_grid: bool,
@@ -215,8 +234,13 @@ pub struct SimFlags {
     /// `-stateFile=<file>`: `name value` lines overriding start values.
     pub state_file: Option<String>,
     /// `-csvInput=<file>`: external input `time,u…` rows, interpolated for the
-    /// optimizer's initial guess (C's `external_input.c`).
+    /// optimizer's initial guess (C's `external_input.c`). `-inputPath` is folded
+    /// in by [`parse`].
     pub csv_input: Option<String>,
+    /// `-inputPath=<dir>`: where the run's *input* files are read from. C also
+    /// prefixes the `_init.xml`/`_info.json`/sparsity files, which this runtime
+    /// carries in the module, so [`parse`] folds it into the two file flags only.
+    pub input_path: Option<String>,
     /// `-csvOstep=<file>` / `-optDebugJac=<iter>`: the optimizer's debug dumps.
     pub csv_ostep: Option<String>,
     pub opt_debug_jac: Option<String>,
@@ -304,18 +328,23 @@ pub struct Capabilities {
     pub variable_filter: bool,
     /// Ipopt is linked, so `method="optimization"` / `-s=optimization` can run.
     pub optimization: bool,
+    /// This runtime runs a whole simulation of its own, so `-s=qss` — which has no
+    /// output grid and no stepping interface — can drive it. C throws "Unhandled
+    /// case in solver_main_step" where it cannot.
+    pub qss: bool,
 }
 
 /// Reject flag values this runtime cannot honour.
 pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
+    // KLU and UMFPACK ride on the same SuiteSparse archives.
     if !cap.klu {
-        for (flag, requested) in [
-            ("lss", f.lss == Some(Lss::Klu)),
-            ("ls", f.ls == Some(Ls::Klu)),
-            ("nlsLS", f.nls_ls == Some(NlsLs::Klu)),
+        for (flag, name) in [
+            ("lss", (f.lss == Some(Lss::Klu)).then_some("klu").or((f.lss == Some(Lss::Umfpack)).then_some("umfpack"))),
+            ("ls", (f.ls == Some(Ls::Klu)).then_some("klu").or((f.ls == Some(Ls::Umfpack)).then_some("umfpack"))),
+            ("nlsLS", (f.nls_ls == Some(NlsLs::Klu)).then_some("klu")),
         ] {
-            if requested {
-                return Err(format!("-{flag}=klu: this runtime has no KLU linear solver"));
+            if let Some(name) = name {
+                return Err(format!("-{flag}={name}: this runtime has no SuiteSparse linear solver"));
             }
         }
     }
@@ -329,6 +358,7 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
         Some(Solver::Ida) if !cap.ida => "ida",
         Some(Solver::Cvode) if !cap.cvode => "cvode",
         Some(Solver::Optimization) if !cap.optimization => "optimization",
+        Some(Solver::Qss) if !cap.qss => "qss",
         _ => return Ok(()),
     };
     let have: Vec<String> = supported(cap)
@@ -421,7 +451,6 @@ const C_FLAGS: &[(&str, bool)] = &[
     ("ipopt_warm_start", true),
     ("jacobian", true),
     ("jacobianNominalFactor", true),
-    ("jacobianThreads", true),
     ("l", true),
     ("l_datarec", false),
     ("logFormat", true),
@@ -534,15 +563,42 @@ pub enum InitMethod {
 const INIT_METHODS: &[Value<InitMethod>] =
     &[("none", InitMethod::None, Offer::Always), ("symbolic", InitMethod::Symbolic, Offer::Always)];
 
+/// C's `JACOBIAN_METHOD` (`jacobian_util.h`).
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum JacobianMethod {
+    ColoredNumJac,
+    InternalNumJac,
+    ColoredSymJac,
+    ColoredSymJacAdj,
+    NumJac,
+    SymJac,
+    BicoloredSymJac,
+}
+
+impl JacobianMethod {
+    /// C's `setJacobianMethod` log line, one per enumerator.
+    pub fn desc(self) -> &'static str {
+        match self {
+            JacobianMethod::ColoredNumJac => "Colored numerical Jacobian.",
+            JacobianMethod::InternalNumJac => "Internal numerical Jacobian.",
+            JacobianMethod::ColoredSymJac => "Colored symbolical Jacobian.",
+            JacobianMethod::ColoredSymJacAdj => "Colored symbolical adjoint Jacobian.",
+            JacobianMethod::NumJac => "Numerical Jacobian.",
+            JacobianMethod::SymJac => "Symbolical Jacobian.",
+            JacobianMethod::BicoloredSymJac => "Bicolored (bidirectional) symbolical Jacobian.",
+        }
+    }
+}
+
 /// C's `JACOBIAN_METHOD_NAME` (`simulation_options.c`).
-const JACOBIAN_METHODS: &[&str] = &[
-    "coloredNumerical",
-    "internalNumerical",
-    "coloredSymbolical",
-    "coloredSymbolicalAdjoint",
-    "numerical",
-    "symbolical",
-    "bicoloredSymbolical",
+const JACOBIAN_METHODS: &[Value<JacobianMethod>] = &[
+    ("coloredNumerical", JacobianMethod::ColoredNumJac, Offer::Always),
+    ("internalNumerical", JacobianMethod::InternalNumJac, Offer::Always),
+    ("coloredSymbolical", JacobianMethod::ColoredSymJac, Offer::Always),
+    ("coloredSymbolicalAdjoint", JacobianMethod::ColoredSymJacAdj, Offer::Always),
+    ("numerical", JacobianMethod::NumJac, Offer::Always),
+    ("symbolical", JacobianMethod::SymJac, Offer::Always),
+    ("bicoloredSymbolical", JacobianMethod::BicoloredSymJac, Offer::Always),
 ];
 
 /// C flags deliberately let through.
@@ -589,15 +645,20 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                     }
                 }
             }
-            "override" => {
-                for item in value(name)?.split(',') {
-                    // An unparsable or unknown override is a no-op, as in C.
-                    if let Some((n, v)) = item.split_once('=') {
-                        if let Ok(val) = v.trim().parse::<f64>() {
-                            f.overrides.push((n.trim().to_string(), val));
-                        }
-                    }
-                }
+            "lvMaxWarn" => {
+                f.max_warn = Some(
+                    value(name)?
+                        .parse::<u32>()
+                        .map_err(|_| "-lvMaxWarn takes an integer argument".to_string())?,
+                )
+            }
+            "override" => push_raw_str(f.override_raw.get_or_insert_with(String::new), value(name)?),
+            "overrideFile" => {
+                let path = value(name)?;
+                let joined = read_override_file(&path)?;
+                let (paths, lines) = f.override_file.get_or_insert_with(Default::default);
+                push_raw_str(paths, path);
+                push_raw_str(lines, joined);
             }
             "output" => f.output_vars = split_top_level(&value(name)?),
             "startTime" => f.start_time = Some(real(name, &value(name)?)?),
@@ -605,10 +666,32 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "tolerance" => f.tolerance = Some(real(name, &value(name)?)?),
             "outputFormat" => f.output_format = Some(output_format(&value(name)?)?),
             "noemit" => f.noemit = true,
+            "single" => f.single_precision = true,
             "outputPath" => f.output_path = Some(value(name)?),
             "iit" => f.init_time = Some(real(name, &value(name)?)?),
             "mei" => f.max_event_iter = Some(int(name, &value(name)?)?.max(0) as u32),
             "mbi" => f.max_bisection_iter = Some(int(name, &value(name)?)?.max(0) as u32),
+            "homAdaptBend" => f.hom.adapt_bend = Some(real(name, &value(name)?)?),
+            "homHEps" => f.hom.h_eps = Some(real(name, &value(name)?)?),
+            "homMaxLambdaSteps" => f.hom.max_lambda_steps = Some(int(name, &value(name)?)?.into()),
+            "homMaxNewtonSteps" => f.hom.max_newton_steps = Some(int(name, &value(name)?)?.into()),
+            "homMaxTries" => f.hom.max_tries = Some(int(name, &value(name)?)?.into()),
+            "homTauDecFac" => f.hom.tau_dec = Some(real(name, &value(name)?)?),
+            "homTauDecFacPredictor" => f.hom.tau_dec_pred = Some(real(name, &value(name)?)?),
+            "homTauIncFac" => f.hom.tau_inc = Some(real(name, &value(name)?)?),
+            "homTauIncThreshold" => f.hom.tau_inc_threshold = Some(real(name, &value(name)?)?),
+            "homTauMax" => f.hom.tau_max = Some(real(name, &value(name)?)?),
+            "homTauMin" => f.hom.tau_min = Some(real(name, &value(name)?)?),
+            "homTauStart" => f.hom.tau_start = Some(real(name, &value(name)?)?),
+            "homBacktraceStrategy" => {
+                let v = value(name)?;
+                f.hom.orthogonal_backtrace = match v.as_str() {
+                    "fix" => false,
+                    "orthogonal" => true,
+                    _ => return Err(format!("-homBacktraceStrategy={v}: expected fix or orthogonal")),
+                };
+            }
+            "homNegStartDir" => f.hom.neg_start_dir = true,
             "newtonFTol" => f.newton_ftol = Some(real(name, &value(name)?)?),
             "newtonXTol" => f.newton_xtol = Some(real(name, &value(name)?)?),
             "newtonMaxStepFactor" => f.newton_max_step_factor = Some(real(name, &value(name)?)?),
@@ -616,14 +699,12 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "steadyStateTol" => f.steady_state_tol = Some(real(name, &value(name)?)?),
             "w" => f.show_all_warnings = true,
             "daeMode" => f.dae_mode = true,
-            "jacobianThreads" => f.jacobian_threads = Some(int(name, &value(name)?)?),
-            // C's only other formats are the XML ones its `-port` server speaks.
-            "logFormat" => {
-                let v = value(name)?;
-                if v != "text" {
-                    return Err(format!("-logFormat={v}: this runtime writes plain text logs only"));
-                }
-            }
+            // C's third format, `xmltcp`, belongs to its `-port` server.
+            "logFormat" => match value(name)?.as_str() {
+                "text" => f.log_xml = false,
+                "xml" => f.log_xml = true,
+                v => return Err(format!("-logFormat={v}: this runtime writes `text` or `xml` logs")),
+            },
             "emit_protected" => f.emit_protected = true,
             "ignoreHideResult" => f.ignore_hide_result = true,
             "variableFilter" => f.variable_filter = Some(value(name)?),
@@ -640,6 +721,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "keepHessian" => f.keep_hessian = Some(int(name, &value(name)?)?),
             "stateFile" => f.state_file = Some(value(name)?),
             "csvInput" => f.csv_input = Some(value(name)?),
+            "inputPath" => f.input_path = Some(value(name)?),
             "csvOstep" => f.csv_ostep = Some(value(name)?),
             "optDebugJac" => f.opt_debug_jac = Some(value(name)?),
             // C declares `-ipopt_jac` but never reads it; accept and ignore, as it does.
@@ -655,14 +737,11 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 )
             }
             "noEventEmit" => f.no_event_emit = true,
-            // Every value this runtime can serve is the colored numerical one, which
-            // is also C's `setJacobianMethod` fallback where only the sparsity
-            // pattern is available -- which is all the wasm-jit backend emits.
+            // What it selects is settled by C's `setJacobianMethod`.
             "jacobian" => {
                 let v = value(name)?;
-                if !JACOBIAN_METHODS.contains(&v.as_str()) {
-                    return Err(format!("Unknown value `{v}` for flag `-jacobian`"));
-                }
+                let m = JACOBIAN_METHODS.iter().find(|(n, ..)| *n == v);
+                f.jacobian = Some(m.ok_or_else(|| format!("Unknown value `{v}` for flag `-jacobian`"))?.1);
             }
             "nlssMinSize" | "nlssMaxDensity" | "lssMinSize" | "lssMaxDensity" => {
                 f.deprecated_density_flag = true;
@@ -741,6 +820,27 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             }
         }
     }
+    // As C joins it at each read site: always for `-csvInput`, and for `-iif` only
+    // when the name does not already resolve on its own.
+    if let Some(dir) = f.input_path.clone() {
+        if let Some(csv) = &f.csv_input {
+            f.csv_input = Some(format!("{dir}/{csv}"));
+        }
+        if let Some(init) = &f.init_file
+            && !file_exists(init)
+        {
+            f.init_file = Some(format!("{dir}/{init}"));
+        }
+    }
+    // C's `doOverride` reads `-override` first, then the file; a later entry for the
+    // same name wins.
+    for raw in [f.override_raw.as_deref(), f.override_file.as_ref().map(|(_, j)| j.as_str())] {
+        for item in raw.into_iter().flat_map(split_top_level) {
+            if let Some((n, v)) = item.split_once('=') {
+                f.overrides.push((n.trim().to_string(), v.trim().to_string()));
+            }
+        }
+    }
     f.log_mask = crate::omclog::mask_from_streams(&f.log)?;
     if f.show_all_warnings {
         f.log_mask |= crate::omclog::SHOW_ALL_WARNINGS;
@@ -748,15 +848,119 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
     Ok(f)
 }
 
-/// C's `initializeResultData` formats. `mat`, `csv` and `empty` are the ones this
-/// runtime has a writer for; `plt`/`ia` are C's and would need one of their own.
+/// C's `FLAG_REPEAT_POLICY_COMBINE` for a repeated `-override`/`-overrideFile`.
+fn push_raw_str(dst: &mut String, v: String) {
+    if !dst.is_empty() {
+        dst.push(',');
+    }
+    dst.push_str(&v);
+}
+
+/// C's `-overrideFile` read: every `\n`-terminated line, trimmed, `//`-comments
+/// dropped, joined with commas into one `-override` string.
+#[cfg(feature = "std")]
+fn read_override_file(path: &str) -> Result<String, String> {
+    let text = std::fs::read_to_string(path).map_err(|e| {
+        format!("simulation_input_xml.c: could not read overrideFile {path}: {e}")
+    })?;
+    let mut out = Vec::new();
+    for line in text.split_inclusive('\n').filter(|l| l.ends_with('\n')) {
+        let line = line.trim();
+        // C's comment test reads both characters whatever the first one is.
+        if line.is_empty() || line.starts_with('/') || line.as_bytes().get(1) == Some(&b'/') {
+            continue;
+        }
+        out.push(line);
+    }
+    Ok(out.join(","))
+}
+
+#[cfg(not(feature = "std"))]
+fn read_override_file(path: &str) -> Result<String, String> {
+    Err(format!("-overrideFile={path}: this runtime has no filesystem"))
+}
+
+/// C's `omc_file_exists`. False without a filesystem, so the prefix is applied and
+/// the read reports the one path it tried.
+#[cfg(feature = "std")]
+fn file_exists(path: &str) -> bool {
+    std::path::Path::new(path).exists()
+}
+
+#[cfg(not(feature = "std"))]
+fn file_exists(_path: &str) -> bool {
+    false
+}
+
+/// C's `initializeResultData` formats. `mat`, `csv`, `plt` and `empty` are the
+/// ones this runtime has a writer for; `ia` is C's and would need one of its own.
 fn output_format(v: &str) -> Result<String, String> {
     match v {
-        "mat" | "csv" | "empty" => Ok(v.to_string()),
-        "plt" | "ia" => Err(format!(
-            "-outputFormat={v}: this runtime writes `mat`/`csv` results, or `empty` for none"
+        "mat" | "csv" | "plt" | "empty" => Ok(v.to_string()),
+        "ia" => Err(format!(
+            "-outputFormat={v}: this runtime writes `mat`/`csv`/`plt` results, or `empty` for none"
         )),
         _ => Err(format!("Unknown output format: {v}")),
+    }
+}
+
+/// The `-hom*` flags, mirroring the `model_help.c` globals.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct HomFlags {
+    pub adapt_bend: Option<f64>,
+    pub h_eps: Option<f64>,
+    pub max_lambda_steps: Option<i64>,
+    pub max_newton_steps: Option<i64>,
+    pub max_tries: Option<i64>,
+    pub tau_dec: Option<f64>,
+    pub tau_dec_pred: Option<f64>,
+    pub tau_inc: Option<f64>,
+    pub tau_inc_threshold: Option<f64>,
+    pub tau_max: Option<f64>,
+    pub tau_min: Option<f64>,
+    pub tau_start: Option<f64>,
+    /// `-homBacktraceStrategy=orthogonal` (C's `homBacktraceStrategy == 2`).
+    pub orthogonal_backtrace: bool,
+    /// `-homNegStartDir`: start the continuation towards decreasing lambda.
+    pub neg_start_dir: bool,
+}
+
+/// [`HomFlags`] with C's defaults filled in.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct HomTuning {
+    pub adapt_bend: f64,
+    pub h_eps: f64,
+    pub tau_dec: f64,
+    pub tau_dec_pred: f64,
+    pub tau_inc: f64,
+    pub tau_inc_threshold: f64,
+    pub tau_max: f64,
+    pub tau_min: f64,
+    pub tau_start: f64,
+    /// 0 = C's `homMaxLambdaSteps` default, which the solver reads as `size*100`.
+    pub max_lambda_steps: u32,
+    pub max_newton_steps: u32,
+    pub max_tries: u32,
+    pub orthogonal_backtrace: bool,
+    pub neg_start_dir: bool,
+}
+
+pub fn hom_tuning(f: &SimFlags) -> HomTuning {
+    HomTuning {
+        adapt_bend: f.hom.adapt_bend.unwrap_or(0.5),
+        h_eps: f.hom.h_eps.unwrap_or(1e-5),
+        tau_dec: f.hom.tau_dec.unwrap_or(10.0),
+        tau_dec_pred: f.hom.tau_dec_pred.unwrap_or(2.0),
+        tau_inc: f.hom.tau_inc.unwrap_or(2.0),
+        tau_inc_threshold: f.hom.tau_inc_threshold.unwrap_or(10.0),
+        tau_max: f.hom.tau_max.unwrap_or(10.0),
+        tau_min: f.hom.tau_min.unwrap_or(1e-4),
+        tau_start: f.hom.tau_start.unwrap_or(0.2),
+        max_lambda_steps: f.hom.max_lambda_steps.unwrap_or(0).max(0) as u32,
+        max_newton_steps: f.hom.max_newton_steps.unwrap_or(20).max(0) as u32,
+        max_tries: f.hom.max_tries.unwrap_or(10).max(0) as u32,
+        orthogonal_backtrace: f.hom.orthogonal_backtrace,
+        neg_start_dir: f.hom.neg_start_dir,
     }
 }
 
@@ -764,7 +968,38 @@ fn output_format(v: &str) -> Result<String, String> {
 /// constant, in its order. Rendered by the caller, which owns the run's log.
 pub fn notices(f: &SimFlags) -> Vec<(crate::omclog::LogType, String)> {
     let g = |v: f64| crate::driver::format_g(v, 6);
+    let ff = |v: f64| crate::omclog::f(v, 0, 6);
     let mut out = Vec::new();
+    for (name, v) in [
+        ("homAdaptBend", f.hom.adapt_bend),
+        ("homHEps", f.hom.h_eps),
+    ] {
+        if let Some(v) = v {
+            out.push((crate::omclog::INFO, format!("homotopy parameter {name} changed to {}", ff(v))));
+        }
+    }
+    for (name, v) in [
+        ("homMaxLambdaSteps", f.hom.max_lambda_steps),
+        ("homMaxNewtonSteps", f.hom.max_newton_steps),
+        ("homMaxTries", f.hom.max_tries),
+    ] {
+        if let Some(v) = v {
+            out.push((crate::omclog::INFO, format!("homotopy parameter {name} changed to {v}")));
+        }
+    }
+    for (name, v) in [
+        ("homTauDecreasingFactor", f.hom.tau_dec),
+        ("homTauDecreasingFactorPredictor", f.hom.tau_dec_pred),
+        ("homTauIncreasingFactor", f.hom.tau_inc),
+        ("homTauIncreasingThreshold", f.hom.tau_inc_threshold),
+        ("homTauMax", f.hom.tau_max),
+        ("homTauMin", f.hom.tau_min),
+        ("homTauStart", f.hom.tau_start),
+    ] {
+        if let Some(v) = v {
+            out.push((crate::omclog::INFO, format!("homotopy parameter {name} changed to {}", ff(v))));
+        }
+    }
     if f.deprecated_density_flag {
         out.push((
             crate::omclog::WARNING,
@@ -782,12 +1017,14 @@ pub fn notices(f: &SimFlags) -> Vec<(crate::omclog::LogType, String)> {
                 .to_string(),
         ));
     }
-    if f.jacobian_threads.is_some() {
+    if let Some(n) = f.init_lambda_steps {
         out.push((
-            crate::omclog::WARNING,
-            "Simulation flag jacobianThreads not available. This runtime evaluates Jacobians \
-             single-threaded."
-                .to_string(),
+            crate::omclog::INFO,
+            if n <= 0 {
+                "Number of lambda steps set to 0. Homotopy is disabled.".to_string()
+            } else {
+                format!("Number of lambda steps for homotopy approach changed to {n}")
+            },
         ));
     }
     if let Some(v) = f.steady_state_tol {
@@ -834,6 +1071,19 @@ pub fn newton_tuning(f: &SimFlags) -> (f64, f64, f64) {
         f.newton_ftol.unwrap_or(1e-12),
         f.newton_xtol.unwrap_or(1e-12),
         f.newton_max_step_factor.unwrap_or(1e12),
+    )
+}
+
+/// `-ils` and the tri-state `-homotopyOnFirstTry` for the wasm runtime's
+/// `rt_set_homotopy`: 0 unset, 1 on, 2 off.
+pub fn homotopy_codes(f: &SimFlags) -> (u32, u32) {
+    (
+        f.init_lambda_steps.unwrap_or(3).max(0) as u32,
+        match f.homotopy_on_first_try {
+            None => 0,
+            Some(true) => 1,
+            Some(false) => 2,
+        },
     )
 }
 
@@ -884,6 +1134,7 @@ enum Offer {
     WithIda,
     WithCvode,
     WithIpopt,
+    WithQss,
     /// `default`, an alias of a listed value, or one this runtime substitutes for.
     Never,
 }
@@ -896,6 +1147,7 @@ impl Offer {
             Offer::WithIda => cap.ida,
             Offer::WithCvode => cap.cvode,
             Offer::WithIpopt => cap.optimization,
+            Offer::WithQss => cap.qss,
             Offer::Never => false,
         }
     }
@@ -914,6 +1166,7 @@ const SOLVERS: &[Value<Solver>] = &[
     ("optimization", Solver::Optimization, Offer::WithIpopt),
     ("symSolver", Solver::SymSolver, Offer::Never),
     ("symSolverSsc", Solver::SymSolverSsc, Offer::Never),
+    ("qss", Solver::Qss, Offer::WithQss),
 ];
 
 /// `-nls`. Without the archives `kinsol` runs the runtime's own sparse Newton.
@@ -941,6 +1194,7 @@ const LS_VALUES: &[Value<Ls>] = &[
     ("lapack", Ls::Lapack, Offer::Always),
     ("totalpivot", Ls::TotalPivot, Offer::Always),
     ("klu", Ls::Klu, Offer::WithSundials),
+    ("umfpack", Ls::Umfpack, Offer::WithSundials),
 ];
 
 /// `-lss`
@@ -948,6 +1202,7 @@ const LSS_VALUES: &[Value<Lss>] = &[
     ("default", Lss::Default, Offer::Never),
     ("rsparse", Lss::Rsparse, Offer::Always),
     ("klu", Lss::Klu, Offer::WithSundials),
+    ("umfpack", Lss::Umfpack, Offer::WithSundials),
 ];
 
 /// `-idaLS`. All five reach a SUNLinearSolver; the whole entry rides on `cap.ida`.
@@ -1028,6 +1283,7 @@ mod store {
 
 pub fn set_flags(f: SimFlags) {
     crate::omclog::set_mask(f.log_mask);
+    crate::omclog::set_xml(f.log_xml);
     store::set(f);
 }
 
@@ -1063,10 +1319,24 @@ mod tests {
         core::iter::once("model".to_string()).chain(s.iter().map(|x| x.to_string())).collect()
     }
 
-    const NOTHING: Capabilities =
-        Capabilities { klu: false, ida: false, cvode: false, alarm: false, variable_filter: false, optimization: false };
-    const EVERYTHING: Capabilities =
-        Capabilities { klu: true, ida: true, cvode: true, alarm: true, variable_filter: true, optimization: true };
+    const NOTHING: Capabilities = Capabilities {
+        klu: false,
+        ida: false,
+        cvode: false,
+        alarm: false,
+        variable_filter: false,
+        optimization: false,
+        qss: false,
+    };
+    const EVERYTHING: Capabilities = Capabilities {
+        klu: true,
+        ida: true,
+        cvode: true,
+        alarm: true,
+        variable_filter: true,
+        optimization: true,
+        qss: true,
+    };
 
     #[test]
     fn defaults_are_all_unset() {
@@ -1086,7 +1356,9 @@ mod tests {
 
     #[test]
     fn unavailable_solvers_are_rejected_with_the_flag_named() {
-        for (arg, needle) in [("-lss=klu", "KLU"), ("-ls=klu", "KLU"), ("-nlsLS=klu", "KLU"),
+        for (arg, needle) in [("-lss=klu", "-lss=klu"), ("-ls=klu", "-ls=klu"),
+                              ("-nlsLS=klu", "-nlsLS=klu"), ("-lss=umfpack", "-lss=umfpack"),
+                              ("-ls=umfpack", "-ls=umfpack"),
                               ("-s=ida", "dassl"), ("-s=cvode", "dassl")] {
             let f = parse(&argv(&[arg])).expect("parses");
             let e = check(&f, NOTHING).expect_err("must reject");
@@ -1124,9 +1396,10 @@ mod tests {
                 }
             }
         }
-        // KLU and KINSOL come from the archives, so neither shows up above.
-        assert!(!supported(NOTHING).iter().any(|(_, v)| v.contains(&"klu")));
-        assert!(!supported(NOTHING).iter().any(|(_, v)| v.contains(&"kinsol")));
+        // KLU, UMFPACK and KINSOL come from the archives, so none shows up above.
+        for v in ["klu", "umfpack", "kinsol"] {
+            assert!(!supported(NOTHING).iter().any(|(_, vals)| vals.contains(&v)));
+        }
     }
 
     /// The other direction: a value [`check`] rejects must not be offered.
@@ -1163,6 +1436,8 @@ mod tests {
         let f = parse(&argv(&["-nls=kinsol", "-nlsLS=totalpivot", "-ls=klu", "-lss=rsparse"]))
             .expect("parses");
         assert_eq!(f.solver_codes(), (2, 2, 4, 3));
+        let f = parse(&argv(&["-ls=umfpack", "-lss=umfpack"])).expect("parses");
+        assert_eq!(f.solver_codes(), (0, 0, 5, 4));
     }
 
     #[test]
@@ -1208,6 +1483,33 @@ mod tests {
         assert_eq!(f.no_equidistant_time, Some(0.5));
     }
 
+    // OMEdit passes `-inputPath=<working directory>` on every run.
+    #[test]
+    fn input_path_prefixes_the_input_files() {
+        let f = parse(&argv(&["-csvInput=u.csv", "-inputPath=/work/M"])).expect("parses");
+        assert_eq!(f.input_path.as_deref(), Some("/work/M"));
+        assert_eq!(f.csv_input.as_deref(), Some("/work/M/u.csv"));
+        // `-iif` names a file that does not resolve on its own, so it is joined too.
+        let f = parse(&argv(&["-inputPath=/work/M", "-iif=M_res.mat"])).expect("parses");
+        assert_eq!(f.init_file.as_deref(), Some("/work/M/M_res.mat"));
+        // Without the flag the names stand as given.
+        let f = parse(&argv(&["-csvInput=u.csv", "-iif=M_res.mat"])).expect("parses");
+        assert_eq!(f.csv_input.as_deref(), Some("u.csv"));
+        assert_eq!(f.init_file.as_deref(), Some("M_res.mat"));
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn input_path_leaves_an_iif_that_already_resolves() {
+        let dir = std::env::temp_dir().join("om_simflags_input_path");
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        let init = dir.join("seed_res.mat");
+        std::fs::write(&init, b"").expect("write");
+        let init = init.to_str().expect("utf-8").to_string();
+        let f = parse(&argv(&["-inputPath=/work/M", &format!("-iif={init}")])).expect("parses");
+        assert_eq!(f.init_file.as_deref(), Some(init.as_str()));
+    }
+
     #[test]
     fn a_rejected_options_value_is_not_read_as_a_flag() {
         let e = parse(&argv(&["-idaScaling", "-lv=LOG_STATS"])).expect_err("must reject");
@@ -1235,8 +1537,15 @@ mod tests {
 
     #[test]
     fn overrides_keep_order_and_skip_junk() {
-        let f = parse(&argv(&["-override=a=1,bad,b=2.5,c=x"])).expect("parses");
-        assert_eq!(f.overrides, [("a".to_string(), 1.0), ("b".to_string(), 2.5)]);
+        let f = parse(&argv(&["-override=a=1,bad,b[1,2]=2.5,c=false"])).expect("parses");
+        assert_eq!(
+            f.overrides,
+            [
+                ("a".to_string(), "1".to_string()),
+                ("b[1,2]".to_string(), "2.5".to_string()),
+                ("c".to_string(), "false".to_string())
+            ]
+        );
     }
 
     #[test]
@@ -1257,6 +1566,7 @@ mod tests {
             "-outputFormat=mat",
             "-variableFilter=.*",
             "-r=/tmp/M_res.mat",
+            "-inputPath=/tmp",
             "-jacobian=coloredNumerical",
             "-w",
         ]))
@@ -1265,6 +1575,7 @@ mod tests {
         assert_eq!((f.step_size, f.tolerance), (Some(0.002), Some(1e-6)));
         assert_eq!(f.output_format.as_deref(), Some("mat"));
         assert_eq!(f.result_file.as_deref(), Some("/tmp/M_res.mat"));
+        assert_eq!(f.input_path.as_deref(), Some("/tmp"));
         assert!(f.show_all_warnings && f.log_mask & crate::omclog::SHOW_ALL_WARNINGS != 0);
     }
 
@@ -1273,10 +1584,17 @@ mod tests {
         assert_eq!(parse(&argv(&["-outputFormat=empty"])).expect("parses").output_format.as_deref(),
                    Some("empty"));
         assert_eq!(parse(&argv(&["-outputFormat=csv"])).expect("csv writer").output_format.as_deref(), Some("csv"));
-        assert!(parse(&argv(&["-outputFormat=plt"])).expect_err("no plt writer").contains("mat"));
+        assert_eq!(parse(&argv(&["-outputFormat=plt"])).expect("plt writer").output_format.as_deref(), Some("plt"));
+        assert!(parse(&argv(&["-outputFormat=ia"])).expect_err("no ia writer").contains("mat"));
         assert!(parse(&argv(&["-outputFormat=nope"])).expect_err("unknown").contains("Unknown"));
         // `-noemit` is C's `sim_noemit`, which it treats exactly as `empty`.
         assert!(parse(&argv(&["-noemit"])).expect("parses").noemit);
+    }
+
+    #[test]
+    fn the_single_flag_selects_single_precision_output() {
+        assert!(!parse(&argv(&[])).expect("parses").single_precision);
+        assert!(parse(&argv(&["-single"])).expect("parses").single_precision);
     }
 
     #[test]
@@ -1300,12 +1618,13 @@ mod tests {
     // C warns about these rather than refusing them, so they must parse.
     #[test]
     fn deprecated_and_unavailable_flags_only_warn() {
-        let f = parse(&argv(&["-daeMode", "-jacobianThreads=4", "-logFormat=text"])).expect("parses");
-        assert!(f.dae_mode && f.jacobian_threads == Some(4));
+        let f = parse(&argv(&["-daeMode", "-logFormat=text"])).expect("parses");
+        assert!(f.dae_mode);
         let msgs = notices(&f);
-        assert_eq!(msgs.len(), 2);
+        assert_eq!(msgs.len(), 1);
         assert!(msgs.iter().all(|(ty, _)| *ty == crate::omclog::WARNING));
-        assert!(parse(&argv(&["-logFormat=xml"])).is_err());
+        assert!(parse(&argv(&["-logFormat=xml"])).expect("parses").log_xml);
+        assert!(parse(&argv(&["-logFormat=xmltcp"])).is_err());
     }
 
     // C's `-alarm=0` disables the alarm rather than setting a zero-second one.

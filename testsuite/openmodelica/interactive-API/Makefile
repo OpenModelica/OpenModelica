@@ -145,6 +145,7 @@ setExtendsModifierValue.mos \
 setExtendsModifier.mos \
 setParameterValue.mos \
 setSourceFileListFile.mos \
+setSourceFileMergeAST.mos \
 showDoc.mos \
 showStructuralAnnotations.mos \
 StateMachine.mos \
@@ -224,4 +225,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

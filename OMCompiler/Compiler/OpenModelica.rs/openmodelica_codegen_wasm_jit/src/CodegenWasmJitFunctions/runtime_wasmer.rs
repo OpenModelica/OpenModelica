@@ -145,7 +145,6 @@ pub(super) fn load_and_execute(
     openmodelica_wasm_jit::host::add_host_builtins(&mut store, &mut imports)?;
     let rt_inst = wt(wasmer::Instance::new(&mut store, &cache.runtime_module, &imports))?;
     imports.register_namespace("rt", rt_inst.exports.iter().map(|(k, v)| (k.clone(), v.clone())));
-    let instance = wt(wasmer::Instance::new(&mut store, &module, &imports))?;
 
     // Runtime entry points needed to marshal heap values (strings, arrays) in
     // and out of the shared heap.
@@ -154,6 +153,15 @@ pub(super) fn load_and_execute(
         .get_memory("memory")
         .map_err(|e| "CodegenWasmJit: runtime has no `memory` export")?
         .clone();
+    // The host's, not the runtime's, so it goes after the namespace registration
+    // that would shadow it.
+    {
+        let str_new = wt(rt_inst.exports.get_typed_function(&store, "rt_str_new"))?;
+        let str_data = wt(rt_inst.exports.get_typed_function(&store, "rt_str_data"))?;
+        openmodelica_wasm_jit::host::define_uri_import(&mut store, &mut imports, &memory, &str_new, &str_data);
+    }
+    let instance = wt(wasmer::Instance::new(&mut store, &module, &imports))?;
+
     let rt = RtFns {
         mem: memory,
         str_new: wt(rt_inst.exports.get_typed_function(&store, "rt_str_new"))?,
@@ -187,8 +195,11 @@ pub(super) fn load_and_execute(
     // Clear any stale pending assertion before the call (defensive — each call
     // consumes its own).
     openmodelica_wasm_jit::host::clear_pending_assert();
+    openmodelica_wasm_jit::host::flush_stdio();
     // wasmer returns the result values directly (no out-parameter buffer).
-    let results = match func.call(&mut store, &params) {
+    let call_res = func.call(&mut store, &params);
+    openmodelica_wasm_jit::host::flush_stdio();
+    let results = match call_res {
         Ok(r) => r,
         Err(e) => {
             // A failed `assert` records its message + source info via the
@@ -1346,16 +1357,16 @@ mod tests {
     #[test]
     fn precompiled_runtime_real_pow() {
         let (mut store, inst) = runtime_instance();
-        let pow = inst.exports.get_typed_function::<(f64, f64), f64>(&store, "rt_real_pow").unwrap();
-        assert_eq!(pow.call(&mut store, 2.0, 3.0).unwrap(), 8.0);
-        assert_eq!(pow.call(&mut store, 4.0, 0.5).unwrap(), 2.0);
+        let pow = inst.exports.get_typed_function::<(f64, f64, i32), f64>(&store, "rt_real_pow").unwrap();
+        assert_eq!(pow.call(&mut store, 2.0, 3.0, 0).unwrap(), 8.0);
+        assert_eq!(pow.call(&mut store, 4.0, 0.5, 0).unwrap(), 2.0);
         // Negative base, (effectively) integer exponent → real.
-        assert_eq!(pow.call(&mut store, -2.0, 3.0).unwrap(), -8.0);
+        assert_eq!(pow.call(&mut store, -2.0, 3.0, 0).unwrap(), -8.0);
         // Odd root of a negative base → real (within rounding of 1/3).
-        assert!((pow.call(&mut store, -27.0, 1.0 / 3.0).unwrap() + 3.0).abs() < 1e-9);
+        assert!((pow.call(&mut store, -27.0, 1.0 / 3.0, 0).unwrap() + 3.0).abs() < 1e-9);
         // Invalid root and overflow-to-inf both trap.
-        assert!(pow.call(&mut store, -2.0, 0.5).is_err());
-        assert!(pow.call(&mut store, 1e300, 2.0).is_err());
+        assert!(pow.call(&mut store, -2.0, 0.5, 0).is_err());
+        assert!(pow.call(&mut store, 1e300, 2.0, 0).is_err());
     }
 
     /// `rt_mod_int`: floored integer modulo, result takes the divisor's sign.

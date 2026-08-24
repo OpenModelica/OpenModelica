@@ -559,6 +559,12 @@ pub fn getLDFlags() -> ArcStr {
 pub fn loadLibrary(inLib: ArcStr, relativePath: bool, printDebug: bool) -> Result<i32> {
     crate::dynload::load_library(&inLib, relativePath, printDebug)
 }
+pub fn loadLibraryLazy(inLib: ArcStr, relativePath: bool, printDebug: bool) -> Result<i32> {
+    crate::dynload::load_library_lazy(&inLib, relativePath, printDebug)
+}
+pub fn getLoadLibraryError() -> ArcStr {
+    ArcStr::from(crate::dynload::last_load_error())
+}
 pub fn lookupFunction(inLibHandle: i32, inFunc: ArcStr) -> Result<i32> {
     crate::dynload::lookup_function(inLibHandle, &inFunc)
 }
@@ -2381,6 +2387,10 @@ pub fn isCancelled() -> bool {
 
 pub fn reportProgress(permille: i32, phase: i32) {
     metamodelica::cancel::report_progress(permille, phase);
+}
+
+pub fn reportProgressMessage(message: ArcStr) {
+    metamodelica::cancel::report_progress_message(&message);
 }
 
 pub fn getMemorySize() -> metamodelica::Real {

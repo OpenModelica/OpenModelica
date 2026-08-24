@@ -501,7 +501,7 @@ algorithm
     case {f} /* A template file .tpl (in the Susan language)*/
       algorithm
         isCodegenTemplateFile(f);
-        TplMain.main(f);
+        TplMain.main(f, Flags.getConfigString(Flags.TPL_OUTPUT_DIR));
       then
         ();
 

@@ -1,5 +1,6 @@
 // name:  testDisableDependency
 // keywords: FMI 2.0 export
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml testDID* output.log
 // cflags: -d=-newInst
@@ -45,6 +46,8 @@ readFile("modelDescription.tmp.xml");
 // ""
 // "testDID.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -127,7 +130,6 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"util/omc_mmap.c\" />
 //       <File name=\"util/omc_msvc.c\" />
 //       <File name=\"util/omc_numbers.c\" />
-//       <File name=\"util/parallel_helper.c\" />
 //       <File name=\"util/rational.c\" />
 //       <File name=\"util/real_array.c\" />
 //       <File name=\"util/ringbuffer.c\" />

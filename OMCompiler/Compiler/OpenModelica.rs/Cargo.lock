@@ -4589,7 +4589,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c75fb1225deed1c9af38c80ec0c312bab52c1509b3c602b97c36b525277fe8c"
 dependencies = [
  "fastrand 1.9.0",
- "nalgebra 0.31.4",
+ "nalgebra",
  "num-traits",
 ]
 
@@ -5378,22 +5378,7 @@ dependencies = [
  "num-complex",
  "num-rational",
  "num-traits",
- "simba 0.7.3",
- "typenum",
-]
-
-[[package]]
-name = "nalgebra"
-version = "0.33.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d43ddcacf343185dfd6de2ee786d9e8b1c2301622afab66b6c73baf9882abfd"
-dependencies = [
- "approx",
- "matrixmultiply",
- "num-complex",
- "num-rational",
- "num-traits",
- "simba 0.9.1",
+ "simba",
  "typenum",
 ]
 
@@ -5514,6 +5499,7 @@ version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
 dependencies = [
+ "bytemuck",
  "num-traits",
 ]
 
@@ -6528,6 +6514,7 @@ dependencies = [
  "openmodelica_frontend_types",
  "openmodelica_mat_writer",
  "openmodelica_modelica_utilities",
+ "openmodelica_plt_writer",
  "openmodelica_script_util",
  "openmodelica_sim_meta",
  "openmodelica_simcode_types",
@@ -6674,6 +6661,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_lapack"
+version = "0.1.0"
+dependencies = [
+ "libm",
+ "oxiblas-core",
+ "oxiblas-lapack",
+ "oxiblas-matrix",
+ "rayon",
+]
+
+[[package]]
 name = "openmodelica_mat_writer"
 version = "0.1.0"
 
@@ -6682,7 +6680,7 @@ name = "openmodelica_modelica_utilities"
 version = "0.1.0"
 dependencies = [
  "libc",
- "openmodelica_wasi",
+ "openmodelica_sim_meta",
 ]
 
 [[package]]
@@ -6726,6 +6724,13 @@ dependencies = [
  "openmodelica_frontend_types",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
+]
+
+[[package]]
+name = "openmodelica_plt_writer"
+version = "0.1.0"
+dependencies = [
+ "libm",
 ]
 
 [[package]]
@@ -6793,6 +6798,7 @@ version = "0.1.0"
 dependencies = [
  "daskr",
  "libm",
+ "openmodelica_mat_writer",
 ]
 
 [[package]]
@@ -6872,8 +6878,8 @@ dependencies = [
  "loop_unwrap",
  "match_deref",
  "metamodelica",
- "nalgebra 0.33.3",
  "openmodelica_error",
+ "openmodelica_lapack",
  "openmodelica_util_datatypes_basic",
  "openmodelica_wasi",
  "rayon",
@@ -7018,6 +7024,60 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "36820e9051aca1014ddc75770aab4d68bc1e9e632f0f5627c4086bc216fb583b"
 dependencies = [
  "ttf-parser",
+]
+
+[[package]]
+name = "oxiblas-blas"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b9e1346a6fb0c859ba99a0c46d54c3b6f620b132ce1be4aa7ef93634002009b"
+dependencies = [
+ "bytemuck",
+ "num-complex",
+ "num-traits",
+ "oxiblas-core",
+ "oxiblas-matrix",
+ "rayon",
+]
+
+[[package]]
+name = "oxiblas-core"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb71a758e4b67699331dc2f01a20ddc05a5b952b66be9e46857f2aafe19db353"
+dependencies = [
+ "bytemuck",
+ "libc",
+ "num-complex",
+ "num-traits",
+ "rayon",
+]
+
+[[package]]
+name = "oxiblas-lapack"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a31dc82201c233fbadc57e7583644062c364f4eb8e77fa8c9fb830722ec8b7e8"
+dependencies = [
+ "bytemuck",
+ "num-complex",
+ "num-traits",
+ "oxiblas-blas",
+ "oxiblas-core",
+ "oxiblas-matrix",
+ "rayon",
+]
+
+[[package]]
+name = "oxiblas-matrix"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3b5d0050e3dea737a5d9c7c30d0029a73f270c5edb59281cef991a4d13c9fb9"
+dependencies = [
+ "bytemuck",
+ "num-complex",
+ "num-traits",
+ "oxiblas-core",
 ]
 
 [[package]]
@@ -8775,19 +8835,6 @@ name = "simba"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2f3fd720c48c53cace224ae62bef1bbff363a70c68c4802a78b5cc6159618176"
-dependencies = [
- "approx",
- "num-complex",
- "num-traits",
- "paste",
- "wide",
-]
-
-[[package]]
-name = "simba"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c99284beb21666094ba2b75bbceda012e610f5479dfcc2d6e2426f53197ffd95"
 dependencies = [
  "approx",
  "num-complex",

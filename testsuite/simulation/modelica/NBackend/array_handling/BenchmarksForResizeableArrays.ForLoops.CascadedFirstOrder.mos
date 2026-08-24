@@ -1,6 +1,6 @@
 // name:     BenchmarksForResizeableArrays.ForLoops.CascadedFirstOrder
 // keywords: vectorized components, array equations, for loops
-// status: correct
+// status: erroneous
 
 
 loadFile("BenchmarksForResizeableArrays.mo"); getErrorString();

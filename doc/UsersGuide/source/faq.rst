@@ -88,15 +88,3 @@ OMNotebook
        writing the new stuff inside the text, i.e., at least one
        character position to the right. Afterwards, delete the old text
        at the beginning of the cell.
-
-OMDev - OpenModelica Development Environment
---------------------------------------------
-
--  Q: I get problems compiling and linking some files when using OMDev
-       with the MINGW (Gnu) C compiler under Windows.
-
--  A: You probably have some Logitech software installed. There is a
-       known bug/incompatibility in Logitech products. For example, if
-       lvprcsrv.exe is running, kill it and/or prevent it to start again
-       at reboot; it does not do anything really useful, not needed for
-       operation of web cameras or mice.

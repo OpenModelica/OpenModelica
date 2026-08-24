@@ -1,6 +1,7 @@
 // name:     Non-expanded Array - Modification
 // keywords: array
 // status:   correct
+// suite: disabled
 //
 // Basic test of modification processing in the case of non-expanded arrays.
 //

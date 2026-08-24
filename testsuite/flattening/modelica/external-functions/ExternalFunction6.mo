@@ -6,7 +6,7 @@ class ExternalFunction6
   function fn
     input Integer i1;
     output Integer i;
-  external "C" i=myFn(i1) annotation(Include="#define myFn(X) (modelica_integer)(2*(X))");
+  external "C" i=myFn(i1) annotation(Include="#define myFn(X) (2*(X))");
   end fn;
 
   constant Integer i = fn(2);

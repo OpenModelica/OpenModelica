@@ -11,6 +11,11 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+/// What wasi-libc's `<unistd.h>` says, given to the ModelicaExternalC sources
+/// directly: they reach that header only for `__unix__`/`__linux__`/`__APPLE_CC__`,
+/// so on wasm they derive no `_POSIX_` and give up on functions wasi-libc has.
+const POSIX_VERSION: &str = "-D_POSIX_VERSION=200809L";
+
 fn main() {
     let crate_dir = PathBuf::from(env("CARGO_MANIFEST_DIR"));
     let out_dir = PathBuf::from(env("OUT_DIR"));
@@ -35,20 +40,34 @@ fn main() {
         .unwrap_or_else(|e| panic!("failed to build the PIC ModelicaExternalC dylink module: {e}"));
     copy(&module, &mec_dest);
 
-    // Only a CVODE/IDA Co-Simulation FMU needs this, so an absent sundials tree
-    // leaves an empty blob rather than failing the build.
+    let usertab = build_usertab_dylink(&out_dir, &sysroot, triple)
+        .unwrap_or_else(|e| panic!("failed to build the PIC usertab dummy dylink module: {e}"));
+    copy(&usertab, &out_dir.join("usertab_dylink.wasm"));
+
+    // Only a CVODE/IDA Co-Simulation FMU needs this, so a build that never asked
+    // for sundials leaves an empty blob. Asking and failing is a hard error: the
+    // omc would look healthy and just refuse `-s=cvode` at export.
+    println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_SOURCES");
     let sundials_dest = out_dir.join("sundials_dylink.wasm");
-    match build_sundials_dylink(&out_dir, &sysroot, triple) {
-        Ok(m) => copy(&m, &sundials_dest),
-        Err(e) => {
-            println!("cargo:warning=no SUNDIALS dylink module ({e}); a wasm FMU cannot use -s=cvode/ida");
-            std::fs::write(&sundials_dest, []).expect("write empty sundials blob");
-        }
+    if std::env::var_os("OMC_SUNDIALS_SOURCES").is_none() {
+        std::fs::write(&sundials_dest, []).expect("write empty sundials blob");
+    } else {
+        let module = build_sundials_dylink(&out_dir, &sysroot, triple).unwrap_or_else(|e| {
+            panic!(
+                "failed to build the SUNDIALS dylink module: {e}\n\
+                 This build asked for sundials (OMC_SUNDIALS_SOURCES is set), so the omc it \
+                 produces must be able to export a wasm FMU with -s=cvode/ida. Build it \
+                 without sundials if that is not wanted."
+            )
+        });
+        copy(&module, &sundials_dest);
     }
 }
 
-/// The SUNDIALS/KLU API the drivers call. wasm-ld GCs from this list, which is what
-/// keeps the module ~220 KB rather than the archives' 1.5 MB.
+/// The SUNDIALS/KLU API the drivers call. wasm-ld GCs from this list, keeping the
+/// module ~220 KB rather than the archives' 1.5 MB — so a driver calling something
+/// new gets an unresolved import at FMU-export time until it is added here. The
+/// wasip1 runtime links the archives instead and never notices.
 const SUNDIALS_EXPORTS: &[&str] = &[
     "CVodeCreate", "CVodeInit", "CVodeReInit", "CVodeFree", "CVode", "CVodeSVtolerances",
     "CVodeRootInit", "CVodeGetRootInfo", "CVodeSetUserData", "CVodeSetLinearSolver",
@@ -61,7 +80,7 @@ const SUNDIALS_EXPORTS: &[&str] = &[
     "IDASVtolerances", "IDARootInit", "IDAGetRootInfo", "IDASetUserData",
     "IDASetLinearSolver", "IDASetJacFn", "IDASetId", "IDASetSuppressAlg",
     "IDASetInitStep", "IDASetMaxOrd", "IDASetMaxNonlinIters", "IDASetMaxConvFails",
-    "IDASetMaxErrTestFails", "IDASetNonlinConvCoef", "IDASetLineSearchOffIC",
+    "IDASetMaxErrTestFails", "IDASetNonlinConvCoef", "IDASetLineSearchOffIC", "IDASetMaxStep",
     "IDASetMaxNumItersIC", "IDASetMaxNumJacsIC", "IDASetMaxNumStepsIC",
     "IDAGetConsistentIC", "IDAGetCurrentStep", "IDAGetActualInitStep", "IDAGetNumSteps",
     "IDAGetNumResEvals", "IDAGetNumJacEvals", "IDAGetNumErrTestFails",
@@ -73,6 +92,12 @@ const SUNDIALS_EXPORTS: &[&str] = &[
     "SUNSparseMatrix_IndexPointers", "SUNSparseMatrix_IndexValues", "SUNMatDestroy",
     "SUNLinSol_Dense", "SUNLinSol_KLU", "SUNLinSol_SPGMR", "SUNLinSol_SPBCGS",
     "SUNLinSol_SPTFQMR", "SUNLinSolFree",
+    // SUNDIALS 6 moved every object onto a SUNContext and added SUNLogger; the
+    // drivers create one per instance and route its four streams.
+    "SUNContext_Create", "SUNContext_Free", "SUNContext_GetLogger",
+    "SUNContext_PushErrHandler",
+    "SUNLogger_SetErrorFilename", "SUNLogger_SetWarningFilename",
+    "SUNLogger_SetInfoFilename", "SUNLogger_SetDebugFilename",
 ];
 
 /// Compile SUNDIALS (CVODE + IDAS), its matrices/linear solvers and SuiteSparse/KLU to
@@ -91,8 +116,10 @@ fn build_sundials_dylink(out_dir: &Path, sysroot: &Path, triple: &str) -> Result
         return Err(format!("{} has no sundials/sundials_config.h", config.display()));
     }
 
-    // `f*.c` are the Fortran interfaces (duplicate `F2C_*_nonlinsol` symbols) and
-    // `sundials_xbraid.c` needs braid.h; neither belongs in the module.
+    // `f*.c` are the Fortran interfaces (duplicate `F2C_*_nonlinsol` symbols),
+    // `sundials_xbraid.c` needs braid.h, and `*mpi*.c` includes `mpi.h`
+    // unconditionally: none belongs in a host-free wasm module. (`sundials_logger.c`
+    // also reaches for `mpi.h`, but behind `#if SUNDIALS_MPI_ENABLED`.)
     let src = sundials.join("src");
     let mut srcs = Vec::new();
     for dir in [
@@ -104,7 +131,7 @@ fn build_sundials_dylink(out_dir: &Path, sysroot: &Path, triple: &str) -> Result
         let mut found = collect_c_files(&src.join(dir));
         found.retain(|p| {
             let n = p.file_name().and_then(|s| s.to_str()).unwrap_or("");
-            !n.starts_with('f') && n != "sundials_xbraid.c"
+            !n.starts_with('f') && n != "sundials_xbraid.c" && !n.contains("mpi")
         });
         if found.is_empty() {
             return Err(format!("no sources in {}", src.join(dir).display()));
@@ -186,7 +213,7 @@ fn ensure_pic_wasi_sysroot() -> PathBuf {
     panic!("OMC_WASI_PIC_SYSROOT={} has no lib/wasm32-wasip1/libc.so", p.display());
 }
 
-/// Compile ModelicaExternalC (+ `DummyUsertab`, `external_c_callbacks.c`,
+/// Compile ModelicaExternalC (+ `external_c_callbacks.c`,
 /// `external_c_stubs.c`) to a PIC dylink side module, then strip its
 /// `_initialize` export: reactor mode emits both `_initialize` and
 /// `__wasm_call_ctors`, and `wit_component::Linker` rejects a library
@@ -196,10 +223,12 @@ fn build_external_c_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, tri
     let c_sources = std::env::var("OMC_EXTERNAL_C_SOURCES").ok().map(PathBuf::from).ok_or_else(|| {
         "OMC_EXTERNAL_C_SOURCES not set".to_owned()
     })?;
+    // No usertab source, so it stays an `env.usertab` import the FMU link resolves
+    // against the model's own libraries first.
     let names = [
         "ModelicaStandardTables.c", "ModelicaStrings.c", "ModelicaRandom.c",
         "ModelicaIO.c", "ModelicaMatIO.c", "snprintf.c",
-        "ModelicaInternal.c", "ModelicaFFT.c", "ModelicaStandardTablesDummyUsertab.c",
+        "ModelicaInternal.c", "ModelicaFFT.c",
     ];
     let mut srcs: Vec<PathBuf> = names.iter().map(|n| c_sources.join(n)).collect();
     if let Some(missing) = srcs.iter().find(|p| !p.exists()) {
@@ -223,7 +252,7 @@ fn build_external_c_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, tri
     let status = Command::new(&clang)
         .arg(format!("--target={triple}"))
         .arg(format!("--sysroot={}", sysroot.display()))
-        .args(["-O2", "-fPIC", "-nodefaultlibs", "-mexec-model=reactor",
+        .args(["-O2", "-fPIC", "-nodefaultlibs", "-mexec-model=reactor", POSIX_VERSION,
                "-DNO_MUTEX", "-DHAVE_ZLIB", "-Wno-error=implicit-function-declaration"])
         .arg("-I").arg(&c_sources)
         .arg("-I").arg(&zlib_dir)
@@ -241,6 +270,41 @@ fn build_external_c_dylink(crate_dir: &Path, out_dir: &Path, sysroot: &Path, tri
     let stripped = strip_wasm_export(&bytes, "_initialize");
     let out = out_dir.join("modelicaexternalc_dylink_stripped.wasm");
     std::fs::write(&out, &stripped).map_err(|e| format!("write dylink: {e}"))?;
+    Ok(out)
+}
+
+/// The C dummy `usertab` on its own, so the FMU link can put it behind a model's own.
+fn build_usertab_dylink(out_dir: &Path, sysroot: &Path, triple: &str) -> Result<PathBuf, String> {
+    let c_sources = std::env::var("OMC_EXTERNAL_C_SOURCES").ok().map(PathBuf::from)
+        .ok_or_else(|| "OMC_EXTERNAL_C_SOURCES not set".to_owned())?;
+    let src = c_sources.join("ModelicaStandardTablesUsertab.c");
+    if !src.exists() {
+        return Err(format!("missing {}", src.display()));
+    }
+    println!("cargo:rerun-if-changed={}", src.display());
+
+    let raw = out_dir.join("usertab_dylink_raw.wasm");
+    let builtins = find_wasm_builtins().ok_or("no libclang_rt.builtins-wasm32.a found")?;
+    let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
+    let status = Command::new(&clang)
+        .arg(format!("--target={triple}"))
+        .arg(format!("--sysroot={}", sysroot.display()))
+        .args(["-O2", "-fPIC", "-nodefaultlibs", "-mexec-model=reactor", "-DDUMMY_FUNCTION_USERTAB"])
+        .arg("-I").arg(&c_sources)
+        .arg(&src)
+        .args(["-Wl,--experimental-pic", "-Wl,--shared", "-Wl,--no-entry",
+               "-Wl,--export=usertab", "-Wl,--allow-undefined"])
+        .arg(&builtins)
+        .arg("-o").arg(&raw)
+        .status()
+        .map_err(|e| format!("spawn {clang}: {e}"))?;
+    if !status.success() {
+        return Err(format!("clang (usertab dylink) exited with {status}"));
+    }
+    let bytes = std::fs::read(&raw).map_err(|e| format!("read raw usertab dylink: {e}"))?;
+    let out = out_dir.join("usertab_dylink_stripped.wasm");
+    std::fs::write(&out, strip_wasm_export(&bytes, "_initialize"))
+        .map_err(|e| format!("write usertab dylink: {e}"))?;
     Ok(out)
 }
 

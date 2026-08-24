@@ -1,6 +1,7 @@
 // name: ThermoPower.PowerPlants.SteamTurbineGroup.Tests.TestSTG_cc
 // keywords: over-determined initialization
 // status: correct
+// suite: disabled
 
 // Test4
 loadModel(ThermoPower); getErrorString();

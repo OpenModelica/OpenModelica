@@ -1,0 +1,26 @@
+// name:     ModelicaIOMatrix
+// keywords: ModelicaIO, writeRealMatrix, readRealMatrix
+// status:   correct
+// teardown_command: rm -rf ModelicaIOMatrix_* ModelicaIOMatrix ModelicaIOMatrix.exe ModelicaIOMatrix.mat ModelicaIOMatrix.c ModelicaIOMatrix.h ModelicaIOMatrix.o ModelicaIOMatrix.libs ModelicaIOMatrix.log ModelicaIOMatrix.makefile ModelicaIOMatrix.wasm output.log
+
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+loadFile("ModelicaIOMatrix.mo"); getErrorString();
+simulate(ModelicaIOMatrix, stopTime=1.0); getErrorString();
+val(x, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ModelicaIOMatrix_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaIOMatrix', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | info    | ... loading \"M\" from \"ModelicaIOMatrix.mat\"
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 24.0
+// endResult

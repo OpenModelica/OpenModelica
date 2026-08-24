@@ -44,6 +44,19 @@ rtest special directives added to help creating testcases:
   them can deselect it: `partest/runtests.pl -suites=-metamodelica,-63bit`.
   Run `runtests.pl -h` for the suites and their defaults. The directive must be
   in the test's header, i.e. before the first line of code.
+* suite: disabled — says that the test is not part of the testsuite, i.e. that it
+  is listed in its makefile as a failing, not compiling, not simulating or manual
+  test rather than in `TESTFILES`. Such a test is expected to fail, and some of
+  them hang or eat all the memory of the machine, so nothing runs it unless asked
+  to:
+  * `rtest -disabled test.mos` (or `RTEST_RUN_DISABLED=1`) runs it anyway,
+    otherwise rtest reports it as `disabled` and neither passes nor fails it.
+  * `make failingtest` and the other makefile targets for these lists pass
+    `-disabled` themselves.
+  * `partest/runtests.pl -failing` (or `-suites=+disabled`) runs them.
+
+  Every test listed in a makefile outside `TESTFILES` carries this tag; keep the
+  two in sync when a test is enabled or disabled.
 
 **NOTE**:  
 A test MUST have the finishing "end ..." at the same indentation level as the "model ..." otherwise there will be a warning(perl -w rtest file) for the next test that are executed.
@@ -69,7 +82,8 @@ Then perl is happy. (no warnings and errornously failed testcases).
 1. Create your folder.
 2. Copy the file Makefile_sample.txt to your directory. Rename it to Makefile.
 3. Add your test files (*.mo and *.mos) -> @TESTFILES
-4. Add any failing tests -> @FAILINGTESTFILES
+4. Add any failing tests -> @FAILINGTESTFILES, and mark each of them with
+   `// suite: disabled` in its header
 5. Add any other files that are needed (e.g. C files with external functions ...) at -> @DEPENDENCIES  
    If you have many dependency files then add them to the directory and just run "make getdeps"  
    This will give you the list of files in 'deps.txt'. Copy the list it as it is.
@@ -84,7 +98,8 @@ The testsuite consists of modelica files (.mo) and modelica script files (.mos) 
    Will make all tests that currently should pass. Use this before checking in.
 
 2. `rtest` in directory mofiles  
-   Will run all tests in the directory, including tests that does not pass.
+   Will run all tests in the directory, except the ones marked `// suite: disabled`.
+   Add `-disabled` to run those too.
 
 3. `make failingtest` runs the tests that is added but not in the testsuite since they fail, i.e. not implemented in OMC yet.
 

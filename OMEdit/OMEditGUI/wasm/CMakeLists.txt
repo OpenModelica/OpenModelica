@@ -119,8 +119,17 @@ list(APPEND OMEDITLIB_SOURCES
   # there is nothing left to stub here for the OMSimulator C API.)
   ${CMAKE_CURRENT_SOURCE_DIR}/sim_widget_stubs.cpp
   # QAbstractFileEngineHandler that serves worker-VFS files to main-thread QFile.
-  ${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp)
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp PROPERTIES SKIP_AUTOMOC ON)
+  ${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
+  # Browser file picker / download, for the user's own filesystem.
+  ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp)
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp PROPERTIES SKIP_AUTOMOC ON)
+# The simulation metadata tables OMCProxy reads (SOLVER_METHOD_NAME, FLAG_NAME,
+# OMC_LOG_STREAM_NAME, ...); native OMEdit gets them from libOpenModelicaCompiler.
+list(APPEND OMEDITLIB_SOURCES ${SIMRT}/util/simulation_options.c ${SIMRT}/util/omc_error.c)
+# omc_error.c reaches <gc.h> for threadData_t; declarations only, no collector call.
+set_source_files_properties(${SIMRT}/util/omc_error.c PROPERTIES
+  INCLUDE_DIRECTORIES ${OM_ROOT}/OMCompiler/3rdParty/gc/include)
 # TimeManager drives the result-replay time slider in VariablesWidget. It is the
 # one Animation/ source that has no OpenSceneGraph/GL dependency (just rtclock +
 # QTimer), so compile it (rtclock entry points are provided by wasm_stubs.cpp)

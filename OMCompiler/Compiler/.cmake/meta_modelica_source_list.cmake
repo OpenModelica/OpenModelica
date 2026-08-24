@@ -116,20 +116,20 @@ set(OMC_MM_ALWAYS_SOURCES
 
 # Only files needed for compiling MetaModelica
 # "Template";
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCFunctions.mo
+    ${OMC_GENERATED_MO_DIR}/Template/AbsynDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenCFunctions.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenWasmJit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/DAEDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/ExpressionDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/GenerateAPIFunctionsTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/SCodeDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenUtil.mo
+    ${OMC_GENERATED_MO_DIR}/Template/DAEDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/ExpressionDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/GenerateAPIFunctionsTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/SCodeDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplAbsyn.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCodegen.mo
+    ${OMC_GENERATED_MO_DIR}/susan_codegen/TplCodegen.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/Tpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplParser.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/Unparsing.mo
+    ${OMC_GENERATED_MO_DIR}/Template/Unparsing.mo
 
   # Only files needed for compiling MetaModelica
   # "Global";
@@ -446,39 +446,39 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtilShared.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/ReduceDAE.mo
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynToJulia.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynJLDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenC.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenEmbeddedC.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppCommon.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCpp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppOMSI.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppHpcom.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppHpcomOMSI.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppInit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU1.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU2.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU3.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCpp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppOMSI.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSI_common.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSIC.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSIC_Equations.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSICpp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppHpcom.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppHpcomOMSI.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJS.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenMidToC.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtilSimulation.mo
+    ${OMC_GENERATED_MO_DIR}/Template/AbsynToJulia.mo
+    ${OMC_GENERATED_MO_DIR}/Template/AbsynJLDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenC.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenEmbeddedC.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenCppCommon.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenCpp.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenCppOMSI.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenCppHpcom.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenCppHpcomOMSI.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenCppInit.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU1.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU2.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU3.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCommon.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCpp.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppOMSI.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSI_common.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSIC.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSIC_Equations.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSICpp.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppHpcom.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppHpcomOMSI.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenJS.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenMidToC.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenUtilSimulation.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenWasmJitFunctions.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenXML.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphvizDump.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphMLDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/NFInstDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeDump.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/VisualXMLTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenXML.mo
+    ${OMC_GENERATED_MO_DIR}/Template/GraphvizDump.mo
+    ${OMC_GENERATED_MO_DIR}/Template/GraphMLDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/NFInstDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/SimCodeDump.mo
+    ${OMC_GENERATED_MO_DIR}/Template/VisualXMLTpl.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Autoconf.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlTree.mo
@@ -487,6 +487,7 @@ set(OMC_MM_BACKEND_SOURCES
 
     # ${CMAKE_CURRENT_SOURCE_DIR}/Util/BasePVector.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Curl.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/ContainerImage.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DiffAlgorithm.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DisjointSets.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ExpandableArray.mo

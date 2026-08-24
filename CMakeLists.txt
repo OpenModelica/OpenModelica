@@ -23,8 +23,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/mo
 # Variable for signifying that we are using the new CMake configuration.
 # We use this to selectively include some cmake source files
 # e.g. simulationRuntime/c/ has two cmake sources that are conditionally
-# included. The old (cmake 2.8) cmake source in there is used for compilation
-# of simulationruntimemsvc by the Makefile.omdev.mingw makefiles.
+# included. The old (cmake 2.8) cmake source in there is used by the legacy
+# standalone Autoconf/Make build.
 set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 
 # include utility macros.
@@ -250,6 +250,25 @@ endif()
 ## Subdirectories ##########################################################################################
 # If asked for encryption support, add and configure the OMEncryption directory.
 if(OM_ENABLE_ENCRYPTION)
+  # OMEncryption builds OpenSSL, which is configured by a perl script that, for its MinGW
+  # targets, only accepts a perl reporting paths with forward slashes. In an MSYS2 shell the
+  # first perl in PATH is the MinGW one, which reports MSWin32 style paths and stops that
+  # configure step with "This perl implementation doesn't produce Unix like paths"; the MSYS
+  # perl, which sits in the same directory as cygpath, is the one that works. Point OMEncryption
+  # at it so the encryption build does not depend on the order of PATH. If it is not there we
+  # leave SEMLA_PERL unset and OMEncryption looks for a perl of its own. A perl given on the
+  # command line wins, and it has to be a path CMake can run, so -DSEMLA_PERL=C:/msys64/usr/bin/perl.exe
+  # rather than -DSEMLA_PERL=/usr/bin/perl.exe (an MSYS shell rewrites the latter for you).
+  if(WIN32 AND NOT MSVC AND NOT SEMLA_PERL)
+    find_program(OM_MSYS_CYGPATH NAMES cygpath)
+    mark_as_advanced(OM_MSYS_CYGPATH)
+    if(OM_MSYS_CYGPATH)
+      get_filename_component(om_msys_bin_dir "${OM_MSYS_CYGPATH}" DIRECTORY)
+      find_program(SEMLA_PERL NAMES perl HINTS "${om_msys_bin_dir}" NO_DEFAULT_PATH
+                   DOC "perl used to configure OpenSSL")
+    endif()
+  endif()
+
   omc_add_subdirectory(OMEncryption)
 endif()
 

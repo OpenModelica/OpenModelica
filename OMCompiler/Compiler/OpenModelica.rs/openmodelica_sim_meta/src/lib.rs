@@ -33,8 +33,11 @@ pub mod omclog;
 #[cfg(feature = "std")]
 pub(crate) mod extinput;
 pub mod optimization;
+pub(crate) mod qss;
+pub mod rtclock;
 pub mod simflags;
 pub mod sync;
+pub mod sysstat;
 #[cfg(sundials)]
 pub mod sundials;
 
@@ -82,6 +85,41 @@ pub enum WTy {
     F64,
 }
 
+/// C's `HOMOTOPY_METHOD`, selected by `--homotopyApproach` (and forced to
+/// [`Self::None`] by `--replaceHomotopy`). The numbering is C's.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum HomotopyMethod {
+    LocalEquidistant = 0,
+    #[default]
+    GlobalEquidistant = 1,
+    GlobalAdaptive = 2,
+    LocalAdaptive = 3,
+    None = 4,
+}
+
+impl HomotopyMethod {
+    pub fn from_code(c: u8) -> Self {
+        match c {
+            0 => Self::LocalEquidistant,
+            2 => Self::GlobalAdaptive,
+            3 => Self::LocalAdaptive,
+            4 => Self::None,
+            _ => Self::GlobalEquidistant,
+        }
+    }
+    pub fn code(self) -> u8 {
+        self as u8
+    }
+    /// The parameter reaches the whole initial system, not just the component.
+    pub fn is_global(self) -> bool {
+        matches!(self, Self::GlobalEquidistant | Self::GlobalAdaptive)
+    }
+    /// The step size is the arc-length continuation's, not `1/init_lambda_steps`.
+    pub fn is_adaptive(self) -> bool {
+        matches!(self, Self::GlobalAdaptive | Self::LocalAdaptive)
+    }
+}
+
 /// Fully-resolved layout of one model's `SimData` block. All offsets are byte
 /// offsets within the block; all are compile-time constants baked into the
 /// generated module. This is the single source of truth: the codegen computes it
@@ -98,6 +136,19 @@ pub struct Layout {
     /// A nonlinear system carries the homotopy operator (C's `homotopySupport`), so
     /// the driver runs the continuation over `functionInitialEquations_lambda0`.
     pub has_homotopy: bool,
+    /// `--homotopyApproach` as C's `homotopyMethod` callback field: whose
+    /// continuation runs, and whether it is equidistant or adaptive.
+    pub homotopy_method: HomotopyMethod,
+    /// A simplified lambda = 0 system was generated, so the continuation's first
+    /// step can call `functionInitialEquations_lambda0`.
+    pub has_init_lambda0: bool,
+    /// The model has `delay(...)` or `spatialDistribution(...)`, i.e. an operator
+    /// with an internal history that `functionStoreDelayed` /
+    /// `functionStoreSpatialDistribution` must be fed at every accepted point.
+    pub has_history_ops: bool,
+    /// The model has a `SES_LINEAR` with a symbolic Jacobian, the only reader of
+    /// `old_real_off`.
+    pub has_old_real: bool,
     /// `SimData` offset of the homotopy parameter lambda (f64).
     pub lambda_off: u32,
     pub rparam_off: u32,
@@ -115,6 +166,9 @@ pub struct Layout {
     pub pre_real_off: u32,
     pub pre_int_off: u32,
     pub pre_bool_off: u32,
+    /// C's `data->localData[1]->realVars`: the reals as of the last accepted step,
+    /// a method-1 linear system's `aux_x`.
+    pub old_real_off: u32,
     /// `terminate(...)` flag (i32).
     pub terminate_off: u32,
     /// `terminal()` flag (i32): C's `data->simulationInfo->terminal`, raised by
@@ -145,6 +199,10 @@ pub struct Layout {
     /// per crossing). `delayZeroCrossing` reads it; the driver snapshots it from
     /// `zc_off` at init and after each accepted point/event.
     pub zc_pre_off: u32,
+    /// Where an integrator's root callback writes its g-values (one f64 per
+    /// crossing): C's `gout`, kept apart from `zc_off` so a probe never overwrites
+    /// the accepted-point snapshot.
+    pub zc_probe_off: u32,
     /// Number of indexed relations (hysteresis count).
     pub n_rel: u32,
     /// Base of the held relation values (one i32 per indexed relation).
@@ -171,8 +229,14 @@ pub struct Layout {
     /// `functionInitStartValues` fills it; `-iif`/`-override` may replace entries;
     /// the driver then copies it over the live region (C's `setAllVarsToStart`).
     pub start_off: u32,
+    /// C's `realVarsData[i].attribute.nominal` as declared, one f64 per real
+    /// variable in [`Layout::start_off`] order. [`Layout::state_nom_off`] is the
+    /// integrator's clamped copy.
+    pub real_nom_off: u32,
     /// Base of the per-state `nominal` attribute (one f64 per state), written by
     /// `functionUpdateBoundVariableAttributes` once the parameters are computed.
+    /// `fmax(|nominal|, 1e-32)` rather than the attribute itself: it is the
+    /// integrator's `atol` scale and the Jacobian's FD step floor.
     pub state_nom_off: u32,
     /// Base of the per-state `max` attribute, written the same way; C's
     /// `functionJacAC_num` flips its difference quotient at the bound.
@@ -269,6 +333,10 @@ impl Layout {
         n_removed_init: u32,
         has_when: bool,
         has_homotopy: bool,
+        homotopy_method: HomotopyMethod,
+        has_init_lambda0: bool,
+        has_history_ops: bool,
+        has_old_real: bool,
     ) -> Self {
         let n_real = 2 * n_states + n_real_alg; // states | ders | algs
         let rparam_off = REAL_OFF + n_real * 8;
@@ -283,7 +351,8 @@ impl Layout {
         let pre_real_off = (eobj_off + n_eobj * 4 + 7) & !7;
         let pre_int_off = pre_real_off + n_real * 8;
         let pre_bool_off = pre_int_off + n_int_alg * 4;
-        let terminate_off = pre_bool_off + n_bool_alg * 4;
+        let old_real_off = (pre_bool_off + n_bool_alg * 4 + 7) & !7;
+        let terminate_off = old_real_off + if has_old_real { n_real * 8 } else { 0 };
         let terminal_off = terminate_off + 4;
         let initial_off = terminal_off + 4;
         let term_info_off = initial_off + 4;
@@ -294,7 +363,8 @@ impl Layout {
         let sample_active_off = sample_off + n_samples * 16;
         let zc_off = (sample_active_off + n_samples * 4 + 7) & !7;
         let zc_pre_off = zc_off + n_zc * 8;
-        let relations_off = zc_pre_off + n_zc * 8;
+        let zc_probe_off = zc_pre_off + n_zc * 8;
+        let relations_off = zc_probe_off + n_zc * 8;
         let rel_fresh_off = relations_off + n_rel * 4;
         let stored_rel_off = rel_fresh_off + 4;
         let relations_pre_off = stored_rel_off + n_rel * 4;
@@ -304,7 +374,8 @@ impl Layout {
         let n_math_slots = if n_math > 0 { n_math + 2 } else { 0 };
         let zctol_off = mathevents_off + n_math_slots * 8;
         let start_off = zctol_off + 8;
-        let state_nom_off = start_off + n_real * 8;
+        let real_nom_off = start_off + n_real * 8;
+        let state_nom_off = real_nom_off + n_real * 8;
         let state_max_off = state_nom_off + n_states * 8;
         let sens_off = state_max_off + n_states * 8;
         let dae_res_off = sens_off + n_sens * 8;
@@ -323,11 +394,11 @@ impl Layout {
         let removed_init_idx_off = removed_init_res_off + 8;
         let total = removed_init_idx_off + 4;
         Layout {
-            n_states, n_real_alg, has_when, has_homotopy, lambda_off, rparam_off, int_off, iparam_off,
-            bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off,
-            terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
+            n_states, n_real_alg, has_when, has_homotopy, homotopy_method, has_init_lambda0, has_history_ops, has_old_real, lambda_off, rparam_off, int_off, iparam_off,
+            bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off, old_real_off,
+            terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off, zc_probe_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
-            mathevents_off, zctol_off, start_off, state_nom_off, state_max_off, n_sens, sens_off,
+            mathevents_off, zctol_off, start_off, real_nom_off, state_nom_off, state_max_off, n_sens, sens_off,
             n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off,
             n_base_clocks, clock_off, n_sub_clocks, subclock_off, clock_fire_off, linz_off, n_linz,
             n_opt_attr, opt_min_off, opt_max_off, opt_nom_off, opt_use_nom_off,
@@ -350,6 +421,11 @@ impl Layout {
         self.start_off + i * 8
     }
 
+    /// Byte offset of real variable `i`'s `nominal` attribute slot.
+    pub fn real_nominal_off(&self, i: u32) -> u32 {
+        self.real_nom_off + i * 8
+    }
+
     /// C's `compiledInDAEMode`: the integrator solves `F(t, y, y') = 0` over states
     /// *and* algebraic unknowns through `evaluateDAEResiduals`, not `functionODE`.
     pub fn dae_mode(&self) -> bool {
@@ -368,6 +444,11 @@ impl Layout {
         } else {
             None
         }
+    }
+
+    /// Bytes the live real region (states | derivatives | algebraics) spans.
+    pub fn real_bytes(&self) -> usize {
+        ((2 * self.n_states + self.n_real_alg) * 8) as usize
     }
 
     /// f64 in the real part of a result row: `time` + states + derivatives + real
@@ -394,6 +475,57 @@ impl Layout {
     }
 }
 
+/// How a negated alias derives its value. C's `crefToCStr` negates a Boolean
+/// logically, everything else arithmetically.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum Neg {
+    #[default]
+    None,
+    /// `-v`
+    Arith,
+    /// `!v`, i.e. `1 - v` over the 0/1 encoding.
+    Not,
+}
+
+impl Neg {
+    pub fn apply_f64(self, v: f64) -> f64 {
+        match self {
+            Neg::None => v,
+            Neg::Arith => -v,
+            Neg::Not => 1.0 - v,
+        }
+    }
+    pub fn apply_i32(self, v: i32) -> i32 {
+        match self {
+            Neg::None => v,
+            Neg::Arith => -v,
+            Neg::Not => (v == 0) as i32,
+        }
+    }
+    /// Compose one more negation step (an alias of an alias).
+    pub fn toggle(self, is_bool: bool) -> Neg {
+        match self {
+            Neg::None if is_bool => Neg::Not,
+            Neg::None => Neg::Arith,
+            _ => Neg::None,
+        }
+    }
+    fn code(self) -> u8 {
+        match self {
+            Neg::None => 0,
+            Neg::Arith => 1,
+            Neg::Not => 2,
+        }
+    }
+    fn from_code(c: u8) -> Neg {
+        match c {
+            1 => Neg::Arith,
+            2 => Neg::Not,
+            _ => Neg::None,
+        }
+    }
+}
+
 /// How a result signal sources its value (the run-time superset of
 /// `openmodelica_mat_writer::MatKind`: `Param` additionally carries the `SimData`
 /// offset/type so the driver can read the parameter's value back after the run).
@@ -403,12 +535,30 @@ pub enum MetaKind {
     Time,
     /// A time-variant real signal at result-buffer column `col` (`negate` for a
     /// negated alias).
-    Column { col: u32, negate: bool },
+    Column { col: u32, negate: Neg },
     /// A time-invariant parameter read from `SimData` at byte offset `off` as
     /// `wty` (`negate` for a negated alias).
-    Param { off: u32, wty: WTy, negate: bool },
+    Param { off: u32, wty: WTy, negate: Neg },
     /// A compile-time constant.
     Const { value: f64 },
+}
+
+impl MetaKind {
+    /// Project onto the `.mat` writer's kind.
+    pub fn mat(&self) -> openmodelica_mat_writer::MatKind {
+        use openmodelica_mat_writer::{MatKind, Neg as MatNeg};
+        let neg = |n: &Neg| match n {
+            Neg::None => MatNeg::None,
+            Neg::Arith => MatNeg::Arith,
+            Neg::Not => MatNeg::Not,
+        };
+        match self {
+            MetaKind::Time => MatKind::Time,
+            MetaKind::Column { col, negate } => MatKind::Column { col: *col, negate: neg(negate) },
+            MetaKind::Param { negate, .. } => MatKind::Param { negate: neg(negate) },
+            MetaKind::Const { value } => MatKind::Const { value: *value },
+        }
+    }
 }
 
 /// One result signal (C-compatible order: time, states, derivatives, algebraics,
@@ -428,9 +578,8 @@ pub struct MetaVar {
 #[derive(Clone, PartialEq, Debug, Default)]
 pub struct SotiVars {
     /// Real variables in real-variable index order (states, derivatives, then the
-    /// other reals) with the `nominal` attribute; a state's runtime nominal comes
-    /// from [`Layout::state_nom_off`] instead.
-    pub reals: Vec<(String, f64)>,
+    /// other reals). Their `start` and `nominal` attributes are `SimData` slots.
+    pub reals: Vec<String>,
     /// Integer/Boolean variables with their `start` attribute.
     pub ints: Vec<(String, i32)>,
     pub bools: Vec<(String, i32)>,
@@ -448,6 +597,21 @@ pub struct ParamVars {
     /// C prints no `fixed` for a String parameter.
     pub strings: Vec<(String, String)>,
 }
+
+/// What C's `importStartValues` walks, one entry per [`IMPORT_GROUP`]: each
+/// quantity's name and the slot its imported `start` goes to — the `start` attribute
+/// for a real variable, the live slot for everything else.
+pub type ImportRoster<'a> = [Vec<(&'a str, u32, WTy)>; 6];
+
+/// C's `importStartValues` group headers, in the order its loops run.
+pub const IMPORT_GROUP: [&str; 6] = [
+    "real variables",
+    "integer variables",
+    "boolean variables",
+    "real parameters",
+    "integer parameters",
+    "boolean parameters",
+];
 
 /// The variable (C's `info.name`) an [`Layout::attr_log_off`] slot belongs to, and
 /// which attribute of it — an index into [`ATTR_NAME`].
@@ -486,6 +650,21 @@ pub struct JacAInfo {
     pub colors: Vec<Vec<u32>>,
     /// `rows_by_col[col]` = 0-based rows nonzero in column `col` (CSC).
     pub rows_by_col: Vec<Vec<u32>>,
+    /// The symbolic column evaluation — C's `JACOBIAN_AVAILABLE`; `None` is
+    /// `JACOBIAN_ONLY_SPARSITY`.
+    pub sym: Option<JacSym>,
+}
+
+/// What the host needs to drive `functionJacA_column`: C's `JACOBIAN` seed / result
+/// arrays, here plain `SimData` slots.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct JacSym {
+    /// Seed slot per differentiation column, in column order.
+    pub seed_offs: Vec<u32>,
+    /// Result slot per row; `u32::MAX` is a structural zero (no result variable).
+    pub result_offs: Vec<u32>,
+    /// `functionJacA_constantEqns` has a body (C's `jacobian->constantEqns`).
+    pub has_constant: bool,
 }
 
 /// `--daeMode` metadata the [`Layout`]'s scalars cannot carry.
@@ -526,7 +705,7 @@ impl LinLanguage {
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub struct LinVar {
     pub off: u32,
-    pub negate: bool,
+    pub negate: Neg,
 }
 
 /// What `-l` needs beyond the ODE: C's `nInputVars`/`nOutputVars` as `SimData`
@@ -602,6 +781,8 @@ pub struct StateSetInfo {
     pub seed_offs: Vec<u32>,
     /// Jacobian result slots (f64), row order (`n_dummy` of them) — column output.
     pub result_offs: Vec<u32>,
+    /// Candidate names, candidate order (C's `statescandidates[i]->name`).
+    pub candidate_names: Vec<String>,
 }
 
 /// One symbolic Jacobian the optimizer differentiates through: C's
@@ -694,6 +875,13 @@ pub struct SolveStats {
     pub state_events: u64,
     pub time_events: u64,
     pub lin_solves: u64,
+    /// [`rtclock`] at the end of the run: seconds per clock, and how often each was
+    /// opened. Travels with the stats so an in-wasm run's timers reach the host.
+    pub timers: [f64; rtclock::N],
+    pub tcalls: [u64; rtclock::N],
+    /// Per linear/nonlinear system, for `LOG_STATS_V`. Read out of the wasm runtime
+    /// (which solves them) by the host after the run; empty unless it was on.
+    pub systems: alloc::vec::Vec<sysstat::SysStat>,
 }
 
 /// One FMI value reference and the `SimData` slot it names. The value references
@@ -705,7 +893,7 @@ pub struct FmiVr {
     pub off: u32,
     pub wty: WTy,
     /// The variable is a negated alias of the slot at `off`; a read negates it.
-    pub negate: bool,
+    pub negate: Neg,
     /// A real variable's `start` attribute slot, 0 for everything else. An
     /// Initialization Mode set must land here: `setAllVarsToStart` runs after the
     /// parameter overrides and would overwrite `off` from it.
@@ -713,6 +901,10 @@ pub struct FmiVr {
     /// The variable is a String: `off` is its i32 runtime-String-handle slot, so
     /// the adapter reads/writes it through `rt_str_*` rather than as a number.
     pub is_string: bool,
+    /// The slot of this output's derivative (`$<name>_der`, which
+    /// `-d=fmuExperimental` adds), 0 for everything else. What
+    /// `fmi2GetRealOutputDerivatives` reports.
+    pub der_off: u32,
 }
 
 /// Everything the driver and the `.mat` writer need about one model: its layout,
@@ -760,6 +952,9 @@ pub struct SimMeta {
     /// Modelica source of each residual `functionRemovedInitialEquations` checks;
     /// C bakes the same text into the generated `errorStreamPrint`.
     pub removed_init_desc: Vec<String>,
+    /// C's `initializeNonlinearSystems` startup warnings, decided at compile time:
+    /// so far only a sparsity pattern `sparsitySanityCheck` rejects.
+    pub nls_warnings: Vec<String>,
     /// C's `simulationInfo->sensitivityParList`: the `SimData` offsets of the
     /// parameters `--calculateSensitivities` selected, in block order.
     pub sens_params: Vec<u32>,
@@ -767,6 +962,8 @@ pub struct SimMeta {
     /// solver order — C reads the same list out of the `_info.json` `defines` array
     /// to name the unknowns in its `-lv=LOG_NLS` blocks.
     pub nls_vars: Vec<NlsVars>,
+    /// C's `modelData->nLinearSystems`, which `initializeLinearSystems` announces.
+    pub n_lin_systems: u32,
     /// `--daeMode` solver metadata; `Some` exactly when [`Layout::dae_mode`].
     pub dae: Option<DaeInfo>,
     /// Synchronous base clocks in `base_idx` order; empty for a model with no
@@ -782,12 +979,13 @@ pub struct SimMeta {
     pub inputs: Vec<InputVar>,
 }
 
-/// One `input` variable, as `-csvInput` reaches it: `off` is a real input's `start`
-/// attribute slot (published by `setAllVarsToStart`) and any other type's own slot,
-/// which is where C's `input_function` puts it.
+/// One `input` variable. C writes the file's value both to the `start` attribute,
+/// for `setAllVarsToStart` to publish (`start_off`), and to the variable itself
+/// before every evaluation (`off`); a non-real input has only the one slot.
 #[derive(Clone, Debug, PartialEq)]
 pub struct InputVar {
     pub off: u32,
+    pub start_off: u32,
     pub wty: WTy,
     /// The result name the file's column header has to match.
     pub name: String,
@@ -801,6 +999,47 @@ pub struct NlsVars {
 }
 
 impl SimMeta {
+    /// [`ImportRoster`] for this model: the codegen resolves the `-iif` file against
+    /// it and the driver applies the result, so both index the same list.
+    pub fn import_roster(&self) -> ImportRoster<'_> {
+        let l = &self.layout;
+        fn group<'a>(names: Vec<&'a str>, off: &dyn Fn(usize) -> u32, wty: WTy) -> Vec<(&'a str, u32, WTy)> {
+            names.into_iter().enumerate().map(|(i, n)| (n, off(i), wty)).collect()
+        }
+        [
+            group(
+                self.soti.reals.iter().map(|n| n.as_str()).collect(),
+                &|i| l.real_start_off(i as u32),
+                WTy::F64,
+            ),
+            group(
+                self.soti.ints.iter().map(|(n, _)| n.as_str()).collect(),
+                &|i| l.int_off + i as u32 * 4,
+                WTy::I32,
+            ),
+            group(
+                self.soti.bools.iter().map(|(n, _)| n.as_str()).collect(),
+                &|i| l.bool_off + i as u32 * 4,
+                WTy::I32,
+            ),
+            group(
+                self.params.reals.iter().map(|(n, _, _)| n.as_str()).collect(),
+                &|i| l.rparam_off + i as u32 * 8,
+                WTy::F64,
+            ),
+            group(
+                self.params.ints.iter().map(|(n, _, _)| n.as_str()).collect(),
+                &|i| l.iparam_off + i as u32 * 4,
+                WTy::I32,
+            ),
+            group(
+                self.params.bools.iter().map(|(n, _, _)| n.as_str()).collect(),
+                &|i| l.bparam_off + i as u32 * 4,
+                WTy::I32,
+            ),
+        ]
+    }
+
     /// Number of equidistant output rows the run writes, before C's terminal step
     /// adds its own. `n_intervals + 1` for a real interval; a zero-length run
     /// (`stop <= start`) writes the start point only, regardless of
@@ -817,7 +1056,8 @@ impl SimMeta {
     /// `filterOutput` as the file is opened.
     ///
     /// `matcher` is a compiled `-variableFilter` (wrapped in C's `^(…)$`) and
-    /// *replaces* [`var_filter::FILTERED`]; `None` keeps it.
+    /// *replaces* [`var_filter::FILTERED`]; `None` keeps it. A plain parameter is
+    /// exempt either way — `initializeOutputFilter` never touches one.
     pub fn output_keep(&self, matcher: Option<&dyn Fn(&str) -> bool>) -> Vec<bool> {
         let (emit_protected, ignore_hide) =
             crate::simflags::with_flags(|f| (f.emit_protected, f.ignore_hide_result));
@@ -828,17 +1068,26 @@ impl SimMeta {
                 if matches!(v.kind, MetaKind::Time) {
                     return true; // never filtered
                 }
-                if v.filter & var_filter::PROTECTED != 0
-                    && !(emit_protected && v.filter & var_filter::ENCRYPTED == 0)
-                {
+                // C's `shouldFilterOutput`: either flag *clears* the verdict both
+                // reasons set, so `-emit_protected` alone emits a variable that is
+                // protected *and* `HideResult=true`.
+                let protected = v.filter & var_filter::PROTECTED != 0;
+                let hidden = v.filter & var_filter::HIDE_RESULT != 0;
+                let mut filtered = protected || hidden;
+                if protected && emit_protected && v.filter & var_filter::ENCRYPTED == 0 {
+                    filtered = false;
+                }
+                if hidden && ignore_hide {
+                    filtered = false;
+                }
+                if filtered {
                     return false;
                 }
-                if v.filter & var_filter::HIDE_RESULT != 0 && !ignore_hide {
-                    return false;
-                }
+                let is_param =
+                    matches!(v.kind, MetaKind::Param { .. }) && v.filter & var_filter::ALIAS == 0;
                 match matcher {
-                    Some(m) => m(&v.name),
-                    None => v.filter & var_filter::FILTERED == 0,
+                    Some(m) if !is_param => m(&v.name),
+                    _ => v.filter & var_filter::FILTERED == 0,
                 }
             })
             .collect();
@@ -985,7 +1234,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 12;
+const VERSION: u32 = 14;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1012,11 +1261,11 @@ fn put_u32s2(o: &mut Vec<u8>, v: &[Vec<u32>]) {
 fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     for v in [
         l.n_states, l.n_real_alg, l.lambda_off, l.rparam_off, l.int_off, l.iparam_off, l.bool_off,
-        l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off,
+        l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off, l.old_real_off,
         l.terminate_off, l.terminal_off, l.initial_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
-        l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
+        l.n_zc, l.zc_off, l.zc_pre_off, l.zc_probe_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
-        l.state_nom_off, l.state_max_off, l.n_sens, l.sens_off,
+        l.real_nom_off, l.state_nom_off, l.state_max_off, l.n_sens, l.sens_off,
         l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off,
         l.n_base_clocks, l.clock_off, l.n_sub_clocks, l.subclock_off, l.clock_fire_off,
         l.linz_off, l.n_linz,
@@ -1029,6 +1278,10 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     }
     o.push(l.has_when as u8);
     o.push(l.has_homotopy as u8);
+    o.push(l.homotopy_method.code());
+    o.push(l.has_init_lambda0 as u8);
+    o.push(l.has_history_ops as u8);
+    o.push(l.has_old_real as u8);
 }
 fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
     match j {
@@ -1038,6 +1291,15 @@ fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
             put_u32(o, j.n);
             put_u32s2(o, &j.colors);
             put_u32s2(o, &j.rows_by_col);
+            match &j.sym {
+                None => o.push(0),
+                Some(s) => {
+                    o.push(1);
+                    put_u32s(o, &s.seed_offs);
+                    put_u32s(o, &s.result_offs);
+                    o.push(s.has_constant as u8);
+                }
+            }
         }
     }
 }
@@ -1047,13 +1309,13 @@ fn put_kind(o: &mut Vec<u8>, k: &MetaKind) {
         MetaKind::Column { col, negate } => {
             o.push(1);
             put_u32(o, *col);
-            o.push(*negate as u8);
+            o.push(negate.code());
         }
         MetaKind::Param { off, wty, negate } => {
             o.push(2);
             put_u32(o, *off);
             o.push(matches!(wty, WTy::F64) as u8);
-            o.push(*negate as u8);
+            o.push(negate.code());
         }
         MetaKind::Const { value } => {
             o.push(3);
@@ -1094,15 +1356,20 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_u32s(&mut o, &s.a_offs);
         put_u32s(&mut o, &s.seed_offs);
         put_u32s(&mut o, &s.result_offs);
+        put_u32(&mut o, s.candidate_names.len() as u32);
+        for n in &s.candidate_names {
+            put_str(&mut o, n);
+        }
     }
     put_u32(&mut o, m.fmi_vrs.len() as u32);
     for v in &m.fmi_vrs {
         put_u32(&mut o, v.vr);
         put_u32(&mut o, v.off);
         o.push(matches!(v.wty, WTy::F64) as u8);
-        o.push(v.negate as u8);
+        o.push(v.negate.code());
         put_u32(&mut o, v.start_off);
         o.push(v.is_string as u8);
+        put_u32(&mut o, v.der_off);
     }
     put_u32(&mut o, m.zc_desc.len() as u32);
     for d in &m.zc_desc {
@@ -1140,14 +1407,17 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     for d in &m.removed_init_desc {
         put_str(&mut o, d);
     }
+    put_u32(&mut o, m.nls_warnings.len() as u32);
+    for d in &m.nls_warnings {
+        put_str(&mut o, d);
+    }
     put_u32(&mut o, m.sample_index.len() as u32);
     for i in &m.sample_index {
         put_u32(&mut o, *i as u32);
     }
     put_u32(&mut o, m.soti.reals.len() as u32);
-    for (n, v) in &m.soti.reals {
+    for n in &m.soti.reals {
         put_str(&mut o, n);
-        put_f64(&mut o, *v);
     }
     for list in [&m.soti.ints, &m.soti.bools] {
         put_u32(&mut o, list.len() as u32);
@@ -1170,6 +1440,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
             put_str(&mut o, n);
         }
     }
+    put_u32(&mut o, m.n_lin_systems);
     match &m.dae {
         None => o.push(0),
         Some(d) => {
@@ -1200,7 +1471,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
                 put_u32(&mut o, g.len() as u32);
                 for v in g {
                     put_u32(&mut o, v.off);
-                    o.push(v.negate as u8);
+                    o.push(v.negate.code());
                 }
             }
             o.push(l.language as u8);
@@ -1265,6 +1536,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     put_u32(&mut o, m.inputs.len() as u32);
     for v in &m.inputs {
         put_u32(&mut o, v.off);
+        put_u32(&mut o, v.start_off);
         o.push(matches!(v.wty, WTy::F64) as u8);
         put_str(&mut o, &v.name);
     }
@@ -1318,7 +1590,19 @@ impl<'a> Reader<'a> {
     fn jac(&mut self) -> Result<Option<JacAInfo>, &'static str> {
         Ok(match self.u8()? {
             0 => None,
-            _ => Some(JacAInfo { n: self.u32()?, colors: self.u32s2()?, rows_by_col: self.u32s2()? }),
+            _ => Some(JacAInfo {
+                n: self.u32()?,
+                colors: self.u32s2()?,
+                rows_by_col: self.u32s2()?,
+                sym: match self.u8()? {
+                    0 => None,
+                    _ => Some(JacSym {
+                        seed_offs: self.u32s()?,
+                        result_offs: self.u32s()?,
+                        has_constant: self.u8()? != 0,
+                    }),
+                },
+            }),
         })
     }
     fn layout(&mut self) -> Result<Layout, &'static str> {
@@ -1337,6 +1621,7 @@ impl<'a> Reader<'a> {
             pre_real_off: self.u32()?,
             pre_int_off: self.u32()?,
             pre_bool_off: self.u32()?,
+            old_real_off: self.u32()?,
             terminate_off: self.u32()?,
             terminal_off: self.u32()?,
             initial_off: self.u32()?,
@@ -1349,6 +1634,7 @@ impl<'a> Reader<'a> {
             n_zc: self.u32()?,
             zc_off: self.u32()?,
             zc_pre_off: self.u32()?,
+            zc_probe_off: self.u32()?,
             n_rel: self.u32()?,
             relations_off: self.u32()?,
             rel_fresh_off: self.u32()?,
@@ -1360,6 +1646,7 @@ impl<'a> Reader<'a> {
             mathevents_off: self.u32()?,
             zctol_off: self.u32()?,
             start_off: self.u32()?,
+            real_nom_off: self.u32()?,
             state_nom_off: self.u32()?,
             state_max_off: self.u32()?,
             n_sens: self.u32()?,
@@ -1390,19 +1677,27 @@ impl<'a> Reader<'a> {
             total: self.u32()?,
             has_when: false,
             has_homotopy: false,
+            homotopy_method: HomotopyMethod::default(),
+            has_init_lambda0: false,
+            has_history_ops: false,
+            has_old_real: false,
         };
         l.has_when = self.u8()? != 0;
         l.has_homotopy = self.u8()? != 0;
+        l.homotopy_method = HomotopyMethod::from_code(self.u8()?);
+        l.has_init_lambda0 = self.u8()? != 0;
+        l.has_history_ops = self.u8()? != 0;
+        l.has_old_real = self.u8()? != 0;
         Ok(l)
     }
     fn kind(&mut self) -> Result<MetaKind, &'static str> {
         Ok(match self.u8()? {
             0 => MetaKind::Time,
-            1 => MetaKind::Column { col: self.u32()?, negate: self.u8()? != 0 },
+            1 => MetaKind::Column { col: self.u32()?, negate: Neg::from_code(self.u8()?) },
             2 => MetaKind::Param {
                 off: self.u32()?,
                 wty: if self.u8()? != 0 { WTy::F64 } else { WTy::I32 },
-                negate: self.u8()? != 0,
+                negate: Neg::from_code(self.u8()?),
             },
             3 => MetaKind::Const { value: self.f64()? },
             _ => return Err("sim_meta: bad MetaKind tag"),
@@ -1438,7 +1733,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let nsets = r.u32()? as usize;
     let mut state_sets = Vec::with_capacity(nsets);
     for _ in 0..nsets {
-        state_sets.push(StateSetInfo {
+        let mut s = StateSetInfo {
             n_candidates: r.u32()?,
             n_states: r.u32()?,
             n_dummy: r.u32()?,
@@ -1447,7 +1742,11 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             a_offs: r.u32s()?,
             seed_offs: r.u32s()?,
             result_offs: r.u32s()?,
-        });
+            candidate_names: Vec::new(),
+        };
+        let nn = r.u32()? as usize;
+        s.candidate_names = (0..nn).map(|_| r.string()).collect::<core::result::Result<_, _>>()?;
+        state_sets.push(s);
     }
     let nvr = r.u32()? as usize;
     let mut fmi_vrs = Vec::with_capacity(nvr);
@@ -1455,10 +1754,11 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         let vr = r.u32()?;
         let off = r.u32()?;
         let wty = if r.u8()? != 0 { WTy::F64 } else { WTy::I32 };
-        let negate = r.u8()? != 0;
+        let negate = Neg::from_code(r.u8()?);
         let start_off = r.u32()?;
         let is_string = r.u8()? != 0;
-        fmi_vrs.push(FmiVr { vr, off, wty, negate, start_off, is_string });
+        let der_off = r.u32()?;
+        fmi_vrs.push(FmiVr { vr, off, wty, negate, start_off, is_string, der_off });
     }
     let ndesc = r.u32()? as usize;
     let mut zc_desc = Vec::with_capacity(ndesc);
@@ -1491,10 +1791,15 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     for _ in 0..nridesc {
         removed_init_desc.push(r.string()?);
     }
+    let nwarn = r.u32()? as usize;
+    let mut nls_warnings = Vec::with_capacity(nwarn);
+    for _ in 0..nwarn {
+        nls_warnings.push(r.string()?);
+    }
     let sample_index = r.u32s()?.into_iter().map(|v| v as i32).collect();
     let mut soti = SotiVars::default();
     for _ in 0..r.u32()? {
-        soti.reals.push((r.string()?, r.f64()?));
+        soti.reals.push(r.string()?);
     }
     for _ in 0..r.u32()? {
         soti.ints.push((r.string()?, r.u32()? as i32));
@@ -1517,6 +1822,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         }
         nls_vars.push(NlsVars { eq_index, names });
     }
+    let n_lin_systems = r.u32()?;
     let dae = match r.u8()? {
         0 => None,
         _ => Some(DaeInfo { alg_offs: r.u32s()?, sparsity: r.jac()? }),
@@ -1548,7 +1854,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
                 let n = r.u32()? as usize;
                 let mut out = Vec::with_capacity(n);
                 for _ in 0..n {
-                    out.push(LinVar { off: r.u32()?, negate: r.u8()? != 0 });
+                    out.push(LinVar { off: r.u32()?, negate: Neg::from_code(r.u8()?) });
                 }
                 Ok(out)
             };
@@ -1642,13 +1948,14 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let mut inputs = Vec::new();
     for _ in 0..r.u32()? {
         let off = r.u32()?;
+        let start_off = r.u32()?;
         let wty = if r.u8()? != 0 { WTy::F64 } else { WTy::I32 };
-        inputs.push(InputVar { off, wty, name: r.string()? });
+        inputs.push(InputVar { off, start_off, wty, name: r.string()? });
     }
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, params, attr_log,
-        removed_init_desc, sample_index, soti, sens_params, nls_vars, dae, clocks, lin, opt, inputs,
+        removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs,
     })
 }
 
@@ -1660,7 +1967,11 @@ mod tests {
 
     fn sample() -> SimMeta {
         SimMeta {
-            layout: Layout::new(2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, false, false),
+            // Every flag non-default, so the round-trip covers the flag block.
+            layout: Layout::new(
+                2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, true, true,
+                HomotopyMethod::LocalAdaptive, true, true, true,
+            ),
             start_time: 0.0,
             stop_time: 1.0,
             n_intervals: 500,
@@ -1671,16 +1982,21 @@ mod tests {
             model_name: "MyModel".to_string(),
             vars: vec![
                 MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, filter: 0 },
-                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: false }, filter: var_filter::PROTECTED },
-                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: true }, filter: var_filter::ALIAS },
-                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: false }, filter: 0 },
-                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: false }, filter: var_filter::HIDE_RESULT },
+                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::None }, filter: var_filter::PROTECTED },
+                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::Not }, filter: var_filter::ALIAS },
+                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: Neg::Arith }, filter: 0 },
+                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: Neg::None }, filter: var_filter::HIDE_RESULT },
                 MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, filter: var_filter::FILTERED },
             ],
             jac_a: Some(JacAInfo {
                 n: 2,
                 colors: vec![vec![0], vec![1]],
                 rows_by_col: vec![vec![0, 1], vec![1]],
+                sym: Some(JacSym {
+                    seed_offs: vec![300, 308],
+                    result_offs: vec![316, u32::MAX],
+                    has_constant: true,
+                }),
             }),
             state_sets: vec![StateSetInfo {
                 n_candidates: 3,
@@ -1691,10 +2007,11 @@ mod tests {
                 a_offs: vec![100, 104, 108, 112, 116, 120],
                 seed_offs: vec![200, 208, 216],
                 result_offs: vec![224],
+                candidate_names: vec!["a.w".to_string(), "b.w".to_string(), "c.w".to_string()],
             }],
             fmi_vrs: vec![
-                FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: false, start_off: 96, is_string: false },
-                FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: true, start_off: 0, is_string: true },
+                FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: Neg::None, start_off: 96, is_string: false, der_off: 0 },
+                FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: Neg::Arith, start_off: 0, is_string: true, der_off: 0 },
             ],
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
             rel_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
@@ -1709,6 +2026,7 @@ mod tests {
                 AttrLog { kind: 3, name: "y".to_string() },
             ],
             removed_init_desc: vec!["4.0 - z".to_string()],
+            nls_warnings: Vec::new(),
             sample_index: vec![1],
             soti: SotiVars::default(),
             sens_params: vec![88],
@@ -1716,12 +2034,14 @@ mod tests {
                 eq_index: 1074,
                 names: vec!["pipe.medium.T".to_string(), "pipe.medium.p".to_string()],
             }],
+            n_lin_systems: 2,
             dae: Some(DaeInfo {
                 alg_offs: vec![32, 40],
                 sparsity: Some(JacAInfo {
                     n: 4,
                     colors: vec![vec![0, 2], vec![1, 3]],
                     rows_by_col: vec![vec![0], vec![0, 1], vec![2], vec![2, 3]],
+                    sym: None,
                 }),
             }),
             clocks: vec![BaseClockMeta {
@@ -1734,8 +2054,8 @@ mod tests {
                 ],
             }],
             lin: Some(LinInfo {
-                input_vars: vec![LinVar { off: 40, negate: false }],
-                output_vars: vec![LinVar { off: 48, negate: true }],
+                input_vars: vec![LinVar { off: 40, negate: Neg::None }],
+                output_vars: vec![LinVar { off: 48, negate: Neg::Arith }],
                 language: LinLanguage::Julia,
                 frame: "function linearized_model()\n%s%s%s%s%s%s\nend".to_string(),
                 frame_datarec: String::new(),
@@ -1768,7 +2088,7 @@ mod tests {
                 jac_c: None,
                 jac_d: None,
             }),
-            inputs: vec![InputVar { off: 96, wty: WTy::F64, name: "u".to_string() }],
+            inputs: vec![InputVar { off: 96, start_off: 104, wty: WTy::F64, name: "u".to_string() }],
         }
     }
 
@@ -1808,11 +2128,11 @@ mod tests {
         assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p", "n"]);
 
         // A `-variableFilter` replaces the model's verdict, so `k` is reachable;
-        // `time` is never filtered.
+        // `time` is never filtered and the parameter `p` is exempt.
         f.ignore_hide_result = false;
         simflags::set_flags(f);
         let only_k = |n: &str| n == "k";
-        assert_eq!(names(m.output_keep(Some(&only_k))), ["time", "k"]);
+        assert_eq!(names(m.output_keep(Some(&only_k))), ["time", "p", "k"]);
     }
 
     /// C's `read_experiment`: the command line replaces what the model was

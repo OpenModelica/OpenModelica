@@ -84,6 +84,7 @@ pub const DEBUG: Stream = 5;
 pub const DELAY: Stream = 6;
 pub const DIVISION: Stream = 7;
 pub const DSS: Stream = 8;
+pub const DSS_JAC: Stream = 9;
 pub const EVENTS: Stream = 12;
 pub const EVENTS_V: Stream = 13;
 pub const INIT: Stream = 19;
@@ -107,6 +108,7 @@ pub const SIMULATION: Stream = 46;
 pub const SOLVER: Stream = 47;
 pub const SOLVER_V: Stream = 48;
 pub const SOTI: Stream = 50;
+pub const SPATIALDISTR: Stream = 51;
 pub const STATS: Stream = 52;
 pub const STATS_V: Stream = 53;
 pub const SUCCESS: Stream = 54;
@@ -127,6 +129,11 @@ pub type Mask = u64;
 
 /// The three streams C activates without `-lv`, and which [`deactivate`] leaves.
 pub const ALWAYS_ON: Mask = (1 << STDOUT) | (1 << ASSERT) | (1 << SUCCESS);
+
+/// What an FMU has on for its whole life: `initDumpSystem` never runs there, so
+/// `omc_useStream` is a zeroed static and `fmi2Instantiate` turns these two on.
+/// `fmi2SetDebugLogging` does not touch them.
+pub const FMU_STREAMS: Mask = (1 << STDOUT) | (1 << ASSERT);
 
 /// C's `omc_showAllWarnings` (`-w`): a warning prints even on an inactive stream.
 /// It rides in the mask, above every stream index, so the single value a run pushes
@@ -175,7 +182,6 @@ fn finish(mut m: Mask) -> Mask {
     const GBODE_V: Stream = 15;
     const GBODE_NLS: Stream = 16;
     const GBODE_NLS_V: Stream = 17;
-    const DSS_JAC: Stream = 9;
     for (from, to) in [
         (GBODE_V, GBODE),
         (GBODE_NLS_V, GBODE_NLS),
@@ -206,6 +212,8 @@ struct State {
     level: [i16; N_STREAMS],
     last_type: [LogType; N_STREAMS],
     last_stream: Stream,
+    /// `-logFormat=xml`: C's `setStreamPrintXML(1)`.
+    xml: bool,
 }
 
 impl State {
@@ -217,6 +225,7 @@ impl State {
             level: [0; N_STREAMS],
             last_type: [0; N_STREAMS],
             last_stream: UNKNOWN,
+            xml: false,
         }
     }
 }
@@ -256,9 +265,16 @@ mod store {
 /// inherits an unclosed block.
 pub fn set_mask(m: Mask) {
     store::with(|s| {
+        let xml = s.xml;
         *s = State::new();
         s.use_stream = m;
+        s.xml = xml;
     });
+}
+
+/// C's `setStreamPrintXML`: write every message as a `<message …>` element.
+pub fn set_xml(v: bool) {
+    store::with(|s| s.xml = v);
 }
 
 pub fn mask() -> Mask {
@@ -306,32 +322,77 @@ pub fn warning(stream: Stream, indent_next: bool, msg: &str) {
     }
 }
 
+/// C's `warningStreamPrintWithLimit`, `max_displayed` being `-lvMaxWarn`.
+pub fn warning_with_limit(stream: Stream, n_displayed: u64, max_displayed: u64, msg: &str) {
+    if !(active(stream) || store::with(|s| s.use_stream & SHOW_ALL_WARNINGS != 0)) {
+        return;
+    }
+    if n_displayed <= max_displayed {
+        message_text(WARNING, stream, false, msg);
+    }
+    if n_displayed == max_displayed {
+        message_text(
+            INFO,
+            stream,
+            false,
+            &format!(
+                "Too many warnings, reached display limit of {max_displayed}. Suppressing further warning messages of the same type."
+            ),
+        );
+        message_text(INFO, stream, false, "Change limit with simulation flag -lvMaxWarn=<newLimit>");
+    }
+}
+
+/// C's `va_throwStreamPrint`: unlike [`error`], gated on `-lv`.
+pub fn debug(stream: Stream, indent_next: bool, msg: &str) {
+    if active(stream) {
+        message_text(DEBUG_TYPE, stream, indent_next, msg);
+    }
+}
+
 pub fn error(stream: Stream, indent_next: bool, msg: &str) {
     message_text(ERROR, stream, indent_next, msg);
 }
 
 /// C's `messageClose`: end a block opened with `indent_next`.
 pub fn close(stream: Stream) {
-    store::with(|s| {
-        if mask_has(s.use_stream, stream) {
+    let end = store::with(|s| {
+        if !mask_has(s.use_stream, stream) {
+            return false;
+        }
+        if !s.xml {
             s.level[stream as usize] -= 1;
         }
+        s.xml
     });
+    if end {
+        crate::driver::log_line(stream, INFO, "</message>\n");
+    }
 }
 
 /// C's `messageCloseWarning`: [`close`] for a block [`warning`] opened, so `-w`
 /// keeps the level balanced on an inactive stream.
 pub fn close_warning(stream: Stream) {
-    store::with(|s| {
-        if mask_has(s.use_stream, stream) || s.use_stream & SHOW_ALL_WARNINGS != 0 {
+    let end = store::with(|s| {
+        if !(mask_has(s.use_stream, stream) || s.use_stream & SHOW_ALL_WARNINGS != 0) {
+            return false;
+        }
+        if !s.xml {
             s.level[stream as usize] -= 1;
         }
+        s.xml
     });
+    if end {
+        crate::driver::log_line(stream, INFO, "</message>\n");
+    }
 }
 
 /// C's `messageText`. A newline in `msg` starts a `subline`: `|` in both header
 /// columns and no level indent, as C's recursive call gives.
 pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
+    if store::with(|s| s.xml) {
+        return message_xml(ty, stream, indent_next, msg);
+    }
     let mut out = String::new();
     store::with(|s| {
         let i = stream as usize;
@@ -356,16 +417,46 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
             s.last_type[i] = ty;
             s.last_stream = stream;
         }
-        if indent_next {
+        // C's `messageText` recurses for the second line and returns, so a
+        // multi-line message never opens a block however `indentNext` is set.
+        if indent_next && !msg.contains('\n') {
             s.level[i] += 1;
         }
     });
-    crate::driver::log_line(&out);
+    crate::driver::log_line(stream, ty, &out);
+}
+
+/// C's `messageXML`: the whole message as one element's `text` attribute, left
+/// open for [`close`] when `indent_next`.
+fn message_xml(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
+    let mut out = format!(
+        "<message stream=\"{}\" type=\"{}\" text=\"",
+        STREAM_NAME[stream as usize], TYPE_DESC[ty as usize]
+    );
+    for c in msg.chars() {
+        match c {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            '"' => out.push_str("&quot;"),
+            _ => out.push(c),
+        }
+    }
+    out.push_str(if indent_next { "\">\n" } else { "\" />\n" });
+    crate::driver::log_line(stream, ty, &out);
 }
 
 /// C's `%<width>.<prec>g`.
 pub fn g(v: f64, width: usize, prec: i32) -> String {
     pad(crate::driver::format_g(v, prec), width)
+}
+
+/// C's `%<width>.<prec>f`: fixed point, no exponent.
+pub fn f(v: f64, width: usize, prec: usize) -> String {
+    if !v.is_finite() {
+        return alloc::format!("{v}");
+    }
+    pad(alloc::format!("{v:.prec$}"), width)
 }
 
 /// C's `%<width>.<prec>e`: always an exponent, at least two exponent digits.
@@ -501,14 +592,19 @@ pub fn debug_string(stream: Stream, msg: &str) {
     info(stream, false, msg);
 }
 
-/// C's `debugInt`: `"%s %d"`.
+/// C's `debugInt`: `"%s %d"`. Built only when the stream is on, as C's variadic
+/// `infoStreamPrint` is — the nonlinear solver calls these per iteration.
 pub fn debug_int(stream: Stream, msg: &str, v: i32) {
-    info(stream, false, &format!("{msg} {v}"));
+    if active(stream) {
+        info(stream, false, &format!("{msg} {v}"));
+    }
 }
 
-/// C's `debugDouble`: `"%s %18.10e"`.
+/// C's `debugDouble`: `"%s %18.10e"`; guarded as [`debug_int`] is.
 pub fn debug_double(stream: Stream, msg: &str, v: f64) {
-    info(stream, false, &format!("{msg} {}", e(v, 18, 10)));
+    if active(stream) {
+        info(stream, false, &format!("{msg} {}", e(v, 18, 10)));
+    }
 }
 
 /// C's `debugVectorDouble`: a `name [n-dim]` block holding one line of
@@ -568,7 +664,7 @@ mod tests {
     std::thread_local! {
         static SINK: core::cell::RefCell<String> = const { core::cell::RefCell::new(String::new()) };
     }
-    fn sink(s: &str) {
+    fn sink(_stream: Stream, _ty: LogType, s: &str) {
         SINK.with(|c| c.borrow_mut().push_str(s));
     }
 

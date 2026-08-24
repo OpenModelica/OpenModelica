@@ -24,7 +24,8 @@ use std::sync::OnceLock;
 use std::time::Instant;
 
 use crate::sim_driver;
-use crate::model::SimModel;
+use crate::dylink_engine::{NlsHooks, zero_results};
+use crate::model::{self, SimModel};
 use openmodelica_sim_meta::SimMeta;
 use crate::host::add_host_builtins;
 
@@ -116,6 +117,9 @@ fn plain_engine() -> &'static wasmtime::Engine {
 fn build_engine_cfg(extra: impl FnOnce(&mut wasmtime::Config)) -> wasmtime::Engine {
     let mut cfg = wasmtime::Config::new();
     crate::tune_memory(&mut cfg);
+    // A model with external "C" carries the `model_error` tag its `ext` call sites
+    // catch, so the module does not validate without this.
+    cfg.wasm_exceptions(true);
     // Compile module functions across threads (off by default with
     // default-features=false) — ~4x faster module compilation here.
     cfg.parallel_compilation(!crate::model::single_threaded());
@@ -164,16 +168,18 @@ pub fn runtime_module() -> std::result::Result<&'static wasmtime::Module, String
 /// reboots and not shared between users (unlike a world-writable temp dir, where
 /// the sticky bit would stop other users refreshing it). Falls back to the
 /// system temp dir if `$HOME` is unset or the cache dir can't be created.
-fn runtime_cache_path(epoch: bool) -> std::path::PathBuf {
+fn aot_cache_key(blob: &[u8], epoch: bool) -> u64 {
     use std::hash::{Hash, Hasher};
     let mut h = std::collections::hash_map::DefaultHasher::new();
-    runtime_blob().len().hash(&mut h);
-    runtime_blob().hash(&mut h);
+    blob.len().hash(&mut h);
+    blob.hash(&mut h);
     std::env::var("OMC_WASM_OPT_LEVEL").unwrap_or_default().hash(&mut h);
     std::env::var("OMC_WASM_NO_INLINE").is_ok().hash(&mut h);
     epoch.hash(&mut h);
-    let key = h.finish();
+    h.finish()
+}
 
+fn aot_cache_path(tag: &str, key: u64) -> std::path::PathBuf {
     let home = openmodelica_util::Settings::getHomeDir(false);
     let dir = if home.is_empty() {
         Some(std::env::temp_dir())
@@ -182,23 +188,23 @@ fn runtime_cache_path(epoch: bool) -> std::path::PathBuf {
         std::fs::create_dir_all(&d).ok().map(|_| d)
     };
     let dir = dir.unwrap_or_else(std::env::temp_dir);
-    dir.join(format!("wasmjit-runtime-{key:016x}.cwasm"))
+    dir.join(format!("wasmjit-{tag}-{key:016x}.cwasm"))
 }
 
-fn load_or_compile_runtime(epoch: bool) -> std::result::Result<wasmtime::Module, String> {
-    let engine = if epoch { alarm_engine() } else { plain_engine() };
-    let path = runtime_cache_path(epoch);
+/// Compile a *fixed* wasm blob through the on-disk AOT cache: the `external "C"`
+/// side libraries take ~0.7 s to compile against ~6 ms to load the artifact.
+fn aot_module(engine: &wasmtime::Engine, tag: &str, blob: &[u8], epoch: bool) -> std::result::Result<wasmtime::Module, String> {
+    let path = aot_cache_path(tag, aot_cache_key(blob, epoch));
     // Try the AOT artifact first (microseconds). `deserialize_file` is unsafe
-    // because it trusts the artifact; it is one we produced under temp_dir, and
-    // wasmtime validates version/config compatibility (erroring otherwise).
-    if path.exists() {
-        if let Ok(m) = unsafe { wasmtime::Module::deserialize_file(engine, &path) } {
-            return Ok(m);
-        }
-        // Incompatible/corrupt cache (e.g. wasmtime upgrade): fall through to
-        // recompile and overwrite it below.
+    // because it trusts the artifact; it is one we produced under the cache dir,
+    // and wasmtime validates version/config compatibility (erroring otherwise).
+    if path.exists()
+        && let Ok(m) = unsafe { wasmtime::Module::deserialize_file(engine, &path) }
+    {
+        return Ok(m);
     }
-    let module = wts(wasmtime::Module::new(engine, runtime_blob()))?;
+    // Incompatible/corrupt cache (e.g. a wasmtime upgrade): recompile over it.
+    let module = wts(wasmtime::Module::new(engine, blob))?;
     // Best-effort: persist the compiled artifact for the next process. Write to
     // a temp sibling then rename, so a concurrent reader never sees a partial file.
     if let Ok(bytes) = module.serialize() {
@@ -208,6 +214,34 @@ fn load_or_compile_runtime(epoch: bool) -> std::result::Result<wasmtime::Module,
         }
     }
     Ok(module)
+}
+
+/// Compile an `external "C"` side library, memoized for the process so
+/// re-simulating a model does not recompile it. A [`Library::fixed`] one also
+/// takes the on-disk artifact.
+pub fn library_module(
+    engine: &wasmtime::Engine,
+    name: &str,
+    blob: &[u8],
+    fixed: bool,
+) -> std::result::Result<wasmtime::Module, String> {
+    let key = aot_cache_key(blob, alarm_secs() != 0);
+    static MEMO: OnceLock<std::sync::Mutex<HashMap<u64, wasmtime::Module>>> = OnceLock::new();
+    let memo = MEMO.get_or_init(Default::default);
+    if let Some(m) = memo.lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
+        return Ok(m.clone());
+    }
+    let m = match fixed {
+        true => aot_module(engine, &format!("lib-{name}"), blob, alarm_secs() != 0)?,
+        false => wts(wasmtime::Module::new(engine, blob))?,
+    };
+    memo.lock().unwrap_or_else(|e| e.into_inner()).insert(key, m.clone());
+    Ok(m)
+}
+
+fn load_or_compile_runtime(epoch: bool) -> std::result::Result<wasmtime::Module, String> {
+    let engine = if epoch { alarm_engine() } else { plain_engine() };
+    aot_module(engine, "runtime", runtime_blob(), epoch)
 }
 
 /// JIT-compile a generated model module on the shared engine. Called either on a
@@ -307,26 +341,148 @@ fn wty_valtype(w: crate::sig::WTy) -> wasmtime::ValType {
 /// Why an `external "C"` function could not be found, and what to do about it. The
 /// codegen's notes come out here, where a library that yielded nothing has become a
 /// missing symbol.
-fn unresolved_external_detail(name: &str, model: &SimModel) -> String {
-    let mut s = if model.ext_libs.is_empty() {
+fn unresolved_external_detail(name: &str, model: &SimModel, load_errors: &[String]) -> String {
+    let searched: Vec<&str> = model
+        .ext_libs
+        .iter()
+        .map(|l| l.name.as_str())
+        .chain(model.ext_native_libs.iter().map(|s| s.as_str()))
+        .chain(model.ext_archives.iter().flat_map(|a| a.archives.iter().map(|s| s.as_str())))
+        .collect();
+    let mut s = if searched.is_empty() {
         format!(
             "  `{name}` is in none of the model's libraries — the model declares no `Library` \
-             annotation that resolves to a wasm library. Build the implementation with \
-             `clang --target=wasm32-wasip1 -fPIC -shared` and name it in `Library`."
+             annotation that resolves to one. Name a wasm module built with \
+             `clang --target=wasm32-wasip1 -fPIC -shared`, or, for a native run, the platform \
+             shared library the C target would link."
         )
     } else {
         format!(
             "  `{name}` is in none of the model's libraries ({}). Check that the library exports it \
              (`-Wl,--export-all`, or `-Wl,--export={name}`).",
-            model.ext_libs.iter().map(|l| l.name.as_str()).collect::<Vec<_>>().join(", "),
+            searched.join(", "),
         )
     };
-    for note in &model.ext_lib_notes {
+    for note in model.ext_lib_notes.iter().chain(load_errors) {
         s.push_str("\n  ");
         s.push_str(note);
     }
     s
 }
+
+/// Load the libraries `sigs` are to be found in, link the model's archives and
+/// build its `Include` sources. Called from `buildModel`'s compile phase; the
+/// builds are cached, so instantiation reuses them.
+pub fn prepare_native_externals(model: &SimModel, sigs: &[crate::sig::ExtCallSig]) -> std::result::Result<(), String> {
+    let mut native = NativeExternals::default();
+    for sig in sigs {
+        if native.resolve(&sig.name, model).is_none() {
+            return Err(unresolved_external_detail(&sig.name, model, &native.errors));
+        }
+    }
+    Ok(())
+}
+
+/// The model's `external "C"` implementations outside wasm, resolved on demand: the
+/// platform libraries its `Library` annotations name (its archives linked into
+/// one), then — only once those and the process image have come up short — its
+/// `Include` C source.
+#[derive(Default)]
+struct NativeExternals {
+    handles: Vec<usize>,
+    loaded: bool,
+    built_includes: bool,
+    errors: Vec<String>,
+}
+
+impl NativeExternals {
+    fn ensure_loaded(&mut self, model: &SimModel) {
+        if self.loaded {
+            return;
+        }
+        self.loaded = true;
+        let (handles, errors) = openmodelica_util::dynload::load_external_libraries(&model.ext_native_libs);
+        self.handles = handles;
+        self.errors = errors;
+        if let Some(archives) = &model.ext_archives {
+            match archives.link() {
+                Ok(path) => {
+                    let (h, errors) = openmodelica_util::dynload::load_external_libraries(&[path]);
+                    self.handles.extend(h);
+                    self.errors.extend(errors);
+                }
+                Err(e) => self.errors.push(e),
+            }
+        }
+    }
+
+    fn resolve(&mut self, name: &str, model: &SimModel) -> Option<usize> {
+        self.ensure_loaded(model);
+        if let Some(addr) = self.symbol(name) {
+            return Some(addr);
+        }
+        if !self.built_includes {
+            self.built_includes = true;
+            if let Some(inc) = &model.ext_includes {
+                let missing: Vec<crate::sig::ExtCallSig> = model
+                    .ext_imports
+                    .iter()
+                    .filter(|s| self.symbol(&s.name).is_none())
+                    .cloned()
+                    .collect();
+                let errors = self.errors.len();
+                // A wrapper for a function the sources only declare leaves an
+                // address the loader cannot resolve.
+                if !self.load_includes(inc, &missing) && !missing.is_empty() {
+                    self.errors.truncate(errors);
+                    self.load_includes(inc, &[]);
+                }
+                return self.symbol(name);
+            }
+        }
+        None
+    }
+
+    /// Build the `Include` sources with `missing` reachable, and load the result.
+    /// Searched first: it is the model's own source.
+    fn load_includes(&mut self, inc: &model::ExtIncludes, missing: &[crate::sig::ExtCallSig]) -> bool {
+        let path = match inc.compile(missing) {
+            Ok(p) => p,
+            Err(e) => {
+                self.errors.push(e);
+                return false;
+            }
+        };
+        let (handles, errors) = openmodelica_util::dynload::load_external_libraries(&[path]);
+        let loaded = !handles.is_empty();
+        self.handles.splice(0..0, handles);
+        self.errors.extend(errors);
+        loaded
+    }
+
+    fn symbol(&self, name: &str) -> Option<usize> {
+        model::external_symbol_or_wrapper(&self.handles, name)
+    }
+
+    /// The model's own `usertab`: no `external "C"`, so never among `ext_imports`.
+    fn usertab(&mut self, model: &SimModel) -> Option<usize> {
+        use openmodelica_util::dynload::symbol_in;
+        self.ensure_loaded(model);
+        if let Some(addr) = symbol_in(&self.handles, USERTAB) {
+            return Some(addr);
+        }
+        // Building an `Include` that defines none is a compiler run for nothing.
+        let inc = model.ext_includes.as_ref()?;
+        if self.built_includes || !inc.sources.iter().any(|s| s.contains(USERTAB)) {
+            return None;
+        }
+        self.built_includes = true;
+        self.load_includes(inc, &[]);
+        symbol_in(&self.handles, USERTAB)
+    }
+}
+
+const USERTAB: &str = "usertab";
 
 /// Define the model's external "C" function imports (wasm module `ext`) from the
 /// host. Uses the model's `ext_imports` (the C-call `SigTy` signature) rather than
@@ -341,16 +497,15 @@ fn define_external_imports(
     memory: wasmtime::Memory,
     rt: &crate::dylink_engine::ExtRt,
     libs: &crate::dylink_engine::Loaded,
-    nls: NlsHooks,
 ) -> Result<()> {
-    let rt_str_new = rt.str_new.clone();
-    let rt_str_data = rt.str_data.clone();
     registry_reset();
+    sim_driver::clear_runtime_error();
     openmodelica_util::dynload::install_modelica_message_interception(
         openmodelica_modelica_utilities::modelica_message_hook,
         openmodelica_modelica_utilities::modelica_warning_hook,
     );
     let engine = linker.engine().clone();
+    let mut native = NativeExternals::default();
     for sig in &model.ext_imports {
         let functype = wasmtime::FuncType::new(
             &engine,
@@ -358,7 +513,7 @@ fn define_external_imports(
             sig.wasm_results().iter().map(|s| wty_valtype(s.wty())),
         );
         // The model's own libraries shadow a same-named symbol in the process.
-        if let Some(target) = libs.func(&sig.name).cloned() {
+        if let Some(target) = libs.func_or_addr(&mut *store, &sig.name) {
             if let Some(f) = crate::dylink_engine::bind_in_wasm_external(store, sig, &functype, target, rt)
                 .map_err(|_| "external \"C\": cannot bind a library function")?
             {
@@ -366,21 +521,107 @@ fn define_external_imports(
                 continue;
             }
         }
-        let addr = openmodelica_util::dynload::external_symbol(&sig.name).ok_or_else(|| {
-            crate::set_engine_error_detail(unresolved_external_detail(&sig.name, model));
+        let addr = native.resolve(&sig.name, model).ok_or_else(|| {
+            crate::set_engine_error_detail(unresolved_external_detail(&sig.name, model, &native.errors));
             "external \"C\" function not found in any loaded library"
         })?;
-        let name = sig.name.clone();
-        let sig = sig.clone();
-        let rt_str_new = rt_str_new.clone();
-        let rt_str_data = rt_str_data.clone();
-        let nls = nls.clone();
-        wt(linker.func_new("ext", &name, functype, move |mut caller, args, rets| {
-            // Safety: `addr` resolves `sig.name`; the `Cif` matches the validated sig.
-            unsafe { call_external(addr, &sig, &mut caller, memory, &rt_str_new, &rt_str_data, &nls, args, rets) }
-                .map_err(|e| wasmtime::Error::msg(format!("{e}")))
-        }))?;
+        define_native_external(linker, sig, functype, addr, memory, rt)?;
     }
+    // No `external "C"` means no `Include`/`Library`, hence no `usertab`.
+    let usertab = (!model.ext_imports.is_empty()).then(|| native.usertab(model)).flatten();
+    openmodelica_util::dynload::set_usertab(usertab);
+    // A library that had to define its own `RHSFinalFlag` reads that copy.
+    openmodelica_util::dynload::register_rhs_final_flag(&native.handles);
+    Ok(())
+}
+
+/// One C argument, held by value so `avalue` can point at it.
+enum Slot {
+    I(i64),
+    F(f64),
+    P(*mut core::ffi::c_void),
+}
+
+// Scratch for [`call_external`]'s argument list, taken and put back so a nested
+// call (or one that unwound) just allocates its own.
+thread_local! {
+    static SLOT_SCRATCH: std::cell::Cell<Vec<Slot>> = const { std::cell::Cell::new(Vec::new()) };
+    static AVALUE_SCRATCH: std::cell::Cell<Vec<*mut core::ffi::c_void>> =
+        const { std::cell::Cell::new(Vec::new()) };
+}
+
+/// libffi's prepared call interface for one external, built once when the import
+/// is bound rather than per call — `ffi_prep_cif` classifies the whole argument
+/// list.
+///
+/// A prepared `ffi_cif` is immutable and `ffi_call` only reads it, so sharing it
+/// is sound even though it holds pointers into the type list it owns.
+struct PreparedCif {
+    cif: libffi::middle::Cif,
+    /// libffi widens a return narrower than `ffi_arg`, so never under 8 bytes.
+    ret_size: usize,
+}
+unsafe impl Send for PreparedCif {}
+unsafe impl Sync for PreparedCif {}
+
+/// The C type of each argument in `ffi_call` order — the classification
+/// [`call_external`]'s phase 1 marshals into, derived from the signature alone.
+fn ffi_arg_types(sig: &crate::sig::ExtCallSig) -> Vec<libffi::middle::Type> {
+    use crate::sig::SigTy;
+    use libffi::middle::Type;
+    let fortran = sig.lang == crate::sig::ExtLang::Fortran77;
+    sig.args
+        .iter()
+        .map(|(ty, is_out)| match ty {
+            // An `_Out_` scalar/string/record gets a scratch cell passed by pointer;
+            // an output array is filled in place, like an input one.
+            _ if *is_out && !matches!(ty, SigTy::Array { .. }) => Type::pointer(),
+            // FORTRAN 77 takes every argument by reference.
+            SigTy::Real if !fortran => Type::f64(),
+            SigTy::Int | SigTy::Bool if !fortran => Type::i64(),
+            _ => Type::pointer(),
+        })
+        .collect()
+}
+
+/// Prepare the call interface, or `None` for a return type [`call_external`]
+/// refuses — it reports that per call, as before.
+fn prepare_cif(sig: &crate::sig::ExtCallSig) -> Option<PreparedCif> {
+    use crate::sig::SigTy;
+    use libffi::middle::{Cif, Type};
+    let (ret_type, ret_size) = match &sig.ret {
+        None => (Type::void(), 8),
+        Some(SigTy::Real) => (Type::f64(), 8),
+        Some(SigTy::Int) | Some(SigTy::Bool) => (Type::i32(), 8),
+        Some(SigTy::Str) | Some(SigTy::Ptr) => (Type::pointer(), 8),
+        // A member-less struct is no C type `ffi_prep_cif` accepts.
+        Some(SigTy::Record { fields, .. }) if !fields.is_empty() => {
+            (c_record_ffi_type(fields), c_record_layout(fields).size as usize)
+        }
+        Some(_) => return None,
+    };
+    Some(PreparedCif { cif: Cif::new(ffi_arg_types(sig), ret_type), ret_size })
+}
+
+/// Bind `ext.<sig.name>` to native `addr` through the libffi trampoline. Shared
+/// with the `-d=gen` function JIT, whose externals resolve the same way.
+pub fn define_native_external(
+    linker: &mut wasmtime::Linker<WasiCtx>,
+    sig: &crate::sig::ExtCallSig,
+    functype: wasmtime::FuncType,
+    addr: usize,
+    memory: wasmtime::Memory,
+    rt: &crate::dylink_engine::ExtRt,
+) -> Result<()> {
+    let name = sig.name.clone();
+    let sig = sig.clone();
+    let rt = rt.clone();
+    let prepared = prepare_cif(&sig);
+    wt(linker.func_new("ext", &name, functype, move |mut caller, args, rets| {
+        // Safety: `addr` resolves `sig.name`; the `Cif` matches the validated sig.
+        unsafe { call_external(addr, &sig, prepared.as_ref(), &mut caller, memory, &rt, args, rets) }
+            .map_err(|e| wasmtime::Error::msg(format!("{e}")))
+    }))?;
     Ok(())
 }
 
@@ -408,52 +649,19 @@ fn define_print_import(linker: &mut wasmtime::Linker<WasiCtx>, memory: wasmtime:
 /// nonlinear solver recovers from leaves no message behind.
 const EXT_CHECKPOINT: arcstr::ArcStr = arcstr::literal!("wasm-jit external \"C\"");
 
-/// The runtime's recoverable-model-error state, reached from the host so an
-/// external "C" `ModelicaError` inside a residual backs the trial off.
-#[derive(Clone)]
-struct NlsHooks {
-    recovering: wasmtime::TypedFunc<(), i32>,
-    note: wasmtime::TypedFunc<(), ()>,
-}
-
-impl NlsHooks {
-    fn recovering(&self, caller: &mut wasmtime::Caller<'_, WasiCtx>) -> Result<bool> {
-        Ok(wt(self.recovering.call(&mut *caller, ()))? != 0)
-    }
-    fn note(&self, caller: &mut wasmtime::Caller<'_, WasiCtx>) -> Result<()> {
-        wt(self.note.call(&mut *caller, ()))
-    }
-}
-
-/// Zeroed results (an empty String for `char*`) after a recovered `ModelicaError`.
-/// The solver discards the residual they feed, but they must be valid handles.
-fn zero_results(
-    sig: &crate::sig::ExtCallSig,
-    caller: &mut wasmtime::Caller<'_, WasiCtx>,
-    rt_str_new: &wasmtime::TypedFunc<u32, u32>,
-    rets: &mut [wasmtime::Val],
-) -> Result<()> {
-    use crate::sig::SigTy;
-    for (slot, ty) in rets.iter_mut().zip(sig.wasm_results()) {
-        *slot = match ty {
-            SigTy::Real => wasmtime::Val::F64(0.0f64.to_bits()),
-            SigTy::Str => wasmtime::Val::I32(wt(rt_str_new.call(&mut *caller, 0))? as i32),
-            _ => wasmtime::Val::I32(0),
-        };
-    }
-    Ok(())
-}
-
 /// Call native external `addr` through libffi, marshalling by the C-call
 /// [`ExtCallSig`]. Input args (in `extArgs` order) come from the wasm parameters:
 /// scalars (Real→f64, Integer/Boolean→i64) by value; `Str` as a NUL-terminated
 /// `char*` copied from the wasm String; `Ptr` (external object) via the handle
 /// registry; `Array` as a native pointer into the runtime array's row-major data.
-/// Each `_Out_` pointer arg gets an 8-byte native scratch cell whose address is
-/// passed to C. The wasm results are the C return value (if any) then each output
-/// cell's written value, in order — scalars directly, external-object pointers via
-/// the registry, and `char*` outputs copied into a fresh in-wasm String
-/// (`rt_str_new`+`rt_str_data`). The whole call is bracketed by
+/// A record goes as a pointer to a native copy of C's `<record>_external` struct.
+/// Each `_Out_` pointer arg gets a native scratch cell — one C value wide, or the
+/// record's whole struct — whose address is passed to C. The wasm results are the
+/// C return value (if any) then each output cell's written value, in order —
+/// scalars directly, external-object pointers via the registry, `char*` outputs
+/// copied into a fresh in-wasm String (`rt_str_new`+`rt_str_data`) and a struct
+/// into a fresh record object. A `String[…]` output array is written back
+/// element by element (C's `unpack_string_array`). The whole call is bracketed by
 /// `sim_external_begin/end` so any `ModelicaAllocateString` uses our arena.
 ///
 /// A `FORTRAN 77` external takes every argument by reference and its arrays
@@ -461,18 +669,15 @@ fn zero_results(
 unsafe fn call_external(
     addr: usize,
     sig: &crate::sig::ExtCallSig,
+    prepared: Option<&PreparedCif>,
     caller: &mut wasmtime::Caller<'_, WasiCtx>,
     memory: wasmtime::Memory,
-    rt_str_new: &wasmtime::TypedFunc<u32, u32>,
-    rt_str_data: &wasmtime::TypedFunc<u32, u32>,
-    nls: &NlsHooks,
+    rt: &crate::dylink_engine::ExtRt,
     args: &[wasmtime::Val],
     rets: &mut [wasmtime::Val],
 ) -> Result<()> {
     use crate::sig::SigTy;
     use core::ffi::c_void;
-    use libffi::middle::{Cif, Type};
-    use wasmtime::Val;
 
     // Raw libffi call, declared `C-unwind` so a Rust panic raised by the
     // ModelicaError interception (`omrs_runtime_abort`) can unwind back through
@@ -487,20 +692,22 @@ unsafe fn call_external(
         );
     }
 
-    enum Slot {
-        I(i64),
-        F(f64),
-        P(*mut c_void),
-    }
     let fortran = sig.lang == crate::sig::ExtLang::Fortran77;
-    let mut slots: Vec<Slot> = Vec::with_capacity(sig.args.len());
+    // Reused across calls (put back below): one heap allocation each otherwise.
+    let mut slots: Vec<Slot> = SLOT_SCRATCH.with(|c| c.take());
+    let mut avalue: Vec<*mut c_void> = AVALUE_SCRATCH.with(|c| c.take());
+    slots.clear();
+    avalue.clear();
     let mut cstrings: Vec<std::ffi::CString> = Vec::new();
-    let mut types: Vec<Type> = Vec::with_capacity(sig.args.len());
-    // One 8-byte native cell per `_Out_` pointer arg (fits int/double/pointer),
-    // in output order; the C call writes through the pointer we pass.
-    let mut out_cells: Vec<(SigTy, Box<[u8; 8]>)> = Vec::new();
-    // Fortran by-reference input cells, kept alive for the call.
-    let mut in_cells: Vec<Box<[u8; 8]>> = Vec::new();
+    // `const char**` argument vectors, kept alive alongside the strings they point at.
+    let mut str_arrays: Vec<Vec<*const std::os::raw::c_char>> = Vec::new();
+    // Output `String[…]`: (index into `str_arrays`, wasm element-area offset).
+    let mut str_out_arrays: Vec<(usize, usize)> = Vec::new();
+    // One native cell per `_Out_` pointer arg, in output order; the C call writes
+    // through the pointer we pass.
+    let mut out_cells: Vec<(SigTy, Cell)> = Vec::new();
+    // Input cells kept alive for the call: record structs, Fortran scalars.
+    let mut in_cells: Vec<Cell> = Vec::new();
     // (buffer, wasm element-area offset, dims, element size, is output).
     let mut f77_arrays: Vec<(Vec<u8>, usize, Vec<usize>, usize, bool)> = Vec::new();
     let mut in_i = 0usize;
@@ -513,9 +720,12 @@ unsafe fn call_external(
             // pre-allocated on the wasm side and passed by pointer (filled in place,
             // like an input array — handled by the `Array` arm below).
             if *is_out && !matches!(ty, SigTy::Array { .. }) {
-                let mut cell: Box<[u8; 8]> = Box::new([0u8; 8]);
-                slots.push(Slot::P(cell.as_mut_ptr() as *mut c_void));
-                types.push(Type::pointer());
+                let mut cell = match ty {
+                    SigTy::Real | SigTy::Int | SigTy::Bool | SigTy::Str | SigTy::Ptr => Cell::new(8),
+                    SigTy::Record { fields, .. } => Cell::new(c_record_layout(fields).size as usize),
+                    _ => return Err("CodegenWasmJit: external \"C\" : output argument type not marshalled"),
+                };
+                slots.push(Slot::P(cell.ptr()));
                 out_cells.push((ty.clone(), cell));
                 continue;
             }
@@ -523,26 +733,23 @@ unsafe fn call_external(
             in_i += 1;
             // Fortran passes scalars by reference; give each one a native cell.
             if fortran && matches!(ty, SigTy::Real | SigTy::Int | SigTy::Bool) {
-                let mut cell: Box<[u8; 8]> = Box::new([0u8; 8]);
+                let mut cell = Cell::new(8);
                 match ty {
-                    SigTy::Real => cell[..8].copy_from_slice(&v.unwrap_f64().to_le_bytes()),
-                    _ => cell[..4].copy_from_slice(&v.unwrap_i32().to_le_bytes()),
+                    SigTy::Real => cell.bytes_mut()[..8].copy_from_slice(&v.unwrap_f64().to_le_bytes()),
+                    _ => cell.bytes_mut()[..4].copy_from_slice(&v.unwrap_i32().to_le_bytes()),
                 }
-                slots.push(Slot::P(cell.as_mut_ptr() as *mut c_void));
-                types.push(Type::pointer());
+                slots.push(Slot::P(cell.ptr()));
                 in_cells.push(cell);
                 continue;
             }
             match ty {
                 SigTy::Real => {
                     slots.push(Slot::F(v.unwrap_f64()));
-                    types.push(Type::f64());
                 }
                 // Marshalled 64-bit: on SysV x86-64 every integer/pointer arg fills
                 // a full 64-bit slot, correct for `int`/`long`/`size_t` alike.
                 SigTy::Int | SigTy::Bool => {
                     slots.push(Slot::I(v.unwrap_i32() as i64));
-                    types.push(Type::i64());
                 }
                 SigTy::Str => {
                     let off = v.unwrap_i32() as usize;
@@ -551,11 +758,9 @@ unsafe fn call_external(
                         .map_err(|_| "external \"C\" : string argument has an interior NUL")?;
                     slots.push(Slot::P(cs.as_ptr() as *mut c_void));
                     cstrings.push(cs);
-                    types.push(Type::pointer());
                 }
                 SigTy::Ptr => {
                     slots.push(Slot::P(registry_get(v.unwrap_i32()) as *mut c_void));
-                    types.push(Type::pointer());
                 }
                 // Array: a native pointer to the runtime array's contiguous
                 // row-major data (`align8(16 + ndims*4)` past the header). The C
@@ -566,6 +771,37 @@ unsafe fn call_external(
                     let (dims, data_off) = crate::host::array_abi::dims_and_data(mem, off)
                         .ok_or("external \"C\" : malformed array argument")?;
                     let base = off + data_off;
+                    // Only scalar elements are already a native array. A `String[:]`
+                    // is in-wasm handles, not the `const char**` C declares, so it
+                    // is rebuilt (C's `data_of_string_c89_array`); anything else has
+                    // no C form at all.
+                    if let SigTy::Str = &**elem {
+                        let n = dims.iter().product::<usize>();
+                        let mut ptrs: Vec<*const std::os::raw::c_char> = Vec::with_capacity(n);
+                        for k in 0..n {
+                            let h = u32::from_le_bytes(mem[base + k * 4..base + k * 4 + 4].try_into().unwrap()) as usize;
+                            // Never filled (a fresh output array): C sees "".
+                            let bytes: &[u8] = if h == 0 {
+                                &[]
+                            } else {
+                                let len = u32::from_le_bytes(mem[h + 4..h + 8].try_into().unwrap()) as usize;
+                                &mem[h + 8..h + 8 + len]
+                            };
+                            let cs = std::ffi::CString::new(bytes)
+                                .map_err(|_| "external \"C\" : string argument has an interior NUL")?;
+                            ptrs.push(cs.as_ptr());
+                            cstrings.push(cs);
+                        }
+                        slots.push(Slot::P(ptrs.as_mut_ptr() as *mut c_void));
+                        if *is_out {
+                            str_out_arrays.push((str_arrays.len(), base));
+                        }
+                        str_arrays.push(ptrs);
+                        continue;
+                    }
+                    if !matches!(&**elem, SigTy::Real | SigTy::Int | SigTy::Bool) {
+                        return Err("CodegenWasmJit: external \"C\" : array element type not marshalled");
+                    }
                     if fortran && dims.len() > 1 {
                         let esz = crate::host::array_abi::elem_size(elem);
                         let n = dims.iter().product::<usize>() * esz;
@@ -576,33 +812,32 @@ unsafe fn call_external(
                     } else {
                         slots.push(Slot::P((mem.as_ptr() as usize + base) as *mut c_void));
                     }
-                    types.push(Type::pointer());
+                }
+                // By pointer, as C's `_copy_to_external` builds it.
+                SigTy::Record { fields, .. } => {
+                    let mut cell = Cell::new(c_record_layout(fields).size as usize);
+                    record_to_native(mem, fields, v.unwrap_i32() as usize, cell.bytes_mut(), &mut cstrings)?;
+                    slots.push(Slot::P(cell.ptr()));
+                    in_cells.push(cell);
                 }
                 other => return Err("CodegenWasmJit: external \"C\" : input argument type not yet marshalled"),
             }
         }
     }
     // libffi `avalue`: a pointer to each slot's stored value.
-    let mut avalue: Vec<*mut c_void> = slots
-        .iter_mut()
-        .map(|s| match s {
-            Slot::I(x) => x as *mut i64 as *mut c_void,
-            Slot::F(x) => x as *mut f64 as *mut c_void,
-            Slot::P(x) => x as *mut *mut c_void as *mut c_void,
-        })
-        .collect();
-    let ret_type = match &sig.ret {
-        None => Type::void(),
-        Some(SigTy::Real) => Type::f64(),
-        Some(SigTy::Int) | Some(SigTy::Bool) => Type::i32(),
-        Some(SigTy::Str) | Some(SigTy::Ptr) => Type::pointer(),
-        Some(other) => return Err("CodegenWasmJit: external \"C\" : return type not yet marshalled"),
+    avalue.extend(slots.iter_mut().map(|s| match s {
+        Slot::I(x) => x as *mut i64 as *mut c_void,
+        Slot::F(x) => x as *mut f64 as *mut c_void,
+        Slot::P(x) => x as *mut *mut c_void as *mut c_void,
+    }));
+    // Prepared when the import was bound; `None` is a return type not marshalled.
+    let Some(prepared) = prepared else {
+        return Err("CodegenWasmJit: external \"C\" : return type not yet marshalled");
     };
-    let cif = Cif::new(types, ret_type);
-    let mut rvalue = [0u8; 8];
-    let cif_ptr = cif.as_raw_ptr() as *mut c_void;
+    let mut rvalue = Cell::new(prepared.ret_size);
+    let cif_ptr = prepared.cif.as_raw_ptr() as *mut c_void;
     let target = unsafe { std::mem::transmute::<usize, unsafe extern "C-unwind" fn()>(addr) };
-    let rvalue_ptr = rvalue.as_mut_ptr() as *mut c_void;
+    let rvalue_ptr = rvalue.ptr();
     let avalue_ptr = avalue.as_mut_ptr();
     // Any `ModelicaAllocateString` the callee makes for a string result must come
     // from our arena (never the C runtime); freed by `sim_external_end` once the
@@ -612,18 +847,28 @@ unsafe fn call_external(
     let ok = openmodelica_error::ErrorExt::catch_runtime_error(|| unsafe {
         ffi_call(cif_ptr, Some(target), rvalue_ptr, avalue_ptr);
     });
-    drop(cstrings); // char* input copies stay alive across the call
     if ok.is_err() {
         openmodelica_modelica_utilities::sim_external_end();
         // A `ModelicaError` recorded its message in the Error buffer and unwound
         // here as a panic. C's `throwStreamPrint` is caught by a nonlinear solver,
         // so back the trial off first, dropping the message it will not fail on.
-        if nls.recovering(caller)? {
+        if let Some(nls) = &rt.nls
+            && wt(nls.recovering(caller))?
+        {
             openmodelica_error::ErrorExt::rollBack(EXT_CHECKPOINT);
-            nls.note(caller)?;
-            return zero_results(sig, caller, rt_str_new, rets);
+            wt(nls.note(caller))?;
+            return wt(zero_results(sig, caller, &rt.str_new, rets));
         }
-        openmodelica_error::ErrorExt::delCheckpoint(EXT_CHECKPOINT);
+        let msg = openmodelica_error::ErrorExt::take_last_runtime_error();
+        // A run reports itself through its log alone, as C's separate executable
+        // does. The `-d=gen` function JIT (no solver, hence no `nls`) has no log:
+        // there the buffer is how the error reaches `getErrorString`.
+        if rt.nls.is_some() {
+            openmodelica_error::ErrorExt::rollBack(EXT_CHECKPOINT);
+            sim_driver::note_runtime_error(&msg.unwrap_or_else(|| format!("external \"C\" `{}` failed", sig.name)));
+        } else {
+            openmodelica_error::ErrorExt::delCheckpoint(EXT_CHECKPOINT);
+        }
         return Err("CodegenWasmJit: external \"C\" raised a runtime error");
     }
     openmodelica_error::ErrorExt::delCheckpoint(EXT_CHECKPOINT);
@@ -638,37 +883,213 @@ unsafe fn call_external(
         }
     }
 
-    // Build an in-wasm String from a native `char*` (NUL-terminated), returning its
-    // offset. Re-enters the runtime (`rt_str_new` may grow memory, so `data_mut` is
-    // re-fetched after).
-    let mut make_string = |cptr: *const std::os::raw::c_char| -> Result<u32> {
-        let bytes: &[u8] = if cptr.is_null() { &[] } else { unsafe { std::ffi::CStr::from_ptr(cptr) }.to_bytes() };
-        let soff = wt(rt_str_new.call(&mut *caller, bytes.len() as u32))?;
-        let doff = wt(rt_str_data.call(&mut *caller, soff))? as usize;
-        memory.data_mut(&mut *caller)[doff..doff + bytes.len()].copy_from_slice(bytes);
-        Ok(soff)
-    };
-    let result_val = |ty: &SigTy, raw: [u8; 8], make: &mut dyn FnMut(*const std::os::raw::c_char) -> Result<u32>| -> Result<Val> {
-        Ok(match ty {
-            SigTy::Real => Val::F64(f64::from_le_bytes(raw).to_bits()),
-            SigTy::Int | SigTy::Bool => Val::I32(i32::from_le_bytes(raw[..4].try_into().unwrap())),
-            SigTy::Ptr => Val::I32(registry_put(usize::from_le_bytes(raw))),
-            SigTy::Str => Val::I32(make(usize::from_le_bytes(raw) as *const std::os::raw::c_char)? as i32),
-            other => return Err("external \"C\": result type not marshalled"),
-        })
-    };
+    // C's `unpack_string_array`. An element the callee did not write still points
+    // at our own input copy, so `cstrings` outlives this.
+    for (k, base) in &str_out_arrays {
+        for (i, cptr) in str_arrays[*k].iter().enumerate() {
+            let bytes: &[u8] =
+                if cptr.is_null() { &[] } else { unsafe { std::ffi::CStr::from_ptr(*cptr) }.to_bytes() };
+            let soff = wt(rt.str_new.call(&mut *caller, bytes.len() as u32))?;
+            let doff = wt(rt.str_data.call(&mut *caller, soff))? as usize;
+            let slot = base + i * 4;
+            let old = {
+                let mem = memory.data_mut(&mut *caller);
+                mem[doff..doff + bytes.len()].copy_from_slice(bytes);
+                let old = u32::from_le_bytes(mem[slot..slot + 4].try_into().unwrap());
+                mem[slot..slot + 4].copy_from_slice(&soff.to_le_bytes());
+                old
+            };
+            if old != 0 {
+                wt(rt.release.call(&mut *caller, old))?;
+            }
+        }
+    }
 
     let mut ri = 0usize;
     if let Some(ret_ty) = &sig.ret {
-        rets[ri] = result_val(ret_ty, rvalue, &mut make_string)?;
+        rets[ri] = ext_result(ret_ty, rvalue.bytes(), caller, memory, rt)?;
         ri += 1;
     }
     for (ty, cell) in &out_cells {
-        rets[ri] = result_val(ty, **cell, &mut make_string)?;
+        rets[ri] = ext_result(ty, cell.bytes(), caller, memory, rt)?;
         ri += 1;
     }
+    // A `char*` an output still points at is one the callee never wrote.
+    drop(cstrings);
     openmodelica_modelica_utilities::sim_external_end();
+    // Hand the buffers back for the next call, emptied so no stale pointer is kept.
+    slots.clear();
+    avalue.clear();
+    SLOT_SCRATCH.with(|c| c.set(slots));
+    AVALUE_SCRATCH.with(|c| c.set(avalue));
     Ok(())
+}
+
+/// An 8-aligned native scratch cell: one C value, or one record's C struct.
+struct Cell(Vec<u64>);
+
+impl Cell {
+    fn new(size: usize) -> Self {
+        Cell(vec![0; size.div_ceil(8).max(1)])
+    }
+    fn ptr(&mut self) -> *mut core::ffi::c_void {
+        self.0.as_mut_ptr().cast()
+    }
+    fn bytes(&self) -> &[u8] {
+        // Safety: an initialized `Vec<u64>` is `len * 8` initialized bytes.
+        unsafe { std::slice::from_raw_parts(self.0.as_ptr().cast(), self.0.len() * 8) }
+    }
+    fn bytes_mut(&mut self) -> &mut [u8] {
+        // Safety: as `bytes`; `u64` has no invalid bit pattern.
+        unsafe { std::slice::from_raw_parts_mut(self.0.as_mut_ptr().cast(), self.0.len() * 8) }
+    }
+}
+
+/// The record's `<record>_external` in the host ABI.
+fn c_record_layout(fields: &[(arcstr::ArcStr, crate::sig::SigTy)]) -> crate::sig::CRecordLayout {
+    crate::sig::c_record_layout(fields, size_of::<usize>() as u32)
+}
+
+/// The same struct as a libffi type, for a by-value return.
+fn c_record_ffi_type(fields: &[(arcstr::ArcStr, crate::sig::SigTy)]) -> libffi::middle::Type {
+    use crate::sig::SigTy;
+    use libffi::middle::Type;
+    Type::structure(fields.iter().map(|(_, t)| match t {
+        SigTy::Real => Type::f64(),
+        SigTy::Int | SigTy::Bool => Type::i32(),
+        SigTy::Record { fields, .. } => c_record_ffi_type(fields),
+        _ => Type::pointer(),
+    }))
+}
+
+/// Write the record object at `handle` into the C struct `dst`, as C's
+/// `_copy_to_external` does. A String member becomes a NUL-terminated copy kept in
+/// `cstrings`; an array member passes its elements, so the callee writes the
+/// model's own array in place.
+fn record_to_native(
+    mem: &[u8],
+    fields: &[(arcstr::ArcStr, crate::sig::SigTy)],
+    handle: usize,
+    dst: &mut [u8],
+    cstrings: &mut Vec<std::ffi::CString>,
+) -> Result<()> {
+    use crate::sig::SigTy;
+    let layout = crate::sig::record_layout(fields);
+    let c = c_record_layout(fields);
+    let word = |at: usize| u32::from_le_bytes(mem[at..at + 4].try_into().unwrap()) as usize;
+    let ptr = |dst: &mut [u8], at: usize, p: usize| dst[at..at + size_of::<usize>()].copy_from_slice(&p.to_le_bytes());
+    for (i, (_, ty)) in fields.iter().enumerate() {
+        let src = handle + (layout.data_off + layout.field_off[i]) as usize;
+        let at = c.offsets[i] as usize;
+        match ty {
+            SigTy::Real => dst[at..at + 8].copy_from_slice(&mem[src..src + 8]),
+            SigTy::Int | SigTy::Bool => dst[at..at + 4].copy_from_slice(&mem[src..src + 4]),
+            SigTy::Ptr => ptr(dst, at, registry_get(word(src) as i32)),
+            SigTy::Str => {
+                let h = word(src);
+                // Never filled (a fresh record): C sees "".
+                let bytes: &[u8] = if h == 0 { &[] } else { &mem[h + 8..h + 8 + word(h + 4)] };
+                let cs = std::ffi::CString::new(bytes)
+                    .map_err(|_| "external \"C\" : string argument has an interior NUL")?;
+                ptr(dst, at, cs.as_ptr() as usize);
+                cstrings.push(cs);
+            }
+            SigTy::Array { .. } => {
+                let h = word(src);
+                let (_, data_off) = crate::host::array_abi::dims_and_data(mem, h)
+                    .ok_or("external \"C\" : malformed array field")?;
+                ptr(dst, at, mem.as_ptr() as usize + h + data_off);
+            }
+            SigTy::Record { fields: inner, .. } => {
+                let end = at + c_record_layout(inner).size as usize;
+                record_to_native(mem, inner, word(src), &mut dst[at..end], cstrings)?;
+            }
+            other => return Err("CodegenWasmJit: external \"C\" : record field type not marshalled"),
+        }
+    }
+    Ok(())
+}
+
+/// The inverse (C's `_copy_from_external`): a fresh record object holding what the
+/// callee wrote into `src`. An array member has no inverse — this record is a new
+/// one, and the callee wrote the model's array in place — as in C, which asserts.
+fn record_from_native(
+    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    memory: wasmtime::Memory,
+    rt: &crate::dylink_engine::ExtRt,
+    fields: &[(arcstr::ArcStr, crate::sig::SigTy)],
+    src: &[u8],
+) -> Result<u32> {
+    use crate::sig::SigTy;
+    let layout = crate::sig::record_layout(fields);
+    let c = c_record_layout(fields);
+    let handle = wt(rt.record_new.call(&mut *caller, (layout.heap.len() as u32, layout.size)))?;
+    // The inline table the runtime releases the record's heap fields by.
+    for (k, (kind, off)) in layout.heap.iter().enumerate() {
+        let at = handle as usize + 8 + k * 8;
+        let mem = memory.data_mut(&mut *caller);
+        mem[at..at + 4].copy_from_slice(&kind.to_le_bytes());
+        mem[at + 4..at + 8].copy_from_slice(&off.to_le_bytes());
+    }
+    let word = |src: &[u8], at: usize| usize::from_le_bytes(src[at..at + size_of::<usize>()].try_into().unwrap());
+    for (i, (_, ty)) in fields.iter().enumerate() {
+        let at = c.offsets[i] as usize;
+        let dst = (handle + layout.data_off + layout.field_off[i]) as usize;
+        // Taken before the store: a String/record member re-enters the runtime,
+        // which may grow the memory `data_mut` hands out.
+        let value: [u8; 4] = match ty {
+            SigTy::Real => {
+                memory.data_mut(&mut *caller)[dst..dst + 8].copy_from_slice(&src[at..at + 8]);
+                continue;
+            }
+            SigTy::Int | SigTy::Bool => src[at..at + 4].try_into().unwrap(),
+            SigTy::Ptr => registry_put(word(src, at)).to_le_bytes(),
+            SigTy::Str => wasm_string(caller, memory, rt, word(src, at) as *const std::os::raw::c_char)?.to_le_bytes(),
+            SigTy::Record { fields: inner, .. } => {
+                record_from_native(caller, memory, rt, inner, &src[at..])?.to_le_bytes()
+            }
+            other => return Err("CodegenWasmJit: external \"C\" : record field type not marshalled"),
+        };
+        memory.data_mut(&mut *caller)[dst..dst + 4].copy_from_slice(&value);
+    }
+    Ok(handle)
+}
+
+/// Build an in-wasm String from a native `char*` (NUL-terminated), returning its
+/// offset. Re-enters the runtime (`rt_str_new` may grow memory, so `data_mut` is
+/// re-fetched after).
+fn wasm_string(
+    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    memory: wasmtime::Memory,
+    rt: &crate::dylink_engine::ExtRt,
+    cptr: *const std::os::raw::c_char,
+) -> Result<u32> {
+    let bytes: &[u8] = if cptr.is_null() { &[] } else { unsafe { std::ffi::CStr::from_ptr(cptr) }.to_bytes() };
+    let soff = wt(rt.str_new.call(&mut *caller, bytes.len() as u32))?;
+    let doff = wt(rt.str_data.call(&mut *caller, soff))? as usize;
+    memory.data_mut(&mut *caller)[doff..doff + bytes.len()].copy_from_slice(bytes);
+    Ok(soff)
+}
+
+/// One C result — the return value or an `_Out_` cell — as its wasm value.
+fn ext_result(
+    ty: &crate::sig::SigTy,
+    cell: &[u8],
+    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    memory: wasmtime::Memory,
+    rt: &crate::dylink_engine::ExtRt,
+) -> Result<wasmtime::Val> {
+    use crate::sig::SigTy;
+    use wasmtime::Val;
+    let word = || usize::from_le_bytes(cell[..8].try_into().unwrap());
+    Ok(match ty {
+        SigTy::Real => Val::F64(f64::from_le_bytes(cell[..8].try_into().unwrap()).to_bits()),
+        SigTy::Int | SigTy::Bool => Val::I32(i32::from_le_bytes(cell[..4].try_into().unwrap())),
+        SigTy::Ptr => Val::I32(registry_put(word())),
+        SigTy::Str => Val::I32(wasm_string(caller, memory, rt, word() as *const std::os::raw::c_char)? as i32),
+        SigTy::Record { fields, .. } => Val::I32(record_from_native(caller, memory, rt, fields, cell)? as i32),
+        other => return Err("external \"C\": result type not marshalled"),
+    })
 }
 
 
@@ -703,6 +1124,31 @@ pub fn run(model: &SimModel, meta: &SimMeta) -> std::result::Result<sim_driver::
         );
     }
     Ok(result)
+}
+
+/// The runtime's `LOG_STATS_V` per-system table, decoded out of linear memory.
+/// Empty when the runtime never armed it (`rt_stats_start`).
+fn read_sys_stats(
+    store: &mut Store,
+    rt_inst: &wasmtime::Instance,
+    memory: &wasmtime::Memory,
+) -> Vec<openmodelica_sim_meta::sysstat::SysStat> {
+    let (Ok(ptr), Ok(len)) = (
+        rt_inst.get_typed_func::<(), u32>(&mut *store, "rt_sys_stats_ptr"),
+        rt_inst.get_typed_func::<(), u32>(&mut *store, "rt_sys_stats_len"),
+    ) else {
+        return Vec::new();
+    };
+    let (Ok(n), Ok(addr)) = (len.call(&mut *store, ()), ptr.call(&mut *store, ())) else {
+        return Vec::new();
+    };
+    let mut bytes = vec![0u8; n as usize * 8];
+    if memory.read(&*store, addr as usize, &mut bytes).is_err() {
+        return Vec::new();
+    }
+    let words: Vec<f64> =
+        bytes.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect();
+    openmodelica_sim_meta::sysstat::decode(&words)
 }
 
 /// One-shot in-wasm run (used by [`run`] under `OMC_WASM_INWASM_DRIVER`): start,
@@ -790,7 +1236,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
 
     // Phase 2: instantiate (sharing the runtime's linear memory).
     let t_inst = Instant::now();
-    let mut store = wasmtime::Store::new(engine, WasiCtx::new(".", Vec::new()));
+    let mut store = wasmtime::Store::new(engine, WasiCtx::new("/", Vec::new()));
     if let secs @ 1.. = alarm_secs() {
         ALARM_FIRED.with(|f| f.set(false));
         store.set_epoch_deadline(secs as u64);
@@ -820,14 +1266,24 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     let ext_rt = crate::dylink_engine::ExtRt {
         str_new: rt_str_new,
         str_data: rt_str_data,
+        release: wts(rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_release"))?,
         alloc: wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?,
         free: wts(rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free"))?,
         record_new: wts(rt_inst.get_typed_func::<(u32, u32), u32>(&mut store, "rt_record_new"))?,
+        nls: Some(nls),
     };
     let ext_libs = crate::dylink_engine::load_ext_libraries(&mut store, engine, rt_inst, memory, model, &ext_rt)?;
-    define_external_imports(&mut linker, &mut store, model, memory, &ext_rt, &ext_libs, nls)?;
+    crate::host::set_shadow_stack(ext_libs.shadow_stack());
+    wts(crate::host::set_model_error_tag(&mut store, None))?;
+    define_external_imports(&mut linker, &mut store, model, memory, &ext_rt, &ext_libs)?;
     define_print_import(&mut linker, memory)?;
+    crate::host::define_uri_import(&mut linker, memory, ext_rt.str_new.clone(), ext_rt.str_data.clone())?;
     let instance = wts(linker.instantiate(&mut store, &model_module))?;
+    // What a library's `ModelicaError` throws, now that the module defining the
+    // tag exists. Only a model with external "C" carries one.
+    if let Some(wasmtime::Extern::Tag(tag)) = instance.get_export(&mut store, "model_error") {
+        wts(crate::host::set_model_error_tag(&mut store, Some(tag)))?;
+    }
     let inst_time = t_inst.elapsed();
     let rt_alloc = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?;
     // `-nls`/`-nlsLS`/`-ls`/`-lss`: the host-driven runtime links no flag store of
@@ -845,10 +1301,41 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         });
         wts(set.call(&mut store, t))?;
     }
+    // `-lvMaxWarn`: the warnings it caps are printed in-wasm.
+    if let Ok(set) = rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_set_max_warn") {
+        let n = openmodelica_sim_meta::simflags::with_flags(|f| f.max_warn.unwrap_or(3));
+        wts(set.call(&mut store, n))?;
+    }
+    // `-ils` / `-homotopyOnFirstTry`: a local approach sweeps inside `rt_solve_nls`.
+    if let Ok(set) = rt_inst.get_typed_func::<(u32, u32), ()>(&mut store, "rt_set_homotopy") {
+        let h = openmodelica_sim_meta::simflags::with_flags(|f| {
+            openmodelica_sim_meta::simflags::homotopy_codes(f)
+        });
+        wts(set.call(&mut store, h))?;
+    }
+    // The arc-length solver's `-hom*` constants.
+    if let Ok(set) = rt_inst
+        .get_typed_func::<(f64, f64, f64, f64, f64, f64, f64, f64, f64, u32, u32, u32, u32, u32), ()>(
+            &mut store, "rt_set_homotopy_tuning",
+        )
+    {
+        let h = openmodelica_sim_meta::simflags::with_flags(openmodelica_sim_meta::simflags::hom_tuning);
+        wts(set.call(&mut store, (
+            h.adapt_bend, h.h_eps, h.tau_dec, h.tau_dec_pred, h.tau_inc, h.tau_inc_threshold,
+            h.tau_max, h.tau_min, h.tau_start, h.max_lambda_steps, h.max_newton_steps, h.max_tries,
+            h.orthogonal_backtrace as u32, h.neg_start_dir as u32,
+        )))?;
+    }
     // Same for `-lv`: the nonlinear solver logs from inside the module.
     let log_mask = openmodelica_sim_meta::simflags::with_flags(|f| f.log_mask);
     if let Ok(set) = rt_inst.get_typed_func::<(u32, u32), ()>(&mut store, "rt_set_log_streams") {
         wts(set.call(&mut store, (log_mask as u32, (log_mask >> 32) as u32)))?;
+    }
+    // The linear/nonlinear systems are solved in-wasm, so their `LOG_STATS_V`
+    // statistics are measured there; hand the module the host clock and arm them.
+    if let Ok(set) = rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_stats_start") {
+        let on = openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::STATS_V);
+        wts(set.call(&mut store, on as u32))?;
     }
     // `-lv=LOG_NLS` names the iteration variables, which only the metadata has. The
     // roster is per model, so it is cleared first and pushed only when the stream is
@@ -989,17 +1476,17 @@ impl sim_driver::SimEngine for WasmtimeEngine {
     fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()> {
         self.memory.write(&mut self.store, addr as usize, buf).map_err(|e| "CodegenWasmJit: mem write")
     }
-    fn call1(&mut self, name: &str, arg: u32) -> Result<()> {
+    fn call1_raw(&mut self, name: &str, arg: u32) -> Result<()> {
         let f = self.func(name)?;
         wt(f.call(&mut self.store, arg))
     }
-    fn call1_if_present(&mut self, name: &str, arg: u32) -> Result<()> {
+    fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> Result<()> {
         if self.instance.get_func(&mut self.store, name).is_none() {
             return Ok(());
         }
-        self.call1(name, arg)
+        self.call1_raw(name, arg)
     }
-    fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
+    fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
         let f = match self.funcs2.get(name) {
             Some(f) => f.clone(),
             None => {
@@ -1014,10 +1501,10 @@ impl sim_driver::SimEngine for WasmtimeEngine {
         let f = wt(self.instance.get_typed_func::<(u32, f64, f64, u32), u32>(&mut self.store, "simulate"))?;
         wt(f.call(&mut self.store, (sim_data, start, stop, n_steps)))
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
         crate::host::take_pending_warnings()
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
@@ -1028,6 +1515,10 @@ impl sim_driver::SimEngine for WasmtimeEngine {
             Ok(f) => f.call(&mut self.store, ()).unwrap_or(0),
             Err(_) => 0,
         }
+    }
+    fn sys_stats(&mut self) -> Vec<openmodelica_sim_meta::sysstat::SysStat> {
+        let out = read_sys_stats(&mut self.store, &self.rt_inst, &self.memory);
+        out
     }
     fn rt_stats(&mut self) -> [u64; sim_driver::RT_STATS] {
         let mut out = [0u64; sim_driver::RT_STATS];
@@ -1045,10 +1536,27 @@ impl sim_driver::SimEngine for WasmtimeEngine {
             .and_then(|f| f.call(&mut self.store, ()).ok())
             .unwrap_or(0)
     }
+    fn error_stage_addr(&mut self) -> u32 {
+        self.rt_inst
+            .get_typed_func::<(), u32>(&mut self.store, "rt_error_stage_addr")
+            .ok()
+            .and_then(|f| f.call(&mut self.store, ()).ok())
+            .unwrap_or(0)
+    }
+    fn no_throw_div_zero_addr(&mut self) -> u32 {
+        self.rt_inst
+            .get_typed_func::<(), u32>(&mut self.store, "rt_no_throw_div_zero_addr")
+            .ok()
+            .and_then(|f| f.call(&mut self.store, ()).ok())
+            .unwrap_or(0)
+    }
     fn clean_nls_history(&mut self, time: f64) {
         if let Ok(f) = self.rt_inst.get_typed_func::<f64, ()>(&mut self.store, "rt_nls_clean_history") {
             let _ = f.call(&mut self.store, time);
         }
+    }
+    fn set_rhs_final(&mut self, final_eval: bool) {
+        openmodelica_util::dynload::set_rhs_final_flag(final_eval);
     }
 }
 
@@ -1072,6 +1580,8 @@ pub struct InWasmSession {
     stat_f: wasmtime::TypedFunc<u32, u64>,
     lin_ptr: wasmtime::TypedFunc<(), u32>,
     lin_len: wasmtime::TypedFunc<(), u32>,
+    sys_ptr: wasmtime::TypedFunc<(), u32>,
+    sys_len: wasmtime::TypedFunc<(), u32>,
     free_f: wasmtime::TypedFunc<(), ()>,
 }
 
@@ -1134,6 +1644,8 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         stat_f: wts(rt_inst.get_typed_func::<u32, u64>(&mut store, "rt_sim_stat"))?,
         lin_ptr: gf(&mut store, "rt_sim_lin_ptr")?,
         lin_len: gf(&mut store, "rt_sim_lin_len")?,
+        sys_ptr: gf(&mut store, "rt_sys_stats_ptr")?,
+        sys_len: gf(&mut store, "rt_sys_stats_len")?,
         free_f: wts(rt_inst.get_typed_func::<(), ()>(&mut store, "rt_sim_free"))?,
         store,
         memory,
@@ -1161,22 +1673,22 @@ impl sim_driver::SimEngine for InWasmSession {
     fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()> {
         self.memory.write(&mut self.store, addr as usize, buf).map_err(|_| "CodegenWasmJit: mem write")
     }
-    fn call1(&mut self, _name: &str, _arg: u32) -> Result<()> {
+    fn call1_raw(&mut self, _name: &str, _arg: u32) -> Result<()> {
         Err("CodegenWasmJit: call1 on in-wasm session (unreachable)")
     }
-    fn call1_if_present(&mut self, _name: &str, _arg: u32) -> Result<()> {
+    fn call1_if_present_raw(&mut self, _name: &str, _arg: u32) -> Result<()> {
         Ok(())
     }
-    fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> Result<()> {
+    fn call2_raw(&mut self, _name: &str, _a: u32, _b: u32) -> Result<()> {
         Err("CodegenWasmJit: call2 on in-wasm session (unreachable)")
     }
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
         Err("CodegenWasmJit: call_simulate on in-wasm session (unreachable)")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
         crate::host::take_pending_warnings()
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
@@ -1213,6 +1725,9 @@ impl InWasmSession {
         let rows = read_vec(&mut self.store, &self.memory, &self.rows_ptr, &self.rows_len)?;
         let params = read_vec(&mut self.store, &self.memory, &self.params_ptr, &self.params_len)?;
         let mut stats = openmodelica_sim_meta::SolveStats::default();
+        stats.systems = openmodelica_sim_meta::sysstat::decode(&read_vec(
+            &mut self.store, &self.memory, &self.sys_ptr, &self.sys_len,
+        )?);
         let mut stat = |i: u32| wt(self.stat_f.call(&mut self.store, i));
         stats.steps = stat(0)?;
         stats.res_evals = stat(1)?;
@@ -1222,6 +1737,7 @@ impl InWasmSession {
         stats.state_events = stat(5)?;
         stats.time_events = stat(6)?;
         stats.lin_solves = stat(7)?;
+        openmodelica_sim_meta::rtclock::read_stat_slots(&mut stats, &mut stat)?;
         let lin = self.take_lin()?;
         Ok(sim_driver::RunResult { rows, n_reals, params, stats, lin })
     }

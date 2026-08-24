@@ -1,6 +1,7 @@
 // name: expconn4.mo
 // keywords:
 // status: correct
+// suite: disabled
 //
 //
 

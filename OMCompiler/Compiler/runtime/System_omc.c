@@ -338,12 +338,27 @@ extern void System_clearCancel()
   cancelRequested = 0;
   progressPermille = -1;
   progressPhase = 0;
+  progressMessage = NULL;
 }
 
+/* Clears the message: it belongs to the step that reported it, and letting it
+ * outlive that step would mislabel whatever comes next. Report it again after
+ * this call to keep it. */
 extern void System_reportProgress(int permille, int phase)
 {
   progressPermille = permille;
   progressPhase = phase;
+  progressMessage = NULL;
+}
+
+extern void System_reportProgressMessage(const char *message)
+{
+  progressMessage = (message && *message) ? omc_alloc_interface.malloc_strdup(message) : NULL;
+}
+
+extern const char* System_progressMessage()
+{
+  return progressMessage ? progressMessage : "";
 }
 
 extern int System_progressPermille()
@@ -628,6 +643,19 @@ extern int System_loadLibrary(const char *name, int relativePath, int printDebug
   int res = SystemImpl__loadLibrary(name, relativePath, printDebug);
   if (res == -1) MMC_THROW();
   return res;
+}
+
+extern int System_loadLibraryLazy(const char *name, int relativePath, int printDebug)
+{
+  int res = SystemImpl__loadLibraryLazy(name, relativePath, printDebug);
+  if (res == -1) MMC_THROW();
+  return res;
+}
+
+extern const char* System_getLoadLibraryError(void)
+{
+  const char *res = SystemImpl__getLoadLibraryError();
+  return strcpy(ModelicaAllocateString(strlen(res)), res);
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)

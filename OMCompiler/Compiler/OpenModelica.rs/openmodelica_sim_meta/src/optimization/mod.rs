@@ -36,19 +36,6 @@ pub const AVAILABLE: bool = cfg!(all(ipopt, feature = "std"));
 pub use run::run_optimizer;
 
 #[cfg(all(ipopt, feature = "std"))]
-pub(crate) use crate::extinput::ExtInputHook;
-
-/// The driver's type-erased entry point into `-csvInput`'s hook, so the residual can
-/// re-read the external input without this module's types reaching `driver`.
-#[cfg(all(ipopt, feature = "std"))]
-pub(crate) const EXT_INPUT_APPLY: unsafe fn(
-    *mut core::ffi::c_void,
-    &mut dyn crate::driver::SimEngine,
-    u32,
-    f64,
-) = ExtInputHook::apply_erased;
-
-#[cfg(all(ipopt, feature = "std"))]
 mod run {
     use alloc::format;
     use alloc::string::String;
@@ -287,6 +274,23 @@ mod run {
         };
         // C sets `noThrowDivZero` for the whole optimization: a division by zero at a
         // trial point must not abort the solve.
+        let div_flag = e.no_throw_div_zero_addr();
+        if div_flag != 0 {
+            driver::write_i32(e, div_flag, 1)?;
+        }
+        let res = run_solve(e, meta, sim_data, opt);
+        if div_flag != 0 {
+            driver::write_i32(e, div_flag, 0)?;
+        }
+        res
+    }
+
+    fn run_solve(
+        e: &mut (dyn SimEngine + 'static),
+        meta: &SimMeta,
+        sim_data: u32,
+        opt: OptInfo,
+    ) -> Result<Vec<f64>> {
         let mut data = setup::pick_up_model_data(e, meta, sim_data, opt)?;
         setup::initial_guess(&mut data)?;
         setup::allocate_der_struct(&mut data)?;
@@ -426,7 +430,7 @@ mod run {
                         if max_iter >= 0 {
                             nlp.int_option("max_iter", max_iter);
                         }
-                        driver::log_line(&format!(
+                        driver::log_line(omclog::STDOUT, omclog::INFO, &format!(
                             "\nmax_iter = {}",
                             v.parse::<i32>().unwrap_or(0)
                         ));
@@ -438,7 +442,7 @@ mod run {
                         if max_iter >= 0 {
                             nlp.int_option("max_iter", max_iter);
                         }
-                        driver::log_line(&format!(
+                        driver::log_line(omclog::STDOUT, omclog::INFO, &format!(
                             "\nmax_iter = (int) {} | (double) {}",
                             max_iter,
                             crate::driver::format_g(scaled, 6)
@@ -477,7 +481,7 @@ mod run {
         if max_iter >= 0 {
             data.iter_ = 0;
             data.index = 1;
-            driver::log_line(IPOPT_BANNER);
+            driver::log_line(omclog::STDOUT, omclog::INFO, IPOPT_BANNER);
             data.out = super::ipopt_out::Capture::begin();
             let mut vopt = core::mem::take(&mut data.ipop.vopt);
             let mut mult_g = core::mem::take(&mut data.ipop.mult_g);

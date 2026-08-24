@@ -22,27 +22,22 @@ regex = "1"
 roxmltree.workspace=true
 # FMU extraction in the hand-written FMIExt.rs.
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
-# Pure-Rust LAPACK fallback (Lapack_nalgebra.rs), used over the system-LAPACK
-# FFI when the `lapack-nalgebra` feature is on (also auto-selected on wasm and
-# Windows via the target block below). Optional so the normal native FFI build
-# does not compile it.
-nalgebra = { version = "0.33", default-features = false, features = ["std"], optional = true }
+# Resolves the `d*_` symbols `src/Lapack.rs` declares, on every target, in place
+# of a system `liblapack.so` — so wasm (nothing to link) and Windows (no MSVC-ABI
+# LAPACK) run the same code as Linux instead of a reduced fallback.
+openmodelica_lapack.workspace = true
 # Safe ZeroMQ bindings for the hand-written ZeroMQ.rs. Optional: the `zeromq`
 # feature (on by default) gates the interactive `--interactive=zmq` server.
 # Native-only: libzmq has no wasm target, so the dep is absent there and the
 # `zeromq` feature must not be enabled for wasm builds (ZeroMQ.rs then uses its
 # feature-off fallback that reports the interactive ZMQ mode unavailable).
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Threads for the oxiblas kernels under the SVD-backed routines; no wasm threads.
+# `Lapack::init_thread_limit` holds the count to what `-n` allows.
+openmodelica_lapack = { workspace = true, features = ["parallel"] }
 zmq = { workspace = true, optional = true }
 # System::launchParallelTasksThreaded; absent on wasm32 (no OS threads).
 rayon.workspace = true
-
-# Lapack_nalgebra.rs implements the LAPACK builtins over nalgebra's pure-Rust
-# decompositions (LU/SVD/QR/eigen). Used unconditionally where there is no
-# linkable system LAPACK: wasm (none) and Windows (no MSVC-ABI build); on other
-# targets the `lapack-nalgebra` feature opts in (the optional dep above).
-[target.'cfg(any(target_arch = "wasm32", target_os = "windows"))'.dependencies]
-nalgebra = { version = "0.33", default-features = false, features = ["std"] }
 
 [features]
 # `zeromq` is NOT a default feature: it pulls native libzmq (no wasm target),
@@ -54,10 +49,6 @@ default = []
 # ZeroMQ.initialize call reports failure and the interactive ZMQ mode is
 # unavailable, but the build needs neither the zmq crate nor libzmq.
 zeromq = ["dep:zmq"]
-# Use the pure-Rust nalgebra LAPACK fallback (Lapack_nalgebra.rs) instead of the
-# system-LAPACK FFI on a native non-Windows target — lets the fallback be tested
-# against the full testsuite on Linux. (wasm/Windows select it unconditionally.)
-lapack-nalgebra = ["dep:nalgebra"]
 
 [build-dependencies]
 # Compiles src/runtime_error_shim.c (va_list error interception shim).

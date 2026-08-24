@@ -28,6 +28,7 @@ ExtendsBasic.mos  \
 FrameTest.mos \
 IdealDiode.mos  \
 impureTest.mos \
+NegatedBooleanAlias.mos \
 NoLoadModel.mos \
 nonConstantIndex.mos \
 nonConstantParam.mos \
@@ -138,4 +139,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

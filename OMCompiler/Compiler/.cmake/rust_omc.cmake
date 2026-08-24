@@ -157,6 +157,14 @@ option(RUST_OMC_PREBUILT_GENERATED_SRC
   "Assume the mmtorust-generated *.rs are already present (e.g. unstashed from an earlier CI stage) and skip the transpile."
   OFF)
 
+# Each client is a separate cargo build resolving the workspace to a different
+# feature set than the cdylib, sharing one target directory: cargo cannot reuse
+# the fingerprints, so every compiler crate is rebuilt per client, every build.
+# The browser OMShell pages come from the wasm target and are not affected.
+option(RUST_OMC_OMSHELL_CLIENTS
+  "Build the desktop egui + dioxus/Blitz OMShell clients. Off by default: each is a separate cargo feature resolution and rebuilds every compiler crate."
+  OFF)
+
 # cargo target/ lives in the build tree, not the source crate tree.
 set(RUST_OMC_TARGET_DIR ${CMAKE_CURRENT_BINARY_DIR}/rust-target
     CACHE PATH "Directory for cargo's target/ output of the Rust omc build.")
@@ -315,12 +323,16 @@ ExternalProject_Add(rust_wasi_pic_sysroot
 option(RUST_OMC_ENABLE_SUNDIALS "Build SUNDIALS/KLU for wasm32-wasip1 (sparse solver in wasm-jit runtime)." ON)
 
 if(RUST_OMC_ENABLE_SUNDIALS)
-  set(_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0)
+  set(_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials)
   set(_suitesparse_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse)
 
   # SuiteSparse toolchain: base wasi toolchain + include dirs for KLU headers.
   # CMAKE_C_FLAGS_INIT is a STRING (not list) so no semicolon issues.
   set(_sundials_cflags "-O2 -I${_suitesparse_sources}/AMD/Include -I${_suitesparse_sources}/COLAMD/Include -I${_suitesparse_sources}/BTF/Include -I${_suitesparse_sources}/SuiteSparse_config")
+  # UMFPACK adds its own headers and `NBLAS`, its no-BLAS build, there being no
+  # BLAS for wasm. Passed as CMAKE_C_FLAGS, not through the toolchain's
+  # CMAKE_C_FLAGS_INIT, which an already-configured build directory ignores.
+  set(_suitesparse_cflags "${_sundials_cflags} -DNBLAS -I${_suitesparse_sources}/UMFPACK/Include")
   set(_sundials_toolchain ${CMAKE_CURRENT_BINARY_DIR}/sundials-wasi-toolchain.cmake)
   file(WRITE ${_sundials_toolchain}
     "set(CMAKE_SYSTEM_NAME WASI)\n"
@@ -342,16 +354,22 @@ if(RUST_OMC_ENABLE_SUNDIALS)
     LIST_SEPARATOR |
     CMAKE_ARGS
       -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
+      -DCMAKE_C_FLAGS=${_suitesparse_cflags}
       -DBUILD_SHARED_LIBS=OFF
-      -DSUITESPARSE_ENABLE_PROJECTS=suitesparse_config|amd|colamd|btf|klu
+      -DSUITESPARSE_ENABLE_PROJECTS=suitesparse_config|amd|colamd|btf|klu|umfpack
       -DSUITESPARSE_USE_FORTRAN=OFF
       -DSUITESPARSE_USE_OPENMP=OFF
       -DSUITESPARSE_USE_CUDA=OFF
       -DSUITESPARSE_DEMOS=OFF
       -DSUITESPARSE_USE_STRICT=OFF
       -DKLU_USE_CHOLMOD=OFF
+      -DUMFPACK_USE_CHOLMOD=OFF
+      # An empty BLAS_LIBRARIES takes SuiteSparseBLAS's "user supplied" path
+      # instead of find_package(BLAS); BLA_VENDOR only picks name-mangling defines.
+      -DBLAS_LIBRARIES=
+      -DBLA_VENDOR=Generic
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_suitesparse_ep_build} --parallel
-      --target KLU_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static
+      --target KLU_static UMFPACK_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static
     INSTALL_COMMAND ""
     BUILD_ALWAYS ON
     EXCLUDE_FROM_ALL ON)
@@ -366,12 +384,31 @@ if(RUST_OMC_ENABLE_SUNDIALS)
     BINARY_DIR ${_sundials_ep_build}
     CMAKE_ARGS
       -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
-      -DSUNDIALS_BUILD_STATIC_LIBS=ON
-      -DSUNDIALS_BUILD_SHARED_LIBS=OFF
-      -DSUNDIALS_LAPACK_ENABLE=OFF
-      -DSUNDIALS_EXAMPLES_ENABLE_C=OFF
-      -DSUNDIALS_KLU_ENABLE=ON
+      # Keep in sync with 3rdParty/CMakeLists.txt.
+      -DBUILD_STATIC_LIBS=ON
+      -DBUILD_SHARED_LIBS=OFF
+      -DSUNDIALS_ENABLE_LAPACK=OFF
+      -DSUNDIALS_ENABLE_C_EXAMPLES=OFF
+      -DSUNDIALS_ENABLE_CXX_EXAMPLES=OFF
+      -DSUNDIALS_ENABLE_EXAMPLES_INSTALL=OFF
+      -DSUNDIALS_ENABLE_BENCHMARKS=OFF
+      -DSUNDIALS_TEST_ENABLE_UNIT_TESTS=OFF
+      -DSUNDIALS_ENABLE_ERROR_CHECKS=OFF
+      -DSUNDIALS_ENABLE_FORTRAN=OFF
+      -DSUNDIALS_ENABLE_KLU=ON
+      # The KLU compatibility checks try_compile() against the archives below.
+      # The toolchain builds try_compile targets as static libraries, so nothing
+      # is actually linked and the check cannot tell us anything.
+      -DSUNDIALS_ENABLE_KLU_CHECKS=OFF
       -DSUNDIALS_INDEX_SIZE=32
+      # SundialsPOSIXTimers.cmake probes the timers by generating a *sub-project*
+      # and try_compile()ing an executable in it. That sub-project is handed the
+      # compiler and the flags but not CMAKE_TOOLCHAIN_FILE, so it never sees the
+      # sysroot or the wasm32-wasip1 target and always fails here. Answer the
+      # question up front instead - wasi-libc has clock_gettime/clock_getres and
+      # CLOCK_MONOTONIC - otherwise sundials_profiler.c stops the build with
+      # "#error SUNProfiler needs POSIX or Windows timers".
+      -DSUNDIALS_POSIX_TIMERS=TRUE
       -DKLU_INCLUDE_DIR=${_suitesparse_sources}/KLU/Include
       -DKLU_LIBRARY=${_suitesparse_ep_build}/KLU/libklu.a
       -DAMD_LIBRARY=${_suitesparse_ep_build}/AMD/libamd.a
@@ -380,6 +417,7 @@ if(RUST_OMC_ENABLE_SUNDIALS)
       -DSUITESPARSECONFIG_LIBRARY=${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_sundials_ep_build} --parallel
       --target
+      sundials_core_static
       sundials_kinsol_static sundials_idas_static sundials_cvode_static
       sundials_nvecserial_static sundials_sunmatrixdense_static
       sundials_sunmatrixsparse_static sundials_sunlinsoldense_static
@@ -394,10 +432,12 @@ if(RUST_OMC_ENABLE_SUNDIALS)
     COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_WASM_DIR}/lib
     COMMAND ${CMAKE_COMMAND} -E copy
       ${_suitesparse_ep_build}/KLU/libklu.a
+      ${_suitesparse_ep_build}/UMFPACK/libumfpack.a
       ${_suitesparse_ep_build}/AMD/libamd.a
       ${_suitesparse_ep_build}/COLAMD/libcolamd.a
       ${_suitesparse_ep_build}/BTF/libbtf.a
       ${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
+      ${_sundials_ep_build}/src/sundials/libsundials_core.a
       ${_sundials_ep_build}/src/kinsol/libsundials_kinsol.a
       ${_sundials_ep_build}/src/idas/libsundials_idas.a
       ${_sundials_ep_build}/src/cvode/libsundials_cvode.a
@@ -422,6 +462,9 @@ if(RUST_OMC_ENABLE_SUNDIALS)
         CACHE PATH "Directory the host SUNDIALS archives are collected into.")
     set(_native_sundials_libs
       sundials_cvode_static sundials_idas_static sundials_sunlinsolklu_static
+      sundials_sunlinsoldense_static sundials_sunmatrixsparse_static
+      sundials_sunmatrixdense_static sundials_nvecserial_static
+      sundials_core_static
       KLU_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static)
     set(_native_sundials_files "")
     foreach(_lib IN LISTS _native_sundials_libs)
@@ -558,7 +601,7 @@ if(EXISTS ${_wasi_libc_src}/CMakeLists.txt)
 endif()
 if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV
-       "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0"
+       "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials"
        "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse"
        # The PIC dylink side module compiles the sources again and needs the
        # `sundials_config.h` the wasm ExternalProject generates.
@@ -594,9 +637,15 @@ endif()
 # artifacts — not RUST_OMC_PROFILE. --workspace covers every crate's tests. The
 # test does not run codegen itself, so the omc targets must be built first (CTest
 # has no build dependency on them) — the standard build-then-ctest order.
+#
+# `openmodelica` is excluded: it is the thin omc launcher, which links against
+# libOpenModelicaCompiler.so of the *build's* profile. That library is only ever
+# produced in RUST_OMC_PROFILE, so building the package's test target in the dev
+# profile fails to link. It carries no tests of its own.
 # ---------------------------------------------------------------------------
 add_test(NAME rust_cargo_test
-  COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} test --target-dir ${RUST_TARGET_DIR} --workspace
+  COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} test --target-dir ${RUST_TARGET_DIR}
+          --workspace --exclude openmodelica
   WORKING_DIRECTORY ${RUST_OMC_DIR})
 
 # ---------------------------------------------------------------------------
@@ -709,8 +758,19 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
 # ---------------------------------------------------------------------------
 # Step 1+2: build mmtorust (release), transpile the Susan subset, build susan.
 # A stamp file marks completion; cargo itself handles incremental rebuilds, so
-# the command always runs but is a fast no-op when nothing changed.
+# the command is a fast no-op when only some of its inputs changed.
+#
+# The stamp has to name those inputs: a stamp rule with no DEPENDS is up to date
+# the moment the file exists, so the rule never runs a second time and every
+# later build compiles the templates with the `susan` of the first one.
 # ---------------------------------------------------------------------------
+file(GLOB_RECURSE SUSAN_TOOL_SOURCES CONFIGURE_DEPENDS ${RUST_OMC_DIR}/mmtorust/src/*.rs)
+list(APPEND SUSAN_TOOL_SOURCES
+     ${RUST_OMC_DIR}/mmtorust/Cargo.toml
+     ${RUST_OMC_DIR}/openmodelica_susan/Cargo.toml
+     ${RUST_OMC_DIR}/openmodelica_susan/src/main.rs)
+# The subset's *.mo: the rest of openmodelica_susan/src is transpiled from them.
+file(STRINGS ${RUST_SUSAN_SOURCES} SUSAN_SUBSET_MO REGEX "\\.mo$")
 set(SUSAN_STAMP ${CMAKE_CURRENT_BINARY_DIR}/rust_susan.stamp)
 add_custom_command(
   OUTPUT ${SUSAN_STAMP}
@@ -725,6 +785,7 @@ add_custom_command(
   COMMAND ${MMTORUST_BIN} --sources ${RUST_SUSAN_SOURCES}
   COMMAND ${CARGO_BUILD} --release -p openmodelica_susan --bin susan
   COMMAND ${CMAKE_COMMAND} -E touch ${SUSAN_STAMP}
+  DEPENDS ${SUSAN_TOOL_SOURCES} ${SUSAN_SUBSET_MO} ${RUST_SUSAN_SOURCES}
   COMMENT "Rust: building mmtorust + Susan template compiler (release)"
   VERBATIM)
 add_custom_target(rust_susan DEPENDS ${SUSAN_STAMP})
@@ -875,13 +936,12 @@ function(omc_rust_setup_codegen)
   if(RUST_OMC_SCRIPTING_API)
     list(APPEND _rust_omc_features scripting_api)
   endif()
-  # Force the pure-Rust nalgebra LAPACK fallback over the system-LAPACK FFI on a
-  # native build, to validate it against the testsuite. openmodelica_util is a
-  # direct dependency of the cdylib, so its feature can be enabled by the
-  # `<dep>/<feature>` form. (wasm and Windows select it unconditionally already.)
-  option(RUST_OMC_LAPACK_NALGEBRA "Build the native omc with the pure-Rust nalgebra LAPACK fallback instead of system LAPACK (for testsuite validation)." OFF)
-  if(RUST_OMC_LAPACK_NALGEBRA)
-    list(APPEND _rust_omc_features openmodelica_util/lapack-nalgebra)
+  # Run the wasm-jit simulations on wasmer rather than wasmtime: the web target's
+  # own host code (`sim_runtime_wasmer.rs`, the ModelicaExternalC side module),
+  # which is otherwise reachable only from a browser.
+  option(RUST_OMC_ENGINE_WASMER "Build the native omc with the wasmer wasm-jit host (the web target's) instead of wasmtime." OFF)
+  if(RUST_OMC_ENGINE_WASMER)
+    list(APPEND _rust_omc_features engine-wasmer)
   endif()
   # --no-default-features makes sundials off by default; enable it only when
   # the wasm cross-compile is enabled.
@@ -970,14 +1030,12 @@ function(omc_rust_setup_codegen)
             DESTINATION lib/wasm32-wasi/omc/lib/wasm32-wasip1 COMPONENT omc)
   endif()
 
-  # The native egui OMShell client (omshell_egui), built when the GUI clients are
-  # enabled (OM_ENABLE_GUI_CLIENTS, the same flag that drives OMEdit). It links the
-  # compiler in-process as an ordinary cargo dependency (omshell_omc ->
+  # The desktop egui OMShell client (omshell_egui). It links the compiler
+  # in-process as an ordinary cargo dependency (omshell_omc ->
   # openmodelica_backend_main), so building it compiles the compiler crates too;
   # hence the DEPENDS on rust_codegen (the generated sources must exist first).
-  # The browser build of OMShell is handled by the wasm target (also gated on
-  # OM_ENABLE_GUI_CLIENTS).
-  if(OM_ENABLE_GUI_CLIENTS)
+  # The browser build of OMShell is handled by the wasm target.
+  if(OM_ENABLE_GUI_CLIENTS AND RUST_OMC_OMSHELL_CLIENTS)
     # Serialised after rust_omc: concurrent cargo-xwin runs race on the shared clang-cl wrapper.
     add_custom_target(rust_omshell_egui ALL
       WORKING_DIRECTORY ${RUST_OMC_DIR}

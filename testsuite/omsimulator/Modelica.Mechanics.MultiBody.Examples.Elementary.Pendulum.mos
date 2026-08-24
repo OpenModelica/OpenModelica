@@ -12,15 +12,17 @@ readFile("Pendulum_systemCall.log");
 // true
 // ""
 // "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // "info: *** FMU Simulation Info ***
 //      - model     : Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum (co-simulation)
 //      - fmiVersion: 2.0
 //      - startTime : 0.000000
 //      - stopTime  : 5.000000
-//      - tolerance : 0.000001
-//      - stepSize  : 0.010000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.01
 // info:    Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum_res.mat (bufferSize=10)
 // info:    Parameter Pendulum.world.label1 will not be stored in the result file, because the signal type is not supported
 // info:    Parameter Pendulum.world.label2 will not be stored in the result file, because the signal type is not supported

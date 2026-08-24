@@ -18,6 +18,17 @@ pub type SunIndex = i32;
 pub type NVector = *mut c_void;
 pub type SunMatrix = *mut c_void;
 type SunLinearSolver = *mut c_void;
+type SunContext = *mut c_void;
+type SunLogger = *mut c_void;
+type SunErrHandlerFn = unsafe extern "C" fn(
+    c_int,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    c_int,
+    *mut c_void,
+    SunContext,
+);
 
 /// `int f(realtype t, N_Vector y, N_Vector ydot, void *user_data)`.
 pub type RhsFn = unsafe extern "C" fn(f64, NVector, NVector, *mut c_void) -> c_int;
@@ -27,34 +38,105 @@ pub type RootFn = unsafe extern "C" fn(f64, NVector, *mut f64, *mut c_void) -> c
 const CV_BDF: c_int = 2;
 const CV_NORMAL: c_int = 1;
 
+const SUN_SUCCESS: c_int = 0;
+const SUN_COMM_NULL: c_int = 0;
+
 const CV_SUCCESS: c_int = 0;
 const CV_TSTOP_RETURN: c_int = 1;
 const CV_ROOT_RETURN: c_int = 2;
+
+/// A fresh `SUNContext`, or null. One per solver: they carry the last error and
+/// the logger, so sharing one across solvers would share that state too.
+fn sun_context() -> SunContext {
+    let mut ctx: SunContext = core::ptr::null_mut();
+    if unsafe { SUNContext_Create(SUN_COMM_NULL, &mut ctx) } != SUN_SUCCESS {
+        return core::ptr::null_mut();
+    }
+    silence_logger(ctx);
+    unsafe { SUNContext_PushErrHandler(ctx, err_handler, core::ptr::null_mut()) };
+    ctx
+}
+
+/// C's `sundialsSilenceLogger`. An empty filename disables a stream.
+fn silence_logger(ctx: SunContext) {
+    let mut logger: SunLogger = core::ptr::null_mut();
+    if unsafe { SUNContext_GetLogger(ctx, &mut logger) } != SUN_SUCCESS || logger.is_null() {
+        return;
+    }
+    let empty = c"".as_ptr();
+    unsafe {
+        SUNLogger_SetErrorFilename(logger, empty);
+        SUNLogger_SetWarningFilename(logger, empty);
+        SUNLogger_SetInfoFilename(logger, empty);
+        SUNLogger_SetDebugFilename(logger, empty);
+    }
+}
+
+/// C's `sundialsErrorHandlerFunction`: the muted diagnostics, on `LOG_SOLVER`.
+unsafe extern "C" fn err_handler(
+    line: c_int,
+    func: *const core::ffi::c_char,
+    file: *const core::ffi::c_char,
+    msg: *const core::ffi::c_char,
+    err_code: c_int,
+    _user_data: *mut c_void,
+    _ctx: SunContext,
+) {
+    if !crate::omclog::active(crate::omclog::SOLVER) {
+        return;
+    }
+    let text = |p: *const core::ffi::c_char| match p.is_null() {
+        true => alloc::string::String::new(),
+        false => unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned(),
+    };
+    crate::omclog::info(crate::omclog::SOLVER, true, "#### SUNDIALS error message #####");
+    crate::omclog::info(
+        crate::omclog::SOLVER,
+        false,
+        &alloc::format!(
+            " -> error code {err_code}\n -> function {}\n -> at {}:{line}",
+            text(func),
+            text(file)
+        ),
+    );
+    crate::omclog::info(crate::omclog::SOLVER, false, &alloc::format!(" Message: {}", text(msg)));
+    crate::omclog::close(crate::omclog::SOLVER);
+}
 /// `mxstep` internal steps taken without reaching `tout`; resuming continues.
 pub const CV_TOO_MUCH_WORK: c_int = -1;
 
 unsafe extern "C" {
-    fn N_VNew_Serial(vec_length: SunIndex) -> NVector;
+    /// `SUNComm` is a plain `int` without MPI, and `SUN_COMM_NULL` is 0.
+    fn SUNContext_Create(comm: c_int, ctx: *mut SunContext) -> c_int;
+    fn SUNContext_Free(ctx: *mut SunContext) -> c_int;
+    fn SUNContext_GetLogger(ctx: SunContext, logger: *mut SunLogger) -> c_int;
+    fn SUNContext_PushErrHandler(ctx: SunContext, handler: SunErrHandlerFn, data: *mut c_void) -> c_int;
+    fn SUNLogger_SetErrorFilename(logger: SunLogger, name: *const core::ffi::c_char) -> c_int;
+    fn SUNLogger_SetWarningFilename(logger: SunLogger, name: *const core::ffi::c_char) -> c_int;
+    fn SUNLogger_SetInfoFilename(logger: SunLogger, name: *const core::ffi::c_char) -> c_int;
+    fn SUNLogger_SetDebugFilename(logger: SunLogger, name: *const core::ffi::c_char) -> c_int;
+
+    fn N_VNew_Serial(vec_length: SunIndex, ctx: SunContext) -> NVector;
     fn N_VDestroy(v: NVector);
     fn N_VGetArrayPointer(v: NVector) -> *mut f64;
 
-    fn SUNDenseMatrix(m: SunIndex, n: SunIndex) -> SunMatrix;
+    fn SUNDenseMatrix(m: SunIndex, n: SunIndex, ctx: SunContext) -> SunMatrix;
     fn SUNDenseMatrix_Data(a: SunMatrix) -> *mut f64;
     fn SUNMatDestroy(a: SunMatrix);
-    fn SUNLinSol_Dense(y: NVector, a: SunMatrix) -> SunLinearSolver;
+    fn SUNLinSol_Dense(y: NVector, a: SunMatrix, ctx: SunContext) -> SunLinearSolver;
     fn SUNLinSolFree(s: SunLinearSolver) -> c_int;
 
-    fn SUNSparseMatrix(m: SunIndex, n: SunIndex, nnz: SunIndex, sparsetype: c_int) -> SunMatrix;
+    fn SUNSparseMatrix(m: SunIndex, n: SunIndex, nnz: SunIndex, sparsetype: c_int, ctx: SunContext) -> SunMatrix;
     fn SUNSparseMatrix_Data(a: SunMatrix) -> *mut f64;
     fn SUNSparseMatrix_IndexPointers(a: SunMatrix) -> *mut SunIndex;
     fn SUNSparseMatrix_IndexValues(a: SunMatrix) -> *mut SunIndex;
-    fn SUNLinSol_KLU(y: NVector, a: SunMatrix) -> SunLinearSolver;
+    fn SUNLinSol_KLU(y: NVector, a: SunMatrix, ctx: SunContext) -> SunLinearSolver;
 
-    fn SUNLinSol_SPGMR(y: NVector, pretype: c_int, maxl: c_int) -> SunLinearSolver;
-    fn SUNLinSol_SPBCGS(y: NVector, pretype: c_int, maxl: c_int) -> SunLinearSolver;
-    fn SUNLinSol_SPTFQMR(y: NVector, pretype: c_int, maxl: c_int) -> SunLinearSolver;
+    fn SUNLinSol_SPGMR(y: NVector, pretype: c_int, maxl: c_int, ctx: SunContext) -> SunLinearSolver;
+    fn SUNLinSol_SPBCGS(y: NVector, pretype: c_int, maxl: c_int, ctx: SunContext) -> SunLinearSolver;
+    fn SUNLinSol_SPTFQMR(y: NVector, pretype: c_int, maxl: c_int, ctx: SunContext) -> SunLinearSolver;
 
-    fn CVodeCreate(lmm: c_int) -> *mut c_void;
+    fn CVodeCreate(lmm: c_int, ctx: SunContext) -> *mut c_void;
     fn CVodeFree(mem: *mut *mut c_void);
     fn CVodeInit(mem: *mut c_void, f: RhsFn, t0: f64, y0: NVector) -> c_int;
     fn CVodeReInit(mem: *mut c_void, t0: f64, y0: NVector) -> c_int;
@@ -98,6 +180,8 @@ pub enum Stop {
 /// Jacobian, per-state nominal-scaled tolerances, and CVODE's own root finding
 /// on the zero-crossings — the configuration `cvode_solver.c` builds.
 pub struct Cvode {
+    /// Outlives every object below it; freed last.
+    ctx: SunContext,
     mem: *mut c_void,
     y: NVector,
     atol: NVector,
@@ -136,30 +220,38 @@ impl Cvode {
         root: Option<RootFn>,
     ) -> Option<Cvode> {
         let n = y0.len();
-        let mut cv = unsafe {
-            let y = N_VNew_Serial(n as SunIndex);
-            let atol_v = N_VNew_Serial(n as SunIndex);
-            let jac = SUNDenseMatrix(n as SunIndex, n as SunIndex);
-            if y.is_null() || atol_v.is_null() || jac.is_null() {
-                return None;
-            }
-            let lin_sol = SUNLinSol_Dense(y, jac);
-            let mem = CVodeCreate(CV_BDF);
-            if lin_sol.is_null() || mem.is_null() {
-                return None;
-            }
-            Cvode {
-                mem,
-                y,
-                atol: atol_v,
-                jac,
-                lin_sol,
-                n,
-                n_roots,
-                roots: vec![0; n_roots.max(1)],
-                past: Counters::default(),
-            }
+        let ctx = sun_context();
+        if ctx.is_null() {
+            return None;
+        }
+        // Owned from here on: each handle is stored as soon as it exists, so a
+        // failure below drops `cv` and frees whatever was allocated already.
+        // The SUNDIALS free functions all ignore a null handle.
+        let mut cv = Cvode {
+            ctx,
+            mem: core::ptr::null_mut(),
+            y: core::ptr::null_mut(),
+            atol: core::ptr::null_mut(),
+            jac: core::ptr::null_mut(),
+            lin_sol: core::ptr::null_mut(),
+            n,
+            n_roots,
+            roots: vec![0; n_roots.max(1)],
+            past: Counters::default(),
         };
+        unsafe {
+            cv.y = N_VNew_Serial(n as SunIndex, ctx);
+            cv.atol = N_VNew_Serial(n as SunIndex, ctx);
+            cv.jac = SUNDenseMatrix(n as SunIndex, n as SunIndex, ctx);
+            if cv.y.is_null() || cv.atol.is_null() || cv.jac.is_null() {
+                return None;
+            }
+            cv.lin_sol = SUNLinSol_Dense(cv.y, cv.jac, ctx);
+            cv.mem = CVodeCreate(CV_BDF, ctx);
+            if cv.lin_sol.is_null() || cv.mem.is_null() {
+                return None;
+            }
+        }
         cv.set_y(y0);
         unsafe {
             core::ptr::copy_nonoverlapping(atol.as_ptr(), N_VGetArrayPointer(cv.atol), n);
@@ -289,6 +381,8 @@ impl Drop for Cvode {
             SUNMatDestroy(self.jac);
             N_VDestroy(self.atol);
             N_VDestroy(self.y);
+            // Last: everything above was created with it.
+            SUNContext_Free(&mut self.ctx);
         }
     }
 }
@@ -310,6 +404,11 @@ pub type IdaJacFn = unsafe extern "C" fn(
 
 /// `mxstep` internal steps taken without reaching `tout`; resuming continues.
 pub const IDA_TOO_MUCH_WORK: c_int = -1;
+/// Error test failures on one step, corrector convergence failures, and a failed
+/// linear-solver setup — what `ida_solver_step` restarts from.
+pub const IDA_ERR_FAIL: c_int = -3;
+pub const IDA_CONV_FAIL: c_int = -4;
+pub const IDA_LSETUP_FAIL: c_int = -6;
 
 const IDA_NORMAL: c_int = 1;
 const IDA_ONE_STEP: c_int = 2;
@@ -323,7 +422,7 @@ const CSC_MAT: c_int = 0;
 const PREC_NONE: c_int = 0;
 
 unsafe extern "C" {
-    fn IDACreate() -> *mut c_void;
+    fn IDACreate(ctx: SunContext) -> *mut c_void;
     fn IDAFree(mem: *mut *mut c_void);
     fn IDAInit(mem: *mut c_void, res: IdaResFn, t0: f64, yy0: NVector, yp0: NVector) -> c_int;
     fn IDAReInit(mem: *mut c_void, t0: f64, yy0: NVector, yp0: NVector) -> c_int;
@@ -339,6 +438,7 @@ unsafe extern "C" {
     fn IDASetMaxConvFails(mem: *mut c_void, maxncf: c_int) -> c_int;
     fn IDASetNonlinConvCoef(mem: *mut c_void, epcon: f64) -> c_int;
     fn IDASetInitStep(mem: *mut c_void, hin: f64) -> c_int;
+    fn IDASetMaxStep(mem: *mut c_void, hmax: f64) -> c_int;
     fn IDASolve(mem: *mut c_void, tout: f64, tret: *mut f64, yret: NVector, ypret: NVector, itask: c_int) -> c_int;
     fn IDAGetCurrentStep(mem: *mut c_void, hcur: *mut f64) -> c_int;
 
@@ -406,6 +506,8 @@ pub struct IdaOptions {
 /// nominal-scaled tolerances, KLU or dense direct linear solver, and IDA's own
 /// root finding on the zero-crossings — the configuration `ida_solver.c` builds.
 pub struct Ida {
+    /// Outlives every object below it; freed last.
+    ctx: SunContext,
     mem: *mut c_void,
     y: NVector,
     yp: NVector,
@@ -455,45 +557,56 @@ impl Ida {
         opts: &IdaOptions,
     ) -> Option<Ida> {
         let n = y0.len();
-        let mut ida = unsafe {
-            let y = N_VNew_Serial(n as SunIndex);
-            let yp = N_VNew_Serial(n as SunIndex);
-            let atol_v = N_VNew_Serial(n as SunIndex);
-            let j = match ls {
-                IdaLs::Dense => SUNDenseMatrix(n as SunIndex, n as SunIndex),
-                IdaLs::Klu => SUNSparseMatrix(n as SunIndex, n as SunIndex, nnz as SunIndex, CSC_MAT),
+        let ctx = sun_context();
+        if ctx.is_null() {
+            return None;
+        }
+        // Owned from here on: each handle is stored as soon as it exists, so a
+        // failure below drops `ida` and frees whatever was allocated already.
+        // The SUNDIALS free functions all ignore a null handle.
+        let mut ida = Ida {
+            ctx,
+            mem: core::ptr::null_mut(),
+            y: core::ptr::null_mut(),
+            yp: core::ptr::null_mut(),
+            atol: core::ptr::null_mut(),
+            jac: core::ptr::null_mut(),
+            lin_sol: core::ptr::null_mut(),
+            n,
+            n_roots,
+            roots: vec![0; n_roots.max(1)],
+            past: Counters::default(),
+            sens: None,
+            jac_fn: jac,
+        };
+        unsafe {
+            ida.y = N_VNew_Serial(n as SunIndex, ctx);
+            ida.yp = N_VNew_Serial(n as SunIndex, ctx);
+            ida.atol = N_VNew_Serial(n as SunIndex, ctx);
+            // Matrix-free Krylov keeps `jac` null; every other failure is fatal.
+            ida.jac = match ls {
+                IdaLs::Dense => SUNDenseMatrix(n as SunIndex, n as SunIndex, ctx),
+                IdaLs::Klu => SUNSparseMatrix(n as SunIndex, n as SunIndex, nnz as SunIndex, CSC_MAT, ctx),
                 _ => core::ptr::null_mut(),
             };
-            if [y, yp, atol_v].iter().any(|p| p.is_null()) || (j.is_null() && !ls.matrix_free()) {
+            if [ida.y, ida.yp, ida.atol].iter().any(|p| p.is_null())
+                || (ida.jac.is_null() && !ls.matrix_free())
+            {
                 return None;
             }
             // Krylov `maxl` is the system size, as `ida_solver.c` passes it.
-            let lin_sol = match ls {
-                IdaLs::Dense => SUNLinSol_Dense(y, j),
-                IdaLs::Klu => SUNLinSol_KLU(y, j),
-                IdaLs::Spgmr => SUNLinSol_SPGMR(y, PREC_NONE, n as c_int),
-                IdaLs::Spbcg => SUNLinSol_SPBCGS(y, PREC_NONE, n as c_int),
-                IdaLs::Sptfqmr => SUNLinSol_SPTFQMR(y, PREC_NONE, n as c_int),
+            ida.lin_sol = match ls {
+                IdaLs::Dense => SUNLinSol_Dense(ida.y, ida.jac, ctx),
+                IdaLs::Klu => SUNLinSol_KLU(ida.y, ida.jac, ctx),
+                IdaLs::Spgmr => SUNLinSol_SPGMR(ida.y, PREC_NONE, n as c_int, ctx),
+                IdaLs::Spbcg => SUNLinSol_SPBCGS(ida.y, PREC_NONE, n as c_int, ctx),
+                IdaLs::Sptfqmr => SUNLinSol_SPTFQMR(ida.y, PREC_NONE, n as c_int, ctx),
             };
-            let mem = IDACreate();
-            if lin_sol.is_null() || mem.is_null() {
+            ida.mem = IDACreate(ctx);
+            if ida.lin_sol.is_null() || ida.mem.is_null() {
                 return None;
             }
-            Ida {
-                mem,
-                y,
-                yp,
-                atol: atol_v,
-                jac: j,
-                lin_sol,
-                n,
-                n_roots,
-                roots: vec![0; n_roots.max(1)],
-                past: Counters::default(),
-                sens: None,
-                jac_fn: jac,
-            }
-        };
+        }
         ida.y_mut().copy_from_slice(y0);
         ida.yp_mut().copy_from_slice(yp0);
         unsafe {
@@ -534,7 +647,7 @@ impl Ida {
     /// so `IDACalcIC` can solve for the latter and (with `suppress_alg`) the local
     /// error test can leave them out.
     pub fn set_id(&mut self, id: &[f64], suppress_alg: bool) -> bool {
-        let v = unsafe { N_VNew_Serial(self.n as SunIndex) };
+        let v = unsafe { N_VNew_Serial(self.n as SunIndex, self.ctx) };
         if v.is_null() {
             return false;
         }
@@ -557,6 +670,11 @@ impl Ida {
 
     pub fn set_init_step(&mut self, h: f64) -> bool {
         unsafe { IDASetInitStep(self.mem, h) == IDA_SUCCESS }
+    }
+
+    /// `IDASetMaxStep`; 0 lifts the cap.
+    pub fn set_max_step(&mut self, h: f64) -> bool {
+        unsafe { IDASetMaxStep(self.mem, h) == IDA_SUCCESS }
     }
 
     /// `IDACalcIC(IDA_YA_YDP_INIT)`: solve for the algebraic unknowns and every
@@ -592,6 +710,7 @@ impl Ida {
                 p: p0.to_vec(),
             }
         };
+        // `sens` owns whatever cloned: dropping it here releases a partial set.
         if [sens.ys, sens.yps, sens.out].iter().any(|a| a.is_null()) {
             return false;
         }
@@ -757,15 +876,21 @@ impl Sens {
     }
 }
 
-impl Drop for Ida {
+impl Drop for Sens {
     fn drop(&mut self) {
-        if let Some(s) = self.sens.take() {
-            unsafe {
-                for a in [s.ys, s.yps, s.out] {
-                    N_VDestroyVectorArray(a, s.ns as c_int);
-                }
+        unsafe {
+            for a in [self.ys, self.yps, self.out] {
+                N_VDestroyVectorArray(a, self.ns as c_int);
             }
         }
+    }
+}
+
+impl Drop for Ida {
+    fn drop(&mut self) {
+        // Before the block below: the vectors were cloned from `y`/`yp` and made
+        // with `ctx`, both freed there.
+        drop(self.sens.take());
         unsafe {
             IDAFree(&mut self.mem);
             SUNLinSolFree(self.lin_sol);
@@ -773,6 +898,8 @@ impl Drop for Ida {
             N_VDestroy(self.atol);
             N_VDestroy(self.yp);
             N_VDestroy(self.y);
+            // Last: everything above was created with it.
+            SUNContext_Free(&mut self.ctx);
         }
     }
 }

@@ -106,8 +106,8 @@ const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     // Rust in `openmodelica_script_util/src/UnitParserExt.rs`.
     "UnitParserExt",
     // All bodies are `external "C"` wrappers over LAPACK (`runtime/lapackimpl.c`);
-    // hand-written in `openmodelica_util/src/Lapack.rs` using the `lapack` crate
-    // bound to the system LAPACK/BLAS.
+    // hand-written in `openmodelica_util/src/Lapack.rs`, whose Fortran-ABI
+    // declarations bind `openmodelica_lapack`.
     "Lapack",
     // All bodies are `external "C"` wrappers over
     // `runtime/HpcOmBenchmarkExt.cpp` (hardcoded op/comm cost estimates plus
@@ -1958,26 +1958,15 @@ const WASM_GATED_TOP_MODULES: &[(&str, Option<&str>)] = &[
     ("Curl", Some("Curl_wasm.rs")),
     // OMSimulator scripting API; drives the dropped OMSimulatorExt (libOMSimulator).
     ("CevalScriptOMSimulator", Some("CevalScriptOMSimulator_wasm.rs")),
-    // FFI to system LAPACK/BLAS (d*_ routines); the pure-Rust nalgebra fallback
-    // replaces it on wasm (no LAPACK to link), on Windows (no MSVC-ABI LAPACK)
-    // and under the `lapack-nalgebra` feature (see stub_active_cfg).
-    ("Lapack", Some("Lapack_nalgebra.rs")),
 ];
 
 /// The cfg predicate under which a gated module's hand-written stub is used
-/// instead of its native implementation. The default is "wasm only"; a few
-/// modules also fall back on Windows (no buildable native dependency there):
-///   * `Lapack` — no MSVC-ABI LAPACK; also opt-in on any target via the
-///     `lapack-nalgebra` feature (lets the fallback be testsuite-validated).
-/// (FFI uses the system libffi on Windows — built from the GNU-syntax `win64.S`
-/// with clang-cl — so it keeps the native module there.)
-fn stub_active_cfg(name: &str) -> &'static str {
-    match name {
-        "Lapack" => {
-            "any(target_arch = \"wasm32\", target_os = \"windows\", feature = \"lapack-nalgebra\")"
-        }
-        _ => "target_arch = \"wasm32\"",
-    }
+/// instead of its native implementation: every one of them is native-only because
+/// of a C dependency wasm cannot link. (`FFI` uses the system libffi on Windows —
+/// built from the GNU-syntax `win64.S` with clang-cl — so it keeps the native
+/// module there.)
+fn stub_active_cfg(_name: &str) -> &'static str {
+    "target_arch = \"wasm32\""
 }
 
 /// Emit a top-level `pub mod NAME;`, cfg-gating the native-only modules listed
@@ -8137,7 +8126,7 @@ fn emit_const_str_operand<'a>(exp: &TypedExp, ctx: &mut GenCtx, top_level: &'a B
             if node.ty != Ty::Str { return None; }
             // No borrow guard possible: the match guard above requires all
             // segments to be subscript-free.
-            Some(emit_var(name, segments, ty, ctx, top_level).0)
+            Some(emit_var(name, segments, ty, /*is_const=*/true, ctx, top_level).0)
         }
         TypedExp::If { cond, then_, elseif, else_, .. } => {
             // Lower to a Rust `if … else if … else` chain so the condition
@@ -8378,7 +8367,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             }).unzip();
             let name: &String = owned_name.as_ref().unwrap_or(name);
             let segments: &Vec<CrefSegment> = owned_segments.as_ref().unwrap_or(segments);
-            let (mut var_str, has_borrow_guard) = emit_var(name, segments, ty, ctx, top_level);
+            let (mut var_str, has_borrow_guard) = emit_var(name, segments, ty, is_const, ctx, top_level);
             // If this reference resolves to a `pub const fn` / `pub fn` getter
             // emitted by `emit_node` for a non-Sync constant (see
             // `collect_const_fn_getters` + the const-emittable/non-Sync branch),
@@ -11557,7 +11546,7 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             };
             let arg3 = args.get(2).map(|a| emit_call_arg_with_formal(a, elem_formal.as_ref(), is_const, ctx, top_level)).unwrap_or_default();
             if arr_is_uninit {
-                Ok(format!("unsafe {{ metamodelica::Dangerous::arrayInitSlot({arg1}, {arg2}, {arg3}) }}"))
+                Ok(ctx.q(&format!("unsafe {{ metamodelica::Dangerous::arrayInitSlotChecked({arg1}, {arg2}, {arg3}) }}")))
             } else {
                 // Lower through `metamodelica::arrayUpdate`, for the same two
                 // reasons as `arrayGet` above: (a) the argument expressions
@@ -11720,6 +11709,18 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
     }
 }
 
+/// Emit a 1-based subscript read `base[idx]`. MetaModelica subscripts fail
+/// (catchably) out of range, so route them through `index_checked`;
+/// [`crate::fallibility::Walk::scan_cref`] marks the caller fallible to match.
+/// A `const` item has no `?` target and rustc checks the index itself.
+fn emit_index(base: &str, idx: &str, is_const: bool, ctx: &mut GenCtx) -> String {
+    if is_const {
+        format!("{base}[({idx}-1) as usize]")
+    } else {
+        format!("(*{})", ctx.q(&format!("metamodelica::index_checked(&{base}, {idx})")))
+    }
+}
+
 /// Emit a variable reference, handling subscripts and the package/field boundary.
 ///
 /// The second tuple element reports whether the emitted expression contains an
@@ -11734,6 +11735,7 @@ fn emit_var<'a>(
     name: &str,
     segments: &[CrefSegment],
     _ty: &Ty,
+    is_const: bool,
     ctx: &mut GenCtx,
     top_level: &'a BTreeMap<String, NameNode<'a>>,
 ) -> (String, bool) {
@@ -11784,7 +11786,8 @@ fn emit_var<'a>(
                 has_borrow_guard = true;
             }
             for sub in &real_segments[0].subscripts {
-                base = format!("{}[({}-1) as usize]", base, emit_exp(sub, false, ctx, top_level));
+                let idx = emit_exp(sub, false, ctx, top_level);
+                base = emit_index(&base, &idx, is_const, ctx);
             }
         }
         base
@@ -11849,7 +11852,8 @@ fn emit_var<'a>(
                     has_borrow_guard = true;
                 }
                 for sub in &last_seg.subscripts {
-                    b = format!("{}[({}-1) as usize]", b, emit_exp(sub, false, ctx, top_level));
+                    let idx = emit_exp(sub, false, ctx, top_level);
+                    b = emit_index(&b, &idx, is_const, ctx);
                 }
                 b
             } else {
@@ -11970,7 +11974,8 @@ fn emit_var<'a>(
                     has_borrow_guard = true;
                 }
                 for sub in &first.subscripts {
-                    res = format!("{}[({}-1) as usize]", res, emit_exp(sub, false, ctx, top_level));
+                    let idx = emit_exp(sub, false, ctx, top_level);
+                    res = emit_index(&res, &idx, is_const, ctx);
                 }
             }
             cur_ty = field_ty;
@@ -11996,7 +12001,8 @@ fn emit_var<'a>(
             has_borrow_guard = true;
         }
         for sub in &seg.subscripts {
-            res = format!("{}[({}-1) as usize]", res, emit_exp(sub, false, ctx, top_level));
+            let idx = emit_exp(sub, false, ctx, top_level);
+            res = emit_index(&res, &idx, is_const, ctx);
         }
         cur_ty = field_ty;
         for _ in &seg.subscripts {
@@ -20422,11 +20428,14 @@ fn emit_stmt<'a>(
                         writeln!(out, "{indent}    let {tmp} = {scrut_expr};").unwrap();
                         writeln!(out, "{indent}    let {idx_tmp} = {idx_str};").unwrap();
                         if let Some(bind) = hoisted_bind {
-                            writeln!(out, "{indent}    {bind}[({idx_tmp}-1) as usize] = {tmp};").unwrap();
+                            let slot = ctx.q(&format!("metamodelica::index_mut_checked(&mut {bind}, {idx_tmp})"));
+                            writeln!(out, "{indent}    *{slot} = {tmp};").unwrap();
                         } else if base_is_uninit {
-                            writeln!(out, "{indent}    unsafe {{ metamodelica::Dangerous::arrayInitSlot({base_str}.clone(), {idx_tmp}, {tmp}); }}").unwrap();
+                            let upd = ctx.q(&format!("unsafe {{ metamodelica::Dangerous::arrayInitSlotChecked({base_str}.clone(), {idx_tmp}, {tmp}) }}"));
+                            writeln!(out, "{indent}    let _ = {upd};").unwrap();
                         } else {
-                            writeln!(out, "{indent}    {base_str}.borrow_mut()[({idx_tmp}-1) as usize] = {tmp};").unwrap();
+                            let slot = ctx.q(&format!("metamodelica::index_mut_checked(&mut {base_str}.borrow_mut(), {idx_tmp})"));
+                            writeln!(out, "{indent}    *{slot} = {tmp};").unwrap();
                         }
                         writeln!(out, "{indent}}}").unwrap();
                     }

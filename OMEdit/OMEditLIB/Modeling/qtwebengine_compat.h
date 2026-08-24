@@ -77,6 +77,12 @@ public:
   void setDefaultTextEncoding(const char *) {}
 };
 
+class QWebEngineNewWindowRequest
+{
+public:
+  QUrl requestedUrl() const { return QUrl(); }
+};
+
 class QWebEnginePage : public QObject
 {
   Q_OBJECT
@@ -84,9 +90,6 @@ public:
   enum WebAction {
     SelectAll, Copy, Cut, Paste, ToggleBold, ToggleItalic, ToggleUnderline,
     ToggleStrikethrough, Indent, Outdent
-  };
-  enum WebWindowType {
-    WebBrowserWindow, WebBrowserTab, WebDialog, WebBrowserBackgroundTab
   };
   enum NavigationType {
     NavigationTypeLinkClicked, NavigationTypeTyped, NavigationTypeFormSubmitted,
@@ -106,6 +109,8 @@ public:
   QPointF scrollPosition() const { return QPointF(); }
   void setHtml(const QString &) {}
   void setUrl(const QUrl &) {}
+signals:
+  void newWindowRequested(QWebEngineNewWindowRequest &request);
 protected:
   virtual bool acceptNavigationRequest(const QUrl &, NavigationType, bool) { return true; }
 };
@@ -124,8 +129,6 @@ public:
   void load(const QUrl &) {}
   void setZoomFactor(qreal) {}
   qreal zoomFactor() const { return 1.0; }
-protected:
-  virtual QWebEngineView *createWindow(QWebEnginePage::WebWindowType) { return nullptr; }
 private:
   QWebEnginePage *mpPage = nullptr;
 };

@@ -71,6 +71,43 @@ def numLogicalCPU() {
   return env.JENKINS_NUM_LOGICAL_CPU
 }
 
+// 6 GB per parallel test job, at most 80% of the node's RAM. Override 6 and 80
+// with OM_PARTEST_MEM_PER_JOB_GB / OM_PARTEST_MEM_PERCENT when a machine hosts
+// more than one Jenkins instance. The arithmetic is awk's because the Groovy
+// sandbox rejects most of the numeric conversions this would otherwise need.
+String testMemoryLimitMB() {
+  String vars = "-v jobs=${numPhysicalCPU()}" +
+                " -v per_job=\"\${OM_PARTEST_MEM_PER_JOB_GB:-6}\"" +
+                " -v percent=\"\${OM_PARTEST_MEM_PERCENT:-80}\""
+  String prog = '/^MemTotal:/ { cap = int($2/1024*percent/100); want = per_job*1024*jobs; print (want < cap ? want : cap) }'
+  return sh(script: "awk ${vars} '${prog}' /proc/meminfo", returnStdout: true).trim()
+}
+
+// The container's cgroup memory.max: covers every process the run spawns and
+// charges memory in use, not address space. --memory-swap must equal --memory to
+// forbid swapping; docker reads 0 as "unset" and then allows swap up to --memory.
+String memoryLimitArgs() {
+  String mb = testMemoryLimitMB()
+  echo "Test container memory limit: ${mb} MB, no swap"
+  return "--memory=${mb}m --memory-swap=${mb}m"
+}
+
+String testCacheMounts(String runtestCache) {
+  return "--mount type=volume,source=${runtestCache},target=/cache/runtest " +
+         "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+         "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+}
+
+// Not an `agent { docker { args } }`: those args are evaluated before a node is
+// allocated, so the limit could not depend on the node's RAM or CPU count.
+void insideTestImage(String image, String extraArgs, Closure body) {
+  def img = docker.image(image)
+  img.pull()
+  img.inside("${memoryLimitArgs()} ${extraArgs}") {
+    body()
+  }
+}
+
 void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
   if (isWindows()) {
 
@@ -106,11 +143,14 @@ void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
 
   sh ("""#!/bin/bash -x
   ulimit -t 1500
+  # On top of the cgroup limit, to catch a single runaway process early
   ulimit -v 6291456 # Max 6GB per process
 
+  .CI/scripts/cgroup-memory.sh check
   cd testsuite/partest
   ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml ${extraArgs}
   CODE=\$?
+  ../../.CI/scripts/cgroup-memory.sh report
   test \$CODE = 0 -o \$CODE = 7 || exit 1
   """
   + (cache ?
@@ -163,6 +203,46 @@ void makeLibsAndCache() {
   } else {
     sh cmd
   }
+  }
+}
+
+// makeLibsAndCache()'s counterpart for a CMake-built omc (see
+// partestCMakeStashed). Produces the same testsuite dependencies, but without
+// the Autoconf machinery: a CMake build has no config.status, so the top-level
+// Makefile the other variant drives does not exist. Each dependency has a
+// standalone Makefile that only needs the installed omc in build/, which is
+// exactly what libraries/CMakeLists.txt and testsuite/CMakeLists.txt wrap in
+// their libs-for-testing / reference-files / ffi-test-lib targets. omc-diff is
+// not built here: partest() rebuilds it from testsuite/difftool anyway.
+void makeLibsAndCacheCMake() {
+  sh "test ! -z '${env.LIBRARIES}'"
+  // If we don't have any result, copy to the master to get a somewhat decent cache
+  sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
+     "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
+  // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
+  sh label: 'Create directory for omlibrary cache', script: """
+  mkdir -p '${env.LIBRARIES}/om-pkg-cache'
+  # Remove the symbolic link, or if it's a directory there... the entire thing
+  rm libraries/.openmodelica/cache || rm -rf libraries/.openmodelica/cache
+  mkdir -p libraries/.openmodelica/
+  test ! -e libraries/.openmodelica/cache
+  ln -s '${env.LIBRARIES}/om-pkg-cache' libraries/.openmodelica/cache
+  ls -lh libraries/.openmodelica/cache/
+  """
+  def cmd = """#!/bin/bash -xe
+  # libs-for-testing: installs the test libraries with the CMake-built omc
+  ${makeCommand()} -C libraries lib-for-testing
+  # reference-files: xz decompression only
+  ${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse -C testsuite/ReferenceFiles
+  # ffi-test-lib
+  ${makeCommand()} -C testsuite/flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc
+  """
+  if (env.SHARED_LOCK) {
+    lock(env.SHARED_LOCK) {
+      sh cmd
+    }
+  } else {
+    sh cmd
   }
 }
 
@@ -238,44 +318,19 @@ void sanityCheck(String installDir, Boolean buildCpp) {
 void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   standardSetup()
 
-  if (isWindows()) {
-    bat (label: 'build', script: """
-      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
-      echo on
-      (
-      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-      echo cd \${MSYS_WORKSPACE}
-      echo export MAKETHREADS=-j16
-      echo set -ex
-      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
-      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
-      echo set
-      echo which cmake
-      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omc testsuite-depends
-      echo cd \${MSYS_WORKSPACE}
-      echo make -f Makefile.omdev.mingw \${MAKETHREADS} BUILDTYPE=Release all-runtimes
-      ) > buildOMCWindows.sh
-
-      set MSYSTEM=UCRT64
-      set MSYS2_PATH_TYPE=inherit
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
-    """)
-  } else {
-    sh 'autoreconf --install'
-    // Note: Do not use -march=native since we might use an incompatible machine in later stages
-    def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
-    sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --with-omniORB --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
-    // OMSimulator requires HOME to be set and writeable
-    if (clean) {
-      sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} clean"
-    }
-    sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} omc omc-diff omsimulator"
-    sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
-
-    // Find unused imports
-    sh label: 'Find unused imports', script: 'cd OMCompiler/Compiler/boot && ./find-unused-import.sh ../*/*.mo'
+  sh 'autoreconf --install'
+  // Note: Do not use -march=native since we might use an incompatible machine in later stages
+  def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
+  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --with-omniORB --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
+  // OMSimulator requires HOME to be set and writeable
+  if (clean) {
+    sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} clean"
   }
+  sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} omc omc-diff omsimulator"
+  sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
+
+  // Find unused imports
+  sh label: 'Find unused imports', script: 'cd OMCompiler/Compiler/boot && ./find-unused-import.sh ../*/*.mo'
 
   sanityCheck('build', buildCpp)
 }
@@ -615,7 +670,7 @@ void assembleWeb() {
   // testsuite-rust stages, so a missing shard is a hard error rather than the
   // normal case of those stages not having run.
   sh 'rm -f testsuite/partest-failed-*.txt partest-rust-failed.txt'
-  if (shouldWeRunRustTests() && !shouldWeDisableAllCMakeBuilds()) {
+  if (shouldWeRunRustTests()) {
     for (p in [1,2]) {
       unstash "partest-failed-${p}"
     }
@@ -672,21 +727,29 @@ void partestRust(partition) {
   """
   String simCodeTargetArg = params.RUST_PARTEST_SIMCODETARGET ? " -simCodeTarget=${params.RUST_PARTEST_SIMCODETARGET}" : ''
   // cpp/hpcom: the Rust omc is built without the C++ runtime. metamodelica:
-  // MetaModelica code generation only works against the C runtime. 63bit/antlr:
-  // the port's Integer is i32 and its parser is winnow, not ANTLR; see
-  // testsuite/rust-ignore-tests.txt.
-  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr'
+  // MetaModelica code generation only works against the C runtime.
+  // cSources/fmuCSources check generated C files or FMU sources - wasm-jit does not use C
+  // 63bit/antlr: the port's Integer is i32 and its parser is winnow, not ANTLR
+  // stackoverflow: Rust aborts on stack overflow, MMC unwinds out of the SEGV handler
+  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-cSources,-fmuCSources,-stackoverflow'
+  // wasmtime reserves ~4 GiB of address space per wasm memory, and shrinking that
+  // reservation to fit an RLIMIT_AS costs the bounds-check-free fast path.
+  String asLimit = params.RUST_PARTEST_SIMCODETARGET == 'wasm-jit'
+                   ? '# wasm-jit: address space is not limited, only the cgroup is'
+                   : 'ulimit -v 6291456 # Max 6GB per process'
   try {
     sh """#!/bin/bash
       set -o pipefail
       ulimit -t 1500
-      ulimit -v 6291456
+      ${asLimit}
+      .CI/scripts/cgroup-memory.sh check
       rm -f testsuite/partest-failed-${partition}.txt
       cd testsuite/partest
       set -x
       ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/2 -nocolour -with-xml${suitesArg}${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
       CODE=\${PIPESTATUS[0]}
       set +x
+      ../../.CI/scripts/cgroup-memory.sh report
       # 0/7 == the run completed (7 means some tests failed); only fail the step on
       # anything else, so junit below still publishes the per-test results.
       test \$CODE = 0 -o \$CODE = 7 || exit 1
@@ -703,6 +766,8 @@ void partestRust(partition) {
     if (params.RUST_PARTEST_JUNIT) {
       junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
     }
+    sh "cp testsuite/partest/result.xml partest-rust-partest-junit-${partition}.xml || true"
+    archiveArtifacts artifacts: "partest-rust-partest-junit-${partition}.xml", allowEmptyArchive: true, fingerprint: true
   }
 }
 
@@ -757,31 +822,6 @@ def getQtMajorVersion(qtVersion) {
 }
 
 void buildGUI(stash, qtVersion) {
-  if (isWindows()) {
-  bat ("""
-     If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
-     echo on
-     (
-     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-     echo cd \${MSYS_WORKSPACE}
-     echo export MAKETHREADS=-j16
-     echo set -e
-     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
-     echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
-     echo set
-     echo which cmake
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} qtclients ${getQtMajorVersion(qtVersion)}
-     echo echo Check that at least OMEdit can be started
-     echo ./build/bin/OMEdit --help
-     ) > buildGUIWindows.sh
-
-     set MSYSTEM=UCRT64
-     set MSYS2_PATH_TYPE=inherit
-     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildGUIWindows.sh && ./buildGUIWindows.sh && rm -f ./buildGUIWindows.sh"
-  """)
-  } else {
-
   if (stash) {
     standardSetup()
     unstash stash
@@ -805,32 +845,9 @@ void buildGUI(stash, qtVersion) {
 
   // test make install after qt builds
   sh label: 'install', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} install ${ignoreOnMac()}"
-  }
 }
 
 void buildAndRunOMEditTestsuite(stashName, qtVersion) {
-  if (isWindows()) {
-  bat ("""
-     If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
-     echo on
-     (
-     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-     echo cd \${MSYS_WORKSPACE}
-     echo export MAKETHREADS=-j16
-     echo set -e
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite ${getQtMajorVersion(qtVersion)}
-     echo export "APPDATA=\${PWD}/libraries"
-     echo cd build/bin
-     echo ./RunOMEditTestsuite.sh
-     ) > buildOMEditTestsuiteWindows.sh
-
-     set MSYSTEM=UCRT64
-     set MSYS2_PATH_TYPE=inherit
-     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMEditTestsuiteWindows.sh && ./buildOMEditTestsuiteWindows.sh && rm -f ./buildOMEditTestsuiteWindows.sh"
-  """)
-  } else {
-
   if (stashName) {
     standardSetup()
     sh 'rm -rf OMEdit/common'
@@ -859,7 +876,6 @@ void buildAndRunOMEditTestsuite(stashName, qtVersion) {
     xvfb-run ./RunOMEditTestsuite.sh
     '''
     }
-  }
 }
 
 void generateTemplates() {
@@ -958,13 +974,13 @@ def makeCommand() {
   return env.GMAKE ?: "make"
 }
 
-private def shouldWeBuildUCRT() {
+private def shouldWeBuildWindows() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Build MSYS2-UCRT64")) {
       return true
     }
   }
-  return params.BUILD_MSYS2_UCRT64
+  return params.BUILD_WINDOWS
 }
 
 private def shouldWeBuildAlpine() {
@@ -992,24 +1008,6 @@ private def shouldWeBuildFedora() {
     }
   }
   return params.BUILD_FEDORA
-}
-
-private def shouldWeDisableAllCMakeBuilds() {
-  if (isPR()) {
-    if (pullRequest.labels.contains("CI/CMake/Disable/All")) {
-      return true
-    }
-  }
-  return params.DISABLE_ALL_CMAKE_BUILDS
-}
-
-private def shouldWeEnableUCRTCMakeBuild() {
-  if (isPR()) {
-    if (pullRequest.labels.contains("CI/CMake/Enable/MSYS2-UCRT64")) {
-      return true
-    }
-  }
-  return params.ENABLE_MSYS2_UCRT64_CMAKE_BUILD
 }
 
 private def shouldWeEnableMacOSCMakeBuild() {
@@ -1072,20 +1070,16 @@ Map evaluateBuildFlags() {
   def flags = [:]
   flags.isPR = isPR()
   print "isPR: ${flags.isPR}"
-  flags.shouldWeBuildUCRT = shouldWeBuildUCRT()
-  print "shouldWeBuildUCRT: ${flags.shouldWeBuildUCRT}"
   flags.shouldWeBuildAlpine = shouldWeBuildAlpine()
   print "shouldWeBuildAlpine: ${flags.shouldWeBuildAlpine}"
   flags.shouldWeBuildEnterpriseLinux = shouldWeBuildEnterpriseLinux()
   print "shouldWeBuildEnterpriseLinux: ${flags.shouldWeBuildEnterpriseLinux}"
   flags.shouldWeBuildFedora = shouldWeBuildFedora()
   print "shouldWeBuildFedora: ${flags.shouldWeBuildFedora}"
-  flags.shouldWeDisableAllCMakeBuilds = shouldWeDisableAllCMakeBuilds()
-  print "shouldWeDisableAllCMakeBuilds: ${flags.shouldWeDisableAllCMakeBuilds}"
   flags.shouldWeEnableMacOSCMakeBuild = shouldWeEnableMacOSCMakeBuild()
   print "shouldWeEnableMacOSCMakeBuild: ${flags.shouldWeEnableMacOSCMakeBuild}"
-  flags.shouldWeEnableUCRTCMakeBuild = shouldWeEnableUCRTCMakeBuild()
-  print "shouldWeEnableUCRTCMakeBuild: ${flags.shouldWeEnableUCRTCMakeBuild}"
+  flags.shouldWeBuildWindows = shouldWeBuildWindows()
+  print "shouldWeBuildWindows: ${flags.shouldWeBuildWindows}"
   flags.shouldWeRunTests = shouldWeRunTests()
   print "shouldWeRunTests: ${flags.shouldWeRunTests}"
   flags.shouldWeRunRustTests = flags.shouldWeRunTests && shouldWeRunRustTests()
@@ -1120,6 +1114,23 @@ void buildGccOMC() {
   stash name: 'omc-gcc', includes: 'build/**, **/config.status'
 }
 
+// The jammy CMake build of omc. Its install tree is what the testsuite-gcc
+// stages run against (partestCMakeStashed), so keep the flags in sync with what
+// those tests need.
+void buildCMakeGccOMC() {
+  buildOMC_CMake([
+    "-DCMAKE_BUILD_TYPE=Release",
+    "-DOM_USE_CCACHE=OFF",
+    "-DCMAKE_INSTALL_PREFIX=build"])
+
+  // Susan's *.mo and Autoconf.mo travel along because the bootstrapping tests
+  // load the compiler sources by path (see partestCMakeStashed).
+  stash name: 'omc-cmake-gcc',
+        includes: 'build/**,' +
+                  'build_cmake/OMCompiler/Compiler/generated-mo/**,' +
+                  'OMCompiler/Compiler/Util/Autoconf.mo'
+}
+
 void buildClangOMC() {
   buildOMC('clang', 'clang++', '--without-hwloc', true, true)
   getVersion()
@@ -1137,17 +1148,6 @@ void buildClangOMC() {
                   'build/include/omc/OMSimulator/**,' +
                   'build/share/OMSimulator/**'
   stash name: 'omcruntime', includes: 'build/lib/**/libomcruntime*'
-}
-
-void buildWinUCRT() {
-  withEnv (["OMDEV=C:\\OMDevUCRT","PATH=${env.OMDEV}\\tools\\msys\\usr\\bin;${env.OMDEV}\\tools\\msys\\ucrt64;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
-    bat "echo PATH: %PATH%"
-    cloneOMDev()
-    buildOMC('cc', 'c++', '', true, false)
-    makeLibsAndCache()
-    buildGUI('', 'qt6')
-    buildAndRunOMEditTestsuite('', 'qt6')
-  }
 }
 
 void checks() {
@@ -1172,6 +1172,20 @@ void partestStashed(stashName, partition, partitionmodulo) {
   partest(partition, partitionmodulo)
 }
 
+// The same, for a stashed CMake install tree (see buildCMakeGccOMC). Only the
+// way the test dependencies are built differs; the run itself is the same
+// partest.
+void partestCMakeStashed(stashName, partition, partitionmodulo) {
+  standardSetup()
+  unstash stashName
+  makeLibsAndCacheCMake()
+  // Susan's generated *.mo files are in the build tree
+  def ws = sh(script: 'pwd', returnStdout: true).trim()
+  withEnv(["OMCOMPILERGENERATEDSOURCES=${ws}/build_cmake/OMCompiler/Compiler/generated-mo"]) {
+    partest(partition, partitionmodulo)
+  }
+}
+
 void crossBuildFMU() {
   def deps = docker.image('docker.openmodelica.org/build-deps:ubuntu-22.04')
   deps.pull()
@@ -1180,15 +1194,14 @@ void crossBuildFMU() {
               "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
               "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest") {
     standardSetup()
-    unstash 'omc-clang'
-    makeLibsAndCache()
+    unstash 'omc-cmake-gcc'
+    makeLibsAndCacheCMake()
     writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: getVersion()
     sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
     sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
     sh 'make -C testsuite/special/FMPy/ fmpy-fmus'
     stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu, testsuite/special/FMPy/Makefile'
     stash name: 'fmpy-fmu', includes: 'testsuite/special/FMPy/*.fmu'
-    stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
     archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
   }
 }
@@ -1259,22 +1272,6 @@ void testUnitC() {
   sh "test -f ./build_cmake/junit.xml"
 }
 
-void fmuCheckerLinuxWine() {
-  echo "${env.NODE_NAME}"
-  sh 'rm -rf testsuite/'
-  unstash 'cross-fmu'
-  unstash 'cross-fmu-extras'
-  sh '''
-  export HOME="$PWD"
-  cd testsuite/special/FmuExportCrossCompile/
-  ./single-fmu-run.sh linux64 `cat VERSION`
-  ./single-fmu-run.sh linux32 `cat VERSION`
-  ./single-fmu-run.sh win64 `cat VERSION`
-  ./single-fmu-run.sh win32 `cat VERSION`
-  '''
-  stash name: 'cross-fmu-results-linux-wine', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
-}
-
 void fmpyLinux() {
   echo "${env.NODE_NAME}"
   unstash 'cross-fmu'
@@ -1284,30 +1281,6 @@ void fmpyLinux() {
   cd testsuite/special/FMPy/
   make test
   '''
-}
-
-void fmuCheckerArm() {
-  echo "${env.NODE_NAME}"
-  sh 'rm -rf testsuite/'
-  unstash 'cross-fmu'
-  unstash 'cross-fmu-extras'
-  sh '''
-  cd testsuite/special/FmuExportCrossCompile/
-  ./single-fmu-run.sh arm-linux-gnueabihf `cat VERSION` /usr/local/bin/fmuCheck.arm-linux-gnueabihf
-  '''
-  stash name: 'cross-fmu-results-armhf', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
-}
-
-void fmuCheckerResults() {
-  echo "${env.NODE_NAME}"
-  sh 'rm -rf build/ testsuite/'
-  unstash 'omc-clang'
-  unstash 'cross-fmu-extras'
-  unstash 'cross-fmu-results-linux-wine'
-  unstash 'cross-fmu-results-armhf'
-  sh 'cd testsuite/special/FmuExportCrossCompile && ../../../build/bin/omc check-files.mos'
-  sh 'cd testsuite/special/FmuExportCrossCompile && tar -czf ../../../Test_FMUs.tar.gz Test_FMUs'
-  archiveArtifacts 'Test_FMUs.tar.gz'
 }
 
 void uploadCompliance() {

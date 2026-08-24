@@ -2,6 +2,7 @@
 // keywords: inline attributes min max nominal unit
 // status: correct
 // teardown_command: rm -rf InlineAttr15947*
+// cflags: -d=omedit
 //
 // Tests that function input/output attributes (min/max/nominal/unit) are not
 // dropped when a function is inlined, in both the old and the new backend.

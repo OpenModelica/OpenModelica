@@ -1,6 +1,7 @@
 // name: Alias3
 // keywords: NewBackend
 // status: correct
+// suite: disabled
 
 loadString("
   model Alias

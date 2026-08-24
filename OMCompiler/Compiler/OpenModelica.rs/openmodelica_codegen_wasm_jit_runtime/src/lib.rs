@@ -32,11 +32,11 @@
 //! heap elements before freeing. Records will follow the same pattern with an
 //! `rt_record_release` when they land.
 
-// `no_std` on the JIT runtime target (`wasm32-unknown-unknown`, no std). The
-// standalone-export target (`wasm32-wasip1`) has std — needed for the in-wasm
-// driver / `write_mat4` / `_start` to do file I/O over WASI — so std is left
-// enabled there, and the custom panic handler (std provides one) is dropped.
-#![cfg_attr(all(not(target_os = "wasi"), not(test)), no_std)]
+// std on every target: wasip1 needs it for the in-wasm driver's file I/O, and on
+// wasm32-unknown-unknown it costs little (its OS half is stubs) while letting this
+// share `openmodelica_lapack` with the compiler instead of a second dense solver.
+// `global_asm!` on wasm32, for the two shadow-stack accessors below.
+#![feature(asm_experimental_arch)]
 
 extern crate alloc;
 
@@ -47,6 +47,8 @@ pub use nls::{rt_nls_clean_history, rt_set_step_size};
 #[cfg(test)]
 mod nls_c_trace;
 mod solvers;
+mod sysstats;
+mod spatial;
 // SUNDIALS/KLU. The archives are wasip1-only (they need a libc) and only linked
 // when the build script found them, so `cfg(sundials)` gates the calls; the module
 // itself compiles everywhere for its capability report.
@@ -62,16 +64,6 @@ use core::alloc::{GlobalAlloc, Layout};
 #[global_allocator]
 static GLOBAL: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
 
-/// A wasm trap on panic (e.g. allocation failure or a bad substring range),
-/// which the host surfaces as `Values.META_FAIL` exactly like a runtime error.
-/// Only on the `no_std` JIT runtime target; std supplies the handler on wasip1
-/// and on the host `cargo test` build.
-#[cfg(all(not(target_os = "wasi"), not(test)))]
-#[panic_handler]
-fn panic(_: &core::panic::PanicInfo) -> ! {
-    trap()
-}
-
 /// Abort into a wasm trap; on the host `cargo test` build (no wasm intrinsics)
 /// this is an ordinary unreachable — the numeric paths under test never hit it.
 #[cfg(target_arch = "wasm32")]
@@ -84,6 +76,26 @@ fn trap() -> ! {
 fn trap() -> ! {
     unreachable!("wasm runtime trap on host test build")
 }
+
+/// Log the message and raise the flag `enrich_trap` reads for the trap that
+/// follows. It runs on the host, and this module has its own copy of the driver's
+/// statics, so the flag goes over `env.rt_host_runtime_error` too.
+pub(crate) fn note_runtime_error(msg: &str) {
+    openmodelica_sim_meta::driver::note_runtime_error(msg);
+    host_runtime_error();
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone")))]
+fn host_runtime_error() {
+    #[link(wasm_import_module = "env")]
+    unsafe extern "C" {
+        fn rt_host_runtime_error();
+    }
+    unsafe { rt_host_runtime_error() };
+}
+
+#[cfg(not(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone"))))]
+fn host_runtime_error() {}
 
 // `rt_reinit_note(state_off, value)`: the model records an executed `reinit` for
 // the driver's `LOG_EVENTS` block. Every generated model imports it, so every
@@ -113,10 +125,125 @@ mod reinit_notes {
 #[cfg(not(feature = "host_log"))]
 pub use reinit_notes::take_reinit_notes;
 
+// `rt_ext_stack_save` / `rt_ext_stack_restore`: an external "C" call site saves
+// the shadow stack before the call and hands it back if a `ModelicaError` threw
+// out of it — the abandoned frames' epilogues never ran. `__stack_pointer` is
+// the linker's own global, which no Rust expression reaches. Same rule as
+// `rt_reinit_note`: with a host present the host binds both instead.
+#[cfg(all(target_arch = "wasm32", not(feature = "host_log")))]
+core::arch::global_asm!(
+    ".globaltype __stack_pointer, i32",
+    ".globl rt_ext_stack_save",
+    ".export_name rt_ext_stack_save, rt_ext_stack_save",
+    "rt_ext_stack_save:",
+    ".functype rt_ext_stack_save () -> (i32)",
+    "global.get __stack_pointer",
+    "end_function",
+    ".globl rt_ext_stack_restore",
+    ".export_name rt_ext_stack_restore, rt_ext_stack_restore",
+    "rt_ext_stack_restore:",
+    ".functype rt_ext_stack_restore (i32) -> ()",
+    "local.get 0",
+    "global.set __stack_pointer",
+    "end_function",
+);
+
+// `rt_uri_to_filename`: same rule as `rt_reinit_note` — a host binds its own
+// resolver (which has the class directories); a host-free module resolves it here.
+#[cfg(not(feature = "host_log"))]
+mod uri;
+#[cfg(not(feature = "host_log"))]
+pub use uri::set_resources_dir;
+
+// `rt_ext_*`: where an external "C" function's `ModelicaError`/`Message`/`Warning`
+// goes when the module carries the implementations itself
+// (`openmodelica_wasi_libc/external_c_callbacks.c`), which C's
+// `ModelicaUtilities.c` sends to the simulation log — in an FMU the FMI logger,
+// and the only way out. Same rule as `rt_reinit_note`: with a host present, the
+// host binds `env.Modelica*` instead.
+#[cfg(not(feature = "host_log"))]
+mod ext_report {
+    use openmodelica_sim_meta::omclog;
+
+    fn cstr<'a>(p: u32) -> &'a str {
+        unsafe { core::ffi::CStr::from_ptr(p as *const core::ffi::c_char) }.to_str().unwrap_or("")
+    }
+
+    // The model module's `throw`, which rustc emits for no wasm target: merged
+    // as `model` into the standalone module, resolved through `env` by the FMU's
+    // shared-everything linker. Always exported by the emitter — with an
+    // `unreachable` body when the model has no external "C" to throw for.
+    #[cfg_attr(target_os = "wasi", link(wasm_import_module = "model"))]
+    #[cfg_attr(not(target_os = "wasi"), link(wasm_import_module = "env"))]
+    unsafe extern "C" {
+        fn om_throw_model_error();
+    }
+
+    /// C's `throwStreamPrint(NULL, …)`, then `MMC_THROW` — which a nonlinear
+    /// solver catches, so a trial it will reject leaves no message behind.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_ext_error(msg: u32) {
+        if crate::nls::rt_nls_recovering() == 0 {
+            crate::note_runtime_error(cstr(msg));
+        }
+        unsafe { om_throw_model_error() };
+        crate::trap()
+    }
+
+    /// C's `infoStreamPrint(OMC_LOG_STDOUT, 0, …)`.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_ext_message(msg: u32) {
+        omclog::info(omclog::STDOUT, false, cstr(msg).trim_end());
+    }
+
+    /// C's `warningStreamPrint(OMC_LOG_STDOUT, 0, …)`.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_ext_warning(msg: u32) {
+        omclog::warning(omclog::STDOUT, false, cstr(msg).trim_end());
+    }
+}
+
 /// With a host present the notes live host-side (`rt_host_take_reinits`).
 #[cfg(feature = "host_log")]
 pub fn take_reinit_notes() -> alloc::vec::Vec<(u32, f64)> {
     alloc::vec::Vec::new()
+}
+
+// `rt_ext_error` with a host present: the message lives in the side module's own
+// memory, so the host reports it, but the throw must stay in wasm (an unwind
+// through a host frame loses the exception) and reaches the model's
+// `om_throw_model_error` through the shared table.
+#[cfg(all(target_arch = "wasm32", feature = "host_log"))]
+mod ext_report_hosted {
+    use core::sync::atomic::{AtomicU32, Ordering};
+
+    #[link(wasm_import_module = "env")]
+    unsafe extern "C" {
+        fn rt_host_ext_error(msg: u32);
+    }
+
+    /// The model's thrower; 0 (wasm-lld's null slot) is unset, as in the `-d=gen`
+    /// function JIT, which instantiates no model.
+    static THROW_SLOT: AtomicU32 = AtomicU32::new(0);
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_set_ext_throw(slot: u32) {
+        THROW_SLOT.store(slot, Ordering::Relaxed);
+    }
+
+    /// C's `throwStreamPrint(NULL, …)` then `MMC_THROW`; see `ext_report`'s.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_ext_error(msg: u32) {
+        if crate::nls::rt_nls_recovering() == 0 {
+            unsafe { rt_host_ext_error(msg) };
+        }
+        let slot = THROW_SLOT.load(Ordering::Relaxed);
+        if slot != 0 {
+            let throw: extern "C" fn() = unsafe { core::mem::transmute(slot as usize) };
+            throw();
+        }
+        crate::trap()
+    }
 }
 
 // The standalone-export entry point (`_start` + the in-wasm driver), only on the
@@ -195,7 +322,10 @@ pub const STAT_NEWTON_MAXITER: u32 = 20;
 pub const STAT_NEWTON_STUCK: u32 = 21;
 pub const STAT_NEWTON_JAC: u32 = 22;
 pub const STAT_NEWTON_SINGULAR: u32 = 23;
-pub const N_STATS: usize = 24;
+/// Not a diagnostic: C's `homotopySteps`, which the driver folds into the
+/// initialization success line.
+pub const STAT_HOMOTOPY_STEPS: u32 = 24;
+pub const N_STATS: usize = 25;
 
 static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
     [const { core::sync::atomic::AtomicU64::new(0) }; N_STATS];
@@ -203,6 +333,10 @@ static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
 #[inline]
 pub(crate) fn stat_inc(kind: u32) {
     STATS[kind as usize].fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+}
+
+pub(crate) fn stat_add(kind: u32, n: u64) {
+    STATS[kind as usize].fetch_add(n, core::sync::atomic::Ordering::Relaxed);
 }
 
 #[unsafe(no_mangle)]
@@ -477,6 +611,14 @@ pub extern "C" fn rt_array_elem_ptr(obj: u32, index: i32) -> u32 {
     }
     let kind = unsafe { load_u32(obj + ARR_KIND_OFF) };
     arr_data(obj) + (index as u32 - 1) * elem_stride(kind)
+}
+
+/// Byte address of the element area, whatever the array's size: C's `arr.data`,
+/// which is what an `external "C"` array argument is. An empty one has no element
+/// to bounds-check, and the callee is told the sizes separately.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_array_data(obj: u32) -> u32 {
+    arr_data(obj)
 }
 
 /// The out-of-range arm of [`rt_array_elem_ptr`], also used by the inlined
@@ -1168,15 +1310,29 @@ rt_math1!(atanh);
 rt_math2!(hypot);
 rt_math2!(fmod);
 
+/// C's `throwStreamPrint(threadData, "%s:%d: Invalid root: (%g)^(%g)", __FILE__,
+/// __LINE__, base, exp)`, with `loc` the `"<file>:<line>: "` prefix in place of
+/// the generated C position.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_invalid_root(base: f64, exp: f64, loc: u32) {
+    use openmodelica_sim_meta::driver::format_g;
+    let at = if loc == 0 { "" } else { core::str::from_utf8(unsafe { str_bytes(loc) }).unwrap_or("") };
+    nls::throw_stream(&format!(
+        "{at}Invalid root: ({})^({})",
+        format_g(base, 6),
+        format_g(exp, 6)
+    ));
+}
+
 /// Scalar `base ^ exp` for a non-integer-literal exponent, replicating the C
 /// target's inlined generic real-power semantics so the result stays
 /// byte-identical. A negative base with an (effectively) integer exponent or an
 /// odd-root fractional exponent gives a real value; any other negative-base
 /// fractional exponent is an "invalid root"; and any nan/inf result is rejected.
-/// The error cases go through [`nls::model_error`], as C's `throwStreamPrint`
+/// The error cases go through [`rt_invalid_root`], as C's `throwStreamPrint`
 /// does: fatal unless a nonlinear solver can back off.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
+pub extern "C" fn rt_real_pow(base: f64, exp: f64, loc: u32) -> f64 {
     let result;
     if base < 0.0 && exp != 0.0 {
         // Split the exponent into integer / fractional parts and round to the
@@ -1209,7 +1365,7 @@ pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
             if libm::fabs(ifrac) < 1e-10 && ((iint as i64 as u64) & 1) != 0 {
                 result = -libm::pow(-base, frac) * libm::pow(base, int);
             } else {
-                nls::model_error();
+                rt_invalid_root(base, exp, loc);
                 return 0.0;
             }
         }
@@ -1217,7 +1373,7 @@ pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
         result = libm::pow(base, exp);
     }
     if result.is_nan() || result.is_infinite() {
-        nls::model_error();
+        rt_invalid_root(base, exp, loc);
         return 0.0;
     }
     result
@@ -1674,13 +1830,18 @@ const STR_DATA_OFF: u32 = 8;
 
 /// Allocate an uninitialized `String` object of `len` bytes (refcount 1, length
 /// set). The caller fills `rt_str_data(obj)..+len` with the bytes.
+///
+/// The byte after them is a NUL, so `rt_str_data` is also a C string, as C's
+/// `modelica_string` always is — an `external "C"` call sharing the memory is
+/// handed it directly.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_str_new(len: u32) -> u32 {
     stat_inc(STAT_STR_NEW);
-    let obj = rt_alloc(STR_DATA_OFF + len);
+    let obj = rt_alloc(STR_DATA_OFF + len + 1);
     unsafe {
         store_u32(obj, 1); // refcount
         store_u32(obj + STR_LEN_OFF, len);
+        *((obj + STR_DATA_OFF + len) as *mut u8) = 0;
     }
     obj
 }
@@ -2255,31 +2416,261 @@ pub extern "C" fn rt_lin_solves() -> u64 {
     lin_solves()
 }
 
+/// Enter a linear system, C's `solve_linear_system`: the generated code assembles
+/// `A` and `b`, so the bracket starts there. [`rt_ls_end`] closes it.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_ls_begin(eq_index: i32, size: u32, nnz: u32) {
+    sysstats::begin(eq_index, false, size, nnz);
+}
+
+/// Leave the linear system [`rt_ls_begin`] entered. Iterations and evaluations are
+/// a nonlinear system's statistics; C leaves them at zero here too.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_ls_end() {
+    sysstats::end([0; 3]);
+}
+
+/// The host's wall clock. Same rule as `rt_reinit_note`: the `env` import only
+/// where a host binds it (`host_log`). The standalone command installs its own;
+/// the FMI3 adapter has neither, and leaves its timers at zero.
+#[cfg(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone")))]
+mod host_clock {
+    #[link(wasm_import_module = "env")]
+    unsafe extern "C" {
+        fn rt_host_now_ms() -> f64;
+    }
+    pub(crate) fn now_ms() -> f64 {
+        unsafe { rt_host_now_ms() }
+    }
+}
+
+/// Install the host clock and arm (or disarm) the per-system statistics for a run;
+/// the host-driven path has no session to do it.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_stats_start(on: u32) {
+    #[cfg(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone")))]
+    openmodelica_sim_meta::driver::set_clock(host_clock::now_ms);
+    sysstats::enable(on != 0);
+}
+
 /// Solve the dense `n`×`n` system `A x = b` in place: `A` is `a_ptr` as `n*n`
 /// f64 in **column-major** order, `b` is `b_ptr` as `n` f64. On success `b ← x`
-/// and 0 is returned; 1 only when the system is genuinely unsolvable.
+/// and 0 is returned; 1 only when the system is genuinely unsolvable. `A` is left
+/// intact for [`rt_linsolve_totalpivot`].
 ///
 /// LU with partial pivoting (like C's `dgesv`), then a total-pivot search on a
-/// singular matrix, mirroring C's `LS_DEFAULT`; `-ls=klu` uses KLU instead.
+/// singular matrix, mirroring C's `LS_DEFAULT`; `-ls=klu`/`-ls=umfpack` use
+/// SuiteSparse instead. `method1`: a [`rt_ls_check_step`] follows, and is what
+/// decides whether the system is solved.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
+pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64, method1: i32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    sysstats::mark_assembly_done();
     let n = n as usize;
+    // C prints this from the solver it dispatched to; `solveTotalPivot` prints its own.
+    match solvers::ls() {
+        solvers::Ls::TotalPivot => {}
+        solvers::Ls::Klu => ls_start_log(eq_index, n, time, "Klu"),
+        solvers::Ls::Umfpack => ls_start_log(eq_index, n, time, "UMFPACK"),
+        solvers::Ls::Lapack => ls_start_log(eq_index, n, time, "Lapack"),
+    }
     #[cfg(sundials)]
-    if solvers::ls() == solvers::Ls::Klu {
-        return sundials::klu_solve_dense(a_ptr, b_ptr, n);
+    match solvers::ls() {
+        solvers::Ls::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
+        // Singular: fall through to the total-pivot search, C's own fallback.
+        solvers::Ls::Umfpack => match sundials::umfpack_solve_dense(a_ptr, b_ptr, n) {
+            0 => return 0,
+            2 => return 1,
+            _ => {}
+        },
+        _ => {}
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
     // `-ls=totalpivot` skips straight to the total-pivot search; LAPACK (C's
     // `dgesv`, and the default) is partial-pivot LU with that as its singular
-    // fallback.
-    let lu_first = solvers::ls() != solvers::Ls::TotalPivot;
-    if (lu_first && nls::lu_solve(a, b, n)) || nls::total_pivot_solve(a, b, n) {
-        0
-    } else {
-        1
+    // fallback. `-ls=umfpack` only gets here having found the matrix singular.
+    let lu_first = !matches!(solvers::ls(), solvers::Ls::TotalPivot | solvers::Ls::Umfpack);
+    if lu_first {
+        match nls::lu_solve_singular_pivot(a, b, n) {
+            None => {
+                if method1 == 0 {
+                    ls_solved(eq_index);
+                }
+                return 0;
+            }
+            Some(k) => {
+                let count = ls_note_failure(eq_index);
+                // C prints `dgesv`'s 1-based `info` one too high; keep the text.
+                omclog::warning_with_limit(
+                    omclog::LS,
+                    count,
+                    solvers::max_warn_displays(),
+                    &alloc::format!(
+                        "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}, system is singular for U[{p}, {p}].",
+                        p = k + 2
+                    ),
+                );
+                ls_report_fallback(eq_index, time, count);
+                ls_failure_entry(eq_index).fell_back = true;
+            }
+        }
     }
+    ls_total_pivot(a, b, n, eq_index, time)
+}
+
+/// C's `solveTotalPivot` fallback for a step [`rt_ls_check_step`] rejected: the
+/// same `A` — a linear system's Jacobian does not depend on its unknowns, so C's
+/// re-evaluation of it lands on the same numbers — against the negated residual.
+/// 0 ok, 1 inconsistent. Same `solve_linear_system` call, so not a new solve.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_linsolve_totalpivot(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64) -> i32 {
+    let n = n as usize;
+    let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
+    let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+    ls_total_pivot(a, b, n, eq_index, time)
+}
+
+/// C's per-solver `Start solving Linear System …` line.
+fn ls_start_log(eq_index: i32, size: usize, time: f64, solver: &str) {
+    omclog::info(
+        omclog::LS,
+        false,
+        &alloc::format!(
+            "Start solving Linear System {eq_index} (size {size}) at time {} with {solver} Solver",
+            openmodelica_sim_meta::driver::format_g(time, 6)
+        ),
+    );
+}
+
+/// C's `solveTotalPivot`, whose under-determined return warns on stdout.
+fn ls_total_pivot(a: &[f64], b: &mut [f64], n: usize, eq_index: i32, time: f64) -> i32 {
+    ls_start_log(eq_index, n, time, "Total Pivot");
+    if nls::total_pivot_solve(a, b, n) {
+        return 0;
+    }
+    omclog::warning(
+        omclog::STDOUT,
+        false,
+        &alloc::format!("Error solving linear system of equations (no. {eq_index}) at time {time:.6}."),
+    );
+    1
+}
+
+/// C's `check_linear_solution` for a system left unsolved, then the
+/// `throwStreamPrintWithEquationIndexes` the generated equation function runs into.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_ls_failed(eq_index: i32, time: f64) {
+    use openmodelica_sim_meta::driver::format_g;
+    if nls::throw_reports() {
+        omclog::warning(
+            omclog::STDOUT,
+            true,
+            &alloc::format!(
+                "Solving linear system {eq_index} fails at time {}. For more information use -lv LOG_LS.",
+                format_g(time, 6)
+            ),
+        );
+        omclog::close_warning(omclog::STDOUT);
+    }
+    nls::throw_stream(&alloc::format!(
+        "Solving linear system {eq_index} failed at time={}.\nFor more information please use -lv LOG_LS.",
+        format_g(time, 15)
+    ));
+}
+
+/// C's method-1 step test (`solveLapack`, `solveKlu`, …): the step `dx` only counts
+/// if the residual `res` re-evaluated at `x + dx` is small — an ill-conditioned
+/// matrix passes the factorization and still leaves the equations unsatisfied.
+/// Returns 1 when the solve must be redone, with `-res` in `b` to step on from
+/// where the unknowns now are. Only the `-ls` (`dense`) solvers have that retry;
+/// a sparse system's rejected step leaves it unsolved, as in C.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64, dense: i32) -> i32 {
+    // `-ls=totalpivot` has no check, and a fallback solve's step already is one.
+    if dense != 0 && matches!(solvers::ls(), solvers::Ls::TotalPivot) {
+        return 0;
+    }
+    if core::mem::replace(&mut ls_failure_entry(eq_index).fell_back, false) {
+        return 0;
+    }
+    let n = n as usize;
+    let res = unsafe { core::slice::from_raw_parts(res_ptr as *const f64, n) };
+    let norm = nls::enorm(res);
+    if !(norm.is_nan() || norm > 1e-4) {
+        ls_solved(eq_index);
+        return 0;
+    }
+    let count = ls_note_failure(eq_index);
+    omclog::warning_with_limit(
+        omclog::LS,
+        count,
+        solvers::max_warn_displays(),
+        &alloc::format!(
+            "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}. Residual norm is {}.",
+            openmodelica_sim_meta::driver::format_g(norm, 15)
+        ),
+    );
+    if dense != 0 {
+        ls_report_fallback(eq_index, time, count);
+        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+        for (bi, &ri) in b.iter_mut().zip(res) {
+            *bi = -ri;
+        }
+    }
+    1
+}
+
+/// C's per-system `linsys->failed` / `numberOfFailures`: the first failure after
+/// a success warns on stdout, a run of them only on `LOG_LS`.
+struct LsFailure {
+    eq_index: i32,
+    failed: bool,
+    failures: u64,
+    /// The last solve was the total-pivot fallback, whose step C takes unchecked.
+    fell_back: bool,
+}
+struct LsFailures(core::cell::UnsafeCell<alloc::vec::Vec<LsFailure>>);
+unsafe impl Sync for LsFailures {}
+static LS_FAILURES: LsFailures = LsFailures(core::cell::UnsafeCell::new(alloc::vec::Vec::new()));
+
+fn ls_failure_entry(eq_index: i32) -> &'static mut LsFailure {
+    let v = unsafe { &mut *LS_FAILURES.0.get() };
+    if let Some(i) = v.iter().position(|e| e.eq_index == eq_index) {
+        return &mut v[i];
+    }
+    v.push(LsFailure { eq_index, failed: false, failures: 0, fell_back: false });
+    v.last_mut().unwrap()
+}
+
+fn ls_solved(eq_index: i32) {
+    ls_failure_entry(eq_index).failed = false;
+}
+
+/// C's `++systemData->numberOfFailures`, shared by both warnings of one failure.
+fn ls_note_failure(eq_index: i32) -> u64 {
+    let e = ls_failure_entry(eq_index);
+    e.failures += 1;
+    e.failures
+}
+
+/// C's `solve_linear_system` `LS_DEFAULT` branch.
+fn ls_report_fallback(eq_index: i32, time: f64, count: u64) {
+    let e = ls_failure_entry(eq_index);
+    let stream = if e.failed { omclog::LS } else { omclog::STDOUT };
+    e.failed = true;
+    omclog::warning_with_limit(
+        stream,
+        count,
+        solvers::max_warn_displays(),
+        &alloc::format!(
+            "The default linear solver fails, the fallback solver with total pivoting is started at time {time:.6}. That might raise performance issues, for more information use -lv LOG_LS."
+        ),
+    );
+}
+
+pub fn reset_ls_failures() {
+    unsafe { &mut *LS_FAILURES.0.get() }.clear();
 }
 
 /// Solve a sparse `n`×`n` system `A x = b` in place, `A` given in CSC:
@@ -2291,6 +2682,7 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: u32, nnz: u32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    sysstats::mark_assembly_done();
     let n = n as usize;
     let nnz = nnz as usize;
     let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
@@ -2337,10 +2729,13 @@ pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_p
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    sysstats::mark_assembly_done();
     let n = n as usize;
     #[cfg(sundials)]
-    if solvers::lss() == solvers::Lss::Klu {
-        return sundials::klu_solve_dense(a_ptr, b_ptr, n);
+    match solvers::lss() {
+        solvers::Lss::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
+        solvers::Lss::Umfpack => return (sundials::umfpack_solve_dense(a_ptr, b_ptr, n) != 0) as i32,
+        solvers::Lss::Rsparse => {}
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
 
@@ -2412,12 +2807,17 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
     b_ptr: u32,
     n: u32,
     nnz: u32,
+    time: f64,
 ) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
-    let backend = match solvers::lss() {
-        solvers::Lss::Klu => solvers::Sparse::Klu,
-        solvers::Lss::Rsparse => solvers::Sparse::Rsparse,
+    sysstats::mark_assembly_done();
+    let (backend, name) = match solvers::lss() {
+        solvers::Lss::Klu => (solvers::Sparse::Klu, "Klu"),
+        solvers::Lss::Umfpack => (solvers::Sparse::Umfpack, "UMFPACK"),
+        // rsparse stands in for KLU where SuiteSparse is absent; C's name for it.
+        solvers::Lss::Rsparse => (solvers::Sparse::Rsparse, "Klu"),
     };
+    ls_start_log(handle as i32, n as usize, time, name);
     lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz, backend)
 }
 
@@ -2439,8 +2839,10 @@ pub(crate) fn lin_sparse_cached(
     let nnz = nnz as usize;
 
     #[cfg(sundials)]
-    if backend == solvers::Sparse::Klu {
-        return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz);
+    match backend {
+        solvers::Sparse::Klu => return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
+        solvers::Sparse::Umfpack => return sundials::umfpack_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
+        solvers::Sparse::Rsparse => {}
     }
     #[cfg(not(sundials))]
     let _ = backend;
@@ -2522,4 +2924,118 @@ fn solve_lin_sparse_cached_inwasm(handle: u32, colptr: u32, rowidx: u32, values:
 pub extern "C" fn rt_call1_indirect(idx: u32, arg: u32) {
     let f: extern "C" fn(u32) = unsafe { core::mem::transmute(idx as usize) };
     f(arg);
+}
+
+// ─────────────────── external "FORTRAN 77" marshalling ───────────────────
+//
+// Only the shared-memory path (a wasm FMU) uses these: there is no host
+// trampoline to convert, so the generated wrapper builds the Fortran argument
+// list itself. The native and web simulation paths keep marshalling on the host
+// (`call_external_in_wasm`), which is where the same rules are implemented for
+// the trampoline. Fortran passes every argument by reference and stores arrays
+// column-major, so a scalar needs a cell and a multi-dimensional array needs a
+// transposed copy — C's `convert_alloc_*_to_f77` / `_from_f77`.
+
+/// A cell holding one `Real`, for a by-reference Fortran argument.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_f77_cell_r(v: f64) -> u32 {
+    let cell = rt_alloc(8);
+    unsafe { store_f64(cell, v) };
+    cell
+}
+
+/// A cell holding one `Integer`/`Boolean`. 8 bytes, so the same `rt_free` path
+/// serves both cell kinds.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_f77_cell_i(v: u32) -> u32 {
+    let cell = rt_alloc(8);
+    unsafe {
+        store_u32(cell, v);
+        store_u32(cell + 4, 0);
+    }
+    cell
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_f77_cell_get_r(cell: u32) -> f64 {
+    unsafe { load_f64(cell) }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_f77_cell_get_i(cell: u32) -> u32 {
+    unsafe { load_u32(cell) }
+}
+
+/// The address a Fortran callee should see for `arr`. A vector is already
+/// contiguous in the order Fortran wants, so its own elements are passed; a
+/// 2-or-more-dimensional array gets a fresh column-major copy, which
+/// [`rt_f77_arr_out`] releases (and copies back for an output).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_f77_arr_in(arr: u32) -> u32 {
+    if arr == 0 {
+        return 0;
+    }
+    if rt_array_ndims(arr) < 2 {
+        return arr_data(arr);
+    }
+    let kind = unsafe { load_u32(arr + ARR_KIND_OFF) };
+    let stride = elem_stride(kind);
+    let total = rt_array_total(arr);
+    let scratch = rt_alloc(total * stride);
+    f77_reorder(arr, arr_data(arr), scratch, stride, true);
+    scratch
+}
+
+/// Undo [`rt_f77_arr_in`]: for an output, copy the callee's column-major result
+/// back into the array's row-major elements; then release the scratch. A no-op
+/// when the callee was handed the elements directly.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_f77_arr_out(arr: u32, ptr: u32, copy_back: u32) {
+    if arr == 0 || ptr == 0 || ptr == arr_data(arr) {
+        return;
+    }
+    if copy_back != 0 {
+        let kind = unsafe { load_u32(arr + ARR_KIND_OFF) };
+        f77_reorder(arr, ptr, arr_data(arr), elem_stride(kind), false);
+    }
+    rt_free(ptr);
+}
+
+/// Transpose between the row-major element order the runtime uses and the
+/// column-major order Fortran expects. `to_f77` picks the direction; `src`/`dst`
+/// are element areas, and `arr` supplies the dimensions.
+fn f77_reorder(arr: u32, src: u32, dst: u32, stride: u32, to_f77: bool) {
+    let ndims = rt_array_ndims(arr);
+    let total = rt_array_total(arr);
+    if total == 0 {
+        return;
+    }
+    // Per-axis sizes, and the row-major stride of each axis in elements.
+    let mut dim = [1u32; 8];
+    let n = (ndims as usize).min(dim.len());
+    for (axis, d) in dim[..n].iter_mut().enumerate() {
+        *d = unsafe { load_u32(arr + ARR_DIMS_OFF + axis as u32 * 4) };
+    }
+    for i in 0..total {
+        // Decompose the row-major position into subscripts, then recompose it
+        // column-major (last axis slowest becomes first axis slowest).
+        let mut rest = i;
+        let mut sub = [0u32; 8];
+        for axis in (0..n).rev() {
+            sub[axis] = rest % dim[axis];
+            rest /= dim[axis];
+        }
+        let mut col = 0u32;
+        for axis in (0..n).rev() {
+            col = col * dim[axis] + sub[axis];
+        }
+        let (from, to) = if to_f77 { (i, col) } else { (col, i) };
+        unsafe {
+            core::ptr::copy_nonoverlapping(
+                (src + from * stride) as *const u8,
+                (dst + to * stride) as *mut u8,
+                stride as usize,
+            );
+        }
+    }
 }

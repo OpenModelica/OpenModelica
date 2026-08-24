@@ -79,7 +79,7 @@ impl Capture {
             }
         }
         if !out.is_empty() {
-            crate::driver::log_line(&out);
+            crate::driver::log_line(crate::omclog::STDOUT, crate::omclog::INFO, &out);
         }
     }
 }

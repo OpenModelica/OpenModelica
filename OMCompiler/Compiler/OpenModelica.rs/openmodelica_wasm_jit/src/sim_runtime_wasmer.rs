@@ -243,6 +243,12 @@ pub fn take_compiled_model(model: &SimModel) -> std::result::Result<wasmer::Modu
     }
 }
 
+/// Nothing to prepare: the `external "C"` implementations are in the
+/// ModelicaExternalC side module, built into omc.
+pub fn prepare_native_externals(_model: &SimModel, _sigs: &[crate::sig::ExtCallSig]) -> std::result::Result<(), String> {
+    Ok(())
+}
+
 type Store = wasmer::Store;
 
 /// `SimEngine`-trait / host-import errors: collapse to the crate `&'static str`
@@ -261,7 +267,7 @@ fn wts<T, E: std::fmt::Debug>(r: std::result::Result<T, E>) -> std::result::Resu
 }
 
 /// Read a NUL-terminated C string from wasm memory at `ptr` (bounded).
-fn read_cstr(mem: &wasmer::Memory, store: &impl wasmer::AsStoreRef, ptr: u32) -> String {
+pub(crate) fn read_cstr(mem: &wasmer::Memory, store: &impl wasmer::AsStoreRef, ptr: u32) -> String {
     let view = mem.view(store);
     let mut bytes = Vec::new();
     let mut a = ptr as u64;
@@ -279,8 +285,8 @@ fn read_u32_mem(mem: &wasmer::Memory, store: &impl wasmer::AsStoreRef, addr: u32
     Ok(u32::from_le_bytes(b))
 }
 
-/// Host state for the side module's `env.Modelica*Error` imports: its memory
-/// (filled in after instantiation) to read the message from.
+/// Host state for the side module's `env.rt_ext_message`/`rt_ext_warning` imports:
+/// its memory (filled in after instantiation) to read the message from.
 struct SideErrEnv {
     mem: Option<wasmer::Memory>,
 }
@@ -303,6 +309,11 @@ struct ExtEnv {
     free: wasmer::TypedFunction<u32, ()>,
     rt_str_new: wasmer::TypedFunction<u32, u32>,
     rt_str_data: wasmer::TypedFunction<u32, u32>,
+    rt_release: wasmer::TypedFunction<u32, ()>,
+    /// What [`recover_trial`] judges a failed call by, and the stack it restores.
+    nls_recovering: wasmer::TypedFunction<(), i32>,
+    nls_note: wasmer::TypedFunction<(), ()>,
+    side_sp: Option<wasmer::Global>,
     func: wasmer::Function,
     sig: crate::sig::ExtCallSig,
 }
@@ -315,16 +326,20 @@ struct ExtEnv {
 /// pointer outputs (scalars, and `char*`/`char**` strings) back — the latter into
 /// fresh in-wasm strings (`rt_str_new`/`rt_str_data`). External-object handles
 /// (`tableID`) are the side module's own pointers, passed straight through as `i32`.
-/// A `ModelicaError` inside the side module records to the Error buffer and traps
-/// (surfaced like the native path). Mirrors
+/// A `ModelicaError` goes to the runtime's `rt_ext_error`, bound wasm→wasm so the
+/// throw it ends in reaches the model's `try_table`; a marshalled call has a host
+/// frame in the way and recovers by [`recover_trial`] instead. Mirrors
 /// `sim_runtime_wasmtime::define_external_imports`.
 fn define_external_imports(
     store: &mut Store,
     imports: &mut wasmer::Imports,
     model: &SimModel,
     sim_mem: &wasmer::Memory,
+    rt_inst: &wasmer::Instance,
+    host_mem: &crate::host::HostMem,
     rt_str_new: &wasmer::TypedFunction<u32, u32>,
     rt_str_data: &wasmer::TypedFunction<u32, u32>,
+    rt_release: &wasmer::TypedFunction<u32, ()>,
 ) -> Result<()> {
     use wasmer::{AsStoreRef, Function, FunctionEnv, FunctionEnvMut, FunctionType, RuntimeError, Value};
 
@@ -332,31 +347,45 @@ fn define_external_imports(
         return Err("error");
     }
 
-    // Instantiate the side module with its `env.Modelica*Error`/`usertab`/
-    // `ModelicaAllocateString` imports.
+    // Instantiate the side module with its `env.rt_ext_*`/`usertab`/
+    // `ModelicaAllocateString` imports. The `Modelica*` entry points themselves
+    // are inside it (`external_c_callbacks.c`), so what arrives here has already
+    // been through `vsnprintf`.
     let side_module = wasmer::Module::from_binary(store.engine(), EXTERNAL_C_WASM).map_err(|_| "CodegenWasmJit: wasm engine error")?;
     let err_env = FunctionEnv::new(&mut *store, SideErrEnv { mem: None });
-    let modelica_error = Function::new_typed_with_env(
+    let side_msg = |env: &FunctionEnvMut<SideErrEnv>, ptr: i32| -> String {
+        let mem = env.data().mem.clone();
+        mem.map(|m| read_cstr(&m, &env.as_store_ref(), ptr as u32)).unwrap_or_default()
+    };
+    // The runtime's own export, so no host frame sits under the throw; it reports
+    // through `env.rt_host_ext_error` first. Message and warning return, so they
+    // stay host closures.
+    let rt_ext_error = rt_inst
+        .exports
+        .get_function("rt_ext_error")
+        .map_err(|_| "CodegenWasmJit: the runtime module exports no `rt_ext_error`")?
+        .clone();
+    // C sends both to `OMC_LOG_STDOUT`, where the run's log picks them up.
+    use openmodelica_sim_meta::omclog;
+    let rt_ext_warning = Function::new_typed_with_env(
         &mut *store, &err_env,
-        |env: FunctionEnvMut<SideErrEnv>, ptr: i32| -> std::result::Result<(), RuntimeError> {
-            let mem = env.data().mem.clone();
-            let msg = mem.map(|m| read_cstr(&m, &env.as_store_ref(), ptr as u32)).unwrap_or_default();
-            openmodelica_error::ErrorExt::runtime_error(&msg);
-            Err(RuntimeError::new(format!("ModelicaError: {msg}")))
+        move |env: FunctionEnvMut<SideErrEnv>, ptr: i32| {
+            let msg = side_msg(&env, ptr);
+            omclog::warning(omclog::STDOUT, false, msg.strip_suffix('\n').unwrap_or(&msg));
         },
     );
-    let modelica_format_error = Function::new_typed_with_env(
+    let rt_ext_message = Function::new_typed_with_env(
         &mut *store, &err_env,
-        |env: FunctionEnvMut<SideErrEnv>, fmt: i32, _args: i32| -> std::result::Result<(), RuntimeError> {
-            let mem = env.data().mem.clone();
-            let msg = mem.map(|m| read_cstr(&m, &env.as_store_ref(), fmt as u32)).unwrap_or_default();
-            openmodelica_error::ErrorExt::runtime_error(&msg);
-            Err(RuntimeError::new(format!("ModelicaError: {msg}")))
+        move |env: FunctionEnvMut<SideErrEnv>, ptr: i32| {
+            let msg = side_msg(&env, ptr);
+            omclog::info(omclog::STDOUT, false, msg.strip_suffix('\n').unwrap_or(&msg));
         },
     );
-    // `usertab` (user-defined table callback) is never used by the standard table
-    // blocks; provide a stub that reports "not found".
-    let usertab = Function::new_typed(&mut *store, |_: i32, _: i32, _: i32, _: i32, _: i32| -> i32 { 1 });
+    // This host cannot build the model's `Include`, so only the C dummy is left.
+    let usertab = Function::new_typed(&mut *store, |_: i32, _: i32, _: i32, _: i32, _: i32| -> i32 {
+        openmodelica_error::ErrorExt::runtime_error("Function \"usertab\" is not implemented\n");
+        1
+    });
     // `ModelicaAllocateString(len)` — allocate the returned string buffer in the
     // side module's own memory (its `malloc`, filled in after instantiation) and
     // record the offset so the trampoline can free it after copying the result out.
@@ -372,30 +401,6 @@ fn define_external_imports(
         },
     );
 
-    // `ModelicaFormatWarning`/`ModelicaVFormatWarning`/`ModelicaFormatMessage` (fmt,
-    // args) — non-fatal; record the (unformatted) format string. `ModelicaVFormatError`
-    // is the noreturn va_list error: trap like `ModelicaError`. All are `(i32,i32)->()`;
-    // ModelicaIO/MatIO pull the extra three (the base three come from tables/strings).
-    let warn_fn = |store: &mut wasmer::Store, err_env: &FunctionEnv<SideErrEnv>| Function::new_typed_with_env(
-        store, err_env,
-        |env: FunctionEnvMut<SideErrEnv>, fmt: i32, _args: i32| {
-            let mem = env.data().mem.clone();
-            let msg = mem.map(|m| read_cstr(&m, &env.as_store_ref(), fmt as u32)).unwrap_or_default();
-            openmodelica_error::ErrorExt::runtime_warning(&msg);
-        },
-    );
-    let modelica_format_warning = warn_fn(&mut *store, &err_env);
-    let modelica_vformat_warning = warn_fn(&mut *store, &err_env);
-    let modelica_format_message = warn_fn(&mut *store, &err_env);
-    let modelica_vformat_error = Function::new_typed_with_env(
-        &mut *store, &err_env,
-        |env: FunctionEnvMut<SideErrEnv>, fmt: i32, _args: i32| -> std::result::Result<(), RuntimeError> {
-            let mem = env.data().mem.clone();
-            let msg = mem.map(|m| read_cstr(&m, &env.as_store_ref(), fmt as u32)).unwrap_or_default();
-            openmodelica_error::ErrorExt::runtime_error(&msg);
-            Err(RuntimeError::new(format!("ModelicaError: {msg}")))
-        },
-    );
     // `ModelicaInternal_get*`: seeding helpers ModelicaRandom pulls in. `getTime`
     // writes nothing (7 int* outs left as-is); `getpid` returns a constant. (Only
     // ModelicaRandom's automatic global seed uses them; explicit-seed RNG does not.)
@@ -404,12 +409,9 @@ fn define_external_imports(
     let modelica_getpid = Function::new_typed(&mut *store, || -> i32 { 1 });
 
     let mut side_imports = wasmer::Imports::new();
-    side_imports.define("env", "ModelicaError", modelica_error);
-    side_imports.define("env", "ModelicaFormatError", modelica_format_error);
-    side_imports.define("env", "ModelicaFormatWarning", modelica_format_warning);
-    side_imports.define("env", "ModelicaVFormatWarning", modelica_vformat_warning);
-    side_imports.define("env", "ModelicaFormatMessage", modelica_format_message);
-    side_imports.define("env", "ModelicaVFormatError", modelica_vformat_error);
+    side_imports.define("env", "rt_ext_error", rt_ext_error);
+    side_imports.define("env", "rt_ext_warning", rt_ext_warning);
+    side_imports.define("env", "rt_ext_message", rt_ext_message);
     side_imports.define("env", "usertab", usertab);
     side_imports.define("env", "ModelicaAllocateString", modelica_alloc_string.clone());
     // ModelicaInternal uses the error-returning variant; same malloc-backed impl
@@ -427,9 +429,12 @@ fn define_external_imports(
 
     let side_mem = side_inst.exports.get_memory("memory")
         .map_err(|e| "CodegenWasmJit: modelicaexternalc.wasm has no `memory")?.clone();
-    // Let the error hooks + WASI calls read/write the side module's memory.
+    // Let the error hooks, the WASI calls and the `rt_ext_stack_*` builtins reach
+    // the side module.
     err_env.as_mut(&mut *store).mem = Some(side_mem.clone());
     wasi_env.as_mut(&mut *store).set_memory(side_mem.clone());
+    let side_sp = side_inst.exports.get_global("__stack_pointer").ok().cloned();
+    host_mem.set_side(&mut *store, &side_mem, side_sp.clone());
     // WASI reactor initialization (sets up the C runtime state).
     if let Ok(init) = side_inst.exports.get_typed_function::<(), ()>(&*store, "_initialize") {
         wt(init.call(&mut *store))?;
@@ -438,6 +443,8 @@ fn define_external_imports(
     let free: wasmer::TypedFunction<u32, ()> = wt(side_inst.exports.get_typed_function(&*store, "free"))?;
     // Now the allocator import can reach the side module's `malloc`.
     alloc_env.as_mut(&mut *store).malloc = Some(malloc.clone());
+    let nls_recovering: wasmer::TypedFunction<(), i32> = wt(rt_inst.exports.get_typed_function(&*store, "rt_nls_recovering"))?;
+    let nls_note: wasmer::TypedFunction<(), ()> = wt(rt_inst.exports.get_typed_function(&*store, "rt_nls_note_assert"))?;
 
     for sig in &model.ext_imports {
         let name = &sig.name;
@@ -469,13 +476,24 @@ fn define_external_imports(
             free: free.clone(),
             rt_str_new: rt_str_new.clone(),
             rt_str_data: rt_str_data.clone(),
+            rt_release: rt_release.clone(),
+            nls_recovering: nls_recovering.clone(),
+            nls_note: nls_note.clone(),
+            side_sp: side_sp.clone(),
             func,
             sig: sig.clone(),
         });
         let nm = name.clone();
         let host = Function::new_with_env(&mut *store, &env, functype,
             move |mut fenv: FunctionEnvMut<ExtEnv>, args: &[Value]| -> std::result::Result<Vec<Value>, RuntimeError> {
-                call_external_side(&mut fenv, args).map_err(|e| RuntimeError::new(format!("external \"C\" `{nm}`: {e}")))
+                let sp = side_stack(&mut fenv);
+                match call_external_side(&mut fenv, args) {
+                    Ok(v) => Ok(v),
+                    Err(e) => match recover_trial(&mut fenv, sp)? {
+                        Some(zeroed) => Ok(zeroed),
+                        None => Err(RuntimeError::new(format!("external \"C\" `{nm}`: {e}"))),
+                    },
+                }
             });
         imports.define("ext", name, host);
     }
@@ -504,6 +522,44 @@ fn valtype(w: WTy) -> wasmer::Type {
     }
 }
 
+/// The side module's `__stack_pointer`, before a call that may abandon frames.
+fn side_stack(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>) -> Option<i32> {
+    let g = fenv.data().side_sp.clone()?;
+    g.get(fenv).i32()
+}
+
+/// What the model's `try_table` would have done, for a call whose throw could not
+/// cross this host trampoline: inside a residual, note the trial and hand back
+/// zeroed results; outside one, `None` — the call really failed. The shadow stack
+/// goes back to `saved_stack` either way.
+fn recover_trial(
+    fenv: &mut wasmer::FunctionEnvMut<ExtEnv>,
+    saved_stack: Option<i32>,
+) -> std::result::Result<Option<Vec<wasmer::Value>>, wasmer::RuntimeError> {
+    use crate::sig::SigTy;
+    use wasmer::Value;
+    let (data, mut store) = fenv.data_and_store_mut();
+    let (recovering, note, str_new, sig, sp) =
+        (data.nls_recovering.clone(), data.nls_note.clone(), data.rt_str_new.clone(), data.sig.clone(), data.side_sp.clone());
+    if let (Some(g), Some(v)) = (sp, saved_stack) {
+        g.set(&mut store, Value::I32(v))?;
+    }
+    if recovering.call(&mut store)? == 0 {
+        return Ok(None);
+    }
+    note.call(&mut store)?;
+    let results = sig.wasm_results();
+    let mut out = Vec::with_capacity(results.len());
+    for ty in results {
+        out.push(match ty {
+            SigTy::Real => Value::F64(0.0),
+            SigTy::Str => Value::I32(str_new.call(&mut store, 0)? as i32),
+            _ => Value::I32(0),
+        });
+    }
+    Ok(Some(out))
+}
+
 /// Marshal `args` (the import's input params) into the side module's memory per the
 /// C-call signature, call the target export with the full C argument list (inputs +
 /// an `_Out_` scratch cell per output pointer), then read the C return value and
@@ -523,6 +579,7 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
     let free = data.free.clone();
     let rt_str_new = data.rt_str_new.clone();
     let rt_str_data = data.rt_str_data.clone();
+    let rt_release = data.rt_release.clone();
     let func = data.func.clone();
     let sig = data.sig.clone();
 
@@ -539,6 +596,8 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
     // offset, byte length, header data offset, column-major dims + element size
     // for a Fortran callee).
     let mut out_arrays: Vec<(u32, u32, usize, u32, Option<(Vec<usize>, usize)>)> = Vec::new();
+    // Output `String[…]`: (`char**` side scratch, sim element area, element count).
+    let mut str_out_arrays: Vec<(u32, u32, usize)> = Vec::new();
     let fortran = sig.lang == crate::sig::ExtLang::Fortran77;
     let mut in_i = 0usize;
     for (ty, is_out) in &sig.args {
@@ -589,6 +648,33 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
                 let total = read_u32_mem(&sim_mem, &store, off + 12)? as usize;
                 let elem_size = crate::host::array_abi::elem_size(elem);
                 let data_off = (16 + ndims * 4 + 7) & !7;
+                // Handles, not the `const char**` C declares: rebuilt in side memory
+                // as NUL-terminated copies (C's `data_of_string_c89_array`).
+                if let SigTy::Str = &**elem {
+                    let base = off + data_off;
+                    let vec_cell = malloc.call(&mut store, (total * 4).max(1) as u32)
+                        .map_err(|_| "CodegenWasmJit: wasm engine error")?;
+                    temps.push(vec_cell);
+                    for k in 0..total {
+                        let h = read_u32_mem(&sim_mem, &store, base + (k * 4) as u32)?;
+                        let len = if h == 0 { 0 } else { read_u32_mem(&sim_mem, &store, h + 4)? as usize };
+                        let mut buf = vec![0u8; len + 1]; // + NUL
+                        sim_mem.view(&store).read((h + 8) as u64, &mut buf[..len])
+                            .map_err(|_| "CodegenWasmJit: wasm engine error")?;
+                        let cell = malloc.call(&mut store, (len + 1) as u32)
+                            .map_err(|_| "CodegenWasmJit: wasm engine error")?;
+                        side_mem.view(&store).write(cell as u64, &buf)
+                            .map_err(|_| "CodegenWasmJit: wasm engine error")?;
+                        temps.push(cell);
+                        side_mem.view(&store).write((vec_cell + (k * 4) as u32) as u64, &cell.to_le_bytes())
+                            .map_err(|_| "CodegenWasmJit: wasm engine error")?;
+                    }
+                    call_args.push(Value::I32(vec_cell as i32));
+                    if *is_out {
+                        str_out_arrays.push((vec_cell, base, total));
+                    }
+                    continue;
+                }
                 let bytes = total * elem_size;
                 let mut buf = vec![0u8; bytes];
                 sim_mem.view(&store).read((off + data_off) as u64, &mut buf).map_err(|_| "CodegenWasmJit: wasm engine error")?;
@@ -632,6 +718,24 @@ fn call_external_side(fenv: &mut wasmer::FunctionEnvMut<ExtEnv>, args: &[wasmer:
             buf = row;
         }
         sim_mem.view(&store).write((*woff + *data_off) as u64, &buf).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+    }
+
+    // C's `unpack_string_array`; an element the callee did not write still points
+    // at our own input copy.
+    for (vec_cell, base, n) in &str_out_arrays {
+        for k in 0..*n {
+            let ptr = read_u32_mem(&side_mem, &store, vec_cell + (k * 4) as u32)?;
+            let bytes = read_side_cstr(&side_mem, &store, ptr)?;
+            let handle = rt_str_new.call(&mut store, bytes.len() as u32).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            let doff = rt_str_data.call(&mut store, handle).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            sim_mem.view(&store).write(doff as u64, &bytes).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            let slot = base + (k * 4) as u32;
+            let old = read_u32_mem(&sim_mem, &store, slot)?;
+            sim_mem.view(&store).write(slot as u64, &handle.to_le_bytes()).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            if old != 0 {
+                rt_release.call(&mut store, old).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+            }
+        }
     }
 
     // Build an in-wasm String (in the sim memory) from a NUL-terminated `char*` at
@@ -852,12 +956,28 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     if !model.ext_imports.is_empty() {
         let rt_str_new: wasmer::TypedFunction<u32, u32> = wts(rt_inst.exports.get_typed_function(&store, "rt_str_new"))?;
         let rt_str_data: wasmer::TypedFunction<u32, u32> = wts(rt_inst.exports.get_typed_function(&store, "rt_str_data"))?;
-        define_external_imports(&mut store, &mut imports, model, &memory, &rt_str_new, &rt_str_data)?;
+        let rt_release: wasmer::TypedFunction<u32, ()> = wts(rt_inst.exports.get_typed_function(&store, "rt_release"))?;
+        define_external_imports(&mut store, &mut imports, model, &memory, &rt_inst, &host_mem, &rt_str_new, &rt_str_data, &rt_release)?;
     }
     define_print_import(&mut store, &mut imports, &memory);
+    {
+        let str_new: wasmer::TypedFunction<u32, u32> = wts(rt_inst.exports.get_typed_function(&store, "rt_str_new"))?;
+        let str_data: wasmer::TypedFunction<u32, u32> = wts(rt_inst.exports.get_typed_function(&store, "rt_str_data"))?;
+        crate::host::define_uri_import(&mut store, &mut imports, &memory, &str_new, &str_data);
+    }
 
     let instance = wts(wasmer::Instance::new(&mut store, &model_module, &imports))?;
     let inst_time = t_inst.elapsed();
+    // The runtime is instantiated first, so `rt_ext_error` reaches the model's
+    // thrower only through the table.
+    if !model.ext_imports.is_empty() {
+        let throw = wts(instance.exports.get_function("om_throw_model_error"))?.clone();
+        let table = wts(rt_inst.exports.get_table("__indirect_function_table"))?.clone();
+        let slot = wts(table.grow(&mut store, 1, wasmer::Value::FuncRef(None)))?;
+        wts(table.set(&mut store, slot, wasmer::Value::FuncRef(Some(throw))))?;
+        let set: wasmer::TypedFunction<u32, ()> = wts(rt_inst.exports.get_typed_function(&store, "rt_set_ext_throw"))?;
+        wts(set.call(&mut store, slot))?;
+    }
     let rt_alloc: wasmer::TypedFunction<u32, u32> = wts(rt_inst.exports.get_typed_function(&store, "rt_alloc"))?;
     // Solver selectors; see the wasmtime runtime.
     if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32, u32, u32), ()>(&store, "rt_set_solvers") {
@@ -871,9 +991,38 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         });
         wts(set.call(&mut store, ftol, xtol, msf))?;
     }
+    // See the wasmtime counterpart.
+    if let Ok(set) = rt_inst.exports.get_typed_function::<u32, ()>(&store, "rt_set_max_warn") {
+        let n = openmodelica_sim_meta::simflags::with_flags(|f| f.max_warn.unwrap_or(3));
+        wts(set.call(&mut store, n))?;
+    }
+    // See the wasmtime counterpart.
+    if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32), ()>(&store, "rt_set_homotopy") {
+        let h = openmodelica_sim_meta::simflags::with_flags(|f| {
+            openmodelica_sim_meta::simflags::homotopy_codes(f)
+        });
+        wts(set.call(&mut store, h.0, h.1))?;
+    }
+    // See the wasmtime counterpart.
+    if let Ok(set) = rt_inst.exports.get_typed_function::<
+        (f64, f64, f64, f64, f64, f64, f64, f64, f64, u32, u32, u32, u32, u32), ()>(
+        &store, "rt_set_homotopy_tuning",
+    ) {
+        let h = openmodelica_sim_meta::simflags::with_flags(openmodelica_sim_meta::simflags::hom_tuning);
+        wts(set.call(
+            &mut store, h.adapt_bend, h.h_eps, h.tau_dec, h.tau_dec_pred, h.tau_inc,
+            h.tau_inc_threshold, h.tau_max, h.tau_min, h.tau_start, h.max_lambda_steps,
+            h.max_newton_steps, h.max_tries, h.orthogonal_backtrace as u32, h.neg_start_dir as u32,
+        ))?;
+    }
     let log_mask = openmodelica_sim_meta::simflags::with_flags(|f| f.log_mask);
     if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32), ()>(&store, "rt_set_log_streams") {
         wts(set.call(&mut store, log_mask as u32, (log_mask >> 32) as u32))?;
+    }
+    // See the wasmtime counterpart.
+    if let Ok(set) = rt_inst.exports.get_typed_function::<u32, ()>(&store, "rt_stats_start") {
+        let on = openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::STATS_V);
+        wts(set.call(&mut store, on as u32))?;
     }
     // See the wasmtime counterpart.
     if openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::NLS)
@@ -950,17 +1099,17 @@ impl sim_driver::SimEngine for WasmerEngine {
     fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()> {
         self.memory.view(&self.store).write(addr as u64, buf).map_err(|e| "CodegenWasmJit: mem write")
     }
-    fn call1(&mut self, name: &str, arg: u32) -> Result<()> {
+    fn call1_raw(&mut self, name: &str, arg: u32) -> Result<()> {
         let f = self.func(name)?;
         wt(f.call(&mut self.store, arg))
     }
-    fn call1_if_present(&mut self, name: &str, arg: u32) -> Result<()> {
+    fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> Result<()> {
         if self.instance.exports.get_extern(name).is_none() {
             return Ok(());
         }
-        self.call1(name, arg)
+        self.call1_raw(name, arg)
     }
-    fn call2(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
+    fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
         let f = match self.funcs2.get(name) {
             Some(f) => f.clone(),
             None => {
@@ -976,10 +1125,10 @@ impl sim_driver::SimEngine for WasmerEngine {
             wt(self.instance.exports.get_typed_function(&self.store, "simulate"))?;
         wt(f.call(&mut self.store, sim_data, start, stop, n_steps))
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
         crate::host::take_pending_warnings()
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
@@ -991,8 +1140,36 @@ impl sim_driver::SimEngine for WasmerEngine {
             Err(_) => 0,
         }
     }
+    fn sys_stats(&mut self) -> Vec<openmodelica_sim_meta::sysstat::SysStat> {
+        let get = |name| self.rt_inst.exports.get_typed_function::<(), u32>(&self.store, name);
+        let (Ok(ptr), Ok(len)) = (get("rt_sys_stats_ptr"), get("rt_sys_stats_len")) else {
+            return Vec::new();
+        };
+        let (Ok(n), Ok(addr)) = (len.call(&mut self.store), ptr.call(&mut self.store)) else {
+            return Vec::new();
+        };
+        let mut bytes = vec![0u8; n as usize * 8];
+        if self.memory.view(&self.store).read(addr as u64, &mut bytes).is_err() {
+            return Vec::new();
+        }
+        let words: Vec<f64> =
+            bytes.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect();
+        openmodelica_sim_meta::sysstat::decode(&words)
+    }
     fn context_addr(&mut self) -> u32 {
         match self.rt_inst.exports.get_typed_function::<(), u32>(&self.store, "rt_context_addr") {
+            Ok(f) => f.call(&mut self.store).unwrap_or(0),
+            Err(_) => 0,
+        }
+    }
+    fn error_stage_addr(&mut self) -> u32 {
+        match self.rt_inst.exports.get_typed_function::<(), u32>(&self.store, "rt_error_stage_addr") {
+            Ok(f) => f.call(&mut self.store).unwrap_or(0),
+            Err(_) => 0,
+        }
+    }
+    fn no_throw_div_zero_addr(&mut self) -> u32 {
+        match self.rt_inst.exports.get_typed_function::<(), u32>(&self.store, "rt_no_throw_div_zero_addr") {
             Ok(f) => f.call(&mut self.store).unwrap_or(0),
             Err(_) => 0,
         }
@@ -1023,6 +1200,8 @@ pub struct InWasmSession {
     stat_f: wasmer::TypedFunction<u32, u64>,
     lin_ptr: wasmer::TypedFunction<(), u32>,
     lin_len: wasmer::TypedFunction<(), u32>,
+    sys_ptr: wasmer::TypedFunction<(), u32>,
+    sys_len: wasmer::TypedFunction<(), u32>,
     free_f: wasmer::TypedFunction<(), ()>,
 }
 
@@ -1089,6 +1268,8 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         stat_f: wts(rt_inst.exports.get_typed_function(&store, "rt_sim_stat"))?,
         lin_ptr: gf(&store, "rt_sim_lin_ptr")?,
         lin_len: gf(&store, "rt_sim_lin_len")?,
+        sys_ptr: gf(&store, "rt_sys_stats_ptr")?,
+        sys_len: gf(&store, "rt_sys_stats_len")?,
         free_f: wts(rt_inst.exports.get_typed_function(&store, "rt_sim_free"))?,
         store,
         memory,
@@ -1116,22 +1297,22 @@ impl sim_driver::SimEngine for InWasmSession {
     fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()> {
         self.memory.view(&self.store).write(addr as u64, buf).map_err(|_| "CodegenWasmJit: mem write")
     }
-    fn call1(&mut self, _name: &str, _arg: u32) -> Result<()> {
+    fn call1_raw(&mut self, _name: &str, _arg: u32) -> Result<()> {
         Err("CodegenWasmJit: call1 on in-wasm session (unreachable)")
     }
-    fn call1_if_present(&mut self, _name: &str, _arg: u32) -> Result<()> {
+    fn call1_if_present_raw(&mut self, _name: &str, _arg: u32) -> Result<()> {
         Ok(())
     }
-    fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> Result<()> {
+    fn call2_raw(&mut self, _name: &str, _a: u32, _b: u32) -> Result<()> {
         Err("CodegenWasmJit: call2 on in-wasm session (unreachable)")
     }
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
         Err("CodegenWasmJit: call_simulate on in-wasm session (unreachable)")
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         crate::host::take_pending_assert()
     }
-    fn take_pending_warnings(&mut self) -> Vec<[i32; 9]> {
+    fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
         crate::host::take_pending_warnings()
     }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
@@ -1166,6 +1347,10 @@ impl InWasmSession {
         let rows = read_vec(&self.memory, &self.store, rp, rn)?;
         let params = read_vec(&self.memory, &self.store, pp, pn)?;
         let mut stats = openmodelica_sim_meta::SolveStats::default();
+        let sp = wt(self.sys_ptr.call(&mut self.store))?;
+        let sn = wt(self.sys_len.call(&mut self.store))? as usize;
+        stats.systems =
+            openmodelica_sim_meta::sysstat::decode(&read_vec(&self.memory, &self.store, sp, sn)?);
         let mut stat = |i: u32| wt(self.stat_f.call(&mut self.store, i));
         stats.steps = stat(0)?;
         stats.res_evals = stat(1)?;
@@ -1174,6 +1359,8 @@ impl InWasmSession {
         stats.conv_test_fails = stat(4)?;
         stats.state_events = stat(5)?;
         stats.time_events = stat(6)?;
+        stats.lin_solves = stat(7)?;
+        openmodelica_sim_meta::rtclock::read_stat_slots(&mut stats, &mut stat)?;
         let lin = self.take_lin()?;
         Ok(sim_driver::RunResult { rows, n_reals, params, stats, lin })
     }

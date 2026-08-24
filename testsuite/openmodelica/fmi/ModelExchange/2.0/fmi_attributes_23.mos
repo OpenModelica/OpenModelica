@@ -42,7 +42,9 @@ readFile("fmi_attributes_23_index.html"); getErrorString();
 // true
 // ""
 // "fmi_attributes_23.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // "<html><h2>TestModel</h2></html>

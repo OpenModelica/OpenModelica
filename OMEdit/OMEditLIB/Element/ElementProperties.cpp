@@ -1550,7 +1550,8 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
               index = pParameter->getUnitComboBox()->count() - 1;
             }
           }
-        } else {
+        }
+        if (index > -1) {
           /* Issue #11782.
            * Setting the display unit trigger SIGNAL currentIndexChanged and calls SLOT unitComboBoxChanged which will set the correct value.
            */
@@ -1771,8 +1772,8 @@ void ElementParameters::setUpDialog()
         }
         Label *pModifierLabel = new Label(pModifier->getName());
         mModifierLabelsVector.append(pModifierLabel);
-        QString modifierValue = pModifier->toString(true, true, false, true);
-        if (!modifierValue.startsWith("(")) {
+        QString modifierValue = pModifier->toString(true, true);
+        if (!modifierValue.isEmpty() && !modifierValue.startsWith("(")) {
           modifierValue = QLatin1String("=") % modifierValue;
         }
         QLineEdit *pModifierValueTextBox = new QLineEdit(modifierValue);

@@ -534,7 +534,7 @@ fn print_some_model_infos(data: &mut OptData) {
     out.push_str("\n--------------------------------------------------------");
     out.push_str(&format!("\nnumber of nonlinear constraints: {}", data.dim.nc));
     out.push_str("\n========================================================\n");
-    driver::log_line(&out);
+    driver::log_line(omclog::STDOUT, omclog::INFO, &out);
 }
 
 /// C's `pickUpStates`: `-csvInput` overrides start values by name.
@@ -568,7 +568,7 @@ fn pick_up_states(data: &mut OptData) {
         }
     }
     out.push('\n');
-    driver::log_line(&out);
+    driver::log_line(omclog::STDOUT, omclog::INFO, &out);
     data.model.input_function(&data.opt.clone());
     data.model.update_discrete_system();
 }
@@ -936,7 +936,7 @@ fn print_local_jac_struct(data: &OptData) {
             out.push_str(if data.s.grad_m[j] { "* " } else { "0 " });
         }
     }
-    driver::log_line(&out);
+    driver::log_line(omclog::STDOUT, omclog::INFO, &out);
 }
 
 /// C's `print_local_hessian_struct`.
@@ -968,7 +968,7 @@ fn print_local_hessian_struct(data: &OptData) {
             }
         }
     }
-    driver::log_line(&out);
+    driver::log_line(omclog::STDOUT, omclog::INFO, &out);
 }
 
 // ───────────────────────────── InitialGuess.c ─────────────────────────────
@@ -1055,15 +1055,10 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
         .iter()
         .map(|&i| data.names.get(i as usize).map(String::as_str).unwrap_or(""))
         .collect();
-    let mut ext = crate::simflags::with_flags(|f| f.csv_input.clone())
-        .and_then(|file| crate::extinput::ExternalInput::load(&file, &input_names))
-        .map(|ext| {
-            alloc::boxed::Box::new(crate::extinput::ExtInputHook {
-                ext,
-                input_offs: opt.inputs.iter().map(|&i| crate::REAL_OFF + i * 8).collect(),
-                inputs: crate::extinput::empty(nu),
-            })
-        });
+    let mut ext = crate::extinput::ExtInputHook::load_reals(&opt.inputs, &input_names);
+    // The file drives the inputs for the guess only; the Ipopt iterations take
+    // theirs from `vopt`.
+    let _armed = ext.as_mut().map(crate::extinput::arm);
     if ext.is_none() {
         let u0 = data.bounds.u0.clone();
         data.model.inputs.copy_from_slice(&u0);
@@ -1076,11 +1071,6 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
     let sim_data = data.model.sim_data;
     let e = unsafe { &mut *engine };
     let mut stepper = driver::GuessStepper::new(e, &meta, sim_data, data.start_time)?;
-    // C re-reads the external input at every residual evaluation
-    // (`functionODE_residual`), not just per step.
-    if let Some(hook) = ext.as_mut() {
-        stepper.set_external_input(&mut **hook as *mut _ as *mut core::ffi::c_void);
-    }
 
     // C's pre-simulation: when the Optimica `startTime` is beyond the experiment's,
     // simulate up to it first and emit those rows.
@@ -1090,7 +1080,7 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
         let mut out = String::from("\nPreSim");
         out.push_str("\n========================================================\n");
         out.push_str(&format!("\ndone: time[0] = {}", format_g(data.start_time, 6)));
-        driver::log_line(&out);
+        driver::log_line(omclog::STDOUT, omclog::INFO, &out);
         while t < data.time.t0 {
             if let Some(hook) = ext.as_mut() {
                 hook.ext.update(t, &mut data.model.inputs);
@@ -1100,7 +1090,7 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
             let e = unsafe { &mut *engine };
             stepper.step_to(e, &meta, t)?;
             let now = stepper.time();
-            driver::log_line(&format!("\ndone: time[0] = {}", format_g(now, 6)));
+            driver::log_line(omclog::STDOUT, omclog::INFO, &format!("\ndone: time[0] = {}", format_g(now, 6)));
             data.emit_row(now)?;
             data.csv_row(now);
         }
@@ -1108,7 +1098,7 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
         let mut out = String::from("\n--------------------------------------------------------");
         out.push_str("\nfinished: PreSim");
         out.push_str("\n========================================================\n");
-        driver::log_line(&out);
+        driver::log_line(omclog::STDOUT, omclog::INFO, &out);
     }
 
     // `-ipopt_init=file` needs `-iif` to name the result file the guess is read from.
@@ -1130,7 +1120,7 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
         let mut out = String::from("\nInitial Guess");
         out.push_str("\n========================================================\n");
         out.push_str(&format!("\ndone: time[0] = {}", format_g(data.time.t0, 6)));
-        driver::log_line(&out);
+        driver::log_line(omclog::STDOUT, omclog::INFO, &out);
     }
 
     let mut k = 1;
@@ -1157,7 +1147,7 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
                 data.model.write_reals(&start);
             }
             if print_guess {
-                driver::log_line(&format!("\ndone: time[{k}] = {}", format_g(t, 6)));
+                driver::log_line(omclog::STDOUT, omclog::INFO, &format!("\ndone: time[{k}] = {}", format_g(t, 6)));
             }
             k += 1;
             let mut buf = zeros(n_real);
@@ -1170,7 +1160,7 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
                 );
                 let v = data.v(i, j)[l];
                 if v < lo || v > hi {
-                    driver::log_line("\n********************************************\n");
+                    driver::log_line(omclog::STDOUT, omclog::INFO, "\n********************************************\n");
                     omclog::warning(
                         omclog::STDOUT,
                         false,
@@ -1187,7 +1177,7 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
                             format_g(hi, 6)
                         ),
                     );
-                    driver::log_line("\n********************************************");
+                    driver::log_line(omclog::STDOUT, omclog::INFO, "\n********************************************");
                 }
             }
         }
@@ -1196,7 +1186,7 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
         let mut out = String::from("\n--------------------------------------------------------");
         out.push_str("\nfinished: Initial Guess");
         out.push_str("\n========================================================\n");
-        driver::log_line(&out);
+        driver::log_line(omclog::STDOUT, omclog::INFO, &out);
     }
     let _ = nu;
     Ok(op)

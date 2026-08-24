@@ -740,32 +740,33 @@ mod tests {
             self.mem[a..a + buf.len()].copy_from_slice(buf);
             Ok(())
         }
-        fn call1(&mut self, name: &str, _arg: u32) -> Result<()> {
+        fn call1_raw(&mut self, name: &str, _arg: u32) -> Result<()> {
             match name {
                 "functionODE" => {
                     let v = self.f64_at(STATES + 8);
                     self.set_f64(DERS, v);
                     self.set_f64(DERS + 8, -G);
                 }
-                // The codegen emits crossings as ±1, not the relation expression.
-                "functionZeroCrossings" => {
-                    let h = self.f64_at(STATES);
-                    self.set_f64(SIM_DATA + ZC_OFF, if h > 0.0 { 1.0 } else { -1.0 });
-                }
                 _ => return Err("unexpected model function"),
             }
             Ok(())
         }
-        fn call1_if_present(&mut self, _name: &str, _arg: u32) -> Result<()> {
+        fn call1_if_present_raw(&mut self, _name: &str, _arg: u32) -> Result<()> {
             Ok(())
         }
-        fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> Result<()> {
-            Err("unused")
+        fn call2_raw(&mut self, name: &str, _a: u32, gout: u32) -> Result<()> {
+            // The codegen emits crossings as ±1, not the relation expression.
+            if name != crate::driver::MODEL_FN_ZC {
+                return Err("unexpected model function");
+            }
+            let h = self.f64_at(STATES);
+            self.set_f64(gout, if h > 0.0 { 1.0 } else { -1.0 });
+            Ok(())
         }
         fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> Result<u32> {
             Err("unused")
         }
-        fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+        fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
             None
         }
     }
@@ -776,7 +777,6 @@ mod tests {
             sim_data: SIM_DATA,
             states_base: STATES,
             ders_base: DERS,
-            time_off: 0,
             nls_fail_off: NLS_FAIL_OFF,
             ctx_addr: 0,
             jac_a: None,

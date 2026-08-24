@@ -21,7 +21,7 @@ use crate::omclog;
 use crate::{BaseClockMeta, Layout, clock_field};
 
 /// C's `SYNC_EPS` (`epsilon.h`).
-const SYNC_EPS: f64 = 1e-14;
+pub const SYNC_EPS: f64 = 1e-14;
 
 /// C's `RATIONAL`, kept exact: sub-clock activation is `shift + count*factor`
 /// relative to the base clock, and only the ticks landing on an integer count.
@@ -71,7 +71,7 @@ impl Rat {
 /// then the termination notice, and fail the run with the error the host reports
 /// without adding a reason of its own.
 fn init_assert(msg: &str) -> &'static str {
-    omclog::message_text(omclog::DEBUG_TYPE, omclog::ASSERT, false, msg);
+    omclog::debug(omclog::ASSERT, false, msg);
     omclog::info(omclog::ASSERT, false, "simulation terminated by an assertion at initialization");
     driver::ASSERT_ERR
 }

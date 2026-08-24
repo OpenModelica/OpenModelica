@@ -25,6 +25,7 @@ FuncDer.mos  \
 FunctionIndirectRecursion.mos \
 FunctionIndirectRecursion2.mos \
 FunctionInReinit.mos \
+FunctionPointer.mos \
 FunctionTupleRecord.mos \
 Interpolation.mos \
 InverseAlgorithm1.mos \
@@ -94,4 +95,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

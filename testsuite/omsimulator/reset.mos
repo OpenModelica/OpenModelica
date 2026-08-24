@@ -60,7 +60,9 @@ readFile("reset_systemCall.log");
 // true
 // ""
 // "reset.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // true
 // ""
 // 0

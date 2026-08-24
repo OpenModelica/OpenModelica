@@ -93,6 +93,7 @@ import FGraph;
 import Flags;
 import FlagsUtil;
 import FlatModel = NFFlatModel;
+import FindZeroCrossings;
 import NFFunction;
 import NFFlatten.{FunctionTree, FunctionTreeImpl};
 import NFApi;
@@ -728,8 +729,15 @@ algorithm
       // translateModel records the lowering error and fails, so the message
       // surfaces (getErrorString / OMEdit) instead of a later "no prepared model".
       CodegenWasmJit.translateModel(simCode);
-      guid := System.getUUIDStr();
-      SerializeInitXML.simulationInitFile(simCode, guid);
+      // The wasm module carries its own metadata; *_init.xml is only read by
+      // OMEdit's variable browser and *_info.json only for debugging.
+      if Flags.isSet(Flags.OMEDIT) then
+        guid := System.getUUIDStr();
+        SerializeInitXML.simulationInitFile(simCode, guid);
+      end if;
+      if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+        SerializeModelInfo.serialize(simCode, true);
+      end if;
     then ();
 
     case "wasm" algorithm
@@ -847,6 +855,7 @@ algorithm
       String cmakelistsStr, needCvode, cvodeDirectory;
       String modelDefinesHeaderStr;
       String fmu_dummy_include_defines;
+      String needModelicaExternalC, cmakeCode;
       list<String> model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
@@ -1201,10 +1210,19 @@ algorithm
         end if;
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", needCvode);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@CVODE_DIRECTORY@", cvodeDirectory);
-        cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_LIBS@", SimCodeUtil.getCmakeLinkLibrariesCode(simCode.makefileParams.libs));
+        (needModelicaExternalC, cmakeCode) := SimCodeUtil.getCmakeLinkLibrariesCode(simCode.makefileParams.libs);
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@COMPILE_MODELICA_EXTERNAL_C@", needModelicaExternalC);
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_LIBS@", cmakeCode);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_INCLUDES@", SimCodeUtil.make2CMakeInclude(simCode.makefileParams.includes));
 
         System.writeFile(fmu_tmp_sources_dir + "CMakeLists.txt", cmakelistsStr);
+
+        // Note the external include directories of the model. Cross compiling in a
+        // container needs them next to the external libraries inside the container.
+        // Written as a dot file so it doesn't end up in the FMU archive.
+        // See https://github.com/OpenModelica/OpenModelica/issues/9509
+        System.writeFile(fmutmp + "/.external_include_dirs",
+                         stringDelimitList(list(SimCodeUtil.stripIncludeFlag(i) for i in simCode.makefileParams.includes), "\n"));
 
         // Set model define include in the FMI model interface source. The
         // interface source includes a version-specific placeholder header
@@ -1231,10 +1249,10 @@ algorithm
             a_simCode=simCode,
             a_FMUVersion=FMUVersion,
             a_sourceFiles=model_all_gen_files,
-            a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files),
-            a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources),
-            a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources),
-            a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
+            a_runtimeObjectFiles=objectFilesOf(shared_source_files),
+            a_dgesvObjectFiles=objectFilesOf(dgesv_sources),
+            a_cminpackObjectFiles=objectFilesOf(cminpack_sources),
+            a_sundialsObjectFiles=objectFilesOf(simrt_c_sundials_sources)),
           txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));
         Tpl.closeFile(Tpl.tplCallWithFailError(
           CodegenFMU.settingsfile,
@@ -1365,6 +1383,8 @@ protected
   String flatString = "", NFFlatString = "";
 
 algorithm
+  List.map_0({ClockIndexes.RT_CLOCK_FRONTEND,ClockIndexes.RT_CLOCK_BACKEND,
+              ClockIndexes.RT_CLOCK_SIMCODE,ClockIndexes.RT_CLOCK_TEMPLATES},System.realtimeClear);
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
 
   outLibs := {};
@@ -2099,7 +2119,7 @@ algorithm
       stateSets                   = {},
       constraints                 = {},
       classAttributes             = {},
-      zeroCrossings               = ZeroCrossings.updateIndices(zeroCrossings),
+      zeroCrossings               = FindZeroCrossings.setOperatorZeroCrossingIndices(ZeroCrossings.updateIndices(zeroCrossings)),
       relations                   = ZeroCrossings.updateIndices(relations),
       timeEvents                  = timeEvents,
       discreteModelVars           = discreteModelVars,
@@ -2183,6 +2203,41 @@ algorithm
     Error.assertion(System.copyFile(source + "/" + f, f2), "Failed to copy file " + f + " from " + source + " to " + destination, sourceInfo());
   end for;
 end copyFiles;
+
+protected function objectFilesOf
+  "The object files a list of runtime sources compiles to, for the makefile of a
+   source FMU.
+
+   Only .c becomes an object, that being what the generated makefile has a rule for.
+   The lists also carry files that are shipped but never compiled - headers and the
+   .inc the FMI 1.0 and 2.0 interfaces include - and those are simply left out.
+
+   A C++ source is left out too, but reported, because it is one that would have to
+   be built and cannot be: the makefile has no rule for it, and the .c to .o
+   replacement this used to do turned jacobian_colpack.cpp into
+   jacobian_colpack.opp, an object nothing can build. That went unnoticed because it
+   only breaks when somebody builds the FMU from its sources with the makefile."
+  input list<String> sourceFiles;
+  output list<String> objectFiles = {};
+protected
+  String ext;
+algorithm
+  for f in sourceFiles loop
+    ext := "";
+    for part in System.strtok(f, ".") loop
+      ext := part; // the last one is the extension
+    end for;
+
+    if ext == "c" then
+      // drop the extension character and put the object one in its place
+      objectFiles := substring(f, 1, stringLength(f) - 1) + "o" :: objectFiles;
+    elseif ext == "cpp" or ext == "cc" or ext == "cxx" or ext == "c++" then
+      Error.addCompilerWarning("Leaving " + f + " out of the object files of the FMU makefile: "
+        + "the makefile has no rule for '." + ext + "'.");
+    end if;
+  end for;
+  objectFiles := listReverse(objectFiles);
+end objectFilesOf;
 
 annotation(__OpenModelica_Interface="backend_main");
 end SimCodeMain;

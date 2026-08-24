@@ -6,9 +6,12 @@
 //! `omc`/`bomc`.
 //!
 //! Usage:  `susan [flags] <file.tpl>`  (run with the template's directory as the
-//! working directory; the `<file>.mo` is written next to the input, as omc did).
-//! Leading `-…` flags (e.g. `-d=failtrace`, passed by the CMake template rule)
-//! are accepted and ignored; the first non-flag argument is the template file.
+//! working directory). `--tplOutputDir=<dir>` writes the `<file>.mo` there —
+//! the same omc config flag, which the build rules use to keep the generated
+//! sources out of the source tree; without it the `.mo` is written next to the
+//! input, as omc did. Other leading `-…` flags (e.g. `-d=failtrace`, passed by
+//! the CMake template rule) are accepted and ignored; the first non-flag
+//! argument is the template file.
 //!
 //! This is deliberately a thin wrapper over the single library entry point
 //! `TplMain::main`: the flags global is valid by default (see
@@ -27,12 +30,22 @@ use openmodelica_susan::TplMain;
 /// address space only (committed lazily), so the headroom is effectively free.
 const DEFAULT_STACK_SIZE: usize = 64 * 1024 * 1024;
 
+const OUTPUT_DIR_FLAG: &str = "--tplOutputDir=";
+
 fn run() -> i32 {
-    let Some(file) = std::env::args().skip(1).find(|a| !a.starts_with('-')).map(ArcStr::from) else {
-        eprintln!("usage: susan [flags] <file.tpl>");
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let Some(file) = args.iter().find(|a| !a.starts_with('-')).map(ArcStr::from) else {
+        eprintln!("usage: susan [--tplOutputDir=<dir>] [flags] <file.tpl>");
         return 1;
     };
-    match TplMain::main(file) {
+    // Last one wins, like omc's own flag parsing.
+    let out_dir = args
+        .iter()
+        .filter_map(|a| a.strip_prefix(OUTPUT_DIR_FLAG))
+        .next_back()
+        .map(ArcStr::from)
+        .unwrap_or_default();
+    match TplMain::main(file, out_dir) {
         Ok(()) => 0,
         Err(_) => {
             // `TplMain`/`translateFile` already printed the error buffer and the

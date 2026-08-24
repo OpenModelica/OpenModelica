@@ -38,7 +38,9 @@ val(rev.w, 1.0, "Pendulum_static_res.mat"); getErrorString();
 // true
 // ""
 // "Pendulum.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // "{
@@ -74,8 +76,8 @@ val(rev.w, 1.0, "Pendulum_static_res.mat"); getErrorString();
 // ""
 // 0.0
 // ""
-// -2.5807275314932316
+// -2.5807275314932356
 // ""
-// 3.1739934192737635
+// 3.173993419273764
 // ""
 // endResult

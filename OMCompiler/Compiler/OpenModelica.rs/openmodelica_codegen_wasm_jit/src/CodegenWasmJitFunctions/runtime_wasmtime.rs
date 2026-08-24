@@ -126,9 +126,11 @@ fn define_external_imports(
     let ext_rt = dl::ExtRt {
         str_new: wt(rt_inst.get_typed_func(&mut *store, "rt_str_new"))?,
         str_data: wt(rt_inst.get_typed_func(&mut *store, "rt_str_data"))?,
+        release: wt(rt_inst.get_typed_func(&mut *store, "rt_release"))?,
         alloc: wt(rt_inst.get_typed_func(&mut *store, "rt_alloc"))?,
         free: wt(rt_inst.get_typed_func(&mut *store, "rt_free"))?,
         record_new: wt(rt_inst.get_typed_func(&mut *store, "rt_record_new"))?,
+        nls: None,
     };
     let mut libs = Vec::with_capacity(sig.libs.len() + 1);
     let libc = openmodelica_wasi_libc::LIBC_PIC;
@@ -136,11 +138,11 @@ fn define_external_imports(
         return Err("CodegenWasmJit: this omc was built without the PIC wasi-libc, so it cannot \
                     load an external \"C\" library");
     }
-    libs.push(dl::Library { name: "libc.so".to_string(), bytes: libc.to_vec() });
+    libs.push(dl::Library::builtin("libc.so", libc));
     for path in &sig.libs {
         let bytes = openmodelica_wasi::fs::read(path)
             .map_err(|_| "CodegenWasmJit: cannot read an external \"C\" library")?;
-        libs.push(dl::Library { name: path.clone(), bytes });
+        libs.push(dl::Library::model(path, bytes));
     }
     let table = rt_inst
         .get_table(&mut *store, "__indirect_function_table")
@@ -149,25 +151,52 @@ fn define_external_imports(
     let engine = linker.engine().clone();
     let loaded = dl::load(&mut *store, &engine, memory, table, &ext_rt.alloc, &libs, &host)
         .map_err(|e| record_dylink_error(e))?;
+    // A dlopen each, so only once a symbol needs one.
+    let mut native: Option<NativeExternals> = None;
     for s in &sig.ext_imports {
         let functype = wasmtime::FuncType::new(
             &engine,
             s.wasm_params().iter().map(|t| valtype(t.wty())),
             s.wasm_results().iter().map(|t| valtype(t.wty())),
         );
-        let target = loaded.func(&s.name).cloned().ok_or_else(|| {
-            record_dylink_error(format!(
+        if let Some(target) = loaded.func_or_addr(&mut *store, &s.name) {
+            let f = dl::bind_in_wasm_external(&mut *store, s, &functype, target, &ext_rt)
+                .map_err(record_dylink_error)?
+                .ok_or("CodegenWasmJit: external \"C\" function has the wrong signature in the library")?;
+            wt(linker.define(&mut *store, "ext", &s.name, f))?;
+            continue;
+        }
+        // No wasm library defines it: the implementation is a platform one, as it
+        // is for the C target. LAPACK and omc's own runtime live in this process.
+        let native = native.get_or_insert_with(|| NativeExternals::new(&sig.native_libs));
+        let Some(addr) = native.resolve(&s.name) else {
+            return Err(record_dylink_error(format!(
                 "external \"C\" function `{}` is in none of the model's libraries{}",
                 s.name,
-                sig.notes.iter().map(|n| format!("\n  {n}")).collect::<String>()
-            ))
-        })?;
-        let f = dl::bind_in_wasm_external(&mut *store, s, &functype, target, &ext_rt)
-            .map_err(record_dylink_error)?
-            .ok_or("CodegenWasmJit: external \"C\" function has the wrong signature in the library")?;
-        wt(linker.define(&mut *store, "ext", &s.name, f))?;
+                sig.notes.iter().chain(native.errors.iter()).map(|n| format!("\n  {n}")).collect::<String>()
+            )));
+        };
+        openmodelica_wasm_jit::sim_runtime::define_native_external(linker, s, functype, addr, memory, &ext_rt)?;
     }
     Ok(())
+}
+
+/// The `external "C"` implementations outside wasm: the platform shared libraries
+/// the `Library` annotations resolved to, then the process image.
+struct NativeExternals {
+    handles: Vec<usize>,
+    errors: Vec<String>,
+}
+
+impl NativeExternals {
+    fn new(paths: &[String]) -> Self {
+        let (handles, errors) = openmodelica_util::dynload::load_external_libraries(paths);
+        NativeExternals { handles, errors }
+    }
+
+    fn resolve(&self, name: &str) -> Option<usize> {
+        openmodelica_wasm_jit::model::external_symbol_or_wrapper(&self.handles, name)
+    }
 }
 
 /// The reason (a missing symbol, a library built without `-shared`) is specific
@@ -189,6 +218,8 @@ struct Sig {
     inputs: Vec<SigTy>,
     outputs: Vec<SigTy>,
     libs: Vec<String>,
+    /// The same implementations as platform shared libraries.
+    native_libs: Vec<String>,
     ext_imports: Vec<ExtCallSig>,
     notes: Vec<String>,
 }
@@ -202,17 +233,19 @@ fn read_sig(path: &str) -> Result<Sig> {
     let inputs = parse(lines.next())?;
     let outputs = parse(lines.next())?;
     let mut libs = Vec::new();
+    let mut native_libs = Vec::new();
     let mut ext_imports = Vec::new();
     let mut notes = Vec::new();
     for line in lines {
         match line.split_once('\t') {
             Some(("lib", rest)) => libs.push(rest.to_string()),
+            Some(("nlib", rest)) => native_libs.push(rest.to_string()),
             Some(("ext", rest)) => ext_imports.push(super::parse_ext_sig(rest)?),
             Some(("note", rest)) => notes.push(rest.to_string()),
             _ => {}
         }
     }
-    Ok(Sig { inputs, outputs, libs, ext_imports, notes })
+    Ok(Sig { inputs, outputs, libs, native_libs, ext_imports, notes })
 }
 
 
@@ -253,7 +286,7 @@ pub(super) fn load_and_execute(
     // module name "rt", plus the `env` math builtins.
     let cache = jit_cache();
     let module = get_or_compile_module(cache, &bytes)?;
-    let mut store = wasmtime::Store::new(&cache.engine, WasiCtx::new(".", Vec::new()));
+    let mut store = wasmtime::Store::new(&cache.engine, WasiCtx::new("/", Vec::new()));
     let rt_inst = wt(cache.env_linker.instantiate(&mut store, &cache.runtime_module))?;
     let mut linker = cache.env_linker.clone();
     wt(linker.instance(&mut store, "rt", rt_inst))?;
@@ -265,6 +298,12 @@ pub(super) fn load_and_execute(
         .ok_or_else(|| "CodegenWasmJit: runtime has no `memory` export")?;
     // `print(s)` in an evaluated function, onto the same stdout a simulation uses.
     define_print_import(&mut linker, memory)?;
+    openmodelica_wasm_jit::host::define_uri_import(
+        &mut linker,
+        memory,
+        wt(rt_inst.get_typed_func(&mut store, "rt_str_new"))?,
+        wt(rt_inst.get_typed_func(&mut store, "rt_str_data"))?,
+    )?;
     define_external_imports(&mut store, &mut linker, rt_inst, memory, &sig).inspect_err(|e| {
         crate::CodegenWasmJit::record_error(format!(
             "CodegenWasmJit: cannot bind the external \"C\" functions of `{file_name}`: {e}"
@@ -310,7 +349,9 @@ pub(super) fn load_and_execute(
     // Clear any stale pending assertion before the call (defensive — each call
     // consumes its own).
     openmodelica_wasm_jit::host::clear_pending_assert();
+    openmodelica_wasm_jit::host::flush_stdio();
     let call_res = func.call(&mut store, &params, &mut results);
+    openmodelica_wasm_jit::host::flush_stdio();
     if call_res.is_err() {
         // A failed `assert` records its message + source info via the `rt_assert`
         // host import, then traps. Route it to the error buffer (matching the C
@@ -675,7 +716,7 @@ mod tests {
     fn runtime_instance() -> (Store, wasmtime::Instance) {
         let engine = wasmtime::Engine::default();
         let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, WasiCtx::new(".", Vec::new()));
+        let mut store = wasmtime::Store::new(&engine, WasiCtx::new("/", Vec::new()));
         let mut linker = wasmtime::Linker::new(&engine);
         openmodelica_wasm_jit::host::add_host_builtins(&mut linker).unwrap();
         let inst = linker.instantiate(&mut store, &module).unwrap();
@@ -1466,16 +1507,16 @@ mod tests {
     #[test]
     fn precompiled_runtime_real_pow() {
         let (mut store, inst) = runtime_instance();
-        let pow = inst.get_typed_func::<(f64, f64), f64>(&mut store, "rt_real_pow").unwrap();
-        assert_eq!(pow.call(&mut store, (2.0, 3.0)).unwrap(), 8.0);
-        assert_eq!(pow.call(&mut store, (4.0, 0.5)).unwrap(), 2.0);
+        let pow = inst.get_typed_func::<(f64, f64, i32), f64>(&mut store, "rt_real_pow").unwrap();
+        assert_eq!(pow.call(&mut store, (2.0, 3.0, 0)).unwrap(), 8.0);
+        assert_eq!(pow.call(&mut store, (4.0, 0.5, 0)).unwrap(), 2.0);
         // Negative base, (effectively) integer exponent → real.
-        assert_eq!(pow.call(&mut store, (-2.0, 3.0)).unwrap(), -8.0);
+        assert_eq!(pow.call(&mut store, (-2.0, 3.0, 0)).unwrap(), -8.0);
         // Odd root of a negative base → real (within rounding of 1/3).
-        assert!((pow.call(&mut store, (-27.0, 1.0 / 3.0)).unwrap() + 3.0).abs() < 1e-9);
+        assert!((pow.call(&mut store, (-27.0, 1.0 / 3.0, 0)).unwrap() + 3.0).abs() < 1e-9);
         // Invalid root and overflow-to-inf both trap.
-        assert!(pow.call(&mut store, (-2.0, 0.5)).is_err());
-        assert!(pow.call(&mut store, (1e300, 2.0)).is_err());
+        assert!(pow.call(&mut store, (-2.0, 0.5, 0)).is_err());
+        assert!(pow.call(&mut store, (1e300, 2.0, 0)).is_err());
     }
 
     /// `rt_mod_int`: floored integer modulo, result takes the divisor's sign.

@@ -491,9 +491,12 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_getuid", Infallible);
         m.insert("System_isCancelled", Infallible);           // pure read of the cancel flag
         m.insert("System_reportProgress", Infallible);        // one-way progress store
+        m.insert("System_reportProgressMessage", Infallible); // one-way progress store
         m.insert("System_initGarbageCollector", Infallible);
         m.insert("System_launchParallelTasks", Fallible);      // MMC_THROW_INTERNAL on pthread error
         m.insert("System_loadLibrary", Fallible);              // throws on dlopen failure
+        m.insert("System_loadLibraryLazy", Fallible);          // throws on dlopen failure
+        m.insert("System_getLoadLibraryError", Infallible);    // pure read of the last message
         m.insert("System_lookupFunction", Fallible);           // -1 → throw
         m.insert("System_makeC89Identifier", Infallible);
         m.insert("System_moFiles", Infallible);

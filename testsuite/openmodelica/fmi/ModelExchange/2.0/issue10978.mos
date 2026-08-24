@@ -1,7 +1,7 @@
 // name:     issue10978
 // keywords: fmi assert null threadData
 // status: correct
-// teardown_command: rm -rf issue10978.fmu issue10978_me_FMU* output.log
+// teardown_command: rm -rf issue10978.fmu issue10978_me_FMU* output.log binaries sources modelDescription.xml resources issue10978.log issue10978_info.json
 // cflags: -d=-newInst
 
 loadString("
@@ -24,7 +24,9 @@ simulate(issue10978_me_FMU); getErrorString();
 // true
 // ""
 // "issue10978.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // "issue10978_me_FMU.mo"
 // ""
 // true

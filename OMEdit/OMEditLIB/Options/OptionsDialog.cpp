@@ -6376,13 +6376,17 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pNativePlatformCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, "static");
   pPlatformsLayout->addWidget(pNativePlatformCheckBox);
   // docker platforms
+  // Referenced by tag, omc resolves the digest and checks it against the one it trusts.
+  // See https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/1153451071?tag=v1.27.0
+  const QString dockerImage = "ghcr.io/openmodelica/crossbuild:v1.27.0";
   QStringList dockerPlarforms;
-  dockerPlarforms << "x86_64-linux-gnu docker run --pull=never multiarch/crossbuild"
-                  << "i686-linux-gnu docker run --pull=never multiarch/crossbuild"
-                  << "x86_64-w64-mingw32 docker run --pull=never multiarch/crossbuild"
-                  << "i686-w64-mingw32 docker run --pull=never multiarch/crossbuild"
-                  << "arm-linux-gnueabihf docker run --pull=never multiarch/crossbuild"
-                  << "aarch64-linux-gnu docker run --pull=never multiarch/crossbuild";
+  dockerPlarforms << ("x86_64-linux-gnu docker run " + dockerImage)
+                  << ("i686-linux-gnu docker run " + dockerImage)
+                  << ("aarch64-linux-gnu docker run " + dockerImage)
+                  << ("arm-linux-gnueabi docker run " + dockerImage)
+                  << ("arm-linux-gnueabihf docker run " + dockerImage)
+                  << ("x86_64-w64-mingw32 docker run " + dockerImage)
+                  << ("i686-w64-mingw32 docker run " + dockerImage);
   foreach (QString dockerPlarform, dockerPlarforms) {
     QCheckBox *pCheckBox = new QCheckBox(dockerPlarform);
     pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, dockerPlarform);

@@ -88,6 +88,7 @@ pub(crate) fn build_init_fn(
         loops: Vec::new(),
         borrowed_locals: Vec::new(),
         elem_ptr_tmp: None,
+        src_loc: None,
         sim: None,
     };
     for (i, e) in exps.iter().enumerate() {
@@ -104,6 +105,12 @@ pub(crate) fn build_init_fn(
         f.instruction(i);
     }
     Ok(f)
+}
+
+/// Intern a heap-valued constant the backend did not mark `SHARED_LITERAL`: the
+/// index tables a non-scalarized for-equation loops over (C's `static const`).
+pub(crate) fn intern_const(e: &DAE::Exp) -> u32 {
+    intern(e)
 }
 
 fn intern(e: &DAE::Exp) -> u32 {

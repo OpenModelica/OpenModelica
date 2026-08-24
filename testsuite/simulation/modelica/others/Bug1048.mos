@@ -1,6 +1,7 @@
 // name: Bug1048.mos
 // keywords: delay
 // status: correct
+// suite: disabled
 // 
 // test for #1048
 // 

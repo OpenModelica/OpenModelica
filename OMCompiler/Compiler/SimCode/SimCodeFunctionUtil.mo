@@ -2365,7 +2365,10 @@ end stripLibraryExtension;
 protected function getLibraryStringInWasmFormat
 "The name of the wasm module implementing the library the Absyn.STRING describes.
  A wasm target has no linker: the annotation resolves to a PIC dylink module omc
- loads as-is, rather than to linker flags."
+ loads as-is, rather than to linker flags.
+
+ The gcc-format string follows it, so a native host running the wasm can fall back
+ to the platform shared library for a function no wasm module implements."
   input Absyn.Exp exp;
   output list<String> strs;
   output list<String> names;
@@ -2373,6 +2376,7 @@ algorithm
   (strs, names) := match exp
     local
       String str;
+      list<String> host;
 
     // In the runtime already: LAPACK/BLAS are in-wasm, and ModelicaExternalC is
     // the side module omc carries.
@@ -2390,13 +2394,13 @@ algorithm
         // Linker flags mean nothing here; only a library name can be resolved.
         if "-" == stringGetStringChar(str, 1) then
           strs := {};
-          names := {};
         else
-          // No name for the generic existence check: it looks for host libraries,
-          // while the wasm code generator resolves the module itself.
-          strs := {stripLibraryExtension(str) + ".wasm"};
-          names := {};
+          (host, _) := getLibraryStringInGccFormat(exp);
+          strs := (stripLibraryExtension(str) + ".wasm") :: host;
         end if;
+        // No name for the generic existence check: it looks for host libraries,
+        // while the wasm code generator resolves the module itself.
+        names := {};
       then (strs, names);
 
     else

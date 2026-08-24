@@ -102,6 +102,7 @@ fn main() {
         s.spawn(|| build_external_c_wasm(&crate_dir, &out_dir));
         s.spawn(|| build_fmi3_me_adapter(&crate_dir, &out_dir));
         s.spawn(|| build_native_fmu_loaders(&crate_dir, &out_dir));
+        s.spawn(|| build_lapack_dylink(&crate_dir, &out_dir));
     });
 }
 
@@ -429,6 +430,75 @@ fn build_native_loader(
     Ok(produced)
 }
 
+/// Build + embed `openmodelica_lapack` as a dylink side module (`liblapack.wasm`)
+/// for an FMU whose model calls `external "FORTRAN 77"` LAPACK. Mandatory like
+/// the FMI3 adapter: a failure means a broken build environment.
+///
+/// `build-std=std` because oxiblas needs std and the precompiled `libstd` is
+/// non-PIC; `+simd128` for oxiblas's wasm kernels.
+fn build_lapack_dylink(crate_dir: &Path, out_dir: &Path) {
+    let dest = out_dir.join("liblapack.wasm");
+    let stamp = out_dir.join("liblapack.wasm.hash");
+    let lapack_dir = crate_dir.parent().expect("crate has a parent dir").join("openmodelica_lapack");
+
+    println!("cargo:rerun-if-env-changed=OMC_LAPACK_WASM");
+    if let Ok(path) = std::env::var("OMC_LAPACK_WASM") {
+        copy(Path::new(&path), &dest);
+        std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+
+    let (hash, files) = hash_inputs(&lapack_dir, &[]);
+    for f in &files {
+        println!("cargo:rerun-if-changed={}", f.display());
+    }
+    if dest.exists()
+        && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
+        && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash)
+    {
+        return;
+    }
+
+    match build_lapack_wasm(&lapack_dir, out_dir) {
+        Ok(produced) => {
+            copy(&produced, &dest);
+            std::fs::write(&stamp, &hash).ok();
+        }
+        Err(e) => panic!(
+            "failed to build the LAPACK dylink module: {e}\n\
+             A wasm FMU whose model calls Modelica.Math.Matrices needs it. Needs the wasm \
+             target and std sources (`rustup target add wasm32-unknown-unknown`, \
+             `rustup component add rust-src`) and the crates.io registry for oxiblas; set \
+             OMC_LAPACK_WASM to a prebuilt .wasm to skip the build."
+        ),
+    }
+}
+
+fn build_lapack_wasm(lapack_dir: &Path, out_dir: &Path) -> Result<PathBuf, String> {
+    let target = "wasm32-unknown-unknown";
+    let target_dir = out_dir.join("lapack-dylink-target");
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
+    let rustflags = "-Zcodegen-backend=llvm -Crelocation-model=pic \
+        -Clink-arg=--experimental-pic -Clink-arg=--shared -Clink-arg=--no-entry \
+        -Clink-arg=--allow-undefined -Ctarget-feature=+simd128";
+    let mut cmd = Command::new(cargo);
+    cmd.current_dir(lapack_dir)
+        .args(["build", "-Z", "build-std=std,panic_abort", "--release", "--target", target])
+        .args(["--features", "fortran-abi"])
+        .arg("--target-dir")
+        .arg(&target_dir)
+        .env("RUSTFLAGS", rustflags)
+        .env_remove("CARGO_ENCODED_RUSTFLAGS")
+        .env_remove("CARGO_BUILD_RUSTFLAGS")
+        .env_remove("RUSTC_WORKSPACE_WRAPPER");
+    run(&mut cmd, "cargo build (LAPACK dylink)")?;
+    let produced = target_dir.join(target).join("release").join("openmodelica_lapack.wasm");
+    if !produced.exists() {
+        return Err(format!("expected dylink wasm not found at {}", produced.display()));
+    }
+    Ok(produced)
+}
+
 /// Build + embed the model-agnostic FMI3 ME adapter (`openmodelica_fmi3_wasm`) as
 /// a dylink side module, linked with the per-model module at FMU-export time.
 /// Built here regardless of omc's own target arch: build scripts run on the host.
@@ -448,17 +518,15 @@ struct AdapterVariant {
     cargo_args: &'static [&'static str],
 }
 
-/// Model Exchange (default features), Co-Simulation, and the combined me_cs world; the
-/// `_sundials` variants add CVODE/IDA and are picked only for a `method=` needing them.
+/// Model Exchange (default features) and the combined me_cs world, which serves
+/// Co-Simulation too (its imports are a `co-simulation-fmu`'s exactly, its exports
+/// a superset). ME stays separate: it imports only `callbacks`, so an ME-only host
+/// that cannot supply `intermediate-update-callbacks` would fail to instantiate a
+/// me_cs component. The `_sundials` variant adds CVODE/IDA and is picked only for a
+/// `method=` needing it.
 const ADAPTER_VARIANTS: &[AdapterVariant] = &[
     AdapterVariant { name: "me", label: "ME", cargo_args: &[] },
-    AdapterVariant { name: "cs", label: "CS", cargo_args: &["--no-default-features", "--features", "cs"] },
     AdapterVariant { name: "mecs", label: "me_cs", cargo_args: &["--no-default-features", "--features", "me,cs"] },
-    AdapterVariant {
-        name: "cs_sundials",
-        label: "CS+SUNDIALS",
-        cargo_args: &["--no-default-features", "--features", "cs,sundials"],
-    },
     AdapterVariant {
         name: "mecs_sundials",
         label: "me_cs+SUNDIALS",
@@ -526,7 +594,8 @@ fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant) {
 }
 
 /// Compile the FMI3 adapter to a dylink side module. `build-std` because the
-/// precompiled `liballoc` is non-PIC; `--allow-undefined` because
+/// precompiled `libstd`/`liballoc` are non-PIC (and `std`, not `core,alloc`,
+/// since the runtime it links is a std crate); `--allow-undefined` because
 /// `__heap_base`/`__heap_end` become imports the linker supplies;
 /// `-Zcodegen-backend=llvm` because the workspace default cranelift cannot target
 /// wasm and RUSTFLAGS here replaces the crate's `.cargo/config.toml`.
@@ -541,7 +610,7 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant) 
         -Clink-arg=--allow-undefined";
     let mut cmd = Command::new(cargo);
     cmd.current_dir(adapter_dir)
-        .args(["build", "-Z", "build-std=core,alloc,panic_abort", "--release", "--target", target])
+        .args(["build", "-Z", "build-std=std,panic_abort", "--release", "--target", target])
         .args(v.cargo_args)
         .arg("--target-dir")
         .arg(&target_dir)
@@ -559,19 +628,26 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant) 
 
 /// The `env` imports `sim_runtime_wasmer::define_external_imports` binds. Any other
 /// undefined symbol is a link error, see `build_external_c_wasm`.
+///
+/// The `Modelica*` entry points are not among them: the side module carries
+/// `external_c_callbacks.c`, the same one an FMU links, so a `%g` is interpolated
+/// by `vsnprintf` before the host ever sees the message. Only allocation stays
+/// host-side (`OM_EXT_HOST_ALLOC`) — the buffer lives in the side module's own
+/// memory and the trampoline frees it after copying it out.
 const HOST_PROVIDED: &[&str] = &[
-    "ModelicaError",
-    "ModelicaFormatError",
-    "ModelicaFormatMessage",
-    "ModelicaFormatWarning",
-    "ModelicaVFormatError",
-    "ModelicaVFormatWarning",
+    "rt_ext_error",
+    "rt_ext_message",
+    "rt_ext_warning",
     "ModelicaAllocateString",
     "ModelicaAllocateStringWithErrorReturn",
     "ModelicaInternal_getTime",
     "ModelicaInternal_getpid",
     "usertab",
 ];
+
+/// `--export-all` keeps older MSL compatibility entry points present, but exports
+/// functions only — hence `__stack_pointer`, which the recovery path restores.
+const EXTRA_LINK_ARGS: &[&str] = &["-Wl,--export-all", "-Wl,--export=__stack_pointer"];
 
 /// Build + embed the ModelicaExternalC WASI side module (`modelicaexternalc.wasm`)
 /// for the web (wasmer) simulation host. Provides `ext.Modelica*_*` external functions
@@ -598,6 +674,7 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
         .expect("OMC_EXTERNAL_C_SOURCES not set (CMake provides it)");
 
     let stubs = crate_dir.join("external_c_stubs.c");
+    let callbacks = crate_dir.join("../openmodelica_wasi_libc/external_c_callbacks.c");
     let sources = [
         "ModelicaStandardTables.c", "ModelicaStrings.c", "ModelicaRandom.c",
         "ModelicaIO.c", "ModelicaMatIO.c", "snprintf.c",
@@ -606,6 +683,7 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
     let src_paths: Vec<PathBuf> = sources.iter().map(|s| c_sources.join(s)).collect();
 
     println!("cargo:rerun-if-changed={}", stubs.display());
+    println!("cargo:rerun-if-changed={}", callbacks.display());
     for src in &src_paths {
         println!("cargo:rerun-if-changed={}", src.display());
     }
@@ -634,12 +712,13 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
     let hash = {
         let mut h: u64 = 0xcbf29ce484222325;
         let mut mix = |bytes: &[u8]| for &byte in bytes { h ^= byte as u64; h = h.wrapping_mul(0x100000001b3); };
-        for f in all_srcs.iter().copied().chain(std::iter::once(&stubs)) {
+        for f in all_srcs.iter().copied().chain([&stubs, &callbacks]) {
             if let Ok(b) = std::fs::read(f) { mix(&b); }
         }
         mix(clang.as_bytes());
         mix(sysroot.as_bytes());
         for s in HOST_PROVIDED { mix(s.as_bytes()); }
+        for s in EXTRA_LINK_ARGS { mix(s.as_bytes()); }
         format!("{h:016x}")
     };
     if dest.exists() && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
@@ -647,9 +726,8 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
         return;
     }
 
-    // `--export-all`: export every symbol so older MSL compatibility entry points
-    // are always present. `-mexec-model=reactor`: exports `_initialize` (runs ctors),
-    // no `_start`. `-nodefaultlibs` means `-lc` has to be explicit.
+    // `-mexec-model=reactor`: exports `_initialize` (runs ctors), no `_start`.
+    // `-nodefaultlibs` means `-lc` has to be explicit.
     //
     // `--allow-undefined-file` rather than blanket `--allow-undefined`: a sysroot that
     // fails to provide libc must be a link error, not a module whose `malloc`/`strlen`/
@@ -660,16 +738,17 @@ fn build_external_c_wasm(crate_dir: &Path, out_dir: &Path) {
         "no libclang_rt.builtins-wasm32.a found (need libclang-rt-*-dev-wasm32)"
     }).unwrap_or_else(|e| panic!("{e}"));
     let mut cmd = Command::new(&clang);
-    cmd.args(["--target=wasm32-wasip1", "-O2", "-mexec-model=reactor",
-               "-nodefaultlibs", "-DNO_MUTEX", "-DHAVE_ZLIB",
+    // `-D_POSIX_VERSION` as for the dylink build; see `openmodelica_wasi_libc`.
+    cmd.args(["--target=wasm32-wasip1", "-O2", "-mexec-model=reactor", "-D_POSIX_VERSION=200809L",
+               "-nodefaultlibs", "-DNO_MUTEX", "-DHAVE_ZLIB", "-DOM_EXT_HOST_ALLOC",
                "-Wno-error=implicit-function-declaration"])
         .arg(format!("--sysroot={sysroot}"))
         .arg("-I").arg(&c_sources)
         .arg("-I").arg(&zlib_dir)
-        .args(&all_srcs).arg(&stubs)
+        .args(&all_srcs).arg(&stubs).arg(&callbacks)
         .arg("-lc")
         .arg(&builtins)
-        .arg("-Wl,--export-all")
+        .args(EXTRA_LINK_ARGS)
         .arg(format!("-Wl,--allow-undefined-file={}", permit.display()))
         .arg("-o").arg(&dest);
     let what = format!("{clang} (modelicaexternalc.wasm, --target=wasm32-wasip1, sysroot {sysroot})");

@@ -46,8 +46,10 @@
 // (synchronously, via the same nested-QEventLoop bridge as every other omc call)
 // and serves them. So every QFile/QFileInfo read of a worker-owned file just works.
 //
-// Read-only: writes fall through (return failure). Directory enumeration (QDir)
-// is served via the worker's WASI fd_readdir (omcWorkerListDir).
+// Writes go the same way in reverse: buffered, then pushed to the worker on
+// close/flush (omcWorkerWriteFile), so a model the GUI saves is the file omc reads.
+// The push does not wait, so success means "handed over". Directory enumeration
+// (QDir) is served via the worker's WASI fd_readdir (omcWorkerListDir).
 #if defined(__EMSCRIPTEN__)
 
 #include <QtCore/private/qabstractfileengine_p.h>
@@ -66,6 +68,7 @@
 // Defined in OMEditLIB/OMC/OMCProxy.cpp (shares the omc worker bridge).
 QByteArray omcWorkerReadFile(const char *path);
 QStringList omcWorkerListDir(const char *path);
+bool omcWorkerWriteFile(const char *path, const QByteArray &data);
 
 // True if the page MEMFS already has the path (then the default engine handles it).
 EM_JS(int, omedit_memfs_exists, (const char *path), {
@@ -103,16 +106,73 @@ public:
   bool open(QIODevice::OpenMode openMode,
             std::optional<QFile::Permissions> = std::nullopt) override
   {
-    if (openMode & QIODevice::WriteOnly) return false;
+    if (openMode & (QIODevice::WriteOnly | QIODevice::Append)) {
+      const bool truncate = openMode & QIODevice::Truncate;
+      if (truncate) {
+        mData.clear();
+      } else {
+        ensureFetched();
+      }
+      mWriting = true;
+      mFetched = true;
+      mExists = true;
+      mPos = (openMode & QIODevice::Append) ? mData.size() : 0;
+      // Truncating creates the file even if nothing is ever written to it.
+      mDirty = truncate;
+      return true;
+    }
     if (!ensureFetched()) return false;
     mPos = 0;
     return true;
   }
-  bool close() override { return true; }
+  bool close() override
+  {
+    bool ok = flush();
+    mWriting = false;
+    return ok;
+  }
+
+  // QFile flushes once itself and again as the engine closes; only push if dirty.
+  bool flush() override
+  {
+    if (!mWriting || !mDirty) return true;
+    if (!omcWorkerWriteFile(mName.toUtf8().constData(), mData)) return false;
+    mDirty = false;
+    return true;
+  }
+
+  qint64 write(const char *data, qint64 len) override
+  {
+    if (!mWriting || len < 0) return -1;
+    if (mPos + len > mData.size()) mData.resize(mPos + len);
+    memcpy(mData.data() + mPos, data, len);
+    mPos += len;
+    mDirty = true;
+    return len;
+  }
+
+  // The store keys on the whole path: a directory exists when something is under it.
+  bool mkdir(const QString &, bool, std::optional<QFile::Permissions> = std::nullopt) const override
+  {
+    return true;
+  }
 
   qint64 size() const override { ensureFetched(); return mExists ? mData.size() : 0; }
   qint64 pos() const override { return mPos; }
-  bool seek(qint64 p) override { if (p < 0 || p > mData.size()) return false; mPos = p; return true; }
+  bool seek(qint64 p) override
+  {
+    if (p < 0 || (!mWriting && p > mData.size())) return false;
+    mPos = p;
+    return true;
+  }
+  bool setSize(qint64 n) override
+  {
+    if (!mWriting || n < 0) return false;
+    mData.resize(n);
+    if (mPos > n) mPos = n;
+    mDirty = true;
+    return true;
+  }
   bool isSequential() const override { return false; }
 
   qint64 read(char *data, qint64 maxlen) override
@@ -127,13 +187,14 @@ public:
 
   FileFlags fileFlags(FileFlags type = FileInfoAll) const override
   {
+    // Writable, so QFileInfo::isWritable() on a save path must not say no.
+    const FileFlags perms = ReadOwnerPerm | ReadUserPerm | ReadGroupPerm | ReadOtherPerm
+                            | WriteOwnerPerm | WriteUserPerm | WriteGroupPerm | WriteOtherPerm;
     FileFlags f;
     if (ensureFetched()) {
-      f |= ExistsFlag | FileType;
-      f |= ReadOwnerPerm | ReadUserPerm | ReadGroupPerm | ReadOtherPerm;
+      f |= ExistsFlag | FileType | perms;
     } else if (ensureDirListed()) {
-      f |= ExistsFlag | DirectoryType;
-      f |= ReadOwnerPerm | ReadUserPerm | ReadGroupPerm | ReadOtherPerm;
+      f |= ExistsFlag | DirectoryType | perms;
     }
     return f & type;
   }
@@ -166,7 +227,7 @@ public:
   void setFileName(const QString &file) override
   {
     mName = file; mFetched = false; mExists = false; mData.clear(); mPos = 0;
-    mDirFetched = false; mDirEntries.clear();
+    mDirFetched = false; mDirEntries.clear(); mWriting = false; mDirty = false;
   }
 
 private:
@@ -197,6 +258,8 @@ private:
   mutable QStringList mDirEntries;
   mutable bool mDirFetched = false;
   qint64 mPos = 0;
+  bool mWriting = false;
+  bool mDirty = false;
 };
 
 class WorkerVfsHandler : public QAbstractFileEngineHandler

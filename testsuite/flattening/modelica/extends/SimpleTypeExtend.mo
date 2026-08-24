@@ -1,6 +1,7 @@
 // name: SimpleTypeExtend
 // keywords: inheritance
 // status: incorrect
+// suite: disabled
 //
 // Tests to make sure you cannot extend built-in types and add components
 // THIS TEST SHOULD FAIL

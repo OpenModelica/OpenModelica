@@ -1,7 +1,7 @@
 // name:     testAssert
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml testAssertFMI* output.log testAssertFMI/*
+// teardown_command: rm -rf binaries sources modelDescription.xml testAssertFMI* output.log testAssertFMI/* resources
 // cflags: -d=-newInst
 
 loadString("
@@ -26,6 +26,8 @@ getErrorString();
 // true
 // "testAssertFMI.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // "testAssertFMI_me_FMU.mo"
 // true

@@ -25,13 +25,14 @@
  *
  */
 
-/*! File jac_util.c
+/*! File jacobian_util.c
  */
 
 #include "jacobian_util.h"
 #include "options.h"
 #include "../util/omc_file.h"
 #include "eval_dep.h"
+#include "jacobian_colpack.h"
 
 /**
  * @brief Initialize analytic jacobian.
@@ -154,11 +155,15 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
 {
   int color, column, row, nz;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-  int sizeDirection = jacobian->isRowEval ? jacobian->sizeRows : jacobian->sizeCols;
 
   /* Dispatch to bidirectional evaluation if applicable */
   if (jacobian->isBidirectional && jacobian->adjointJacobian) {
     evalJacobianBidirectional(data, threadData, jacobian, parentJacobian, jac, isDense);
+    return;
+  }
+
+  if (jacobian->isRowEval) {
+    evalJacobianRow(data, threadData, jacobian, parentJacobian, jac, isDense);
     return;
   }
 
@@ -176,7 +181,6 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   /* evaluate Jacobian */
   for (color = 0; color < sp->maxColors; color++) {
     /* activate seed variable for the corresponding color */
-    // direction = 0; direction < sizeDirection; direction++
     for (column = 0; column < jacobian->sizeCols; column++)
       if (sp->colorCols[column]-1 == color)
         jacobian->seedVars[column] = 1.0;
@@ -193,7 +197,7 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
             jac[nz] = jacobian->resultVars[row]; //* solverData->xScaling[j];
           }
           else {
-            /* dense case (row major layout for csc format) */
+            /* dense case */
             jac[column * jacobian->sizeRows + row] = jacobian->resultVars[row]; //* solverData->xScaling[j];
           }
         }
@@ -267,14 +271,18 @@ void evalJacobianRow(DATA* data, threadData_t *threadData,
             /* sparse case (CSR value buffer aligned with index order) */
             jac[nz] = jacobian->resultVars[col];
           } else {
-            /* dense case (row-major layout for csr format) */
-            jac[row * nCols + col] = jacobian->resultVars[col];
+            /* dense case */
+            jac[col * nRows + row] = jacobian->resultVars[col];
           }
         }
         /* de-activate seed variable for the corresponding color (row) */
         jacobian->seedVars[row] = 0.0;
       }
     }
+
+    /* Row evaluators accumulate adjoints; reset between colors. */
+    memset(jacobian->resultVars, 0, nCols * sizeof(modelica_real));
+    memset(jacobian->tmpVars, 0, jacobian->sizeTmpVars * sizeof(modelica_real));
   }
 }
 
@@ -688,10 +696,12 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
 }
 
 /**
- * @brief Greedy distance-1 column coloring of a CSC sparse pattern.
+ * @brief Distance-1 column coloring of a CSC sparse pattern.
  *
  * Two columns may share a color only if they have no non-zero row in common.
- * Uses the existing cscToCsr helper to build the row→columns map, then
+ * Uses ColPack's partial distance-two column coloring when available, with
+ * a greedy C-only fallback.
+ * The fallback uses the existing cscToCsr helper to build the row→columns map, then
  * assigns the smallest available color to each column in order.
  *
  * Needed for the resizable analytic Jacobian path: the C sparsity pattern
@@ -706,7 +716,18 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
  */
 void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols)
 {
-  if (!sp || nCols == 0) return;
+  if (!sp || !sp->colorCols) return;
+  if (nCols == 0) {
+    sp->maxColors = 0;
+    return;
+  }
+
+#if defined(OMC_HAVE_COLPACK)
+  if (computeColPackColumnColoring(
+          nRows, nCols, sp->leadindex, sp->index, sp->nnz, sp->colorCols, &sp->maxColors) == 0) {
+    return;
+  }
+#endif
 
   SPARSE_PATTERN* csr = cscToCsr(sp, nRows, nCols);
   if (!csr) {

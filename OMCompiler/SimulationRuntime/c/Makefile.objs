@@ -45,7 +45,6 @@ UTIL_OBJS_MINIMAL=$(UTIL_OBJS_NO_FMI) \
                   omc_mmap$(OBJ_EXT) \
                   omc_msvc$(OBJ_EXT) \
                   omc_numbers$(OBJ_EXT) \
-                  parallel_helper$(OBJ_EXT) \
                   rational$(OBJ_EXT) \
                   real_array$(OBJ_EXT) \
                   ringbuffer$(OBJ_EXT) \
@@ -170,7 +169,6 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               gbode_util$(OBJ_EXT) \
               ida_solver$(OBJ_EXT) \
               jacobian_analysis$(OBJ_EXT) \
-              jacobianSymbolical$(OBJ_EXT) \
               kinsol_b$(OBJ_EXT) \
               kinsolSolver$(OBJ_EXT) \
               linearSolverKlu$(OBJ_EXT) \
@@ -194,7 +192,6 @@ SOLVER_HFILES = cvode_solver.h \
                 external_input.h \
                 discrete_changes.h \
                 ida_solver.h \
-                jacobianSymbolical.h \
                 linearSystem.h \
                 mixedSystem.h \
                 model_help.h \
@@ -252,6 +249,7 @@ RESULTS_FILES = MatVer4.cpp \
 
 SIM_OBJS = ../dataReconciliation/dataReconciliation$(OBJ_EXT) \
            ../linearization/linearize$(OBJ_EXT) \
+           jacobian_colpack$(OBJ_EXT) \
            simulation_runtime$(OBJ_EXT) \
            socket$(OBJ_EXT)
 ifeq ($(OMC_FMI_RUNTIME),)
@@ -271,6 +269,7 @@ SIM_HFILES = ../dataReconciliation/dataReconciliation.h \
              ../linearization/linearize.h \
              arrayIndex.h \
              eval_dep.h \
+             jacobian_colpack.h \
              jacobian_util.h \
              modelinfo.h \
              omc_simulation_util.h \
@@ -282,7 +281,7 @@ SIM_HFILES = ../dataReconciliation/dataReconciliation.h \
              socket.h
 
 FMIPATH = fmi/
-FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT)
+FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT) FMI3Common$(OBJ_EXT) FMI3ModelExchange$(OBJ_EXT)
 FMIOBJSPATH = $(FMI_OBJS:%=$(BUILDPATH)/$(FMIPATH)%)
 
 GCPATH = gc/

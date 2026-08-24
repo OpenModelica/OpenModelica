@@ -48,6 +48,11 @@ set(CPPTHREADS_LIBRARY_FLAG ${CMAKE_THREAD_LIBS_INIT})
 # library's thread library (instead of something like boost threads).
 set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "-DOMC_BUILD -DUSE_THREAD -fPIC")
 
+# Compile the generated model code with -DUSE_LOGGER, like the runtime libraries
+# themselves (see cmake_3.14.cmake). The generated makefile turns this into that
+# flag itself, so it must not also be listed in SYSTEM_CFLAGS above.
+set(USE_LOGGER_ "ON")
+
 message(STATUS "configuring ModelicaConfig_gcc.inc in OMCompiler/SimulationRuntime/cpp with:")
 message(STATUS "boost include: ${Boost_INCLUDE_DIR}")
 message(STATUS "boost libraries implict / explicit: ${Boost_LIBRARIES} / ${Boost_LIBRARIES_}")
@@ -75,6 +80,7 @@ add_library(omc::simrt::cpp::core::dataexchange ALIAS OMCppDataExchange)
 target_sources(OMCppDataExchange PRIVATE ${OMC_SIMRT_CPP_CORE_DATAEXCHANGE_SOURCES})
 
 target_link_libraries(OMCppDataExchange PUBLIC omc::simrt::cpp::config)
+target_link_libraries(OMCppDataExchange PUBLIC omc::simrt::cpp::core::utils::extension)
 
 install(TARGETS OMCppDataExchange)
 
@@ -120,6 +126,7 @@ add_library(omc::simrt::cpp::core::math ALIAS OMCppMath)
 target_sources(OMCppMath PRIVATE ${OMC_SIMRT_CPP_CORE_MATH_SOURCES})
 
 target_link_libraries(OMCppMath PUBLIC omc::simrt::cpp::config)
+target_link_libraries(OMCppMath PUBLIC omc::simrt::cpp::core::utils::extension)
 
 install(TARGETS OMCppMath)
 
@@ -159,6 +166,7 @@ target_sources(OMCppSolver PRIVATE ${OMC_SIMRT_CPP_CORE_SOLVER_SOURCES})
 
 target_link_libraries(OMCppSolver PUBLIC omc::simrt::cpp::config)
 target_link_libraries(OMCppSolver PUBLIC omc::simrt::cpp::core::math)
+target_link_libraries(OMCppSolver PUBLIC omc::simrt::cpp::core::utils::extension)
 
 install(TARGETS OMCppSolver)
 

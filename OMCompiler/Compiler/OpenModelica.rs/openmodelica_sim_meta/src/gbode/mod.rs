@@ -33,6 +33,7 @@ pub(crate) use nls::Solved;
 use nls::GbNls;
 use tableau::{Estimator, GmType, Tableau};
 
+pub(crate) use crate::driver::MINIMAL_STEP_SIZE;
 use crate::driver::Result;
 use crate::omclog;
 use math::{abs, pow, sqrt};
@@ -40,8 +41,6 @@ use math::{abs, pow, sqrt};
 
 /// C's `GB_MINIMAL_STEP_SIZE` (`epsilon.h`).
 const GB_MINIMAL_STEP_SIZE: f64 = 1e-20;
-/// C's `MINIMAL_STEP_SIZE` (`epsilon.h`), the bisection's absolute tolerance.
-const MINIMAL_STEP_SIZE: f64 = 1e-12;
 /// C's `GB_TOLERANCE_SCALING_SAFETY` (`gbode_err.h`).
 const GB_TOLERANCE_SCALING_SAFETY: f64 = 0.2;
 

@@ -515,7 +515,10 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
     mpCancelButton->setEnabled(true);
   }
 #endif
-  pOMCProxy->sendCommand(command);
+  {
+    OMCLongOperation longOperation;
+    pOMCProxy->sendCommand(command);
+  }
 #if defined(__EMSCRIPTEN__)
   mIsWasmJitSimulationRunning = false;
   mpCancelButton->setEnabled(false);

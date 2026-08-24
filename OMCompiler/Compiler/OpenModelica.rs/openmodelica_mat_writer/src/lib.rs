@@ -21,6 +21,16 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 /// How a result signal sources its value in the `.mat`.
+/// Mirrors `openmodelica_sim_meta::Neg`.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Neg {
+    None,
+    /// `-v`: shares the aliased row through a negative `dataInfo` index.
+    Arith,
+    /// `!v` = `1 - v`: not a sign, so it needs a row of its own.
+    Not,
+}
+
 #[derive(Clone, Copy)]
 pub enum MatKind {
     /// The independent variable (`time`): data_2 row 1.
@@ -28,12 +38,33 @@ pub enum MatKind {
     /// A time-variant real signal reading result-buffer column `col` (0-based
     /// into the `[time | realVars]` row layout, so `col >= 1`). Several signals
     /// may share one column (aliases); `negate` flags a negated alias.
-    Column { col: u32, negate: bool },
+    Column { col: u32, negate: Neg },
     /// A time-invariant parameter; its value comes from the `params` slice in
     /// `Param` order. `negate` flags a negated alias of a parameter.
-    Param { negate: bool },
+    Param { negate: Neg },
     /// A compile-time constant written directly to `data_1`.
     Const { value: f64 },
+}
+
+/// The precision of the real-valued result data (`data_1`/`data_2`). Mirrors C's
+/// `MatVer4Type_t` for the real matrices; the `-single` flag selects
+/// [`Precision::Single`].
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Precision {
+    /// 8-byte IEEE double (C's `MatVer4Type_DOUBLE`).
+    Double,
+    /// 4-byte IEEE single (C's `MatVer4Type_SINGLE`).
+    Single,
+}
+
+impl Precision {
+    /// The mat v4 type code for the real matrices (C's `MatVer4Type_t`).
+    fn type_code(self) -> i32 {
+        match self {
+            Precision::Double => 0,
+            Precision::Single => 10,
+        }
+    }
 }
 
 /// One signal in the result file (C-compatible order: time, states, derivatives,
@@ -46,8 +77,9 @@ pub struct MatVar<'a> {
 
 /// Serialize the MATLAB v4 result file for `signals`. `rows` is the row-major
 /// time-variant buffer (`n_reals` columns per row, column 0 = time); `params`
-/// holds the scalar parameter values in `MatKind::Param` order. Returns the file
-/// bytes.
+/// holds the scalar parameter values in `MatKind::Param` order. `precision`
+/// selects the storage width of the real data (`data_1`/`data_2`). Returns the
+/// file bytes.
 pub fn write_mat4(
     signals: &[MatVar],
     start_time: f64,
@@ -55,6 +87,7 @@ pub fn write_mat4(
     rows: &[f64],
     n_reals: u32,
     params: &[f64],
+    precision: Precision,
 ) -> Vec<u8> {
     let n_reals = n_reals as usize;
     let n_rows = if n_reals == 0 { 0 } else { rows.len() / n_reals };
@@ -71,27 +104,27 @@ pub fn write_mat4(
     write_char_matrix_cols(&mut out, "name", &names);
     write_char_matrix_cols(&mut out, "description", &descs);
 
-    // Build data_2 / data_1 like the C runtime: each `Column` signal references
-    // a result-buffer column; several names can share one column (alias dedup).
-    // A referenced column that is constant over the whole run is stored once in
-    // data_1; varying ones go to data_2. Parameters (and constant aliases of
-    // them) go to data_1. Negated aliases get a negative dataInfo index.
+    // Names can share a column, an arithmetic negation reading it through a negative
+    // dataInfo index; a Boolean one needs the `1 - v` row C's `mat4_emit4` adds.
     let demote = n_rows >= 2;
 
-    // Which buffer columns does any signal reference, and is each constant?
     let mut referenced = vec![false; n_reals];
+    let mut referenced_not = vec![false; n_reals];
     for v in signals {
-        if let MatKind::Column { col, .. } = &v.kind {
+        if let MatKind::Column { col, negate } = &v.kind {
             let c = *col as usize;
             if c < n_reals {
-                referenced[c] = true;
+                match negate {
+                    Neg::Not => referenced_not[c] = true,
+                    _ => referenced[c] = true,
+                }
             }
         }
     }
     let mut col_is_const = vec![false; n_reals];
     if demote {
         for c in 1..n_reals {
-            if referenced[c] {
+            if referenced[c] || referenced_not[c] {
                 let first = rows[c];
                 col_is_const[c] = (1..n_rows).all(|r| rows[r * n_reals + c] == first);
             }
@@ -109,20 +142,29 @@ pub fn write_mat4(
     // referenced columns (after [start,stop] and the scalar signals).
     let mut col_data2_row = vec![0i32; n_reals];
     let mut col_data1_row = vec![0i32; n_reals];
-    let mut varying_cols: Vec<usize> = Vec::new();
-    let mut const_cols: Vec<usize> = Vec::new();
+    let mut not_data2_row = vec![0i32; n_reals];
+    let mut not_data1_row = vec![0i32; n_reals];
+    let mut varying_cols: Vec<(usize, Neg)> = Vec::new();
+    let mut const_cols: Vec<(usize, Neg)> = Vec::new();
     let mut next_const_row: i32 = 2 + n_scalars as i32;
     for c in 1..n_reals {
-        if !referenced[c] {
-            continue; // column belongs to a filtered-out variable — drop it
-        }
-        if col_is_const[c] {
-            const_cols.push(c);
-            col_data1_row[c] = next_const_row;
-            next_const_row += 1;
-        } else {
-            varying_cols.push(c);
-            col_data2_row[c] = 1 + varying_cols.len() as i32;
+        for neg in [Neg::None, Neg::Not] {
+            let (wanted, d1, d2) = if neg == Neg::Not {
+                (referenced_not[c], &mut not_data1_row, &mut not_data2_row)
+            } else {
+                (referenced[c], &mut col_data1_row, &mut col_data2_row)
+            };
+            if !wanted {
+                continue; // filtered-out variable
+            }
+            if col_is_const[c] {
+                const_cols.push((c, neg));
+                d1[c] = next_const_row;
+                next_const_row += 1;
+            } else {
+                varying_cols.push((c, neg));
+                d2[c] = 1 + varying_cols.len() as i32;
+            }
         }
     }
 
@@ -134,11 +176,15 @@ pub fn write_mat4(
             MatKind::Time => [0, 1, 0, -1],
             MatKind::Column { col, negate } => {
                 let c = *col as usize;
-                let sgn = if *negate { -1 } else { 1 };
-                if c < n_reals && col_data1_row[c] != 0 {
-                    [1, sgn * col_data1_row[c], 0, 0]
-                } else if c < n_reals && col_data2_row[c] != 0 {
-                    [2, sgn * col_data2_row[c], 0, 0]
+                let (d1, d2, sgn) = match negate {
+                    Neg::Not => (&not_data1_row, &not_data2_row, 1),
+                    Neg::Arith => (&col_data1_row, &col_data2_row, -1),
+                    Neg::None => (&col_data1_row, &col_data2_row, 1),
+                };
+                if c < n_reals && d1[c] != 0 {
+                    [1, sgn * d1[c], 0, 0]
+                } else if c < n_reals && d2[c] != 0 {
+                    [2, sgn * d2[c], 0, 0]
                 } else {
                     [0, 1, 0, -1] // unreachable (every Column is referenced); alias time
                 }
@@ -146,7 +192,7 @@ pub fn write_mat4(
             MatKind::Param { negate } => {
                 let r = next_scalar_row;
                 next_scalar_row += 1;
-                [1, if *negate { -r } else { r }, 0, 0]
+                [1, if *negate == Neg::Arith { -r } else { r }, 0, 0]
             }
             MatKind::Const { .. } => {
                 let r = next_scalar_row;
@@ -169,10 +215,10 @@ pub fn write_mat4(
     let mut param_idx = 0usize;
     for v in signals {
         let val = match &v.kind {
-            MatKind::Param { .. } => {
+            MatKind::Param { negate } => {
                 let v = params.get(param_idx).copied().unwrap_or(0.0);
                 param_idx += 1;
-                v
+                if *negate == Neg::Not { 1.0 - v } else { v }
             }
             MatKind::Const { value } => *value,
             _ => continue,
@@ -181,23 +227,26 @@ pub fn write_mat4(
         data_1[n_data1 + row_idx] = val;
         row_idx += 1;
     }
-    for &c in &const_cols {
-        let idx = (col_data1_row[c] - 1) as usize; // 1-based row -> 0-based index
-        data_1[idx] = rows[c];
-        data_1[n_data1 + idx] = rows[c];
+    for &(c, neg) in &const_cols {
+        let row = if neg == Neg::Not { not_data1_row[c] } else { col_data1_row[c] };
+        let idx = (row - 1) as usize;
+        let v = if neg == Neg::Not { 1.0 - rows[c] } else { rows[c] };
+        data_1[idx] = v;
+        data_1[n_data1 + idx] = v;
     }
-    write_double_matrix(&mut out, "data_1", n_data1, 2, &data_1);
+    write_real_matrix(&mut out, "data_1", n_data1, 2, &data_1, precision);
 
     // data_2 (n_reals2 x n_rows double, column-major): time + the varying columns.
     let n_reals2 = 1 + varying_cols.len();
     let mut data_2: Vec<f64> = Vec::with_capacity(n_rows * n_reals2);
     for r in 0..n_rows {
         data_2.push(rows[r * n_reals]); // time
-        for &c in &varying_cols {
-            data_2.push(rows[r * n_reals + c]);
+        for &(c, neg) in &varying_cols {
+            let v = rows[r * n_reals + c];
+            data_2.push(if neg == Neg::Not { 1.0 - v } else { v });
         }
     }
-    write_double_matrix(&mut out, "data_2", n_reals2, n_rows, &data_2);
+    write_real_matrix(&mut out, "data_2", n_reals2, n_rows, &data_2, precision);
 
     out
 }
@@ -219,10 +268,13 @@ fn write_mat_header(out: &mut Vec<u8>, name: &str, ty: i32, mrows: usize, ncols:
     out.push(0);
 }
 
-fn write_double_matrix(out: &mut Vec<u8>, name: &str, mrows: usize, ncols: usize, data: &[f64]) {
-    write_mat_header(out, name, mat_type(0, false), mrows, ncols);
+fn write_real_matrix(out: &mut Vec<u8>, name: &str, mrows: usize, ncols: usize, data: &[f64], precision: Precision) {
+    write_mat_header(out, name, precision.type_code(), mrows, ncols);
     for v in data {
-        out.extend_from_slice(&v.to_le_bytes());
+        match precision {
+            Precision::Double => out.extend_from_slice(&v.to_le_bytes()),
+            Precision::Single => out.extend_from_slice(&(*v as f32).to_le_bytes()),
+        }
     }
 }
 
@@ -277,6 +329,8 @@ mod tests {
                 1 // char/uint8
             } else if (ty / 10) % 10 == 2 {
                 4 // int32
+            } else if (ty / 10) % 10 == 1 {
+                4 // single
             } else {
                 8 // double
             };
@@ -293,6 +347,9 @@ mod tests {
     fn f64s(payload: &[u8]) -> Vec<f64> {
         payload.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect()
     }
+    fn f32s(payload: &[u8]) -> Vec<f32> {
+        payload.chunks_exact(4).map(|c| f32::from_le_bytes(c.try_into().unwrap())).collect()
+    }
     fn i32s(payload: &[u8]) -> Vec<i32> {
         payload.chunks_exact(4).map(|c| i32::from_le_bytes(c.try_into().unwrap())).collect()
     }
@@ -303,14 +360,14 @@ mod tests {
     fn writes_expected_matrices() {
         let vars = [
             MatVar { name: "time", comment: "Time in s", kind: MatKind::Time },
-            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: false } },
-            MatVar { name: "p", comment: "a param", kind: MatKind::Param { negate: false } },
+            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
+            MatVar { name: "p", comment: "a param", kind: MatKind::Param { negate: Neg::None } },
             MatVar { name: "k", comment: "", kind: MatKind::Const { value: 9.0 } },
         ];
         // 3 communication points; x ramps 0,1,2.
         let rows = [0.0, 0.0, /*r1*/ 0.5, 1.0, /*r2*/ 1.0, 2.0];
         let params = [7.0]; // p = 7
-        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &params);
+        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &params, Precision::Double);
 
         // name matrix: 4 columns, one per signal, column-major null-padded.
         let (mrows, ncols, name_payload) = find_matrix(&buf, "name");
@@ -340,5 +397,109 @@ mod tests {
         assert_eq!((m2, n2), (2, 3));
         let d2 = f64s(d2);
         assert_eq!(d2, vec![0.0, 0.0, 0.5, 1.0, 1.0, 2.0]);
+    }
+
+    /// Arithmetic negation shares the target's row; a Boolean one gets its own.
+    #[test]
+    fn negated_aliases() {
+        let vars = [
+            MatVar { name: "time", comment: "", kind: MatKind::Time },
+            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
+            MatVar { name: "mx", comment: "", kind: MatKind::Column { col: 1, negate: Neg::Arith } },
+            MatVar { name: "b", comment: "", kind: MatKind::Column { col: 2, negate: Neg::None } },
+            MatVar { name: "nb", comment: "", kind: MatKind::Column { col: 2, negate: Neg::Not } },
+            MatVar { name: "np", comment: "", kind: MatKind::Param { negate: Neg::Not } },
+        ];
+        // n_reals = 3: [time, x, b]; b toggles, so its column stays time-variant.
+        let rows = [0.0, 1.0, 0.0, /*r1*/ 0.5, 2.0, 1.0];
+        let buf = write_mat4(&vars, 0.0, 0.5, &rows, 3, &[1.0], Precision::Double);
+
+        let (_r, _c, di) = find_matrix(&buf, "dataInfo");
+        let di = i32s(di);
+        assert_eq!(&di[4..8], &[2, 2, 0, 0]); // x -> data_2 row 2
+        assert_eq!(&di[8..12], &[2, -2, 0, 0]); // mx -> same row, negated
+        assert_eq!(&di[12..16], &[2, 3, 0, 0]); // b -> data_2 row 3
+        assert_eq!(&di[16..20], &[2, 4, 0, 0]); // nb -> its own derived row
+        assert_eq!(&di[20..24], &[1, 2, 0, 0]); // np -> data_1 row 2, not negated
+
+        let (m1, _n1, d1) = find_matrix(&buf, "data_1");
+        assert_eq!(f64s(d1)[1], 0.0);
+        assert_eq!(m1, 2);
+
+        let (m2, n2, d2) = find_matrix(&buf, "data_2");
+        assert_eq!((m2, n2), (4, 2));
+        assert_eq!(f64s(d2), vec![0.0, 1.0, 0.0, 1.0, 0.5, 2.0, 1.0, 0.0]);
+    }
+
+    /// The type code of a named matrix's header (to assert `-single`'s 10).
+    fn matrix_type(buf: &[u8], want: &str) -> i32 {
+        let mut p = 0;
+        while p + 20 <= buf.len() {
+            let ty = i32::from_le_bytes(buf[p..p + 4].try_into().unwrap());
+            let mrows = i32::from_le_bytes(buf[p + 4..p + 8].try_into().unwrap()) as usize;
+            let ncols = i32::from_le_bytes(buf[p + 8..p + 12].try_into().unwrap()) as usize;
+            let namelen = i32::from_le_bytes(buf[p + 16..p + 20].try_into().unwrap()) as usize;
+            let name = core::str::from_utf8(&buf[p + 20..p + 20 + namelen - 1]).unwrap();
+            let p_elt = if ty % 10 == 1 { 1 } else if (ty / 10) % 10 == 2 { 4 } else if (ty / 10) % 10 == 1 { 4 } else { 8 };
+            let data_off = p + 20 + namelen;
+            if name == want {
+                return ty;
+            }
+            p = data_off + mrows * ncols * p_elt;
+        }
+        panic!("matrix `{want}` not found");
+    }
+
+    /// `-single`: the real matrices carry type code 10 and 4-byte elements, and
+    /// the values round-trip as `f32`.
+    #[test]
+    fn single_precision() {
+        let vars = [
+            MatVar { name: "time", comment: "", kind: MatKind::Time },
+            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
+            MatVar { name: "p", comment: "", kind: MatKind::Param { negate: Neg::None } },
+        ];
+        // 2 rows; x is 0.5 and 1.5 (exact in f32), p = 7 (exact in f32).
+        let rows = [0.0, 0.5, 1.0, 1.5];
+        let buf = write_mat4(&vars, 0.0, 1.0, &rows, 2, &[7.0], Precision::Single);
+
+        assert_eq!(matrix_type(&buf, "data_1"), 10);
+        assert_eq!(matrix_type(&buf, "data_2"), 10);
+
+        let (m1, n1, d1) = find_matrix(&buf, "data_1");
+        assert_eq!(d1.len(), m1 * n1 * 4); // 4-byte elements
+        assert_eq!(f32s(d1), vec![0.0, 7.0, 1.0, 7.0]);
+        let (m2, n2, d2) = find_matrix(&buf, "data_2");
+        assert_eq!(d2.len(), m2 * n2 * 4);
+        assert_eq!(f32s(d2), vec![0.0, 0.5, 1.0, 1.5]);
+    }
+
+    /// A value not exact in `f32` rounds to the nearest single, as C's cast does.
+    #[test]
+    fn single_precision_rounds() {
+        let vars = [
+            MatVar { name: "time", comment: "", kind: MatKind::Time },
+            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
+        ];
+        // 1/3 is not exact in f32; the stored value must equal the f32 rounding.
+        let rows = [0.0, 1.0 / 3.0];
+        let buf = write_mat4(&vars, 0.0, 0.0, &rows, 2, &[], Precision::Single);
+        let (_r, _c, d2) = find_matrix(&buf, "data_2");
+        let d2 = f32s(d2);
+        assert_eq!(d2[1], (1.0 / 3.0) as f32);
+    }
+
+    /// The single-precision file is smaller than the double one, as the test
+    /// `s2 > s1` checks.
+    #[test]
+    fn single_precision_is_smaller() {
+        let vars = [
+            MatVar { name: "time", comment: "", kind: MatKind::Time },
+            MatVar { name: "x", comment: "", kind: MatKind::Column { col: 1, negate: Neg::None } },
+        ];
+        let rows = [0.0, 0.0, 1.0, 0.5, 2.0, 1.5];
+        let single = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Single);
+        let double = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Double);
+        assert!(single.len() < double.len());
     }
 }

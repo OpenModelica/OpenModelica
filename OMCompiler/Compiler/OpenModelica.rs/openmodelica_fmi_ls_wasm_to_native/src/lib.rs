@@ -285,6 +285,9 @@ const PLATFORM: &str = {
 fn engine() -> wasmtime::Result<Engine> {
     let mut cfg = Config::new();
     cfg.wasm_component_model(true);
+    // A model with external "C" carries the `model_error` tag its call sites catch.
+    // The exporter's engine must agree, or the `.cwasm` it precompiled is rejected.
+    cfg.wasm_exceptions(true);
     Engine::new(&cfg)
 }
 
@@ -323,6 +326,9 @@ fn load_component(engine: &Engine, res: &Path) -> wasmtime::Result<Component> {
 
 fn new_store(engine: &Engine, res: &str, env: *mut c_void, log: Log, iu: IntermediateUpdateCb) -> wasmtime::Result<Store<Host>> {
     let mut builder = wasmtime_wasi::WasiCtxBuilder::new();
+    // C's `messageText` puts the simulation log on the importer's stdout with
+    // `printf`; the component's stdout is WASI's, so it has to be this library's.
+    builder.inherit_stdout().inherit_stderr();
     // What fmi3Instantiate* points at: a file-based CombiTable reads its table
     // through this preopen.
     if Path::new(res).is_dir() {

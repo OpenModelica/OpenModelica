@@ -24,7 +24,7 @@
 //! - `wasm-merge runtime.wasm rt model.wasm model` connects both directions,
 //!   leaving only the WASI imports (satisfied by `wasmtime`/the worker shim).
 
-use openmodelica_mat_writer::{MatKind, MatVar};
+use openmodelica_mat_writer::{MatVar, Precision};
 use openmodelica_sim_meta::driver::{self, SimEngine};
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{self as meta, MetaKind, SimMeta};
@@ -42,14 +42,19 @@ unsafe extern "C" {
     fn functionODE(sim_data: u32);
     fn functionAlgebraics(sim_data: u32);
     fn functionStateSetJacobians(sim_data: u32);
-    fn functionZeroCrossings(sim_data: u32);
+    fn functionZeroCrossings(sim_data: u32, gout: u32);
+    fn functionZeroCrossingsEquations(sim_data: u32);
     fn functionUpdateRelations(sim_data: u32);
     fn functionCheckAsserts(sim_data: u32);
     fn functionStoreDelayed(sim_data: u32);
     fn functionInitDelay(sim_data: u32);
+    fn functionStoreSpatialDistribution(sim_data: u32);
+    fn functionInitSpatialDistribution(sim_data: u32);
     fn functionUpdateBoundParameters(sim_data: u32);
     fn functionUpdateBoundVariableAttributes(sim_data: u32);
     fn functionRemovedInitialEquations(sim_data: u32);
+    fn functionJacA_constantEqns(sim_data: u32);
+    fn functionJacA_column(sim_data: u32);
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
     fn linearJacA(sim_data: u32);
@@ -93,7 +98,7 @@ impl SimEngine for StandaloneEngine {
         dst.copy_from_slice(buf);
         Ok(())
     }
-    fn call1(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+    fn call1_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         unsafe {
             match name {
                 "functionParameters" => functionParameters(arg),
@@ -103,14 +108,18 @@ impl SimEngine for StandaloneEngine {
                 "functionODE" => functionODE(arg),
                 "functionAlgebraics" => functionAlgebraics(arg),
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
-                "functionZeroCrossings" => functionZeroCrossings(arg),
+                "functionZeroCrossingsEquations" => functionZeroCrossingsEquations(arg),
                 "functionUpdateRelations" => functionUpdateRelations(arg),
                 "functionCheckAsserts" => functionCheckAsserts(arg),
                 "functionStoreDelayed" => functionStoreDelayed(arg),
                 "functionInitDelay" => functionInitDelay(arg),
+                "functionStoreSpatialDistribution" => functionStoreSpatialDistribution(arg),
+                "functionInitSpatialDistribution" => functionInitSpatialDistribution(arg),
                 "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
                 "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
                 "functionRemovedInitialEquations" => functionRemovedInitialEquations(arg),
+                "functionJacA_constantEqns" => functionJacA_constantEqns(arg),
+                "functionJacA_column" => functionJacA_column(arg),
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
                 "linearJacA" => linearJacA(arg),
@@ -123,15 +132,19 @@ impl SimEngine for StandaloneEngine {
         }
         Ok(())
     }
-    fn call1_if_present(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+    fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         // Every entry point is always exported (empty stub if unused), so a plain
         // call is a no-op when the feature is absent.
-        self.call1(name, arg)
+        self.call1_raw(name, arg)
     }
-    // Importing `evaluateDAEResiduals` (or the two synchronous dispatchers) would
-    // leave every model without that feature with an unresolved `model.*` import,
-    // so the standalone export supports neither.
-    fn call2(&mut self, name: &str, _a: u32, _b: u32) -> driver::Result<()> {
+    fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
+        if name == driver::MODEL_FN_ZC {
+            unsafe { functionZeroCrossings(a, b) };
+            return Ok(());
+        }
+        // Importing `evaluateDAEResiduals` (or the two synchronous dispatchers) would
+        // leave every model without that feature with an unresolved `model.*` import,
+        // so the standalone export supports neither.
         Err(match name {
             driver::MODEL_FN_DAE => {
                 "wasm-jit standalone: --daeMode models are not supported by the standalone export"
@@ -145,12 +158,18 @@ impl SimEngine for StandaloneEngine {
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
         crate::take_reinit_notes()
     }
-    fn take_pending_assert(&mut self) -> Option<[i32; 8]> {
+    fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         // No host to record it; a failed model assert traps (see `rt_assert`).
         None
     }
     fn context_addr(&mut self) -> u32 {
         crate::nls::rt_context_addr()
+    }
+    fn error_stage_addr(&mut self) -> u32 {
+        crate::nls::rt_error_stage_addr()
+    }
+    fn no_throw_div_zero_addr(&mut self) -> u32 {
+        crate::nls::rt_no_throw_div_zero_addr()
     }
     fn clean_nls_history(&mut self, time: f64) {
         crate::nls::rt_nls_clean_history(time);
@@ -197,55 +216,84 @@ fn run() {
         }
     }
 
-    if m.output_format != "mat" {
+    if m.output_format != "mat" && m.output_format != "plt" {
         return; // "empty": run only (benchmarking), no file
     }
 
     // A run-time `-variableFilter` was refused at the flag check (no regex engine);
     // the model's own filter is the codegen's verdict.
     let keep = m.output_keep(None);
-    let mut params: Vec<f64> = Vec::new();
+    // `params` is positional over the unfiltered `Param` signals; only the kept
+    // ones are collected, in signal order, for the writer.
+    let mut kept_params: Vec<f64> = Vec::new();
     let mut param_idx = 0usize;
-    let mut matvars: Vec<MatVar> = Vec::new();
-    for (v, &keep) in m.vars.iter().zip(&keep) {
-        let is_param = matches!(v.kind, MetaKind::Param { .. });
-        if is_param && keep {
-            params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
+    let bytes = if m.output_format == "mat" {
+        let mut matvars: Vec<MatVar> = Vec::new();
+        for (v, &keep) in m.vars.iter().zip(&keep) {
+            let is_param = matches!(v.kind, MetaKind::Param { .. });
+            if is_param && keep {
+                kept_params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
+            }
+            param_idx += is_param as usize;
+            if !keep {
+                continue;
+            }
+            matvars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
         }
-        param_idx += is_param as usize;
-        if !keep {
-            continue;
+        // `-single` narrows the real data to 4-byte float (C's `FLAG_SINGLE_PRECISION`).
+        let precision =
+            simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
+        openmodelica_mat_writer::write_mat4(
+            &matvars,
+            m.start_time,
+            m.stop_time,
+            &result.rows,
+            result.n_reals,
+            &kept_params,
+            precision,
+        )
+    } else {
+        use openmodelica_plt_writer::{Neg as PltNeg, PltKind, PltVar};
+        let neg = |n: &meta::Neg| match n {
+            meta::Neg::None => PltNeg::None,
+            meta::Neg::Arith => PltNeg::Arith,
+            meta::Neg::Not => PltNeg::Not,
+        };
+        let to_plt = |k: &MetaKind| match k {
+            MetaKind::Time => PltKind::Time,
+            MetaKind::Column { col, negate } => PltKind::Column { col: *col, negate: neg(negate) },
+            MetaKind::Param { negate, .. } => PltKind::Param { negate: neg(negate) },
+            MetaKind::Const { value } => PltKind::Const { value: *value },
+        };
+        let mut signals: Vec<PltVar> = Vec::new();
+        for (v, &keep) in m.vars.iter().zip(&keep) {
+            let is_param = matches!(v.kind, MetaKind::Param { .. });
+            // C's plt writer omits integer/boolean parameters (`nParameters*`);
+            // real parameters ride in `nVariablesReal` and are kept.
+            let is_int_bool_param = matches!(v.kind, MetaKind::Param { wty: meta::WTy::I32, .. });
+            let emit = keep && !is_int_bool_param;
+            if is_param && emit {
+                kept_params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
+            }
+            param_idx += is_param as usize;
+            if !emit {
+                continue;
+            }
+            signals.push(PltVar { name: &v.name, kind: to_plt(&v.kind) });
         }
-        matvars.push(MatVar {
-            name: &v.name,
-            comment: &v.comment,
-            kind: match &v.kind {
-                MetaKind::Time => MatKind::Time,
-                MetaKind::Column { col, negate } => MatKind::Column { col: *col, negate: *negate },
-                MetaKind::Param { negate, .. } => MatKind::Param { negate: *negate },
-                MetaKind::Const { value } => MatKind::Const { value: *value },
-            },
-        });
-    }
-
-    let bytes = openmodelica_mat_writer::write_mat4(
-        &matvars,
-        m.start_time,
-        m.stop_time,
-        &result.rows,
-        result.n_reals,
-        &params,
-    );
-    std::fs::write(result_file(&m.prefix), bytes).expect("wasm-jit standalone: cannot write result file");
+        openmodelica_plt_writer::write_plt(&signals, &result.rows, result.n_reals, &kept_params)
+    };
+    std::fs::write(result_file(&m.prefix, &m.output_format), bytes)
+        .expect("wasm-jit standalone: cannot write result file");
 }
 
 /// C's result-file resolution (`simulation_runtime.cpp`): `-r` outright, else
-/// `<prefix>_res.mat` under `-outputPath`.
-fn result_file(prefix: &str) -> String {
+/// `<prefix>_res.<format>` under `-outputPath`.
+fn result_file(prefix: &str, format: &str) -> String {
     simflags::with_flags(|f| match (&f.result_file, &f.output_path) {
         (Some(r), _) => r.clone(),
-        (None, Some(dir)) => format!("{dir}/{prefix}_res.mat"),
-        (None, None) => format!("{prefix}_res.mat"),
+        (None, Some(dir)) => format!("{dir}/{prefix}_res.{format}"),
+        (None, None) => format!("{prefix}_res.{format}"),
     })
 }
 
@@ -290,7 +338,7 @@ pub extern "C" fn _start() {
 /// assertion, so print the message (`msg` is an `rt` String handle:
 /// `[refcount:u32][len:u32][utf8…]`) and trap, which aborts the command.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_assert(msg: i32, _file: i32, _sline: i32, _scol: i32, _eline: i32, _ecol: i32, _read_only: i32, _cond: i32) -> i32 {
+pub extern "C" fn rt_assert(msg: i32, _file: i32, _sline: i32, _scol: i32, _eline: i32, _ecol: i32, _read_only: i32, _cond: i32, _initial: i32) -> i32 {
     if msg != 0 {
         let h = msg as u32;
         let len = unsafe { crate::load_u32(h + 4) } as usize;
@@ -337,6 +385,7 @@ pub extern "C" fn rt_assert_warning(
     _eline: i32,
     _ecol: i32,
     _read_only: i32,
+    _initial: i32,
 ) {
     if msg != 0 {
         let h = msg as u32;

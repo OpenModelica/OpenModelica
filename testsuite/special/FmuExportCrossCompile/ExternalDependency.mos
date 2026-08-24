@@ -1,0 +1,44 @@
+// status: correct
+// Note: Requires docker in PATH
+//
+// Cross compile an FMU for a model that depends on a pre-compiled external C
+// library. The external library has to end up in the FMU next to the model
+// binary of each platform, see
+// https://github.com/OpenModelica/OpenModelica/issues/9509
+// The external library itself is built by the Makefile target
+// `ExternalDependency` before this script is run.
+
+if not loadFile("ExtLib/package.mo") then
+  print(getErrorString());
+  exit(1);
+end if;
+
+if not setCommandLineOptions("--fmuCMakeBuild=true") then
+  print(getErrorString());
+  exit(1);
+end if;
+
+platforms := {
+  "x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0",
+  "x86_64-w64-mingw32 docker run ghcr.io/openmodelica/crossbuild:v1.27.0"};
+if "" == buildModelFMU(ExtLib.Test, version="2.0", fmuType="me_cs", fileNamePrefix="ExternalDependency", platforms=platforms) then
+  print(getErrorString());
+  exit(1);
+end if;
+getErrorString();
+
+// The same model as a CoSimulation FMU with the CVODE integrator linked into it, to
+// check that the SUNDIALS libraries are found inside the container as well.
+// Linux only: OpenModelica ships SUNDIALS only for the platform it was built for, so
+// there is no Windows build of CVODE to link against when cross compiling.
+if not setCommandLineOptions("--fmiFlags=s:cvode") then
+  print(getErrorString());
+  exit(1);
+end if;
+
+if "" == buildModelFMU(ExtLib.Test, version="2.0", fmuType="cs", fileNamePrefix="ExternalDependencyCVode",
+                       platforms={"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.27.0"}) then
+  print(getErrorString());
+  exit(1);
+end if;
+getErrorString();

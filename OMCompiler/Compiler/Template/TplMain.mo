@@ -63,6 +63,7 @@ constant SourceInfo dsi = TplAbsyn.dummySourceInfo;
 
 public function main
   input String inFile;
+  input String inOutputDir = "";
 
 algorithm
   () := match inFile
@@ -77,7 +78,7 @@ algorithm
     case file
       algorithm
         Print.clearBuf();
-        translateFile(file);
+        translateFile(file, inOutputDir);
         strErrBuf := Print.getErrorString();
         strErrBuf := if strErrBuf == "" then "" else ("### Error Buffer ###\n"+strErrBuf+"\n### End of Error Buffer ###\n");
         print(strErrBuf);
@@ -89,6 +90,7 @@ end main;
 
 public function translateFile
   input String inFile;
+  input String inOutputDir = "";
 
 algorithm
   () := matchcontinue inFile
@@ -107,6 +109,9 @@ algorithm
 
         destFile := System.stringReplace(file + "*", ".tpl*", ".mo");
         false := stringEq(file, destFile);
+        if inOutputDir <> "" then
+          destFile := inOutputDir + "/" + System.basename(destFile);
+        end if;
 
         //print(destFile);
         tplPackage := TplParser.templPackageFromFile(file);

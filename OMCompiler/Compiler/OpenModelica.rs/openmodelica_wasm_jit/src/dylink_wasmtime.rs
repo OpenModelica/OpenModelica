@@ -19,6 +19,24 @@ type Result<T> = std::result::Result<T, String>;
 pub struct Library {
     pub name: String,
     pub bytes: Vec<u8>,
+    /// Worth an on-disk AOT artifact: a built-in library or one a `Library`
+    /// annotation named, so every run loads the same bytes. One compiled from a
+    /// model's own `Include` sources is not — caching it would leave a file per
+    /// model behind, and only that process ever reloads it.
+    pub fixed: bool,
+}
+
+impl Library {
+    pub fn model(name: &str, bytes: Vec<u8>) -> Self {
+        Library { name: name.to_string(), bytes, fixed: false }
+    }
+    fn ext(l: &crate::model::ExtLibrary) -> Self {
+        Library { name: l.name.clone(), bytes: l.bytes.clone(), fixed: l.fixed }
+    }
+    /// One of the libraries built into omc, which also takes the on-disk artifact.
+    pub fn builtin(name: &str, bytes: &'static [u8]) -> Self {
+        Library { name: name.to_string(), bytes: bytes.to_vec(), fixed: true }
+    }
 }
 
 pub struct Loaded {
@@ -28,11 +46,34 @@ pub struct Loaded {
     data: HashMap<String, u32>,
     func_slots: HashMap<String, u32>,
     table: Table,
+    /// The libraries' shared shadow stack: after a `ModelicaError` unwound their
+    /// frames the epilogues that would have handed it back never ran, so the
+    /// model's recovery path restores what it saved (`rt_ext_stack_restore`).
+    stack_pointer: Option<Global>,
 }
 
 impl Loaded {
     pub fn func(&self, name: &str) -> Option<&Func> {
         self.funcs.get(name)
+    }
+    /// `name`, else its `Include` wrapper: the call one for a macro, or what the
+    /// address one points at.
+    pub fn func_or_addr(&self, store: &mut wasmtime::Store<WasiCtx>, name: &str) -> Option<Func> {
+        if let Some(f) = self.funcs.get(name) {
+            return Some(f.clone());
+        }
+        if let Some(f) = self.funcs.get(&format!("{}{name}", crate::model::EXT_CALL_PREFIX)) {
+            return Some(f.clone());
+        }
+        let w = self.funcs.get(&format!("{}{name}", crate::model::EXT_ADDR_PREFIX))?;
+        // Slot 0 is the null function pointer: the sources only declared it.
+        match w.typed::<(), i32>(&*store).ok()?.call(&mut *store, ()).ok()? {
+            0 => None,
+            idx => self.table.get(store, idx as u64)?.as_func().flatten().cloned(),
+        }
+    }
+    pub fn shadow_stack(&self) -> Option<Global> {
+        self.stack_pointer
     }
 }
 
@@ -69,6 +110,7 @@ pub fn load(
         data: HashMap::new(),
         func_slots: HashMap::new(),
         table,
+        stack_pointer: None,
     };
     if libs.is_empty() {
         return Ok(loaded);
@@ -86,6 +128,7 @@ pub fn load(
         Val::I32((stack + SIDE_STACK_SIZE) as i32),
     )
     .map_err(|e| format!("dylink: cannot create __stack_pointer: {e}"))?;
+    loaded.stack_pointer = Some(stack_pointer);
     loaded.data.insert("__stack_low".to_string(), stack);
     loaded.data.insert("__stack_high".to_string(), stack + SIDE_STACK_SIZE);
     // An empty initial dlmalloc segment: every allocation then comes from `sbrk`,
@@ -102,8 +145,21 @@ pub fn load(
     let mut wasi = wasmtime::Linker::new(engine);
     crate::wasi_shim::add_to_linker(&mut wasi).map_err(|e| format!("dylink: {e}"))?;
 
-    let mut weak: std::collections::HashSet<String> = std::collections::HashSet::new();
+    // Every library's exports before any is placed: a PIC library reaches even its
+    // own exported symbols through `env`, so they can be interposed, and one may
+    // call what a later one defines. Such an import gets a trampoline, bound below.
+    let mut modules = Vec::with_capacity(libs.len());
+    let mut defined: std::collections::HashSet<String> = std::collections::HashSet::new();
     for lib in libs {
+        let module = crate::sim_runtime::library_module(engine, &lib.name, &lib.bytes, lib.fixed)
+            .map_err(|e| format!("external \"C\" library `{}` is not valid wasm: {e}", lib.name))?;
+        defined.extend(module.exports().filter(|e| e.ty().func().is_some()).map(|e| e.name().to_string()));
+        modules.push(module);
+    }
+    let mut deferred: HashMap<String, DeferredTarget> = HashMap::new();
+
+    let mut weak: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for (lib, module) in libs.iter().zip(&modules) {
         let dl = dylink::parse(&lib.bytes).ok_or_else(|| {
             format!(
                 "external \"C\" library `{}` is not a shared library (no dylink.0 section) \
@@ -114,9 +170,8 @@ pub fn load(
         weak.extend(dl.weak_imports.iter().cloned());
         place(
             store,
-            engine,
+            module,
             &lib.name,
-            &lib.bytes,
             &dl,
             memory,
             table,
@@ -124,10 +179,17 @@ pub fn load(
             &stack_pointer,
             &wasi,
             host_imports,
+            &defined,
+            &mut deferred,
             &mut got_mem,
             &mut got_func,
             &mut loaded,
         )?;
+    }
+    for (sym, target) in &deferred {
+        if let Some(f) = loaded.funcs.get(sym) {
+            let _ = target.set(*f);
+        }
     }
 
     for (sym, g) in &got_mem {
@@ -166,8 +228,35 @@ pub fn load(
                 .map_err(|e| format!("external \"C\" library `{}` failed to initialise: {e}", lib.name))?;
         }
     }
+    set_guest_cwd(store, rt_alloc, memory, &loaded)?;
     unbuffer_stdout(store, &loaded)?;
     Ok(loaded)
+}
+
+/// Give libc the process's own working directory: `__wasilibc_find_relpath`
+/// resolves every path a library opens against `__wasilibc_cwd`, which is `"/"` out
+/// of the box. A later `chdir` frees only a buffer libc allocated itself.
+fn set_guest_cwd(
+    store: &mut wasmtime::Store<WasiCtx>,
+    rt_alloc: &wasmtime::TypedFunc<u32, u32>,
+    memory: Memory,
+    loaded: &Loaded,
+) -> Result<()> {
+    let (Some(&slot), Ok(cwd)) = (loaded.data.get("__wasilibc_cwd"), openmodelica_wasi::fs::cwd()) else {
+        return Ok(());
+    };
+    let bytes = cwd.as_bytes();
+    let p = rt_alloc
+        .call(&mut *store, bytes.len() as u32 + 1)
+        .map_err(|e| format!("rt_alloc: {e}"))?;
+    let data = memory.data_mut(&mut *store);
+    let too_small = "dylink: the shared memory is too small for the working directory";
+    let dst = data.get_mut(p as usize..p as usize + bytes.len() + 1).ok_or(too_small)?;
+    dst[..bytes.len()].copy_from_slice(bytes);
+    dst[bytes.len()] = 0;
+    let ptr = data.get_mut(slot as usize..slot as usize + 4).ok_or(too_small)?;
+    ptr.copy_from_slice(&p.to_le_bytes());
+    Ok(())
 }
 
 /// Nothing flushes libc's buffer — the module is torn down, not exited — so a
@@ -230,9 +319,8 @@ fn func_slot(store: &mut wasmtime::Store<WasiCtx>, loaded: &mut Loaded, sym: &st
 #[allow(clippy::too_many_arguments)]
 fn place(
     store: &mut wasmtime::Store<WasiCtx>,
-    engine: &wasmtime::Engine,
+    module: &wasmtime::Module,
     lib_name: &str,
-    bytes: &[u8],
     dl: &Dylink,
     memory: Memory,
     table: Table,
@@ -240,13 +328,12 @@ fn place(
     stack_pointer: &Global,
     wasi: &wasmtime::Linker<WasiCtx>,
     host_imports: &HashMap<String, Func>,
+    defined: &std::collections::HashSet<String>,
+    deferred: &mut HashMap<String, DeferredTarget>,
     got_mem: &mut HashMap<String, Global>,
     got_func: &mut HashMap<String, Global>,
     loaded: &mut Loaded,
 ) -> Result<()> {
-    let module = wasmtime::Module::new(engine, bytes)
-        .map_err(|e| format!("external \"C\" library `{lib_name}` is not valid wasm: {e}"))?;
-
     let memory_base = alloc_aligned(store, rt_alloc, dl.mem.mem_size, dl.mem.mem_align())?;
     let table_base = if dl.mem.table_size == 0 {
         table.size(&*store)
@@ -269,7 +356,7 @@ fn place(
             ("GOT.mem", sym) => Extern::Global(got_entry(store, got_mem, sym)?),
             ("GOT.func", sym) => Extern::Global(got_entry(store, got_func, sym)?),
             ("env", sym) => {
-                // Another library's export, else a host import, else undefined.
+                // A placed library's export, else a host import, else deferred.
                 let ty = imp
                     .ty()
                     .func()
@@ -277,6 +364,7 @@ fn place(
                     .ok_or_else(|| format!("external \"C\" library `{lib_name}` imports env.{sym}, which is not a function"))?;
                 match loaded.funcs.get(sym).or_else(|| host_imports.get(sym)) {
                     Some(f) => Extern::Func(*f),
+                    None if defined.contains(sym) => Extern::Func(deferred_import(store, &ty, deferred, sym)),
                     None => Extern::Func(missing_symbol_stub(store, &ty, lib_name, sym)),
                 }
             }
@@ -377,6 +465,27 @@ fn missing_symbol_stub(
         Err(wasmtime::Error::msg(msg.clone()))
     })
 }
+
+/// Where a deferred `env` import ends up, once every library is instantiated.
+type DeferredTarget = std::sync::Arc<std::sync::OnceLock<Func>>;
+
+/// A trampoline over the [`DeferredTarget`] `load` fills in; one target per symbol.
+fn deferred_import(
+    store: &mut wasmtime::Store<WasiCtx>,
+    ty: &FuncType,
+    deferred: &mut HashMap<String, DeferredTarget>,
+    sym: &str,
+) -> Func {
+    let target = deferred.entry(sym.to_string()).or_default().clone();
+    let sym = sym.to_string();
+    Func::new(&mut *store, ty.clone(), move |mut caller: Caller<'_, WasiCtx>, args, rets| {
+        match target.get() {
+            Some(f) => f.call(&mut caller, args, rets),
+            None => Err(wasmtime::Error::msg(format!("external \"C\": `{sym}` was never defined"))),
+        }
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -409,8 +518,8 @@ mod tests {
             return None;
         }
         Some([
-            Library { name: "libc.so".into(), bytes: openmodelica_wasi_libc::LIBC_PIC.to_vec() },
-            Library { name: name.into(), bytes },
+            Library::builtin("libc.so", openmodelica_wasi_libc::LIBC_PIC),
+            Library::model(name, bytes),
         ])
     }
 
@@ -418,7 +527,7 @@ mod tests {
     fn runtime() -> (wasmtime::Store<WasiCtx>, wasmtime::Engine, wasmtime::Instance) {
         let engine = wasmtime::Engine::default();
         let module = wasmtime::Module::new(&engine, crate::RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, WasiCtx::new(".", Vec::new()));
+        let mut store = wasmtime::Store::new(&engine, WasiCtx::new("/", Vec::new()));
         let mut linker = wasmtime::Linker::new(&engine);
         crate::host::add_host_builtins(&mut linker).unwrap();
         let inst = linker.instantiate(&mut store, &module).unwrap();
@@ -516,9 +625,11 @@ mod tests {
         let rt = ExtRt {
             str_new: rt_inst.get_typed_func(&mut store, "rt_str_new").unwrap(),
             str_data: rt_inst.get_typed_func(&mut store, "rt_str_data").unwrap(),
+            release: rt_inst.get_typed_func(&mut store, "rt_release").unwrap(),
             alloc: alloc.clone(),
             free: rt_inst.get_typed_func(&mut store, "rt_free").unwrap(),
             record_new: rt_inst.get_typed_func(&mut store, "rt_record_new").unwrap(),
+            nls: None,
         };
         let sig = ExtCallSig {
             name: "triple".into(),
@@ -570,7 +681,7 @@ mod tests {
         let memory = rt_inst.get_memory(&mut store, "memory").unwrap();
         let table = rt_inst.get_table(&mut store, "__indirect_function_table").unwrap();
         let alloc = rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc").unwrap();
-        let libs = [Library { name: "obj.o".into(), bytes: std::fs::read(&o).unwrap() }];
+        let libs = [Library::model("obj.o", std::fs::read(&o).unwrap())];
         let err = match load(&mut store, &engine, memory, table, &alloc, &libs, &HashMap::new()) {
             Err(e) => e,
             Ok(_) => panic!("an object file was accepted as a library"),
@@ -594,7 +705,7 @@ pub fn load_ext_libraries(
     let table = rt_inst
         .get_table(&mut *store, "__indirect_function_table")
         .ok_or_else(|| "CodegenWasmJit: runtime has no __indirect_function_table export".to_string())?;
-    if model.ext_libs.is_empty() {
+    if model.ext_libs.is_empty() && !model.ext_builtin {
         return load(store, engine, memory, table, &rt.alloc, &[], &HashMap::new());
     }
     let libc = openmodelica_wasi_libc::LIBC_PIC;
@@ -603,10 +714,21 @@ pub fn load_ext_libraries(
                     load an external \"C\" library"
             .to_string());
     }
-    let mut libs = Vec::with_capacity(model.ext_libs.len() + 1);
-    libs.push(Library { name: "libc.so".to_string(), bytes: libc.to_vec() });
+    let mut libs = Vec::with_capacity(model.ext_libs.len() + 3);
+    libs.push(Library::builtin("libc.so", libc));
     for l in &model.ext_libs {
-        libs.push(Library { name: l.name.clone(), bytes: l.bytes.clone() });
+        libs.push(Library::ext(l));
+    }
+    // After the model's own libraries, so those still define a symbol they share.
+    // Binding an `external "C"` here makes the call wasm->wasm; the dlopen
+    // fallback costs a host trampoline and libffi marshalling per call.
+    if model.ext_builtin {
+        libs.push(Library::builtin("modelicaexternalc", openmodelica_wasi_libc::EXTERNAL_C_DYLINK));
+        // The dummy `usertab` ModelicaExternalC imports; last, so a `usertab` from
+        // the model's own libraries wins.
+        if !openmodelica_wasi_libc::USERTAB_DYLINK.is_empty() {
+            libs.push(Library::builtin("usertab", openmodelica_wasi_libc::USERTAB_DYLINK));
+        }
     }
     let host = modelica_utilities_imports(store, rt);
     load(store, engine, memory, table, &rt.alloc, &libs, &host)
@@ -621,53 +743,83 @@ fn shared_cstr(caller: &mut wasmtime::Caller<'_, WasiCtx>, ptr: i32) -> String {
     String::from_utf8_lossy(&rest[..len]).into_owned()
 }
 
+/// A message without its trailing newline; the log adds its own, as C does.
+fn trim_eol(msg: &str) -> &str {
+    msg.strip_suffix('\n').unwrap_or(msg)
+}
+
 /// The ModelicaUtilities a library may call: host imports, because the messages
-/// belong in omc's error buffer. A formatted variant gets `(format, va_list)` and
-/// is not interpolated, as on the web target.
+/// belong in the run's log (or, outside a run, in omc's error buffer). A formatted
+/// variant gets `(format, va_list)` and is not interpolated, as on the web target.
 pub fn modelica_utilities_imports(
     store: &mut wasmtime::Store<WasiCtx>,
     rt: &ExtRt,
 ) -> HashMap<String, wasmtime::Func> {
     use wasmtime::{Caller, Func};
+    use openmodelica_sim_meta::omclog;
     let mut m: HashMap<String, Func> = HashMap::new();
 
-    let error = |mut caller: Caller<'_, WasiCtx>, ptr: i32| -> std::result::Result<(), wasmtime::Error> {
+    let nls = rt.nls.clone();
+    let err_fn = |store: &mut wasmtime::Store<WasiCtx>, nls: Option<NlsHooks>| Func::wrap(
+        store,
+        move |mut caller: Caller<'_, WasiCtx>, ptr: i32| -> std::result::Result<(), wasmtime::Error> {
+            raise_model_error(&nls, &mut caller, ptr)
+        },
+    );
+    let err_fmt_fn = |store: &mut wasmtime::Store<WasiCtx>, nls: Option<NlsHooks>| Func::wrap(
+        store,
+        move |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| -> std::result::Result<(), wasmtime::Error> {
+            raise_model_error(&nls, &mut caller, fmt)
+        },
+    );
+    // C sends both to `OMC_LOG_STDOUT`. The `-d=gen` function JIT has no run and no
+    // such log, and neither does the compiler process in C.
+    let in_run = rt.nls.is_some();
+    let warning = move |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
         let msg = shared_cstr(&mut caller, ptr);
-        openmodelica_error::ErrorExt::runtime_error(&msg);
-        Err(wasmtime::Error::msg(format!("ModelicaError: {msg}")))
+        if in_run {
+            omclog::warning(omclog::STDOUT, false, trim_eol(&msg));
+        } else {
+            openmodelica_error::ErrorExt::runtime_warning(&msg);
+        }
     };
-    let error_fmt = |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| -> std::result::Result<(), wasmtime::Error> {
+    let warning_fmt = move |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| {
         let msg = shared_cstr(&mut caller, fmt);
-        openmodelica_error::ErrorExt::runtime_error(&msg);
-        Err(wasmtime::Error::msg(format!("ModelicaError: {msg}")))
-    };
-    let warning = |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
-        let msg = shared_cstr(&mut caller, ptr);
-        openmodelica_error::ErrorExt::runtime_warning(&msg);
-    };
-    let warning_fmt = |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| {
-        let msg = shared_cstr(&mut caller, fmt);
-        openmodelica_error::ErrorExt::runtime_warning(&msg);
+        if in_run {
+            omclog::warning(omclog::STDOUT, false, trim_eol(&msg));
+        } else {
+            openmodelica_error::ErrorExt::runtime_warning(&msg);
+        }
     };
 
-    let message = |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
-        let msg = shared_cstr(&mut caller, ptr);
-        openmodelica_wasi::wasi::stdout_write(msg.as_bytes());
+    let message = move |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
+        if in_run {
+            let msg = shared_cstr(&mut caller, ptr);
+            omclog::info(omclog::STDOUT, false, trim_eol(&msg));
+        }
     };
-    let message_fmt = |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| {
-        let msg = shared_cstr(&mut caller, fmt);
-        openmodelica_wasi::wasi::stdout_write(msg.as_bytes());
+    let message_fmt = move |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| {
+        if in_run {
+            let msg = shared_cstr(&mut caller, fmt);
+            omclog::info(omclog::STDOUT, false, trim_eol(&msg));
+        }
     };
 
-    m.insert("ModelicaError".into(), Func::wrap(&mut *store, error));
-    m.insert("ModelicaFormatError".into(), Func::wrap(&mut *store, error_fmt));
-    m.insert("ModelicaVFormatError".into(), Func::wrap(&mut *store, error_fmt));
+    m.insert("ModelicaError".into(), err_fn(&mut *store, nls.clone()));
+    m.insert("ModelicaFormatError".into(), err_fmt_fn(&mut *store, nls.clone()));
+    m.insert("ModelicaVFormatError".into(), err_fmt_fn(&mut *store, nls.clone()));
     m.insert("ModelicaWarning".into(), Func::wrap(&mut *store, warning));
     m.insert("ModelicaFormatWarning".into(), Func::wrap(&mut *store, warning_fmt));
     m.insert("ModelicaVFormatWarning".into(), Func::wrap(&mut *store, warning_fmt));
     m.insert("ModelicaMessage".into(), Func::wrap(&mut *store, message));
     m.insert("ModelicaFormatMessage".into(), Func::wrap(&mut *store, message_fmt));
     m.insert("ModelicaVFormatMessage".into(), Func::wrap(&mut *store, message_fmt));
+
+    // A side module carrying `external_c_callbacks.c` has the `Modelica*` entry
+    // points itself, so what arrives here is already through `vsnprintf`.
+    m.insert("rt_ext_error".into(), err_fn(&mut *store, nls));
+    m.insert("rt_ext_message".into(), Func::wrap(&mut *store, message));
+    m.insert("rt_ext_warning".into(), Func::wrap(&mut *store, warning));
 
     // The simulation's allocator, so a string the callee builds is readable from
     // the model's memory.
@@ -691,9 +843,80 @@ pub fn modelica_utilities_imports(
 pub struct ExtRt {
     pub str_new: wasmtime::TypedFunc<u32, u32>,
     pub str_data: wasmtime::TypedFunc<u32, u32>,
+    pub release: wasmtime::TypedFunc<u32, ()>,
     pub alloc: wasmtime::TypedFunc<u32, u32>,
     pub free: wasmtime::TypedFunc<u32, ()>,
     pub record_new: wasmtime::TypedFunc<(u32, u32), u32>,
+    /// A run's solver state; the `-d=gen` function JIT has no solver.
+    pub nls: Option<NlsHooks>,
+}
+
+/// The runtime's recoverable-model-error state, reached from the host so an
+/// external "C" `ModelicaError` inside a residual backs the trial off.
+#[derive(Clone)]
+pub struct NlsHooks {
+    pub recovering: wasmtime::TypedFunc<(), i32>,
+    pub note: wasmtime::TypedFunc<(), ()>,
+}
+
+impl NlsHooks {
+    pub fn recovering(&self, caller: &mut wasmtime::Caller<'_, WasiCtx>) -> std::result::Result<bool, wasmtime::Error> {
+        Ok(self.recovering.call(&mut *caller, ())? != 0)
+    }
+    pub fn note(&self, caller: &mut wasmtime::Caller<'_, WasiCtx>) -> std::result::Result<(), wasmtime::Error> {
+        self.note.call(&mut *caller, ())
+    }
+}
+
+/// End the call the way C's `throwStreamPrint` does: with the model's
+/// `model_error` tag, which the `ext` call site catches — inside a residual to
+/// reject the trial, outside one to end the run (so only then is the message
+/// worth reporting). With no tag registered (the `-d=gen` function JIT, whose
+/// module has no solver to recover into) it stays a trap.
+fn raise_model_error(
+    nls: &Option<NlsHooks>,
+    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    ptr: i32,
+) -> std::result::Result<(), wasmtime::Error> {
+    let recovering = match nls {
+        Some(nls) => nls.recovering(caller)?,
+        None => false,
+    };
+    if !recovering {
+        let msg = shared_cstr(caller, ptr);
+        // A run reports itself through its log alone, as C's separate executable
+        // does; the function JIT has no log and answers through the Error buffer.
+        match nls {
+            Some(_) => crate::sim_driver::note_runtime_error(&msg),
+            None => openmodelica_error::ErrorExt::runtime_error(&msg),
+        }
+    }
+    match crate::host::model_error_exception(caller)? {
+        Some(exn) => {
+            use wasmtime::AsContextMut;
+            caller.as_context_mut().throw::<()>(exn).map_err(wasmtime::Error::new)
+        }
+        None => Err(wasmtime::Error::msg(format!("ModelicaError: {}", shared_cstr(caller, ptr)))),
+    }
+}
+
+/// Zeroed results (an empty String for `char*`) after a recovered `ModelicaError`.
+/// The solver discards the residual they feed, but they must be valid handles.
+pub fn zero_results(
+    sig: &crate::sig::ExtCallSig,
+    caller: &mut wasmtime::Caller<'_, WasiCtx>,
+    rt_str_new: &wasmtime::TypedFunc<u32, u32>,
+    rets: &mut [wasmtime::Val],
+) -> std::result::Result<(), wasmtime::Error> {
+    use crate::sig::SigTy;
+    for (slot, ty) in rets.iter_mut().zip(sig.wasm_results()) {
+        *slot = match ty {
+            SigTy::Real => wasmtime::Val::F64(0.0f64.to_bits()),
+            SigTy::Str => wasmtime::Val::I32(rt_str_new.call(&mut *caller, 0)? as i32),
+            _ => wasmtime::Val::I32(0),
+        };
+    }
+    Ok(())
 }
 
 /// Whether the import is already exactly the C function, so the engine can call it
@@ -733,8 +956,12 @@ pub fn bind_in_wasm_external(
     let sig = sig.clone();
     let rt = rt.clone();
     let f = wasmtime::Func::new(&mut *store, functype.clone(), move |mut caller, args, rets| {
-        call_external_in_wasm(&sig, &rt, &target, &mut caller, args, rets)
-            .map_err(|e| wasmtime::Error::msg(format!("external \"C\" `{}`: {e}", sig.name)))
+        let mut thrown = None;
+        let r = call_external_in_wasm(&sig, &rt, &target, &mut caller, args, rets, &mut thrown);
+        match thrown {
+            Some(e) => Err(e),
+            None => r.map_err(|e| wasmtime::Error::msg(format!("external \"C\" `{}`: {e}", sig.name))),
+        }
     });
     Ok(Some(wasmtime::Extern::Func(f)))
 }
@@ -748,6 +975,7 @@ fn call_external_in_wasm(
     caller: &mut wasmtime::Caller<'_, WasiCtx>,
     args: &[wasmtime::Val],
     rets: &mut [wasmtime::Val],
+    thrown: &mut Option<wasmtime::Error>,
 ) -> Result<()> {
     use crate::sig::SigTy;
     use wasmtime::Val;
@@ -761,6 +989,8 @@ fn call_external_in_wasm(
     // Column-major copies a FORTRAN 77 callee gets instead of the array itself:
     // (scratch, element area, dims, element size, is output).
     let mut f77_arrays: Vec<(u32, u32, Vec<usize>, usize, bool)> = Vec::new();
+    // Output `String[…]`: (`char**` scratch, element area, element count).
+    let mut str_out_arrays: Vec<(u32, u32, usize)> = Vec::new();
 
     let alloc = |caller: &mut wasmtime::Caller<'_, WasiCtx>, n: u32| -> Result<u32> {
         rt.alloc.call(&mut *caller, n).map_err(|e| format!("rt_alloc: {e}"))
@@ -879,6 +1109,29 @@ fn call_external_in_wasm(
                 let (dims, data_off) = crate::host::array_abi::dims_and_data(memory.data(&*caller), off)
                     .ok_or_else(|| "external \"C\": malformed array argument".to_string())?;
                 let base = (off + data_off) as u32;
+                // Handles, not the `const char**` C declares: rebuilt as a vector of
+                // NUL-terminated copies (C's `data_of_string_c89_array`).
+                if let SigTy::Str = &**elem {
+                    let n = dims.iter().product::<usize>();
+                    let vec_cell = alloc(caller, (n * 4).max(1) as u32)?;
+                    temps.push(vec_cell);
+                    for k in 0..n {
+                        let h = read_u32(memory, caller, base + (k * 4) as u32);
+                        let len = if h == 0 { 0 } else { read_u32(memory, caller, h + 4) as usize };
+                        let cell = alloc(caller, (len + 1) as u32)?;
+                        temps.push(cell);
+                        let mem = memory.data_mut(&mut *caller);
+                        mem.copy_within(h as usize + 8..h as usize + 8 + len, cell as usize);
+                        mem[cell as usize + len] = 0;
+                        let slot = vec_cell as usize + k * 4;
+                        mem[slot..slot + 4].copy_from_slice(&cell.to_le_bytes());
+                    }
+                    call_args.push(Val::I32(vec_cell as i32));
+                    if *is_out {
+                        str_out_arrays.push((vec_cell, base, n));
+                    }
+                    continue;
+                }
                 if fortran && dims.len() > 1 {
                     // C's `convert_alloc_*_to_f77`.
                     let esz = crate::host::array_abi::elem_size(elem);
@@ -906,7 +1159,16 @@ fn call_external_in_wasm(
     };
     let mut raw_ret = [Val::I32(0)];
     let ret_slice = if returns_value { &mut raw_ret[..] } else { &mut raw_ret[..0] };
-    target.call(&mut *caller, &call_args, ret_slice).map_err(|e| format!("{e}"))?;
+    if let Err(e) = target.call(&mut *caller, &call_args, ret_slice) {
+        // A `model_error` on its way to the model's `try_table` passes straight
+        // through: rewritten, the store's pending exception would never land.
+        if e.downcast_ref::<wasmtime::ThrownException>().is_some() {
+            *thrown = Some(e);
+            return Ok(());
+        }
+        // `{e:?}`: whatever ended the call is the trap's cause.
+        return Err(format!("{e:?}"));
+    }
 
     // C's `convert_alloc_*_from_f77`.
     for (cell, base, dims, esz, is_out) in &f77_arrays {
@@ -918,6 +1180,28 @@ fn call_external_in_wasm(
         let mut buf = vec![0u8; n];
         crate::host::array_abi::reorder(&mem[*cell as usize..*cell as usize + n], &mut buf, dims, *esz, false);
         mem[*base as usize..*base as usize + n].copy_from_slice(&buf);
+    }
+
+    // C's `unpack_string_array`; an element the callee did not write still points
+    // at our own input copy.
+    for (vec_cell, base, n) in &str_out_arrays {
+        for k in 0..*n {
+            let ptr = read_u32(memory, caller, vec_cell + (k * 4) as u32) as usize;
+            let len = str_len(memory, caller, ptr)?;
+            let handle = rt.str_new.call(&mut *caller, len as u32).map_err(|e| format!("{e}"))?;
+            let dst = rt.str_data.call(&mut *caller, handle).map_err(|e| format!("{e}"))? as usize;
+            let slot = *base as usize + k * 4;
+            let old = {
+                let mem = memory.data_mut(&mut *caller);
+                mem.copy_within(ptr..ptr + len, dst);
+                let old = u32::from_le_bytes(mem[slot..slot + 4].try_into().unwrap());
+                mem[slot..slot + 4].copy_from_slice(&handle.to_le_bytes());
+                old
+            };
+            if old != 0 {
+                rt.release.call(&mut *caller, old).map_err(|e| format!("{e}"))?;
+            }
+        }
     }
 
     let mut result = Vec::with_capacity(rets.len());
@@ -983,12 +1267,7 @@ fn ext_result(
         SigTy::Int | SigTy::Bool | SigTy::Ptr => Val::I32(i32::from_le_bytes(raw[..4].try_into().unwrap())),
         SigTy::Str => {
             let ptr = u32::from_le_bytes(raw[..4].try_into().unwrap()) as usize;
-            let data = memory.data(&*caller);
-            let len = if ptr == 0 {
-                0
-            } else {
-                data[ptr..].iter().position(|&b| b == 0).ok_or_else(|| "external \"C\": unterminated `char*` result".to_string())?
-            };
+            let len = str_len(memory, caller, ptr)?;
             let handle = rt.str_new.call(&mut *caller, len as u32).map_err(|e| format!("{e}"))?;
             let dst = rt.str_data.call(&mut *caller, handle).map_err(|e| format!("{e}"))? as usize;
             memory.data_mut(&mut *caller).copy_within(ptr..ptr + len, dst);
@@ -1001,39 +1280,9 @@ fn ext_result(
 
 // ─────────────────── records across the C boundary ───────────────────
 
-/// The C type an `external "C"` prototype gives a value.
-fn c_size_align(t: &crate::sig::SigTy) -> (u32, u32) {
-    use crate::sig::SigTy;
-    match t {
-        SigTy::Real => (8, 8),
-        SigTy::Record { fields, .. } => {
-            let l = c_record_layout(fields);
-            (l.size, l.align)
-        }
-        _ => (4, 4),
-    }
-}
-
-/// The C struct the callee declares. Not the record object's own layout: a
-/// `String` member is a `char*` and a nested record is inlined, not referenced.
-struct CRecord {
-    size: u32,
-    align: u32,
-    offsets: Vec<u32>,
-}
-
-fn c_record_layout(fields: &[(arcstr::ArcStr, crate::sig::SigTy)]) -> CRecord {
-    let mut off = 0u32;
-    let mut align = 1u32;
-    let mut offsets = Vec::with_capacity(fields.len());
-    for (_, t) in fields {
-        let (sz, a) = c_size_align(t);
-        off = dylink::align_up(off, a);
-        offsets.push(off);
-        off += sz;
-        align = align.max(a);
-    }
-    CRecord { size: dylink::align_up(off, align), align, offsets }
+/// The C struct the callee declares, in the side module's wasm32 ABI.
+fn c_record_layout(fields: &[(arcstr::ArcStr, crate::sig::SigTy)]) -> crate::sig::CRecordLayout {
+    crate::sig::c_record_layout(fields, 4)
 }
 
 /// How the wasm C ABI passes a value.
@@ -1262,6 +1511,17 @@ fn wasm_string(
         memory.data_mut(&mut *caller).copy_within(ptr as usize..ptr as usize + len, dst);
     }
     Ok(handle)
+}
+
+/// `strlen` of the NUL-terminated `char*` at `ptr` in the shared memory.
+fn str_len(memory: wasmtime::Memory, caller: &mut wasmtime::Caller<'_, WasiCtx>, ptr: usize) -> Result<usize> {
+    if ptr == 0 {
+        return Ok(0);
+    }
+    memory.data(&*caller)[ptr..]
+        .iter()
+        .position(|&b| b == 0)
+        .ok_or_else(|| "external \"C\": unterminated `char*`".to_string())
 }
 
 fn read_u32(memory: wasmtime::Memory, caller: &mut wasmtime::Caller<'_, WasiCtx>, at: u32) -> u32 {

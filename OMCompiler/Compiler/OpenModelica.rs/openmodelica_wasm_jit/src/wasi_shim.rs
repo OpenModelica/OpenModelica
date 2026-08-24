@@ -441,21 +441,21 @@ mod tests {
     /// Build a tiny wasip1 command module that, from `_start`:
     ///   * `path_open`s a relative name for writing (CREAT|TRUNC, write rights),
     ///   * `fd_write`s a fixed payload,
-    ///   * `fd_close`s (flushing to the VFS),
+    ///   * `fd_close`s (flushing the file out),
     ///   * `proc_exit(0)`.
     /// The data segment lays out, from address 0:
     ///   [0]   the path string         (`path_bytes`)
-    ///   [64]  the payload string      (`data_bytes`)
-    ///   [128] iovec { buf=64, len }
-    ///   [136] scratch: opened-fd out  (u32)
-    ///   [140] scratch: nwritten out   (u32)
+    ///   [256] the payload string      (`data_bytes`)
+    ///   [512] iovec { buf=256, len }
+    ///   [520] scratch: opened-fd out  (u32)
+    ///   [524] scratch: nwritten out   (u32)
     fn build_writer_module(path: &str, data: &str) -> Vec<u8> {
         use we::Instruction as I;
         const PATH_OFF: i32 = 0;
-        const DATA_OFF: i32 = 64;
-        const IOVEC_OFF: i32 = 128;
-        const OPENED_FD_OFF: i32 = 136;
-        const NWRITTEN_OFF: i32 = 140;
+        const DATA_OFF: i32 = 256;
+        const IOVEC_OFF: i32 = 512;
+        const OPENED_FD_OFF: i32 = 520;
+        const NWRITTEN_OFF: i32 = 524;
         const WASI: &str = "wasi_snapshot_preview1";
 
         let mut m = we::Module::new();
@@ -547,28 +547,36 @@ mod tests {
         m.finish()
     }
 
+    /// A run directory of our own, since the shim serves real files natively.
+    fn test_root(tag: &str) -> String {
+        format!("{}/om-wasi-shim-{tag}-{}", std::env::temp_dir().display(), std::process::id())
+    }
+
     #[test]
-    fn wasi_writes_through_vfs() {
-        let path = "wasi_shim_test_out.txt";
-        let payload = "hello from wasi over the vfs\n";
-        let wasm = build_writer_module(path, payload);
+    fn wasi_writes_through_fs() {
+        let root = test_root("abs");
+        openmodelica_wasi::fs::create_dir_all(&root).unwrap();
+        let path = format!("{root}/wasi_shim_test_out.txt");
+        let payload = "hello from wasi over the fs facade\n";
+        let wasm = build_writer_module(&path, payload);
         let code = run_command(&wasm, "", vec!["sim".to_string()]).unwrap();
         assert_eq!(code, 0);
-        let got = openmodelica_wasi::read(path).expect("file should exist in the VFS");
+        let got = openmodelica_wasi::fs::read(&path).expect("file should exist");
         assert_eq!(String::from_utf8(got).unwrap(), payload);
-        openmodelica_wasi::remove(path);
+        let _ = openmodelica_wasi::fs::remove_dir_all(&root);
     }
 
     #[test]
     fn wasi_writes_under_cwd_prefix() {
-        let path = "res.mat";
+        let root = test_root("cwd");
+        openmodelica_wasi::fs::create_dir_all(&root).unwrap();
         let payload = "MATDATA";
-        let wasm = build_writer_module(path, payload);
-        let code = run_command(&wasm, "rundir", vec!["sim".to_string()]).unwrap();
+        let wasm = build_writer_module("res.mat", payload);
+        let code = run_command(&wasm, &root, vec!["sim".to_string()]).unwrap();
         assert_eq!(code, 0);
-        // cwd "rundir" + relative "res.mat" -> VFS key "rundir/res.mat".
-        let got = openmodelica_wasi::read("rundir/res.mat").expect("file under cwd prefix");
+        // cwd <root> + relative "res.mat" -> <root>/res.mat.
+        let got = openmodelica_wasi::fs::read(&format!("{root}/res.mat")).expect("file under cwd prefix");
         assert_eq!(String::from_utf8(got).unwrap(), payload);
-        openmodelica_wasi::remove("rundir/res.mat");
+        let _ = openmodelica_wasi::fs::remove_dir_all(&root);
     }
 }

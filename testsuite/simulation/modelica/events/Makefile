@@ -13,6 +13,8 @@ ChatteringEventsTest1.mos \
 ChatteringEventsTest2.mos \
 CheckEvents.mos \
 cseOutsideNoEvent.mos \
+DelayZeroCrossing.mos \
+derInWhenCondition.mos \
 discreteRelations.mos \
 EventDelay.mos \
 EventIteration.mos \
@@ -87,4 +89,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

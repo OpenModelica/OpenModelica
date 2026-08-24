@@ -12,7 +12,7 @@ use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
 
-use crate::driver::{Result, SimEngine, format_g, read_f64, write_f64};
+use crate::driver::{Result, SimEngine, format_g, read_f64, write_f64, write_i32};
 use crate::{LinInfo, LinLanguage, LinVar, REAL_OFF, SimMeta};
 
 /// The linearized model, for the caller to write where its file system is.
@@ -43,11 +43,11 @@ fn jac_off(lin: &LinInfo, layout: &crate::Layout, k: usize) -> u32 {
 
 fn read_lin_var(e: &dyn SimEngine, sim_data: u32, v: &LinVar) -> Result<f64> {
     let raw = read_f64(e, sim_data + v.off)?;
-    Ok(if v.negate { -raw } else { raw })
+    Ok(v.negate.apply_f64(raw))
 }
 
 fn write_lin_var(e: &mut dyn SimEngine, sim_data: u32, v: &LinVar, value: f64) -> Result<()> {
-    write_f64(e, sim_data + v.off, if v.negate { -value } else { value })
+    write_f64(e, sim_data + v.off, v.negate.apply_f64(value))
 }
 
 /// C's `functionODE_residual`.
@@ -335,6 +335,10 @@ pub fn linearize(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32) -> Resul
     let layout = &model.layout;
     let (n_x, n_u, n_y, n_z) =
         (layout.n_states as usize, lin.input_vars.len(), lin.output_vars.len(), layout.n_real_alg as usize);
+
+    // C linearizes with `discreteCall == 0`: relations and `mathEventsValuePre`
+    // stay held, so a perturbed state cannot step a discrete value.
+    write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
 
     let mut a = vec![0.0; n_x * n_x];
     let mut b = vec![0.0; n_x * n_u];

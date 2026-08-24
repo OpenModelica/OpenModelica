@@ -25,7 +25,7 @@ use alloc::vec::Vec;
 use super::tableau::{GmType, Tableau};
 use crate::gbode::math::{abs, pow, sqrt};
 use crate::JacAInfo;
-use crate::driver::{Result, SimEngine, write_f64};
+use crate::driver::{Result, SimEngine};
 
 /// C's `DBL_ABSORPTION`.
 const DBL_ABSORPTION: f64 = 10.0 * f64::EPSILON;
@@ -83,7 +83,6 @@ pub struct Ode<'a> {
     pub sim_data: u32,
     pub states_base: u32,
     pub ders_base: u32,
-    pub time_off: u32,
     pub nls_fail_off: u32,
     pub ctx_addr: u32,
     /// Sparsity + coloring for the finite-difference Jacobian; `None` ⇒ dense
@@ -99,7 +98,7 @@ pub struct Ode<'a> {
 
 impl Ode<'_> {
     pub fn eval(&mut self, t: f64, y: &[f64], f: &mut [f64]) -> Result<()> {
-        write_f64(self.e, self.sim_data + self.time_off, t)?;
+        crate::driver::write_time(self.e, self.sim_data, t)?;
         let mut bytes = vec![0u8; y.len() * 8];
         for (i, v) in y.iter().enumerate() {
             bytes[i * 8..i * 8 + 8].copy_from_slice(&v.to_le_bytes());
@@ -127,7 +126,7 @@ impl Ode<'_> {
         crate::driver::set_context_events(self.e, self.ctx_addr);
         let run = (|| -> Result<()> {
             self.eval(t, y, &mut f)?;
-            self.e.call1("functionZeroCrossings", self.sim_data)?;
+            self.e.call2(crate::driver::MODEL_FN_ZC, self.sim_data, self.sim_data + self.zc_off)?;
             let mut bytes = vec![0u8; zc.len() * 8];
             self.e.read_bytes(self.sim_data + self.zc_off, &mut bytes)?;
             for (i, v) in zc.iter_mut().enumerate() {
