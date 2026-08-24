@@ -43,7 +43,9 @@ encapsulated package Autoconf
   constant String ldflags_runtime_fmu_static = " -lSimulationRuntimeFMI " + ldflags_runtime_fmu;
 
   // Libraries linked into generated simulation code when --parmodauto (ParModelica auto) is enabled.
-  constant String parModelicaAutoLibs = " -lParModelicaAuto -ltbb ";
+  // MSYS2 ucrt64's tbb package only ships the oneTBB-versioned import lib (libtbb12.dll.a),
+  // not an unversioned libtbb.dll.a/libtbb.a, so link against -ltbb12 here.
+  constant String parModelicaAutoLibs = " -lParModelicaAuto -ltbb12 ";
 
   constant String platform = if is64Bit then "WIN64" else "WIN32";
   constant String pathDelimiter = "/";

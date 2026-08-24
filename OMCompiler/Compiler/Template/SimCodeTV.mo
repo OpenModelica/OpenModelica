@@ -440,6 +440,33 @@ package SimCode
   type SparsityPattern = list<tuple<Integer, list<Integer>>>;
   type NonlinearPattern = SparsityPattern;
 
+
+  uniontype Dependency
+    record DEPENDENCY
+      array<list<Integer>> skips;
+      list<Boolean> kinds "true = reduced, false = regular";
+    end DEPENDENCY;
+  end Dependency;
+
+uniontype SparsityRow
+  record SPARSITY_ROW
+    DAE.ComponentRef equation_name;
+    list<BackendDAE.SimIterator> equation_iterators;
+    list<tuple<DAE.ComponentRef, Dependency, Boolean>> dependencies;
+    list<DAE.ComponentRef> solved_crefs;
+  end SPARSITY_ROW;
+end SparsityRow;
+
+  uniontype Sparsity
+    record SPARSITY
+      list<SparsityRow> rows;
+    end SPARSITY;
+
+    record EMPTY
+    end EMPTY;
+  end Sparsity;
+
+
   uniontype JacobianColumn
     record JAC_COLUMN
       list<SimEqSystem> columnEqns;
@@ -454,6 +481,7 @@ package SimCode
       list<JacobianColumn> columns;
       list<SimCodeVar.SimVar> seedVars;
       String matrixName;
+      Sparsity sparsityMatrix;
       SparsityPattern sparsity;
       SparsityPattern sparsityT;
       NonlinearPattern nonlinear;
@@ -576,6 +604,7 @@ package SimCode
       DAE.Exp initPnts      "initial grid points";
       DAE.Exp initVals      "initial grid values";
       Integer initSize      "number of initial points";
+      Option<DAE.Exp> condition "guard condition of the enclosing if-branch, if any";
     end SPATIAL_DISTRIBUTION;
   end SpatialDistribution;
 
@@ -632,7 +661,7 @@ package SimCode
     record SES_FOR_RESIDUAL
       Integer index;
       Integer res_index;
-      list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+      list<BackendDAE.SimIterator> iterators;
       DAE.Exp exp;
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
@@ -642,7 +671,7 @@ package SimCode
       Integer index;
       Integer res_index;
       list<Integer> scal_indices;
-      list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+      list<BackendDAE.SimIterator> iterators;
       DAE.Exp exp;
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
@@ -1057,6 +1086,44 @@ package SimCode
     end FMI_TERMINAL_MEMBER;
   end FmiTerminalMember;
 
+  uniontype FmiFigure
+    record FMI_FIGURE
+      String title;
+      String group;
+      Boolean preferred;
+      String caption;
+      list<FmiPlot> plots;
+    end FMI_FIGURE;
+  end FmiFigure;
+
+  uniontype FmiPlot
+    record FMI_PLOT
+      String title;
+      list<FmiCurve> curves;
+      FmiFigureAxis xAxis;
+      FmiFigureAxis yAxis;
+      Option<String> terminal;
+    end FMI_PLOT;
+  end FmiPlot;
+
+  uniontype FmiCurve
+    record FMI_CURVE
+      Option<DAE.ComponentRef> xVariable;
+      DAE.ComponentRef yVariable;
+      String legend;
+    end FMI_CURVE;
+  end FmiCurve;
+
+  uniontype FmiFigureAxis
+    record FMI_FIGURE_AXIS
+      String label;
+      String unit;
+      Option<Real> min;
+      Option<Real> max;
+      Boolean logScale;
+    end FMI_FIGURE_AXIS;
+  end FmiFigureAxis;
+
   uniontype FmiClock
     record FMI_CLOCK
       Integer valueReference;
@@ -1279,6 +1346,16 @@ end SimCodeFunction;
 
 package SimCodeUtil
 
+  function linearSystemMatrixFormat
+    input SimCode.LinearSystem ls;
+    output String format;
+  end linearSystemMatrixFormat;
+
+  function nonlinearSystemMatrixFormat
+    input SimCode.NonlinearSystem nls;
+    output String format;
+  end nonlinearSystemMatrixFormat;
+
   function absoluteClockIdxForBaseClock
     input Integer baseClockIdx;
     input list<SimCode.ClockedPartition> allBaseClockPartitions;
@@ -1408,6 +1485,16 @@ package SimCodeUtil
     input SimCode.SimCode simCode;
     output list<SimCode.FmiTerminal> terminals;
   end getFMI3Terminals;
+
+  function getFMI3Figures
+    input SimCode.SimCode simCode;
+    output list<SimCode.FmiFigure> figures;
+  end getFMI3Figures;
+
+  function getFMI3VisualizationResource
+    input SimCode.SimCode simCode;
+    output String resource;
+  end getFMI3VisualizationResource;
 
   function isFMI3NestableAlias
     input SimCodeVar.SimVar simVar;
@@ -2645,6 +2732,7 @@ package DAE
       Exp range;
       list<Statement> statementLst;
       ElementSource source;
+      list<tuple<ComponentRef, array<Exp>>> sub_iters;
     end STMT_FOR;
     record STMT_PARFOR
       Type type_;

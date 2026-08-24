@@ -39,8 +39,8 @@
 #include <stdarg.h>
 #include "java_interface.h"
 
-typedef __declspec(dllimport) jint (__stdcall * GetCreatedJavaVMsFunc)(JavaVM **, jsize, jsize *);
-typedef __declspec(dllimport) jint (__stdcall * CreateJavaVMFunc)(JavaVM**,void**,void*);
+typedef jint (__stdcall * GetCreatedJavaVMsFunc)(JavaVM **, jsize, jsize *);
+typedef jint (__stdcall * CreateJavaVMFunc)(JavaVM**,void**,void*);
 
 #else /* UNIX */
 

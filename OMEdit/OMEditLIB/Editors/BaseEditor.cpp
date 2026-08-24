@@ -43,6 +43,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/DocumentationWidget.h"
 #include "Util/Helper.h"
+#include "Util/NavigationManager.h"
 #include "Debugger/Breakpoints/BreakpointsWidget.h"
 #include "Util/ResourceCache.h"
 
@@ -1119,6 +1120,22 @@ void PlainTextEdit::goToLineNumber(int lineNumber)
     QTextCursor cursor(block);
     cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
     setTextCursor(cursor);
+    NavigationManager::instance()->recordNavigationPoint(this);
+    centerCursor();
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::moveToNavigationPoint
+ * Moves the text cursor to the given position.
+ * \param position - the position to move to.
+ */
+void PlainTextEdit::moveToNavigationPoint(int position)
+{
+  if (position >= 0 && position <= textCursor().document()->characterCount()) {
+    QTextCursor textCursor = this->textCursor();
+    textCursor.setPosition(position);
+    setTextCursor(textCursor);
     centerCursor();
   }
 }
@@ -2087,6 +2104,9 @@ void PlainTextEdit::mousePressEvent(QMouseEvent *event)
     viewport()->unsetCursor();
   }
   QPlainTextEdit::mousePressEvent(event);
+  if (event->button() == Qt::LeftButton) {
+    NavigationManager::instance()->recordNavigationPoint(this);
+  }
 }
 
 /*!
@@ -2802,6 +2822,7 @@ void FindReplaceWidget::findText(bool forward)
     }
   }
   mpBaseEditor->getPlainTextEdit()->setTextCursor(newTextCursor);
+  NavigationManager::instance()->recordNavigationPoint(mpBaseEditor->getPlainTextEdit());
 }
 
 /*!

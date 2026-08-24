@@ -118,6 +118,7 @@ public
   constant String SEED_STR                = "$SEED";
   constant String TIME_EVENT_STR          = "$TEV";
   constant String STATE_EVENT_STR         = "$SEV";
+  constant String WHEN_CONDITION_STR      = "$WC";
   constant String CLOCK_STR               = "$CLK";
 
   function toString
@@ -485,6 +486,16 @@ public
     end match;
   end isUnknownRecord;
 
+  function isConstRecord extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      local
+        Prefixes.Variability variability;
+      case VariableKind.RECORD(max_var = variability) guard(variability == NFPrefixes.Variability.CONSTANT) then true;
+      else false;
+    end match;
+  end isConstRecord;
+
   function isClock extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
@@ -685,6 +696,7 @@ function isJacobianResultVar
     end match;
   end isJacobianResultVarPDer;
 
+
   function isDummyState
     extends checkVar;
   algorithm
@@ -709,6 +721,7 @@ function isJacobianResultVar
     b := match var.backendinfo.varKind
       case VariableKind.PARAMETER() then true;
       case VariableKind.CONSTANT()  then true;
+      case VariableKind.RECORD()    then isKnownRecord(var_ptr);
       else false;
     end match;
   end isParamOrConst;
@@ -718,6 +731,7 @@ function isJacobianResultVar
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.CONSTANT() then true;
+      case VariableKind.RECORD()   then isConstRecord(var_ptr);
       else false;
     end match;
   end isConst;
@@ -729,6 +743,7 @@ function isJacobianResultVar
       case VariableKind.PARAMETER() then true;
       case VariableKind.CONSTANT()  then true;
       case VariableKind.STATE()     then true;
+      case VariableKind.RECORD()    then isKnownRecord(var_ptr);
       else false;
     end match;
   end isKnown;
@@ -979,12 +994,12 @@ function isJacobianResultVar
     // FIXME use VariableAttributes.isFixed()?
     b := match var.backendinfo.attributes
       local
-        Expression fixed;
-      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then Expression.isAllTrue(fixed);
-      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then Expression.isAllTrue(fixed);
+        Binding fixed;
+      case VariableAttributes.VAR_ATTR_REAL(fixed = SOME(fixed))        then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_INT(fixed = SOME(fixed))         then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_BOOL(fixed = SOME(fixed))        then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_STRING(fixed = SOME(fixed))      then Expression.isAllTrue(Binding.getTypedExp(fixed));
+      case VariableAttributes.VAR_ATTR_ENUMERATION(fixed = SOME(fixed)) then Expression.isAllTrue(Binding.getTypedExp(fixed));
       else false;
     end match;
   end isFixed;
@@ -1204,6 +1219,19 @@ function isJacobianResultVar
     Pointer.update(varPointer, var);
   end setStateDerivativeVar;
 
+  function setStateDerKind
+    "Updates a variable pointer to STATE_DER kind, linking it to its state.
+    Used when an existing frontend derivative variable is promoted to STATE_DER."
+    input Pointer<Variable> varPointer;
+    input Pointer<Variable> statePointer;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(varPointer);
+    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(statePointer, NONE()));
+    Pointer.update(varPointer, var);
+  end setStateDerKind;
+
   function makeAlgStateVar
     "Updates a variable pointer to be an algebraic state.
     Only if it currently is an algebraic variable, required for DAEMode."
@@ -1322,6 +1350,13 @@ function isJacobianResultVar
     end match;
   end getRecordChildren;
 
+  function getRecordChildrenOrSelf
+    input Pointer<Variable> var;
+    output list<Pointer<Variable>> children = getRecordChildren(var);
+  algorithm
+    children := if listEmpty(children) then {var} else children;
+  end getRecordChildrenOrSelf;
+
   function getRecordChildrenCref
     input ComponentRef cref;
     output list<ComponentRef> children;
@@ -1341,13 +1376,31 @@ function isJacobianResultVar
     children := if listEmpty(children) then {cref} else children;
   end getRecordChildrenCrefOrSelf;
 
+  function setRecordVariability
+    input Pointer<Variable> var_ptr;
+    input Prefixes.Variability variability;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    _ := match var.backendinfo.varKind
+      local
+        VariableKind varKind;
+      case varKind as VariableKind.RECORD() algorithm
+        varKind.min_var := variability;
+        varKind.max_var := variability;
+        var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
+        Pointer.update(var_ptr, var);
+      then ();
+      else();
+    end match;
+  end setRecordVariability;
+
   function makeDummyState
     input Pointer<Variable> varPointer;
     output Pointer<Variable> derivative;
   protected
-    Variable var;
+    Variable var = Pointer.access(varPointer);
   algorithm
-    var := Pointer.access(varPointer);
     var.backendinfo := match BackendInfo.getVarKind(var.backendinfo)
       local
         Variable der_var;
@@ -1424,34 +1477,52 @@ function isJacobianResultVar
         Option<Pointer<Variable>> ovar;
         Variable var;
         VariableKind varKind;
+        ComponentRef original_cref;
 
       case qual as InstNode.VAR_NODE() algorithm
+        original_cref := cref;
         // get the variable pointer from the old cref to later on link back to it
         old_var_ptr := getVarPointer(cref, sourceInfo());
-        ovar := getVarSeed(old_var_ptr);
-        if isSome(ovar) then
-          var_ptr := Util.getOption(ovar);
-          cref := getVarName(var_ptr);
+        // For subscripted element crefs (partial-slice NLS iter vars), skip the
+        // base-ptr cache so each outer element gets its own scalar seed var instead
+        // of all elements sharing the first element's seed via the array ptr cache.
+        // For non-subscripted crefs, use the cache normally (check first, create if absent).
+        if ComponentRef.hasSubscripts(original_cref) then
+          ovar := NONE();
         else
-          // prepend the seed str and the matrix name and create the new cref
-          qual.name := SEED_STR + "_" + name;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-          var := fromCref(cref, NFAttributes.IMPL_DISCRETE_ATTR);
-
-          // update the variable to be a seed and pass the pointer to the original variable
-          // if it is a record, clear the children instead
-          varKind := match getVarKind(old_var_ptr)
-            case varKind as VariableKind.RECORD() algorithm
-              varKind.children := {};
-            then varKind;
-            else VariableKind.SEED_VAR();
-          end match;
-          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
-
-          // create the new variable pointer and safe it to the component reference
-          (var_ptr, cref) := makeVarPtrCyclic(var, cref);
-          connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
+          ovar := getVarSeed(old_var_ptr);
         end if;
+
+        () := match ovar
+          case SOME(var_ptr) algorithm
+            // Cache hit (non-subscripted case only): reuse existing seed
+            cref := getVarName(var_ptr);
+          then ();
+          else algorithm
+            // Cache miss OR subscripted element: create a new seed variable
+            qual.name := SEED_STR + "_" + name;
+            cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+            var := fromCref(cref, NFAttributes.IMPL_DISCRETE_ATTR);
+
+            // update the variable to be a seed and pass the pointer to the original variable
+            // if it is a record, clear the children instead
+            varKind := match getVarKind(old_var_ptr)
+              case varKind as VariableKind.RECORD() algorithm
+                varKind.children := {};
+              then varKind;
+              else VariableKind.SEED_VAR();
+            end match;
+            var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
+
+            // create the new variable pointer and save it to the component reference
+            (var_ptr, cref) := makeVarPtrCyclic(var, cref);
+            // For non-subscripted crefs, connect partners to populate the cache.
+            // For subscripted element crefs, skip so the cache stays clean for other elements.
+            if not ComponentRef.hasSubscripts(original_cref) then
+              connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
+            end if;
+          then ();
+        end match;
       then ();
 
       else algorithm
@@ -2795,6 +2866,8 @@ function isJacobianResultVar
       input list<Pointer<Variable>> var_lst;
       input VarType varType;
     algorithm
+      if listEmpty(var_lst) then return; end if;
+
       varData := match (varData, varType)
 
         case (VAR_DATA_SIM(), VarType.STATE) algorithm
@@ -2859,7 +2932,7 @@ function isJacobianResultVar
           varData.variables   := VariablePointers.addList(var_lst, varData.variables);
           varData.records     := VariablePointers.addList(var_lst, varData.records);
           varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
-          varData.records     := VariablePointers.mapPtr(varData.records, function BackendDAE.lowerRecordChildren(variables = varData.variables));
+          varData.records     := VariablePointers.mapPtr(varData.records, function BackendDAE.lowerUnkownRecordChildren(variables = varData.variables));
         then varData;
 
         // ToDo: other cases

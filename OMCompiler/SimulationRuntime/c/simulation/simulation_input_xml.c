@@ -825,7 +825,7 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   parser = XML_ParserCreate(NULL);
   if(!parser)
   {
-    fclose(file);
+    free(mi);
     throwStreamPrint(threadData, "simulation_input_xml.c: Error: couldn't allocate memory for the XML parser!");
   }
 
@@ -838,6 +838,8 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   if(initXMLData == NULL) {
     file = omc_fopen(filename, "r");
     if(!file) {
+      free(mi);
+      XML_ParserFree(parser);
       throwStreamPrint(threadData, "simulation_input_xml.c: Error: can not read file %s as setup file to the generated simulation code.", filename);
     }
 

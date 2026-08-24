@@ -8,7 +8,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
 
-use anyhow::{Result, anyhow, bail};
+use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::List;
 
@@ -16,11 +16,13 @@ use openmodelica_ast::Absyn;
 use openmodelica_frontend_types::Values;
 
 use super::SigTy;
+use openmodelica_wasm_jit::sig::ExtCallSig;
+use openmodelica_wasi::wasi::WasiCtx;
 
 /// wasmtime errors carry their own (re-exported) `anyhow`, which does not unify
 /// with ours under the feature set we build with; flatten via the message.
 fn wt<T>(r: std::result::Result<T, wasmtime::Error>) -> Result<T> {
-    r.map_err(|e| anyhow!("{e:?}"))
+    r.map_err(|_| "CodegenWasmJit: wasm engine error")
 }
 
 /// The static linear-memory runtime, precompiled from
@@ -29,7 +31,7 @@ fn wt<T>(r: std::result::Result<T, wasmtime::Error>) -> Result<T> {
 /// module, which imports its `memory` and `rt_*` exports — so the allocator,
 /// reference counting and string ops are shared precompiled code, not re-emitted
 /// per module.
-pub(super) static RUNTIME_WASM: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/runtime.wasm"));
+pub(super) use openmodelica_wasm_jit::RUNTIME_WASM;
 
 /// Process-wide JIT cache shared across all `load_and_execute` calls.
 ///
@@ -47,7 +49,7 @@ struct JitCache {
     engine: wasmtime::Engine,
     /// Host-imported math builtins (module `"env"`); identical for every module,
     /// so built once and reused for every instantiation.
-    env_linker: wasmtime::Linker<()>,
+    env_linker: wasmtime::Linker<WasiCtx>,
     /// The static linear-memory runtime ([`RUNTIME_WASM`]), compiled once. A
     /// fresh instance is created per call to give each evaluation its own heap.
     runtime_module: wasmtime::Module,
@@ -57,11 +59,13 @@ struct JitCache {
 fn jit_cache() -> &'static JitCache {
     static CACHE: OnceLock<JitCache> = OnceLock::new();
     CACHE.get_or_init(|| {
-        let engine = wasmtime::Engine::default();
+        let mut cfg = wasmtime::Config::new();
+        openmodelica_wasm_jit::tune_memory(&mut cfg);
+        let engine = wasmtime::Engine::new(&cfg).expect("wasm-jit: failed to build wasmtime engine");
         let mut env_linker = wasmtime::Linker::new(&engine);
         // The builtin set is fixed and cannot collide; a failure here is a
         // programming error in `add_host_builtins`, not a runtime condition.
-        add_host_builtins(&mut env_linker).expect("register wasm-jit host builtins");
+        openmodelica_wasm_jit::host::add_host_builtins(&mut env_linker).expect("register wasm-jit host builtins");
         let runtime_module = wasmtime::Module::new(&engine, RUNTIME_WASM).expect("compile wasm-jit runtime");
         JitCache { engine, env_linker, runtime_module, modules: Mutex::new(HashMap::new()) }
     })
@@ -87,80 +91,130 @@ fn get_or_compile_module(cache: &JitCache, bytes: &[u8]) -> Result<wasmtime::Mod
         .clone())
 }
 
-/// Parsed `.wasm.sig` sidecar: scalar types of the main function's inputs and
-/// outputs.
+/// The runtime does not export this one; it is the host's.
+fn define_print_import(linker: &mut wasmtime::Linker<WasiCtx>, memory: wasmtime::Memory) -> Result<()> {
+    wt(linker.func_wrap("rt", "rt_print", move |caller: wasmtime::Caller<'_, WasiCtx>, handle: i32| {
+        if handle == 0 {
+            return;
+        }
+        // [refcount:u32][len:u32][utf8]
+        let data = memory.data(&caller);
+        let h = handle as usize;
+        let Some(lenb) = data.get(h + 4..h + 8) else { return };
+        let len = u32::from_le_bytes(lenb.try_into().unwrap()) as usize;
+        if let Some(bytes) = data.get(h + 8..h + 8 + len) {
+            openmodelica_wasi::wasi::stdout_write(bytes);
+        }
+    }))?;
+    Ok(())
+}
+
+/// Load the `external "C"` libraries the sidecar names and bind the module's
+/// `ext.<name>` imports to them, with the loader a simulation uses.
+fn define_external_imports(
+    store: &mut wasmtime::Store<WasiCtx>,
+    linker: &mut wasmtime::Linker<WasiCtx>,
+    rt_inst: wasmtime::Instance,
+    memory: wasmtime::Memory,
+    sig: &Sig,
+) -> Result<()> {
+    use openmodelica_wasm_jit::dylink_engine as dl;
+    if sig.ext_imports.is_empty() {
+        return Ok(());
+    }
+    openmodelica_wasm_jit::host::set_sim_memory(memory);
+    let ext_rt = dl::ExtRt {
+        str_new: wt(rt_inst.get_typed_func(&mut *store, "rt_str_new"))?,
+        str_data: wt(rt_inst.get_typed_func(&mut *store, "rt_str_data"))?,
+        alloc: wt(rt_inst.get_typed_func(&mut *store, "rt_alloc"))?,
+        free: wt(rt_inst.get_typed_func(&mut *store, "rt_free"))?,
+        record_new: wt(rt_inst.get_typed_func(&mut *store, "rt_record_new"))?,
+    };
+    let mut libs = Vec::with_capacity(sig.libs.len() + 1);
+    let libc = openmodelica_wasi_libc::LIBC_PIC;
+    if libc.is_empty() {
+        return Err("CodegenWasmJit: this omc was built without the PIC wasi-libc, so it cannot \
+                    load an external \"C\" library");
+    }
+    libs.push(dl::Library { name: "libc.so".to_string(), bytes: libc.to_vec() });
+    for path in &sig.libs {
+        let bytes = openmodelica_wasi::fs::read(path)
+            .map_err(|_| "CodegenWasmJit: cannot read an external \"C\" library")?;
+        libs.push(dl::Library { name: path.clone(), bytes });
+    }
+    let table = rt_inst
+        .get_table(&mut *store, "__indirect_function_table")
+        .ok_or_else(|| "CodegenWasmJit: runtime has no __indirect_function_table export")?;
+    let host = dl::modelica_utilities_imports(&mut *store, &ext_rt);
+    let engine = linker.engine().clone();
+    let loaded = dl::load(&mut *store, &engine, memory, table, &ext_rt.alloc, &libs, &host)
+        .map_err(|e| record_dylink_error(e))?;
+    for s in &sig.ext_imports {
+        let functype = wasmtime::FuncType::new(
+            &engine,
+            s.wasm_params().iter().map(|t| valtype(t.wty())),
+            s.wasm_results().iter().map(|t| valtype(t.wty())),
+        );
+        let target = loaded.func(&s.name).cloned().ok_or_else(|| {
+            record_dylink_error(format!(
+                "external \"C\" function `{}` is in none of the model's libraries{}",
+                s.name,
+                sig.notes.iter().map(|n| format!("\n  {n}")).collect::<String>()
+            ))
+        })?;
+        let f = dl::bind_in_wasm_external(&mut *store, s, &functype, target, &ext_rt)
+            .map_err(record_dylink_error)?
+            .ok_or("CodegenWasmJit: external \"C\" function has the wrong signature in the library")?;
+        wt(linker.define(&mut *store, "ext", &s.name, f))?;
+    }
+    Ok(())
+}
+
+/// The reason (a missing symbol, a library built without `-shared`) is specific
+/// and useless if swallowed.
+fn record_dylink_error(e: String) -> &'static str {
+    crate::CodegenWasmJit::record_error(format!("CodegenWasmJit: {e}"));
+    "CodegenWasmJit: cannot load the model's external \"C\" libraries"
+}
+
+fn valtype(w: openmodelica_wasm_jit::sig::WTy) -> wasmtime::ValType {
+    match w {
+        openmodelica_wasm_jit::sig::WTy::I32 => wasmtime::ValType::I32,
+        openmodelica_wasm_jit::sig::WTy::F64 => wasmtime::ValType::F64,
+    }
+}
+
+/// Parsed `.wasm.sig` sidecar.
 struct Sig {
     inputs: Vec<SigTy>,
     outputs: Vec<SigTy>,
+    libs: Vec<String>,
+    ext_imports: Vec<ExtCallSig>,
+    notes: Vec<String>,
 }
 
 fn read_sig(path: &str) -> Result<Sig> {
-    let text = std::fs::read_to_string(path)?;
+    let text = std::fs::read_to_string(path).map_err(|_| "runtime_wasmtime: cannot read sig file")?;
     let mut lines = text.lines();
     let parse = |line: Option<&str>| -> Result<Vec<SigTy>> {
         super::parse_sig_types(line.unwrap_or(""))
     };
     let inputs = parse(lines.next())?;
     let outputs = parse(lines.next())?;
-    Ok(Sig { inputs, outputs })
+    let mut libs = Vec::new();
+    let mut ext_imports = Vec::new();
+    let mut notes = Vec::new();
+    for line in lines {
+        match line.split_once('\t') {
+            Some(("lib", rest)) => libs.push(rest.to_string()),
+            Some(("ext", rest)) => ext_imports.push(super::parse_ext_sig(rest)?),
+            Some(("note", rest)) => notes.push(rest.to_string()),
+            _ => {}
+        }
+    }
+    Ok(Sig { inputs, outputs, libs, ext_imports, notes })
 }
 
-/// Register the host-imported math builtins (module `"env"`), matching
-/// `super::BUILTINS` one-for-one.
-pub(crate) fn add_host_builtins(linker: &mut wasmtime::Linker<()>) -> Result<()> {
-    // The transcendental math `BUILTINS` are now provided in-wasm by the runtime
-    // module (`rt_math*` exports, via libm) and imported under the `rt` namespace,
-    // so they no longer cross the wasm<->host boundary. Only the effectful
-    // `ENV_EXTRA` imports remain host-side here.
-    // `rt_assert` (see `super::ENV_EXTRA`): record the failing assertion's message
-    // and source-info handles so `load_and_execute` can route them to the error
-    // buffer after the generated code traps. The handles point into the shared
-    // linear memory, which is still live when `load_and_execute` reads them.
-    wt(linker.func_wrap(
-        // Registered under `rt` (not `env`): the model imports rt_assert from `rt`
-        // so the standalone wasip1 export — where the merged runtime provides it —
-        // never needs an `env` namespace. The runtime instance does not export
-        // rt_assert, so there is no collision with `linker.instance(.., "rt", ..)`.
-        "rt",
-        "rt_assert",
-        |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32| {
-            PENDING_ASSERT.with(|p| {
-                *p.borrow_mut() = Some(PendingAssert { msg, file, sline, scol, eline, ecol, read_only: read_only != 0 });
-            });
-        },
-    ))?;
-    Ok(())
-}
-
-/// A failing assertion recorded by the `rt_assert` host import, to be reported by
-/// [`load_and_execute`] after the wasm trap. The `msg`/`file` fields are handles
-/// into the shared linear memory (read with [`read_rt_string`]).
-struct PendingAssert {
-    msg: i32,
-    file: i32,
-    sline: i32,
-    scol: i32,
-    eline: i32,
-    ecol: i32,
-    read_only: bool,
-}
-
-thread_local! {
-    /// The most recent assertion recorded by `rt_assert` on this thread, consumed
-    /// by [`load_and_execute`]. Single-threaded per call, so a plain cell suffices.
-    static PENDING_ASSERT: std::cell::RefCell<Option<PendingAssert>> = const { std::cell::RefCell::new(None) };
-}
-
-/// Take the pending assertion recorded by `rt_assert` (message + source-info
-/// handles into shared memory) as raw fields
-/// `[msg, file, sline, scol, eline, ecol, read_only]`, or `None`. Lets the
-/// simulation drivers surface a failed `assert()` after a `functionODE`/
-/// `functionAlgebraics` trap (the function-eval path uses `report_pending_assert`).
-pub(crate) fn take_pending_assert() -> Option<[i32; 7]> {
-    PENDING_ASSERT
-        .with(|p| p.borrow_mut().take())
-        .map(|pa| [pa.msg, pa.file, pa.sline, pa.scol, pa.eline, pa.ecol, pa.read_only as i32])
-}
 
 /// Extract a numeric argument as an `f64`, accepting any scalar `Values.Value`.
 fn value_as_f64(v: &Values::Value) -> Result<f64> {
@@ -169,7 +223,7 @@ fn value_as_f64(v: &Values::Value) -> Result<f64> {
         Values::Value::INTEGER { integer } => *integer as f64,
         Values::Value::BOOL { boolean } => *boolean as i64 as f64,
         Values::Value::ENUM_LITERAL { index, .. } => *index as f64,
-        other => bail!("CodegenWasmJit: cannot pass {other:?} to a wasm function"),
+        other => return Err("CodegenWasmJit: cannot pass to a wasm function"),
     })
 }
 
@@ -180,7 +234,7 @@ fn value_as_i32(v: &Values::Value) -> Result<i32> {
         Values::Value::BOOL { boolean } => *boolean as i32,
         Values::Value::ENUM_LITERAL { index, .. } => *index,
         Values::Value::REAL { real } => real.into_inner() as i32,
-        other => bail!("CodegenWasmJit: cannot pass {other:?} to a wasm function"),
+        other => return Err("CodegenWasmJit: cannot pass to a wasm function"),
     })
 }
 
@@ -191,7 +245,7 @@ pub(super) fn load_and_execute(
 ) -> Result<Arc<Values::Value>> {
     let wasm_path = format!("{file_name}.wasm");
     let sig = read_sig(&format!("{file_name}.wasm.sig"))?;
-    let bytes = std::fs::read(&wasm_path)?;
+    let bytes = std::fs::read(&wasm_path).map_err(|_| "runtime_wasmtime: cannot read wasm file")?;
 
     // Reuse the shared engine/env-linker and the per-content compiled module.
     // Each call gets a fresh runtime instance (its own heap/linear memory); the
@@ -199,17 +253,29 @@ pub(super) fn load_and_execute(
     // module name "rt", plus the `env` math builtins.
     let cache = jit_cache();
     let module = get_or_compile_module(cache, &bytes)?;
-    let mut store = wasmtime::Store::new(&cache.engine, ());
+    let mut store = wasmtime::Store::new(&cache.engine, WasiCtx::new(".", Vec::new()));
     let rt_inst = wt(cache.env_linker.instantiate(&mut store, &cache.runtime_module))?;
     let mut linker = cache.env_linker.clone();
     wt(linker.instance(&mut store, "rt", rt_inst))?;
-    let instance = wt(linker.instantiate(&mut store, &module))?;
 
     // Runtime entry points needed to marshal heap values (strings, arrays) in
     // and out of the shared heap.
     let memory = rt_inst
         .get_memory(&mut store, "memory")
-        .ok_or_else(|| anyhow!("CodegenWasmJit: runtime has no `memory` export"))?;
+        .ok_or_else(|| "CodegenWasmJit: runtime has no `memory` export")?;
+    // `print(s)` in an evaluated function, onto the same stdout a simulation uses.
+    define_print_import(&mut linker, memory)?;
+    define_external_imports(&mut store, &mut linker, rt_inst, memory, &sig).inspect_err(|e| {
+        crate::CodegenWasmJit::record_error(format!(
+            "CodegenWasmJit: cannot bind the external \"C\" functions of `{file_name}`: {e}"
+        ))
+    })?;
+    let instance = linker.instantiate(&mut store, &module).map_err(|e| {
+        crate::CodegenWasmJit::record_error(format!(
+            "CodegenWasmJit: cannot instantiate the JIT module for `{file_name}`: {e}"
+        ));
+        "CodegenWasmJit: wasm engine error"
+    })?;
     let rt = RtFns {
         mem: memory,
         str_new: wt(rt_inst.get_typed_func(&mut store, "rt_str_new"))?,
@@ -226,12 +292,12 @@ pub(super) fn load_and_execute(
 
     let func = instance
         .get_func(&mut store, "main")
-        .ok_or_else(|| anyhow!("CodegenWasmJit: module has no `main` export"))?;
+        .ok_or_else(|| "CodegenWasmJit: module has no `main` export")?;
 
     // Marshal the arguments according to the input signature.
     let argv: Vec<&Arc<Values::Value>> = (&**args).into_iter().collect();
     if argv.len() != sig.inputs.len() {
-        bail!("CodegenWasmJit: function expects {} arguments, got {}", sig.inputs.len(), argv.len());
+        return Err("CodegenWasmJit: function argument count mismatch");
     }
     let mut params: Vec<wasmtime::Val> = Vec::with_capacity(argv.len());
     for (a, ty) in argv.iter().zip(sig.inputs.iter()) {
@@ -243,7 +309,7 @@ pub(super) fn load_and_execute(
     let mut results = vec![wasmtime::Val::I32(0); n_results];
     // Clear any stale pending assertion before the call (defensive — each call
     // consumes its own).
-    PENDING_ASSERT.with(|p| *p.borrow_mut() = None);
+    openmodelica_wasm_jit::host::clear_pending_assert();
     let call_res = func.call(&mut store, &params, &mut results);
     if call_res.is_err() {
         // A failed `assert` records its message + source info via the `rt_assert`
@@ -251,7 +317,7 @@ pub(super) fn load_and_execute(
         // target's `[info] Error: <msg>`) and return `META_FAIL` directly — this
         // is an expected runtime failure, not an internal error, so it should not
         // be reported as a wasm trap on stderr by `loadAndExecute`.
-        if let Some(pa) = PENDING_ASSERT.with(|p| p.borrow_mut().take()) {
+        if let Some(pa) = openmodelica_wasm_jit::host::take_pending_assert_raw() {
             report_pending_assert(&mut store, &rt, &pa)?;
             return Ok(Arc::new(Values::Value::META_FAIL));
         }
@@ -259,7 +325,7 @@ pub(super) fn load_and_execute(
     wt(call_res)?;
 
     if results.len() != sig.outputs.len() {
-        bail!("CodegenWasmJit: wasm returned {} values but signature has {}", results.len(), sig.outputs.len());
+        return Err("CodegenWasmJit: wasm return-value/signature count mismatch");
     }
 
     let mut out: Vec<Arc<Values::Value>> = Vec::with_capacity(results.len());
@@ -281,7 +347,7 @@ fn read_rt_str(store: &mut Store, rt: &RtFns, handle: i32) -> Result<String> {
     let len = wt(rt.str_len.call(&mut *store, handle))? as usize;
     let data = wt(rt.str_data.call(&mut *store, handle))? as usize;
     let mut buf = vec![0u8; len];
-    rt.mem.read(&*store, data, &mut buf).map_err(|e| anyhow!("CodegenWasmJit: {e}"))?;
+    rt.mem.read(&*store, data, &mut buf).map_err(|e| "CodegenWasmJit")?;
     Ok(String::from_utf8_lossy(&buf).into_owned())
 }
 
@@ -290,7 +356,7 @@ fn read_rt_str(store: &mut Store, rt: &RtFns, handle: i32) -> Result<String> {
 /// `[file:l:c-l:c:writable] Error: <msg>` output. The `%s`-templated
 /// `COMPILER_ERROR` message renders the assertion message verbatim at `Error`
 /// severity.
-fn report_pending_assert(store: &mut Store, rt: &RtFns, pa: &PendingAssert) -> Result<()> {
+fn report_pending_assert(store: &mut Store, rt: &RtFns, pa: &openmodelica_wasm_jit::host::PendingAssert) -> Result<()> {
     use openmodelica_util::Error;
     let msg = read_rt_str(store, rt, pa.msg)?;
     let file = read_rt_str(store, rt, pa.file)?;
@@ -324,7 +390,8 @@ struct RtFns {
     rec_new: wasmtime::TypedFunc<(i32, i32), i32>,
 }
 
-type Store = wasmtime::Store<()>;
+// A WASI context so a loaded library (and its libc) has real file I/O.
+type Store = wasmtime::Store<WasiCtx>;
 
 /// Build a `wasmtime::Val` (scalar, or an `i32` handle into the heap) for the
 /// argument value `v` of the given Modelica type. Heap values (strings, arrays)
@@ -337,7 +404,9 @@ fn marshal_in(store: &mut Store, rt: &RtFns, ty: &SigTy, v: &Values::Value) -> R
         SigTy::Str => wasmtime::Val::I32(str_to_handle(store, rt, v)?),
         SigTy::Array { elem, rank } => wasmtime::Val::I32(array_to_handle(store, rt, elem, *rank, v)?),
         SigTy::Record { fields, .. } => wasmtime::Val::I32(record_to_handle(store, rt, fields, v)?),
-        SigTy::Ptr => bail!("CodegenWasmJit: external objects are not supported in function evaluation"),
+        SigTy::Ptr | SigTy::Func { .. } => {
+            return Err("CodegenWasmJit: external objects and function references are not supported in function evaluation");
+        }
     })
 }
 
@@ -347,7 +416,7 @@ fn marshal_in(store: &mut Store, rt: &RtFns, ty: &SigTy, v: &Values::Value) -> R
 /// is self-describing for release/copy.
 fn record_to_handle(store: &mut Store, rt: &RtFns, fields: &[(ArcStr, SigTy)], v: &Values::Value) -> Result<i32> {
     let Values::Value::RECORD { orderd, comp, .. } = v else {
-        bail!("CodegenWasmJit: expected a record argument, got {v:?}");
+        return Err("CodegenWasmJit: expected a record argument");
     };
     let layout = super::record_layout(fields);
     let obj = wt(rt.rec_new.call(&mut *store, (layout.heap.len() as i32, layout.size as i32)))?;
@@ -365,7 +434,7 @@ fn record_to_handle(store: &mut Store, rt: &RtFns, fields: &[(ArcStr, SigTy)], v
     for (i, (fname, fty)) in fields.iter().enumerate() {
         let fv = by_name
             .get(fname.as_str())
-            .ok_or_else(|| anyhow!("CodegenWasmJit: record argument missing field `{fname}`"))?;
+            .ok_or_else(|| "CodegenWasmJit: record argument missing field")?;
         let addr = obj as usize + layout.data_off as usize + layout.field_off[i] as usize;
         write_elem(store, rt, fty, addr, fv)?;
     }
@@ -375,12 +444,12 @@ fn record_to_handle(store: &mut Store, rt: &RtFns, fields: &[(ArcStr, SigTy)], v
 /// Materialize a `Values.STRING` into a fresh runtime string, returning its handle.
 fn str_to_handle(store: &mut Store, rt: &RtFns, v: &Values::Value) -> Result<i32> {
     let Values::Value::STRING { string } = v else {
-        bail!("CodegenWasmJit: expected a String argument, got {v:?}");
+        return Err("CodegenWasmJit: expected a String argument");
     };
     let b = string.as_bytes();
     let h = wt(rt.str_new.call(&mut *store, b.len() as i32))?;
     let d = wt(rt.str_data.call(&mut *store, h))? as usize;
-    rt.mem.write(&mut *store, d, b).map_err(|e| anyhow!("CodegenWasmJit: memory write: {e}"))?;
+    rt.mem.write(&mut *store, d, b).map_err(|e| "CodegenWasmJit: memory write")?;
     Ok(h)
 }
 
@@ -389,11 +458,11 @@ fn str_to_handle(store: &mut Store, rt: &RtFns, v: &Values::Value) -> Result<i32
 /// dimension; the leaves are flattened row-major and written into the object.
 fn array_to_handle(store: &mut Store, rt: &RtFns, elem: &SigTy, rank: u32, v: &Values::Value) -> Result<i32> {
     let Values::Value::ARRAY { dimLst, .. } = v else {
-        bail!("CodegenWasmJit: expected an array argument, got {v:?}");
+        return Err("CodegenWasmJit: expected an array argument");
     };
     let dims: Vec<i32> = (&**dimLst).into_iter().copied().collect();
     if dims.len() as u32 != rank {
-        bail!("CodegenWasmJit: array argument has {} dimensions, expected rank {rank}", dims.len());
+        return Err("CodegenWasmJit: array argument has dimensions, expected rank");
     }
     let total: i32 = dims.iter().product();
     let obj = wt(rt.arr_new.call(&mut *store, (elem.elem_kind() as i32, rank as i32, total)))?;
@@ -404,7 +473,7 @@ fn array_to_handle(store: &mut Store, rt: &RtFns, elem: &SigTy, rank: u32, v: &V
     let mut leaves = Vec::new();
     flatten_values(v, &mut leaves);
     if leaves.len() as i32 != total {
-        bail!("CodegenWasmJit: array argument has {} elements but dimensions imply {total}", leaves.len());
+        return Err("CodegenWasmJit: array argument element/dimension count mismatch");
     }
     for (k, leaf) in leaves.iter().enumerate() {
         let addr = wt(rt.arr_elem_ptr.call(&mut *store, (obj, k as i32 + 1)))? as usize;
@@ -443,40 +512,44 @@ fn write_elem(store: &mut Store, rt: &RtFns, elem: &SigTy, addr: usize, v: &Valu
             let h = record_to_handle(store, rt, fields, v)?;
             write_bytes(store, rt, addr, &h.to_le_bytes())?;
         }
-        SigTy::Ptr => bail!("CodegenWasmJit: external objects are not supported in function evaluation"),
+        SigTy::Ptr | SigTy::Func { .. } => {
+            return Err("CodegenWasmJit: external objects and function references are not supported in function evaluation");
+        }
     }
     Ok(())
 }
 
 fn write_bytes(store: &mut Store, rt: &RtFns, addr: usize, bytes: &[u8]) -> Result<()> {
-    rt.mem.write(&mut *store, addr, bytes).map_err(|e| anyhow!("CodegenWasmJit: memory write: {e}"))
+    rt.mem.write(&mut *store, addr, bytes).map_err(|e| "CodegenWasmJit: memory write")
 }
 
 /// Build a `Values.Value` from a wasm result of the given Modelica type.
 fn marshal_out(store: &mut Store, rt: &RtFns, ty: &SigTy, val: &wasmtime::Val) -> Result<Values::Value> {
     Ok(match ty {
         SigTy::Int => Values::Value::INTEGER {
-            integer: val.i32().ok_or_else(|| anyhow!("CodegenWasmJit: expected i32 result"))?,
+            integer: val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 result")?,
         },
         SigTy::Bool => Values::Value::BOOL {
-            boolean: val.i32().ok_or_else(|| anyhow!("CodegenWasmJit: expected i32 result"))? != 0,
+            boolean: val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 result")? != 0,
         },
         SigTy::Real => Values::Value::REAL {
-            real: metamodelica::Real::from(val.f64().ok_or_else(|| anyhow!("CodegenWasmJit: expected f64 result"))?),
+            real: metamodelica::Real::from(val.f64().ok_or_else(|| "CodegenWasmJit: expected f64 result")?),
         },
         SigTy::Str => {
-            let h = val.i32().ok_or_else(|| anyhow!("CodegenWasmJit: expected i32 string handle result"))?;
+            let h = val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 string handle result")?;
             Values::Value::STRING { string: ArcStr::from(read_string(store, rt, h)?.as_str()) }
         }
         SigTy::Array { elem, .. } => {
-            let h = val.i32().ok_or_else(|| anyhow!("CodegenWasmJit: expected i32 array handle result"))?;
+            let h = val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 array handle result")?;
             read_array(store, rt, elem, h)?
         }
         SigTy::Record { path, fields } => {
-            let h = val.i32().ok_or_else(|| anyhow!("CodegenWasmJit: expected i32 record handle result"))?;
+            let h = val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 record handle result")?;
             record_to_value(store, rt, path, fields, h)?
         }
-        SigTy::Ptr => bail!("CodegenWasmJit: external objects are not supported in function evaluation"),
+        SigTy::Ptr | SigTy::Func { .. } => {
+            return Err("CodegenWasmJit: external objects and function references are not supported in function evaluation");
+        }
     })
 }
 
@@ -499,9 +572,10 @@ fn record_to_value(store: &mut Store, rt: &RtFns, path: &ArcStr, fields: &[(ArcS
     })
 }
 
-/// Rebuild an `Absyn.Path` from a dotted record name (`"A.B.C"`).
+/// Rebuild an `Absyn.Path` from a dotted record name. A record declaration's name
+/// is fully qualified (`".A.B"`): the leading `.` is a marker, not an identifier.
 fn path_from_dotted(s: &str) -> Arc<Absyn::Path> {
-    let parts: Vec<&str> = s.split('.').collect();
+    let parts: Vec<&str> = s.trim_start_matches('.').split('.').collect();
     let mut it = parts.iter().rev();
     let last = it.next().copied().unwrap_or("");
     let mut p = Absyn::Path::IDENT { name: ArcStr::from(last) };
@@ -516,8 +590,8 @@ fn read_string(store: &mut Store, rt: &RtFns, h: i32) -> Result<String> {
     let len = wt(rt.str_len.call(&mut *store, h))? as usize;
     let d = wt(rt.str_data.call(&mut *store, h))? as usize;
     let mut buf = vec![0u8; len];
-    rt.mem.read(&*store, d, &mut buf).map_err(|e| anyhow!("CodegenWasmJit: memory read: {e}"))?;
-    String::from_utf8(buf).map_err(|e| anyhow!("CodegenWasmJit: non-utf8 result string: {e}"))
+    rt.mem.read(&*store, d, &mut buf).map_err(|e| "CodegenWasmJit: memory read")?;
+    String::from_utf8(buf).map_err(|e| "CodegenWasmJit: non-utf8 result string")
 }
 
 /// Read a runtime array handle into a (nested) `Values.ARRAY` of element type
@@ -557,13 +631,15 @@ fn read_elem(store: &mut Store, rt: &RtFns, elem: &SigTy, addr: usize) -> Result
             let h = i32::from_le_bytes(read_bytes::<4>(store, rt, addr)?);
             record_to_value(store, rt, path, fields, h)?
         }
-        SigTy::Ptr => bail!("CodegenWasmJit: external objects are not supported in function evaluation"),
+        SigTy::Ptr | SigTy::Func { .. } => {
+            return Err("CodegenWasmJit: external objects and function references are not supported in function evaluation");
+        }
     })
 }
 
 fn read_bytes<const N: usize>(store: &mut Store, rt: &RtFns, addr: usize) -> Result<[u8; N]> {
     let mut buf = [0u8; N];
-    rt.mem.read(&*store, addr, &mut buf).map_err(|e| anyhow!("CodegenWasmJit: memory read: {e}"))?;
+    rt.mem.read(&*store, addr, &mut buf).map_err(|e| "CodegenWasmJit: memory read")?;
     Ok(buf)
 }
 
@@ -594,9 +670,21 @@ mod tests {
     use super::*;
     use wasm_encoder as we;
 
+    /// The precompiled runtime, instantiated over the same host imports the
+    /// production linker provides.
+    fn runtime_instance() -> (Store, wasmtime::Instance) {
+        let engine = wasmtime::Engine::default();
+        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
+        let mut store = wasmtime::Store::new(&engine, WasiCtx::new(".", Vec::new()));
+        let mut linker = wasmtime::Linker::new(&engine);
+        openmodelica_wasm_jit::host::add_host_builtins(&mut linker).unwrap();
+        let inst = linker.instantiate(&mut store, &module).unwrap();
+        (store, inst)
+    }
+
     /// Read the bytes of a runtime string handle out of an instance's memory.
     fn read_rt_string(
-        store: &mut wasmtime::Store<()>,
+        store: &mut Store,
         inst: &wasmtime::Instance,
         mem: wasmtime::Memory,
         handle: i32,
@@ -613,10 +701,7 @@ mod tests {
     /// byte-for-byte (so `String(Real)` stays identical to the C target).
     #[test]
     fn precompiled_runtime_string_abi() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
 
         let int_string = inst.get_typed_func::<i32, i32>(&mut store, "rt_int_string").unwrap();
@@ -669,10 +754,7 @@ mod tests {
     /// elements without trapping.
     #[test]
     fn precompiled_runtime_array_abi() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
 
         let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
@@ -744,10 +826,7 @@ mod tests {
     /// `min`/`max`) over a Real array.
     #[test]
     fn precompiled_runtime_array_builtins() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
 
         let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
@@ -783,10 +862,7 @@ mod tests {
     fn precompiled_runtime_real_format_and_pad_abi() {
         use openmodelica_util::System;
 
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
 
         let real_format =
@@ -817,7 +893,7 @@ mod tests {
         }
 
         // rt_str_pad: write a string into a fresh runtime object, then pad.
-        let make = |store: &mut wasmtime::Store<()>, s: &str| -> i32 {
+        let make = |store: &mut Store, s: &str| -> i32 {
             let h = str_new.call(&mut *store, s.len() as i32).unwrap();
             let d = str_data.call(&mut *store, h).unwrap() as usize;
             mem.write(&mut *store, d, s.as_bytes()).unwrap();
@@ -1016,10 +1092,7 @@ mod tests {
     /// operand orders) and negation, over Real and Integer elements.
     #[test]
     fn precompiled_runtime_array_elementwise() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
         let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
         let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
@@ -1081,10 +1154,7 @@ mod tests {
     /// `transpose` of a 2x3 Integer matrix gives a 3x2 with swapped indices.
     #[test]
     fn precompiled_runtime_array_transpose() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
         let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
         let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
@@ -1118,10 +1188,7 @@ mod tests {
     /// array of (kind, value) pairs as the codegen builds it.
     #[test]
     fn precompiled_runtime_array_slice() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
         let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
         let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
@@ -1182,14 +1249,82 @@ mod tests {
         assert_eq!((rf(&mut store, pick, 1), rf(&mut store, pick, 2)), (3.0, 1.0));
     }
 
+    /// `rt_array_indexed_assign` on a 3x3 Real matrix: a row lhs `m[2,:] :=
+    /// {40,50,60}`, a strided column lhs `m[:,3] := {70,80,90}`, and an
+    /// index-array lhs `m[1,{3,1}] := {11,12}` (the source is consumed in
+    /// selection order, so 11 lands in column 3).
+    #[test]
+    fn precompiled_runtime_array_indexed_assign() {
+        let (mut store, inst) = runtime_instance();
+        let mem = inst.get_memory(&mut store, "memory").unwrap();
+        let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
+        let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
+        let elem_ptr = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr").unwrap();
+        let assign = inst
+            .get_typed_func::<(i32, i32, i32, i32), ()>(&mut store, "rt_array_indexed_assign")
+            .unwrap();
+
+        // m = [[1,2,3],[4,5,6],[7,8,9]] Real, row-major.
+        let m = arr_new.call(&mut store, (1, 2, 9)).unwrap();
+        set_dim.call(&mut store, (m, 0, 3)).unwrap();
+        set_dim.call(&mut store, (m, 1, 3)).unwrap();
+        for k in 0..9 {
+            let addr = elem_ptr.call(&mut store, (m, k + 1)).unwrap() as usize;
+            mem.write(&mut store, addr, &((k + 1) as f64).to_le_bytes()).unwrap();
+        }
+        let rf = |store: &mut Store, h: i32, k: i32| {
+            let addr = elem_ptr.call(&mut *store, (h, k)).unwrap() as usize;
+            let mut b = [0u8; 8];
+            mem.read(&*store, addr, &mut b).unwrap();
+            f64::from_le_bytes(b)
+        };
+        let make_spec = |store: &mut Store, pairs: &[(i32, i32)]| -> i32 {
+            let s = arr_new.call(&mut *store, (0, 1, pairs.len() as i32 * 2)).unwrap();
+            for (i, (k, v)) in pairs.iter().enumerate() {
+                let ka = elem_ptr.call(&mut *store, (s, i as i32 * 2 + 1)).unwrap() as usize;
+                mem.write(&mut *store, ka, &k.to_le_bytes()).unwrap();
+                let va = elem_ptr.call(&mut *store, (s, i as i32 * 2 + 2)).unwrap() as usize;
+                mem.write(&mut *store, va, &v.to_le_bytes()).unwrap();
+            }
+            s
+        };
+        let make_real_vec = |store: &mut Store, vals: &[f64]| -> i32 {
+            let v = arr_new.call(&mut *store, (1, 1, vals.len() as i32)).unwrap();
+            set_dim.call(&mut *store, (v, 0, vals.len() as i32)).unwrap();
+            for (i, x) in vals.iter().enumerate() {
+                let a = elem_ptr.call(&mut *store, (v, i as i32 + 1)).unwrap() as usize;
+                mem.write(&mut *store, a, &x.to_le_bytes()).unwrap();
+            }
+            v
+        };
+
+        let sp = make_spec(&mut store, &[(0, 2), (1, 0)]);
+        let v = make_real_vec(&mut store, &[40.0, 50.0, 60.0]);
+        assign.call(&mut store, (m, 2, sp, v)).unwrap();
+
+        let sp = make_spec(&mut store, &[(1, 0), (0, 3)]);
+        let v = make_real_vec(&mut store, &[70.0, 80.0, 90.0]);
+        assign.call(&mut store, (m, 2, sp, v)).unwrap();
+
+        let idx = arr_new.call(&mut store, (0, 1, 2)).unwrap();
+        set_dim.call(&mut store, (idx, 0, 2)).unwrap();
+        for (k, i) in [3i32, 1].iter().enumerate() {
+            let a = elem_ptr.call(&mut store, (idx, k as i32 + 1)).unwrap() as usize;
+            mem.write(&mut store, a, &i.to_le_bytes()).unwrap();
+        }
+        let sp = make_spec(&mut store, &[(0, 1), (2, idx)]);
+        let v = make_real_vec(&mut store, &[11.0, 12.0]);
+        assign.call(&mut store, (m, 2, sp, v)).unwrap();
+
+        let got: Vec<f64> = (1..=9).map(|k| rf(&mut store, m, k)).collect();
+        assert_eq!(got, vec![12.0, 2.0, 11.0, 40.0, 50.0, 80.0, 7.0, 8.0, 90.0]);
+    }
+
     /// `rt_array_cat` on Real arrays: a 1-D 3-way concat along dim 1, and a 2-D
     /// concat along dim 2 (strided copy into the result).
     #[test]
     fn precompiled_runtime_array_cat() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
         let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
         let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
@@ -1262,10 +1397,7 @@ mod tests {
     /// matrix·vector, and a non-square matrix·matrix product.
     #[test]
     fn precompiled_runtime_array_matmul() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
         let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
         let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
@@ -1317,10 +1449,7 @@ mod tests {
     /// the zero / negative-exponent cases, and the reciprocal branch.
     #[test]
     fn precompiled_runtime_real_int_pow() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let pow = inst.get_typed_func::<(f64, i32), f64>(&mut store, "rt_real_int_pow").unwrap();
         assert_eq!(pow.call(&mut store, (2.0, 10)).unwrap(), 1024.0);
         assert_eq!(pow.call(&mut store, (10.0, 3)).unwrap(), 1000.0);
@@ -1336,10 +1465,7 @@ mod tests {
     /// / nan-inf cases that must trap.
     #[test]
     fn precompiled_runtime_real_pow() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let pow = inst.get_typed_func::<(f64, f64), f64>(&mut store, "rt_real_pow").unwrap();
         assert_eq!(pow.call(&mut store, (2.0, 3.0)).unwrap(), 8.0);
         assert_eq!(pow.call(&mut store, (4.0, 0.5)).unwrap(), 2.0);
@@ -1355,10 +1481,7 @@ mod tests {
     /// `rt_mod_int`: floored integer modulo, result takes the divisor's sign.
     #[test]
     fn precompiled_runtime_mod_int() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let m = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_mod_int").unwrap();
         assert_eq!(m.call(&mut store, (7, 3)).unwrap(), 1);
         assert_eq!(m.call(&mut store, (-7, 3)).unwrap(), 2);
@@ -1372,10 +1495,7 @@ mod tests {
     /// symmetric, cross, outerProduct, skew (all Real where numeric).
     #[test]
     fn precompiled_runtime_shape_builtins() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
         let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
         let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
@@ -1454,10 +1574,7 @@ mod tests {
     /// Integer[] -> Real[] cast, and element-wise Boolean and/or/not.
     #[test]
     fn precompiled_runtime_int_to_real_and_logical() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
         let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
         let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
@@ -1506,10 +1623,7 @@ mod tests {
     /// The matrix-constructor builtins: identity, diagonal, linspace.
     #[test]
     fn precompiled_runtime_array_constructors() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
         let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
         let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
@@ -1557,10 +1671,7 @@ mod tests {
     /// once per record (no double free, no leak).
     #[test]
     fn precompiled_runtime_record() {
-        let engine = wasmtime::Engine::default();
-        let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, ());
-        let inst = wasmtime::Linker::new(&engine).instantiate(&mut store, &module).unwrap();
+        let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
         let rec_new = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_record_new").unwrap();
         let rec_copy = inst.get_typed_func::<i32, i32>(&mut store, "rt_record_copy").unwrap();

@@ -1,5 +1,6 @@
 // name: fmi3_array_nonscalarized
 // keywords: FMI 3.0 export array non-scalarized NewBackend
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf fmi3_array_nonscalarized.fmu fmi3_array_nonscalarized.fmutmp/ fmi3_array_nonscalarized.dims fmi3_array_nonscalarized.xml fmi3_array_nonscalarized_tmp.xml fmi3_array_nonscalarized.log fmi3_array_nonscalarized_info.json index.html
 //
@@ -7,6 +8,7 @@
 // C runtime. The array is exported as one native FMI 3.0 Float64 with a
 // <Dimension> and IS dimensioned in the FMU init (numberOfDimensions = 1).
 
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
 
 loadString("
@@ -35,11 +37,10 @@ readFile("fmi3_array_nonscalarized.xml"); getErrorString();
 // ""
 // true
 // ""
+// true
+// ""
 // "fmi3_array_nonscalarized.fmu"
-// "Warning: NSimJacobian.SimJacobian.createSparsityPattern: column cref not found in Jacobian local_idx_map: x[1]
-// Available keys: x, $DER.x
-// Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern of Jacobian [ODE].
-// "
+// ""
 // 0
 // ""
 // "2

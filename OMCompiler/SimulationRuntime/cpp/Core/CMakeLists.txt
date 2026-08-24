@@ -26,7 +26,17 @@ endif()
 # Lapack libs are also expected to be in the system directories.
 set(LAPACK_LIBS_ ".")
 if(UNIX)
-  set(LAPACK_LIBRARIES_ "-llapack -lblas")
+  # Alpine/musl only packages OpenBLAS, which does not provide an unversioned
+  # libblas.so (only libopenblas.so, which bundles both BLAS and LAPACK), so
+  # -lblas fails to link there. Fall back to -lopenblas when a standalone
+  # libblas.so isn't available (see rt_ldflags_generated_code.cmake for the
+  # same logic used by the C runtime).
+  find_library(OMC_SYSTEM_LIBBLAS_FOUND NAMES blas)
+  if(OMC_SYSTEM_LIBBLAS_FOUND)
+    set(LAPACK_LIBRARIES_ "-llapack -lblas")
+  else()
+    set(LAPACK_LIBRARIES_ "-lopenblas")
+  endif()
   set(LINUX_LIB_DL "-ldl")
 endif()
 

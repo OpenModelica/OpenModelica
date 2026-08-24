@@ -157,6 +157,29 @@ function instClassInProgram
   output FlatModel flatModel;
   output FunctionTree functions;
   output String flatString "The flat model as a string if dumpFlat = true.";
+algorithm
+  System.reportProgress(-1, 3) "PHASE_INSTANTIATE";
+
+  try
+    (flatModel, functions, flatString) :=
+      instClassInProgram2(classPath, program, annotationProgram, relaxedFrontend, dumpFlat);
+  else
+    System.reportProgress(-1, 0) "PHASE_IDLE";
+    fail();
+  end try;
+
+  System.reportProgress(-1, 0) "PHASE_IDLE";
+end instClassInProgram;
+
+function instClassInProgram2
+  input Absyn.Path classPath;
+  input SCode.Program program;
+  input SCode.Program annotationProgram;
+  input Boolean relaxedFrontend;
+  input Boolean dumpFlat;
+  output FlatModel flatModel;
+  output FunctionTree functions;
+  output String flatString;
 protected
   InstNode top, cls, inst_cls;
   InstContext.Type context;
@@ -191,6 +214,7 @@ algorithm
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
   // instantiation to make sure that lookup is able to find the correct nodes.
+  Error.checkCancel();
   instExpressions(inst_cls, context = context, settings = settings);
   execStat("NFInst.instExpressions");
 
@@ -199,9 +223,11 @@ algorithm
   execStat("NFInst.updateImplicitVariability");
 
   // Type the class.
+  Error.checkCancel();
   Typing.typeClass(inst_cls, context);
 
   // Flatten the model and evaluate constants in it.
+  Error.checkCancel();
   flatModel := Flatten.flatten(inst_cls, classPath);
   flatModel := EvalConstants.evaluate(flatModel, context);
 
@@ -284,7 +310,7 @@ algorithm
   //print(AbsynUtil.pathString(classPath) + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
 
   clearCaches();
-end instClassInProgram;
+end instClassInProgram2;
 
 function instClassForConnection
   "Instantiates a class given by its fully qualified path, with the result being
@@ -1110,6 +1136,7 @@ protected
   Class cls;
   Modifier outer_mod;
 algorithm
+  Error.checkCancel();
   cls := InstNode.getClass(node);
   outer_mod := Class.getModifier(cls);
 
@@ -3554,7 +3581,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.FOR);
         stmtl := instStatements(scodeStmt.forBody, for_scope, next_context);
       then
-        Statement.FOR(iter, oexp, stmtl, Statement.ForType.NORMAL(), makeSource(scodeStmt.comment, info));
+        Statement.FOR(iter, oexp, stmtl, Statement.ForType.NORMAL(), makeSource(scodeStmt.comment, info), {});
 
     case SCode.Statement.ALG_PARFOR(info = info)
       algorithm
@@ -3563,7 +3590,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.FOR);
         stmtl := instStatements(scodeStmt.parforBody, for_scope, next_context);
       then
-        Statement.FOR(iter, oexp, stmtl, Statement.ForType.PARALLEL({}), makeSource(scodeStmt.comment, info));
+        Statement.FOR(iter, oexp, stmtl, Statement.ForType.PARALLEL({}), makeSource(scodeStmt.comment, info), {});
 
     case SCode.Statement.ALG_IF(info = info)
       algorithm

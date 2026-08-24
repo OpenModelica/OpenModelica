@@ -332,6 +332,13 @@ struct GenCtx {
     /// types such as `Arc<T>`. Cleared / updated in `emit_stmt` alongside
     /// `fn_env_vars`; saved and restored around nested-function emissions.
     uninit_arrays: HashSet<String>,
+    /// Function-input `Array<T>` params whose cell borrow is hoisted to a single
+    /// `let __ab_<name> = <name>.borrow[_mut]();` at function entry, reused for
+    /// every element access instead of re-borrowing per subscript (see
+    /// [`array_hoistable`]). Maps the source name to whether the hoisted borrow
+    /// is shared (`borrow`) or exclusive (`borrow_mut`). Saved/restored around
+    /// nested-function emissions like `fn_env_vars`.
+    hoisted_arrays: HashMap<String, BorrowKind>,
     /// Variables in scope at the enclosing function level: inputs, outputs,
     /// and protected locals. Used to seed the per-arm `LocalEnv` when entering
     /// a match-expression case body, so assignments to function-level outputs
@@ -683,6 +690,7 @@ impl GenCtx {
             fn_type_vars,
             qmode: QMode::Function,
             uninit_arrays: HashSet::new(),
+            hoisted_arrays: HashMap::new(),
             fn_env_vars: HashMap::new(),
             fn_input_names: HashSet::new(),
             fn_scope_vars: HashSet::new(),
@@ -1231,7 +1239,7 @@ impl GenCtx {
             "this OpenModelica build was compiled without the '{feature}' code generation target"
         );
         let off = if self.current_fn_fallible {
-            format!("bail!({what:?})")
+            format!("return Err({what:?})")
         } else {
             format!("panic!({what:?})")
         };
@@ -1254,7 +1262,7 @@ impl GenCtx {
             "this OpenModelica build was compiled without the '{feature}' code generation target"
         );
         let body = if self.current_fn_fallible {
-            format!("bail!({what:?})")
+            format!("return Err({what:?})")
         } else {
             format!("panic!({what:?})")
         };
@@ -1284,10 +1292,11 @@ impl GenCtx {
 }
 
 /// Cargo feature guarding an optional code-generation target crate, or `None`
-/// for crates that are always built. Grouping: all `openmodelica_codegen_cpp*`
-/// crates share `cpp`; the FMU codegen crates share `codegen_fmu`. Kept in sync
-/// with the `[features]` tables of `openmodelica_backend_main` and the
-/// `interface_to_crate` mapping in `MM.rs`.
+/// for crates that are always built. All `openmodelica_codegen_cpp*` crates share
+/// `cpp`; the modelDescription.xml templates are `codegen_fmu` and the FMU C
+/// export `codegen_fmu_c`, so the web omc can emit an FMU without the C code
+/// generator. Kept in sync with the `[features]` tables of
+/// `openmodelica_backend_main` and the `interface_to_crate` mapping in `MM.rs`.
 fn feature_for_crate(crate_name: &str) -> Option<&'static str> {
     Some(match crate_name {
         "openmodelica_codegen_cpp"
@@ -1296,9 +1305,8 @@ fn feature_for_crate(crate_name: &str) -> Option<&'static str> {
         | "openmodelica_codegen_cpp_ext"
         | "openmodelica_codegen_cpp_omsi_ext" => "cpp",
         "openmodelica_codegen_c" => "codegen_c",
-        "openmodelica_codegen_fmu"
-        | "openmodelica_codegen_fmu_c"
-        | "openmodelica_codegen_fmu_omsi" => "codegen_fmu",
+        "openmodelica_codegen_fmu" => "codegen_fmu",
+        "openmodelica_codegen_fmu_c" | "openmodelica_codegen_fmu_omsi" => "codegen_fmu_c",
         "openmodelica_susan" => "susan",
         _ => return None,
     })
@@ -2069,6 +2077,11 @@ fn generate_lib_file(hier: &InstanceHierarchy<'_>, this_dir: &str, default_dir: 
     if std::path::Path::new(&format!("{this_dir}/ModelInstanceReference.rs")).exists() {
         writeln!(out, "pub mod ModelInstanceReference;").unwrap();
     }
+    // Hand-written `OMGraphics_*` external bodies, reached from generated
+    // `CevalScriptBackend.rs` via `external_c_calls::external_c_impl_path`.
+    if std::path::Path::new(&format!("{this_dir}/OMGraphicsExt.rs")).exists() {
+        writeln!(out, "pub mod OMGraphicsExt;").unwrap();
+    }
     // (The typed OMEdit interface ABI lives in its own hand-maintained crate,
     // `openmodelica_scripting_qt`, written by `emit_scripting_api_qt`; it is not
     // declared here.)
@@ -2419,7 +2432,7 @@ fn generate_file<'a>(top_name: &str, node: &NameNode<'_>, crate_map: &BTreeMap<S
     writeln!(out, "#![allow(unreachable_patterns, unreachable_code, non_camel_case_types, non_snake_case, dead_code, unused_imports, unused_variables, non_upper_case_globals, unused_mut)]").unwrap();
     writeln!(out, "
 use std::sync::Arc;
-use anyhow::{{Result, bail}};
+use metamodelica::Result;
 use loop_unwrap::unwrap_break_err;
 use metamodelica::*; // Built-in types and functions
 use const_str;
@@ -4323,10 +4336,14 @@ fn emit_type_item(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::Cla
 // "`?`-free body" restriction on the candidate, so fallible / `matchcontinue`-
 // using recursions are eligible.
 //
-// Multi-output functions and multi-mutual recursion (SCCs of size 2–3) are
-// *not* yet lowered — see the open TODOs. The current MetaModelica source
-// rarely needs mutual recursion (every important case in `BaseAvlTree`/`List`
-// is a single self-recursive function).
+// An `input output` accumulator is lowered too: dropping its declaration
+// leaves the `mut` parameter, which `continue` reassigns. Only pure outputs
+// must stay write-once.
+//
+// Multi-mutual recursion (SCCs of size 2–3) is *not* yet lowered — see the
+// open TODOs. The current MetaModelica source rarely needs mutual recursion
+// (every important case in `BaseAvlTree`/`List` is a single self-recursive
+// function).
 
 /// Return true if any tail position of `exp` is a call to `self_short_name`.
 ///
@@ -4880,6 +4897,241 @@ fn pat_reads_name(_pat: &TypedPat, _name: &str) -> bool {
     false
 }
 
+/// How a hoisted array's cell is borrowed for the duration of a function body.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BorrowKind {
+    /// Read-only: `let __ab_A = A.borrow();`.
+    Shared,
+    /// Subscript-written: `let mut __ab_A = A.borrow_mut();`.
+    Mut,
+}
+
+/// Running state of the "borrow once" occurrence analysis (see
+/// [`array_hoistable`]). `ok` is cleared the moment any disqualifying use of the
+/// candidate is seen; `written` records whether a subscript write was found (so
+/// the caller picks `borrow_mut` over `borrow`).
+struct HoistScan {
+    ok: bool,
+    written: bool,
+    /// Whether any valid subscript access of the candidate was seen. A param
+    /// never referenced in the body is not hoisted (the borrow would be unused).
+    used: bool,
+}
+
+/// The Rust local bound to a hoisted array's held borrow. `name` is the raw
+/// MetaModelica identifier; the `__ab_` prefix guarantees a valid non-keyword
+/// identifier without needing `escape_ident` (which would inject a `r#`).
+fn hoisted_binding_name(name: &str) -> String {
+    format!("__ab_{name}")
+}
+
+/// Decide whether the function-input array `name` may have its cell borrow
+/// hoisted to a single `borrow[_mut]()` at function entry. Returns the borrow
+/// kind (`Shared` for read-only, `Mut` when any element is subscript-written),
+/// or `None` if any occurrence would fight a hoisted borrow.
+///
+/// Hoisting is legal only when **every** occurrence of `name` in the body is a
+/// single-segment subscript element access `name[idx]` — as a read, or as the
+/// base of a `name[idx] := v` assignment. Any *bare* use (passed as a call
+/// argument, whole-reassigned, iterated with `for x in name`, or bound/shadowed
+/// by a pattern) disqualifies it, because that use either moves the array or
+/// needs its own borrow, which would alias the held one. See
+/// `HANDOFF-borrow-once.md` for the full rationale and the fail-loud safety
+/// property (a wrong hoist panics on the `RefCell` flag, never miscompiles).
+fn array_hoistable(
+    stmts: &[typedexp::TypedStmt],
+    init_exps: &[typedexp::TypedExp],
+    name: &str,
+) -> Option<BorrowKind> {
+    let mut scan = HoistScan { ok: true, written: false, used: false };
+    hoist_scan_stmts(stmts, name, &mut scan);
+    // Output/protected-local initialisers (`protected Integer N = arrayLength(ass);`)
+    // live outside `stmts` but are still part of the body — a bare use there
+    // (e.g. `arrayLength(ass)`) must disqualify the hoist just the same.
+    for e in init_exps {
+        hoist_scan_exp(e, name, &mut scan);
+    }
+    if scan.ok && scan.used {
+        Some(if scan.written { BorrowKind::Mut } else { BorrowKind::Shared })
+    } else {
+        None
+    }
+}
+
+/// True iff `exp` is exactly a bare reference to `name` (no subscripts, no
+/// further segments) — the shape that appears as the base of `name[i] := v`.
+fn is_bare_var(exp: &typedexp::TypedExp, name: &str) -> bool {
+    let typedexp::TypedExp::Var { name: n, segments, .. } = exp else { return false };
+    match segments.as_slice() {
+        [] => n == name,
+        [seg] => seg.name == name && seg.subscripts.is_empty(),
+        _ => false,
+    }
+}
+
+/// True iff `name` appears anywhere in the pattern — as a binding or inside an
+/// `Index`/`FieldAccess` base/index expression. Used to reject any LHS shape
+/// other than the clean `name[idx]` write.
+fn pat_mentions_name(pat: &typedexp::TypedPat, name: &str) -> bool {
+    use typedexp::TypedPat as P;
+    match pat {
+        P::Var(n) => n == name,
+        P::As { var, pat } => var == name || pat_mentions_name(pat, name),
+        P::Some_(p) => pat_mentions_name(p, name),
+        P::Cons { head, tail } => pat_mentions_name(head, name) || pat_mentions_name(tail, name),
+        P::Tuple(ps) => ps.iter().any(|p| pat_mentions_name(p, name)),
+        P::Constructor { fields, named_fields, .. } =>
+            fields.iter().any(|p| pat_mentions_name(p, name))
+                || named_fields.iter().any(|(_, p)| pat_mentions_name(p, name)),
+        P::Index { base, index } => exp_reads_name(base, name) || exp_reads_name(index, name),
+        P::FieldAccess { base, .. } => pat_mentions_name(base, name),
+        P::Wildcard | P::Lit(_) | P::EmptyList | P::None_ | P::Todo(_) => false,
+    }
+}
+
+fn hoist_scan_stmts(stmts: &[typedexp::TypedStmt], name: &str, scan: &mut HoistScan) {
+    for s in stmts {
+        if !scan.ok { return; }
+        hoist_scan_stmt(s, name, scan);
+    }
+}
+
+fn hoist_scan_stmt(stmt: &typedexp::TypedStmt, name: &str, scan: &mut HoistScan) {
+    use typedexp::TypedStmt as S;
+    use typedexp::TypedPat as P;
+    if !scan.ok { return; }
+    match stmt {
+        S::Assign { lhs, rhs } => {
+            if let P::Index { base, index } = lhs {
+                if is_bare_var(base, name) {
+                    // `name[idx] := v` — a subscript write; needs borrow_mut.
+                    scan.written = true;
+                    scan.used = true;
+                    hoist_scan_exp(index, name, scan);
+                } else if exp_reads_name(base, name) {
+                    // `name` appears in the write target in a non-simple way
+                    // (e.g. `other[name[i]] := v` writes `other`, reads name —
+                    // that read is fine; but `name[i][j] := v` is not the clean
+                    // single-subscript form). Be conservative.
+                    scan.ok = false;
+                } else {
+                    hoist_scan_exp(base, name, scan);
+                    hoist_scan_exp(index, name, scan);
+                }
+            } else if pat_mentions_name(lhs, name) {
+                // Whole-reassignment (`name := …`), pattern binding, or a nested
+                // reference — none compatible with a single hoisted borrow.
+                scan.ok = false;
+            }
+            hoist_scan_exp(rhs, name, scan);
+        }
+        S::NoRetCall { call } => hoist_scan_exp(call, name, scan),
+        S::If { cond, then_, elseif, else_ } => {
+            hoist_scan_exp(cond, name, scan);
+            hoist_scan_stmts(then_, name, scan);
+            for (c, b) in elseif {
+                hoist_scan_exp(c, name, scan);
+                hoist_scan_stmts(b, name, scan);
+            }
+            hoist_scan_stmts(else_, name, scan);
+        }
+        S::For { var, range, body } => {
+            if var == name { scan.ok = false; return; }
+            hoist_scan_exp(range, name, scan);
+            hoist_scan_stmts(body, name, scan);
+        }
+        S::While { cond, body } => {
+            hoist_scan_exp(cond, name, scan);
+            hoist_scan_stmts(body, name, scan);
+        }
+        S::Try { body, else_body } => {
+            hoist_scan_stmts(body, name, scan);
+            hoist_scan_stmts(else_body, name, scan);
+        }
+        S::Failure { body } => hoist_scan_stmts(body, name, scan),
+        S::Return | S::Break | S::Continue | S::Todo(_) => {}
+    }
+}
+
+fn hoist_scan_exp(exp: &typedexp::TypedExp, name: &str, scan: &mut HoistScan) {
+    use typedexp::TypedExp as E;
+    if !scan.ok { return; }
+    match exp {
+        E::Lit(_) | E::Todo(_) => {}
+        E::Var { name: n, segments, .. } => {
+            let head = segments.first().map(|s| s.name.as_str()).unwrap_or(n.as_str());
+            if head == name {
+                // Only a single-segment subscript element access is allowed.
+                let valid = segments.len() == 1 && !segments[0].subscripts.is_empty();
+                if valid { scan.used = true; } else { scan.ok = false; }
+            }
+            // Recurse into every subscript expression (they may nest `name[..]`
+            // reads or read `name` bare inside another var's subscript).
+            for seg in segments {
+                for sub in &seg.subscripts {
+                    hoist_scan_exp(sub, name, scan);
+                }
+            }
+        }
+        E::BinOp { lhs, rhs, .. } => {
+            hoist_scan_exp(lhs, name, scan);
+            hoist_scan_exp(rhs, name, scan);
+        }
+        E::UnOp { operand, .. } => hoist_scan_exp(operand, name, scan),
+        E::Call { args, named_args, .. }
+        | E::Constructor { args, named_args, .. }
+        | E::PartEval { args, named_args, .. } => {
+            for a in args { hoist_scan_exp(a, name, scan); }
+            for (_, v) in named_args { hoist_scan_exp(v, name, scan); }
+        }
+        E::If { cond, then_, elseif, else_, .. } => {
+            hoist_scan_exp(cond, name, scan);
+            hoist_scan_exp(then_, name, scan);
+            for (c, b) in elseif {
+                hoist_scan_exp(c, name, scan);
+                hoist_scan_exp(b, name, scan);
+            }
+            hoist_scan_exp(else_, name, scan);
+        }
+        E::Cons { head, tail, .. } => {
+            hoist_scan_exp(head, name, scan);
+            hoist_scan_exp(tail, name, scan);
+        }
+        E::Tuple(es) => for e in es { hoist_scan_exp(e, name, scan); },
+        E::Array { elems, .. } => for e in elems { hoist_scan_exp(e, name, scan); },
+        E::Range { start, step, stop, .. } => {
+            hoist_scan_exp(start, name, scan);
+            if let Some(s) = step { hoist_scan_exp(s, name, scan); }
+            hoist_scan_exp(stop, name, scan);
+        }
+        E::Match { input, cases, as_binding, .. } => {
+            hoist_scan_exp(input, name, scan);
+            if as_binding.as_deref() == Some(name) { scan.ok = false; return; }
+            for c in cases {
+                if typedexp::pat_bindings(&c.pattern).iter().any(|(n, _)| n == name) {
+                    scan.ok = false;
+                    return;
+                }
+                if let Some(g) = &c.guard { hoist_scan_exp(g, name, scan); }
+                for (ln, _, d, _) in &c.locals {
+                    if ln == name { scan.ok = false; return; }
+                    if let Some(d) = d { hoist_scan_exp(d, name, scan); }
+                }
+                hoist_scan_stmts(&c.stmts, name, scan);
+                hoist_scan_exp(&c.result, name, scan);
+            }
+        }
+        E::Reduction { body, iterators, .. } => {
+            for it in iterators {
+                if it.name == name { scan.ok = false; return; }
+                hoist_scan_exp(&it.range, name, scan);
+                if let Some(g) = &it.guard { hoist_scan_exp(g, name, scan); }
+            }
+            hoist_scan_exp(body, name, scan);
+        }
+    }
+}
+
 fn exp_reads_name(exp: &typedexp::TypedExp, name: &str) -> bool {
     use typedexp::TypedExp as E;
     match exp {
@@ -4981,6 +5233,7 @@ fn case_uses_local_name(case: &typedexp::TypedCase, name: &str) -> bool {
 fn plan_tail_call_lowering<'a>(
     typed_stmts: &[typedexp::TypedStmt],
     outputs: &[(String, Ty, Option<Arc<Absyn::Modification>>, bool)],
+    input_names: &HashSet<String>,
     fn_short_name: &str,
     is_fallible_fn: bool,
     ctx: &GenCtx,
@@ -4995,7 +5248,12 @@ fn plan_tail_call_lowering<'a>(
     if !stmts_lowerable_as_tail_expr(typed_stmts, &out_names) { return None; }
     if !stmts_have_tail_self_call(typed_stmts, &out_names, fn_short_name) { return None; }
 
-    // Suppressing each output's `let mut <n>` declaration only works if the
+    // An `input output` keeps a readable, writable place with its shadow
+    // suppressed — the `mut` parameter, which is also what `continue`
+    // reassigns. The two checks below therefore apply to pure outputs only.
+    let pure_outs = || out_names.iter().filter(|n| !input_names.contains(*n));
+
+    // Suppressing a pure output's `let mut <n>` declaration only works if the
     // body never reads it as a value — every reference becomes a
     // "cannot find value" error otherwise. Fold-style functions
     // (`BaseAvlTree.fold`) declare an accumulator output and thread it
@@ -5008,13 +5266,13 @@ fn plan_tail_call_lowering<'a>(
     // suppression; refuse the plan in this case and fall back to the
     // ordinary `let mut out; out = match ...; out` emission, which compiles
     // (no tail-loop optimisation for accumulator-threading folds).
-    if out_names.iter().any(|n| stmts_read_name(typed_stmts, n)) { return None; }
+    if pure_outs().any(|n| stmts_read_name(typed_stmts, n)) { return None; }
 
-    // Each output's `let mut <out>` is suppressed, so any *write* to one
+    // A pure output's `let mut <out>` is suppressed, so any *write* to one
     // outside the consumed tail position(s) would reference an undeclared
     // place (E0425). A preamble (non-last) statement, or a non-tail branch of
     // the trailing `if`, that assigns an output therefore disqualifies it.
-    if out_names.iter().any(|n| preamble_writes_out(typed_stmts, n)) { return None; }
+    if pure_outs().any(|n| preamble_writes_out(typed_stmts, n)) { return None; }
 
     // An explicit `return` reads (and returns) all outputs, which we suppress.
     if body_has_return(typed_stmts) { return None; }
@@ -7138,7 +7396,7 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
     // arms are ordinary control flow, not `tailcall::call!` sites a second
     // macro has to find). Bodies needing `match_deref!` are therefore lowered
     // normally; see `emit_match`, which no longer special-cases loop bodies.
-    let tail_plan = plan_tail_call_lowering(&typed_stmts, &outputs, name, is_fallible_fn, ctx, top_level);
+    let tail_plan = plan_tail_call_lowering(&typed_stmts, &outputs, &input_names, name, is_fallible_fn, ctx, top_level);
 
     // Set the ambient "we're inside a loop-lowered body" flag so that
     // [`emit_match`] can emit a *diverging* fallback for a non-exhaustive
@@ -7230,6 +7488,7 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         let saved_fn_outputs = ctx.fn_outputs.clone();
         let saved_fn_outputs_no_default = ctx.fn_outputs_no_default.clone();
         let saved_uninit_arrays = ctx.uninit_arrays.clone();
+        let saved_hoisted_arrays = ctx.hoisted_arrays.clone();
         for member in parent_members.iter() {
             if let MM::ClassMember::ClassDef(cdm) = member
                 && matches!(&cdm.class_def.restriction, Absyn::Restriction::R_FUNCTION { .. })
@@ -7279,6 +7538,7 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         ctx.fn_outputs = saved_fn_outputs;
         ctx.fn_outputs_no_default = saved_fn_outputs_no_default;
         ctx.uninit_arrays = saved_uninit_arrays;
+        ctx.hoisted_arrays = saved_hoisted_arrays;
     }
 
     // Open the tail-call loop *before* the output/protected-local declarations
@@ -7296,6 +7556,47 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         ctx.tail_self_short = name.to_owned();
     }
     let body_indent = if loop_lowered { format!("{orig_body_indent}    ") } else { orig_body_indent.clone() };
+
+    // "Borrow once": for each `Array<T>` input parameter that is never an
+    // output and whose every occurrence is a plain `name[idx]` element access
+    // (see [`array_hoistable`]), hoist its cell borrow to a single binding here
+    // and reuse it for every access, instead of re-`borrow()`ing per subscript.
+    // Loop-lowered functions are skipped: a tail self-call passes its arrays as
+    // bare args (which `array_hoistable` already rejects), and holding a borrow
+    // across param reassignment would be unsound. The bindings must dominate the
+    // whole body, including output/protected initialisers below, so emit them
+    // first and populate `ctx.hoisted_arrays` before anything reads it.
+    ctx.hoisted_arrays.clear();
+    if !loop_lowered {
+        let output_names: HashSet<&str> = env.outputs.iter().map(|s| s.as_str()).collect();
+        // Typed initialiser expressions of the outputs/protected locals — part
+        // of the body for the purpose of the bare-use check in `array_hoistable`.
+        let init_exps: Vec<typedexp::TypedExp> = outputs.iter().chain(protected.iter())
+            .filter_map(|(_, _, modif, _)| extract_default_exp(modif))
+            .map(|exp| typedexp::infer_exp(exp, &infer_env, top_level, &pkg_prefix, &all_type_vars))
+            .collect();
+        for inp in fn_inputs_eff.iter() {
+            if !matches!(inp.ty, Ty::Array(_)) { continue; }
+            if output_names.contains(inp.name.as_str()) { continue; }
+            if let Some(kind) = array_hoistable(&typed_stmts, &init_exps, &inp.name) {
+                ctx.hoisted_arrays.insert(inp.name.clone(), kind);
+            }
+        }
+        // Emit in a stable order so codegen is deterministic.
+        let mut hoisted: Vec<(&String, &BorrowKind)> = ctx.hoisted_arrays.iter().collect();
+        hoisted.sort_by(|a, b| a.0.cmp(b.0));
+        for (nm, kind) in hoisted {
+            // The binding uses the raw name (the `__ab_` prefix already makes it
+            // a non-keyword, valid identifier); the borrowed param is referenced
+            // through `escape_ident` since a keyword param is declared `r#kw`.
+            let bind = hoisted_binding_name(nm);
+            let esc = escape_ident(nm);
+            match kind {
+                BorrowKind::Shared => writeln!(out, "{body_indent}let {bind} = {esc}.borrow();").unwrap(),
+                BorrowKind::Mut => writeln!(out, "{body_indent}let mut {bind} = {esc}.borrow_mut();").unwrap(),
+            }
+        }
+    }
 
     for (n, t, modif, is_const_local) in outputs.iter().chain(protected.iter()) {
         // The output `n` is consumed by the tail-call lowering: its declaration
@@ -10026,9 +10327,9 @@ fn emit_diverging_fail(msg: &str, is_const: bool, ctx: &GenCtx) -> String {
     }
     match &ctx.qmode {
         QMode::TryBlock(label) => {
-            format!("break {label} Err::<_, _>(anyhow::anyhow!(\"{msg}\"))")
+            format!("break {label} Err::<_, _>(\"{msg}\")")
         }
-        QMode::Function if ctx.current_fn_fallible => format!("bail!(\"{msg}\")"),
+        QMode::Function if ctx.current_fn_fallible => format!("return Err(\"{msg}\")"),
         _ => format!("panic!(\"{msg}\")"),
     }
 }
@@ -10229,7 +10530,7 @@ fn emit_reduction<'a>(
                 Some(id) => format!("__acc.unwrap_or({id})"),
                 // No identity for this element type: an empty reduction stays a
                 // runtime error, surfaced as Result via the caller's qmode.
-                None => ctx.q(&format!("__acc.ok_or_else(|| anyhow::anyhow!(\"empty {func} reduction\"))")),
+                None => ctx.q(&format!("__acc.ok_or_else(|| \"empty {func} reduction\")")),
             };
             (
                 format!("let mut __acc: Option<{elem_ty}> = None;"),
@@ -10320,7 +10621,7 @@ fn emit_reduction<'a>(
                         format!("let mut __acc: Option<{acc_ty}> = None;"),
                         update,
                         ctx.q(&format!(
-                            "__acc.ok_or_else(|| anyhow::anyhow!(\"empty {func} reduction\"))"
+                            "__acc.ok_or_else(|| \"empty {func} reduction\")"
                         )),
                     )
                 }
@@ -10670,9 +10971,9 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             // an Err instead.
             match &ctx.qmode {
                 QMode::TryBlock(label) => {
-                    Ok(format!("break {label} Err::<_, _>(anyhow::anyhow!(\"fail\"))"))
+                    Ok(format!("break {label} Err::<_, _>(\"fail\")"))
                 }
-                _ => Ok("bail!(\"fail\")".to_owned()),
+                _ => Ok("return Err(\"fail\")".to_owned()),
             }
         },
         // setGlobalRoot(index, value)
@@ -10781,7 +11082,7 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
                     // resulting `Result` per the current `QMode` (`?`, `.unwrap()`,
                     // or `unwrap_break_err!` inside a `try` block).
                     let read = format!(
-                        "{var_path}.with(|__root| __root.borrow().clone()).ok_or_else(|| anyhow::anyhow!(\"getGlobalRoot: empty slot {}\"))",
+                        "{var_path}.with(|__root| __root.borrow().clone()).ok_or_else(|| \"getGlobalRoot: empty slot {}\")",
                         grc.const_name,
                     );
                     return Ok(ctx.q(&read));
@@ -11467,9 +11768,18 @@ fn emit_var<'a>(
     let base_name = if real_segments.is_empty() {
         name_str.clone()
     } else {
-        let mut base = escape_ident(&real_segments[0].name);
+        // A hoisted input array (see the "borrow once" pass in `emit_function`)
+        // reuses the single `__ab_<name>` borrow held for the whole body — no
+        // per-access `.borrow()` and no scoping guard.
+        let hoisted = real_segments.len() == 1
+            && ctx.hoisted_arrays.contains_key(&real_segments[0].name);
+        let mut base = if hoisted {
+            hoisted_binding_name(&real_segments[0].name)
+        } else {
+            escape_ident(&real_segments[0].name)
+        };
         if !real_segments[0].subscripts.is_empty() {
-            if matches!(ctx.fn_env_vars.get(&real_segments[0].name), Some(Ty::Array(_))) {
+            if !hoisted && matches!(ctx.fn_env_vars.get(&real_segments[0].name), Some(Ty::Array(_))) {
                 base = format!("{base}.borrow()");
                 has_borrow_guard = true;
             }
@@ -14721,7 +15031,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // too: a value-typed `Err(…)` would not unify with the
                 // `!`-typed arms (and the `loop` body must stay `()`/`!`).
                 if active_tail.is_some() && ctx.current_fn_fallible {
-                    ",\n        _ => return Err(anyhow::anyhow!(\"match: no arm matched\"))".to_owned()
+                    ",\n        _ => return Err(\"match: no arm matched\")".to_owned()
                 } else {
                     ",\n        _ => unreachable!(\"tail-call lowered match: no arm matched\")".to_owned()
                 }
@@ -14732,7 +15042,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // semantics that wouldn't typecheck in every callsite.
                 ",\n        _ => unreachable!(\"match_deref! exhaustiveness placeholder\")".to_owned()
             } else if ctx.current_fn_fallible {
-                ",\n        _ => bail!(\"match: no arm matched\")".to_owned()
+                ",\n        _ => return Err(\"match: no arm matched\")".to_owned()
             } else {
                 // A non-fallible function can't `bail!`; a runtime miss of a
                 // non-exhaustive match panics instead (the typical source is an
@@ -14984,7 +15294,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     if parts.is_empty() {
                         String::new()
                     } else {
-                        format!("            if !({}) {{ bail!(\"guard\") }}\n", parts.join(" && "))
+                        format!("            if !({}) {{ return Err(\"guard\") }}\n", parts.join(" && "))
                     }
                 };
 
@@ -15291,7 +15601,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     s.push_str(&body.replace("            ", "                    "));
                     s.push_str(&format!("                    Ok({result})\n"));
                     s.push_str("                }\n");
-                    s.push_str("                _ => bail!(\"nomatch\"),\n");
+                    s.push_str("                _ => return Err(\"nomatch\"),\n");
                     s.push_str("            }}\n");
                 } else {
                     if bind_arc_directly {
@@ -15302,11 +15612,11 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                         let mut_prefix = if true { "mut " } else { "" };
                         s.push_str(&format!("            let {mut_prefix}{var_name} = __mc_input.clone();\n"));
                     } else if mc_uses_tuple_rewrite {
-                        s.push_str(&format!("            let {pat} = __mc_input.clone() else {{ bail!(\"nomatch\") }};\n"));
+                        s.push_str(&format!("            let {pat} = __mc_input.clone() else {{ return Err(\"nomatch\") }};\n"));
                     } else if input_is_arc {
-                        s.push_str(&format!("            let {pat} = __mc_input.as_ref() else {{ bail!(\"nomatch\") }};\n"));
+                        s.push_str(&format!("            let {pat} = __mc_input.as_ref() else {{ return Err(\"nomatch\") }};\n"));
                     } else {
-                        s.push_str(&format!("            let {pat} = __mc_input.clone() else {{ bail!(\"nomatch\") }};\n"));
+                        s.push_str(&format!("            let {pat} = __mc_input.clone() else {{ return Err(\"nomatch\") }};\n"));
                     }
                     s.push_str(&guard_check);
                     s.push_str(&body);
@@ -17517,10 +17827,10 @@ fn emit_pat_assign<'a>(
                     // rather than bailing out of a possibly-infallible function.
                     _ => match &ctx.qmode {
                         QMode::TryBlock(label) => {
-                            fail_owned = format!("break {label} Err::<_, _>(anyhow::anyhow!(\"pattern mismatch\"))");
+                            fail_owned = format!("break {label} Err::<_, _>(\"pattern mismatch\")");
                             &fail_owned
                         }
-                        _ => "bail!(\"pattern mismatch\")",
+                        _ => "return Err(\"pattern mismatch\")",
                     },
                 };
                 writeln!(out, "{indent}let {tmp} = ({scrut_expr});").unwrap();
@@ -17704,10 +18014,10 @@ fn emit_pat_assign<'a>(
                     // break can never escape across a closure.
                     FailureMode::Function | FailureMode::TryArm => match &ctx.qmode {
                         QMode::TryBlock(label) => {
-                            fail_owned = format!("break {label} Err::<_, _>(anyhow::anyhow!(\"pattern mismatch\"))");
+                            fail_owned = format!("break {label} Err::<_, _>(\"pattern mismatch\")");
                             &fail_owned
                         }
-                        _ => "bail!(\"pattern mismatch\")",
+                        _ => "return Err(\"pattern mismatch\")",
                     },
                     FailureMode::Failure => "()",
                     FailureMode::IfLetElse(else_code) => {
@@ -17855,10 +18165,10 @@ fn emit_pat_assign<'a>(
                     // possibly-infallible function.
                     FailureMode::Function | FailureMode::TryArm => match &ctx.qmode {
                         QMode::TryBlock(label) => {
-                            fail_owned = format!("break {label} Err::<_, _>(anyhow::anyhow!(\"pattern mismatch\"))");
+                            fail_owned = format!("break {label} Err::<_, _>(\"pattern mismatch\")");
                             &fail_owned
                         }
-                        _ => "bail!(\"pattern mismatch\")",
+                        _ => "return Err(\"pattern mismatch\")",
                     },
                     FailureMode::Failure => "()",
                     FailureMode::IfLetElse(_) => unreachable!(),
@@ -20087,7 +20397,21 @@ fn emit_stmt<'a>(
                         let n = *fresh; *fresh += 1;
                         let tmp = format!("__cell{n}");
                         let idx_tmp = format!("__idx{n}");
-                        let base_str = emit_exp(base, /*is_const=*/false, ctx, top_level);
+                        // A hoisted input array holds a single `borrow_mut()`
+                        // (`__ab_<name>`) for the whole body; write through it
+                        // directly. The RHS/subscript temps read the same held
+                        // borrow (RefMut derefs to `&` for reads) with no aliasing
+                        // panic, so the temp hoisting only preserves eval order.
+                        let hoisted_bind: Option<String> = match base {
+                            TypedExp::Var { name, .. } if ctx.hoisted_arrays.contains_key(name.as_str()) =>
+                                Some(hoisted_binding_name(name)),
+                            _ => None,
+                        };
+                        let base_str = if hoisted_bind.is_some() {
+                            String::new()
+                        } else {
+                            emit_exp(base, /*is_const=*/false, ctx, top_level)
+                        };
                         // Check if the base array is uninitialised (from arrayCreateNoInit).
                         // If so, use ptr::write via arrayInitSlot to avoid dropping garbage bytes.
                         let base_is_uninit = matches!(
@@ -20097,7 +20421,9 @@ fn emit_stmt<'a>(
                         writeln!(out, "{indent}{{").unwrap();
                         writeln!(out, "{indent}    let {tmp} = {scrut_expr};").unwrap();
                         writeln!(out, "{indent}    let {idx_tmp} = {idx_str};").unwrap();
-                        if base_is_uninit {
+                        if let Some(bind) = hoisted_bind {
+                            writeln!(out, "{indent}    {bind}[({idx_tmp}-1) as usize] = {tmp};").unwrap();
+                        } else if base_is_uninit {
                             writeln!(out, "{indent}    unsafe {{ metamodelica::Dangerous::arrayInitSlot({base_str}.clone(), {idx_tmp}, {tmp}); }}").unwrap();
                         } else {
                             writeln!(out, "{indent}    {base_str}.borrow_mut()[({idx_tmp}-1) as usize] = {tmp};").unwrap();
@@ -20493,7 +20819,7 @@ fn emit_stmt<'a>(
                 ctx.with_qmode(QMode::TryBlock(label.clone()), |ctx| {
                     emit_stmts(out, &format!("{indent}    "), body, FailureMode::TryArm, ctx, &mut benv, top_level, fresh);
                 });
-                writeln!(out, "{indent}    Ok::<(), anyhow::Error>(())").unwrap();
+                writeln!(out, "{indent}    Ok::<(), &'static str>(())").unwrap();
                 writeln!(out, "{indent}}}.is_err() {{").unwrap();
                 let mut eenv = env.clone();
                 emit_stmts(out, &format!("{indent}    "), else_body, fail_mode, ctx, &mut eenv, top_level, fresh);
@@ -20512,7 +20838,7 @@ fn emit_stmt<'a>(
                 ctx.with_qmode(QMode::TryBlock(label.clone()), |ctx| {
                     emit_stmts(out, &format!("{indent}    "), body, FailureMode::TryArm, ctx, &mut benv, top_level, fresh);
                 });
-                writeln!(out, "{indent}    Ok::<(), anyhow::Error>(())").unwrap();
+                writeln!(out, "{indent}    Ok::<(), &'static str>(())").unwrap();
                 writeln!(out, "{indent}}} {{").unwrap();
                 writeln!(out, "{indent}    Ok(()) => {{}}").unwrap();
                 writeln!(out, "{indent}    {err_pat} => {{").unwrap();
@@ -20552,7 +20878,7 @@ fn emit_stmt<'a>(
                 ctx.with_qmode(QMode::TryBlock(label.clone()), |ctx| {
                     emit_stmts(out, &format!("{indent}    "), body, FailureMode::TryArm, ctx, &mut benv, top_level, fresh);
                 });
-                writeln!(out, "{indent}    Ok::<_, anyhow::Error>({yield_tuple})").unwrap();
+                writeln!(out, "{indent}    Ok::<_, &'static str>({yield_tuple})").unwrap();
                 writeln!(out, "{indent}}} {{").unwrap();
                 writeln!(out, "{indent}    Ok({temp_pat}) => {{").unwrap();
                 for (v, t) in escaped_vars.iter().zip(temp_names.iter()) {
@@ -20587,8 +20913,8 @@ fn emit_stmt<'a>(
             ctx.with_qmode(QMode::TryBlock(label.clone()), |ctx| {
                 emit_stmts(out, &format!("{indent}    "), body, FailureMode::TryArm, ctx, &mut fenv, top_level, fresh);
             });
-            writeln!(out, "{indent}    Ok::<(), anyhow::Error>(())").unwrap();
-            writeln!(out, "{indent}}}.is_ok() {{ bail!(\"failure(): body succeeded\") }}").unwrap();
+            writeln!(out, "{indent}    Ok::<(), &'static str>(())").unwrap();
+            writeln!(out, "{indent}}}.is_ok() {{ return Err(\"failure(): body succeeded\") }}").unwrap();
         }
         S::Return => {
             // Expand `return;` into the same shape that emit_function produces

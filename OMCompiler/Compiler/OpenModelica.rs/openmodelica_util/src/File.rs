@@ -46,7 +46,7 @@ use std::fs::OpenOptions;
 use std::io::{Seek, SeekFrom, Write};
 use std::sync::{Arc, Mutex};
 
-use anyhow::{bail, Result};
+use metamodelica::Result;
 use arcstr::{literal, ArcStr};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -96,14 +96,14 @@ impl FileInner {
             match self.file.as_mut() {
                 Some(f) => f
                     .write_all(bytes)
-                    .map_err(|e| anyhow::anyhow!("File.{what}: write to {}: {}", self.name, e)),
-                None => bail!("File.{what}: Failed to write to file: {} (not open)", self.name),
+                    .map_err(|e| "File.{what}: write to {}: {}"),
+                None => return Err("File.{what}: Failed to write to file: {} (not open)"),
             }
         }
         #[cfg(target_arch = "wasm32")]
         {
             if self.mode != Some(Mode::Write) {
-                bail!("File.{what}: Failed to write to file: {} (not open)", self.name);
+                return Err("File.{what}: Failed to write to file: {} (not open)");
             }
             let end = self.pos + bytes.len();
             if self.buf.len() < end {
@@ -191,10 +191,7 @@ impl File {
             }),
             Some(id) => FILE_REGISTRY.with(|r| {
                 r.borrow().get(&id).cloned().ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "File.constructor: opaque file reference {id} is not registered \
-                         (already released, or created on another thread)"
-                    )
+                    "error"
                 })
             }),
         }
@@ -229,7 +226,7 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
                 .truncate(true)
                 .open(filename.as_str()),
         }
-        .map_err(|e| anyhow::anyhow!("File.open: Failed to open file {filename} with mode {mode:?}: {e}"))?;
+        .map_err(|e| "File.open: Failed to open file {filename} with mode {mode:?}: {e}")?;
         guard.file = Some(handle);
         guard.name = filename;
         Ok(())
@@ -241,7 +238,7 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
         match mode {
             Mode::Read => {
                 let bytes = openmodelica_wasi::read(filename.as_str()).ok_or_else(|| {
-                    anyhow::anyhow!("File.open: Failed to open file {filename} with mode {mode:?}: no such file")
+                    "File.open: Failed to open file {filename} with mode {mode:?}: no such file"
                 })?;
                 guard.buf = bytes;
             }
@@ -264,16 +261,65 @@ pub fn write(file: File, data: ArcStr) -> Result<()> {
 }
 
 pub fn writeInt(file: File, data: i32, format: ArcStr) -> Result<()> {
-    // The C runtime uses `fprintf` with a user-supplied format string. We
-    // honor the common `%d` default with a fast path and fall through to a
-    // simple substitution otherwise. Full printf-compatibility would require
-    // a printf parser; callers in the OMC sources only use `%d` and `%ld`.
     let mut guard = file.inner.lock().unwrap();
-    let s = match format.as_str() {
-        "%d" | "%i" | "%ld" => data.to_string(),
-        other => other.replace("%d", &data.to_string()).replace("%ld", &data.to_string()),
-    };
+    let s = format_int(format.as_str(), data);
     guard.write_bytes(s.as_bytes(), "writeInt")
+}
+
+// Substitute the first printf integer conversion `%[0][width][l](d|i)` in `fmt`,
+// keeping surrounding literals. Callers use `%d`/`%i`/`%ld` and `%02d` (xsdateTime).
+fn format_int(fmt: &str, data: i32) -> String {
+    let bytes = fmt.as_bytes();
+    let mut out = String::with_capacity(fmt.len() + 8);
+    let mut i = 0;
+    let mut lit_start = 0;
+    while i < bytes.len() {
+        if bytes[i] != b'%' {
+            i += 1;
+            continue;
+        }
+        let mut j = i + 1;
+        let zero = j < bytes.len() && bytes[j] == b'0';
+        if zero {
+            j += 1;
+        }
+        let ws = j;
+        while j < bytes.len() && bytes[j].is_ascii_digit() {
+            j += 1;
+        }
+        let width: usize = fmt.get(ws..j).and_then(|w| w.parse().ok()).unwrap_or(0);
+        while j < bytes.len() && bytes[j] == b'l' {
+            j += 1;
+        }
+        if j < bytes.len() && (bytes[j] == b'd' || bytes[j] == b'i') {
+            out.push_str(&fmt[lit_start..i]);
+            out.push_str(&fmt_int_field(data, zero, width));
+            j += 1;
+            i = j;
+            lit_start = j;
+        } else {
+            i += 1;
+        }
+    }
+    out.push_str(&fmt[lit_start..]);
+    out
+}
+
+// Zero- or space-pad `data` to `width` (sign kept outside the padding).
+fn fmt_int_field(data: i32, zero: bool, width: usize) -> String {
+    let num = data.to_string();
+    if num.len() >= width {
+        return num;
+    }
+    let pad = width - num.len();
+    if zero {
+        match num.strip_prefix('-') {
+            Some(rest) => format!("-{}{}", "0".repeat(pad), rest),
+            None => format!("{}{}", "0".repeat(pad), num),
+        }
+    } else {
+        format!("{}{}", " ".repeat(pad), num)
+    }
 }
 
 pub fn writeReal(file: File, data: metamodelica::Real, format: ArcStr) -> Result<()> {
@@ -431,7 +477,7 @@ pub fn releaseReference(file: File) -> Result<()> {
         }
     });
     if !released {
-        bail!("File.releaseReference: file is not registered (double release?)");
+        return Err("File.releaseReference: file is not registered (double release?)");
     }
     Ok(())
 }

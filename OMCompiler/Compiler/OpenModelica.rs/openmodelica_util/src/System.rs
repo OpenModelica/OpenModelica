@@ -25,7 +25,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
-use anyhow::{Context, Result, bail};
+use metamodelica::Result;
 use arcstr::{ArcStr, literal};
 
 use metamodelica::List;
@@ -83,10 +83,11 @@ struct SysState {
     rng: u64,
 }
 
-#[derive(Clone, Copy)]
-enum RtSlot {
-    Running { start: u64, accumulated_ns: u128, ntick: i32 },
-    Stopped { accumulated_ns: u128, ntick: i32 },
+#[derive(Clone, Copy, Default)]
+struct RtSlot {
+    tick: Option<u64>,
+    accumulated_ns: u128,
+    ntick: i32,
 }
 
 thread_local! {
@@ -128,7 +129,7 @@ pub fn trimWhitespace(inString: ArcStr) -> ArcStr {
 
 pub fn trimChar(inString1: ArcStr, inString2: ArcStr) -> Result<ArcStr> {
     if inString2.chars().count() != 1 {
-        bail!("System.trimChar: second argument must be exactly one character");
+        return Err("System.trimChar: second argument must be exactly one character");
     }
     let c = inString2.chars().next().unwrap();
     Ok(ArcStr::from(inString1.trim_matches(c)))
@@ -169,11 +170,10 @@ pub fn stringFindString(r#str: ArcStr, searchStr: ArcStr) -> ArcStr {
     }
 }
 
-/// POSIX `regex(3)` wrapper, a faithful port of `OpenModelica_regexImpl`
-/// (SimulationRuntime/c/util/utility.c): it FFIs straight to the same
-/// `regcomp`/`regexec` the C runtime uses, so BRE/ERE syntax and POSIX
-/// leftmost-longest matching behave identically (rather than reimplementing a
-/// regex engine).
+/// POSIX `regex(3)` wrapper, a port of `OpenModelica_regexImpl`
+/// (SimulationRuntime/c/util/utility.c) over the `regex` crate. The crate is
+/// leftmost-first where POSIX is leftmost-longest; that only shows in which of
+/// several alternatives a *capture* takes, which OMC's patterns do not depend on.
 ///
 /// Returns `(nmatch, matches)` where `matches` always has `maxMatches` elements:
 /// the captured substrings (full match at index 0, then each participating
@@ -182,7 +182,6 @@ pub fn stringFindString(r#str: ArcStr, searchStr: ArcStr) -> ArcStr {
 /// is empty and `nmatch` is 1 on match, 0 otherwise. On a compile error
 /// `nmatch` is 0 and (for `maxMatches > 0`) the error message is the first
 /// element.
-#[cfg(any(target_arch = "wasm32", target_os = "windows"))]
 pub fn regex(
     str: ArcStr,
     re: ArcStr,
@@ -190,11 +189,6 @@ pub fn regex(
     extended: bool,
     ignoreCase: bool,
 ) -> (i32, Arc<List<ArcStr>>) {
-    // POSIX regcomp/regexec are libc-only; on wasm and Windows we run the `regex`
-    // instead. POSIX ERE maps almost directly onto its syntax; POSIX BRE has the
-    // grouping/quantifier metacharacter conventions reversed, so translate first.
-    use regex::RegexBuilder;
-
     fn list_forward(items: Vec<ArcStr>) -> Arc<List<ArcStr>> {
         let mut res = metamodelica::nil();
         for it in items.into_iter().rev() {
@@ -206,12 +200,8 @@ pub fn regex(
     let maxn = maxMatches.max(0) as usize;
     let pattern = posix_to_rust(re.as_str(), extended);
 
-    // The C runtime passes no REG_NEWLINE, so `.` matches newline too and `^`/`$`
-    // anchor the whole subject (multi_line stays off).
-    let compiled = RegexBuilder::new(&pattern)
-        .case_insensitive(ignoreCase)
-        .dot_matches_new_line(true)
-        .build();
+    let mut builder = regex_builder(&pattern);
+    let compiled = builder.case_insensitive(ignoreCase).build();
 
     let re_c = match compiled {
         Ok(c) => c,
@@ -273,7 +263,6 @@ pub fn regex(
 /// Backreferences (`\1`…) aren't supported by the crate and don't occur in OMC's
 /// patterns; a literal backslash inside a bracket expression (POSIX-literal, but
 /// an escape to the crate) likewise doesn't occur and is left as-is.
-#[cfg(any(target_arch = "wasm32", target_os = "windows"))]
 fn posix_to_rust(re: &str, extended: bool) -> String {
     let mut out = String::with_capacity(re.len() + 8);
     let mut chars = re.chars().peekable();
@@ -334,93 +323,36 @@ fn posix_to_rust(re: &str, extended: bool) -> String {
     out
 }
 
-#[cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))]
-pub fn regex(
-    str: ArcStr,
-    re: ArcStr,
-    maxMatches: i32,
-    extended: bool,
-    ignoreCase: bool,
-) -> (i32, Arc<List<ArcStr>>) {
-    use std::ffi::CString;
+/// The builder every pattern is compiled with, already translated by
+/// [`posix_to_rust`]. The C runtime passes no `REG_NEWLINE`, so `.` matches
+/// newline too and `^`/`$` anchor the whole subject (`multi_line` stays off).
+/// POSIX bounds a pattern only by memory, so the crate's fixed 10 MB/2 MB
+/// budgets scale with it instead — both are too small for a pattern naming every
+/// variable of a large model, the DFA cache disastrously so.
+fn regex_builder(pattern: &str) -> regex::RegexBuilder {
+    let budget = pattern.len().saturating_mul(512);
+    let mut b = regex::RegexBuilder::new(pattern);
+    b.dot_matches_new_line(true).size_limit(budget.max(10 << 20)).dfa_size_limit(budget.max(2 << 20));
+    b
+}
 
-    fn list_forward(items: Vec<ArcStr>) -> Arc<List<ArcStr>> {
-        let mut res = metamodelica::nil();
-        for it in items.into_iter().rev() {
-            res = metamodelica::cons(it, res);
-        }
-        res
+/// A compiled POSIX ERE, so one pattern can be tested against many strings
+/// ([`regex`] compiles per call).
+pub struct Regex {
+    re: regex::Regex,
+}
+
+impl Regex {
+    /// No captures (`REG_NOSUB`); the error is the backend's own message.
+    pub fn new(re: &str) -> Result<Self, String> {
+        regex_builder(&posix_to_rust(re, true))
+            .build()
+            .map(|re| Regex { re })
+            .map_err(|e| e.to_string())
     }
 
-    let maxn = maxMatches.max(0) as usize;
-    let flags = (if extended { libc::REG_EXTENDED } else { 0 })
-        | (if ignoreCase { libc::REG_ICASE } else { 0 })
-        | (if maxn != 0 { 0 } else { libc::REG_NOSUB });
-
-    // POSIX strings are NUL-terminated; a NUL in the pattern/subject can't be
-    // represented. OMC's patterns and subjects never contain NUL, so treat that
-    // as a non-match (mirrors the C, which would simply see a truncated string).
-    let (c_re, c_str) = match (CString::new(re.as_bytes()), CString::new(str.as_bytes())) {
-        (Ok(a), Ok(b)) => (a, b),
-        _ => {
-            let items = vec![literal!(""); maxn];
-            return (0, list_forward(items));
-        }
-    };
-
-    unsafe {
-        let mut preg: libc::regex_t = std::mem::zeroed();
-        let rc = libc::regcomp(&mut preg, c_re.as_ptr(), flags);
-        if rc != 0 {
-            // Compile failure. With no capture slots there is nothing to report;
-            // otherwise the first slot carries the error message (regerror), the
-            // rest are empty — exactly as OpenModelica_regexImpl does.
-            if maxn == 0 {
-                return (0, metamodelica::nil());
-            }
-            let mut buf = vec![0 as core::ffi::c_char; 2048];
-            libc::regerror(rc, &preg, buf.as_mut_ptr(), buf.len());
-            let msg = std::ffi::CStr::from_ptr(buf.as_ptr()).to_string_lossy().into_owned();
-            let mut items: Vec<ArcStr> = Vec::with_capacity(maxn);
-            items.push(ArcStr::from(format!("Failed to compile regular expression: {re} with error: {msg}")));
-            for _ in 1..maxn {
-                items.push(literal!(""));
-            }
-            // regcomp leaves nothing to free on failure, but freeing a
-            // zero-initialised regex_t is safe and matches the C path.
-            libc::regfree(&mut preg);
-            return (0, list_forward(items));
-        }
-
-        let mut pmatch: Vec<libc::regmatch_t> = vec![std::mem::zeroed(); maxn.max(1)];
-        let res = libc::regexec(&preg, c_str.as_ptr(), maxn, pmatch.as_mut_ptr(), 0);
-        libc::regfree(&mut preg);
-
-        let bytes = str.as_bytes();
-        let mut nmatch = 0i32;
-        let matches = if maxn == 0 {
-            if res == 0 {
-                nmatch = 1;
-            }
-            metamodelica::nil()
-        } else {
-            let mut items: Vec<ArcStr> = Vec::with_capacity(maxn);
-            for m in pmatch.iter().take(maxn) {
-                // Pack only participating groups (rm_so != -1), like the C.
-                if res == 0 && (m.rm_so as i64) != -1 {
-                    let so = m.rm_so as usize;
-                    let eo = m.rm_eo as usize;
-                    let sub = std::str::from_utf8(&bytes[so..eo]).unwrap_or("");
-                    items.push(ArcStr::from(sub));
-                    nmatch += 1;
-                }
-            }
-            while items.len() < maxn {
-                items.push(literal!(""));
-            }
-            list_forward(items)
-        };
-        (nmatch, matches)
+    pub fn is_match(&self, s: &str) -> bool {
+        self.re.is_match(s)
     }
 }
 
@@ -441,7 +373,7 @@ pub fn strncmp(inString1: ArcStr, inString2: ArcStr, len: i32) -> i32 {
 
 pub fn stringReplace(r#str: ArcStr, source: ArcStr, target: ArcStr) -> Result<ArcStr> {
     if source.is_empty() {
-        bail!("System.stringReplace: source pattern must be non-empty");
+        return Err("System.stringReplace: source pattern must be non-empty");
     }
     Ok(ArcStr::from(r#str.replace(source.as_str(), target.as_str())))
 }
@@ -641,21 +573,21 @@ pub fn freeLibrary(inLibHandle: i32, inPrintDebug: bool) -> Result<()> {
 
 pub fn writeFile(fileNameToWrite: ArcStr, stringToBeWritten: ArcStr) -> Result<()> {
     openmodelica_wasi::fs::write(fileNameToWrite.as_str(), stringToBeWritten.as_bytes())
-        .with_context(|| format!("System.writeFile: cannot write {}", fileNameToWrite))?;
+        .map_err(|_| "System.writeFile: cannot write {}")?;
     Ok(())
 }
 
 pub fn appendFile(file: ArcStr, data: ArcStr) -> Result<()> {
     openmodelica_wasi::fs::append(file.as_str(), data.as_bytes())
-        .with_context(|| format!("System.appendFile: cannot append to {file}"))?;
+        .map_err(|_| "System.appendFile: cannot append to {file}")?;
     Ok(())
 }
 
 pub fn readFile(inString: ArcStr) -> Result<ArcStr> {
     let bytes = openmodelica_wasi::fs::read(inString.as_str())
-        .with_context(|| format!("System.readFile: cannot read {inString}"))?;
+        .map_err(|_| "System.readFile: cannot read {inString}")?;
     let s = String::from_utf8(bytes)
-        .with_context(|| format!("System.readFile: {inString} is not valid UTF-8"))?;
+        .map_err(|_| "System.readFile: {inString} is not valid UTF-8")?;
     Ok(ArcStr::from(s))
 }
 
@@ -882,7 +814,7 @@ pub fn createTemporaryDirectory(inPrefix: ArcStr) -> Result<ArcStr> {
             return Ok(ArcStr::from(candidate));
         }
     }
-    bail!("System.createTemporaryDirectory: failed to create unique directory under {inPrefix}")
+    return Err("System.createTemporaryDirectory: failed to create unique directory under {inPrefix}")
 }
 
 pub fn pwd() -> ArcStr {
@@ -915,7 +847,7 @@ pub fn readEnv(inString: ArcStr) -> Result<ArcStr> {
     }
     match std::env::var(inString.as_str()) {
         Ok(v) => Ok(ArcStr::from(v)),
-        Err(_) => bail!("System.readEnv: variable {inString} not set"),
+        Err(_) => return Err("System.readEnv: variable {inString} not set"),
     }
 }
 
@@ -1207,7 +1139,7 @@ pub fn getLoadModelPath(
             return Ok((e.dir.clone(), ArcStr::from(e.file.clone()), e.file_is_dir));
         }
     }
-    bail!("System.getLoadModelPath: no match for {className} on the MODELICAPATH")
+    return Err("System.getLoadModelPath: no match for {className} on the MODELICAPATH")
 }
 
 pub fn time() -> metamodelica::Real {
@@ -1527,13 +1459,14 @@ pub fn getuid() -> i32 {
 // ───────────────────────────────── realtime stopwatches ──────────────────────
 
 fn rt_slot_mut(s: &mut SysState, idx: i32) -> &mut RtSlot {
-    s.rt.entry(idx).or_insert(RtSlot::Stopped { accumulated_ns: 0, ntick: 0 })
+    s.rt.entry(idx).or_default()
 }
 
 pub fn realtimeTick(clockIndex: i32) -> Result<()> {
     with(|s| {
         let slot = rt_slot_mut(s, clockIndex);
-        *slot = RtSlot::Running { start: openmodelica_wasi::monotonic_nanos(), accumulated_ns: 0, ntick: 0 };
+        slot.tick = Some(openmodelica_wasi::monotonic_nanos());
+        slot.ntick += 1;
     });
     Ok(())
 }
@@ -1549,13 +1482,9 @@ pub fn realtimeTock(clockIndex: i32) -> Result<metamodelica::Real> {
     // version's garbage value.
     let nanos = with(|s| -> u128 {
         let slot = rt_slot_mut(s, clockIndex);
-        match slot {
-            RtSlot::Running { start, ntick, .. } => {
-                let elapsed = openmodelica_wasi::monotonic_nanos().saturating_sub(*start) as u128;
-                *ntick += 1;
-                elapsed
-            }
-            RtSlot::Stopped { accumulated_ns, .. } => *accumulated_ns,
+        match slot.tick {
+            Some(start) => openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128,
+            None => slot.accumulated_ns,
         }
     });
     Ok(metamodelica::OrderedFloat(nanos as f64 / 1.0e9))
@@ -1563,7 +1492,9 @@ pub fn realtimeTock(clockIndex: i32) -> Result<metamodelica::Real> {
 
 pub fn realtimeClear(clockIndex: i32) -> Result<()> {
     with(|s| {
-        s.rt.insert(clockIndex, RtSlot::Stopped { accumulated_ns: 0, ntick: 0 });
+        let slot = rt_slot_mut(s, clockIndex);
+        slot.accumulated_ns = 0;
+        slot.ntick = 0;
     });
     Ok(())
 }
@@ -1571,37 +1502,24 @@ pub fn realtimeClear(clockIndex: i32) -> Result<()> {
 pub fn realtimeAccumulate(clockIndex: i32) -> Result<metamodelica::Real> {
     with(|s| {
         let slot = rt_slot_mut(s, clockIndex);
-        match *slot {
-            RtSlot::Running { start, accumulated_ns, ntick } => {
-                let new_acc = accumulated_ns + openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128;
-                *slot = RtSlot::Stopped { accumulated_ns: new_acc, ntick: ntick + 1 };
-                Ok(metamodelica::OrderedFloat(new_acc as f64 / 1.0e9))
-            }
-            RtSlot::Stopped { accumulated_ns, .. } => {
-                Ok(metamodelica::OrderedFloat(accumulated_ns as f64 / 1.0e9))
-            }
-        }
+        let diff = match slot.tick {
+            Some(start) => openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128,
+            None => 0,
+        };
+        slot.accumulated_ns += diff;
+        Ok(metamodelica::OrderedFloat(diff as f64 / 1.0e9))
     })
 }
 
 pub fn realtimeAccumulated(clockIndex: i32) -> Result<metamodelica::Real> {
     with(|s| {
         let slot = rt_slot_mut(s, clockIndex);
-        let nanos = match *slot {
-            RtSlot::Running { start, accumulated_ns, .. } => accumulated_ns + openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128,
-            RtSlot::Stopped { accumulated_ns, .. } => accumulated_ns,
-        };
-        Ok(metamodelica::OrderedFloat(nanos as f64 / 1.0e9))
+        Ok(metamodelica::OrderedFloat(slot.accumulated_ns as f64 / 1.0e9))
     })
 }
 
 pub fn realtimeNtick(clockIndex: i32) -> Result<i32> {
-    with(|s| {
-        let slot = rt_slot_mut(s, clockIndex);
-        Ok(match *slot {
-            RtSlot::Running { ntick, .. } | RtSlot::Stopped { ntick, .. } => ntick,
-        })
-    })
+    with(|s| Ok(rt_slot_mut(s, clockIndex).ntick))
 }
 
 // ───────────────────────────────── single-instance timer ─────────────────────
@@ -1849,7 +1767,7 @@ pub fn uriToClassAndPath(uri: ArcStr) -> Result<(ArcStr, ArcStr, ArcStr)> {
         let (name, path) = split_name_path(rest);
         if name.is_empty() {
             add_scripting_error("Modelica URI lacks classname: %s", &uri);
-            bail!("Modelica URI lacks classname: {uri}");
+            return Err("Modelica URI lacks classname: {uri}");
         }
         return Ok((literal!("modelica://"), ArcStr::from(name), ArcStr::from(path)));
     }
@@ -1857,16 +1775,16 @@ pub fn uriToClassAndPath(uri: ArcStr) -> Result<(ArcStr, ArcStr, ArcStr)> {
         let (name, path) = split_name_path(rest);
         if path.is_empty() {
             add_scripting_error("File URI has no path: %s", &uri);
-            bail!("File URI has no path: {uri}");
+            return Err("File URI has no path: {uri}");
         }
         if !name.is_empty() {
             add_scripting_error("File URI using hostnames is not supported: %s", &uri);
-            bail!("File URI using hostnames is not supported: {uri}");
+            return Err("File URI using hostnames is not supported: {uri}");
         }
         return Ok((literal!("file://"), literal!(""), ArcStr::from(path)));
     }
     add_scripting_error("Unknown uri: %s", &uri);
-    bail!("Unknown uri: {uri}")
+    return Err("Unknown uri: {uri}")
 }
 
 pub fn modelicaPlatform() -> ArcStr {
@@ -2104,7 +2022,7 @@ pub fn snprintff(format: ArcStr, maxlen: i32, val: metamodelica::Real) -> Result
     // and fall back to `{:?}` for anything else. The C runtime truncates
     // to maxlen-1 bytes; we mirror that.
     let formatted = c_format_double(format.as_str(), val.into_inner())
-        .with_context(|| format!("System.snprintff: unsupported format {format}"))?;
+        .ok_or("System.snprintff: unsupported format")?;
     let cap = (maxlen.max(0) as usize).saturating_sub(1);
     let truncated: String = formatted.chars().take(cap).collect();
     Ok(ArcStr::from(truncated))
@@ -2112,7 +2030,7 @@ pub fn snprintff(format: ArcStr, maxlen: i32, val: metamodelica::Real) -> Result
 
 pub fn sprintff(format: ArcStr, val: metamodelica::Real) -> Result<ArcStr> {
     let s = c_format_double(format.as_str(), val.into_inner())
-        .with_context(|| format!("System.sprintff: unsupported format {format}"))?;
+        .ok_or("System.sprintff: unsupported format")?;
     Ok(ArcStr::from(s))
 }
 
@@ -2278,7 +2196,7 @@ pub fn realpath(path: ArcStr) -> Result<ArcStr> {
     #[cfg(not(target_arch = "wasm32"))]
     {
         let canon = fs::canonicalize(path.as_str())
-            .with_context(|| format!("System.realpath: cannot resolve {path}"))?;
+            .map_err(|_| "System.realpath: cannot resolve {path}")?;
         Ok(ArcStr::from(canon.to_string_lossy().as_ref()))
     }
 }
@@ -2326,8 +2244,8 @@ pub fn fileIsNewerThan(file1: ArcStr, file2: ArcStr) -> Result<bool> {
         let _ = &file2;
         Ok(openmodelica_wasi::fs::is_file(file1.as_str()))
     } else {
-        let t1 = openmodelica_wasi::fs::modified(file1.as_str()).with_context(|| format!("stat {file1}"))?;
-        let t2 = openmodelica_wasi::fs::modified(file2.as_str()).with_context(|| format!("stat {file2}"))?;
+        let t1 = openmodelica_wasi::fs::modified(file1.as_str()).map_err(|_| "stat {file1}")?;
+        let t2 = openmodelica_wasi::fs::modified(file2.as_str()).map_err(|_| "stat {file2}")?;
         Ok(t1 > t2)
     }
 }
@@ -2372,6 +2290,78 @@ pub fn launchParallelTasks<AnyInput: Clone + 'static, AnyOutput: Clone + 'static
     Ok(Arc::new(results?.into_iter().collect::<List<AnyOutput>>()))
 }
 
+// A process-wide pool, sized on first use to the requested thread count and
+// reused across calls — rebuilding one per call would churn OS threads. The
+// count is stable in practice (min(8, numProcs)).
+#[cfg(not(target_arch = "wasm32"))]
+fn parallel_pool(n: usize) -> Option<&'static rayon::ThreadPool> {
+    use std::sync::OnceLock;
+    static POOL: OnceLock<Option<rayon::ThreadPool>> = OnceLock::new();
+    POOL.get_or_init(|| rayon::ThreadPoolBuilder::new().num_threads(n).build().ok())
+        .as_ref()
+}
+
+// Real-threaded map, opted into per call site. The `Send` bounds reject the
+// non-`Send` payloads the other `launchParallelTasks` sites carry.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: Clone + Send + 'static>(
+    numThreads: i32,
+    inData: Arc<List<AnyInput>>,
+    func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
+) -> Result<Arc<List<AnyOutput>>> {
+    use rayon::prelude::*;
+
+    let items: Vec<AnyInput> = (&*inData).into_iter().cloned().collect();
+    if numThreads <= 1 || items.len() < 2 {
+        let results: Result<Vec<AnyOutput>> = items.into_iter().map(|x| func(x)).collect();
+        return Ok(Arc::new(results?.into_iter().collect::<List<AnyOutput>>()));
+    }
+
+    struct SendSync<T>(T);
+    // SAFETY: the func is always a zero-capture top-level `fnptr!` (already
+    // `Send + Sync`); this re-attaches the marker the `Arc<dyn Fn>` cast drops.
+    unsafe impl<T> Send for SendSync<T> {}
+    unsafe impl<T> Sync for SendSync<T> {}
+
+    struct MergeGuard;
+    impl Drop for MergeGuard {
+        fn drop(&mut self) {
+            openmodelica_error::ErrorExt::end_parallel_merge();
+        }
+    }
+
+    let n = (numThreads as usize).min(items.len());
+    let func = SendSync(func);
+    openmodelica_error::ErrorExt::begin_parallel_merge();
+    let _guard = MergeGuard;
+    let results: Vec<Result<AnyOutput>> = match parallel_pool(n) {
+        // `let f = &func` captures the whole SendSync wrapper, not the bare
+        // `func.0` field (disjoint capture drops the Send + Sync markers).
+        Some(pool) => pool.install(|| {
+            items.into_par_iter().map(|x| { let f = &func; (f.0)(x) }).collect()
+        }),
+        None => items.into_iter().map(|x| (func.0)(x)).collect(),
+    };
+
+    let mut out = Vec::with_capacity(results.len());
+    for r in results {
+        out.push(r?);
+    }
+    Ok(Arc::new(out.into_iter().collect::<List<AnyOutput>>()))
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: Clone + Send + 'static>(
+    _numThreads: i32,
+    inData: Arc<List<AnyInput>>,
+    func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
+) -> Result<Arc<List<AnyOutput>>> {
+    // wasm32-unknown-unknown has no OS threads; run serially.
+    let results: Result<Vec<AnyOutput>> =
+        (&*inData).into_iter().map(|x| func(x.clone())).collect();
+    Ok(Arc::new(results?.into_iter().collect::<List<AnyOutput>>()))
+}
+
 pub fn exit(status: i32) -> Result<()> {
     std::process::exit(status);
 }
@@ -2383,6 +2373,14 @@ pub fn threadWorkFailed() {
     // be observed as a failed task by the orchestrator once
     // `launchParallelTasks` is implemented.
     panic!("System.threadWorkFailed: worker thread aborted by user code");
+}
+
+pub fn isCancelled() -> bool {
+    metamodelica::cancel::check_cancel()
+}
+
+pub fn reportProgress(permille: i32, phase: i32) {
+    metamodelica::cancel::report_progress(permille, phase);
 }
 
 pub fn getMemorySize() -> metamodelica::Real {
@@ -2547,7 +2545,7 @@ impl StringAllocator {
     pub fn new(sz: i32) -> Result<StringAllocator> {
         // `StringAllocator_constructor` throws (MMC_THROW) on a negative size.
         if sz < 0 {
-            bail!("StringAllocator: negative size {sz}");
+            return Err("StringAllocator: negative size {sz}");
         }
         Ok(StringAllocator {
             buf: Arc::new(std::sync::Mutex::new(vec![0u8; sz as usize])),

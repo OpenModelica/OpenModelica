@@ -4,7 +4,7 @@
 use std::sync::Arc;
 use std::rc::Rc;
 use std::cell::RefCell;
-use anyhow::{Result, bail};
+use crate::Result;
 use crate::{Array, list::List};
 
 pub mod static_array;
@@ -37,7 +37,7 @@ pub fn arrayGet<A: Clone>(arr: Array<A>, index: i32) -> Result<A> {
     let v = arr.borrow();
     v.get(idx)
         .cloned()
-        .ok_or_else(|| anyhow::anyhow!("Index {} out of bounds for array of length {}", index, v.len()))
+        .ok_or_else(|| "Index {} out of bounds for array of length {}")
 }
 
 /// Creates a new array of the given size, initialized with initialValue. O(size).
@@ -94,7 +94,7 @@ pub fn arrayUpdate<A: Clone>(arr: Array<A>, index: i32, new_value: A) -> Result<
         let mut v = arr.borrow_mut();
         let len = v.len();
         if idx >= len {
-            bail!("Index {} out of bounds for array of length {}", index, len);
+            return Err("Index {} out of bounds for array of length {}");
         }
         v[idx] = new_value;
     }

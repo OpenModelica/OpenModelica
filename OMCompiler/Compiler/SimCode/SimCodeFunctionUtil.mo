@@ -70,6 +70,7 @@ import Mod;
 import Patternm;
 import SCode;
 import SCodeUtil;
+import StringUtil;
 import Testsuite;
 import UnorderedMap;
 import Config;
@@ -1654,6 +1655,15 @@ algorithm
             recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
             UnorderedMap.add(sname, recDecl, recDeclsMap);
           end if;
+          // Also ensure the struct type itself is declared. Without this, sizeof(name) and
+          // function return types using 'name' produce "unknown type name" C errors, because
+          // RECORD_DECL_ADD_CONSTRCTOR does not emit a typedef or struct for the base record.
+          if Flags.getConfigBool(Flags.NEW_BACKEND) and isNone(UnorderedMap.get(name, recDeclsMap)) then
+            vars := List.map(varlst, typesVar);
+            recDecl := SimCodeFunction.RECORD_DECL_FULL(name, NONE(), path, vars, usedExternally);
+            UnorderedMap.add(name, recDecl, recDeclsMap);
+            collectRecDeclsFromTypesVars(varlst, recDeclsMap);
+          end if;
         end if;
       then ();
 
@@ -2081,6 +2091,11 @@ protected function generateExtFunctionLibraryDirectoryFlags2
   input list<String> inLibs;
   output list<String> libs;
 algorithm
+  // A wasm target loads modules by path (libPaths) instead of linking.
+  if isWasmSimCodeTarget() then
+    libs := inLibs;
+    return;
+  end if;
   libs := if isLinux then "-Wl,-rpath=\"" + dir + "\""::inLibs else inLibs;
   libs := (if getGerneralTarget(target)=="msvc" then "/LIBPATH:\"" + dir + "\"" else "\"-L" + dir + "\"")::libs;
 end generateExtFunctionLibraryDirectoryFlags2;
@@ -2124,6 +2139,7 @@ algorithm
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform3,""), str + "/" + platform3, isLinux, libs);
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs);
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform1,""), str + "/" + platform1, isLinux, libs);
+        libs := generateExtFunctionLibraryDirectoryPaths2(isWasmSimCodeTarget(), str + "/wasm32-wasip1", isLinux, libs);
       then libs;
     case _
       algorithm
@@ -2138,6 +2154,7 @@ algorithm
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform3,""), str + "/" + platform3, isLinux, libs);
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs);
         libs := generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform1,""), str + "/" + platform1, isLinux, libs);
+        libs := generateExtFunctionLibraryDirectoryPaths2(isWasmSimCodeTarget(), str + "/wasm32-wasip1", isLinux, libs);
       then libs;
     else {};
   end matchcontinue;
@@ -2325,18 +2342,96 @@ algorithm
   end matchcontinue;
 end getLibraryStringInGccFormat;
 
+protected function isWasmSimCodeTarget
+"An FMU export falls back to C in the testsuite (SimCodeMain.callTargetTemplatesFMU)."
+  output Boolean isWasm = StringUtil.startsWith(Config.simCodeTarget(), "wasm")
+                          and not (Flags.getConfigBool(Flags.BUILDING_FMU) and Testsuite.isRunning());
+end isWasmSimCodeTarget;
+
+protected function stripLibraryExtension
+"The base name of a library written for any target, so an annotation naming a host
+ object file or shared library still identifies the wasm module."
+  input String str;
+  output String base = str;
+algorithm
+  for ext in {".wasm", ".dylib", ".obj", ".dll", ".lib", ".so", ".a", ".o"} loop
+    if StringUtil.endsWith(str, ext) then
+      base := Util.removeLastNChar(str, stringLength(ext));
+      return;
+    end if;
+  end for;
+end stripLibraryExtension;
+
+protected function getLibraryStringInWasmFormat
+"The name of the wasm module implementing the library the Absyn.STRING describes.
+ A wasm target has no linker: the annotation resolves to a PIC dylink module omc
+ loads as-is, rather than to linker flags."
+  input Absyn.Exp exp;
+  output list<String> strs;
+  output list<String> names;
+algorithm
+  (strs, names) := match exp
+    local
+      String str;
+
+    // In the runtime already: LAPACK/BLAS are in-wasm, and ModelicaExternalC is
+    // the side module omc carries.
+    case Absyn.STRING("lapack") then ({},{});
+    case Absyn.STRING("Lapack") then ({},{});
+    case Absyn.STRING("blas") then ({},{});
+    case Absyn.STRING("ModelicaExternalC") then ({},{});
+    case Absyn.STRING("ModelicaStandardTables") then ({},{});
+    case Absyn.STRING("ModelicaIO") then ({},{});
+    case Absyn.STRING("ModelicaMatIO") then ({},{});
+    case Absyn.STRING("zlib") then ({},{});
+
+    case Absyn.STRING(str)
+      algorithm
+        // Linker flags mean nothing here; only a library name can be resolved.
+        if "-" == stringGetStringChar(str, 1) then
+          strs := {};
+          names := {};
+        else
+          // No name for the generic existence check: it looks for host libraries,
+          // while the wasm code generator resolves the module itself.
+          strs := {stripLibraryExtension(str) + ".wasm"};
+          names := {};
+        end if;
+      then (strs, names);
+
+    else
+      algorithm
+        Error.addInternalError("Failed to process Library annotation for external function", sourceInfo());
+      then fail();
+  end match;
+end getLibraryStringInWasmFormat;
+
 protected function generateExtFunctionIncludesLibstr
   input String target;
   input SCode.Mod inMod;
   output list<String> outStringLst;
   output list<String> names;
 algorithm
-  (outStringLst, names) := matchcontinue getGerneralTarget(target)
+  (outStringLst, names) := matchcontinue (if isWasmSimCodeTarget() then "wasm" else getGerneralTarget(target))
     local
       list<Absyn.Exp> arr;
       list<String> libs;
       list<list<String>> libsList, namesList;
       Absyn.Exp exp;
+    case "wasm"
+      algorithm
+        SCode.MOD(binding = SOME(Absyn.ARRAY(arr))) :=
+          Mod.getUnelabedSubMod(inMod, "Library");
+        (libsList, namesList) := List.map_2(arr, getLibraryStringInWasmFormat);
+      then
+        (List.flatten(libsList), List.flatten(namesList));
+    case "wasm"
+      algorithm
+        SCode.MOD(binding = SOME(exp)) :=
+          Mod.getUnelabedSubMod(inMod, "Library");
+        (libs,names) := getLibraryStringInWasmFormat(exp);
+      then
+        (libs,names);
     case "msvc"
       algorithm
         SCode.MOD(binding = SOME(Absyn.ARRAY(arr))) :=

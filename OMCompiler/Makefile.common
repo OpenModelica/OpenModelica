@@ -228,15 +228,27 @@ colpack-clean:
 	if test -f $(OMC_COLPACK_ROOT)/build/Makefile; then $(MAKE) -C $(OMC_COLPACK_ROOT)/build/ clean; fi
 	rm -rf $(OMC_COLPACK_ROOT)/build
 
+# Build only the SuiteSparse projects the OMC runtime needs. Building "all"
+# pulls in SPEX (needs GMP/MPFR), SPQR, GraphBLAS, ... which we do not use.
+# Keep these options in sync with 3rdParty/CMakeLists.txt, which applies the
+# same settings when SuiteSparse is built through the CMake build system.
 suitesparse:
-	mkdir -p 3rdParty/SuiteSparse-5.8.1/build
-	cd 3rdParty/SuiteSparse-5.8.1/build && $(CMAKE_NO_CHECK_UNDEFINED) .. -G $(CMAKE_TARGET) \
+	mkdir -p 3rdParty/SuiteSparse/build
+	cd 3rdParty/SuiteSparse/build && $(CMAKE_NO_CHECK_UNDEFINED) .. -G $(CMAKE_TARGET) \
 		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" \
 		-DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" \
 		-DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR)/include/omc/c/" \
+		-DSUITESPARSE_ENABLE_PROJECTS="suitesparse_config;amd;colamd;btf;klu;umfpack" \
+		-DSUITESPARSE_USE_OPENMP:Bool=OFF \
+		-DSUITESPARSE_USE_CUDA:Bool=OFF \
+		-DSUITESPARSE_USE_FORTRAN:Bool=OFF \
+		-DSUITESPARSE_DEMOS:Bool=OFF \
+		-DSUITESPARSE_USE_STRICT:Bool=OFF \
+		-DKLU_USE_CHOLMOD:Bool=OFF \
+		-DUMFPACK_USE_CHOLMOD:Bool=OFF \
 		-DBUILD_SHARED_LIBS:Bool=$(SUITESPARSE_SHARED)
-	$(MAKE) -C 3rdParty/SuiteSparse-5.8.1/build install
+	$(MAKE) -C 3rdParty/SuiteSparse/build install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libamd.dylib               "$(builddir_lib_omc)/libamd.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libbtf.dylib               "$(builddir_lib_omc)/libbtf.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libcolamd.dylib            "$(builddir_lib_omc)/libcolamd.dylib"
@@ -251,8 +263,8 @@ suitesparse:
 
 
 suitesparse-clean:
-	$(MAKE) -C 3rdParty/SuiteSparse-5.8.1 distclean
-	rm -rf 3rdParty/SuiteSparse-5.8.1/build 3rdParty/SuiteSparse-5.8.1/build_msvc
+	$(MAKE) -C 3rdParty/SuiteSparse distclean
+	rm -rf 3rdParty/SuiteSparse/build 3rdParty/SuiteSparse/build_msvc
 
 $(OMBUILDDIR)/$(LIB_OMC)/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 CC="$(CC)" CXX="$(CXX)" FC="$(FC)" FCFLAGS="$(FCFLAGS)" USE_THREAD=0 NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica $(OPENBLAS_EXTRA_ARGS)

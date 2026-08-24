@@ -4839,6 +4839,7 @@ public
       case UNARY() then isNonNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNonPositive, false);
       case CALL() then Call.isNonPositive(exp.call);
+      case ARRAY() then Array.all(exp.elements, isNonPositive);
       else false;
     end match;
   end isNonPositive;
@@ -5621,7 +5622,9 @@ public
             (outExp, expanded) := ExpandExp.expand(exp);
           end if;
 
-          if expanded then
+          // The ARRAY case above is what consumes the expansion; recursing on
+          // anything else would not terminate.
+          if expanded and isArray(outExp) then
             outExp := promote2(outExp, true, dims, types);
           else
             outExp := CALL(Call.makeTypedCall(
@@ -6657,7 +6660,7 @@ public
         algorithm
           json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.STRING("typename"), json);
-          json := JSON.addPair("name", JSON.makeString(Type.toString(exp.ty)), json);
+          json := JSON.addPair("name", JSON.makeString(Type.typenameString(Type.arrayElementType(exp.ty))), json);
         then
           json;
 

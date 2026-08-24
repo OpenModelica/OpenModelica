@@ -1,0 +1,24 @@
+// name: Buildings.Fluid.Boilers.Examples.BoilerPolynomial
+// keywords: NewBackend Buildings derived record parameter binding typedef
+// status: correct
+// teardown_command: rm -rf Buildings.Fluid.Boilers.Examples.BoilerPolynomial.libs Buildings*.libs
+
+loadModel(Buildings, {"12.0.0"}); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(Buildings.Fluid.Boilers.Examples.BoilerPolynomial); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Buildings.Fluid.Boilers.Examples.BoilerPolynomial_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Buildings.Fluid.Boilers.Examples.BoilerPolynomial', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected. Use -d=dumprepl for more information.
+// "
+// endResult

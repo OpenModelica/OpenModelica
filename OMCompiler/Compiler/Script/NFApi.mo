@@ -521,7 +521,7 @@ algorithm
       setGlobalRoot(Global.instNFNodeCacheIndex, {});
     end if;
     (_, scode_builtin) := FBuiltin.getInitialFunctions();
-    program := AbsynToSCode.translateAbsyn2SCode(absynProgram);
+    program := if referenceEq(absynProgram, SymbolTable.getAbsyn()) then SymbolTable.getSCode() else AbsynToSCode.translateAbsyn2SCode(absynProgram);
     program := listAppend(scode_builtin, program);
     placementProgram := InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
     graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);

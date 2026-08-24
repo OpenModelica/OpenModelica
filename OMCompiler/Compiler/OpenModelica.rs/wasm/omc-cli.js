@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 //
-// Minimal OpenModelica wasm CLI. Loads the wasm-bindgen package built by
-// wasm/build.sh, initialises the compiler runtime, then evaluates interactive
+// Minimal OpenModelica wasm CLI. Loads the wasm-bindgen package built by the
+// cmake web/node target (RUST_OMC_WASM_MODE=node-*), initialises the compiler
+// runtime, then evaluates interactive
 // commands as strings and prints the replies — the same string-to-string
 // protocol the interactive ZeroMQ server speaks.
 //

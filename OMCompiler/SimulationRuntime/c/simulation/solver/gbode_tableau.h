@@ -41,16 +41,41 @@ extern "C" {
 #endif
 
 typedef struct BUTCHER_TABLEAU BUTCHER_TABLEAU;
+typedef struct GB_ERROR_ESTIMATOR GB_ERROR_ESTIMATOR;
+typedef struct GB_ERROR_CONTEXT GB_ERROR_CONTEXT;
+
 /**
  * @brief Function to compute interpolation using dense output.
  */
 typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates);
 
+/**
+ * @brief Function to compute variable-step two-step weights.
+ *
+ * The weights always act in K-space:
+ *     y_emb = y_n + h_old * d_old(r)^T * K_old + h_new * g_new(r)^T * K_new,
+ * where r = h_new / h_old.
+ * The callback also returns mu(r), used by the estimate as
+ *     err = mu(r) * (y_main - y_emb).
+ */
+typedef void (*gb_two_step_weights)(double r, double *d_old, double *g_new, double *mu);
+
+/**
+ * @brief General error estimator interface function.
+ */
+typedef int (*gb_error_estimator_fn)(GB_ERROR_CONTEXT *context, const GB_ERROR_ESTIMATOR *estimator);
+
+#define GB_ERROR_ESTIMATOR_FAILED -1
+
+// some macros for stack arrays
+#define MAX_GBODE_STAGES 35
 #define MAX_GBODE_FIRK_STAGES 8
+
+// accessor for t_transform->L fields
 #define GBODE_L_INDEX(row, col) (((row) * ((row) - 1)) / 2 + (col))
 
 /**
- * @brief Data for contractive error estimates (requires T-Transformation + internal NLS strategy).
+ * @brief Data for contractive defect error estimates (requires T-Transformation + internal NLS strategy).
  *
  * Error estimates for superconvergent FIRK methods are extremely difficult as an embedded method can obtain a
  * maximum order of s-1 for s stages, while the methods have order 2s (Gauss), 2s-1 (Radau), 2s-2 (Lobatto). This
@@ -73,26 +98,110 @@ typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* 
  * For theory of these estimates refer to
  *     Shampine & Baka "Error estimators for stiff differential equations" (original literature),
  *     Hairer & Wanner pp.123 "Solving Ordinary Differential Equations II" (Radau IIA estimate),
- *     Gonzalez-Pinto et al. "Two–step error estimators for implicit Runge–Kutta methods applied to stiff systems" (gives an overview of such ideas and
+ *     Gonzalez-Pinto et al. "Two-step error estimators for implicit Runge-Kutta methods applied to stiff systems" (gives an overview of such ideas and
  *                                                                                                                  an alternative 2-step estimator),
  */
-typedef struct CONTRACTIVE_ERROR {
+typedef struct CONTRACTIVE_DEFECT {
   /**
-   * @brief Weights of the stage values d(0)^T * A.
+   * @brief Weights d(0)^T * A for the K-space defect f(t_n, y_n) - d(0)^T * A * K.
    */
   double *dT_A;
+} CONTRACTIVE_DEFECT;
+
+/**
+ * @brief Data for variable-step two-step error estimates, in the spirit of Gonzalez-Pinto et al.
+ *        "Two-step error estimators for implicit Runge-Kutta methods applied to stiff systems".
+ *
+ * Uses the stage derivatives from the previous accepted step and the current step.
+ * With r = h / h_old, the generated K-space weights form
+ *    y_emb = y_n + h_old * sum_i d_i(r) * K_old_i + h * sum_i g_i(r) * K_i,
+ *
+ * and the estimator writes abs(mu(r) * (y_{n+1} - y_emb)) directly to errest.
+ *
+ * The pole-free weights d and g are constructed such that the estimator has a fixed
+ * exact order for all r > 0, without degenerate points of higher or lower order.
+ *
+ *    The calibration for the factor mu(r) is done as follows:
+ *
+ * For the linear test equation, the exact local error of the main method is
+ *    E_exact(z) = abs(R(z) - exp(z)).
+ *
+ * An ideal I-controller based on this exact error would use the feedback signal
+ *    S_exact = (TOL / E_exact(z))^(1 / (p + 1)).
+ *
+ * The two-step estimator gives
+ *    E_est(z,r) = abs(y_{n+1} - y_emb),
+ *
+ * and therefore the controller feedback is
+ *    S_est = (TOL_ref' / (abs(mu(r)) * E_est(z,r)))^(1 / (q + 1)).
+ *
+ * We compare S_est and S_exact with the reference tolerance scaling
+ *    TOL_ref' = TOL^a,  a = (q + 1) / (p + 1),
+ *
+ * so the powers of TOL cancel in S_est / S_exact. This ratio is then studied as
+ * a function of r > 0 and z in the complex plane. Ideally it would be globally constant 1, but
+ * this is impossible; values <= 1 mean that the estimator proposes no larger step than the exact-error controller.
+ *
+ * The scalar mu(r) is calibrated from the non-stiff Taylor expansion of this
+ * controller-feedback ratio. For z -> 0,
+ *    E_exact(z) = abs(C_main * z^(p + 1)) + ...
+ *    E_est(z,r) = abs(C_est(r) * z^(q + 1)) + ...
+ *
+ * and setting S_est / S_exact = target for the leading term gives
+ *    abs(mu(r) * C_est(r)) = abs(C_main)^a / target^(q + 1).
+ *
+ * Hence mu(r) = scale / abs(C_est(r)). If C_est(r) = N(r) / D(r), the generated C table stores this as
+ *    mu(r) = scale * abs(D(r) / N(r)).
+ *
+ * Thus mu(r) removes the step-ratio dependence of the leading non-stiff controller feedback. Gonzalez-Pinto et al.
+ * achieve the same leading cancellation by modifying the error controller. Here we treat it as a property of
+ * the error estimate itself: the estimate is scaled before it is passed to a standard controller.
+ *
+ * The full ratio S_est / S_exact is checked in the relevant complex-plane regions, especially z -> 0, Re(z) < 0,
+ * and a small strip into Re(z) > 0, to detect underestimation away from the leading non-stiff term.
+ *
+ * The tabulated mu(r) is independent of the numerical tolerance. Since GBODE uses another scaled tolerance, twoStepScaleMu()
+ * maps the table value to that runtime convention by multiplying with gbScaledErrorTolerance(...) / TOL_ref'.
+ *
+ * If no valid previous step is available, e.g. at startup or after events, the
+ * one-step fallback estimator is used.
+ */
+typedef struct TWO_STEP_ESTIMATOR
+{
+  /**
+   * @brief Callback evaluating d_old(r), g_new(r), and mu(r) for K-space two-step estimates.
+   */
+  gb_two_step_weights weights;
 
   /**
-   * @brief Set to true, if we only apply the filter matrix ERR := (1 / (h * gamma) * I - J)^(-1) ERR
+   * @brief One-step estimator used when no previous step is available.
    */
-  modelica_boolean apply_filter_only;
-} CONTRACTIVE_ERROR;
+  const GB_ERROR_ESTIMATOR *fallback;
+} TWO_STEP_ESTIMATOR;
+
+struct GB_ERROR_ESTIMATOR
+{
+  enum GB_ERROR_METHOD type;
+  int order;
+
+  gb_error_estimator_fn evaluate;
+  void *data;
+};
+
+typedef struct GB_ERROR_ESTIMATOR_SET
+{
+  GB_ERROR_ESTIMATOR active;
+  GB_ERROR_ESTIMATOR embedded;
+  GB_ERROR_ESTIMATOR contractive_defect;
+  GB_ERROR_ESTIMATOR contractive_filter;
+  GB_ERROR_ESTIMATOR two_step;
+} GB_ERROR_ESTIMATOR_SET;
 
 /**
  * @brief Transformation structures for decoupling fully implicit Runge–Kutta systems.
  *
  * Fully implicit Runge–Kutta (FIRK) schemes require solving a coupled system of
- * size (S * N) × (S * N), where S is the number of stages and N is the number
+ * size (S * N) x (S * N), where S is the number of stages and N is the number
  * of ODE states, which is (almost impractically) costly.
  *
  * The T-transformation (T^{-1} * A^{-1} * T = Lambda + L) diagonalizes (L = 0, Lambda = diagonal), block-diagonalizes (L = 0, Lambda contains cmplx blocks),
@@ -232,10 +341,14 @@ typedef struct T_TRANSFORM {
   modelica_boolean lastColumnZero;
 
   /**
-   * @brief Number of unique real eigenvalues / complex eigenpairs and their row / block occurrences.
+   * @brief Number of unique real eigenvalues / complex eigenpairs.
    */
   int nRealEigenvalues;
   int nComplexEigenpairs;
+
+  /**
+   * @brief Number of real eigenvalue and complex eigenpair blocks in the diagonalization. (also counting repeated eigenvalues)
+   */
   int nRealBlocks;
   int nComplexBlocks;
 
@@ -320,10 +433,10 @@ typedef struct BUTCHER_TABLEAU {
   double *bt;                         /* Weights vector of embedded formula */
   double *b_dt;                       /* Weights vector for dense output */
   double *c;                          /* Nodes vector */
-  unsigned int nStages;               /* Number of stages */
-  unsigned int order_b;               /* Order of the Runge-Kutta method */
-  unsigned int order_bt;              /* Order of the embedded Runge-Kutta method */
-  unsigned int error_order;           /* Usually min(order_b, order_bt) */
+  int nStages;                        /* Number of stages */
+  int order_b;                        /* Order of the Runge-Kutta method */
+  int order_bt;                       /* Order of the embedded Runge-Kutta method */
+  int error_order;                    /* Usually min(order_b, order_bt) */
   double fac;                         /* Security factor for step size control */
   modelica_boolean  richardson;       /* if no embedded version is available, Richardson
                                          extrapolation can be used for step size control */
@@ -333,7 +446,8 @@ typedef struct BUTCHER_TABLEAU {
   gb_dense_output dense_output;       /* Generic dense output function */
   T_TRANSFORM *t_transform;           /* T-transformation for FIRK methods */
   STAGE_VALUE_PREDICTORS *svp;        /* Stage-Value-Predictors for (E)SDIRK methods */
-  CONTRACTIVE_ERROR *contraction;     /* Contractive defect error estimate for method using -gbnls=internal */
+  GB_ERROR_ESTIMATOR_SET error;       /* Available and active error estimators */
+  enum GB_ERROR_METHOD error_method; /* Requested error estimator */
 } BUTCHER_TABLEAU;
 
 /**
@@ -351,6 +465,7 @@ enum GM_TYPE {
 
 BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag);
 void freeButcherTableau(BUTCHER_TABLEAU* tableau);
+void finalizeButcherTableauError(BUTCHER_TABLEAU *tableau, enum GB_NLS_METHOD nlsMethod);
 
 void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* nlSystemSize, enum GM_TYPE* expl);
 

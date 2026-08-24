@@ -272,10 +272,9 @@ public
   algorithm
     ite_vars := list(Slice.apply(var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr)) for var in tearing.iteration_vars);
     res_eqns := list(Slice.apply(eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name)) for eqn in tearing.residual_eqns);
-    // filter discretes?
-    inner_eqns := listArray(list(differentiateStrongComponent(ie, diffArguments_ptr, idx, context, name) for ie in tearing.innerEquations));
+    // Only differentiate continuous inner equations; discrete ones contribute zero to the Jacobian.
+    inner_eqns := listArray(list(differentiateStrongComponent(ie, diffArguments_ptr, idx, context, name) for ie guard(not StrongComponent.isDiscrete(ie)) in arrayList(tearing.innerEquations)));
 
-    // diff jac?
     diff_tearing := Tearing.TEARING_SET(ite_vars, res_eqns, inner_eqns, NONE());
   end differentiateTearing;
 
@@ -461,7 +460,11 @@ public
         list<Option<NBEquation.Iterator>> iterMaps;
         ComponentRef iterName;
         Expression iterRange;
+        Option<NBEquation.Iterator> iterMap;
+        list<tuple<ComponentRef, array<Expression>>> sub_iters_stmt;
         NBEquation.Iterator revIter;
+        ComponentRef iter_name;
+        array<Expression> iter_elems;
 
       // ===================== SCALAR_EQUATION (Assignment) =====================
       case Equation.SCALAR_EQUATION() algorithm
@@ -472,7 +475,10 @@ public
         if (not ComponentRef.isEmpty(lhsCref)) and UnorderedMap.contains(ComponentRef.stripSubscriptsAll(lhsCref), dm) then
           seedCref := UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(lhsCref), dm);
           if not diffArguments.scalarized then
-            seedCref := ComponentRef.copySubscripts(lhsCref, seedCref);
+            // Strip subscripts from base seed before copying: diff_map[base] may store a
+            // subscripted element seed (partial-slice NLS). Stripping lets copySubscripts
+            // place the origin subscripts onto an unsubscripted template without conflict.
+            seedCref := ComponentRef.copySubscripts(lhsCref, ComponentRef.stripSubscriptsAll(seedCref));
           end if;
 
           // Set seed in diffArguments and differentiate RHS
@@ -495,9 +501,12 @@ public
 
         if (not ComponentRef.isEmpty(lhs_base)) and UnorderedMap.contains(ComponentRef.stripSubscriptsAll(lhs_base), dm) then
           seed_base := UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(lhs_base), dm);
+          // Strip subscripts from base seed before applying: diff_map[base] may store
+          // a subscripted element seed (partial-slice NLS). applySubscripts then
+          // merges the lhs subscripts onto an unsubscripted template correctly.
           seed_subscripted := Expression.applySubscripts(
                 ComponentRef.subscriptsAllFlat(lhs_base),
-                Expression.fromCref(seed_base),
+                Expression.fromCref(ComponentRef.stripSubscriptsAll(seed_base)),
                 true);
           diffArguments.current_grad := seed_subscripted;
           diffArguments.collectAdjoints := true;
@@ -516,7 +525,8 @@ public
         if (not ComponentRef.isEmpty(lhsCref)) and UnorderedMap.contains(ComponentRef.stripSubscriptsAll(lhsCref), dm) then
           seedCref := UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(lhsCref), dm);
           if not diffArguments.scalarized then
-            seedCref := ComponentRef.copySubscripts(lhsCref, seedCref);
+            // Strip subscripts from base seed before copying (same reason as SCALAR_EQUATION).
+            seedCref := ComponentRef.copySubscripts(lhsCref, ComponentRef.stripSubscriptsAll(seedCref));
           end if;
 
           diffArguments.current_grad := Expression.fromCref(seedCref);
@@ -549,14 +559,20 @@ public
         // Wrap in nested FOR statement with reversed iterator range
         revIter := reverseEquationIterator(eq.iter);
         (iterNames, iterRanges, iterMaps) := NBEquation.Iterator.getFrames(revIter);
-        for tpl in listReverse(List.zip(iterNames, iterRanges)) loop
-          (iterName, iterRange) := tpl;
+        for tpl in listReverse(List.zip3(iterNames, iterRanges, iterMaps)) loop
+          (iterName, iterRange, iterMap) := tpl;
+          sub_iters_stmt := match iterMap
+            case SOME(NBEquation.Iterator.SINGLE(name = iter_name, range = Expression.ARRAY(elements = iter_elems), map = NONE()))
+              then {(iter_name, iter_elems)};
+            else {};
+          end match;
           stmts := {Statement.FOR(
             ComponentRef.node(iterName),
             SOME(iterRange),
             stmts,
             Statement.ForType.NORMAL(),
-            DAE.emptyElementSource
+            DAE.emptyElementSource,
+            sub_iters_stmt
           )};
         end for;
       then (diffArguments, stmts);
@@ -633,7 +649,8 @@ public
           reverseForRange(stmt.range),
           allStmts,
           stmt.forType,
-          stmt.source
+          stmt.source,
+          stmt.sub_iters
         )};
       then (diffArguments, stmts);
 
@@ -1210,10 +1227,13 @@ public
           // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
           dbg("[dCREF:JAC] mapped -> " + ComponentRef.toString(derCref));
-          res     := Expression.fromCref(ComponentRef.copySubscripts(exp.cref, derCref));
+          // Strip subscripts from derCref before copying: diff_map[base] may store a
+          // subscripted element seed (partial-slice NLS iter vars). Stripping ensures
+          // exp.cref subscripts (including iterators) merge onto an unsubscripted template.
+          res     := Expression.fromCref(ComponentRef.copySubscripts(exp.cref, ComponentRef.stripSubscriptsAll(derCref)));
           dbg("[dCREF:JAC] get variable for derivative cref: " + NBVariable.pointerToString(NBVariable.getVarPointer(derCref, sourceInfo())));
           if diffArguments.collectAdjoints then // if derCref is on the rhs then collect adjoint (collectAdjoints is false when differentiating lhs)
-            adjointKey := ComponentRef.copySubscripts(exp.cref, derCref);
+            adjointKey := ComponentRef.copySubscripts(exp.cref, ComponentRef.stripSubscriptsAll(derCref));
             if not UnorderedMap.contains(adjointKey, Util.getOption(diffArguments.adjoint_map)) then
               UnorderedMap.tryAdd(adjointKey, {}, Util.getOption(diffArguments.adjoint_map));
             end if;
@@ -2243,8 +2263,16 @@ public
       else UnorderedSet.new(InstNode.hash, InstNode.nameEqual);
     end match;
 
-    // only add inputs as its the only relevant part for pre-defined function derivatives
+    // add all interface nodes of func (inputs, locals, outputs) since all have been
+    // differentiated to produce der_func; this prevents re-differentiation of func.outputs
+    // that became locals in der_func when creating higher-order derivatives
     for node in func.inputs loop
+      UnorderedSet.add(node, diffInfo);
+    end for;
+    for node in func.locals loop
+      UnorderedSet.add(node, diffInfo);
+    end for;
+    for node in func.outputs loop
       UnorderedSet.add(node, diffInfo);
     end for;
 
@@ -2432,6 +2460,7 @@ public
           new_nodes := d_node :: new_nodes;
           // add to skipped nodes if differentiated again because the derivative now already exists
           UnorderedSet.add(node, diffInfo);
+        else
         end if;
       end if;
     end for;
@@ -2682,6 +2711,21 @@ public
       case diff_stmt as Statement.ASSIGNMENT() guard(Type.isReal(Type.arrayElementType(Expression.typeOf(diff_stmt.lhs)))) algorithm
         // In reverse mode the assignment LHS is the destination; traverse it without
         // collecting into adjoint_map to avoid artificial self-contributions.
+        (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
+        diff_stmt.lhs := lhs;
+        diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
+      then if isReverse then {diff_stmt} else {diff_stmt, stmt};
+
+      // I-b. differentiate record-type assignment from a function call
+      // e.g. f := Helmholtz(d, T) where f is a record — propagate seeds through
+      // the called function so the derivative record gets populated correctly.
+      // Without this, the derivative variable is left zero-initialised and the
+      // analytical Jacobian for any NLS that calls the outer function is wrong.
+      case diff_stmt as Statement.ASSIGNMENT() guard(
+        Type.isComplex(Expression.typeOf(diff_stmt.lhs)) and
+        Expression.isCall(diff_stmt.rhs)
+      ) algorithm
         (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
         diff_stmt.lhs := lhs;
@@ -3007,8 +3051,9 @@ public
           end if;
           // create subtraction and multiplication operator from the size classification of original division operator
           (_, sizeClass) := Operator.classify(operator);
-          // the frontend treats multiplication equally for element and nen elementwise, but pow needs to have the correct operator
-          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+          // the frontend treats multiplication equally for element and non-elementwise, but pow needs to have the correct operator
+          // the addition in the numerator f'g +/- fg' must be element-wise when the result is an array (same as multiplication case)
+          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, Operator.classifyAddition(operator)), operator.ty);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
       then (Expression.MULTARY(
               {Expression.MULTARY(

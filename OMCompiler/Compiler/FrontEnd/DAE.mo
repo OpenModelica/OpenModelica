@@ -702,6 +702,7 @@ uniontype Statement "There are four kinds of statements:
     Exp range "range for the loop";
     list<Statement> statementLst;
     ElementSource source "the origin of the component/equation/algorithm" ;
+    list<tuple<ComponentRef, array<Exp>>> sub_iters "sub-iterators for ARRAY iterator case (NBackEnd only)";
   end STMT_FOR;
 
   record STMT_PARFOR

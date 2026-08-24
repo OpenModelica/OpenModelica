@@ -174,7 +174,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
                 LoadSystem(_modelLib, _modelKey);
             }
             else {
-                throw ex;
+                throw;
             }
         }
     }
@@ -461,12 +461,11 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
             packageName="";
         std::cout << "package name "<< packageName<< std::endl;
          string fileName = modelKey;
-         ModelicaCompiler* compiler;
          // when a model from MSL is used, then LoadFile doesn't need to be called
          // still there is problem with calling reducedTerms with model from MSL, because
          // for example for Modelica.Electrical.Analog.Examples.CauerLowPassSC, the modelPath only gives Modelica.CauerLowPassSC
-        compiler =new ModelicaCompiler(modelKey,fileName,packageName,!loadMSL,loadPackage);
-        compiler->reduceTerms(terms,simsettings.start_time,simsettings.end_time);
+        ModelicaCompiler compiler(modelKey,fileName,packageName,!loadMSL,loadPackage);
+        compiler.reduceTerms(terms,simsettings.start_time,simsettings.end_time);
         //-----------------------------------------------------------------------------------------
 
 

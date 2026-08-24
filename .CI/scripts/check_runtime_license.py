@@ -145,37 +145,29 @@ OSMC_PL_1_8_LICENSE_TEXT_PY = f"""
 
 OSMC_PL_1_8_RUNTIME_LICENSE_TEXT_PY = f"""
 #
-# This file is part of OpenModelica.
+# This file belongs to the OpenModelica Run-Time System
 #
 # Copyright (c) 1998-{CURRENT_YEAR}, Open Source Modelica Consortium (OSMC),
 # c/o Linköpings universitet, Department of Computer and Information Science,
-# SE-58183 Linköping, Sweden.
+# SE-58183 Linköping, Sweden. All rights reserved.
 #
-# All rights reserved.
-#
-# THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
-# THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
-# ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-# RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+# THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+# AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+# USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+# ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
 # VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
 #
-# The OpenModelica software and the OSMC (Open Source Modelica Consortium)
-# Public License (OSMC-PL) are obtained from OSMC, either from the above
-# address, from the URLs:
-# http://www.openmodelica.org or
-# https://github.com/OpenModelica/ or
-# http://www.ida.liu.se/projects/OpenModelica,
-# and in the OpenModelica distribution.
+# The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+# (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+# http://www.openmodelica.org or https://github.com/OpenModelica/ or
+# http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution.
+# GNU AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL.
+# The BSD NEW License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
 #
-# GNU AGPL version 3 is obtained from:
-# https://www.gnu.org/licenses/licenses.html#GPL
-#
-# This program is distributed WITHOUT ANY WARRANTY; without
-# even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-# IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-#
-# See the full OSMC Public License conditions for more details.
+# This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+# SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+# OSMC-PL.
 #
 """
 
@@ -213,7 +205,7 @@ OSMC_PL_1_8_RUNTIME_LICENSE_TEXT_C = f"""
 # File-type groups
 # ---------------------------------------------------------------------------
 
-C_STYLE_EXTS = frozenset({".c", ".h", ".h.in", ".cpp", ".cc", ".cxx", ".inc", ".inl", ".hpp", ".cl", ".g", ".qss"})
+C_STYLE_EXTS = frozenset({".c", ".h", ".h.in", ".cpp", ".cpp.in", ".cc", ".cxx", ".inc", ".inl", ".hpp", ".cl", ".g", ".qss"})
 PYTHON_EXTS = frozenset({".py", ".pro", ".pri"})
 MODELICA_EXTS = frozenset({".mo", ".mos", ".tpl"})
 
@@ -223,7 +215,7 @@ SUPPORTED_EXTS = C_STYLE_EXTS | PYTHON_EXTS | MODELICA_EXTS
 def _file_ext(filename: str) -> str:
     """Return the file extension, handling double extensions like '.h.in'."""
     name = os.path.basename(filename)
-    for ext in (".h.in",):
+    for ext in (".h.in", ".cpp.in"):
         if name.endswith(ext):
             return ext
     return os.path.splitext(name)[1].lower()
@@ -429,9 +421,7 @@ def _replace_python_license_header(filepath: str, content: str, is_runtime: bool
     Returns True after rewriting the file.
     """
 
-    if is_runtime:
-        raise ValueError("No Python runtime license available.")
-    new_header = (OSMC_PL_1_8_LICENSE_TEXT_PY).strip()
+    new_header = (OSMC_PL_1_8_RUNTIME_LICENSE_TEXT_PY if is_runtime else OSMC_PL_1_8_LICENSE_TEXT_PY).strip()
 
     lines = content.splitlines(keepends=True)
 
@@ -499,11 +489,16 @@ def _update_copyright_year(filepath: str, content: str) -> bool:
     return True
 
 
-def _copyright_year_errors(filepath: str, content: str, fix_year: bool) -> list[str]:
-    """Return errors for a wrong or placeholder copyright year."""
-    if _PLACEHOLDER_COPYRIGHT_RE.search(content):
+def _copyright_year_errors(filepath: str, header: str, content: str, fix_year: bool) -> list[str]:
+    """Return errors for a wrong or placeholder copyright year.
+
+    Searches only *header* (the extracted license block) so that in-body
+    copyright strings (e.g. Python ``__copyright__`` variables) are ignored.
+    *content* is the full file text, used only when rewriting the year.
+    """
+    if _PLACEHOLDER_COPYRIGHT_RE.search(header):
         return ["copyright year is an unreplaced template placeholder (CurrentYear)"]
-    m = _COPYRIGHT_RE.search(content)
+    m = _COPYRIGHT_RE.search(header)
     if not m:
         return ["copyright year not found"]
     end_year = int(m.group(2) or m.group(1))
@@ -557,7 +552,7 @@ def check_file(
                     if _replace_license_header(filepath, content, is_runtime=True, ext=ext):
                         errors[-1] += " [FIXED]"
             else:
-                errors.extend(_copyright_year_errors(filepath, content, fix_year))
+                errors.extend(_copyright_year_errors(filepath, header, content, fix_year))
         elif not has_runtime_mark and has_osmc_pl_1_8:
             errors.append(
                 "wrong license type: has normal OSMC-PL 1.8 header, expected runtime header"
@@ -585,7 +580,7 @@ def check_file(
     else:
         if has_osmc_pl_1_8 and not has_runtime_mark:
             # Correct normal license; check/update year.
-            errors.extend(_copyright_year_errors(filepath, content, fix_year))
+            errors.extend(_copyright_year_errors(filepath, header, content, fix_year))
         elif has_osmc_pl_1_8 and has_runtime_mark:
             errors.append(
                 "wrong license type: has runtime header, expected normal OSMC-PL 1.8 header"
@@ -687,7 +682,17 @@ def main() -> int:
     runtime_roots = [
         Path(root) / "OMCompiler" / "SimulationRuntime",
         Path(root) / "OMCompiler" / "3rdParty" / "ryu",
-    ]
+    ] + [Path(root) / "OMCompiler" / "Compiler" / "OpenModelica.rs" / subdir for subdir in [
+        "openmodelica_sim_meta",
+        "openmodelica_codegen_wasm_jit_runtime",
+        "openmodelica_codegen_wasm_jit_runtime",
+        "openmodelica_wasi",
+        "openmodelica_wasi_libc",
+        "openmodelica_wasm_jit",
+        "openmodelica_mat_writer",
+        "openmodelica_fmi3_wasm",
+        "openmodelica_modelica_utilities",
+    ]]
 
     for abspath in iter_source_files(root, dirs):
         rel = str(abspath.relative_to(root)).replace(os.sep, "/")

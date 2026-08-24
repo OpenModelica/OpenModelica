@@ -57,6 +57,8 @@
 #include "Plotting/VariablesWidget.h"
 #include "Search/SearchWidget.h"
 #include "Util/Helper.h"
+#include "Util/NavigationManager.h"
+#include "Util/NavigationManagerView.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "CRML/CRMLTranslatorOutputWidget.h"
@@ -220,11 +222,11 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
 #endif
   // Get the number of processors.
   mNumberOfProcessors = mpOMCProxy->numProcessors();
-  // create an object of OMSProxy
-  OMSProxy::create();
   // Create an object of OptionsDialog
   mpLibrariesMenu = 0;
   OptionsDialog::create();
+  // Create the NavigationManager which detects the back/forward navigation globally
+  NavigationManager::instance();
 #if !defined(__EMSCRIPTEN__)
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
 #else
@@ -237,6 +239,13 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpProgressBar->setMaximumWidth(300);
   mpProgressBar->setTextVisible(false);
   mpProgressBar->setVisible(false);
+  // Cancel button for a running omc operation (parse/instantiate/backend/sim)
+  mpCancelOperationButton = new QToolButton;
+  mpCancelOperationButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
+  mpCancelOperationButton->setToolTip(tr("Cancel the running operation"));
+  mpCancelOperationButton->setAutoRaise(true);
+  mpCancelOperationButton->setVisible(false);
+  connect(mpCancelOperationButton, SIGNAL(clicked()), SLOT(cancelOmcOperation()));
   // Position Label
   mpPositionLabel = new Label;
   mpPositionLabel->setMinimumWidth(75);
@@ -272,6 +281,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpStatusBar->setContentsMargins(0, 0, 0, 0);
   // add items to statusbar
   mpStatusBar->addPermanentWidget(mpProgressBar);
+  mpStatusBar->addPermanentWidget(mpCancelOperationButton);
   mpStatusBar->addPermanentWidget(mpPositionLabel);
   mpStatusBar->addPermanentWidget(mpPerspectiveTabbar);
   // set status bar for MainWindow
@@ -309,6 +319,15 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpSearchDockWidget->setWidget(mpSearchWidget);
   addDockWidget(Qt::BottomDockWidgetArea, mpSearchDockWidget);
   mpSearchDockWidget->hide();
+  // Create NavigationManagerDockWidget dock
+  if (isDebug()) {
+    mpNavigationManagerDockWidget = new QDockWidget(tr("Navigation Manager"), this);
+    mpNavigationManagerDockWidget->setObjectName("NavigationManager");
+    mpNavigationManagerDockWidget->setAllowedAreas(Qt::BottomDockWidgetArea | Qt::TopDockWidgetArea);
+    mpNavigationManagerView = new NavigationManagerView(this);
+    mpNavigationManagerDockWidget->setWidget(mpNavigationManagerView);
+    addDockWidget(Qt::BottomDockWidgetArea, mpNavigationManagerDockWidget);
+  }
 #if !defined(__EMSCRIPTEN__)
   // create the GDB adapter instance
   GDBAdapter::create();
@@ -1391,6 +1410,17 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   } else {
     platforms.append("static"); // default is static
   }
+#if defined(__EMSCRIPTEN__)
+  // A browser omc has no C code generator, so the model always goes into a wasm
+  // FMU. "static"/"dynamic" name the C link modes and mean nothing here; every
+  // other entry is a native platform the FMU should also serve, which is what an
+  // FMI 2.0 FMU needs to be loadable at all.
+  platforms.removeAll("static");
+  platforms.removeAll("dynamic");
+  if (!platforms.contains("wasm")) {
+    platforms.append("wasm");
+  }
+#endif
   if (platforms.empty()) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_EMPTY_PLATFORMS).arg(Helper::toolsOptionsPath),
                                                           Helper::scriptingKind, Helper::warningLevel));
@@ -2080,6 +2110,20 @@ void MainWindow::switchToPlottingPerspectiveSlot()
 void MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot()
 {
   mpPerspectiveTabbar->setCurrentIndex(3);
+}
+
+/*!
+ * \brief MainWindow::switchToPerspectiveTab
+ * Switches to the perspective tab with the given index. Used by the global
+ * back/forward navigation history to restore a perspective switch.
+ * \param tabIndex
+ */
+void MainWindow::switchToPerspectiveTab(int tabIndex)
+{
+  if (tabIndex < 0 || tabIndex >= mpPerspectiveTabbar->count()) {
+    tabIndex = 0;
+  }
+  mpPerspectiveTabbar->setCurrentIndex(tabIndex);
 }
 
 /*!
@@ -3641,6 +3685,84 @@ void MainWindow::toggleAutoSave()
   }
 }
 
+// Cancel setter, one per backend. The compiler polls this flag at its chokepoints
+// (System.checkCancel) and unwinds cooperatively; nothing is force-terminated.
+// extern "C": these are C-linkage symbols (EM_JS / the omc C ABI), so the
+// declarations must not be C++-mangled or the reference won't resolve.
+extern "C" {
+#if defined(__EMSCRIPTEN__)
+void omedit_cancel_sim();                        // omc Web Worker: SharedArrayBuffer store (OMCProxy.cpp)
+#elif defined(OMC_RUST_ABI)
+void omc_compiler_request_cancel();              // Rust omc in-process (libOpenModelicaCompiler)
+#else
+void System_requestCancel();                     // classic C omc runtime
+#endif
+}
+
+/*!
+ * \brief MainWindow::showCancelOperationButton
+ * Shows or hides the status-bar Cancel button for a running omc operation.
+ */
+void MainWindow::showCancelOperationButton(bool show)
+{
+  // May be called by an omc command issued before the status bar is built.
+  if (mpCancelOperationButton) {
+    mpCancelOperationButton->setVisible(show);
+  }
+}
+
+/*!
+ * \brief MainWindow::setOmcOperationRunning
+ * Disables everything but the status-bar Cancel button for the duration of an
+ * omc command, so the pumped event loop (omedit_pump_events) can deliver the
+ * Cancel click without re-entering the non-reentrant compiler. Also parks the
+ * auto-save timer, which would otherwise fire an omc command mid-operation.
+ */
+void MainWindow::setOmcOperationRunning(bool running)
+{
+  const bool enabled = !running;
+  if (centralWidget()) {
+    centralWidget()->setEnabled(enabled);
+  }
+  if (menuBar()) {
+    menuBar()->setEnabled(enabled);
+  }
+  for (QToolBar *pToolBar : findChildren<QToolBar*>()) {
+    pToolBar->setEnabled(enabled);
+  }
+  for (QDockWidget *pDockWidget : findChildren<QDockWidget*>()) {
+    pDockWidget->setEnabled(enabled);
+  }
+  if (mpAutoSaveTimer) {
+    if (running) {
+      mAutoSaveWasActive = mpAutoSaveTimer->isActive();
+      mpAutoSaveTimer->stop();
+    } else if (mAutoSaveWasActive) {
+      mpAutoSaveTimer->start();
+    }
+  }
+  // The button is revealed by OmcBusyScope's delayed timer so quick commands
+  // don't flash it; here we only guarantee it is hidden once the op ends.
+  if (!running) {
+    showCancelOperationButton(false);
+  }
+}
+
+/*!
+ * \brief MainWindow::cancelOmcOperation
+ * Requests cancellation of the operation omc is currently running.
+ */
+void MainWindow::cancelOmcOperation()
+{
+#if defined(__EMSCRIPTEN__)
+  omedit_cancel_sim();
+#elif defined(OMC_RUST_ABI)
+  omc_compiler_request_cancel();
+#else
+  System_requestCancel();
+#endif
+}
+
 /*!
  * \brief MainWindow::perspectiveTabChanged
  * Handles the perspective tab changed case.
@@ -3648,6 +3770,7 @@ void MainWindow::toggleAutoSave()
  */
 void MainWindow::perspectiveTabChanged(int tabIndex)
 {
+  NavigationManager::instance()->recordNavigationPoint(tabIndex);
   switch (tabIndex) {
     case 0:
       switchToWelcomePerspective();
@@ -4468,9 +4591,6 @@ void MainWindow::createActions()
   // Add connector action
   mpAddConnectorAction = new QAction(QIcon(":/Resources/icons/add-connector.svg"), Helper::addConnector, this);
   mpAddConnectorAction->setStatusTip(Helper::addConnectorTip);
-  // Add bus action
-  mpAddBusAction = new QAction(QIcon(":/Resources/icons/bus.svg"), Helper::addBus, this);
-  mpAddBusAction->setStatusTip(Helper::addBusTip);
   // Add SubModel Action
   mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
   mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
@@ -4597,6 +4717,9 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpFindUsageDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpSearchDockWidget->toggleViewAction());
+  if (isDebug()) {
+    pViewWindowsMenu->addAction(mpNavigationManagerDockWidget->toggleViewAction());
+  }
 #if !defined(__EMSCRIPTEN__)
   pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpBreakpointsDockWidget->toggleViewAction());
@@ -4636,7 +4759,6 @@ void MainWindow::createMenus()
   pSSPMenu->addAction(mpDeleteIconAction);
   pSSPMenu->addSeparator();
   pSSPMenu->addAction(mpAddConnectorAction);
-  pSSPMenu->addAction(mpAddBusAction);
   pSSPMenu->addSeparator();
   pSSPMenu->addAction(mpAddSubModelAction);
   // add OMSimulator menu to menu bar
@@ -5155,7 +5277,6 @@ void MainWindow::createToolbars()
   mpOMSimulatorToolbar->addAction(mpDeleteIconAction);
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddConnectorAction);
-  mpOMSimulatorToolbar->addAction(mpAddBusAction);
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddSubModelAction);
   connect(mpOMSimulatorToolbar, SIGNAL(visibilityChanged(bool)), SLOT(OMSimulatorToolBarVisibilityChanged(bool)));
@@ -5297,10 +5418,14 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   setWindowTitle(tr("About %1").arg(Helper::applicationName));
   setAttribute(Qt::WA_DeleteOnClose);
 
+  const QString omsVersionLine = OMSProxy::isCreated()
+      ? QString("<b>Connected to %1</b><br />").arg(OMSProxy::instance()->getVersion())
+      : QString();
   const QString aboutText = tr(
      "<h2>%1 - %2</h2>"
      "<b>Connected to %3 %4 encryption support</b><br />"
-     "<b>Connected to %5</b><br /><br />"
+     "%5"
+     "<br />"
      "Compiled with <b>Qt %7</b>, running with <b>Qt %8</b>.<br /><br />"
      "Installation path <b>%6</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
@@ -5317,7 +5442,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
 #else
           "without",
 #endif
-          oms_getVersion(),
+          omsVersionLine,
           Helper::OpenModelicaHome,
           QStringLiteral(QT_VERSION_STR),
           QString::fromLatin1(qVersion()));

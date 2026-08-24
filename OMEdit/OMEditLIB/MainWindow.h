@@ -60,6 +60,7 @@ extern "C" {
 #include <QMainWindow>
 #include <QDialog>
 #include <QProgressBar>
+#include <QToolButton>
 #include <QMimeData>
 #include <QDomDocument>
 #include <QStackedWidget>
@@ -100,6 +101,7 @@ class StatusBar;
 class TraceabilityGraphViewWidget;
 class SearchWidget;
 class MessageTab;
+class NavigationManagerView;
 
 class MainWindow : public QMainWindow
 {
@@ -156,6 +158,8 @@ public:
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
   void hideProgressBar() {mpProgressBar->setVisible(false);}
+  void showCancelOperationButton(bool show);
+  void setOmcOperationRunning(bool running);
   Label* getPositionLabel() {return mpPositionLabel;}
   bool isModelingPerspectiveActive();
   bool isPlottingPerspectiveActive();
@@ -210,7 +214,6 @@ public:
   QAction* getAddOrEditIconAction() {return mpAddOrEditIconAction;}
   QAction* getDeleteIconAction() {return mpDeleteIconAction;}
   QAction* getAddConnectorAction() {return mpAddConnectorAction;}
-  QAction* getAddBusAction() {return mpAddBusAction;}
   QAction* getAddSubModelAction() {return mpAddSubModelAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
   QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
@@ -289,6 +292,8 @@ private:
   SearchWidget *mpSearchWidget;
   QDockWidget *mpSearchDockWidget;
   QDockWidget *mpMessagesDockWidget;
+  NavigationManagerView *mpNavigationManagerView = nullptr;
+  QDockWidget *mpNavigationManagerDockWidget = nullptr;
   LibraryWidget *mpLibraryWidget;
   QDockWidget *mpLibraryDockWidget;
   ElementWidget *mpElementWidget;
@@ -321,11 +326,13 @@ private:
   TraceabilityInformationURI *mpTraceabilityInformationURI;
   QStackedWidget *mpCentralStackedWidget;
   QTabWidget *mpMessagesTabWidget;
-  QProgressBar *mpProgressBar;
+  QProgressBar *mpProgressBar = nullptr;
+  QToolButton *mpCancelOperationButton = nullptr;
   Label *mpPositionLabel;
   QTabBar *mpPerspectiveTabbar;
-  StatusBar *mpStatusBar;
-  QTimer *mpAutoSaveTimer;
+  StatusBar *mpStatusBar = nullptr;
+  QTimer *mpAutoSaveTimer = nullptr;
+  bool mAutoSaveWasActive = false;
   QShortcut *mpSearchBrowserShortcut;
   // File Menu
   // Modelica File Actions
@@ -461,7 +468,6 @@ private:
   QAction *mpAddOrEditIconAction;
   QAction *mpDeleteIconAction;
   QAction *mpAddConnectorAction;
-  QAction *mpAddBusAction;
   QAction *mpAddSubModelAction;
   QAction *mpOMSSimulateAction;
   // Toolbars
@@ -495,6 +501,7 @@ public slots:
   void switchToModelingPerspectiveSlot();
   void switchToPlottingPerspectiveSlot();
   void switchToAlgorithmicDebuggingPerspectiveSlot();
+  void switchToPerspectiveTab(int tabIndex);
   void showSearchBrowser();
   void createNewModelicaClass();
   void createNewMOSFile();
@@ -587,6 +594,7 @@ public slots:
   void updateDebuggerToolBarMenu();
   void toggleAutoSave();
 private slots:
+  void cancelOmcOperation();
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
   void messagesTabBarClicked(int index);

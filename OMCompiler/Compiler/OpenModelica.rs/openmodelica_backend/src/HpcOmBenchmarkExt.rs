@@ -45,7 +45,7 @@
 
 use std::sync::Arc;
 
-use anyhow::{bail, Result};
+use metamodelica::Result;
 use arcstr::ArcStr;
 
 use metamodelica::ext::{c_atof, c_atol};
@@ -108,7 +108,7 @@ pub fn readCalcTimesFromXml(fileName: ArcStr) -> Result<Arc<List<Real>>> {
     let Ok(content) = std::fs::read_to_string(fileName.as_str()) else {
         // Mirrors the printf in HpcOmBenchmarkExtImpl__readCalcTimesFromXml.
         println!("File '{}' does not exist", fileName);
-        bail!("File '{}' does not exist", fileName);
+        return Err("File '{}' does not exist");
     };
     let mut res: Arc<List<Real>> = metamodelica::nil();
     let doc = match roxmltree::Document::parse(&content) {
@@ -152,7 +152,7 @@ pub fn readCalcTimesFromJson(fileName: ArcStr) -> Result<Arc<List<Real>>> {
     let Ok(content) = std::fs::read(fileName.as_str()) else {
         // Mirrors the printf in HpcOmBenchmarkExtImpl__readCalcTimesFromJson.
         println!("File '{}' does not exist", fileName);
-        bail!("File '{}' does not exist", fileName);
+        return Err("File '{}' does not exist");
     };
     let mut res: Arc<List<Real>> = metamodelica::nil();
     let Ok(root) = serde_json::from_slice::<serde_json::Value>(&content) else {

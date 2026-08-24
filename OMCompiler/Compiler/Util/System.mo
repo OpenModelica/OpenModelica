@@ -1251,6 +1251,20 @@ public function launchParallelTasks "Takes a list of inputs and produces a list 
 external "C" result = System_launchParallelTasks(OpenModelica.threadData(), numThreads, inData, func) annotation(Library = {"omcruntime"});
 end launchParallelTasks;
 
+public function launchParallelTasksThreaded "Like launchParallelTasks, but only for call sites whose task input/output are safe to move across OS threads. In the classic runtime this is an alias for launchParallelTasks; the Rust port uses it to opt a call site into real (rayon) threading."
+  input Integer numThreads;
+  input list<AnyInput> inData;
+  input ForkFunction func;
+  output list<AnyOutput> result;
+  partial function ForkFunction
+    input AnyInput inData;
+    output AnyOutput outData;
+  end ForkFunction;
+  replaceable type AnyInput subtypeof Any;
+  replaceable type AnyOutput subtypeof Any;
+external "C" result = System_launchParallelTasks(OpenModelica.threadData(), numThreads, inData, func) annotation(Library = {"omcruntime"});
+end launchParallelTasksThreaded;
+
 public function exit "Exits the compiler at this point with the given exit status."
   input Integer status;
 external "C" exit(status) annotation(Include = "#include <stdlib.h>");
@@ -1259,6 +1273,17 @@ end exit;
 public function threadWorkFailed "Exits the current thread with a failure."
   external "C" System_threadFail(OpenModelica.threadData());
 end threadWorkFailed;
+
+public function isCancelled "True if the user has requested cancellation of the running operation."
+  output Boolean cancelled;
+  external "C" cancelled = System_isCancelled() annotation(Library = "omcruntime");
+end isCancelled;
+
+public function reportProgress "Report progress of the running operation to the host UI. permille is 0..1000 or -1 (indeterminate); phase is one of the metamodelica::cancel PHASE_* constants (2 parse, 3 instantiate, 4 backend, 5 simulate)."
+  input Integer permille;
+  input Integer phase;
+  external "C" System_reportProgress(permille, phase) annotation(Library = "omcruntime");
+end reportProgress;
 
 public function getMemorySize
   output Real memory(unit="MB");

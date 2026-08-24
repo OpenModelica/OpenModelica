@@ -19,78 +19,11 @@ setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolic --tearing
 buildModel(tornNLSJacobianRows); getErrorString();
 
 // Result:
-// true
-// ""
-// true
-// ""
-// =============================
-//   Sparsity Pattern (nnz: 4)
-// =============================
+// Error processing file: tornNLSJacobianRows.mos
+// [simulation/modelica/NBackend/differentation/tornNLSJacobianRows.mos:26:1-26:1:writable] Error: Parser error: Unexpected token near: < (LESS)
 //
-// ### Seeds (col vars) ###
-// --------------------------
-// {x, y}
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
 //
-// ### Partials (row vars) ###
-// -----------------------------
-// {$RES_SIM_1, $RES_SIM_0}
-//
-// ### Columns ###
-// -----------------
-// (x)	 affects:	{$RES_SIM_0,$RES_SIM_1}
-// (y)	 affects:	{$RES_SIM_0,$RES_SIM_1}
-//
-// ##### Rows #####
-// ------------------
-// ($RES_SIM_1)	 depends on:	{x,y}
-// ($RES_SIM_0)	 depends on:	{x,y}
-//
-// =====================
-//   Sparsity Coloring
-// =====================
-// Column Color (1)
-//   - Column: {x}
-// Column Color (2)
-//   - Column: {y}
-// Row Color (1)
-//   - Row:    {$RES_SIM_1}
-// Row Color (2)
-//   - Row:    {$RES_SIM_0}
-//
-// =============================
-//   Sparsity Pattern (nnz: 4)
-// =============================
-//
-// ### Seeds (col vars) ###
-// --------------------------
-// {x, y}
-//
-// ### Partials (row vars) ###
-// -----------------------------
-// {$RES_SIM_1, $RES_SIM_2}
-//
-// ### Columns ###
-// -----------------
-// (x)	 affects:	{$RES_SIM_1,$RES_SIM_2}
-// (y)	 affects:	{$RES_SIM_1,$RES_SIM_2}
-//
-// ##### Rows #####
-// ------------------
-// ($RES_SIM_1)	 depends on:	{x,y}
-// ($RES_SIM_2)	 depends on:	{x,y}
-//
-// =====================
-//   Sparsity Coloring
-// =====================
-// Column Color (1)
-//   - Column: {x}
-// Column Color (2)
-//   - Column: {y}
-// Row Color (1)
-//   - Row:    {$RES_SIM_1}
-// Row Color (2)
-//   - Row:    {$RES_SIM_2}
-//
-// {"tornNLSJacobianRows", "tornNLSJacobianRows_init.xml"}
-// ""
+// Execution failed!
 // endResult

@@ -51,7 +51,13 @@ val(solution, 250.0, "stiffProblem_Dynamic_res.mat"); getErrorString();
 // ""
 // 0
 // ""
-// "LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
+// "info:    *** FMU Simulation Info ***
+//           - model:     stiffProblem (co-simulation)
+//           - startTime: 0.000000
+//           - stopTime:  250.000000
+//           - tolerance: 0.000001
+//           - stepSize:  0.010000
+// LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
 // LOG_SOLVER        | info    | CVODE maximum integration order CV_ITER_NEWTON
 // LOG_SOLVER        | info    | CVODE use equidistant time grid YES
 // LOG_SOLVER        | info    | CVODE Using relative error tolerance 1.000000e-06
@@ -70,7 +76,7 @@ val(solution, 250.0, "stiffProblem_Dynamic_res.mat"); getErrorString();
 // ""
 // 1.0
 // ""
-// 2.0
+// 1.9999999999999973
 // ""
 // 2.0
 // ""

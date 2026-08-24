@@ -1,6 +1,6 @@
 // name: NonlinearSolverFailureInitial
 // status: correct
-// teardown_command: rm -f NonlinearSolverFailureInitial* output.log
+// teardown_command: rm -f SolverFailure.NonlinearSolverFailureInitial* output.log
 // cflags: -d=-newInst
 
 loadModel(Modelica, {"3.2.3"});

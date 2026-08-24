@@ -12,10 +12,10 @@
 //   return value into `Ok(...)`.  The tests below do the same.
 //
 // Known runtime bug:
-//   intersection() always fails (bail!("fail")), faithfully reproducing the
+//   intersection() always fails (return Err("fail")), faithfully reproducing the
 //   MetaModelica source which has `redeclare function intersection; algorithm fail();`.
 
-use anyhow::Result;
+use metamodelica::Result;
 use std::sync::Arc;
 use metamodelica::*;
 use arcstr::{ArcStr, literal};

@@ -74,6 +74,35 @@ type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 type SparsityPattern = list< tuple<Integer, list<Integer>> >;
 type NonlinearPattern = SparsityPattern; // same structure but different name for the sake of maintenance
 
+
+uniontype Dependency
+  "the dependency kind to show how a component reference occurs in an equation.
+  for each dimension there has to be one dependency kind."
+  record DEPENDENCY
+    array<list<Integer>> skips;
+    list<Boolean> kinds "true = reduced, false = regular"; // Fixme: enumerations don't seem to work for codegen
+  end DEPENDENCY;
+end Dependency;
+
+uniontype SparsityRow
+  record SPARSITY_ROW
+    DAE.ComponentRef equation_name "only for debugging";
+    list<BackendDAE.SimIterator> equation_iterators;
+    list<tuple<DAE.ComponentRef, Dependency, Boolean /*true=repeated*/>> dependencies;
+    list<DAE.ComponentRef> solved_crefs;
+  end SPARSITY_ROW;
+end SparsityRow;
+
+uniontype Sparsity
+  "the new resizable sparsity pattern for the NB"
+  record SPARSITY
+    list<SparsityRow> rows;
+  end SPARSITY;
+
+  record EMPTY
+  end EMPTY;
+end Sparsity;
+
 uniontype JacobianColumn
   record JAC_COLUMN
     list<SimEqSystem> columnEqns;       // column equations equals in size to column vars
@@ -88,6 +117,7 @@ uniontype JacobianMatrix
     list<JacobianColumn> columns;       // columns equations and variables
     list<SimCodeVar.SimVar> seedVars;   // corresponds to the number of columns
     String matrixName;                  // unique matrix name
+    Sparsity sparsityMatrix;            // new backend sparsity
     SparsityPattern sparsity;
     SparsityPattern sparsityT;
     NonlinearPattern nonlinear;
@@ -106,7 +136,8 @@ uniontype JacobianMatrix
   end JAC_MATRIX;
 end JacobianMatrix;
 
-constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE(), false, false, -1, "");
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", Sparsity.EMPTY(),
+  {}, {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE(), false, false, -1, "");
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
 
@@ -241,6 +272,7 @@ uniontype SpatialDistribution
     DAE.Exp initPnts      "initial grid points";
     DAE.Exp initVals      "initial grid values";
     Integer initSize      "number of initial points";
+    Option<DAE.Exp> condition "guard condition of the enclosing if-branch, if any";
   end SPATIAL_DISTRIBUTION;
 end SpatialDistribution;
 
@@ -411,7 +443,7 @@ uniontype SimEqSystem
   record SES_FOR_RESIDUAL
     Integer index;
     Integer res_index;
-    list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+    list<BackendDAE.SimIterator> iterators;
     DAE.Exp exp;
     DAE.ElementSource source;
     BackendDAE.EquationAttributes eqAttr;
@@ -422,7 +454,7 @@ uniontype SimEqSystem
     Integer index;
     Integer res_index;
     list<Integer> scal_indices;
-    list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+    list<BackendDAE.SimIterator> iterators;
     DAE.Exp exp;
     DAE.ElementSource source;
     BackendDAE.EquationAttributes eqAttr;
@@ -780,6 +812,47 @@ public uniontype FmiTerminalMember
     String variableKind     "role of the member, derived from causality (input/output/...)";
   end FMI_TERMINAL_MEMBER;
 end FmiTerminalMember;
+
+/* The Documentation(figures=...) annotation resolved against the exported
+   variables; emitted by CodegenFMU3 as the OpenModelica <Figures> vendor
+   annotation. See SimCodeUtil.getFMI3Figures. */
+public uniontype FmiFigure
+  record FMI_FIGURE
+    String title;
+    String group            "plot-group name, \"\" if none";
+    Boolean preferred       "display automatically after simulation";
+    String caption          "\"\" if none";
+    list<FmiPlot> plots;
+  end FMI_FIGURE;
+end FmiFigure;
+
+public uniontype FmiPlot
+  record FMI_PLOT
+    String title;
+    list<FmiCurve> curves;
+    FmiFigureAxis xAxis;
+    FmiFigureAxis yAxis;
+    Option<String> terminal "set when every curve's y variable is a member of this one terminal";
+  end FMI_PLOT;
+end FmiPlot;
+
+public uniontype FmiCurve
+  record FMI_CURVE
+    Option<DAE.ComponentRef> xVariable "NONE() means simulation time; a cref is formatted like a modelDescription variable";
+    DAE.ComponentRef yVariable         "resolved exported variable; formatted like a modelDescription variable";
+    String legend                      "\"\" if none";
+  end FMI_CURVE;
+end FmiCurve;
+
+public uniontype FmiFigureAxis
+  record FMI_FIGURE_AXIS
+    String label            "\"\" if none";
+    String unit             "\"\" if none";
+    Option<Real> min        "only when explicitly set";
+    Option<Real> max        "only when explicitly set";
+    Boolean logScale        "true for a logarithmic axis";
+  end FMI_FIGURE_AXIS;
+end FmiFigureAxis;
 
 /* FMI 3.0 Clocks (output clocks from the model's clocked partitions) */
 public uniontype FmiClock

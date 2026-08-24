@@ -1752,6 +1752,7 @@ protected
   list<tuple<DAE.ComponentRef, SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
   list<DAE.ComponentRef> conditions;
   Boolean initialCall;
+  list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 algorithm
   for stmt in inStmts loop
     (stmt, extraArg) := match stmt
@@ -1784,12 +1785,12 @@ algorithm
         (e_1, extraArg) := Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
       then (DAE.STMT_IF(e_1, stmts2, algElse, source), extraArg);
 
-      case DAE.STMT_FOR(type_=tp, iterIsArray=b1, iter=id1, range=e, statementLst=stmts, source=source) algorithm
+      case DAE.STMT_FOR(type_=tp, iterIsArray=b1, iter=id1, range=e, statementLst=stmts, source=source, sub_iters=sub_iters) algorithm
         cr := ComponentReferenceBasics.makeCrefIdent(id1, tp, {});
         iteratorExp := Expression.crefExp(cr);
         iteratorexps := BackendDAEUtil.extendRange(e, inKnvars);
         (stmts2, extraArg) := traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, inKnvars, extraArg);
-      then (DAE.STMT_FOR(tp, b1, id1, e, stmts2, source), extraArg);
+      then (DAE.STMT_FOR(tp, b1, id1, e, stmts2, source, sub_iters), extraArg);
 
       case DAE.STMT_PARFOR(type_=tp, iterIsArray=b1, iter=id1, range=e, statementLst=stmts, loopPrlVars= loopPrlVars, source=source) algorithm
         cr := ComponentReferenceBasics.makeCrefIdent(id1, tp, {});

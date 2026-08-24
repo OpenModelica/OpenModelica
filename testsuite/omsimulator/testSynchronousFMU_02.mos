@@ -1,13 +1,11 @@
 // name:     testSynchronousFMU_02.mos
 // status:   correct
-// teardown_command: rm -rf tempSynchronous02/
-//
+// teardown_command: rm -rf Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks.fmu Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks-oms_res.csv Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks_diff.csv testSynchronousFMU_systemCall.log
 // Test FMU with clock from Modelica.Clocked with MSL 4.0.0.
 
 loadModel(Modelica, {"4.0.0"}); getErrorString();
 
 echo(false);
-mkdir("tempSynchronous02/"); cd("tempSynchronous02/");
 echo(true);
 
 // Reference results without FMU
@@ -17,10 +15,7 @@ simulate(Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks, stopTi
 buildModelFMU(Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks, version="2.0", fmuType="me", fileNamePrefix="Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks"); getErrorString();
 
 // Simulate FMU with OMSimulator
-system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks.fmu"
-  +" --stopTime=4 --tolerance=1e-8 --deleteTempFiles=true --tempDir=temp"
-  +" --resultFile=Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks-oms_res.csv --stripRoot=true --suppressPath=true --skipCSVHeader=true",
-  "testSynchronousFMU_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks.fmu --stop-time=4 --tolerance=1e-8 --result-file=Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks-oms_res.csv --stripRoot --skipCSVHeader", "testSynchronousFMU_systemCall.log"); getErrorString();
 //readFile("testSynchronousFMU_systemCall.log"); getErrorString();
 
 // Compare results

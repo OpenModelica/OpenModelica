@@ -104,6 +104,7 @@ enum _FLAG
   FLAG_IPOPT_MAX_ITER,
   FLAG_IPOPT_WARM_START,
   FLAG_JACOBIAN,
+  FLAG_JACOBIAN_NOMINAL_FACTOR,
   FLAG_JACOBIAN_THREADS,
   FLAG_L,
   FLAG_L_DATA_RECOVERY,
@@ -246,6 +247,7 @@ enum GB_METHOD {
   RK_SIRK3_2_3L2SA,   /* sirk3l */
   RK_SIRK3_2_4L3SA,   /* sirk3 */
   RK_SIRK3_2_5L3SA,   /* sirk3s5 */
+  RK_SIRK4_3_LAGUERRE,/* sirk4lag*/
   RK_SIRK4_3_5L3SA,   /* sirk4 */
   RK_SIRK5_4_5L3SA,   /* sirk5 */
   RK_SIRK4_3_6L4SA,   /* sirk4s6 */
@@ -254,7 +256,7 @@ enum GB_METHOD {
   RK_SIRK6_5_7L4SA,   /* sirk6s7 */
   RK_SIRK6_5_8L4SA,   /* sirk6s8 */
   RK_SIRK5_4_7L5SA,   /* sirk5s7l5 */
-  RK_FIRK7_6_5L4SA,   /* firk7 */
+  RK_FIRK7_6TS_5L4SA, /* firk7 */
   RK_RADAU_IA_2,      /* radauIA2*/
   RK_RADAU_IA_3,      /* radauIA3*/
   RK_RADAU_IA_4,      /* radauIA4*/
@@ -358,20 +360,23 @@ extern const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX];
 extern const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX];
 
 /**
- * @brief Extrapolation method for single-rate / multi-rate error estimation.
+ * @brief Method for single-rate / multi-rate error estimation.
  */
-enum GB_EXTRAPOL_METHOD {
-  GB_EXT_UNKNOWN = 0,    /* Unknown method */
+enum GB_ERROR_METHOD {
+  GB_ERROR_UNKNOWN = 0,    /* Unknown method */
 
-  GB_EXT_DEFAULT,        /* Default, depending on the Runge-Kutta method */
-  GB_EXT_RICHARDSON,     /* Richardson extrapolation */
-  GB_EXT_EMBEDDED,       /* Embedded scheme */
+  GB_ERROR_DEFAULT,        /* Default, depending on the Runge-Kutta method */
+  GB_ERROR_RICHARDSON,     /* Richardson extrapolation */
+  GB_ERROR_EMBEDDED,       /* Embedded scheme */
+  GB_ERROR_TWO_STEP,       /* Two-step estimator */
+  GB_ERROR_CONTRACTIVE,    /* Contractive defect estimator */
+  GB_ERROR_FILTER,         /* Contractive filter applied to embedded estimator */
 
-  GB_EXT_MAX
+  GB_ERROR_MAX
 };
 
-extern const char *GB_EXTRAPOL_METHOD_NAME[GB_EXT_MAX];
-extern const char *GB_EXTRAPOL_METHOD_DESC[GB_EXT_MAX];
+extern const char *GB_ERROR_METHOD_NAME[GB_ERROR_MAX];
+extern const char *GB_ERROR_METHOD_DESC[GB_ERROR_MAX];
 
 enum SOLVER_METHOD
 {

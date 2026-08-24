@@ -163,7 +163,7 @@ pub fn clone<T: Clone + PartialEq>(mutable: Pointer<T>) -> Pointer<T> {
 // the callback result: the MM analysis classified `Pointer.apply` infallible
 // based on its callees, which is only sound when the callback itself never
 // fails. Surface a misuse as a panic, consistent with the C runtime.
-pub fn apply<T: Clone + PartialEq + 'static>(mutable: Pointer<T>, func: std::sync::Arc<dyn ::std::ops::Fn(T) -> anyhow::Result<T> + 'static>) -> anyhow::Result<Pointer<T>> {
+pub fn apply<T: Clone + PartialEq + 'static>(mutable: Pointer<T>, func: std::sync::Arc<dyn ::std::ops::Fn(T) -> metamodelica::Result<T> + 'static>) -> metamodelica::Result<Pointer<T>> {
     let new = func(access(mutable.clone()))?;
     // The MM source skips the write when `func` returned its argument
     // unchanged (`if not referenceEq(newData, data)`). With `T` passed by

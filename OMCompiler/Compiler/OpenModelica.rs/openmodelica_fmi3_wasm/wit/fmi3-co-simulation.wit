@@ -1,0 +1,394 @@
+
+package fmi:fmi3@3.0.0;
+
+// Copyright (C) 2026 Modelica Association Project "FMI"
+//               All rights reserved.
+//
+// Copied from the FMI Layered Standard WebAssembly (fmi-ls-wasm) repository
+// (https://github.com/modelica/fmi-ls-wasm), released under the BSD 2-Clause
+// license:
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// - Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+//
+// - Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// SPDX-License-Identifier: BSD-2-Clause
+
+interface co-simulation {
+  use types.{
+    value-reference, status, fmu-state,
+    interval-qualifier, interval-fraction,
+    variable-dependency, discrete-states-info,
+  };
+
+  /// Result of a fmi3DoStep call.
+  record do-step-result {
+    /// The FMU completed the step up to (at least) the requested time.
+    /// When early-return is enabled this may be less than end-point.
+    last-successful-time: f64,
+    /// True if the FMU returned early (canReturnEarlyAfterIntermediateUpdate).
+    event-handling-needed: bool,
+    /// True if the FMU requests termination.
+    terminate-simulation:  bool,
+    /// True if the step was entirely discarded and must be retried.
+    early-return:          bool,
+  }
+
+  resource co-simulation-instance {
+
+    // ── Construction ──────────────────────────────────────────────────────────
+
+    /// Instantiate a Co-Simulation FMU instance.
+    ///
+    /// FMI C: fmi3Instance fmi3InstantiateCoSimulation(
+    ///     fmi3String instanceName, fmi3String instantiationToken,
+    ///     fmi3String resourcePath, fmi3Boolean visible,
+    ///     fmi3Boolean loggingOn,
+    ///     fmi3Boolean eventModeUsed,
+    ///     fmi3Boolean earlyReturnAllowed,
+    ///     const fmi3ValueReference requiredIntermediateVariables[],
+    ///     size_t nRequiredIntermediateVariables,
+    ///     fmi3InstanceEnvironment instanceEnvironment,
+    ///     fmi3LogMessageCallback logMessage,
+    ///     fmi3IntermediateUpdateCallback intermediateUpdate);
+    instantiate-co-simulation: static func(
+      instance-name:                        string,
+      instantiation-token:                  string,
+      resource-path:                        string,
+      visible:                              bool,
+      logging-on:                           bool,
+      event-mode-used:                      bool,
+      early-return-allowed:                 bool,
+      required-intermediate-variables:      list<value-reference>,
+    ) -> option<co-simulation-instance>;
+
+    // ── Debug logging ─────────────────────────────────────────────────────────
+
+    /// Enable or disable logging for specific categories.
+    ///
+    /// FMI C: fmi3Status fmi3SetDebugLogging(
+    ///     fmi3Instance instance, fmi3Boolean loggingOn,
+    ///     size_t nCategories, const fmi3String categories[]);
+    set-debug-logging: func(logging-on: bool, categories: list<string>) -> status;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    /// Transition to Initialisation Mode.
+    ///
+    /// FMI C: fmi3Status fmi3EnterInitializationMode(
+    ///     fmi3Instance instance,
+    ///     fmi3Boolean toleranceDefined, fmi3Float64 tolerance,
+    ///     fmi3Float64 startTime,
+    ///     fmi3Boolean stopTimeDefined, fmi3Float64 stopTime);
+    enter-initialization-mode: func(
+      tolerance:  option<f64>,
+      start-time: f64,
+      stop-time:  option<f64>,
+    ) -> status;
+
+    /// Leave Initialisation Mode and enter the appropriate operating mode.
+    ///
+    /// FMI C: fmi3Status fmi3ExitInitializationMode(fmi3Instance instance);
+    exit-initialization-mode: func() -> status;
+
+    /// Enter Event Mode (Co-Simulation with event mode).
+    ///
+    /// FMI C: fmi3Status fmi3EnterEventMode(fmi3Instance instance);
+    enter-event-mode: func() -> status;
+
+    /// Update discrete states and check for further event iterations.
+    ///
+    /// FMI C: fmi3Status fmi3UpdateDiscreteStates(...)
+    update-discrete-states: func() -> result<discrete-states-info, status>;
+
+    /// Terminate the simulation run (orderly shutdown).
+    ///
+    /// FMI C: fmi3Status fmi3Terminate(fmi3Instance instance);
+    terminate: func() -> status;
+
+    /// Reset the instance to the state after fmi3Instantiate*.
+    ///
+    /// FMI C: fmi3Status fmi3Reset(fmi3Instance instance);
+    reset: func() -> status;
+
+    // ── Configuration mode (structural parameters) ───────────────────────────
+
+    /// Enter Configuration Mode to set structural parameters.
+    ///
+    /// FMI C: fmi3Status fmi3EnterConfigurationMode(fmi3Instance instance);
+    enter-configuration-mode: func() -> status;
+
+    /// Leave Configuration Mode.
+    ///
+    /// FMI C: fmi3Status fmi3ExitConfigurationMode(fmi3Instance instance);
+    exit-configuration-mode: func() -> status;
+
+    // ── Variable getters ──────────────────────────────────────────────────────
+
+    /// fmi3Status fmi3GetFloat32(instance, vrs[], nVRs, values[], nValues);
+    get-float32: func(value-references: list<value-reference>) -> result<list<f32>, status>;
+
+    /// fmi3Status fmi3GetFloat64(instance, vrs[], nVRs, values[], nValues);
+    get-float64: func(value-references: list<value-reference>) -> result<list<f64>, status>;
+
+    /// fmi3Status fmi3GetInt8(instance, vrs[], nVRs, values[], nValues);
+    get-int8:  func(value-references: list<value-reference>) -> result<list<s8>,  status>;
+
+    /// fmi3Status fmi3GetInt16(instance, vrs[], nVRs, values[], nValues);
+    get-int16: func(value-references: list<value-reference>) -> result<list<s16>, status>;
+
+    /// fmi3Status fmi3GetInt32(instance, vrs[], nVRs, values[], nValues);
+    get-int32: func(value-references: list<value-reference>) -> result<list<s32>, status>;
+
+    /// fmi3Status fmi3GetInt64(instance, vrs[], nVRs, values[], nValues);
+    get-int64: func(value-references: list<value-reference>) -> result<list<s64>, status>;
+
+    /// fmi3Status fmi3GetUInt8(instance, vrs[], nVRs, values[], nValues);
+    get-uint8:  func(value-references: list<value-reference>) -> result<list<u8>,  status>;
+
+    /// fmi3Status fmi3GetUInt16(instance, vrs[], nVRs, values[], nValues);
+    get-uint16: func(value-references: list<value-reference>) -> result<list<u16>, status>;
+
+    /// fmi3Status fmi3GetUInt32(instance, vrs[], nVRs, values[], nValues);
+    get-uint32: func(value-references: list<value-reference>) -> result<list<u32>, status>;
+
+    /// fmi3Status fmi3GetUInt64(instance, vrs[], nVRs, values[], nValues);
+    get-uint64: func(value-references: list<value-reference>) -> result<list<u64>, status>;
+
+    /// fmi3Status fmi3GetBoolean(instance, vrs[], nVRs, values[], nValues);
+    get-boolean: func(value-references: list<value-reference>) -> result<list<bool>, status>;
+
+    /// fmi3Status fmi3GetString(instance, vrs[], nVRs, values[], nValues);
+    get-string: func(value-references: list<value-reference>) -> result<list<string>, status>;
+
+    /// fmi3Status fmi3GetBinary(instance, vrs[], nVRs, valueSizes[], values[], nValues);
+    get-binary: func(value-references: list<value-reference>) -> result<list<list<u8>>, status>;
+
+    /// fmi3Status fmi3GetClock(instance, vrs[], nVRs, values[]);
+    get-clock: func(value-references: list<value-reference>) -> result<list<bool>, status>;
+
+    // ── Variable setters ──────────────────────────────────────────────────────
+
+    /// fmi3Status fmi3SetFloat32(instance, vrs[], nVRs, values[], nValues);
+    set-float32: func(value-references: list<value-reference>, values: list<f32>) -> status;
+
+    /// fmi3Status fmi3SetFloat64(instance, vrs[], nVRs, values[], nValues);
+    set-float64: func(value-references: list<value-reference>, values: list<f64>) -> status;
+
+    /// fmi3Status fmi3SetInt8(instance, vrs[], nVRs, values[], nValues);
+    set-int8:  func(value-references: list<value-reference>, values: list<s8>)  -> status;
+
+    /// fmi3Status fmi3SetInt16(instance, vrs[], nVRs, values[], nValues);
+    set-int16: func(value-references: list<value-reference>, values: list<s16>) -> status;
+
+    /// fmi3Status fmi3SetInt32(instance, vrs[], nVRs, values[], nValues);
+    set-int32: func(value-references: list<value-reference>, values: list<s32>) -> status;
+
+    /// fmi3Status fmi3SetInt64(instance, vrs[], nVRs, values[], nValues);
+    set-int64: func(value-references: list<value-reference>, values: list<s64>) -> status;
+
+    /// fmi3Status fmi3SetUInt8(instance, vrs[], nVRs, values[], nValues);
+    set-uint8:  func(value-references: list<value-reference>, values: list<u8>)  -> status;
+
+    /// fmi3Status fmi3SetUInt16(instance, vrs[], nVRs, values[], nValues);
+    set-uint16: func(value-references: list<value-reference>, values: list<u16>) -> status;
+
+    /// fmi3Status fmi3SetUInt32(instance, vrs[], nVRs, values[], nValues);
+    set-uint32: func(value-references: list<value-reference>, values: list<u32>) -> status;
+
+    /// fmi3Status fmi3SetUInt64(instance, vrs[], nVRs, values[], nValues);
+    set-uint64: func(value-references: list<value-reference>, values: list<u64>) -> status;
+
+    /// fmi3Status fmi3SetBoolean(instance, vrs[], nVRs, values[], nValues);
+    set-boolean: func(value-references: list<value-reference>, values: list<bool>) -> status;
+
+    /// fmi3Status fmi3SetString(instance, vrs[], nVRs, values[], nValues);
+    set-string: func(value-references: list<value-reference>, values: list<string>) -> status;
+
+    /// fmi3Status fmi3SetBinary(instance, vrs[], nVRs, valueSizes[], values[], nValues);
+    set-binary: func(value-references: list<value-reference>, values: list<list<u8>>) -> status;
+
+    /// fmi3Status fmi3SetClock(instance, vrs[], nVRs, values[]);
+    set-clock: func(value-references: list<value-reference>, values: list<bool>) -> status;
+
+    // ── Variable dependencies ─────────────────────────────────────────────────
+
+    /// Query the number of rows in the variable-dependency table.
+    ///
+    /// FMI C: fmi3Status fmi3GetNumberOfVariableDependencies(
+    ///     fmi3Instance instance, fmi3ValueReference vr,
+    ///     size_t* nDependencies);
+    get-number-of-variable-dependencies: func(vr: value-reference) -> result<u64, status>;
+
+    /// Retrieve the variable dependency table.
+    ///
+    /// FMI C: fmi3Status fmi3GetVariableDependencies(...)
+    get-variable-dependencies: func(
+      dependent: value-reference,
+    ) -> result<list<variable-dependency>, status>;
+
+    // ── FMU state (save / restore) ────────────────────────────────────────────
+
+    /// Capture the complete internal state of the FMU.
+    ///
+    /// FMI C: fmi3Status fmi3GetFMUState(
+    ///     fmi3Instance instance, fmi3FMUState* FMUState);
+    get-fmu-state: func() -> result<fmu-state, status>;
+
+    /// Restore the FMU to a previously saved state.
+    ///
+    /// FMI C: fmi3Status fmi3SetFMUState(
+    ///     fmi3Instance instance, fmi3FMUState FMUState);
+    set-fmu-state: func(state: fmu-state) -> status;
+
+    // ── Directional derivatives ───────────────────────────────────────────────
+
+    /// Compute directional derivatives  dv = J · Δz.
+    ///
+    /// FMI C: fmi3Status fmi3GetDirectionalDerivative(...)
+    get-directional-derivative: func(
+      unknowns:  list<value-reference>,
+      knowns:    list<value-reference>,
+      seed:      list<f64>,
+    ) -> result<list<f64>, status>;
+
+    /// Compute adjoint (transposed Jacobian) derivatives  Δz = Jᵀ · dv.
+    ///
+    /// FMI C: fmi3Status fmi3GetAdjointDerivative(...)
+    get-adjoint-derivative: func(
+      unknowns:  list<value-reference>,
+      knowns:    list<value-reference>,
+      seed:      list<f64>,
+    ) -> result<list<f64>, status>;
+
+    // ── Clock interval / shift queries ────────────────────────────────────────
+
+    /// fmi3Status fmi3GetIntervalDecimal(instance, vrs[], nVRs, intervals[], qualifiers[]);
+    get-interval-decimal: func(
+      value-references: list<value-reference>,
+    ) -> result<list<tuple<f64, interval-qualifier>>, status>;
+
+    /// fmi3Status fmi3GetIntervalFraction(instance, vrs[], nVRs, counters[], resolutions[], qualifiers[]);
+    get-interval-fraction: func(
+      value-references: list<value-reference>,
+    ) -> result<list<tuple<interval-fraction, interval-qualifier>>, status>;
+
+    /// fmi3Status fmi3GetShiftDecimal(instance, vrs[], nVRs, shifts[]);
+    get-shift-decimal: func(
+      value-references: list<value-reference>,
+    ) -> result<list<f64>, status>;
+
+    /// fmi3Status fmi3GetShiftFraction(instance, vrs[], nVRs, counters[], resolutions[]);
+    get-shift-fraction: func(
+      value-references: list<value-reference>,
+    ) -> result<list<interval-fraction>, status>;
+
+    /// fmi3Status fmi3SetIntervalDecimal(instance, vrs[], nVRs, intervals[]);
+    set-interval-decimal: func(
+      value-references: list<value-reference>,
+      intervals:        list<f64>,
+    ) -> status;
+
+    /// fmi3Status fmi3SetIntervalFraction(instance, vrs[], nVRs, counters[], resolutions[]);
+    set-interval-fraction: func(
+      value-references: list<value-reference>,
+      intervals:        list<interval-fraction>,
+    ) -> status;
+
+    /// fmi3Status fmi3SetShiftDecimal(instance, vrs[], nVRs, shifts[]);
+    set-shift-decimal: func(
+      value-references: list<value-reference>,
+      shifts:           list<f64>,
+    ) -> status;
+
+    /// fmi3Status fmi3SetShiftFraction(instance, vrs[], nVRs, counters[], resolutions[]);
+    set-shift-fraction: func(
+      value-references: list<value-reference>,
+      shifts:           list<interval-fraction>,
+    ) -> status;
+
+    /// Evaluate discrete states without consuming a full time step.
+    ///
+    /// FMI C: fmi3Status fmi3EvaluateDiscreteStates(fmi3Instance instance);
+    evaluate-discrete-states: func() -> status;
+
+    // ── Input derivatives ─────────────────────────────────────────────────────
+
+    /// Provide higher-order input derivatives to the FMU before fmi3DoStep.
+    ///
+    /// FMI C: fmi3Status fmi3SetInputDerivatives(
+    ///     fmi3Instance instance,
+    ///     const fmi3ValueReference vrs[], size_t nVRs,
+    ///     const fmi3UInt32 orders[], size_t nOrders,
+    ///     const fmi3Float64 values[], size_t nValues);
+    ///
+    /// Mapping: (vr, order) pairs are interleaved in a list of tuples.
+    set-input-derivatives: func(
+      requests: list<tuple<value-reference, u32>>,
+      values:   list<f64>,
+    ) -> status;
+
+    // ── Output derivatives ────────────────────────────────────────────────────
+
+    /// Retrieve higher-order output derivatives after fmi3DoStep.
+    ///
+    /// FMI C: fmi3Status fmi3GetOutputDerivatives(
+    ///     fmi3Instance instance,
+    ///     const fmi3ValueReference vrs[], size_t nVRs,
+    ///     const fmi3UInt32 orders[], size_t nOrders,
+    ///     fmi3Float64 values[], size_t nValues);
+    get-output-derivatives: func(
+      requests: list<tuple<value-reference, u32>>,
+    ) -> result<list<f64>, status>;
+
+    // ── Step ──────────────────────────────────────────────────────────────────
+
+    /// Advance the simulation by one communication step.
+    ///
+    /// FMI C: fmi3Status fmi3DoStep(
+    ///     fmi3Instance instance,
+    ///     fmi3Float64 currentCommunicationPoint,
+    ///     fmi3Float64 communicationStepSize,
+    ///     fmi3Boolean noSetFMUStatePriorToCurrentPoint,
+    ///     fmi3Boolean* eventHandlingNeeded,
+    ///     fmi3Boolean* terminateSimulation,
+    ///     fmi3Boolean* earlyReturn,
+    ///     fmi3Float64* lastSuccessfulTime);
+    ///
+    /// Mapping notes:
+    ///   • Output parameters aggregated into do-step-result.
+    ///   • status::discard signals the step must be retried with a smaller
+    ///     step size; in that case the returned do-step-result fields indicate
+    ///     why and where the FMU stopped.
+    do-step: func(
+      current-communication-point:            f64,
+      communication-step-size:                f64,
+      no-set-fmu-state-prior-to-current-point: bool,
+    ) -> result<do-step-result, status>;
+
+    // ── Step-mode transition (CS with event mode) ─────────────────────────────
+
+    /// Enter Step Mode from Event Mode (used when event-mode-used = true).
+    ///
+    /// FMI C: fmi3Status fmi3EnterStepMode(fmi3Instance instance);
+    enter-step-mode: func() -> status;
+  }
+}

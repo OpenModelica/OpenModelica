@@ -31,6 +31,8 @@
 #include "../../util/omc_error.h"
 #include "../jacobian_util.h"
 
+#include <string.h>
+
 /*! \fn printStateSelectionInfo
  *
  *  function prints actually information about current state selection
@@ -189,9 +191,9 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
 
     for(i=0; i<jacobian->sizeRows; i++)
     {
-      buffer[0] = 0;
+      char *p = buffer;
       for(j=0; j < jacobian->sizeCols; j++)
-        sprintf(buffer, "%s%.5e ", buffer, jac[i*jacobian->sizeCols+j]);
+        p += sprintf(p, "%.5e ", jac[i*jacobian->sizeCols+j]);
       infoStreamPrint(OMC_LOG_DSS_JAC, 0, "%s", buffer);
     }
     messageClose(OMC_LOG_DSS_JAC);
@@ -333,9 +335,9 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
 
       for(m=0; m < data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows; m++)
       {
-        buffer[0] = 0;
+        char *p = buffer;
         for(j=0; j < data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols; j++)
-          sprintf(buffer, "%s%.5e ", buffer, set->J[m*data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols+j]);
+          p += sprintf(p, "%.5e ", set->J[m*data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols+j]);
         warningStreamPrint(OMC_LOG_DSS, 0, "%s", buffer);
       }
 

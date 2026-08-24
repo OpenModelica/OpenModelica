@@ -1,6 +1,6 @@
 // keywords: fmu export
 // status: correct
-// teardown_command: rm -rf fmiblackbox.lua fmiblackbox_res.mat fmi_attributes_11.fmu fmiblackbox_fmi_attributes_11.log fmi_attributes_11_info.json fmiblackbox_systemCall.log temp-fmiblackbox/
+// teardown_command: rm -rf fmiblackbox.py fmiblackbox_res.mat fmi_attributes_11.fmu fmiblackbox_fmi_attributes_11.log fmi_attributes_11_info.json fmiblackbox_systemCall.log temp-fmiblackbox/
 
 loadString("
 model fmi_attributes_11
@@ -22,24 +22,25 @@ end fmi_attributes_11;
 setCommandLineOptions("--fmiFilter=blackBox"); getErrorString();
 buildModelFMU(fmi_attributes_11, version="2.0", fmuType="me_cs", platforms={"static"}); getErrorString();
 
-writeFile("fmiblackbox.lua", "
-oms_setTempDirectory(\"./temp-fmiblackbox/\")
+writeFile("fmiblackbox.py", "
+from OMSimulator import SSP, Settings, CRef
 
-oms_newModel(\"fmiblackbox\")
-oms_addSystem(\"fmiblackbox.root\", oms_system_sc)
-oms_addSubModel(\"fmiblackbox.root.fmi_attributes_11\", \"fmi_attributes_11.fmu\")
+Settings.suppressPath = True
 
-oms_instantiate(\"fmiblackbox\")
+model = SSP()
+model.addResource('fmi_attributes_11.fmu', new_name='resources/fmi_attributes_11.fmu')
+model.addComponent(CRef('default', 'fmi_attributes_11'), 'resources/fmi_attributes_11.fmu')
 
-oms_initialize(\"fmiblackbox\")
+instantiated_model = model.instantiate()
+instantiated_model.setResultFile('fmiblackbox_res.mat')
 
-oms_simulate(\"fmiblackbox\")
-
-oms_terminate(\"fmiblackbox\")
-oms_delete(\"fmiblackbox\")
+instantiated_model.initialize()
+instantiated_model.simulate()
+instantiated_model.terminate()
+instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator fmiblackbox.lua", "fmiblackbox_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 fmiblackbox.py", "fmiblackbox_systemCall.log");
 readFile("fmiblackbox_systemCall.log");
 
 // Result:
@@ -52,10 +53,6 @@ readFile("fmiblackbox_systemCall.log");
 // true
 // ""
 // 0
-// "info:    maximum step size for 'fmiblackbox.root': 0.001000
-// info:    Result file: fmiblackbox_res.mat (bufferSize=10)
-// info:    Final Statistics for 'fmiblackbox.root':
-//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
-//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "info:    Result file: fmiblackbox_res.mat (bufferSize=10)
 // "
 // endResult

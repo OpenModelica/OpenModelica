@@ -13,7 +13,7 @@
 // Known bugs / limitations found while writing these tests are documented
 // inline with "Bug:" prefixes.
 
-use anyhow::Result;
+use metamodelica::Result;
 use std::sync::Arc;
 use metamodelica::*;
 use arcstr::ArcStr;

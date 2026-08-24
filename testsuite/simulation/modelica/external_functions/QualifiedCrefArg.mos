@@ -1,8 +1,8 @@
 // name: QualifiedCrefArg
 // keyword: external function, qualified cref
 // status: correct
-// setup_command: gcc `if test "x86_64" = \`uname -m\`; then echo -fPIC; fi` -c -o QualifiedCrefArg-f.o QualifiedCrefArg-f.c
-// teardown_command: rm -f QualifiedCrefArg-f.o QualifiedCrefArg_*
+// setup_command: $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -o QualifiedCrefArg-f$OMC_EXTLIB_EXT QualifiedCrefArg-f.c $OMC_EXTLIB_LIBS
+// teardown_command: rm -f QualifiedCrefArg-f$OMC_EXTLIB_EXT QualifiedCrefArg_*
 // cflags: -d=-newInst
 //
 //

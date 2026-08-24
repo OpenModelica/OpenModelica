@@ -4,14 +4,14 @@
 //! build evaluates functions through the in-process wasm JIT
 //! (`openmodelica_codegen_wasm_jit`) instead of this C/.so path.
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 
 pub fn load_library(_path: &str, _relative: bool, _debug: bool) -> Result<i32> {
-    bail!("System.loadLibrary: dynamic loading (dlopen) is unavailable on wasm")
+    return Err("System.loadLibrary: dynamic loading (dlopen) is unavailable on wasm")
 }
 
 pub fn lookup_function(_lib: i32, _name: &str) -> Result<i32> {
-    bail!("System.lookupFunction: dynamic loading is unavailable on wasm")
+    return Err("System.lookupFunction: dynamic loading is unavailable on wasm")
 }
 
 pub fn free_function(_func: i32, _debug: bool) -> Result<()> {
@@ -24,7 +24,7 @@ pub fn free_library(_lib: i32, _debug: bool) -> Result<()> {
 }
 
 pub fn function_addr(_func: i32) -> Result<usize> {
-    bail!("dynload::function_addr: dynamic loading is unavailable on wasm")
+    return Err("dynload::function_addr: dynamic loading is unavailable on wasm")
 }
 
 pub fn runtime_symbol(_name: &str) -> Option<usize> {
@@ -32,5 +32,5 @@ pub fn runtime_symbol(_name: &str) -> Option<usize> {
 }
 
 pub fn thread_data() -> Result<usize> {
-    bail!("dynload::thread_data: the dlopen'd MMC runtime is unavailable on wasm")
+    return Err("dynload::thread_data: the dlopen'd MMC runtime is unavailable on wasm")
 }

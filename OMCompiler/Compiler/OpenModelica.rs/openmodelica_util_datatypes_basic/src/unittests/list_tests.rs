@@ -1,4 +1,4 @@
-use anyhow::{Result, bail};
+use metamodelica::Result;
 use std::sync::Arc;
 use metamodelica::*;
 use arcstr::ArcStr;
@@ -348,7 +348,7 @@ fn test_fill() {
 #[test]
 fn test_filter() {
     let lst = list![1i32, 2, 3, 4, 5, 6];
-    let result = L::filter(Arc::clone(&lst), Arc::new(|x| { if x % 2 == 0 { Ok(()) } else { bail!("skip") } }));
+    let result = L::filter(Arc::clone(&lst), Arc::new(|x| { if x % 2 == 0 { Ok(()) } else { return Err("skip") } }));
     assert_eq!(result, list![2i32, 4, 6]);
 }
 
@@ -356,7 +356,7 @@ fn test_filter() {
 #[test]
 fn test_filter1() {
     let lst = list![1i32];
-    let result = L::filter1(Arc::clone(&lst), Arc::new(|x, _arg: i32| { if x > 0 { Ok(()) } else { bail!("skip") } }), 0i32);
+    let result = L::filter1(Arc::clone(&lst), Arc::new(|x, _arg: i32| { if x > 0 { Ok(()) } else { return Err("skip") } }), 0i32);
     assert_eq!(result, list![1i32]);
 }
 
@@ -414,7 +414,7 @@ fn test_filter_cons() {
 #[test]
 fn test_filter_map() {
     let lst = list![1i32, 2, 3, 4];
-    let result = L::filterMap(Arc::clone(&lst), Arc::new(|x| if x % 2 == 0 { Ok(x * 10) } else { bail!("skip") }));
+    let result = L::filterMap(Arc::clone(&lst), Arc::new(|x| if x % 2 == 0 { Ok(x * 10) } else { return Err("skip") }));
     assert_eq!(result, list![20i32, 40]);
 }
 
@@ -422,7 +422,7 @@ fn test_filter_map() {
 #[test]
 fn test_filter_map1() {
     let lst = list![2i32];
-    let result = L::filterMap1(Arc::clone(&lst), Arc::new(|x, _arg: i32| if x > 0 { Ok(x * 2) } else { bail!("skip") }), 0i32);
+    let result = L::filterMap1(Arc::clone(&lst), Arc::new(|x, _arg: i32| if x > 0 { Ok(x * 2) } else { return Err("skip") }), 0i32);
     assert_eq!(result, list![4i32]);
 }
 
@@ -2170,7 +2170,7 @@ fn test_fold_empty() {
 #[test]
 fn test_filter_empty_result() {
     let lst = list![1i32, 3, 5];
-    let result = L::filter(Arc::clone(&lst), Arc::new(|x| { if x % 2 == 0 { Ok(()) } else { bail!("skip") } }));
+    let result = L::filter(Arc::clone(&lst), Arc::new(|x| { if x % 2 == 0 { Ok(()) } else { return Err("skip") } }));
     assert!(result.is_empty());
 }
 

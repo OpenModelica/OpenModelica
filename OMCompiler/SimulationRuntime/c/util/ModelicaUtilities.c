@@ -32,12 +32,26 @@
 #include <stdlib.h>
 #include "omc_error.h"
 
+void OpenModelica_Simulation_ModelicaVFormatMessage(const char*string, va_list args) {
+  va_infoStreamPrint(OMC_LOG_STDOUT, 0, string, args);
+}
+
+void OpenModelica_Simulation_ModelicaVFormatWarning(const char*string, va_list args) {
+  va_warningStreamPrint(OMC_LOG_STDOUT, 0, string, args);
+}
+
+/* Like OpenModelica_Modelica{,V}FormatError below: a host that runs the
+   simulation in its own process (the Rust omc's wasm-jit target) rebinds these
+   to route an external function's messages into its simulation log. */
+void (*OpenModelica_ModelicaVFormatMessage)(const char*,va_list) = OpenModelica_Simulation_ModelicaVFormatMessage;
+void (*OpenModelica_ModelicaVFormatWarning)(const char*,va_list) = OpenModelica_Simulation_ModelicaVFormatWarning;
+
 void ModelicaMessage(const char* string) {
   ModelicaFormatMessage("%s", string);
 }
 
 extern void ModelicaVFormatMessage(const char*string, va_list args) {
-  va_infoStreamPrint(OMC_LOG_STDOUT, 0, string, args);
+  OpenModelica_ModelicaVFormatMessage(string, args);
 }
 
 void ModelicaFormatMessage(const char* string,...) {
@@ -52,7 +66,7 @@ void ModelicaWarning(const char* string) {
 }
 
 extern void ModelicaVFormatWarning(const char*string, va_list args) {
-  va_warningStreamPrint(OMC_LOG_STDOUT, 0, string, args);
+  OpenModelica_ModelicaVFormatWarning(string, args);
 }
 
 void ModelicaFormatWarning(const char* string,...) {

@@ -66,21 +66,9 @@ simulate(implicitEquation); getErrorString();
 // -----------------------------
 //   (2) $pDER_INI_NLS_JAC_1_0.$RES_SIM_0 := -(($SEED_INI_NLS_JAC_1_0.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1_0.x) - 2.0 * x * $SEED_INI_NLS_JAC_1_0.x)
 //
-// Sparsity Pattern Cols
-// ***********************
-//   0:	{0}
-//
-// Sparsity Pattern Rows
-// ***********************
-//   0:	{0}
-//
-// Sparsity Coloring Columns
-// ***************************
-//   {0}
-//
-// Sparsity Coloring Rows
-// ************************
-//   {0}
+// Resizable Sparsity Pattern
+// ----------------------------
+// $RES_SIM_0 ... {$pDER_INI_NLS_JAC_1_0.$RES_SIM_0} ... {($SEED_INI_NLS_JAC_1_0.x, {}, false)}
 //
 // ======================================================
 //   [EMPTY] SimCode Jacobian A(idx = 1, partition = 0)
@@ -206,7 +194,7 @@ simulate(implicitEquation); getErrorString();
 //
 // jacobianEquations:
 // ========================================
-// 7: $pDER_INI_NLS_JAC_1_0.$RES_SIM_0=-($SEED_INI_NLS_JAC_1_0.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1_0.x - 2.0 * x * $SEED_INI_NLS_JAC_1_0.x) [Real]
+// 2: $pDER_INI_NLS_JAC_1_0.$RES_SIM_0=-($SEED_INI_NLS_JAC_1_0.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1_0.x - 2.0 * x * $SEED_INI_NLS_JAC_1_0.x) [Real]
 //
 // jacobianMatrices:
 // ========================================

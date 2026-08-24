@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 use arcstr::ArcStr;
-use anyhow::Result;
+use metamodelica::Result;
 use loop_unwrap::unwrap_break_err;
 use metamodelica::*; // Built-in types and functions
 use const_str;

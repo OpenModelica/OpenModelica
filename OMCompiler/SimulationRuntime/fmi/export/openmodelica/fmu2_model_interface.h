@@ -94,6 +94,7 @@ typedef struct {
   fmi2Real stopTime;
 
   int _need_update;
+  int _terminate_simulation_requested;
   int _has_jacobian;
   int _has_jacobian_intialization;
   JACOBIAN* fmiDerJac;

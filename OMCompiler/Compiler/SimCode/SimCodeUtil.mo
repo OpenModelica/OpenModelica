@@ -128,6 +128,7 @@ import SimCodeUtilShared;
 import Static;
 import StringUtil;
 import SymbolicJacobian;
+import SymbolTable;
 import System;
 import TypesDump;
 import Util;
@@ -254,6 +255,9 @@ protected
   SimCode.HashTableCrefToSimVar crefToSimVarHT;
   SimCodeFunction.MakefileParams makefileParams;
   SimCode.ModelInfo modelInfo;
+  tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literalsAcc = literals;
+  list<SimCodeFunction.RecordDeclaration> recordDeclsAcc = recordDecls;
+  AvlTreePathFunction.Tree fmiDerInitFuncTree;
   HashTable.HashTable crefToClockIndexHT;
   array<Integer> systemIndexMap;
   list<BackendDAE.EqSystem> clockedSysts, contSysts;
@@ -602,8 +606,12 @@ algorithm
 
     // collect fmi partial derivative (FMI 2.0 and 3.0 both expose a ModelStructure)
     if FMI.isFMIVersion20(FMUVersion) or FMI.isFMIVersion30(FMUVersion) then
-      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
+      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex, fmiDerInitFuncTree) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
+      // the FMIDERINIT jacobian is created here, i.e. after the functions have been
+      // elaborated, so the functions it calls on its own have to be added now
+      (modelInfo, literalsAcc, recordDeclsAcc) := addFmiDerInitFunctions(program, fmiDerInitFuncTree,
+        BackendDAEUtil.getFunctions(inBackendDAE.shared), modelInfo, literalsAcc, recordDeclsAcc);
       if debug then execStat("simCode: create FMI model structure"); end if;
     end if;
 
@@ -768,7 +776,7 @@ algorithm
     simCode := SimCode.SIMCODE(
       modelInfo                   = modelInfo,
       literals                    = {}, // Set by the traversal below...
-      recordDecls                 = recordDecls,
+      recordDecls                 = recordDeclsAcc,
       externalFunctionIncludes    = externalFunctionIncludes,
       generic_loop_calls          = {}, // only used in new backend
       localKnownVars              = localKnownVars,
@@ -820,7 +828,7 @@ algorithm
       scalarized                  = true
     );
 
-    (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
+    (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literalsAcc);
     simCode := setSimCodeLiterals(simCode, listReverse(lits));
 
     // dumpCrefToSimVarHashTable(crefToSimVarHT);
@@ -4779,7 +4787,7 @@ algorithm
           print("created sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
         end if;
 
-      then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false, false, -1, "")), iuniqueEqIndex, itempvars);
+      then (SOME(SimCode.JAC_MATRIX({}, {}, "", SimCode.Sparsity.EMPTY(), sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false, false, -1, "")), iuniqueEqIndex, itempvars);
 
     case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs=systs, shared=shared), name, independentVarsLst, residualVarsLst, dependentVarsLst, _)),
                                       (sparsepatternComRefs, sparsepatternComRefsT, _, _),
@@ -4854,7 +4862,7 @@ algorithm
 
         (allEquations, constantEqns, uniqueEqIndex, tempvars) := getSimEqSystemForJacobians(systs, shared, uniqueEqIndex, tempvars);
 
-      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false, false, -1, "")), uniqueEqIndex, tempvars);
+      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, SimCode.Sparsity.EMPTY(), sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false, false, -1, "")), uniqueEqIndex, tempvars);
 
     else
       algorithm
@@ -5120,7 +5128,7 @@ algorithm
         seedVars := List.map1(seedVars, setSimVarKind, BackendDAE.SEED_VAR());
         seedVars := List.map1(seedVars, setSimVarMatrixName, SOME(name));
 
-        tmpJac := SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows, {})}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false, false, -1, "");
+        tmpJac := SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows, {})}, seedVars, name, SimCode.Sparsity.EMPTY(), sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false, false, -1, "");
         linearModelMatrices := tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) := createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
 
@@ -5226,7 +5234,7 @@ algorithm
           print("analytical Jacobians -> created all SimCode equations for Matrix " + name +  " time: " + realString(clock()) + "\n");
         end if;
 
-        tmpJac := SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false, false, -1, "");
+        tmpJac := SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, SimCode.Sparsity.EMPTY(), sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false, false, -1, "");
         linearModelMatrices := tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) := createSymbolicJacobianssSimCode(rest, inSimVarHT, uniqueEqIndex, restnames, linearModelMatrices);
      then
@@ -5886,21 +5894,33 @@ protected
   list<SimCode.SpatialDistribution> spatial_lst;
   Mutable<Integer> maxIndex_ptr = Mutable.create(-1);
 algorithm
-  (_,spatial_lst) := BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsHelper, (function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), {}));
+  // Traverse top-down so we can keep track of the guard condition of the
+  // enclosing if-branch a spatialDistribution() operator sits in. The
+  // storeSpatialDistribution() callback must be guarded by the same condition
+  (_, (_, spatial_lst)) := BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsTopDownHelper, (function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (NONE(), {})));
   spatialInfo := SimCode.SPATIAL_DISTRIBUTION_INFO(spatial_lst, Mutable.access(maxIndex_ptr));
 end extractSpatialDistributionInfo;
 
 function extractSpatialDistributionInfoExp
+  "Top-down expression traversal that collects every spatialDistribution() call
+   together with the guard condition of the enclosing if-branch it sits in.
+   The condition is carried in the traversal argument and conjoined per branch
+   (then = cond, else = not cond) so the generated storeSpatialDistribution
+   callback can be guarded by the same event as the operator's evaluation."
   input output DAE.Exp callExp;
-  input output list<SimCode.SpatialDistribution> spatialInfo;
+  output Boolean cont "Continue descending flag for Expression.traverseExpTopDown";
+  input output tuple<Option<DAE.Exp>, list<SimCode.SpatialDistribution>> tpl "current guard condition and collected operators";
   input Mutable<Integer> maxIndex_ptr;
 algorithm
-  spatialInfo := match callExp
+  (cont, tpl) := match callExp
     local
       Integer i, initSize;
-      DAE.Exp in0, in1, pos, dir, initPnts, initVals;
+      DAE.Exp in0, in1, pos, dir, initPnts, initVals, cond, tb, fb;
+      Option<DAE.Exp> curCond;
+      list<SimCode.SpatialDistribution> spatialInfo;
     case DAE.CALL(path = Absyn.IDENT("spatialDistribution"), expLst={DAE.ICONST(i), in0, in1, pos, dir, initPnts, initVals})
       algorithm
+        (curCond, spatialInfo) := tpl;
         if i > Mutable.access(maxIndex_ptr) then
           Mutable.update(maxIndex_ptr, i);
         end if;
@@ -5908,10 +5928,35 @@ algorithm
           Error.addInternalError("function extractDelayedExpressions failed: initialPoints and initialValues of spatialDistribution are not of the same size.", sourceInfo());
         end if;
         initSize := Expression.sizeOf(Expression.typeof(initPnts));
-    then SimCode.SPATIAL_DISTRIBUTION(i, in0, in1, pos, dir, initPnts, initVals, initSize) :: spatialInfo;
-    else spatialInfo;
+        spatialInfo := SimCode.SPATIAL_DISTRIBUTION(i, in0, in1, pos, dir, initPnts, initVals, initSize, curCond) :: spatialInfo;
+    then (true, (curCond, spatialInfo));
+
+    // Descend into the branches ourselves so the accumulated guard condition
+    // can differ between the then- and else-branch. Return cont=false to keep
+    // the generic traversal from visiting the children a second time.
+    case DAE.IFEXP(cond, tb, fb)
+      algorithm
+        (curCond, spatialInfo) := tpl;
+        (_, (_, spatialInfo)) := Expression.traverseExpTopDown(cond, function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (curCond, spatialInfo));
+        (_, (_, spatialInfo)) := Expression.traverseExpTopDown(tb, function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (SOME(combineGuardCondition(curCond, cond)), spatialInfo));
+        (_, (_, spatialInfo)) := Expression.traverseExpTopDown(fb, function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), (SOME(combineGuardCondition(curCond, Expression.negate(cond))), spatialInfo));
+    then (false, (curCond, spatialInfo));
+
+    else (true, tpl);
   end match;
 end extractSpatialDistributionInfoExp;
+
+function combineGuardCondition
+  "Conjoins an outer guard condition (if any) with a branch condition."
+  input Option<DAE.Exp> outerCond;
+  input DAE.Exp branchCond;
+  output DAE.Exp cond;
+algorithm
+  cond := match outerCond
+    case SOME(cond) then DAE.LBINARY(cond, DAE.AND(DAE.T_BOOL_DEFAULT), branchCond);
+    else branchCond;
+  end match;
+end combineGuardCondition;
 
 public function createExtObjInfo
   input BackendDAE.Shared shared;
@@ -13724,6 +13769,7 @@ public function createFMIModelStructure
   output SimCode.ModelInfo outModelInfo = inModelInfo;
   output list<SimCode.JacobianMatrix> symJacs = {};
   output Integer uniqueEqIndex = inUniqueEqIndex;
+  output AvlTreePathFunction.Tree outFmiDerInitFuncTree = AvlTreePathFunction.new() "functions the FMIDERINIT jacobian calls, may hold functions created by the differentiation";
 protected
    BackendDAE.SparsePatternCrefs spTA, spTA1;
    SimCode.SparsityPattern sparseInts;
@@ -13819,7 +13865,7 @@ algorithm
 
     // get FMI initialUnknowns list with dependencies
     if not listEmpty(tmpInitialUnknowns) then
-      (allInitialUnknowns, fmiDerInit, sortedUnknownCrefs, sortedknownCrefs) := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
+      (allInitialUnknowns, fmiDerInit, sortedUnknownCrefs, sortedknownCrefs, outFmiDerInitFuncTree) := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
     else
       allInitialUnknowns := {};
     end if;
@@ -13911,6 +13957,83 @@ else
 end try;
 end createFMIModelStructure;
 
+protected function collectUsedFmiDerInitFunctions
+  "returns the functions of the given tree that the FMIDERINIT jacobian equations call"
+  input BackendDAE.SymbolicJacobians fmiDerInit;
+  input AvlTreePathFunction.Tree fmiDerInitFuncTree;
+  output AvlTreePathFunction.Tree usedFuncs = AvlTreePathFunction.new();
+protected
+  BackendDAE.BackendDAE jacDAE;
+algorithm
+  for jac in fmiDerInit loop
+    () := match jac
+      case (SOME((jacDAE, _, _, _, _, _)), _, _, _)
+        algorithm
+          usedFuncs := BackendDAEOptimize.removeUnusedFunctions(jacDAE.eqs, jacDAE.shared, {}, fmiDerInitFuncTree, usedFuncs);
+        then ();
+      else ();
+    end match;
+  end for;
+end collectUsedFmiDerInitFunctions;
+
+protected function addFmiDerInitFunctions
+  "The FMIDERINIT jacobian is created after the functions have been elaborated, and
+   differentiating it symbolically can call functions that nothing else in the model calls,
+   e.g. a partial derivative created on the fly or the function of a derivative annotation
+   that got removed by removeUnusedFunctions. Elaborate those and add them here, otherwise
+   the generated code calls functions that are never defined."
+  input Absyn.Program program;
+  input AvlTreePathFunction.Tree fmiDerInitFuncTree "functions the FMIDERINIT jacobian calls";
+  input AvlTreePathFunction.Tree elaboratedFuncTree "functions that are elaborated already";
+  input output SimCode.ModelInfo modelInfo;
+  input output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  input list<SimCodeFunction.RecordDeclaration> recordDecls;
+  output list<SimCodeFunction.RecordDeclaration> outRecordDecls = recordDecls;
+protected
+  list<DAE.Function> newFuncs;
+  list<DAE.Exp> lits;
+  list<SimCodeFunction.Function> simFuncs;
+  list<SimCodeFunction.RecordDeclaration> newRecordDecls;
+  list<String> knownRecordDecls;
+algorithm
+  // keep the ones that are not elaborated yet
+  newFuncs := list(func for func guard
+    isNone(AvlTreePathFunction.getOpt(elaboratedFuncTree, DAEUtil.functionName(func)))
+    in DAEUtil.getFunctionList(fmiDerInitFuncTree));
+
+  if listEmpty(newFuncs) then
+    return;
+  end if;
+
+  // same treatment the elaborated functions got in SimCodeUtilShared.createFunctions,
+  // continuing the literal count so the indices of the existing literals still hold
+  newFuncs := Inline.inlineCallsInFunctions(newFuncs, (NONE(), {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
+  (newFuncs, literals) := DAEUtil.traverseDAEFunctions(newFuncs, SimCodeFunctionUtil.findLiteralsHelper, literals);
+  (_, _, lits) := literals;
+  (simFuncs, newRecordDecls) := SimCodeFunctionUtil.elaborateFunctions(program, newFuncs, {}, lits, {});
+
+  modelInfo.functions := listAppend(modelInfo.functions, simFuncs);
+
+  // add the record declarations that are not declared already, the new ones are sorted
+  // by their dependencies already and nothing declared before can depend on them
+  knownRecordDecls := list(recordDeclarationName(rd) for rd in recordDecls);
+  newRecordDecls := list(rd for rd guard
+    not listMember(recordDeclarationName(rd), knownRecordDecls) in newRecordDecls);
+  outRecordDecls := listAppend(recordDecls, newRecordDecls);
+end addFmiDerInitFunctions;
+
+protected function recordDeclarationName
+  "returns the name a record declaration is generated under"
+  input SimCodeFunction.RecordDeclaration recordDecl;
+  output String name;
+algorithm
+  name := match recordDecl
+    case SimCodeFunction.RECORD_DECL_FULL() then recordDecl.name;
+    case SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR() then recordDecl.ctor_name;
+    case SimCodeFunction.RECORD_DECL_DEF() then AbsynUtil.pathString(recordDecl.path);
+  end match;
+end recordDeclarationName;
+
 protected function isInitialApproxOrCalculatedSimVar
   "return true if the initial attribute is CALCULATED or APPROX else false"
   input SimCodeVar.SimVar simVar;
@@ -14000,6 +14123,7 @@ protected function getFmiInitialUnknowns
   output BackendDAE.SymbolicJacobians fmiDerInit = {} "partial derivative of initDAE";
   output list<tuple<Integer, DAE.ComponentRef>> sortedUnknownCrefs = {} "sorted crefs of unknowns";
   output list<tuple<Integer, DAE.ComponentRef>> sortedknownCrefs = {} "sorted crefs of knowns";
+  output AvlTreePathFunction.Tree fmiDerInitFuncTree = AvlTreePathFunction.new() "functions the partial derivative of initDAE calls";
 protected
   list<DAE.ComponentRef> initialUnknownCrefs, indepCrefs, depCrefs, crefs;
   DAE.ComponentRef cref;
@@ -14129,7 +14253,10 @@ algorithm
       BackendDump.dumpVarList(fmiDerInitDepVars, "fmiDerInit_unknownVars");
       BackendDump.dumpVarList(fmiDerInitIndepVars, "fmiDerInit_knownVars");
     end if;
-    fmiDerInit := SymbolicJacobian.createFMIModelDerivativesForInitialization(inInitDAE, inSimDAE, fmiDerInitDepVars, fmiDerInitIndepVars, currentSystem.orderedVars, sparsePattern, sparseColoring);
+    (fmiDerInit, fmiDerInitFuncTree) := SymbolicJacobian.createFMIModelDerivativesForInitialization(inInitDAE, inSimDAE, fmiDerInitDepVars, fmiDerInitIndepVars, currentSystem.orderedVars, sparsePattern, sparseColoring);
+    // the jacobian can call functions that nothing else calls, keep track of them so that
+    // they can be elaborated later on, the tree of initDAE itself is not filtered at all
+    fmiDerInitFuncTree := collectUsedFmiDerInitFunctions(fmiDerInit, fmiDerInitFuncTree);
 
     // sort the cref according to FMIINDEX, to be used by fmi2GetDirectionalDerivative()
     sortedknownCrefs := sortInitialUnknowsSimVars(getSimVars2Crefs(indepCrefs, crefSimVarHT));
@@ -14688,13 +14815,13 @@ public function getFMI3TypeOffset
   input SimCode.ModelInfo inModelInfo;
   output Integer outOffset;
 protected
-  SimCodeVar.SimVars vars = inModelInfo.vars;
-  // per-scalar counts so the offsets match the contiguous scalar realVars layout
-  // (an array variable occupies getNumElems scalar slots).
-  Integer numReal = 2*numScalarElems(vars.stateVars) + numScalarElems(vars.algVars) + numScalarElems(vars.discreteAlgVars) + numScalarElems(vars.paramVars) + numScalarElems(vars.aliasVars);
-  Integer numInteger = numScalarElems(vars.intAlgVars) + numScalarElems(vars.intParamVars) + numScalarElems(vars.intAliasVars);
-  Integer numBoolean = numScalarElems(vars.boolAlgVars) + numScalarElems(vars.boolParamVars) + numScalarElems(vars.boolAliasVars);
-  Integer numString = numScalarElems(vars.stringAlgVars) + numScalarElems(vars.stringParamVars) + numScalarElems(vars.stringAliasVars);
+  // Per-scalar counts from varInfo (O(1)). Re-counting the variable lists here on
+  // every call is O(n) and this runs once per variable, i.e. O(n^2) overall.
+  SimCode.VarInfo vi = inModelInfo.varInfo;
+  Integer numReal = 2*vi.numStateVars + vi.numAlgVars + vi.numDiscreteReal + vi.numParams + vi.numAlgAliasVars;
+  Integer numInteger = vi.numIntAlgVars + vi.numIntParams + vi.numIntAliasVars;
+  Integer numBoolean = vi.numBoolAlgVars + vi.numBoolParams + vi.numBoolAliasVars;
+  Integer numString = vi.numStringAlgVars + vi.numStringParamVars + vi.numStringAliasVars;
 algorithm
   outOffset := match inType
     local DAE.Type aty;
@@ -14711,6 +14838,20 @@ algorithm
     else 0;
   end match;
 end getFMI3TypeOffset;
+
+public function getFMI2ValueReferenceOffsets
+  "The offsets that turn an FMI 2.0 value reference, which is unique only per base
+   type, into the globally unique FMI 3.0 one, in the order Real, Integer, Boolean,
+   String. The wasm FMU export ships them with the FMU so its loader can serve the
+   FMI 2.0 API from a component that speaks FMI 3.0."
+  input SimCode.ModelInfo modelInfo;
+  output list<Integer> offsets;
+algorithm
+  offsets := {getFMI3TypeOffset(DAE.T_REAL_DEFAULT, modelInfo),
+              getFMI3TypeOffset(DAE.T_INTEGER_DEFAULT, modelInfo),
+              getFMI3TypeOffset(DAE.T_BOOL_DEFAULT, modelInfo),
+              getFMI3TypeOffset(DAE.T_STRING_DEFAULT, modelInfo)};
+end getFMI2ValueReferenceOffsets;
 
 public function getFMI3ValueReference
   "Returns the globally unique value reference of a variable for the FMI 3.0
@@ -15756,6 +15897,422 @@ algorithm
   end matchcontinue;
 end connectorMemberOf;
 
+public function getFMI3Figures
+  "The model's Documentation(figures=...) annotation, resolved against the exported
+   SimVars, for CodegenFMU3 to emit as the OpenModelica <Figures> vendor annotation.
+   Curves that do not reference an exported variable (and plots/figures thereby left
+   empty) are dropped; an empty result writes no annotation. C and wasm FMU export."
+  input SimCode.SimCode simCode;
+  output list<SimCode.FmiFigure> figures = {};
+protected
+  Absyn.Program program;
+  Absyn.Class cls;
+  Option<list<Absyn.Exp>> ofigs;
+  list<Absyn.Exp> figExps;
+  list<tuple<String, DAE.ComponentRef>> nameMap;
+  list<SimCode.FmiTerminal> terminals;
+  SimCode.FmiFigure fig;
+algorithm
+  program := SymbolTable.getAbsyn();
+  try
+    cls := ProgramUtil.getPathedClassInProgram(simCode.modelInfo.name, program);
+  else
+    return;
+  end try;
+  ofigs := AbsynUtil.getNamedAnnotationInClass(cls,
+    Absyn.QUALIFIED("Documentation", Absyn.IDENT("figures")), figureExpsFromMod);
+  figExps := match ofigs case SOME(figExps) then figExps; else {}; end match;
+  if listEmpty(figExps) then
+    return;
+  end if;
+  nameMap := buildFmiFigureNameMap(simCode);
+  terminals := getFMI3Terminals(simCode);
+  for e in figExps loop
+    fig := fmiFigureFromExp(e, nameMap, terminals);
+    if not listEmpty(fig.plots) then
+      figures := fig :: figures;
+    end if;
+  end for;
+  figures := listReverse(figures);
+end getFMI3Figures;
+
+public function getFMI3VisualizationResource
+  "The <name>_visual.xml resource -d=visxml exported, or \"\" if none. CodegenFMU3
+   emits it as the OpenModelica <Visualization> vendor annotation."
+  input SimCode.SimCode simCode;
+  output String resource = "";
+protected
+  String path;
+algorithm
+  if Flags.isSet(Flags.VISUAL_XML) then
+    path := simCode.fileNamePrefix + "_visual.xml";
+    if System.regularFileExists(path) then
+      resource := simCode.fileNamePrefix + "_visual.xml";
+    end if;
+  end if;
+end getFMI3VisualizationResource;
+
+protected function figureExpsFromMod
+  input Option<Absyn.Modification> mod;
+  output list<Absyn.Exp> exps;
+algorithm
+  exps := match mod
+    local Absyn.Exp exp;
+    case SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = exp))) then figureExpElements(exp);
+    else {};
+  end match;
+end figureExpsFromMod;
+
+protected function figureExpElements
+  input Absyn.Exp exp;
+  output list<Absyn.Exp> exps;
+algorithm
+  exps := match exp
+    case Absyn.ARRAY() then exp.arrayExp;
+    else {exp};
+  end match;
+end figureExpElements;
+
+protected function buildFmiFigureNameMap "name -> cref over every exported SimVar, to resolve curve references"
+  input SimCode.SimCode simCode;
+  output list<tuple<String, DAE.ComponentRef>> nameMap = {};
+protected
+  SimCodeVar.SimVars vars;
+  list<SimCodeVar.SimVar> allVars;
+algorithm
+  vars := simCode.modelInfo.vars;
+  allVars := List.flatten({vars.stateVars, vars.derivativeVars, vars.algVars,
+    vars.discreteAlgVars, vars.paramVars, vars.intAlgVars, vars.intParamVars,
+    vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars,
+    vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars});
+  for v in allVars loop
+    nameMap := (ComponentReference.crefStr(v.name), v.name) :: nameMap;
+  end for;
+end buildFmiFigureNameMap;
+
+protected function fmiFigureFromExp
+  input Absyn.Exp exp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  input list<SimCode.FmiTerminal> terminals;
+  output SimCode.FmiFigure figure;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  list<SimCode.FmiPlot> plots;
+algorithm
+  args := figureArgs(exp, {"title", "identifier", "group", "preferred", "plots", "caption"});
+  plots := fmiPlotsFromExp(figureArgExp(args, "plots"), nameMap, terminals);
+  figure := SimCode.FMI_FIGURE(
+    figureStrArg(args, "title"),
+    figureStrArg(args, "group"),
+    figureBoolFlag(args, "preferred"),
+    figureStrArg(args, "caption"),
+    plots);
+end fmiFigureFromExp;
+
+protected function fmiPlotsFromExp
+  input Option<Absyn.Exp> oexp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  input list<SimCode.FmiTerminal> terminals;
+  output list<SimCode.FmiPlot> plots = {};
+protected
+  list<Absyn.Exp> elems;
+  Option<SimCode.FmiPlot> op;
+algorithm
+  elems := match oexp local Absyn.Exp e; case SOME(e) then figureExpElements(e); else {}; end match;
+  for e in elems loop
+    op := fmiPlotFromExp(e, nameMap, terminals);
+    if isSome(op) then
+      plots := Util.getOption(op) :: plots;
+    end if;
+  end for;
+  plots := listReverse(plots);
+end fmiPlotsFromExp;
+
+protected function fmiPlotFromExp
+  "A resolved plot, or NONE() when no curve resolved to an exported variable."
+  input Absyn.Exp exp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  input list<SimCode.FmiTerminal> terminals;
+  output Option<SimCode.FmiPlot> oplot;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  list<SimCode.FmiCurve> curves;
+algorithm
+  args := figureArgs(exp, {"title", "identifier", "curves", "x", "y"});
+  curves := fmiCurvesFromExp(figureArgExp(args, "curves"), nameMap);
+  if listEmpty(curves) then
+    oplot := NONE();
+  else
+    oplot := SOME(SimCode.FMI_PLOT(
+      figureStrArg(args, "title"),
+      curves,
+      fmiAxisFromArg(figureArgExp(args, "x")),
+      fmiAxisFromArg(figureArgExp(args, "y")),
+      curvesCommonTerminal(curves, terminals)));
+  end if;
+end fmiPlotFromExp;
+
+protected function fmiCurvesFromExp
+  input Option<Absyn.Exp> oexp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  output list<SimCode.FmiCurve> curves = {};
+protected
+  list<Absyn.Exp> elems;
+  Option<SimCode.FmiCurve> oc;
+algorithm
+  elems := match oexp local Absyn.Exp e; case SOME(e) then figureExpElements(e); else {}; end match;
+  for e in elems loop
+    oc := fmiCurveFromExp(e, nameMap);
+    if isSome(oc) then
+      curves := Util.getOption(oc) :: curves;
+    end if;
+  end for;
+  curves := listReverse(curves);
+end fmiCurvesFromExp;
+
+protected function fmiCurveFromExp
+  "A resolved curve, or NONE() when y (or a given non-time x) is not an exported
+   variable. Only plain variable references resolve, not derived expressions."
+  input Absyn.Exp exp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  output Option<SimCode.FmiCurve> ocurve = NONE();
+protected
+  list<tuple<String, Absyn.Exp>> args;
+  Option<DAE.ComponentRef> yref, xVar;
+  DAE.ComponentRef yc;
+  Boolean dropX;
+algorithm
+  args := figureArgs(exp, {"x", "y", "legend"});
+  yref := match figureArgExp(args, "y") local Absyn.Exp e; case SOME(e) then resolveFigureRef(e, nameMap); else NONE(); end match;
+  if isNone(yref) then
+    return;
+  end if;
+  SOME(yc) := yref;
+  xVar := NONE();
+  dropX := false;
+  () := match figureArgExp(args, "x")
+    local Absyn.Exp xe;
+    case NONE() then ();
+    case SOME(xe) guard isFigureTime(xe) then ();
+    case SOME(xe)
+      algorithm
+        xVar := resolveFigureRef(xe, nameMap);
+        dropX := isNone(xVar);
+      then ();
+  end match;
+  if dropX then
+    return;
+  end if;
+  ocurve := SOME(SimCode.FMI_CURVE(xVar, yc, figureStrArg(args, "legend")));
+end fmiCurveFromExp;
+
+protected function fmiAxisFromArg
+  input Option<Absyn.Exp> oexp;
+  output SimCode.FmiFigureAxis axis;
+protected
+  list<tuple<String, Absyn.Exp>> args;
+algorithm
+  args := match oexp local Absyn.Exp e; case SOME(e) then figureArgs(e, {"min", "max", "unit", "label", "scale"}); else {}; end match;
+  axis := SimCode.FMI_FIGURE_AXIS(
+    figureStrArg(args, "label"),
+    figureStrArg(args, "unit"),
+    figureBoundArg(args, "min"),
+    figureBoundArg(args, "max"),
+    figureScaleIsLog(figureArgExp(args, "scale")));
+end fmiAxisFromArg;
+
+protected function resolveFigureRef "the exported cref a curve x/y names, or NONE() if not a plain exported-var reference"
+  input Absyn.Exp exp;
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  output Option<DAE.ComponentRef> ocref;
+algorithm
+  ocref := match exp
+    local Absyn.ComponentRef acr;
+    case Absyn.CREF(componentRef = acr) then lookupFigureName(nameMap, AbsynUtil.crefString(acr));
+    else NONE();
+  end match;
+end resolveFigureRef;
+
+protected function isFigureTime
+  input Absyn.Exp exp;
+  output Boolean isTime;
+algorithm
+  isTime := match exp
+    local Absyn.ComponentRef acr;
+    case Absyn.CREF(componentRef = acr) then stringEq(AbsynUtil.crefString(acr), "time");
+    else false;
+  end match;
+end isFigureTime;
+
+protected function lookupFigureName
+  input list<tuple<String, DAE.ComponentRef>> nameMap;
+  input String key;
+  output Option<DAE.ComponentRef> ocref = NONE();
+protected
+  String k;
+  DAE.ComponentRef c;
+algorithm
+  for e in nameMap loop
+    (k, c) := e;
+    if stringEq(k, key) then
+      ocref := SOME(c);
+      return;
+    end if;
+  end for;
+end lookupFigureName;
+
+protected function curvesCommonTerminal "the terminal shared by all curves y-vars, else NONE()"
+  input list<SimCode.FmiCurve> curves;
+  input list<SimCode.FmiTerminal> terminals;
+  output Option<String> terminal = NONE();
+protected
+  Option<String> t;
+  Boolean first = true;
+algorithm
+  for c in curves loop
+    t := crefTerminalName(c.yVariable, terminals);
+    if isNone(t) then
+      terminal := NONE();
+      return;
+    end if;
+    if first then
+      terminal := t;
+      first := false;
+    elseif not stringEq(Util.getOption(t), Util.getOption(terminal)) then
+      terminal := NONE();
+      return;
+    end if;
+  end for;
+  if first then
+    terminal := NONE();
+  end if;
+end curvesCommonTerminal;
+
+protected function crefTerminalName
+  input DAE.ComponentRef cref;
+  input list<SimCode.FmiTerminal> terminals;
+  output Option<String> name = NONE();
+protected
+  String key;
+algorithm
+  key := ComponentReference.crefStr(cref);
+  for t in terminals loop
+    for m in t.members loop
+      if stringEq(ComponentReference.crefStr(m.variable), key) then
+        name := SOME(t.name);
+        return;
+      end if;
+    end for;
+  end for;
+end crefTerminalName;
+
+protected function figureArgs
+  "Maps a record-constructor call's arguments to (fieldName, exp) pairs; positional
+   args by declared field order, named args by name."
+  input Absyn.Exp exp;
+  input list<String> fieldNames;
+  output list<tuple<String, Absyn.Exp>> args = {};
+protected
+  list<Absyn.Exp> pos;
+  list<Absyn.NamedArg> named;
+  list<String> names = fieldNames;
+  String name;
+algorithm
+  () := match exp
+    case Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(args = pos, argNames = named))
+      algorithm
+        for e in pos loop
+          name :: names := names;
+          args := (name, e) :: args;
+        end for;
+        for na in named loop
+          args := (na.argName, na.argValue) :: args;
+        end for;
+      then ();
+    else ();
+  end match;
+end figureArgs;
+
+protected function figureArgExp
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Option<Absyn.Exp> oexp = NONE();
+protected
+  String n;
+  Absyn.Exp e;
+algorithm
+  for a in args loop
+    (n, e) := a;
+    if n == name then
+      oexp := SOME(e);
+      return;
+    end if;
+  end for;
+end figureArgExp;
+
+protected function figureStrArg
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output String value;
+algorithm
+  value := match figureArgExp(args, name)
+    local String s;
+    case SOME(Absyn.STRING(value = s)) then s;
+    else "";
+  end match;
+end figureStrArg;
+
+protected function figureBoolFlag
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Boolean value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Boolean b;
+    case SOME(Absyn.BOOL(value = b)) then b;
+    else false;
+  end match;
+end figureBoolFlag;
+
+protected function figureBoundArg
+  "An axis bound: NONE() when absent (auto), SOME when explicitly set."
+  input list<tuple<String, Absyn.Exp>> args;
+  input String name;
+  output Option<Real> value;
+algorithm
+  value := match figureArgExp(args, name)
+    local Absyn.Exp e;
+    case SOME(e) then SOME(figureExpReal(e));
+    else NONE();
+  end match;
+end figureBoundArg;
+
+protected function figureExpReal
+  input Absyn.Exp exp;
+  output Real value;
+algorithm
+  value := match exp
+    local Integer i; String s;
+    case Absyn.INTEGER(value = i) then intReal(i);
+    case Absyn.REAL(value = s) then stringReal(s);
+    case Absyn.UNARY(op = Absyn.UMINUS()) then -figureExpReal(exp.exp);
+    else 0.0;
+  end match;
+end figureExpReal;
+
+protected function figureScaleIsLog
+  "Whether an axis scale argument denotes the logarithmic scale (Scale.Log)."
+  input Option<Absyn.Exp> oexp;
+  output Boolean isLog;
+algorithm
+  isLog := match oexp
+    local Absyn.ComponentRef cr;
+    case SOME(Absyn.CALL(function_ = cr)) then stringEq(AbsynUtil.crefIdent(cr), "Log");
+    case SOME(Absyn.CREF(componentRef = cr)) then stringEq(AbsynUtil.crefIdent(cr), "Log");
+    else false;
+  end match;
+end figureScaleIsLog;
+
 protected function crefConnectorSplit
   "Split a cref at its outermost connector-typed qualifier: returns the connector
    instance name (terminal), the remaining member path, the connector's
@@ -16239,6 +16796,74 @@ algorithm
   cmakeVersion := SemanticVersion.parse(cmakeVersionString);
   System.removeFile(cmakeVersionLogFile);
 end getCMakeVersion;
+
+protected function matrixFormatC
+  "The SOLVER_MATRIX_FORMAT for a system of this shape. An unknown count, which is
+   any pattern only built at runtime, counts as dense."
+  input Integer size;
+  input Option<Integer> nnz;
+  input Boolean isLinear;
+  output String format;
+protected
+  Integer entries = Util.getOptionOrDefault(nnz, size * size);
+algorithm
+  format := if BackendDAEUtil.useSparseSolver(size, entries, isLinear) then "OMC_MATRIX_SPARSE" else "OMC_MATRIX_DENSE";
+end matrixFormatC;
+
+public function linearSystemMatrixFormat
+  "Format for this linear system, counting nonzeros off the Jacobian's sparsity
+   where there is one, which is what the runtime used to measure itself."
+  input SimCode.LinearSystem ls;
+  output String format;
+protected
+  Option<Integer> nnz;
+algorithm
+  format := match ls
+    case SimCode.LINEARSYSTEM() algorithm
+      nnz := match ls.jacobianMatrix
+        case SOME(SimCode.JAC_MATRIX(sparsity = {})) then simJacNonzeros(ls.simJac);
+        case SOME(SimCode.JAC_MATRIX()) then sparsityNonzeros(ls.jacobianMatrix);
+        else simJacNonzeros(ls.simJac);
+      end match;
+    then matrixFormatC(listLength(ls.vars), nnz, true);
+  end match;
+end linearSystemMatrixFormat;
+
+public function nonlinearSystemMatrixFormat
+  "Format for this nonlinear system."
+  input SimCode.NonlinearSystem nls;
+  output String format;
+algorithm
+  format := match nls
+    case SimCode.NONLINEARSYSTEM()
+      then matrixFormatC(listLength(nls.crefs), sparsityNonzeros(nls.jacobianMatrix), false);
+  end match;
+end nonlinearSystemMatrixFormat;
+
+protected function simJacNonzeros
+  "Entries of A, which a torn system does not give elementwise."
+  input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+  output Option<Integer> nnz = if listEmpty(simJac) then NONE() else SOME(listLength(simJac));
+end simJacNonzeros;
+
+protected function sparsityNonzeros
+  "Entries of a Jacobian's sparsity pattern, unknown without one."
+  input Option<SimCode.JacobianMatrix> ojac;
+  output Option<Integer> nnz;
+protected
+  Integer entries = 0;
+algorithm
+  nnz := match ojac
+    local
+      SimCode.SparsityPattern sparsity;
+    case SOME(SimCode.JAC_MATRIX(sparsity = sparsity)) guard not listEmpty(sparsity) algorithm
+      for col in sparsity loop
+        entries := entries + listLength(Util.tuple22(col));
+      end for;
+    then SOME(entries);
+    else NONE();
+  end match;
+end sparsityNonzeros;
 
 public function getExpNominal
   "Returns the nominal value of an expression.

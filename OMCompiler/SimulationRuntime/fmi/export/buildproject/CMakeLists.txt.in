@@ -43,6 +43,30 @@ if(${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} ST
           "Use OpenModelica compiler flag '--fmuRuntimeDepends=none' to disable including runtime dependencies into FMU.")
 endif()
 
+# On musl libc (e.g. Alpine), ldconfig is a BusyBox applet that doesn't support
+# "-p" (needed by install(... RUNTIME_DEPENDENCIES ...) below). It silently
+# ignores the flag and exits 0 with empty stdout, so check for empty output
+# too and fall back to not bundling runtime dependencies instead of failing.
+if(UNIX AND NOT APPLE AND NOT RUNTIME_DEPENDENCIES_LEVEL STREQUAL "none")
+  find_program(OMC_LDCONFIG_EXECUTABLE ldconfig PATHS /sbin /usr/sbin)
+  if(OMC_LDCONFIG_EXECUTABLE)
+    execute_process(
+      COMMAND ${OMC_LDCONFIG_EXECUTABLE} -p
+      RESULT_VARIABLE OMC_LDCONFIG_P_RESULT
+      OUTPUT_VARIABLE OMC_LDCONFIG_P_OUTPUT
+      ERROR_QUIET)
+    string(STRIP "${OMC_LDCONFIG_P_OUTPUT}" OMC_LDCONFIG_P_OUTPUT)
+    if(NOT OMC_LDCONFIG_P_RESULT EQUAL 0 OR OMC_LDCONFIG_P_OUTPUT STREQUAL "")
+      message(WARNING
+              "ldconfig does not support '-p' (likely musl libc, e.g. Alpine). "
+              "CMake's runtime dependency resolution needs this, so falling back "
+              "to RUNTIME_DEPENDENCIES_LEVEL=none for this FMU. Use "
+              "--fmuRuntimeDepends=none to silence this warning.")
+      set(RUNTIME_DEPENDENCIES_LEVEL "none")
+    endif()
+  endif()
+endif()
+
 # Create position independent code for static libraries
 if(NOT BUILD_SHARED_LIBS)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)

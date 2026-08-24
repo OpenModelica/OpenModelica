@@ -46,6 +46,10 @@ if(NOT XWIN_CACHE_DIR)
     endforeach()
   endif()
 endif()
+# cargo-xwin's own $XWIN_CACHE_DIR is the dir *above* the sysroot; accept either.
+if(NOT EXISTS "${XWIN_CACHE_DIR}/crt/include" AND EXISTS "${XWIN_CACHE_DIR}/xwin/crt/include")
+  set(XWIN_CACHE_DIR "${XWIN_CACHE_DIR}/xwin")
+endif()
 if(NOT EXISTS "${XWIN_CACHE_DIR}/crt/include")
   message(FATAL_ERROR
     "xwin sysroot not found at ${XWIN_CACHE_DIR}. Run a `cargo xwin build` once, "

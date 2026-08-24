@@ -43,6 +43,35 @@ import * as OmcModule from "./omc/OpenModelicaCompiler.js";
 // Self-ID so a page console shows which omc_worker.js loaded (cache diagnosis).
 console.log("omc_worker.js loaded (WASI file surface)");
 
+// Cooperative cancel + live progress (OMEdit-wasm): a long omc call (simulate,
+// installPackage, …) blocks here, so the main thread shares a SharedArrayBuffer
+// "control block" the worker reads/writes with Atomics. Layout (Int32Array):
+//   [0] cancel   main→worker  0 run / 1 cancel requested (omc polls per step)
+//   [1] progress worker→main  permille 0..1000, or -1 indeterminate
+//   [2] phase    worker→main  0 idle,1 download,2 parse,3 instantiate,4 backend,5 sim
+//   [3] generation main→both  bumped per op so a stale read is ignored
+// Null-safe until the main thread hands over the buffer (`controlBuf`/`cancelBuf`).
+let controlView = null;
+globalThis.__omcPollCancel = () => (controlView ? Atomics.load(controlView, 0) : 0);
+globalThis.__omcReportProgress = (permille, phase) => {
+  // Guard length so an older 4-byte (cancel-only) buffer doesn't throw.
+  if (controlView && controlView.length >= 3) {
+    Atomics.store(controlView, 1, permille);
+    Atomics.store(controlView, 2, phase);
+  }
+};
+// Clear cancel + progress once an op finishes, so a cancel flag set during (or
+// after) one op never leaks into the next and spuriously aborts it — the flag is
+// strictly per-op. Called after each eval/abi completes.
+function resetControl() {
+  if (!controlView) return;
+  Atomics.store(controlView, 0, 0);
+  if (controlView.length >= 3) {
+    Atomics.store(controlView, 1, -1);
+    Atomics.store(controlView, 2, 0);
+  }
+}
+
 // Read a whole file from the worker store through the WASI preview1 flow
 // (path_open → fd_read → fd_close). Returns a Uint8Array or undefined if absent.
 function wasiReadFile(path) {
@@ -152,6 +181,14 @@ async function doInit(installMsl) {
   if (!omc_init()) {
     return { kind: "ready", ok: false, error: "omc_init() failed" };
   }
+  // Point the omc driver's cancel poll at __omcPollCancel (feature-detected).
+  if (typeof OmcModule.omc_enable_cancel_poll === "function") {
+    OmcModule.omc_enable_cancel_poll();
+  }
+  // Route omc progress reports into the control block (feature-detected).
+  if (typeof OmcModule.omc_enable_progress_sink === "function") {
+    OmcModule.omc_enable_progress_sink();
+  }
   // The browser omc has no pre-installed library, so install the MSL to make the
   // shell immediately usable. Best-effort: a failure (e.g. no network) only
   // surfaces its diagnostics, it does not stop the shell from starting. A client
@@ -199,12 +236,20 @@ async function doEval(src, keepErrors) {
 
 self.onmessage = async (e) => {
   const msg = e.data;
+  // One-way setup message (no reply): store the shared control block. Before
+  // `await ready` so it is in place before the first long call. `cancelBuf` is
+  // the old name for the same message (a 4-byte cancel-only buffer).
+  if (msg.cmd === "controlBuf" || msg.cmd === "cancelBuf") {
+    try { controlView = msg.buf ? new Int32Array(msg.buf) : null; } catch (_) { controlView = null; }
+    return;
+  }
   await ready;
   try {
     if (msg.cmd === "init") {
       self.postMessage(await doInit(msg.installMsl !== false));
     } else if (msg.cmd === "eval") {
       const { msg: reply, transfer } = await doEval(msg.src, msg.keepErrors);
+      resetControl();
       // Transfer the result-file buffers (zero-copy) rather than clone them.
       self.postMessage(reply, transfer);
     } else if (msg.cmd === "abi") {
@@ -214,6 +259,7 @@ self.onmessage = async (e) => {
         typeof OmcModule.omc_abi === "function"
           ? await abiWithDownloads(msg.request)
           : JSON.stringify({ error: "omc_abi unavailable (omc built without the scripting_api feature)" });
+      resetControl();
       self.postMessage({ kind: "abiResult", id: msg.id, response });
     } else if (msg.cmd === "vfsGet") {
       // OMEdit reads some files (library index, install manifests, visual.xml)

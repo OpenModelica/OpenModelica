@@ -36,6 +36,8 @@
 
 use crate::auxiliary::{real_pow, real_sign, xerrwd};
 use crate::linpack;
+#[cfg(not(feature = "std"))]
+use crate::FloatShim;
 use core::slice;
 
 /// 1-based element access mirroring f2c's `arr[i]` after a `--arr` adjustment:

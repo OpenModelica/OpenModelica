@@ -66,9 +66,15 @@ readFile("ModelWithAlias_me_systemCall.log");
 // ""
 // 0
 // ""
-// "info:    maximum step size for 'model.root': 0.002000
-// info:    Result file: model_res.mat (bufferSize=10)
-// info:    Final Statistics for 'model.root':
+// "info:    *** FMU Simulation Info ***
+//           - model:     ModelWithAlias (model exchange)
+//           - startTime: 0.000000
+//           - stopTime:  0.000000
+//           - tolerance: 0.000001
+//           - stepSize:  0.002000
+// info:    maximum step size for 'ModelWithAlias.root': 0.002000
+// info:    Result file: ModelWithAlias_res.mat (bufferSize=10)
+// info:    Final Statistics for 'ModelWithAlias.root':
 //          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
 //          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "

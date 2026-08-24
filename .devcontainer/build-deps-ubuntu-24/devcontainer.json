@@ -1,0 +1,25 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
+{
+  "name": "build-deps:ubuntu-24.04",
+
+  // Dockerfile
+  "image": "docker.openmodelica.org/build-deps:ubuntu-24.04-debug",
+
+  // Additional VSCode extensions
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "AnHeuermann.metamodelica",
+        "ms-vscode.cpptools-extension-pack",
+        "njpwerner.autodocstring",
+        "lextudio.restructuredtext",
+        "trond-snekvik.simple-rst",
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  },
+
+  "remoteUser": "ubuntu"
+}

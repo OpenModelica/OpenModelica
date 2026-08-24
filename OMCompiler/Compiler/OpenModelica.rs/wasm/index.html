@@ -4,20 +4,13 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OpenModelica — Web</title>
+<link rel="stylesheet" href="theme.css" />
 <style>
-  :root {
-    color-scheme: dark;
-    --bg: #1e1e1e; --panel: #252526; --border: #333; --fg: #d4d4d4;
-    --muted: #808080; --accent: #23afe5; --accent-2: #0e639c; --teal: #4ec9b0;
-    --rail: 84px;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; }
+    :root { --rail: 84px; }
+  /* A sidebar rail beside the client stage, not theme.css's stacked column. */
   body {
-    font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    background: var(--bg); color: var(--fg);
+    font-size: 14px;
     display: grid; grid-template-columns: var(--rail) 1fr; grid-template-rows: 1fr;
-    height: 100vh; overflow: hidden;
   }
 
   /* --- Sidebar --------------------------------------------------------- */
@@ -35,6 +28,10 @@
   }
   .nav-btn .ic { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
   .nav-btn .ic img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  /* The FMI logo is the Modelica Association's, dark artwork that may not be
+     recoloured; its usage terms ask for a white background, which also makes it
+     legible here. */
+  #nav-fmi .ic img { background: #fff; border-radius: 4px; padding: 2px 3px; }
   .nav-btn .lbl {
     font-size: 10px; line-height: 1.1; width: 100%; text-align: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -56,6 +53,18 @@
   }
   .brand { display: flex; align-items: center; height: 100%; cursor: pointer; flex: 0 0 auto; }
   .brand img { height: 20px; display: block; }
+  .brand img.narrow { display: none; height: 19px; }
+
+  /* Hamburger toggles the sidebar drawer on narrow screens. */
+  .hamburger {
+    display: none; align-items: center; justify-content: center;
+    width: 34px; height: 34px; padding: 0; flex: 0 0 auto;
+    background: transparent; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--fg); cursor: pointer;
+  }
+  .hamburger:hover { background: #2d2d30; }
+  .hamburger svg { width: 18px; height: 18px; }
+  .nav-backdrop { display: none; }
   .topbar .name { font-weight: 600; color: var(--teal); white-space: nowrap; }
   .topbar .sep { width: 1px; height: 22px; background: var(--border); }
   .variants { display: flex; gap: 4px; }
@@ -64,7 +73,8 @@
     background: transparent; color: var(--muted); cursor: pointer; font: inherit;
     font-size: 13px; transition: background .12s, color .12s, border-color .12s;
   }
-  .pill:hover { color: var(--fg); border-color: #555; }
+  /* Only the outline lights up; the fill is reserved for the active variant. */
+  .pill:hover { background: transparent; color: var(--fg); border-color: #555; }
   .pill.active { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
   .pill.missing { opacity: .4; cursor: not-allowed; text-decoration: line-through; }
   .spacer { flex: 1; }
@@ -88,17 +98,51 @@
   .overlay .box { max-width: 460px; }
   .overlay h2 { color: var(--fg); margin: 0 0 8px; font-weight: 600; }
   .overlay code { color: #ce9178; font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+  /* --- Mobile: sidebar becomes a slide-in drawer behind a hamburger ---- */
+  @media (max-width: 640px) {
+    body { grid-template-columns: 1fr; }
+    aside {
+      position: fixed; top: 0; bottom: 0; left: 0; width: 240px; z-index: 30;
+      padding: 8px; transform: translateX(-100%); transition: transform .2s ease;
+      box-shadow: 2px 0 14px #0007;
+    }
+    body.nav-open aside { transform: none; }
+    .nav-backdrop {
+      display: block; position: fixed; inset: 0; z-index: 20;
+      background: #0007; opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    body.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
+    /* Wider drawer → horizontal rows read better than the desktop rail. */
+    .nav-btn { flex-direction: row; justify-content: flex-start; gap: 12px; padding: 11px 12px; }
+    .nav-btn .ic { width: 24px; height: 24px; }
+    .nav-btn .lbl { font-size: 14px; width: auto; text-align: left; }
+    .nav-btn.active::before { left: 0; }
+
+    .hamburger { display: inline-flex; }
+    .brand img.wide { display: none; }
+    .brand img.narrow { display: block; }
+    .topbar { gap: 8px; padding: 0 8px; }
+    /* "Open in new tab" shrinks to just its icon. */
+    .tool .lbl { display: none; }
+    .tool { padding: 6px; }
+  }
 </style>
 </head>
 <body>
+<div class="nav-backdrop" id="navBackdrop"></div>
 <aside id="sidebar">
   <nav id="nav"></nav>
 </aside>
 
 <main>
   <div class="topbar">
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu" title="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
     <a class="brand" href="#" title="OpenModelica — home" data-home>
-      <img src="icons/openmodelica-logo.svg" alt="OpenModelica" />
+      <img class="wide" src="icons/openmodelica-logo.svg" alt="OpenModelica" />
+      <img class="narrow" src="icons/om.svg" alt="OpenModelica" />
     </a>
     <span class="sep"></span>
     <span class="name" id="clientName"></span>
@@ -106,7 +150,7 @@
     <span class="spacer"></span>
     <a class="tool" id="openTab" target="_blank" rel="noopener" title="Open this client in a new tab" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
-      Open in new tab
+      <span class="lbl">Open in new tab</span>
     </a>
   </div>
 
@@ -133,6 +177,10 @@ const CLIENTS = [
       { id: 'dioxus',   name: 'dioxus',   src: 'OMShell-dioxus.html' },
       { id: 'qt',       name: 'Qt',       src: 'OMShell-qt/OMShell-qt.html' },
     ] },
+  { id: 'simulator', name: 'Simulator', icon: 'icons/simulator.svg',
+    src: 'simulator/index.html' },
+  { id: 'fmi', name: 'FMI', icon: 'icons/fmi.svg',
+    src: 'fmi-simulator/index.html' },
   { id: 'omnotebook', name: 'OMNotebook', icon: 'icons/omnotebook.svg',
     src: 'OMNotebook-qt/OMNotebook-qt.html' },
   { id: 'omedit', name: 'OMEdit', icon: 'icons/omedit.png',
@@ -190,11 +238,17 @@ function parseHash() {
 }
 
 function go(id, variant) {
+  closeNav();                                // collapse the mobile drawer on pick
   let hash = '#' + id;
   if (variant) hash += '/' + variant;
   if (location.hash === hash) render();      // same link → just (re)render
   else location.hash = hash;                 // triggers hashchange → render
 }
+
+// --- Mobile drawer ---------------------------------------------------------
+const closeNav = () => document.body.classList.remove('nav-open');
+document.getElementById('hamburger').onclick = () => document.body.classList.toggle('nav-open');
+document.getElementById('navBackdrop').onclick = closeNav;
 
 async function render() {
   const { id, variant } = parseHash();

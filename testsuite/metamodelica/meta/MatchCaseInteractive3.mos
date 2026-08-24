@@ -2,6 +2,7 @@
 // keywords: MatchCase
 // status:   correct
 // cflags:   -g=MetaModelica -d=gen -d=-newInst
+// suite: metamodelica
 //
 // MatchCase Testing
 //

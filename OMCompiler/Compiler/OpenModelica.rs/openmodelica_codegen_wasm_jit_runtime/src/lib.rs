@@ -40,7 +40,17 @@
 
 extern crate alloc;
 
+mod delay;
 mod nls;
+mod omclog;
+pub use nls::{rt_nls_clean_history, rt_set_step_size};
+#[cfg(test)]
+mod nls_c_trace;
+mod solvers;
+// SUNDIALS/KLU. The archives are wasip1-only (they need a libc) and only linked
+// when the build script found them, so `cfg(sundials)` gates the calls; the module
+// itself compiles everywhere for its capability report.
+mod sundials;
 
 use alloc::format;
 use alloc::string::String;
@@ -75,12 +85,53 @@ fn trap() -> ! {
     unreachable!("wasm runtime trap on host test build")
 }
 
+// `rt_reinit_note(state_off, value)`: the model records an executed `reinit` for
+// the driver's `LOG_EVENTS` block. Every generated model imports it, so every
+// host-free consumer must define it — the standalone export and the FMI3 adapter
+// alike. A host-instantiated runtime (`host_log`) must NOT: the host binds that
+// import to its own recorder, and an export of the same name collides with it
+// under the `rt` namespace.
+#[cfg(not(feature = "host_log"))]
+mod reinit_notes {
+    struct Reinits(core::cell::UnsafeCell<alloc::vec::Vec<(u32, f64)>>);
+    unsafe impl Sync for Reinits {}
+    static REINITS: Reinits = Reinits(core::cell::UnsafeCell::new(alloc::vec::Vec::new()));
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn rt_reinit_note(off: i32, value: f64) {
+        if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::EVENTS) {
+            unsafe { &mut *REINITS.0.get() }.push((off as u32, value));
+        }
+    }
+
+    /// The notes recorded since the last call, for a driver's `LOG_EVENTS` block.
+    pub fn take_reinit_notes() -> alloc::vec::Vec<(u32, f64)> {
+        core::mem::take(unsafe { &mut *REINITS.0.get() })
+    }
+}
+
+#[cfg(not(feature = "host_log"))]
+pub use reinit_notes::take_reinit_notes;
+
+/// With a host present the notes live host-side (`rt_host_take_reinits`).
+#[cfg(feature = "host_log")]
+pub fn take_reinit_notes() -> alloc::vec::Vec<(u32, f64)> {
+    alloc::vec::Vec::new()
+}
+
 // The standalone-export entry point (`_start` + the in-wasm driver), only on the
 // wasm32-wasip1 target. It uses std (file I/O over WASI) + daskr + the shared
 // sim-meta / mat-writer crates, all wasi-gated, so the no_std JIT runtime
 // (wasm32-unknown-unknown) is unaffected.
-#[cfg(target_os = "wasi")]
+#[cfg(all(target_os = "wasi", feature = "standalone"))]
 mod standalone;
+
+// The in-wasm session driver (`rt_sim_*`): the shared driver + daskr compiled
+// in-wasm so the model is reached wasm->wasm via the shared table. Both JIT
+// runtimes (unknown-unknown for web, wasip1 for native) enable it via the
+// `session` feature; the FMI3 adapter drops it to avoid a dangling table import.
+#[cfg(all(target_arch = "wasm32", feature = "session"))]
+mod session;
 
 // ---------------------------------------------------------------------------
 // Raw little-endian memory access (all pointers are byte offsets into the one
@@ -113,6 +164,63 @@ unsafe fn store_f64(addr: u32, v: f64) {
 }
 
 // ---------------------------------------------------------------------------
+// Diagnostic counters
+// ---------------------------------------------------------------------------
+
+/// `rt_stat` slots, read by the host bench line (`OMC_WASM_SIM_BENCH`) — the
+/// wasm-jit analogue of C's `-lv=LOG_STATS`.
+pub const STAT_ALLOC: u32 = 0;
+pub const STAT_ARRAY_NEW: u32 = 1;
+pub const STAT_RECORD_NEW: u32 = 2;
+pub const STAT_STR_NEW: u32 = 3;
+pub const STAT_NLS_SOLVE: u32 = 4;
+pub const STAT_NLS_RES: u32 = 5;
+pub const STAT_NLS_JAC: u32 = 6;
+pub const STAT_NLS_FAIL: u32 = 7;
+pub const STAT_NLS_RETRY: u32 = 8;
+pub const STAT_ELEM_PTR: u32 = 9;
+pub const STAT_NLS_ITER: u32 = 10;
+pub const STAT_NLS_NEWTON_FAIL: u32 = 11;
+pub const STAT_NLS_GUESS_HIT: u32 = 12;
+pub const STAT_NLS_ACCEPT: u32 = 13;
+pub const STAT_NLS_STORE_BACK: u32 = 14;
+pub const STAT_NLS_VARY_START: u32 = 15;
+pub const STAT_NLS_STALE: u32 = 16;
+/// Why `newton_c` (C's `newtonAlgorithm`) gave up, so a run can be compared against
+/// C's own fallback count without a rebuild.
+pub const STAT_NEWTON_IRREGULAR: u32 = 17;
+pub const STAT_NEWTON_LAMBDA: u32 = 18;
+pub const STAT_NEWTON_NEGSTEP: u32 = 19;
+pub const STAT_NEWTON_MAXITER: u32 = 20;
+pub const STAT_NEWTON_STUCK: u32 = 21;
+pub const STAT_NEWTON_JAC: u32 = 22;
+pub const STAT_NEWTON_SINGULAR: u32 = 23;
+pub const N_STATS: usize = 24;
+
+static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
+    [const { core::sync::atomic::AtomicU64::new(0) }; N_STATS];
+
+#[inline]
+pub(crate) fn stat_inc(kind: u32) {
+    STATS[kind as usize].fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_stat(kind: u32) -> u64 {
+    match STATS.get(kind as usize) {
+        Some(c) => c.load(core::sync::atomic::Ordering::Relaxed),
+        None => 0,
+    }
+}
+
+/// Called per run (`rt_sim_start`), so the counters are per-run.
+pub fn reset_stats() {
+    for c in STATS.iter() {
+        c.store(0, core::sync::atomic::Ordering::Relaxed);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Allocator + reference counting
 // ---------------------------------------------------------------------------
 
@@ -122,12 +230,45 @@ unsafe fn store_f64(addr: u32, v: f64) {
 const HEADER: usize = 8;
 const ALIGN: usize = 8;
 
+/// Recycling free lists in front of `dlmalloc`. Generated code allocates and frees
+/// one array/record per array/record-typed function local on every call (an IF97
+/// property evaluation does hundreds), so a same-size block is nearly always
+/// available and bucketing by 8-byte size class turns both into a push/pop.
+/// `rt_alloc` writes the *rounded* total into the size word, so `rt_free` finds the
+/// same class and `dlmalloc` gets the layout it was handed.
+const CACHE_MAX: usize = 1024;
+const CACHE_CLASSES: usize = CACHE_MAX / ALIGN + 1;
+
+struct FreeLists(core::cell::UnsafeCell<[u32; CACHE_CLASSES]>);
+// The runtime is single-threaded (as is the in-wasm session driver).
+unsafe impl Sync for FreeLists {}
+static FREE: FreeLists = FreeLists(core::cell::UnsafeCell::new([0; CACHE_CLASSES]));
+
+/// `None` when `total` is not cached: too big, or no room for the link word.
+#[inline]
+fn cache_class(total: usize) -> Option<usize> {
+    (total <= CACHE_MAX && total >= HEADER + 4).then(|| total / ALIGN)
+}
+
 /// Allocate an object of `size` payload bytes (including its 4-byte refcount),
 /// returning its pointer. The reference count is left zero — the typed
 /// constructors below set it to 1.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_alloc(size: u32) -> u32 {
-    let total = HEADER + size as usize;
+    stat_inc(STAT_ALLOC);
+    let mut total = HEADER + size as usize;
+    if total <= CACHE_MAX {
+        total = (total + ALIGN - 1) & !(ALIGN - 1);
+    }
+    if let Some(class) = cache_class(total) {
+        let lists = unsafe { &mut *FREE.0.get() };
+        let head = lists[class];
+        if head != 0 {
+            lists[class] = unsafe { load_u32(head + HEADER as u32) };
+            unsafe { store_u32(head, total as u32) };
+            return head + HEADER as u32;
+        }
+    }
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
     let raw = unsafe { GLOBAL.alloc(layout) } as u32;
     if raw == 0 {
@@ -146,6 +287,12 @@ pub extern "C" fn rt_free(obj: u32) {
     }
     let raw = obj - HEADER as u32;
     let total = unsafe { load_u32(raw) } as usize;
+    if let Some(class) = cache_class(total) {
+        let lists = unsafe { &mut *FREE.0.get() };
+        unsafe { store_u32(raw + HEADER as u32, lists[class]) };
+        lists[class] = raw;
+        return;
+    }
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
     unsafe { GLOBAL.dealloc(raw as *mut u8, layout) };
 }
@@ -265,17 +412,17 @@ fn arr_data(obj: u32) -> u32 {
 /// partially filled array is safe.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_new(elem_kind: u32, ndims: u32, total: u32) -> u32 {
+    stat_inc(STAT_ARRAY_NEW);
     let data_off = arr_data_off(ndims);
-    let obj = rt_alloc(data_off + total * elem_stride(elem_kind));
+    let size = data_off + total * elem_stride(elem_kind);
+    let obj = rt_alloc(size);
     unsafe {
         store_u32(obj, 1); // refcount
         store_u32(obj + ARR_KIND_OFF, elem_kind);
         store_u32(obj + ARR_NDIMS_OFF, ndims);
         store_u32(obj + ARR_TOTAL_OFF, total);
         // Zero the dim words and the element area (rt_alloc does not zero).
-        for off in (ARR_DIMS_OFF..data_off + total * elem_stride(elem_kind)).step_by(4) {
-            store_u32(obj + off, 0);
-        }
+        core::ptr::write_bytes((obj + ARR_DIMS_OFF) as *mut u8, 0, (size - ARR_DIMS_OFF) as usize);
     }
     obj
 }
@@ -304,10 +451,17 @@ pub extern "C" fn rt_array_total(obj: u32) -> u32 {
 pub extern "C" fn rt_array_dim(obj: u32, axis: i32) -> u32 {
     let ndims = rt_array_ndims(obj) as i32;
     if axis < 1 || axis > ndims {
-        trap();
+        nls::model_error();
+        return 0;
     }
     unsafe { load_u32(obj + ARR_DIMS_OFF + (axis as u32 - 1) * 4) }
 }
+
+/// Storage handed out in place of an out-of-range element address, so the
+/// caller's load/store lands somewhere harmless.
+#[repr(align(8))]
+struct ElemDiscard([u8; 8]);
+static mut ELEM_DISCARD: ElemDiscard = ElemDiscard([0; 8]);
 
 /// Byte address of the element at row-major linear position `index` (1-based).
 /// Traps on an out-of-range index (→ META_FAIL), matching the bounds check the
@@ -316,12 +470,21 @@ pub extern "C" fn rt_array_dim(obj: u32, axis: i32) -> u32 {
 /// the element's natural wasm type.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_array_elem_ptr(obj: u32, index: i32) -> u32 {
+    stat_inc(STAT_ELEM_PTR);
     let total = rt_array_total(obj) as i32;
     if index < 1 || index > total {
-        trap();
+        return rt_elem_ptr_oob();
     }
     let kind = unsafe { load_u32(obj + ARR_KIND_OFF) };
     arr_data(obj) + (index as u32 - 1) * elem_stride(kind)
+}
+
+/// The out-of-range arm of [`rt_array_elem_ptr`], also used by the inlined
+/// address computation the codegen emits.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_elem_ptr_oob() -> u32 {
+    nls::model_error();
+    &raw const ELEM_DISCARD as usize as u32
 }
 
 /// Copy every element of `src` into `dst` starting at the 0-based element
@@ -410,20 +573,108 @@ pub extern "C" fn rt_array_release(obj: u32) {
     rt_free(obj);
 }
 
+const SPEC_INDEX: u32 = 0;
+const SPEC_WHOLE: u32 = 1;
+
+/// Per-axis view of a subscript spec: an Integer array of `2 * nspec` words
+/// describing the first `nspec` axes (0-based) of the array it applies to.
+/// `spec[2*s]` is the axis kind and `spec[2*s+1]` its value —
+///   * 0 INDEX: value is the fixed 1-based index; the axis selects one position
+///     and is dropped from a slice's result (rank-reducing).
+///   * 1 WHOLE: value unused; the axis is kept at full size.
+///   * 2 SLICE: value is a handle to an Integer array of 1-based indices; the
+///     axis is kept, sized to that array's length.
+/// Axes at or past `nspec` are WHOLE (a trailing `a[i]` on a matrix).
+struct SliceSpec {
+    nspec: u32,
+    data: u32,
+}
+
+impl SliceSpec {
+    fn new(nspec: u32, spec: u32) -> SliceSpec {
+        SliceSpec { nspec, data: arr_data(spec) }
+    }
+
+    fn kind(&self, axis: u32) -> u32 {
+        if axis < self.nspec { unsafe { load_u32(self.data + 2 * axis * 4) } } else { SPEC_WHOLE }
+    }
+
+    fn val(&self, axis: u32) -> u32 {
+        if axis < self.nspec { unsafe { load_u32(self.data + (2 * axis + 1) * 4) } } else { 0 }
+    }
+
+    /// How many positions of `arr`'s `axis` (0-based) the spec selects.
+    fn axis_len(&self, arr: u32, axis: u32) -> u32 {
+        match self.kind(axis) {
+            SPEC_INDEX => 1,
+            SPEC_WHOLE => rt_array_dim(arr, axis as i32 + 1),
+            _ => rt_array_total(self.val(axis)),
+        }
+    }
+
+    /// The 0-based coordinate of the `pos`-th selected position of `axis`.
+    fn coord(&self, axis: u32, pos: u32) -> u32 {
+        match self.kind(axis) {
+            SPEC_INDEX => self.val(axis) - 1,
+            SPEC_WHOLE => pos,
+            _ => (unsafe { load_u32(arr_data(self.val(axis)) + pos * 4) }) - 1,
+        }
+    }
+}
+
+/// The row-major linear indices into `arr` of every position `spec` selects, in
+/// selection order. Returns the scratch holding them and their count; the caller
+/// frees it. An out-of-range index is a model error (C asserts) and is clamped
+/// so the caller's copy stays in bounds.
+fn spec_positions(arr: u32, spec: &SliceSpec) -> (u32, u32) {
+    let ndims = rt_array_ndims(arr);
+    let arr_total = rt_array_total(arr);
+    let mut count = 1u32;
+    for axis in 0..ndims {
+        count *= spec.axis_len(arr, axis);
+    }
+    if arr_total == 0 {
+        if count != 0 {
+            nls::model_error();
+        }
+        return (rt_alloc(0), 0);
+    }
+
+    let out = rt_alloc(count * 4);
+    let pos = rt_alloc(ndims * 4);
+    unsafe { core::ptr::write_bytes(pos as *mut u8, 0, (ndims * 4) as usize) };
+    for i in 0..count {
+        let mut lin = 0u32;
+        for axis in 0..ndims {
+            let p = unsafe { load_u32(pos + axis * 4) };
+            lin = lin * rt_array_dim(arr, axis as i32 + 1) + spec.coord(axis, p);
+        }
+        if lin >= arr_total {
+            nls::model_error();
+            lin = arr_total - 1;
+        }
+        unsafe { store_u32(out + i * 4, lin) };
+        // Advance the per-axis position vector, last axis fastest.
+        let mut axis = ndims;
+        while axis > 0 {
+            axis -= 1;
+            let p = unsafe { load_u32(pos + axis * 4) } + 1;
+            if p < spec.axis_len(arr, axis) {
+                unsafe { store_u32(pos + axis * 4, p) };
+                break;
+            }
+            unsafe { store_u32(pos + axis * 4, 0) };
+        }
+    }
+    rt_free(pos);
+    (out, count)
+}
+
 /// Slice / partial-index a source array into a fresh (refcount-1) array, the
 /// runtime counterpart of `a[i, :, lo:hi, ...]` on an array whose dimensions
 /// are not known at codegen time (constant-dimension slices are scalarized by
-/// the frontend and lowered element-by-element instead).
-///
-/// `spec` is an Integer array of `2 * nspec` words describing the first `nspec`
-/// source axes (0-based): `spec[2*s]` is the axis kind and `spec[2*s+1]` its
-/// value —
-///   * kind 0 = INDEX  → value is the fixed 1-based index; the axis is dropped
-///     from the result (rank-reducing).
-///   * kind 1 = WHOLE  → value unused; the axis is kept at full size.
-///   * kind 2 = SLICE  → value is a handle to an Integer array of 1-based
-///     indices; the axis is kept, sized to that index array's length.
-/// Source axes `>= nspec` are treated as WHOLE (trailing `a[i]` on a matrix).
+/// the frontend and lowered element-by-element instead). `spec` is a
+/// [`SliceSpec`] over the source axes.
 ///
 /// The result's element kind matches the source; heap elements are deep-copied
 /// (`copy_kind`, matching `rt_array_copy`) so the slice shares no mutable
@@ -433,99 +684,31 @@ pub extern "C" fn rt_array_release(obj: u32) {
 pub extern "C" fn rt_array_slice(src: u32, nspec: u32, spec: u32) -> u32 {
     let kind = unsafe { load_u32(src + ARR_KIND_OFF) };
     let src_ndims = rt_array_ndims(src);
-    let spec_data = arr_data(spec);
-    // Per-source-axis kind/value, with axes past `nspec` defaulting to WHOLE.
-    let ax_kind = |s: u32| -> u32 {
-        if s < nspec { unsafe { load_u32(spec_data + (2 * s) * 4) } } else { 1 }
-    };
-    let ax_val = |s: u32| -> u32 {
-        if s < nspec { unsafe { load_u32(spec_data + (2 * s + 1) * 4) } } else { 0 }
-    };
+    let spec = SliceSpec::new(nspec, spec);
+    let (positions, total) = spec_positions(src, &spec);
 
-    // Result rank/shape: one axis per kept (WHOLE/SLICE) source axis.
+    // Result shape: one axis per kept (WHOLE/SLICE) source axis.
     let mut res_ndims = 0u32;
-    let mut res_total = 1u32;
     for s in 0..src_ndims {
-        match ax_kind(s) {
-            0 => {} // INDEX: dropped
-            1 => {
-                res_total *= rt_array_dim(src, s as i32 + 1);
-                res_ndims += 1;
-            }
-            _ => {
-                res_total *= rt_array_total(ax_val(s)); // SLICE index-array length
-                res_ndims += 1;
-            }
+        if spec.kind(s) != SPEC_INDEX {
+            res_ndims += 1;
         }
     }
-    let result = rt_array_new(kind, res_ndims, res_total);
-    {
-        let mut rk = 0u32;
-        for s in 0..src_ndims {
-            match ax_kind(s) {
-                0 => {}
-                1 => {
-                    rt_array_set_dim(result, rk, rt_array_dim(src, s as i32 + 1));
-                    rk += 1;
-                }
-                _ => {
-                    rt_array_set_dim(result, rk, rt_array_total(ax_val(s)));
-                    rk += 1;
-                }
-            }
-        }
-    }
-
-    // Scratch: 0-based source coordinate per source axis (INDEX axes fixed once)
-    // followed by the result coordinate per result axis (recomputed per element).
-    let scratch = rt_alloc((src_ndims + res_ndims) * 4);
-    let src_coord = scratch;
-    let res_coord = scratch + src_ndims * 4;
+    let result = rt_array_new(kind, res_ndims, total);
+    let mut rk = 0u32;
     for s in 0..src_ndims {
-        let c = if ax_kind(s) == 0 { ax_val(s) - 1 } else { 0 };
-        unsafe { store_u32(src_coord + s * 4, c) };
+        if spec.kind(s) != SPEC_INDEX {
+            rt_array_set_dim(result, rk, spec.axis_len(src, s));
+            rk += 1;
+        }
     }
 
     let stride = elem_stride(kind);
     let src_base = arr_data(src);
     let dst_base = arr_data(result);
     let heap = matches!(kind, EK_STR | EK_ARRAY | EK_RECORD);
-    for r in 0..res_total {
-        // Decompose `r` into per-result-axis coordinates (row-major).
-        let mut rem = r;
-        let mut rk = res_ndims;
-        while rk > 0 {
-            rk -= 1;
-            let d = unsafe { load_u32(result + ARR_DIMS_OFF + rk * 4) };
-            unsafe { store_u32(res_coord + rk * 4, rem % d) };
-            rem /= d;
-        }
-        // Map result coordinates back onto the source axes.
-        let mut rk = 0u32;
-        for s in 0..src_ndims {
-            match ax_kind(s) {
-                0 => {} // fixed
-                1 => {
-                    let c = unsafe { load_u32(res_coord + rk * 4) };
-                    unsafe { store_u32(src_coord + s * 4, c) };
-                    rk += 1;
-                }
-                _ => {
-                    let idx_arr = ax_val(s);
-                    let pos = unsafe { load_u32(res_coord + rk * 4) };
-                    // SLICE index array holds 1-based source indices (Integer).
-                    let one_based = unsafe { load_u32(arr_data(idx_arr) + pos * 4) };
-                    unsafe { store_u32(src_coord + s * 4, one_based - 1) };
-                    rk += 1;
-                }
-            }
-        }
-        // Row-major source linear index from the source coordinates.
-        let mut lin = 0u32;
-        for s in 0..src_ndims {
-            lin = lin * rt_array_dim(src, s as i32 + 1) + unsafe { load_u32(src_coord + s * 4) };
-        }
-        let sp = src_base + lin * stride;
+    for r in 0..total {
+        let sp = src_base + unsafe { load_u32(positions + r * 4) } * stride;
         let dp = dst_base + r * stride;
         unsafe {
             core::ptr::copy_nonoverlapping(sp as *const u8, dp as *mut u8, stride as usize);
@@ -535,8 +718,47 @@ pub extern "C" fn rt_array_slice(src: u32, nspec: u32, spec: u32) -> u32 {
         }
     }
 
-    rt_free(scratch);
+    rt_free(positions);
     result
+}
+
+/// Indexed assignment `dst[i, :, lo:hi, ...] := src` — C's
+/// `indexed_assign_<type>_array`. `src` supplies the positions [`SliceSpec`]
+/// selects, in selection order, and must hold exactly that many elements.
+///
+/// `dst` is written in place; an overwritten heap element is released and the
+/// new one deep-copied (`copy_kind`) for value semantics. `src` and the SLICE
+/// index arrays are read only — the caller still owns and releases them.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_array_indexed_assign(dst: u32, nspec: u32, spec: u32, src: u32) {
+    let kind = unsafe { load_u32(dst + ARR_KIND_OFF) };
+    let spec = SliceSpec::new(nspec, spec);
+    let (positions, count) = spec_positions(dst, &spec);
+    if count != rt_array_total(src) {
+        rt_free(positions);
+        nls::model_error();
+        return;
+    }
+
+    let stride = elem_stride(kind);
+    let src_base = arr_data(src);
+    let dst_base = arr_data(dst);
+    let heap = matches!(kind, EK_STR | EK_ARRAY | EK_RECORD);
+    for r in 0..count {
+        let sp = src_base + r * stride;
+        let dp = dst_base + unsafe { load_u32(positions + r * 4) } * stride;
+        unsafe {
+            if heap {
+                release_kind(kind, load_u32(dp));
+            }
+            core::ptr::copy_nonoverlapping(sp as *const u8, dp as *mut u8, stride as usize);
+            if heap {
+                store_u32(dp, copy_kind(kind, load_u32(dp)));
+            }
+        }
+    }
+
+    rt_free(positions);
 }
 
 /// Concatenate `n` arrays along dimension `dim` (1-based) into a fresh
@@ -887,7 +1109,8 @@ pub extern "C" fn rt_real_int_pow(mut base: f64, mut n: i32) -> f64 {
     let neg = n < 0;
     if neg {
         if base == 0.0 {
-            trap();
+            nls::model_error();
+            return 0.0;
         }
         n = -n;
     }
@@ -950,8 +1173,8 @@ rt_math2!(fmod);
 /// byte-identical. A negative base with an (effectively) integer exponent or an
 /// odd-root fractional exponent gives a real value; any other negative-base
 /// fractional exponent is an "invalid root"; and any nan/inf result is rejected.
-/// All the error cases trap, surfacing as `fail()` (META_FAIL) exactly as the C
-/// `throwStreamPrint` path does in the function-evaluation context.
+/// The error cases go through [`nls::model_error`], as C's `throwStreamPrint`
+/// does: fatal unless a nonlinear solver can back off.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
     let result;
@@ -986,14 +1209,16 @@ pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
             if libm::fabs(ifrac) < 1e-10 && ((iint as i64 as u64) & 1) != 0 {
                 result = -libm::pow(-base, frac) * libm::pow(base, int);
             } else {
-                trap();
+                nls::model_error();
+                return 0.0;
             }
         }
     } else {
         result = libm::pow(base, exp);
     }
     if result.is_nan() || result.is_infinite() {
-        trap();
+        nls::model_error();
+        return 0.0;
     }
     result
 }
@@ -1004,7 +1229,8 @@ pub extern "C" fn rt_real_pow(base: f64, exp: f64) -> f64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_mod_int(x: i32, y: i32) -> i32 {
     if y == 0 {
-        trap();
+        nls::model_error();
+        return 0;
     }
     let r = x.wrapping_rem(y);
     if r != 0 && (r < 0) != (y < 0) { r + y } else { r }
@@ -1043,13 +1269,12 @@ fn rec_data_off(nheap: u32) -> u32 {
 /// start as the null handle, so releasing a partially built record is safe.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_record_new(nheap: u32, size: u32) -> u32 {
+    stat_inc(STAT_RECORD_NEW);
     let obj = rt_alloc(size);
     unsafe {
         store_u32(obj, 1); // refcount
         store_u32(obj + REC_NHEAP_OFF, nheap);
-        for off in (8..size).step_by(4) {
-            store_u32(obj + off, 0);
-        }
+        core::ptr::write_bytes((obj + 8) as *mut u8, 0, size.saturating_sub(8) as usize);
     }
     obj
 }
@@ -1240,7 +1465,8 @@ fn ew_i32(x: i32, y: i32, op: u32) -> i32 {
         OP_OR => x | y,
         _ => {
             if y == 0 {
-                trap();
+                nls::model_error();
+                return 0;
             }
             x.wrapping_div(y)
         }
@@ -1450,6 +1676,7 @@ const STR_DATA_OFF: u32 = 8;
 /// set). The caller fills `rt_str_data(obj)..+len` with the bytes.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_str_new(len: u32) -> u32 {
+    stat_inc(STAT_STR_NEW);
     let obj = rt_alloc(STR_DATA_OFF + len);
     unsafe {
         store_u32(obj, 1); // refcount
@@ -2010,20 +2237,289 @@ pub extern "C" fn rt_sim_store_row(buf: u32, row: u32, sim_data: u32, n_reals: u
 // algorithm class as LAPACK's `dgesv`, so results track the C target closely.
 // ---------------------------------------------------------------------------
 
+/// Count of linear-system solves in the current run (every dense + sparse path).
+/// The session resets it per run via [`reset_lin_solves`]; surfaced in `LOG_STATS`.
+static LIN_SOLVES: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
+
+pub fn lin_solves() -> u64 {
+    LIN_SOLVES.load(core::sync::atomic::Ordering::Relaxed)
+}
+pub fn reset_lin_solves() {
+    LIN_SOLVES.store(0, core::sync::atomic::Ordering::Relaxed);
+}
+
+/// [`lin_solves`] for a host driving the model itself, which has no session and so
+/// no `rt_sim_stat` to read the counter from.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_lin_solves() -> u64 {
+    lin_solves()
+}
+
 /// Solve the dense `n`×`n` system `A x = b` in place: `A` is `a_ptr` as `n*n`
 /// f64 in **column-major** order, `b` is `b_ptr` as `n` f64. On success `b ← x`
 /// and 0 is returned; 1 only when the system is genuinely unsolvable.
 ///
-/// LU with partial pivoting first (like C's `dgesv`); on a singular matrix a
-/// total-pivot search runs as fallback, mirroring C's `LS_DEFAULT`.
+/// LU with partial pivoting (like C's `dgesv`), then a total-pivot search on a
+/// singular matrix, mirroring C's `LS_DEFAULT`; `-ls=klu` uses KLU instead.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
+    LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     let n = n as usize;
+    #[cfg(sundials)]
+    if solvers::ls() == solvers::Ls::Klu {
+        return sundials::klu_solve_dense(a_ptr, b_ptr, n);
+    }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
-    if nls::lu_solve(a, b, n) || nls::total_pivot_solve(a, b, n) {
+    // `-ls=totalpivot` skips straight to the total-pivot search; LAPACK (C's
+    // `dgesv`, and the default) is partial-pivot LU with that as its singular
+    // fallback.
+    let lu_first = solvers::ls() != solvers::Ls::TotalPivot;
+    if (lu_first && nls::lu_solve(a, b, n)) || nls::total_pivot_solve(a, b, n) {
         0
     } else {
         1
     }
+}
+
+/// Solve a sparse `n`×`n` system `A x = b` in place, `A` given in CSC:
+/// `colptr` = `n+1` i32 column pointers, `rowidx`/`values` = `nnz` row indices /
+/// f64 values (column-major). `b ← x` on success (returns 0), 1 if singular.
+///
+/// Sparse LU with AMD fill-reducing ordering via `rsparse::lusol` (a CSparse port)
+/// on the in-wasm-solve build; the others densify and reuse the dense LU.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: u32, nnz: u32) -> i32 {
+    LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    let n = n as usize;
+    let nnz = nnz as usize;
+    let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
+    let rowi = unsafe { core::slice::from_raw_parts(rowidx as *const i32, nnz) };
+    let vals = unsafe { core::slice::from_raw_parts(values as *const f64, nnz) };
+    let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+
+    #[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
+    {
+        let a = rsparse::data::Sprs {
+            nzmax: nnz,
+            m: n,
+            n,
+            p: colp.iter().map(|&x| x as isize).collect(),
+            i: rowi.iter().map(|&x| x as usize).collect(),
+            x: vals.to_vec(),
+        };
+        // order 2 = AMD on A'A (CSparse's LU ordering); tol 1.0 = partial pivoting.
+        match rsparse::lusol(&a, b, 2, 1.0) {
+            Ok(()) => 0,
+            Err(_) => 1,
+        }
+    }
+    #[cfg(not(all(target_os = "wasi", feature = "inwasm_solve")))]
+    {
+        // No in-wasm rsparse (native interactive / no_std): densify + dense LU.
+        let mut dense = alloc::vec![0.0f64; n * n];
+        for col in 0..n {
+            for k in colp[col] as usize..colp[col + 1] as usize {
+                dense[col * n + rowi[k] as usize] = vals[k];
+            }
+        }
+        if nls::lu_solve(&dense, b, n) || nls::total_pivot_solve(&dense, b, n) {
+            0
+        } else {
+            1
+        }
+    }
+}
+
+/// Solve `A x = b` from a dense column-major `A` (`a_ptr`, `n*n` f64) with the
+/// `-lss` solver: its structural nonzeros are scanned into CSC first. There is no
+/// system handle, so nothing is cached. 0 ok, 1 singular.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
+    LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    let n = n as usize;
+    #[cfg(sundials)]
+    if solvers::lss() == solvers::Lss::Klu {
+        return sundials::klu_solve_dense(a_ptr, b_ptr, n);
+    }
+    let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
+
+    #[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
+    {
+        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+        let mut p = alloc::vec![0isize; n + 1];
+        let mut i = alloc::vec::Vec::new();
+        let mut x = alloc::vec::Vec::new();
+        for col in 0..n {
+            for row in 0..n {
+                let v = a[col * n + row];
+                if v != 0.0 {
+                    i.push(row);
+                    x.push(v);
+                }
+            }
+            p[col + 1] = i.len() as isize;
+        }
+        let sp = rsparse::data::Sprs { nzmax: i.len(), m: n, n, p, i, x };
+        match rsparse::lusol(&sp, b, 2, 1.0) {
+            Ok(()) => 0,
+            Err(_) => 1,
+        }
+    }
+    #[cfg(not(all(target_os = "wasi", feature = "inwasm_solve")))]
+    {
+        // No in-wasm rsparse: A is already dense column-major, solve directly.
+        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+        if nls::lu_solve(a, b, n) || nls::total_pivot_solve(a, b, n) {
+            0
+        } else {
+            1
+        }
+    }
+}
+
+// Native rsparse solve on the host (`openmodelica_wasm_jit::host::lin_solve`),
+// which caches the symbolic analysis host-side. Returns 0 (solved) or 1 (singular).
+#[cfg(all(target_os = "wasi", feature = "host_lin_solve"))]
+#[link(wasm_import_module = "env")]
+unsafe extern "C" {
+    fn rt_host_lin_solve(handle: u32, colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: u32, nnz: u32) -> i32;
+}
+
+// Per-system cached sparse-LU symbolic analysis (keyed by `handle`): the pattern is
+// constant over a run, so `sqr` runs once and each solve only refactors.
+#[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
+struct CachedLss {
+    a: rsparse::data::Sprs<f64>, // p/i fixed; x refreshed each solve
+    s: rsparse::data::Symb,
+    x: alloc::vec::Vec<f64>,
+}
+
+#[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
+thread_local! {
+    static LSS_CACHE: core::cell::RefCell<std::collections::HashMap<u32, CachedLss>> =
+        core::cell::RefCell::new(std::collections::HashMap::new());
+}
+
+/// Solve the CSC system with the `-lss` solver, reusing `handle`'s cached symbolic
+/// analysis (the pattern is read only to seed the cache on the first call).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_solve_lin_sparse_cached(
+    handle: u32,
+    colptr: u32,
+    rowidx: u32,
+    values: u32,
+    b_ptr: u32,
+    n: u32,
+    nnz: u32,
+) -> i32 {
+    LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    let backend = match solvers::lss() {
+        solvers::Lss::Klu => solvers::Sparse::Klu,
+        solvers::Lss::Rsparse => solvers::Sparse::Rsparse,
+    };
+    lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz, backend)
+}
+
+/// [`rt_solve_lin_sparse_cached`] without the statistics counter — the sparse
+/// nonlinear solver's inner factorizations are kinsol/KLU solves in C, which the
+/// `### STATISTICS ###` "linear system solves" line does not count. `backend` is
+/// the caller's selector: `-lss` here, `-nlsLS` inside the nonlinear solver.
+pub(crate) fn lin_sparse_cached(
+    handle: u32,
+    colptr: u32,
+    rowidx: u32,
+    values: u32,
+    b_ptr: u32,
+    n: u32,
+    nnz: u32,
+    backend: solvers::Sparse,
+) -> i32 {
+    let n = n as usize;
+    let nnz = nnz as usize;
+
+    #[cfg(sundials)]
+    if backend == solvers::Sparse::Klu {
+        return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz);
+    }
+    #[cfg(not(sundials))]
+    let _ = backend;
+
+    // Native interactive runtime: the host solves natively (cheap crossings).
+    #[cfg(all(target_os = "wasi", feature = "host_lin_solve"))]
+    {
+        return unsafe { rt_host_lin_solve(handle, colptr, rowidx, values, b_ptr, n as u32, nnz as u32) };
+    }
+    // In-wasm rsparse cache: web interactive (boundary too costly) + standalone.
+    #[cfg(all(target_os = "wasi", feature = "inwasm_solve", not(feature = "host_lin_solve")))]
+    {
+        return solve_lin_sparse_cached_inwasm(handle, colptr, rowidx, values, b_ptr, n, nnz);
+    }
+    // no_std (JIT fallback): densify + dense LU.
+    #[cfg(not(all(target_os = "wasi", any(feature = "host_lin_solve", feature = "inwasm_solve"))))]
+    {
+        let _ = handle;
+        rt_solve_lin_sparse(colptr, rowidx, values, b_ptr, n as u32, nnz as u32)
+    }
+}
+
+/// In-wasm cached sparse solve (rsparse) — the web interactive + standalone
+/// wasip1 runtimes (no host solver). Reuses the cached symbolic analysis for `handle`.
+#[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
+fn solve_lin_sparse_cached_inwasm(handle: u32, colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: usize, nnz: usize) -> i32 {
+    let vals = unsafe { core::slice::from_raw_parts(values as *const f64, nnz) };
+    let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+    LSS_CACHE.with(|cell| {
+        let mut cache = cell.borrow_mut();
+        let entry = cache.entry(handle).or_insert_with(|| {
+            let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
+            let rowi = unsafe { core::slice::from_raw_parts(rowidx as *const i32, nnz) };
+            let a = rsparse::data::Sprs {
+                nzmax: nnz,
+                m: n,
+                n,
+                p: colp.iter().map(|&x| x as isize).collect(),
+                i: rowi.iter().map(|&x| x as usize).collect(),
+                x: vals.to_vec(),
+            };
+            let s = rsparse::sqr(&a, 2, false); // AMD ordering + symbolic, once
+            CachedLss { a, s, x: alloc::vec![0.0f64; n] }
+        });
+        entry.a.x.copy_from_slice(vals);
+        let CachedLss { a, s, x } = entry;
+        let nm = match rsparse::lu(a, s, 1.0) {
+            Ok(nm) => nm,
+            Err(_) => return 1,
+        };
+        // x = P*b, solve L/U, b = Q*x; rsparse's `ipvec` permute is private.
+        match &nm.pinv {
+            Some(p) => for k in 0..n { x[p[k] as usize] = b[k]; },
+            None => x[..n].copy_from_slice(&b[..n]),
+        }
+        rsparse::lsolve(&nm.l, &mut x[..]);
+        rsparse::usolve(&nm.u, &mut x[..]);
+        match &s.q {
+            Some(q) => for k in 0..n { b[q[k] as usize] = x[k]; },
+            None => b[..n].copy_from_slice(&x[..n]),
+        }
+        0
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Host-driven call_indirect into the model (in-wasm sim driver wiring).
+//
+// The host appends a model export (e.g. `functionODE`) to the shared
+// `__indirect_function_table` and passes back its index; the runtime reaches it
+// wasm→wasm via `call_indirect`, exactly as `rt_solve_nls` reaches a system's
+// `residual`/`load`. A fn-pointer value *is* the table index on wasm, so a
+// transmute + call lowers to `call_indirect` of the `(i32)->()` type.
+// ---------------------------------------------------------------------------
+
+/// Call the table-`idx` model function of type `fn(u32)` (an equation function
+/// such as `functionODE`/`functionParameters`) with `arg` (the `sim_data` ptr).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_call1_indirect(idx: u32, arg: u32) {
+    let f: extern "C" fn(u32) = unsafe { core::mem::transmute(idx as usize) };
+    f(arg);
 }

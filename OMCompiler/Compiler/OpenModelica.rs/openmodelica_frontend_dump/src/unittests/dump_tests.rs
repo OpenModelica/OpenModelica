@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use anyhow::Result;
+use metamodelica::Result;
 use metamodelica::*;
 use openmodelica_ast::Absyn;
 use crate::Dump;

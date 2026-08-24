@@ -1,5 +1,6 @@
 // cflags: +g=MetaModelica +d=noevalfunc,nogen -d=-newInst
 // status: correct
+// suite: metamodelica
 
 model UnboxCond
 

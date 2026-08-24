@@ -1,0 +1,26 @@
+// name: Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage
+// keywords: NewBackend Buildings StateGraph discrete algebraic loop
+// status: correct
+// teardown_command: rm -f Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_res.mat Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_diff.csv && rm -rf Buildings*.libs
+
+loadModel(Buildings, {"12.1.1"}); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage, stopTime=1.0); getErrorString();
+diffSimulationResults("Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_res.mat", "ReferenceFiles/Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_res.mat", "Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_diff.csv", 1e-8);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Buildings.Applications.DataCenters.ChillerCooled.Controls.Validation.ConstantSpeedPumpStage', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult

@@ -151,6 +151,12 @@ typedef enum
  * CSC uses column coloring and CSR uses row coloring.
  * leadindex: size nCols+1 (CSC) or nRows+1 (CSR)
  */
+typedef enum
+{
+  OMC_MATRIX_DENSE = 0,       /* the backend chose a dense factorization */
+  OMC_MATRIX_SPARSE           /* the backend chose a sparse factorization */
+} SOLVER_MATRIX_FORMAT;
+
 typedef struct SPARSE_PATTERN
 {
   /* Primary CSC/CSR representation */
@@ -415,6 +421,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   void (*getIterationVars)(DATA* data, double* array);
   int (*checkConstraints)(DATA* data, threadData_t *threadData);
 
+  SOLVER_MATRIX_FORMAT matrixFormat;   /* dense or sparse, chosen by the backend */
   NONLINEAR_SOLVER nlsMethod;          /* nonlinear solver */
   void *solverData;
   NLS_LS nlsLinearSolver;              /* nls linear solver */
@@ -499,7 +506,8 @@ typedef struct LINEAR_SYSTEM_DATA
 
   modelica_integer method;             /* 0: No Jacobain created for linear system
                                         * 1: Symbolic Jacobian available for linear system */
-  modelica_boolean useSparseSolver;    /* true if sparse solver is used */
+  SOLVER_MATRIX_FORMAT matrixFormat;   /* dense or sparse, chosen by the backend */
+  modelica_boolean useSparseSolver;    /* matrixFormat, unless no sparse solver was built in */
 
   LINEAR_SYSTEM_THREAD_DATA* parDynamicData; /* Array of length numMaxThreads for internal write data */
 
@@ -781,6 +789,12 @@ typedef struct SPATIAL_DISTRIBUTION_DATA {
   modelica_boolean isInitialized;
 
   modelica_real oldPosX;
+
+  modelica_boolean startPosXSet;  /* true once startPosX has been captured */
+  modelica_real startPosX;        /* value of x at the first call; x is shifted by
+                                     this so the operator always starts at x = 0.
+                                     Only the change of x (transport distance)
+                                     matters, so a nonzero start value of x is fine. */
 
   DOUBLE_ENDED_LIST* transportedQuantity;
   DOUBLE_ENDED_LIST* storedEvents;

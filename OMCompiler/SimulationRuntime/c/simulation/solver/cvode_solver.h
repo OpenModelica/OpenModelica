@@ -121,6 +121,10 @@ typedef struct CVODE_SOLVER
   /* CVODE internal data */
   void *cvode_mem;            /* Internal CVODE memory block */
   CVODE_USERDATA *simData;
+
+#ifdef OMC_FMI_RUNTIME
+  void (*freeSolverMemory)(void*); /* How to free this struct: FMI callback (FMI2) or plain free (FMI3/no callback) */
+#endif
 } CVODE_SOLVER;
 
 #else /* WITH_SUNDIALS */
@@ -133,6 +137,9 @@ typedef void CVODE_SOLVER;
 int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI);
 int cvode_solver_reinit(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData);
 int cvode_solver_deinitial(CVODE_SOLVER *cvodeData);
+
+/* read the nominal values into the absolute tolerances */
+int cvode_solver_setNominals(DATA *data, threadData_t *threadData, CVODE_SOLVER *cvodeData);
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo);
 
 #ifdef OMC_FMI_RUNTIME

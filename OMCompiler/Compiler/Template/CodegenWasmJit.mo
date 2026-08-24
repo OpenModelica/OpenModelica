@@ -94,6 +94,56 @@ algorithm
   fail();
 end emitStandalone;
 
+function emitMeFmu
+  " wasm Model-Exchange export: lower the model, link it with the
+    model-agnostic ME adapter into an fmi-ls-wasm component
+    (wit_component::Linker, pure Rust — no external wasm-merge), and write the
+    self-contained `.fmu` ZIP (`modelDescription` + binaries/wasm32-wasip2/<id>.wasm)
+    to `fmuPath`. Host-free, so it also works in the browser omc.
+    `modelDescription` is CodegenFMU2's or CodegenFMU3's XML; its value references
+    are resolved at run time through the vr table the emitter puts in the model's
+    metadata blob. Implemented in Rust. "
+  input SimCode.SimCode simCode;
+  input String fmuPath;
+  input String guid;
+  input String modelDescription;
+  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: terminalsAndIcons, documentation";
+  input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
+algorithm
+  Error.addInternalError("CodegenWasmJit.emitMeFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
+  fail();
+end emitMeFmu;
+
+function emitCsFmu
+  " wasm Co-Simulation export: as emitMeFmu, but the component embeds the
+    simulation driver (the FMU integrates itself between the importer's
+    communication points). Implemented in Rust. "
+  input SimCode.SimCode simCode;
+  input String fmuPath;
+  input String guid;
+  input String modelDescription;
+  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: terminalsAndIcons, documentation";
+  input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
+algorithm
+  Error.addInternalError("CodegenWasmJit.emitCsFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
+  fail();
+end emitCsFmu;
+
+function emitMeCsFmu
+  " wasm me_cs export: one component exporting both the Model-Exchange and
+    Co-Simulation interfaces (a single binary and modelIdentifier). Implemented in
+    Rust. "
+  input SimCode.SimCode simCode;
+  input String fmuPath;
+  input String guid;
+  input String modelDescription;
+  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: terminalsAndIcons, documentation";
+  input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
+algorithm
+  Error.addInternalError("CodegenWasmJit.emitMeCsFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
+  fail();
+end emitMeCsFmu;
+
 function runSimulationWasmtime
   " Run the standalone module (built by emitStandalone) in a wasmtime subprocess;
     its _start writes the result file. Returns 0 on success, 1 on failure.

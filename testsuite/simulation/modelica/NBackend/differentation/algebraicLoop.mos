@@ -65,8 +65,8 @@ buildModel(algebraicLoop); getErrorString();
 //
 // SeedVars (size = 2)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.y
-//   (1)[SEED] (1) Real $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.x
+//   (0)[SEED] (1) Real $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.x
+//   (1)[SEED] (1) Real $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.y
 //
 // TmpVars (size = 0)
 // ********************
@@ -79,25 +79,10 @@ buildModel(algebraicLoop); getErrorString();
 //   (12) $pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_0 := -(3.0 * $DER.x ^ 2.0 * $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.x - 2.0 * $DER.y * $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.y)
 //   (11) $pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_1 := -(2.0 * $DER.x * $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.y)
 //
-// Sparsity Pattern Cols
-// ***********************
-//   0:	{0, 1}
-//   1:	{0, 1}
-//
-// Sparsity Pattern Rows
-// ***********************
-//   0:	{0, 1}
-//   1:	{0, 1}
-//
-// Sparsity Coloring Columns
-// ***************************
-//   {0}
-//   {1}
-//
-// Sparsity Coloring Rows
-// ************************
-//   {0}
-//   {1}
+// Resizable Sparsity Pattern
+// ----------------------------
+// $RES_SIM_0 ... {$pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_0} ... {($SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.y, {}, false), ($SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.x, {}, false)}
+// $RES_SIM_1 ... {$pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_1} ... {($SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.y, {}, false), ($SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.x, {}, false)}
 //
 // ============================================================
 //   SimCode Jacobian INI_NLS_JAC_1_0(idx = 0, partition = 0)
@@ -105,8 +90,8 @@ buildModel(algebraicLoop); getErrorString();
 //
 // SeedVars (size = 2)
 // *********************
-//   (0)[SEED] (1) Real $SEED_INI_NLS_JAC_1_0.$DER.y
-//   (1)[SEED] (1) Real $SEED_INI_NLS_JAC_1_0.$DER.x
+//   (0)[SEED] (1) Real $SEED_INI_NLS_JAC_1_0.$DER.x
+//   (1)[SEED] (1) Real $SEED_INI_NLS_JAC_1_0.$DER.y
 //
 // TmpVars (size = 0)
 // ********************
@@ -119,25 +104,10 @@ buildModel(algebraicLoop); getErrorString();
 //   (4) $pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_0 := -(3.0 * $DER.x ^ 2.0 * $SEED_INI_NLS_JAC_1_0.$DER.x - 2.0 * $DER.y * $SEED_INI_NLS_JAC_1_0.$DER.y)
 //   (3) $pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_1 := -(2.0 * $DER.x * $SEED_INI_NLS_JAC_1_0.$DER.x + 3.0 * $DER.y ^ 2.0 * $SEED_INI_NLS_JAC_1_0.$DER.y)
 //
-// Sparsity Pattern Cols
-// ***********************
-//   0:	{0, 1}
-//   1:	{0, 1}
-//
-// Sparsity Pattern Rows
-// ***********************
-//   0:	{0, 1}
-//   1:	{0, 1}
-//
-// Sparsity Coloring Columns
-// ***************************
-//   {0}
-//   {1}
-//
-// Sparsity Coloring Rows
-// ************************
-//   {0}
-//   {1}
+// Resizable Sparsity Pattern
+// ----------------------------
+// $RES_SIM_0 ... {$pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_0} ... {($SEED_INI_NLS_JAC_1_0.$DER.y, {}, false), ($SEED_INI_NLS_JAC_1_0.$DER.x, {}, false)}
+// $RES_SIM_1 ... {$pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_1} ... {($SEED_INI_NLS_JAC_1_0.$DER.y, {}, false), ($SEED_INI_NLS_JAC_1_0.$DER.x, {}, false)}
 //
 // ==============================================
 //   SimCode Jacobian A(idx = 2, partition = 2)
@@ -145,8 +115,8 @@ buildModel(algebraicLoop); getErrorString();
 //
 // SeedVars (size = 2)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ODE_JAC.y
-//   (1)[SEED] (1) Real $SEED_ODE_JAC.x
+//   (0)[SEED] (1) Real $SEED_ODE_JAC.x
+//   (1)[SEED] (1) Real $SEED_ODE_JAC.y
 //
 // TmpVars (size = 0)
 // ********************
@@ -160,25 +130,10 @@ buildModel(algebraicLoop); getErrorString();
 //   --(9) 0 = -(3.0 * $DER.x ^ 2.0 * $pDER_ODE_JAC.$DER.x - ($SEED_ODE_JAC.x + $SEED_ODE_JAC.y + 2.0 * $DER.y * $pDER_ODE_JAC.$DER.y))
 //   --(10) 0 = -((2.0 * $DER.x * $pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $pDER_ODE_JAC.$DER.y) - ($SEED_ODE_JAC.x * y + x * $SEED_ODE_JAC.y))
 //
-// Sparsity Pattern Cols
-// ***********************
-//   0:	{0, 1}
-//   1:	{0, 1}
-//
-// Sparsity Pattern Rows
-// ***********************
-//   0:	{0, 1}
-//   1:	{0, 1}
-//
-// Sparsity Coloring Columns
-// ***************************
-//   {0}
-//   {1}
-//
-// Sparsity Coloring Rows
-// ************************
-//   {0}
-//   {1}
+// Resizable Sparsity Pattern
+// ----------------------------
+// $RES_SIM_0 ... {$pDER_ODE_JAC.$DER.y, $pDER_ODE_JAC.$DER.x} ... {($SEED_ODE_JAC.y, {}, false), ($SEED_ODE_JAC.x, {}, false)}
+// $RES_SIM_1 ... {$pDER_ODE_JAC.$DER.y, $pDER_ODE_JAC.$DER.x} ... {($SEED_ODE_JAC.y, {}, false), ($SEED_ODE_JAC.x, {}, false)}
 //
 // ======================================================
 //   [EMPTY] SimCode Jacobian B(idx = 4, partition = 0)
@@ -301,12 +256,10 @@ buildModel(algebraicLoop); getErrorString();
 //
 // jacobianEquations:
 // ========================================
-// 15: $pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_1=-(2.0 * $DER.x * $SEED_INI_NLS_JAC_1_0.$DER.x + 3.0 * $DER.y ^ 2.0 * $SEED_INI_NLS_JAC_1_0.$DER.y) [Real]
-// 14: $pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_0=-(3.0 * $DER.x ^ 2.0 * $SEED_INI_NLS_JAC_1_0.$DER.x - 2.0 * $DER.y * $SEED_INI_NLS_JAC_1_0.$DER.y) [Real]
 // 13:  (LINEAR) index:0 jacobian: true
 // 	variables:
-// index:0: $pDER_ODE_JAC.$DER.y (no alias)  initial: 	no arrCref index:(1) []
-// index:1: $pDER_ODE_JAC.$DER.x (no alias)  initial: 	no arrCref index:(2) []
+// index:1: $pDER_ODE_JAC.$DER.y (no alias)  initial: 	no arrCref index:(2) []
+// index:0: $pDER_ODE_JAC.$DER.x (no alias)  initial: 	no arrCref index:(1) []
 // 	b-vector:
 // 	9: -(3.0 * $DER.x ^ 2.0 * $pDER_ODE_JAC.$DER.x - $SEED_ODE_JAC.x - $SEED_ODE_JAC.y - 2.0 * $DER.y * $pDER_ODE_JAC.$DER.y) (RESIDUAL)
 // 	10: -(2.0 * $DER.x * $pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $pDER_ODE_JAC.$DER.y - ($SEED_ODE_JAC.x * y + x * $SEED_ODE_JAC.y)) (RESIDUAL)
@@ -315,8 +268,10 @@ buildModel(algebraicLoop); getErrorString();
 // 	11: $pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_1=-(2.0 * $DER.x * $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.y) [Real]
 //
 // 	simJac:
-// [0, 0] ->0: 0.0 (RESIDUAL)[1, 0] ->0: 0.0 (RESIDUAL)[0, 1] ->0: 0.0 (RESIDUAL)[1, 1] ->0: 0.0 (RESIDUAL)
 //
+//
+// 4: $pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_0=-(3.0 * $DER.x ^ 2.0 * $SEED_INI_NLS_JAC_1_0.$DER.x - 2.0 * $DER.y * $SEED_INI_NLS_JAC_1_0.$DER.y) [Real]
+// 3: $pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_1=-(2.0 * $DER.x * $SEED_INI_NLS_JAC_1_0.$DER.x + 3.0 * $DER.y ^ 2.0 * $SEED_INI_NLS_JAC_1_0.$DER.y) [Real]
 //
 // jacobianMatrices:
 // ========================================
@@ -331,8 +286,8 @@ buildModel(algebraicLoop); getErrorString();
 // 	Jacobian idx: 2
 // 	13:  (LINEAR) index:0 jacobian: true
 // 	variables:
-// index:0: $pDER_ODE_JAC.$DER.y (no alias)  initial: 	no arrCref index:(1) []
-// index:1: $pDER_ODE_JAC.$DER.x (no alias)  initial: 	no arrCref index:(2) []
+// index:1: $pDER_ODE_JAC.$DER.y (no alias)  initial: 	no arrCref index:(2) []
+// index:0: $pDER_ODE_JAC.$DER.x (no alias)  initial: 	no arrCref index:(1) []
 // 	b-vector:
 // 	9: -(3.0 * $DER.x ^ 2.0 * $pDER_ODE_JAC.$DER.x - $SEED_ODE_JAC.x - $SEED_ODE_JAC.y - 2.0 * $DER.y * $pDER_ODE_JAC.$DER.y) (RESIDUAL)
 // 	10: -(2.0 * $DER.x * $pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $pDER_ODE_JAC.$DER.y - ($SEED_ODE_JAC.x * y + x * $SEED_ODE_JAC.y)) (RESIDUAL)
@@ -340,8 +295,8 @@ buildModel(algebraicLoop); getErrorString();
 // 	12: $pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_0=-(3.0 * $DER.x ^ 2.0 * $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.x - 2.0 * $DER.y * $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.y) [Real]
 // 	11: $pDER_ODE_JAC_ODE_LS_JAC_0.$RES_SIM_1=-(2.0 * $DER.x * $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $SEED_ODE_JAC_ODE_LS_JAC_0.$pDER_ODE_JAC.$DER.y) [Real]
 //
-// 	simJac:
-// [0, 0] ->0: 0.0 (RESIDUAL)[1, 0] ->0: 0.0 (RESIDUAL)[0, 1] ->0: 0.0 (RESIDUAL)[1, 1] ->0: 0.0 (RESIDUAL)
+// 	simJac:<<<<<<< HEAD
+//
 //
 //
 // 	Jacobian idx: 4

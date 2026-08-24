@@ -21,7 +21,7 @@
 use std::cell::RefCell;
 use std::sync::Arc;
 
-use anyhow::Result;
+use metamodelica::Result;
 use arcstr::ArcStr;
 
 use metamodelica::List;

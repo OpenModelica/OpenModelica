@@ -28,7 +28,7 @@ pipeline {
         stage('autoconf-jammy-gcc') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -45,10 +45,10 @@ pipeline {
         }
         stage('cmake-jammy-gcc') {
           agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
+            docker {
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
+              alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                     "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
@@ -58,11 +58,11 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-                                        + " -DOM_USE_CCACHE=OFF"
-                                        + " -DCMAKE_INSTALL_PREFIX=build"
-                                        + " -DSUNDIALS_BUILD_SHARED_LIBS=ON")
-              sh "build/bin/omc --version"
+              common.buildOMC_CMake([
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DOM_USE_CCACHE=OFF",
+                "-DCMAKE_INSTALL_PREFIX=build",
+                "-DSUNDIALS_BUILD_SHARED_LIBS=ON"])
             }
             stash name: 'omc-cmake-gcc', includes: 'build/**'
           }
@@ -74,10 +74,10 @@ pipeline {
       parallel {
         stage('testsuite-cmake-gcc 1/3') {
           agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
+            docker {
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
+              alwaysPull true
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
@@ -102,10 +102,10 @@ pipeline {
         }
         stage('testsuite-cmake-gcc 2/3') {
           agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
+            docker {
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
+              alwaysPull true
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
@@ -130,10 +130,10 @@ pipeline {
         }
         stage('testsuite-cmake-gcc 3/3') {
           agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
+            docker {
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
+              alwaysPull true
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"

@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 
 use crate::NFExpression as Expression;
 use crate::NFType as Type;
@@ -38,5 +38,5 @@ pub fn callFunction(
     _specs: metamodelica::Array<ArgSpec>,
     _returnType: Arc<Type::NFType>,
 ) -> Result<(Arc<Expression::NFExpression>, Arc<metamodelica::List<Arc<Expression::NFExpression>>>)> {
-    bail!("FFI.callFunction: external \"C\" evaluation (dlopen+libffi) is unavailable on this target")
+    return Err("FFI.callFunction: external \"C\" evaluation (dlopen+libffi) is unavailable on this target")
 }

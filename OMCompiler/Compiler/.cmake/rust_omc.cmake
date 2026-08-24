@@ -22,9 +22,14 @@ find_program(CARGO_EXECUTABLE cargo REQUIRED)
 
 set(RUST_OMC_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/OpenModelica.rs
     CACHE PATH "Canonical Rust omc source tree (mirrored into the per-build copy).")
+# sccache hashes CARGO_MANIFEST_DIR into the Rust cache key, so a per-checkout
+# working copy makes every crate a guaranteed miss; CI pins this (.CI/common.groovy
+# rustWorkDir()).
+set(RUST_OMC_WORK_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    CACHE PATH "Parent directory of the per-build Rust working copy (rust-src).")
 # Not cached: a normal set() shadows a stale cache from before this was per-build,
 # so reconfiguring an existing build dir picks up the new path.
-set(RUST_OMC_DIR ${CMAKE_CURRENT_BINARY_DIR}/rust-src)
+set(RUST_OMC_DIR ${RUST_OMC_WORK_DIR}/rust-src)
 set(RUST_SRC_MANIFEST ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/rust_src_files.txt)
 
 # Mirror now so the configure-time reads below (.gitignore, susanSources.txt) see
@@ -171,9 +176,9 @@ endif()
 #   * mold (RUST_OMC_MOLD, default ON): link with mold when it is found on PATH.
 #     Set OFF if only an old mold is available: mold < 1.7 lacks
 #     --export-dynamic-symbol, which the omc launcher needs to re-export
-#     omc_Error_getCurrentComponent. The Jenkins image installs a current mold
-#     (.CI/cache/rust/Dockerfile); when OFF the fallback is the toolchain default
-#     (rust's bundled lld, itself a fast linker that supports the flag).
+#     omc_Error_getCurrentComponent. The Jenkins image installs a current mold;
+#     when OFF the fallback is the toolchain default (rust's bundled lld, itself
+#     a fast linker that supports the flag).
 #   * RUST_OMC_THREADS (>0): pass nightly rustc's -Zthreads=N to parallelise the
 #     compiler front-end, which dominates the build of the huge generated crates
 #     (their dependency chain is near-linear, so the front-ends sit on the serial
@@ -205,15 +210,361 @@ endif()
 # reads them via option_env! (with a cfg!-based fallback). Single source of truth
 # shared with the C runtime build (only platform booleans, so it's safe here).
 include(${CMAKE_CURRENT_SOURCE_DIR}/runtime/rt_ldflags_generated_code.cmake)
+
+# ---------------------------------------------------------------------------
+# WASI toolchain discovery (shared by wasi-libc PIC sysroot and sundials wasm).
+# ---------------------------------------------------------------------------
+find_program(LLVM_AR_EXECUTABLE llvm-ar)
+find_program(LLVM_RANLIB_EXECUTABLE llvm-ranlib)
+if(NOT LLVM_AR_EXECUTABLE OR NOT LLVM_RANLIB_EXECUTABLE)
+  execute_process(COMMAND clang -dumpversion OUTPUT_VARIABLE _clang_ver
+                  OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  if(_clang_ver MATCHES "^([0-9]+)")
+    set(_clang_major "${CMAKE_MATCH_1}")
+    find_program(LLVM_AR_EXECUTABLE llvm-ar-${_clang_major})
+    find_program(LLVM_RANLIB_EXECUTABLE llvm-ranlib-${_clang_major})
+  endif()
+endif()
+
+find_program(_omc_wasi_clang clang)
+if(_omc_wasi_clang)
+  execute_process(
+    COMMAND ${_omc_wasi_clang} -print-resource-dir
+    OUTPUT_VARIABLE _clang_res_dir OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  if(_clang_res_dir)
+    set(_wasi_builtins ${_clang_res_dir}/lib/wasi/libclang_rt.builtins-wasm32.a)
+  endif()
+endif()
+
+# PIC wasi-libc sysroot (for external "C" in wasm FMUs).
+#
+# Built by CMake using wasi-libc's own CMakeLists.txt with BUILD_SHARED=ON
+# so it produces a -fPIC libc.so (Debian's is non-PIC).
+# ---------------------------------------------------------------------------
+if(NOT LLVM_AR_EXECUTABLE OR NOT LLVM_RANLIB_EXECUTABLE)
+  message(FATAL_ERROR "llvm-ar/llvm-ranlib not found; required to build the wasi-libc PIC sysroot.")
+endif()
+if(NOT _wasi_builtins OR NOT EXISTS ${_wasi_builtins})
+  message(FATAL_ERROR "libclang_rt.builtins-wasm32.a not found (install libclang-rt-*-dev-wasm32).")
+endif()
+
+set(RUST_WASI_PIC_SYSROOT ${CMAKE_BINARY_DIR}/rust-wasi-pic-sysroot
+    CACHE PATH "Output directory for the PIC wasi-libc sysroot.")
+
+# Write the wasm32-wasip1 toolchain file for CMake to use when cross-compiling.
+set(_wasi_toolchain ${CMAKE_CURRENT_BINARY_DIR}/wasi-toolchain.cmake)
+file(WRITE ${_wasi_toolchain}
+  "set(CMAKE_SYSTEM_NAME WASI)\n"
+  "set(CMAKE_SYSTEM_PROCESSOR wasm32)\n"
+  "set(CMAKE_C_COMPILER clang)\n"
+  "set(CMAKE_C_COMPILER_TARGET wasm32-wasip1)\n"
+  "set(CMAKE_SYSROOT ${RUST_WASI_PIC_SYSROOT})\n"
+  "set(CMAKE_AR ${LLVM_AR_EXECUTABLE})\n"
+  "set(CMAKE_RANLIB ${LLVM_RANLIB_EXECUTABLE})\n"
+  "set(CMAKE_C_FLAGS_INIT \"-O2\")\n"
+  "set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\n"
+  "set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)\n")
+set(_wasi_libc_src ${CMAKE_BINARY_DIR}/downloads/wasi-libc/wasi-libc-wasi-sdk-32)
+if(NOT EXISTS ${_wasi_libc_src}/CMakeLists.txt)
+  set(_wasi_tgz ${CMAKE_BINARY_DIR}/downloads/wasi-libc-wasi-sdk-32.tar.gz)
+  message(STATUS "Downloading wasi-libc (wasi-sdk-32) source…")
+  file(DOWNLOAD
+       https://github.com/WebAssembly/wasi-libc/archive/refs/tags/wasi-sdk-32.tar.gz
+       ${_wasi_tgz}
+       EXPECTED_HASH SHA256=ea9827495c0f35bca3b3d0a953e854cac112c43bea3196b5a4f7f8fc4704b9a4
+       TLS_VERIFY ON STATUS _wasi_dl)
+  list(GET _wasi_dl 0 _wasi_dl_code)
+  if(NOT _wasi_dl_code EQUAL 0)
+    file(REMOVE ${_wasi_tgz})
+    message(FATAL_ERROR "Failed to download wasi-libc source (${_wasi_dl})")
+  else()
+    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/downloads/wasi-libc)
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${_wasi_tgz}
+                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/downloads/wasi-libc
+                    RESULT_VARIABLE _wasi_untar)
+    if(NOT _wasi_untar EQUAL 0)
+      message(FATAL_ERROR "Failed to unpack wasi-libc source")
+    endif()
+  endif()
+endif()
+
+# Build wasi-libc PIC sysroot via ExternalProject (honours jobserver, proper progress).
+include(ExternalProject)
+set(_wasi_libc_ep_build ${CMAKE_BINARY_DIR}/rust-wasi-libc-wasm-ep-build)
+ExternalProject_Add(rust_wasi_pic_sysroot
+  SOURCE_DIR ${_wasi_libc_src}
+  BINARY_DIR ${_wasi_libc_ep_build}
+  CMAKE_ARGS
+    -DCMAKE_TOOLCHAIN_FILE=${_wasi_toolchain}
+    -DBUILD_SHARED=ON -DBUILD_TESTS=OFF
+    -DCMAKE_LINK_DEPENDS_USE_LINKER=OFF
+    -DBUILTINS_LIB=${_wasi_builtins}
+  BUILD_ALWAYS ON
+  BUILD_COMMAND ${CMAKE_COMMAND} --build ${_wasi_libc_ep_build} --parallel
+  INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${_wasi_libc_ep_build}/sysroot ${RUST_WASI_PIC_SYSROOT}
+  EXCLUDE_FROM_ALL ON)
+
+# ---------------------------------------------------------------------------
+# SUNDIALS/KLU wasm cross-compile.
+#
+# Separate from the native C runtime build (3rdParty/CMakeLists.txt). Uses the
+# same sources but a wasm32-wasip1 toolchain and a distinct build directory.
+# Produces static archives linked into the wasm-jit runtimes (FMI/web).
+# ---------------------------------------------------------------------------
+option(RUST_OMC_ENABLE_SUNDIALS "Build SUNDIALS/KLU for wasm32-wasip1 (sparse solver in wasm-jit runtime)." ON)
+
+if(RUST_OMC_ENABLE_SUNDIALS)
+  set(_sundials_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0)
+  set(_suitesparse_sources ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse)
+
+  # SuiteSparse toolchain: base wasi toolchain + include dirs for KLU headers.
+  # CMAKE_C_FLAGS_INIT is a STRING (not list) so no semicolon issues.
+  set(_sundials_cflags "-O2 -I${_suitesparse_sources}/AMD/Include -I${_suitesparse_sources}/COLAMD/Include -I${_suitesparse_sources}/BTF/Include -I${_suitesparse_sources}/SuiteSparse_config")
+  set(_sundials_toolchain ${CMAKE_CURRENT_BINARY_DIR}/sundials-wasi-toolchain.cmake)
+  file(WRITE ${_sundials_toolchain}
+    "set(CMAKE_SYSTEM_NAME WASI)\n"
+    "set(CMAKE_SYSTEM_PROCESSOR wasm32)\n"
+    "set(CMAKE_C_COMPILER clang)\n"
+    "set(CMAKE_C_COMPILER_TARGET wasm32-wasip1)\n"
+    "set(CMAKE_SYSROOT ${RUST_WASI_PIC_SYSROOT})\n"
+    "set(CMAKE_AR ${LLVM_AR_EXECUTABLE})\n"
+    "set(CMAKE_RANLIB ${LLVM_RANLIB_EXECUTABLE})\n"
+    "set(CMAKE_C_FLAGS_INIT \"${_sundials_cflags}\")\n"
+    "set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\n"
+    "set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)\n")
+
+  # SuiteSparse wasm via ExternalProject.
+  set(_suitesparse_ep_build ${CMAKE_BINARY_DIR}/rust-suitesparse-wasm-ep-build)
+  ExternalProject_Add(rust_suitesparse_wasm
+    SOURCE_DIR ${_suitesparse_sources}
+    BINARY_DIR ${_suitesparse_ep_build}
+    LIST_SEPARATOR |
+    CMAKE_ARGS
+      -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
+      -DBUILD_SHARED_LIBS=OFF
+      -DSUITESPARSE_ENABLE_PROJECTS=suitesparse_config|amd|colamd|btf|klu
+      -DSUITESPARSE_USE_FORTRAN=OFF
+      -DSUITESPARSE_USE_OPENMP=OFF
+      -DSUITESPARSE_USE_CUDA=OFF
+      -DSUITESPARSE_DEMOS=OFF
+      -DSUITESPARSE_USE_STRICT=OFF
+      -DKLU_USE_CHOLMOD=OFF
+    BUILD_COMMAND ${CMAKE_COMMAND} --build ${_suitesparse_ep_build} --parallel
+      --target KLU_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static
+    INSTALL_COMMAND ""
+    BUILD_ALWAYS ON
+    EXCLUDE_FROM_ALL ON)
+  add_dependencies(rust_suitesparse_wasm rust_wasi_pic_sysroot)
+
+  # SUNDIALS wasm via ExternalProject.
+  set(_sundials_ep_build ${CMAKE_BINARY_DIR}/rust-sundials-wasm-ep-build)
+  set(RUST_SUNDIALS_WASM_DIR ${CMAKE_BINARY_DIR}/rust-sundials-wasm
+      CACHE PATH "Output directory for the SUNDIALS/KLU wasm32-wasip1 archives.")
+  ExternalProject_Add(rust_sundials_wasm
+    SOURCE_DIR ${_sundials_sources}
+    BINARY_DIR ${_sundials_ep_build}
+    CMAKE_ARGS
+      -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
+      -DSUNDIALS_BUILD_STATIC_LIBS=ON
+      -DSUNDIALS_BUILD_SHARED_LIBS=OFF
+      -DSUNDIALS_LAPACK_ENABLE=OFF
+      -DSUNDIALS_EXAMPLES_ENABLE_C=OFF
+      -DSUNDIALS_KLU_ENABLE=ON
+      -DSUNDIALS_INDEX_SIZE=32
+      -DKLU_INCLUDE_DIR=${_suitesparse_sources}/KLU/Include
+      -DKLU_LIBRARY=${_suitesparse_ep_build}/KLU/libklu.a
+      -DAMD_LIBRARY=${_suitesparse_ep_build}/AMD/libamd.a
+      -DCOLAMD_LIBRARY=${_suitesparse_ep_build}/COLAMD/libcolamd.a
+      -DBTF_LIBRARY=${_suitesparse_ep_build}/BTF/libbtf.a
+      -DSUITESPARSECONFIG_LIBRARY=${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
+    BUILD_COMMAND ${CMAKE_COMMAND} --build ${_sundials_ep_build} --parallel
+      --target
+      sundials_kinsol_static sundials_idas_static sundials_cvode_static
+      sundials_nvecserial_static sundials_sunmatrixdense_static
+      sundials_sunmatrixsparse_static sundials_sunlinsoldense_static
+      sundials_sunlinsolklu_static
+    INSTALL_COMMAND ""
+    BUILD_ALWAYS ON
+    EXCLUDE_FROM_ALL ON)
+  add_dependencies(rust_sundials_wasm rust_suitesparse_wasm)
+
+  # Collect all .a into RUST_SUNDIALS_WASM_DIR/lib/.
+  add_custom_target(rust_sundials_collect
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_WASM_DIR}/lib
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${_suitesparse_ep_build}/KLU/libklu.a
+      ${_suitesparse_ep_build}/AMD/libamd.a
+      ${_suitesparse_ep_build}/COLAMD/libcolamd.a
+      ${_suitesparse_ep_build}/BTF/libbtf.a
+      ${_suitesparse_ep_build}/SuiteSparse_config/libsuitesparseconfig.a
+      ${_sundials_ep_build}/src/kinsol/libsundials_kinsol.a
+      ${_sundials_ep_build}/src/idas/libsundials_idas.a
+      ${_sundials_ep_build}/src/cvode/libsundials_cvode.a
+      ${_sundials_ep_build}/src/nvector/serial/libsundials_nvecserial.a
+      ${_sundials_ep_build}/src/sunmatrix/dense/libsundials_sunmatrixdense.a
+      ${_sundials_ep_build}/src/sunmatrix/sparse/libsundials_sunmatrixsparse.a
+      ${_sundials_ep_build}/src/sunlinsol/dense/libsundials_sunlinsoldense.a
+      ${_sundials_ep_build}/src/sunlinsol/klu/libsundials_sunlinsolklu.a
+      ${RUST_SUNDIALS_WASM_DIR}/lib/
+    COMMENT "Rust: collecting SUNDIALS/KLU wasm archives -> ${RUST_SUNDIALS_WASM_DIR}/lib/"
+    VERBATIM)
+  add_dependencies(rust_sundials_collect rust_sundials_wasm)
+
+  # The host CVODE/IDAS the host-driven wasm-jit driver links are the C runtime's
+  # own archives (3rdParty), not a second build: they are already
+  # position-independent (`libSimulationRuntimeC.so` links them), and reusing them
+  # leaves the two copies identical should both end up in one process. Collected
+  # into a fixed directory because the cargo env cannot carry a generator
+  # expression. IDA's default linear solver is KLU, so SuiteSparse comes too.
+  if(TARGET sundials_cvode_static)
+    set(RUST_SUNDIALS_NATIVE_DIR ${CMAKE_BINARY_DIR}/rust-sundials-native
+        CACHE PATH "Directory the host SUNDIALS archives are collected into.")
+    set(_native_sundials_libs
+      sundials_cvode_static sundials_idas_static sundials_sunlinsolklu_static
+      KLU_static AMD_static COLAMD_static BTF_static SuiteSparseConfig_static)
+    set(_native_sundials_files "")
+    foreach(_lib IN LISTS _native_sundials_libs)
+      list(APPEND _native_sundials_files $<TARGET_FILE:${_lib}>)
+    endforeach()
+    add_custom_target(rust_sundials_native_collect
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_NATIVE_DIR}/lib
+      COMMAND ${CMAKE_COMMAND} -E copy
+        ${_native_sundials_files} ${RUST_SUNDIALS_NATIVE_DIR}/lib/
+      DEPENDS ${_native_sundials_libs}
+      COMMENT "Rust: collecting host SUNDIALS archives -> ${RUST_SUNDIALS_NATIVE_DIR}/lib/"
+      VERBATIM)
+  endif()
+endif()
+
+# ---------------------------------------------------------------------------
+# Ipopt for `method="optimization"` (the classic dynamic-optimization runtime),
+# collected like the host SUNDIALS archives above. Host-only: MUMPS is Fortran 90,
+# so there is no wasm build and an in-wasm runtime reports the same
+# "Ipopt is needed but not available" a C runtime without OMC_HAVE_IPOPT does.
+# ---------------------------------------------------------------------------
+if(OM_OMC_ENABLE_OPTIMIZATION AND TARGET ipopt)
+  set(RUST_IPOPT_NATIVE_DIR ${CMAKE_BINARY_DIR}/rust-ipopt-native
+      CACHE PATH "Directory the host Ipopt archives are collected into.")
+  set(_native_ipopt_libs ipopt dmumps mumps_common seq metis)
+  set(_native_ipopt_files "")
+  foreach(_lib IN LISTS _native_ipopt_libs)
+    list(APPEND _native_ipopt_files $<TARGET_FILE:${_lib}>)
+  endforeach()
+  add_custom_target(rust_ipopt_native_collect
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_IPOPT_NATIVE_DIR}/lib
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${_native_ipopt_files} ${RUST_IPOPT_NATIVE_DIR}/lib/
+    DEPENDS ${_native_ipopt_libs}
+    COMMENT "Rust: collecting host Ipopt archives -> ${RUST_IPOPT_NATIVE_DIR}/lib/"
+    VERBATIM)
+endif()
+
+# ---------------------------------------------------------------------------
+# Preview1→preview2 reactor adapter (mandatory for FMI wasm FMU export).
+# ---------------------------------------------------------------------------
+set(_wasi_p1_adapter ${CMAKE_BINARY_DIR}/downloads/wasi_snapshot_preview1.reactor.wasm)
+if(NOT EXISTS ${_wasi_p1_adapter})
+  message(STATUS "Downloading wasi_snapshot_preview1 reactor adapter (wasmtime v27.0.0)…")
+  file(DOWNLOAD
+       https://github.com/bytecodealliance/wasmtime/releases/download/v27.0.0/wasi_snapshot_preview1.reactor.wasm
+       ${_wasi_p1_adapter}
+       EXPECTED_HASH SHA256=cf26d826c3b1b81faa86c5b6352a725fcf55c50a8806fdf58ba658f675971ff2
+       TLS_VERIFY ON STATUS _wasi_p1_dl)
+  list(GET _wasi_p1_dl 0 _wasi_p1_code)
+  if(NOT _wasi_p1_code EQUAL 0)
+    file(REMOVE ${_wasi_p1_adapter})
+    message(FATAL_ERROR "Failed to download the wasi preview1 adapter (${_wasi_p1_dl})")
+  endif()
+endif()
+
+# ---------------------------------------------------------------------------
+# CARGO_ENV: env vars forwarded to every cargo invocation.
+# Prebuilt artifacts (PIC sysroot, sundials wasm) are passed as output paths
+# so the cargo build.rs uses them rather than rebuilding.
+# ---------------------------------------------------------------------------
+# The revision this omc reports, tagged "-rust" where the C build says "-cmake".
+# file(GENERATE), not file(WRITE): it keeps the timestamp when the revision is
+# unchanged, so reconfiguring alone rebuilds nothing.
+set(RUST_OMC_REVISION_FILE ${CMAKE_CURRENT_BINARY_DIR}/omc-revision.txt)
+file(GENERATE OUTPUT ${RUST_OMC_REVISION_FILE} CONTENT "${SOURCE_REVISION_BASE}-rust\n")
 list(APPEND CARGO_ENV
      "OMC_RT_LDFLAGS_GENERATED_CODE=${RT_LDFLAGS_GENERATED_CODE}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM=${RT_LDFLAGS_GENERATED_CODE_SIM}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC}"
-     # ModelicaExternalC C-Sources dir, so openmodelica_codegen_wasm_jit's build.rs
-     # can compile the ModelicaExternalC WASI side module (modelicaexternalc.wasm) —
-     # the crate builds from a synced copy (rust-src) whose relative path can't reach it.
-     "OMC_EXTERNAL_C_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/ModelicaExternalC/C-Sources")
+     # ModelicaExternalC C-Sources dir (the crate builds from a synced copy whose
+     # relative path can't reach the real location).
+     "OMC_EXTERNAL_C_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/ModelicaExternalC/C-Sources"
+     # A *path*, not the revision itself: that in the environment would be part
+     # of every rustc invocation and miss the whole compilation cache on each
+     # commit. Only the leaf openmodelica_revision crate reads the file.
+     "OMC_REVISION_FILE=${RUST_OMC_REVISION_FILE}"
+     # Prebuilt PIC wasi-libc sysroot (with -fPIC libc.so) built by rust_wasi_pic_sysroot.
+     "OMC_WASI_PIC_SYSROOT=${RUST_WASI_PIC_SYSROOT}"
+     # Preview1 adapter for FMI wasm FMU export.
+     "OMC_WASI_P1_ADAPTER=${_wasi_p1_adapter}")
+
+# Native platforms an exported wasm FMU can also serve
+# (`buildModelFMU(..., platforms={"wasm","win64"})`). omc embeds one loader
+# library per platform, so each is a cross build of
+# `openmodelica_fmi_ls_wasm_to_native` and needs that platform's C toolchain —
+# cargo-xwin for the MSVC targets, cargo-zigbuild for Apple and non-host Linux.
+# A named target that will not build fails the build (OMC_FMU_NATIVE_OPTIONAL=1
+# makes the set best-effort). The host's own platform is always built and need
+# not be listed.
+set(RUST_OMC_FMU_NATIVE_TARGETS "" CACHE STRING
+    "Extra rustc target triples to build FMU loader libraries for (comma-separated).")
+if(RUST_OMC_FMU_NATIVE_TARGETS)
+  list(APPEND CARGO_ENV "OMC_FMU_NATIVE_TARGETS=${RUST_OMC_FMU_NATIVE_TARGETS}")
+endif()
+# Loaders from a previous build, reused instead of cross-built again; whatever is
+# missing is still built. Same hand-off as RUST_OMC_WASM_RUNTIME.
+set(RUST_OMC_FMU_LOADERS "" CACHE PATH
+    "Directory of prebuilt FMU loader libraries to reuse (empty = build them).")
+if(RUST_OMC_FMU_LOADERS)
+  list(APPEND CARGO_ENV "OMC_FMU_LOADERS_IN=${RUST_OMC_FMU_LOADERS}")
+endif()
+# zig ships no Apple frameworks, so an *-apple-darwin loader needs an SDK.
+set(RUST_OMC_MACOS_SDK "" CACHE PATH
+    "macOS SDK for the *-apple-darwin FMU loaders (MacOSX<version>.sdk).")
+if(RUST_OMC_MACOS_SDK)
+  list(APPEND CARGO_ENV "OMC_FMU_MACOS_SDK=${RUST_OMC_MACOS_SDK}")
+endif()
+# The libraries themselves are not linked into omc — a native one reads them from
+# lib/omc/fmu-loaders, the browser one fetches them from the web bundle — so the
+# build script drops them here for CMake to install.
+set(RUST_FMU_LOADERS_DIR ${CMAKE_CURRENT_BINARY_DIR}/fmu-loaders)
+list(APPEND CARGO_ENV "OMC_FMU_LOADERS_OUT=${RUST_FMU_LOADERS_DIR}")
+
+if(RUST_OMC_ENABLE_SUNDIALS)
+  list(APPEND CARGO_ENV "OMC_SUNDIALS_WASM_DIR=${RUST_SUNDIALS_WASM_DIR}")
+  if(TARGET sundials_cvode_static)
+    # The wasm archives are 32-bit-index builds and this one is whatever the C
+    # runtime uses, so the bindings' `sunindextype` follows the archive.
+    list(APPEND CARGO_ENV
+         "OMC_SUNDIALS_NATIVE_DIR=${RUST_SUNDIALS_NATIVE_DIR}"
+         "OMC_SUNDIALS_NATIVE_INDEX_SIZE=${SUNDIALS_INDEX_SIZE}")
+  endif()
+endif()
+
+if(TARGET rust_ipopt_native_collect)
+  list(APPEND CARGO_ENV "OMC_IPOPT_NATIVE_DIR=${RUST_IPOPT_NATIVE_DIR}")
+endif()
+
+# Source paths (fallback for raw cargo builds without CMake).
+if(EXISTS ${_wasi_libc_src}/CMakeLists.txt)
+  list(APPEND CARGO_ENV "OMC_WASI_LIBC_SRC=${_wasi_libc_src}")
+endif()
+if(RUST_OMC_ENABLE_SUNDIALS)
+  list(APPEND CARGO_ENV
+       "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials-5.4.0"
+       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse"
+       # The PIC dylink side module compiles the sources again and needs the
+       # `sundials_config.h` the wasm ExternalProject generates.
+       "OMC_SUNDIALS_WASM_INCLUDE=${_sundials_ep_build}/include")
+endif()
+
 # Always via ${CARGO_BUILD} so target/ is never the in-source default.
 set(CARGO_BUILD ${CARGO_ENV} ${CARGO_EXECUTABLE} build --target-dir ${RUST_TARGET_DIR})
 # The build tools (mmtorust, susan, scripting_api_gen) always run on and target
@@ -455,6 +806,11 @@ function(omc_rust_setup_codegen)
       CACHE INTERNAL "Generated OpenModelicaScriptingAPIQt C++ sources (build tree)")
 
   set(CODEGEN_STAMP ${CMAKE_CURRENT_BINARY_DIR}/rust_codegen.stamp)
+  # The generated *.rs depend on how mmtorust lowers, not only on the *.mo it
+  # lowers; without these a transpiler change leaves stale *.rs in place.
+  file(GLOB_RECURSE MMTORUST_SOURCES CONFIGURE_DEPENDS
+       ${RUST_OMC_DIR}/mmtorust/src/*.rs)
+  list(APPEND MMTORUST_SOURCES ${RUST_OMC_DIR}/mmtorust/Cargo.toml)
   if(RUST_OMC_PREBUILT_GENERATED_SRC)
     # Stamp completion with no dependency on the transpile chain, so mmtorust /
     # susan / the templates are never built; the .rs are already in the tree.
@@ -484,7 +840,7 @@ function(omc_rust_setup_codegen)
     COMMAND ${CMAKE_COMMAND} -E touch ${CODEGEN_STAMP}
     DEPENDS ${TPL_OUTPUT_MO_FILES} ${SUSAN_STAMP} ${RUST_SOURCES_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
-            ${RUST_MO_SOURCES}
+            ${RUST_MO_SOURCES} ${MMTORUST_SOURCES}
     COMMENT "Rust: transpiling all MetaModelica sources (mmtorust --sources <cmake list>)"
     VERBATIM)
   add_custom_target(rust_codegen DEPENDS ${CODEGEN_STAMP})
@@ -509,9 +865,10 @@ function(omc_rust_setup_codegen)
   #     OMEdit links those #[no_mangle] symbols out of this cdylib. A split CI can
   #     force it ON to ship those symbols even with the GUI subdirs OFF.
   # `--no-default-features` lets the list below be authoritative (the wasm-jit
-  # target is always present and is not a feature). codegen_fmu implies
+  # target is always present and is not a feature). codegen_fmu_c is the FMU C
+  # export; it implies codegen_fmu (the modelDescription.xml templates) and
   # codegen_c in the crate's feature table.
-  set(_rust_omc_features codegen_c codegen_fmu)
+  set(_rust_omc_features codegen_c codegen_fmu_c)
   if(OM_OMC_ENABLE_CPP_RUNTIME)
     list(APPEND _rust_omc_features cpp)
   endif()
@@ -525,6 +882,11 @@ function(omc_rust_setup_codegen)
   option(RUST_OMC_LAPACK_NALGEBRA "Build the native omc with the pure-Rust nalgebra LAPACK fallback instead of system LAPACK (for testsuite validation)." OFF)
   if(RUST_OMC_LAPACK_NALGEBRA)
     list(APPEND _rust_omc_features openmodelica_util/lapack-nalgebra)
+  endif()
+  # --no-default-features makes sundials off by default; enable it only when
+  # the wasm cross-compile is enabled.
+  if(RUST_OMC_ENABLE_SUNDIALS)
+    list(APPEND _rust_omc_features openmodelica_codegen_wasm_jit/sundials)
   endif()
   list(JOIN _rust_omc_features "," _rust_omc_features_csv)
   set(RUST_OMC_CDYLIB_FEATURES --no-default-features --features ${_rust_omc_features_csv})
@@ -548,9 +910,18 @@ function(omc_rust_setup_codegen)
     # which tracks byproducts globally; the cross-directory build order for the
     # Unix Makefiles generator is the add_dependencies in omc_rust_setup_omedit.
     BYPRODUCTS ${RUST_TARGET_DIR}/${RUST_OMC_ARTIFACT_SUBDIR}/${RUST_OMC_CDYLIB_NAME}
-    DEPENDS rust_codegen
+    DEPENDS rust_codegen rust_wasi_pic_sysroot
     COMMENT "Rust: building ${RUST_OMC_CDYLIB_NAME} (${RUST_OMC_PROFILE})"
     VERBATIM)
+  if(RUST_OMC_ENABLE_SUNDIALS)
+    add_dependencies(rust_libopenmodelica rust_sundials_collect)
+    if(TARGET rust_sundials_native_collect)
+      add_dependencies(rust_libopenmodelica rust_sundials_native_collect)
+    endif()
+  endif()
+  if(TARGET rust_ipopt_native_collect)
+    add_dependencies(rust_libopenmodelica rust_ipopt_native_collect)
+  endif()
 
   add_custom_target(rust_omc ALL
     WORKING_DIRECTORY ${RUST_OMC_DIR}
@@ -581,6 +952,22 @@ function(omc_rust_setup_codegen)
   else()
     install(PROGRAMS ${RUST_OMC_ARTIFACT_DIR}/${RUST_OMC_CDYLIB_NAME}
             DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)
+  endif()
+
+  # The FMI 3.0 loader libraries an exported wasm FMU is given for a native
+  # platform. Read at export time, not linked into omc.
+  install(DIRECTORY ${RUST_FMU_LOADERS_DIR}/
+          DESTINATION lib/omc/fmu-loaders COMPONENT omc)
+
+  # The PIC wasi-libc sysroot an external "C" library for wasm-jit is compiled
+  # against. Under the wasm triple with an `omc` subdirectory so it cannot be
+  # confused with a distribution's /usr/lib/wasm32-wasi, and with the compiler-rt
+  # builtins so it matches the libc.so omc resolves imports against.
+  install(DIRECTORY ${RUST_WASI_PIC_SYSROOT}/
+          DESTINATION lib/wasm32-wasi/omc COMPONENT omc)
+  if(_wasi_builtins)
+    install(FILES ${_wasi_builtins}
+            DESTINATION lib/wasm32-wasi/omc/lib/wasm32-wasip1 COMPONENT omc)
   endif()
 
   # The native egui OMShell client (omshell_egui), built when the GUI clients are
@@ -764,6 +1151,34 @@ function(omc_rust_omshell_web_page _label _binname _srcindex)
   add_dependencies(rust_omshell_${_label}_web rust_wasm)
 endfunction()
 
+# The FMU native-platform compiler for the browser: `openmodelica_fmi_ls_wasm_aot`
+# built for wasm32-wasip1 (a compiler-only wasmtime), staged as web/fmu-aot.wasm
+# and loaded on demand by wasm/fmu-aot-worker.js. Not embedded in the omc module:
+# it is ~13 MB and only an export that asks for a native platform needs it.
+#
+# wasip1, not wasm32-unknown-unknown, because cranelift's pass timing calls
+# `Instant::now()`, which panics there. Always release — a debug cranelift is far
+# too slow to compile a model with.
+#
+# Its own `[workspace]` and target dir, so the compiler-only wasmtime never meets
+# the host workspace's resolution. Reads omc_rust_setup_wasm's _web_dir.
+function(omc_rust_fmu_aot_module)
+  set(_aot_src ${RUST_OMC_DIR}/openmodelica_fmi_ls_wasm_aot)
+  set(_aot_target_dir ${CMAKE_CURRENT_BINARY_DIR}/fmu-aot-target)
+  set(_aot_artifact ${_aot_target_dir}/wasm32-wasip1/release/openmodelica_fmi_ls_wasm_aot.wasm)
+  add_custom_target(rust_fmu_aot ALL
+    WORKING_DIRECTORY ${_aot_src}
+    JOB_SERVER_AWARE TRUE
+    COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release
+            --manifest-path ${_aot_src}/Cargo.toml
+            --target wasm32-wasip1 --target-dir ${_aot_target_dir}
+    COMMAND ${CMAKE_COMMAND} -E copy ${_aot_artifact} ${_web_dir}/fmu-aot.wasm
+    COMMENT "Rust: FMU native-platform compiler (wasm32-wasip1) -> ${_web_dir}/fmu-aot.wasm"
+    VERBATIM)
+  # rust_wasm recreates ${_web_dir}, so the copy has to follow it.
+  add_dependencies(rust_fmu_aot rust_wasm)
+endfunction()
+
 # Assemble the Qt OMShell web page. Unlike the egui/dioxus pages (Rust crates the
 # rust_wasm cargo invocation already built), this is the C++ Qt OMShell compiled
 # with Qt for WebAssembly — a separate toolchain, so it is a nested cmake build
@@ -924,6 +1339,8 @@ function(omc_rust_omedit_qt_web_page)
             ${_qt_bld}/OMEdit-qt.wasm ${_qt_bld}/qtloader.js
             ${_qt_bld}/qtlogo.svg ${_qt_pkgdir}/
     COMMAND ${CMAKE_COMMAND} -E copy ${RUST_OMC_DIR}/omshell_omc/omc_worker.js ${_web_dir}/omc_worker.js
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_SOURCE_DIR}/OMEdit/OMEditLIB/Resources/icons/omedit_splashscreen.png ${_qt_pkgdir}/
     COMMENT "Qt: building OMEdit-qt web page -> ${_qt_pkgdir}"
     VERBATIM)
   if(NOT RUST_OMC_WEB_QT_STANDALONE)
@@ -971,6 +1388,9 @@ function(omc_rust_setup_wasm)
   set(_wasm_name OpenModelicaCompiler)
   # wasmtime has no wasm backend, so the wasm-jit engine must be wasmer (`js`);
   # the cdylib is built with no default features (drops the native-only deps).
+  # `codegen_fmu` is on for the wasm FMU export's modelDescription.xml: the
+  # description templates only, not `codegen_fmu_c`/`codegen_c` -- the wasm-jit
+  # target emits the model itself.
   #
   # When the OMShell web pages are wanted (GUI clients on, browser host) their
   # crates are added to this *same* cargo invocation, so eframe/dioxus and their
@@ -988,14 +1408,26 @@ function(omc_rust_setup_wasm)
   if(RUST_OMC_SCRIPTING_API)
     set(_wasm_scripting_feature ",libopenmodelica_compiler/scripting_api")
   endif()
+  # Forward the sundials feature for the wasm-jit runtime (KLU sparse solver).
+  set(_wasm_sundials_feature "")
+  if(RUST_OMC_ENABLE_SUNDIALS)
+    set(_wasm_sundials_feature ",openmodelica_codegen_wasm_jit/sundials")
+  endif()
+  # Standalone animation wasm for the browser pages, built in the same cargo pass
+  # (features package-qualified so the extra -p stays unambiguous).
+  set(_anim_pkg "")
+  if(_host STREQUAL "web")
+    set(_anim_pkg -p openmodelica_animation_wasm)
+  endif()
   if(_build_omshell_web)
     set(_wasm_common --target ${_wasm_target}
-                     -p libopenmodelica_compiler -p omshell_egui -p omshell_dioxus
+                     -p libopenmodelica_compiler -p omshell_egui -p omshell_dioxus ${_anim_pkg}
                      --no-default-features
-                     --features libopenmodelica_compiler/engine-wasmer,omshell_dioxus/web${_wasm_scripting_feature})
+                     --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu,omshell_dioxus/web${_wasm_scripting_feature}${_wasm_sundials_feature})
   else()
-    set(_wasm_common --target ${_wasm_target} -p libopenmodelica_compiler
-                     --no-default-features --features engine-wasmer${_wasm_scripting_feature})
+    set(_wasm_common --target ${_wasm_target} -p libopenmodelica_compiler ${_anim_pkg}
+                     --no-default-features
+                     --features libopenmodelica_compiler/engine-wasmer,libopenmodelica_compiler/codegen_fmu${_wasm_scripting_feature}${_wasm_sundials_feature})
   endif()
 
   if(_profile STREQUAL "release")
@@ -1024,18 +1456,139 @@ function(omc_rust_setup_wasm)
   if(_host STREQUAL "web")
     set(_wasm_pkgdir ${_web_dir}/omc)
     set(_web_launcher ${RUST_OMC_DIR}/wasm/index.html)
+
+    # three.js is large minified vendor code, not kept in git. Download and cache
+    # it at configure time, pinned to r169 (matching the vendored OrbitControls.js)
+    # with an integrity hash. Cached in the build tree; re-download only if absent.
+    set(_three_js ${CMAKE_BINARY_DIR}/downloads/three.module.min.js)
+    if(NOT EXISTS ${_three_js})
+      message(STATUS "Downloading three.module.min.js (r169)…")
+      file(DOWNLOAD
+           https://unpkg.com/three@0.169.0/build/three.module.min.js ${_three_js}
+           EXPECTED_HASH SHA256=f7cee3c7533449a1505cc12cb5128b89e3d4fd3d7ea62b05f9f5464a217472ee
+           TLS_VERIFY ON STATUS _three_dl)
+      list(GET _three_dl 0 _three_dl_code)
+      if(NOT _three_dl_code EQUAL 0)
+        file(REMOVE ${_three_js})
+        message(FATAL_ERROR "Failed to download three.module.min.js: ${_three_dl}")
+      endif()
+    endif()
+
+    # The FMI simulator transpiles a Wasm component to JS in the browser using
+    # jco's js-component-bindgen, which runs on the WASI preview2 shim. Both are
+    # vendor code, not kept in git: download the pinned npm tarballs at configure
+    # time and unpack them into the build tree.
+    set(_jco_vendor ${CMAKE_BINARY_DIR}/downloads/jco-transpile/package/vendor)
+    set(_p2_shim ${CMAKE_BINARY_DIR}/downloads/preview2-shim/package/dist/browser)
+    foreach(_pkg IN ITEMS
+            "jco-transpile|0.4.2|6f65610ecef99501084de896e299885fc6f645ee77413a820c20aa3d53f21bc7"
+            "preview2-shim|0.19.0|625d787a571bb1dd4b4e1d0fe51e2ef2f0b24e689d7cfcaff6c47ee866dc3526")
+      string(REPLACE "|" ";" _p ${_pkg})
+      list(GET _p 0 _p_name)
+      list(GET _p 1 _p_ver)
+      list(GET _p 2 _p_hash)
+      set(_p_dir ${CMAKE_BINARY_DIR}/downloads/${_p_name})
+      if(NOT EXISTS ${_p_dir}/package/package.json)
+        set(_p_tgz ${CMAKE_BINARY_DIR}/downloads/${_p_name}-${_p_ver}.tgz)
+        message(STATUS "Downloading @bytecodealliance/${_p_name} ${_p_ver}…")
+        file(DOWNLOAD
+             https://registry.npmjs.org/@bytecodealliance/${_p_name}/-/${_p_name}-${_p_ver}.tgz
+             ${_p_tgz} EXPECTED_HASH SHA256=${_p_hash} TLS_VERIFY ON STATUS _p_dl)
+        list(GET _p_dl 0 _p_dl_code)
+        if(NOT _p_dl_code EQUAL 0)
+          file(REMOVE ${_p_tgz})
+          message(FATAL_ERROR "Failed to download @bytecodealliance/${_p_name}: ${_p_dl}")
+        endif()
+        # cmake -E tar, not file(ARCHIVE_EXTRACT): that needs 3.18, and the web
+        # target should not raise the repo's CMake floor.
+        file(MAKE_DIRECTORY ${_p_dir})
+        execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${_p_tgz}
+                        WORKING_DIRECTORY ${_p_dir} RESULT_VARIABLE _p_untar)
+        if(NOT _p_untar EQUAL 0)
+          file(REMOVE_RECURSE ${_p_tgz} ${_p_dir})
+          message(FATAL_ERROR "Failed to unpack ${_p_tgz}: ${_p_untar}")
+        endif()
+      endif()
+    endforeach()
+
+    # Static page sources copied into the bundle. Listed as DEPENDS below so an
+    # edit to any of them re-assembles the bundle (the wasm itself need not change).
+    set(_web_launcher_deps
+        ${RUST_OMC_DIR}/wasm/omc-terminal/index.html
+        ${RUST_OMC_DIR}/wasm/home/index.html
+        ${RUST_OMC_DIR}/wasm/simulator/index.html
+        ${RUST_OMC_DIR}/wasm/simulator/omc-worker.js
+        ${RUST_OMC_DIR}/wasm/simulator/config.json
+        ${RUST_OMC_DIR}/wasm/simulator/examples/BouncingBall.mo
+        ${RUST_OMC_DIR}/wasm/plot.js
+        ${RUST_OMC_DIR}/wasm/theme.css
+        ${RUST_OMC_DIR}/wasm/fmu-aot.js
+        ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
+        # Shared 3D animation view (anim/), used by both simulator pages.
+        ${RUST_OMC_DIR}/wasm/anim/animation.js
+        ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
+        ${RUST_OMC_DIR}/wasm/anim/anim-view.js
+        ${RUST_OMC_DIR}/wasm/anim/anim-core.js
+        ${RUST_OMC_DIR}/openmodelica_animation_wasm/src/lib.rs
+        ${RUST_OMC_DIR}/openmodelica_animation_wasm/Cargo.toml
+        ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html
+        ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu.js
+        ${RUST_OMC_DIR}/wasm/fmi-simulator/master.js
+        ${_three_js})
     set(_web_launcher_extra
+        # The chart engine and the shared look, imported by both simulator pages.
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/plot.js
+                ${RUST_OMC_DIR}/wasm/theme.css
+                ${RUST_OMC_DIR}/wasm/fmu-aot.js
+                ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
+                ${_web_dir}/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/omc-terminal
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/omc-terminal/index.html ${_web_dir}/omc-terminal/
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/home
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/home/index.html ${_web_dir}/home/
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/simulator
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/simulator/index.html
+                ${RUST_OMC_DIR}/wasm/simulator/omc-worker.js
+                ${RUST_OMC_DIR}/wasm/simulator/config.json
+                ${_web_dir}/simulator/
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${RUST_OMC_DIR}/wasm/simulator/examples ${_web_dir}/simulator/examples
+        # Shared anim/ module: the wasm-bindgen'd anim wasm plus the renderer/panel
+        # JS and three.js, imported by both simulator pages as ../anim/*.
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/anim
+        COMMAND ${WASM_BINDGEN_EXECUTABLE}
+                ${RUST_TARGET_DIR}/${_wasm_target}/${_profile}/openmodelica_animation_wasm.wasm
+                --out-dir ${_web_dir}/anim --target web
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/anim/animation.js
+                ${RUST_OMC_DIR}/wasm/anim/OrbitControls.js
+                ${RUST_OMC_DIR}/wasm/anim/anim-view.js
+                ${RUST_OMC_DIR}/wasm/anim/anim-core.js
+                ${_three_js} ${_web_dir}/anim/
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_web_dir}/fmi-simulator/vendor
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html
+                ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu.js
+                ${RUST_OMC_DIR}/wasm/fmi-simulator/master.js
+                ${_web_dir}/fmi-simulator/
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${_jco_vendor}/js-component-bindgen-component.js
+                ${_jco_vendor}/js-component-bindgen-component.core.wasm
+                ${_jco_vendor}/js-component-bindgen-component.core2.wasm
+                ${_web_dir}/fmi-simulator/vendor/
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${_p2_shim} ${_web_dir}/fmi-simulator/vendor/preview2-shim
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${RUST_OMC_DIR}/wasm/icons ${_web_dir}/icons)
   else()
     set(_wasm_pkgdir ${_web_dir}/pkg-nodejs)
     set(_web_launcher ${RUST_OMC_DIR}/wasm/omc-cli.js)
+    set(_web_launcher_deps "")
   endif()
 
   # Release size optimisation, only if binaryen is available.
@@ -1063,10 +1616,13 @@ function(omc_rust_setup_wasm)
     JOB_SERVER_AWARE TRUE
     COMMAND ${_wasm_cargo} ${_cargo_profile_flag} ${RUST_OMC_TIMINGS_FLAG} ${_wasm_common} ${_cargo_backend}
     BYPRODUCTS ${_wasm_artifact}
-    DEPENDS rust_codegen
+    DEPENDS rust_codegen rust_wasi_pic_sysroot
     COMMENT "Rust: cargo build wasm/web (${RUST_OMC_WASM_MODE})"
     VERBATIM)
   add_dependencies(rust_wasm_cargo rust_src_sync)
+  if(RUST_OMC_ENABLE_SUNDIALS)
+    add_dependencies(rust_wasm_cargo rust_sundials_collect)
+  endif()
   add_custom_command(
     OUTPUT ${_wasm_pkgdir}/${_wasm_name}_bg.wasm
     COMMAND ${CMAKE_COMMAND} -E rm -rf ${_web_dir}
@@ -1074,8 +1630,9 @@ function(omc_rust_setup_wasm)
             --out-dir ${_wasm_pkgdir} --target ${_host}
     ${_wasm_opt_cmd}
     COMMAND ${CMAKE_COMMAND} -E copy ${_web_launcher} ${_web_dir}/
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUST_FMU_LOADERS_DIR} ${_web_dir}/fmu-loaders
     ${_web_launcher_extra}
-    DEPENDS ${_wasm_artifact} rust_wasm_cargo
+    DEPENDS ${_wasm_artifact} rust_wasm_cargo ${_web_launcher} ${_web_launcher_deps}
     COMMENT "Rust: wasm-bindgen + wasm-opt -> ${_web_dir}"
     VERBATIM)
   add_custom_target(rust_wasm ALL DEPENDS ${_wasm_pkgdir}/${_wasm_name}_bg.wasm)
@@ -1094,6 +1651,10 @@ function(omc_rust_setup_wasm)
   # above so the page drives omc in-browser, and installed to
   # <datarootdir>/omc/web-omshell-<gui>/. A Node host has no DOM, so the pages are
   # built only for the browser host.
+  if(_host STREQUAL "web")
+    omc_rust_fmu_aot_module()
+  endif()
+
   if(OM_ENABLE_GUI_CLIENTS)
     if(_host STREQUAL "web")
       omc_rust_omshell_web_page(egui   OMShell-egui   ${RUST_OMC_DIR}/omshell_egui/web/index.html)

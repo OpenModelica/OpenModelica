@@ -13,10 +13,35 @@ version = "0.1.0"
 edition = "2024"
 
 [lib]
-crate-type = ["cdylib"]
+# `rlib` in addition to `cdylib` so the FMI3-ME adapter crate can depend on this
+# crate for its allocator + `rt_*` primitives (linked into one module, one heap).
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# In-wasm `rt_sim_*` session driver (src/session.rs) + its DAE solver (daskr). On
+# for the no_std JIT and web interactive runtimes; off for the native host-driven
+# runtime, so daskr/sim_meta are not linked there. The FMI3 adapter disables it.
+default = ["session", "host_log"]
+session = ["dep:daskr"]
+# Route `-lv` log lines out through `env.rt_host_log`. Every runtime a wasm host
+# instantiates has it; the FMI3 adapter has no `env` host, and installs its own sink.
+host_log = []
+# Standalone-export driver (src/standalone.rs, `_start` + model-importing), wasip1 only.
+standalone = ["dep:daskr", "dep:openmodelica_mat_writer", "inwasm_solve"]
+# In-wasm sparse solve (rsparse). Off for the native interactive runtime, which
+# delegates to the host (`host_lin_solve`) instead of linking rsparse.
+inwasm_solve = ["dep:rsparse"]
+# Delegate the sparse solve to the host (`env.rt_host_lin_solve`); native interactive only.
+host_lin_solve = []
 
 [dependencies]
+# The shared `-lv` stream table + `omc_error.c` message layout the NLS solver logs
+# through. `no_std` here; the wasi build below adds `std` back.
+openmodelica_sim_meta = { path = "../openmodelica_sim_meta", default-features = false }
 dlmalloc = { version = "0.2.14", features = ["global"] }
+# MINPACK hybrd for the in-wasm nonlinear solver (`nls.rs`): converges to `xtol`
+# like C's default solver, unlike the crude Newton it replaces. no_std + libm.
+minpack = { path = "../minpack", default-features = false }
 # Self-contained (in-wasm) `pow` for element-wise array power, so the JIT loop
 # never crosses the wasm↔host boundary per element.
 libm = "0.2"
@@ -25,16 +50,32 @@ libm = "0.2"
 # (dlmalloc-backed) + `libm` for float ops — no host boundary crossing per solve.
 nalgebra = { version = "0.35", default-features = false, features = ["alloc", "libm"] }
 
+# In-wasm session driver (`src/session.rs`) for the no_std JIT runtime
+# (wasm32-unknown-unknown): the shared driver + solver compiled in-wasm so the
+# model's functionODE etc. are reached wasm->wasm. no_std (`default-features =
+# false`); math routes through libm. mat_writer is not needed here (rows go into
+# an rt_alloc buffer, not a `.mat`).
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+daskr = { path = "../daskr", default-features = false, optional = true }
+
 # Standalone-export (wasm32-wasip1) only: the in-wasm driver (`src/standalone.rs`)
 # decodes the model metadata, runs DASSL (daskr) / Euler, and serialises the
-# `.mat`. None of these are pulled into the no_std JIT runtime build.
+# `.mat`. wasip1 has std, so these keep their default (`std`) features.
 [target.'cfg(target_os = "wasi")'.dependencies]
-openmodelica_sim_meta = { path = "../openmodelica_sim_meta" }
-openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
-daskr = { path = "../daskr" }
+openmodelica_sim_meta = { path = "../openmodelica_sim_meta", features = ["std"] }
+openmodelica_mat_writer = { path = "../openmodelica_mat_writer", optional = true }
+daskr = { path = "../daskr", optional = true }
+# Sparse direct solver (CSparse port, AMD fill-reducing ordering) for torn linear
+# systems selected as sparse — the in-wasm-solve builds only (`inwasm_solve`); the
+# native interactive runtime delegates to the host instead. Pure Rust, zero deps.
+rsparse = { version = "1.2", optional = true }
 
 [profile.release]
-opt-level = "s"
+# Speed, not size: `rt_solve_nls` + minpack and the array/record/allocator helpers
+# all run here, millions of times per simulated second (FullRobot 14% faster than
+# at `opt-level = "s"`). The ~50 KB it adds to `runtime.wasm` is 0.06% of the web
+# bundle's 84 MB compiler wasm.
+opt-level = 3
 lto = true
 panic = "abort"
 strip = true

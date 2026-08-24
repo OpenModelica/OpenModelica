@@ -1,6 +1,7 @@
 // name: ErrorInvalidComplexType
 // cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
+// suite: metamodelica
 package ErrorInvalidComplexType
 
 constant option<String> str = NONE();
@@ -9,8 +10,8 @@ end ErrorInvalidComplexType;
 
 // Result:
 // Error processing file: ErrorInvalidComplexType.mo
-// [metamodelica/meta/ErrorInvalidComplexType.mo:6:1-6:37:writable] Error: Class option not found in scope ErrorInvalidComplexType.option.
-// [metamodelica/meta/ErrorInvalidComplexType.mo:6:1-6:37:writable] Error: Invalid complex type name: option<String>
+// [metamodelica/meta/ErrorInvalidComplexType.mo:7:1-7:37:writable] Error: Class option not found in scope ErrorInvalidComplexType.option.
+// [metamodelica/meta/ErrorInvalidComplexType.mo:7:1-7:37:writable] Error: Invalid complex type name: option<String>
 // Error: Error occurred while flattening model ErrorInvalidComplexType
 //
 // # Error encountered! Exiting...

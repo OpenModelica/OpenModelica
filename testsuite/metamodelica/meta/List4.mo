@@ -2,6 +2,7 @@
 // cflags: -g=MetaModelica -d=noevalfunc,gen -d=-newInst
 // status: correct
 // teardown_command: rm -f List4_*
+// suite: metamodelica
 model List4
 
   function func2

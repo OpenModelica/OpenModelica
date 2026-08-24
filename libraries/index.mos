@@ -30,6 +30,13 @@ if not installPackage(BioChem, "1.0.1+msl.3.2.1", exactMatch=true) then
 else
   print("Installed: BioChem 1.0.1+msl.3.2.1\n");
 end if;
+if not installPackage(Buildings, "12.1.2-maint.12.x", exactMatch=true) then
+  print("Buildings 12.1.2-maint.12.x failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: Buildings 12.1.2-maint.12.x\n");
+end if;
 if not installPackage(Complex, "3.2.2+maint.om", exactMatch=true) then
   print("Complex 3.2.2+maint.om failed.\n");
   print(getErrorString());

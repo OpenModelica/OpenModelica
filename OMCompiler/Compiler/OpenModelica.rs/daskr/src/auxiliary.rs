@@ -2,7 +2,10 @@
 //! handler (`xerrwd`/`xsetf`/`xsetun`/`ixsav`) and the few libf2c intrinsics the
 //! solver relies on (`real_sign`, `real_pow`).
 
-use std::sync::atomic::{AtomicI32, Ordering};
+use core::sync::atomic::{AtomicI32, Ordering};
+
+#[cfg(not(feature = "std"))]
+use crate::FloatShim;
 
 /// `d1mach`: the unit roundoff, computed in a machine-independent way exactly as
 /// the C does (so it yields the same value, `f64::EPSILON`).
@@ -83,36 +86,52 @@ pub fn xsetun(lun: i32) {
 /// `ni`/`nr` select how many of `i1,i2`/`r1,r2` are appended.
 #[allow(clippy::too_many_arguments)]
 pub fn xerrwd(msg: &str, _nerr: i32, level: i32, ni: i32, i1: i32, i2: i32, nr: i32, r1: f64, r2: f64) {
-    let mesflg = ixsav(2, 0, false);
-    if mesflg != 0 {
-        let mut out = String::new();
-        out.push_str(msg);
-        out.push('\n');
-        if ni == 1 {
-            out.push_str(&format!("      In above message,  I1 = {}\n", i1));
+    // The no_std runtime has no stdout; message formatting/printing (and its
+    // `String`/`format!` machinery) compile only for `std`. `xsetf(0)` silences
+    // this path in the sim drivers anyway.
+    #[cfg(feature = "std")]
+    {
+        let mesflg = ixsav(2, 0, false);
+        if mesflg != 0 {
+            let mut out = String::new();
+            out.push_str(msg);
+            out.push('\n');
+            if ni == 1 {
+                out.push_str(&format!("      In above message,  I1 = {}\n", i1));
+            }
+            if ni == 2 {
+                out.push_str(&format!("      In above message,  I1 = {}   I2 = {}\n", i1, i2));
+            }
+            if nr == 1 {
+                out.push_str(&format!("      In above message,  R1 = {}\n", fmt_e21_13(r1)));
+            }
+            if nr == 2 {
+                out.push_str(&format!(
+                    "      In above,  R1 = {}   R2 = {}\n",
+                    fmt_e21_13(r1),
+                    fmt_e21_13(r2)
+                ));
+            }
+            print!("{}", out);
         }
-        if ni == 2 {
-            out.push_str(&format!("      In above message,  I1 = {}   I2 = {}\n", i1, i2));
-        }
-        if nr == 1 {
-            out.push_str(&format!("      In above message,  R1 = {}\n", fmt_e21_13(r1)));
-        }
-        if nr == 2 {
-            out.push_str(&format!(
-                "      In above,  R1 = {}   R2 = {}\n",
-                fmt_e21_13(r1),
-                fmt_e21_13(r2)
-            ));
-        }
-        print!("{}", out);
     }
+    #[cfg(not(feature = "std"))]
+    let _ = (msg, ni, i1, i2, nr, r1, r2);
+
     if level == 2 {
+        // A `level == 2` message is a fatal solver error. Native/`std` exits(0)
+        // as the C does; no_std has no process to exit, so it traps (surfaced as
+        // a failed run by the host).
+        #[cfg(feature = "std")]
         std::process::exit(0);
+        #[cfg(not(feature = "std"))]
+        panic!("DASKR: fatal solver error");
     }
 }
 
 /// Format like C's `%21.13E`: 13 fractional digits, uppercase `E`, a signed
 /// exponent of at least two digits, right-justified to width 21.
+#[cfg(feature = "std")]
 fn fmt_e21_13(x: f64) -> String {
     // Rust's `{:.13E}` gives e.g. "1.2345678901234E5"; rebuild the C exponent.
     let s = format!("{:.13E}", x);

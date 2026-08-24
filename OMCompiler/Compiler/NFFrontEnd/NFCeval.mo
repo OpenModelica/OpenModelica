@@ -2758,7 +2758,7 @@ algorithm
           fail();
         end if;
       then
-        Expression.REAL(v ^ (1/n));
+        Expression.REAL(if v < 0.0 and intMod(n, 2) <> 0 then -((-v) ^ (1/n)) else v ^ (1/n));
 
     else
       algorithm

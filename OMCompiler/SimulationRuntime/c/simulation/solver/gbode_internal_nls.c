@@ -106,8 +106,7 @@ typedef struct GB_INTERNAL_NLS_DATA
   double *scal;                      // scaling vector for termination of Newton loop
   double *etas;                      // Newton contraction factors for each NLS stage (size == number of stages)
   double eta_inital_damping;         // Initial damping factor eta_new = eta_old^eta_initial_damping
-  Tolerances tol_integrator;         // Integrator / user provided tolerances
-  Tolerances tol_scaled;             // scaled Integrator tolerances
+  double integrator_tol;             // Integrator / user provided tolerance
   double fnewt;                      // Newton tolerance: if eta * norm(dx) <= fnewt -> convergence
   double theta_keep;                 // if norm(dx_k) / norm(dx_{k-1}) = theta_{k} < theta_keep -> keep old jacobian_callback
   modelica_boolean call_jac;         // call jacobian in the next call to NLS solve
@@ -387,7 +386,7 @@ static void gbInternal_evalNumericalJacobian(DATA *data,
         double delta_hhh = delta_h * der_x_ref[big_col];
 
         // scal_raw = ATOL * NOMINAL + RTOL * abs(x_i), we use the real (un-transformed) integrator tolerances though
-        double raw_weight = nls->tol_integrator.atol * nominals[big_col] + nls->tol_integrator.rtol * fabs(x[big_col]);
+        double raw_weight = nls->integrator_tol * nominals[big_col] + nls->integrator_tol * fabs(x[big_col]);
 
         // choose h_i := h * max(abs(x_i), h * f(x)_i, ATOL * NOMINAL + RTOL * abs(x_i), 1e-3)
         delta_hh[big_col] = delta_h * fmax(fmax(fmax(fabs(x[big_col]), 1e-3), fabs(delta_hhh)), fabs(raw_weight));
@@ -681,7 +680,7 @@ static void createGbScales(GB_INTERNAL_NLS_DATA *nls, DATA_GBODE *gbData, double
   {
     for (int i = 0; i < nls->size; i++)
     {
-      nls->scal[i] = 1.0 / (nls->tol_scaled.atol * nominals[i] + fmax(fabs(y1[i]), fabs(y2[i])) * nls->tol_scaled.rtol);
+      nls->scal[i] = 1.0 / (nls->integrator_tol * nominals[i] + fmax(fabs(y1[i]), fabs(y2[i])) * nls->integrator_tol);
     }
   }
   else
@@ -689,7 +688,7 @@ static void createGbScales(GB_INTERNAL_NLS_DATA *nls, DATA_GBODE *gbData, double
     for (int i = 0; i < nls->size; i++)
     {
       const size_t fast_idx = (size_t) gbData->fastStatesIdx[i];
-      nls->scal[i] = 1.0 / (nls->tol_scaled.atol * nominals[fast_idx] + fmax(fabs(y1[i]), fabs(y2[i])) * nls->tol_scaled.rtol);
+      nls->scal[i] = 1.0 / (nls->integrator_tol * nominals[fast_idx] + fmax(fabs(y1[i]), fabs(y2[i])) * nls->integrator_tol);
     }
   }
 }
@@ -903,10 +902,10 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
 
 /** @brief Compute (T otimes I) * v for block vectors (applies T to block_count blocks of size block_size). */
 static inline void dense_kron_id_vec(int block_count,
-                              int block_size,
-                              const double *T,
-                              const double *v,
-                              double *out)
+                                     int block_size,
+                                     const double *T,
+                                     const double *v,
+                                     double *out)
 {
   dgemm_(
     &CHAR_NO_TRANS, &CHAR_NO_TRANS,
@@ -1275,7 +1274,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   double nrm_delta_prev = 0;
   double theta = 0;
 
-  /* invalidate eta if an event happened */
+  // invalidate eta if an event happened
   if (gbData->eventHappened) *nls->etas = DBL_MAX;
 
   // Newton iteration count - we start with newt_it = 1, because we need this for the step size selection and conditions below
@@ -1562,59 +1561,22 @@ void *gbInternalNlsAllocate(int size,
     nls->etas[i] = DBL_MAX;
   }
 
-  nls->tol_integrator = (Tolerances){ userData->data->simulationInfo->tolerance, userData->data->simulationInfo->tolerance };
+  nls->integrator_tol = userData->data->simulationInfo->tolerance;
 
-  // We transform the error such that the error term err = || v || = sqrt(1/n * sum (v[i] / scal[i])^2) is scaled with same measure
-  // As we later have v = sum (b - bt) * k = min of local error of b and bt -> scale ATOL and RTOL w.r.t. (min(b, bt) + 1) / (b + 1)
+  /* Internal Newton convergence criteria is written in terms of the raw (unscaled), i.e.
+     user-provided tolerance: || v ||_scal <= alpha, where || v ||_scal = sqrt(1/N sum_i=1^N (v_i / (ATOL_i + |y_i| * RTOL_i))^2),
+     ATOL and RTOL are unscaled tolerances. */
+  const double alpha_default = 3e-2;
+  const double alpha_maximal = 5e-2;
+  const double safety_newt = 0.1;
+  double target_alpha = alpha_default;
 
-  if (tabl->richardson)
+  if (!tabl->richardson && tabl->error_order < tabl->order_b && tabl->order_b - tabl->error_order != 1)
   {
-    nls->tol_scaled.rtol = nls->tol_integrator.rtol;
-    nls->tol_scaled.atol = nls->tol_integrator.atol;
-    nls->fnewt = fmax(10 * DBL_EPSILON / nls->tol_scaled.rtol, 3e-2);
+    const double order_quot = ((double)tabl->error_order + 1.0) / ((double)tabl->order_b + 1.0);
+    target_alpha = pow(safety_newt, 1.0 / order_quot);
   }
-  else
-  {
-    // scale error measure to embedded method
-    const double safety = 0.2; /* TODO: TBD: which coefficient should be used here, given as tableau specific tableau->fac? See "A comparison of Rosenbrock and ESDIRK methods
-                                             combined with iterative solvers for unsteady compressible flows" for a calibration technique */
-    double quot = nls->tol_integrator.atol / nls->tol_integrator.rtol;
-    double order_quot = ((double)tabl->error_order + 1.0) / ((double)tabl->order_b + 1.0);
-    double rtol_pred = safety * pow(nls->tol_integrator.rtol, order_quot);
-    double atol_pred = quot * rtol_pred;
-    nls->tol_scaled.rtol = fmax(nls->tol_integrator.rtol, rtol_pred);
-    nls->tol_scaled.atol = fmax(nls->tol_integrator.atol, atol_pred);
-
-    // default if no tolerance scaling is performed (scaled norm == actual TOL norm)
-    const double alpha_default = 3e-2;
-    const double alpha_maximal = 5e-2;
-    const double safety_newt = 0.1;
-    double fnewt_prop = alpha_default;
-
-    if (nls->tol_scaled.rtol != nls->tol_integrator.rtol)
-    {
-      // undo the tolerance scaling, s.t. raw residual <= alpha * actual TOL, where per default alpha = 3e-2, unless severe tolerance scaling is done
-      double target_alpha = alpha_default;
-
-      if (tabl->order_b - tabl->error_order != 1)
-      {
-        // severe tolerance scaling, possibly be more conservative for high orders / many stages
-        // choose to loosen safety a bit more: act as if safety was given by safety_newt
-        target_alpha = pow(safety_newt, 1.0 / order_quot);
-      }
-
-      target_alpha = fmin(alpha_maximal, target_alpha);
-
-      const double tol_times_one = pow(nls->tol_scaled.rtol, 1.0 / order_quot - 1.0) * pow(safety, -1.0 / order_quot);
-      fnewt_prop = tol_times_one * target_alpha;
-    }
-
-    // in all branches: fnewt * tol_scaled = alpha_eff * rtol_integrator, where
-    //     alpha_eff = alpha_default                                        (no scaling)
-    //     alpha_eff = fmin(alpha_maximal, alpha_default)                   (normal, p-q=1)
-    //     alpha_eff = fmin(alpha_maximal, safety_newt^((order_b+1)/(error_order+1)))  (severe, p-q!=1)
-    nls->fnewt = fmax(DBL_ABSORPTION / nls->tol_scaled.rtol, fmin(alpha_maximal, fnewt_prop));
-  }
+  nls->fnewt = fmax(DBL_ABSORPTION / nls->integrator_tol, fmin(alpha_maximal, target_alpha));
 
   // damping power for eta
   if (omc_flag[FLAG_SR_NLS_INTERNAL_DAMPING_FAC])
@@ -1792,13 +1754,8 @@ void gbInternalNlsFree(void *nls_ptr)
     free(nls->colorCols_stub);
   }
 
+  freeNlsUserData(nls->nls_user_data);
   free(nls);
-}
-
-/* Get internal, scaled tolerances. */
-Tolerances *gbInternalNlsGetScaledTolerances(void *nls_ptr)
-{
-  return &((GB_INTERNAL_NLS_DATA *) nls_ptr)->tol_scaled;
 }
 
 void gbInternalScheduleFastStatesUpdate(void *nls_ptr)
@@ -2027,22 +1984,22 @@ NLS_SOLVER_STATUS gbInternalSolveNls(DATA *data,
  * This estimate is A-stable and of one order higher than the naive embedded method, which
  * is crucial for stiff problems.
  *
- * See notes on struct CONTRACTIVE_ERROR for more context.
+ * See notes on struct CONTRACTIVE_DEFECT for more context.
  */
 void gbInternalContractiveDefect(DATA *data,
-                           threadData_t *threadData,
-                           NONLINEAR_SYSTEM_DATA *nonlinsys,
-                           DATA_GBODE *gbData,
-                           double *err)
+                                 threadData_t *threadData,
+                                 NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                 DATA_GBODE *gbData,
+                                 CONTRACTIVE_DEFECT *contractive,
+                                 double *err)
 {
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) (((struct dataSolver *)nonlinsys->solverData)->ordinaryData);
   BUTCHER_TABLEAU *tabl = nls->tabl;
-  CONTRACTIVE_ERROR *contraction = tabl->contraction;
   SOLVERSTATS *stats = (nls->multirate ? &gbData->gbfData->stats : &gbData->stats);
 
   int nStates = gbData->nStates;
   int size = nls->size;
-  int nStages = (int)tabl->nStages;
+  int nStages = tabl->nStages;
 
   double *yOld = (nls->multirate ? gbData->gbfData->yOldPacked : gbData->yOld);
   double *kPacked = (nls->multirate ? gbData->gbfData->kCurrPacked : gbData->k);
@@ -2053,7 +2010,7 @@ void gbInternalContractiveDefect(DATA *data,
          &INT_ONE,
          &nStages,
          &DBL_MINUS_ONE, kPacked, &size,
-         contraction->dT_A, &nStages,
+         contractive->dT_A, &nStages,
          &DBL_ZERO, err, &size);
 
   modelica_boolean sr_valid = (!nls->multirate && !gbData->didFastStep && gbData->time != data->simulationInfo->startTime && !gbData->eventHappened && gbData->extrapolationBaseTime != INFINITY);
@@ -2085,45 +2042,45 @@ void gbInternalContractiveDefect(DATA *data,
   gbInternal_dKLU_solve(&nls->klu_internals_real[0], size, err);
 }
 
-void gbInternalContractiveFilter(DATA *data,
-                                 threadData_t *threadData,
-                                 NONLINEAR_SYSTEM_DATA *nonlinsys,
-                                 DATA_GBODE *gbData,
-                                 double *y,
-                                 double *yt)
+static void gbInternalContractiveFilterPacked(GB_INTERNAL_NLS_DATA *nls,
+                                              DATA_GBODE *gbData,
+                                              double *err)
+{
+  int size = nls->size;
+  double filter_scale = 1.0;
+
+  if (nls->use_t_transform)
+  {
+    double stepSize = nls->multirate ? gbData->gbfData->stepSize : gbData->stepSize;
+    filter_scale = nls->tabl->t_transform->gamma[0] / stepSize;
+  }
+
+  // DIRK systems use h*gamma*J - I, so the solve already applies the filter up to sign.
+  // FIRK/T systems use gamma/h*I - J = gamma/h * (I - h/gamma*J), so scale by gamma/h after the solve.
+  gbInternal_dKLU_solve(&nls->klu_internals_real[0], size, err);
+  if (filter_scale != 1.0) dscal_(&size, &filter_scale, err, &INT_ONE);
+}
+
+void gbInternalContractiveFilterError(NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                      DATA_GBODE *gbData,
+                                      double *err)
 {
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) (((struct dataSolver *)nonlinsys->solverData)->ordinaryData);
-  int size = nls->size;
-
-  assert(nls->tabl->contraction->apply_filter_only);
 
   if (!nls->multirate)
   {
-    // yt := yt - y
-    daxpy_(&size, &DBL_MINUS_ONE, y, &INT_ONE, yt, &INT_ONE);
-
-    // yt := (I - h * gamma * J)^{-1} (yt - y); no need to dscal_ with some 1 / (h * gamma) as system is written with factor of I = 1
-    gbInternal_dKLU_solve(&nls->klu_internals_real[0], size, yt);
-
-    // yt := yt + y
-    daxpy_(&size, &DBL_ONE, y, &INT_ONE, yt, &INT_ONE);
+    gbInternalContractiveFilterPacked(nls, gbData, err);
   }
   else
   {
     double *work = nls->work;
 
-    // work := fast(yt - y)
-    gbInternal_T_Transform_copy_full_to_fast(gbData, nls, yt, work);
-    gbInternal_T_Transform_full_to_fast_axpy(gbData, nls, -1.0, y, work);
+    // work := fast(err)
+    gbInternal_T_Transform_copy_full_to_fast(gbData, nls, err, work);
+    gbInternalContractiveFilterPacked(nls, gbData, work);
 
-    // work := (I - h * gamma * J)^{-1} (yt - y); no need to dscal_ with some 1 / (h * gamma) as system is written with factor of I = 1
-    gbInternal_dKLU_solve(&nls->klu_internals_real[0], size, work);
-
-    // yt := full(work)
-    gbInternal_T_Transform_copy_fast_to_full(gbData, nls, work, yt);
-
-    // yt := y + full(work)
-    gbInternal_T_Transform_copy_full_to_full_axpy(gbData, nls, 1.0, y, yt);
+    // err := full(work)
+    gbInternal_T_Transform_copy_fast_to_full(gbData, nls, work, err);
   }
 }
 

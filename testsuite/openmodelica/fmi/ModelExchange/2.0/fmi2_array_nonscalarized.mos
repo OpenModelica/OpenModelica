@@ -1,5 +1,6 @@
 // name: fmi2_array_nonscalarized
 // keywords: FMI 2.0 export array non-scalarized NewBackend
+// suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf fmi2_array_nonscalarized.fmu fmi2_array_nonscalarized.fmutmp/ fmi2_array_nonscalarized.dims fmi2_array_nonscalarized.log fmi2_array_nonscalarized_info.json index.html
 //
@@ -32,10 +33,7 @@ readFile("fmi2_array_nonscalarized.dims"); getErrorString();
 // true
 // ""
 // "fmi2_array_nonscalarized.fmu"
-// "Warning: NSimJacobian.SimJacobian.createSparsityPattern: column cref not found in Jacobian local_idx_map: x[1]
-// Available keys: x, $DER.x
-// Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern of Jacobian [ODE].
-// "
+// ""
 // 0
 // ""
 // "2

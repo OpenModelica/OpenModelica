@@ -24,26 +24,17 @@
 
 use std::sync::Mutex;
 
-use anyhow::{Result, bail};
+use metamodelica::Result;
 use arcstr::ArcStr;
 
 use crate::Autoconf;
-
-/// Compiler version string, the analogue of the C build's `CONFIG_VERSION`
-/// (`Settings_getVersionNr` returns it verbatim). The C build injects the git
-/// revision through `revision.h`; we let a build inject the same value via the
-/// `OPENMODELICA_REVISION` environment variable at compile time and otherwise
-/// fall back to the current development version. Defining it here keeps the
-/// version next to the function that exposes it, matching `Settings_omc.cpp`.
-const VERSION: &str = match option_env!("OPENMODELICA_REVISION") {
-    Some(v) => v,
-    None => "v1.27.0-dev",
-};
 
 /// Process-global settings, mirroring the `static` variables in
 /// `settingsimpl.c`. `None` means "not yet computed / cleared"; the getters
 /// lazily fill the cache exactly like the C functions do.
 struct SettingsState {
+    /// `CONFIG_VERSION` in C, injected by the host (see [`setVersionNr`]).
+    version: Option<ArcStr>,
     /// `tempDirectoryPath` in C.
     temp_directory_path: Option<ArcStr>,
     /// `echo` in C — initialised to 1 (true).
@@ -57,6 +48,7 @@ struct SettingsState {
 }
 
 static STATE: Mutex<SettingsState> = Mutex::new(SettingsState {
+    version: None,
     temp_directory_path: None,
     echo: 1,
     installation_path: None,
@@ -82,8 +74,20 @@ fn set_env_var(var: &str, value: &ArcStr) {
     crate::System::setEnv(ArcStr::from(var), value.clone(), true);
 }
 
+/// Set the version `getVersionNr` reports (the C build's `CONFIG_VERSION`). It
+/// has no counterpart in the C runtime: the revision comes from the host rather
+/// than being compiled into this crate, which every other one depends on. See
+/// the `openmodelica_revision` crate.
+pub fn setVersionNr(inString: ArcStr) {
+    STATE.lock().unwrap().version = Some(inString);
+}
+
 pub fn getVersionNr() -> ArcStr {
-    ArcStr::from(VERSION)
+    // Unset: "unknown", the `CONFIG_VERSION` fallback in `omc_config.h`.
+    match &STATE.lock().unwrap().version {
+        Some(v) => v.clone(),
+        None => arcstr::literal!("unknown"),
+    }
 }
 
 pub fn setTempDirectoryPath(inString: ArcStr) {
@@ -135,13 +139,13 @@ pub fn setInstallationDirectoryPath(inString: ArcStr) {
 /// and replaces it with a generic message that never mentions
 /// `OPENMODELICAHOME` — without the stderr line the actual cause is invisible.
 fn strip_bin_path(path: &str) -> Result<ArcStr> {
-    fn cannot_deduce(path: &str) -> anyhow::Error {
+    fn cannot_deduce(path: &str) -> &'static str {
         let msg = format!(
             "could not deduce the OpenModelica installation directory from \
              executable path: [{path}], please set OPENMODELICAHOME"
         );
         eprintln!("{msg}");
-        anyhow::anyhow!(msg)
+        "error"
     }
 
     if !path.contains("bin") && !path.contains("lib") {
@@ -197,7 +201,7 @@ pub fn getInstallationDirectoryPath() -> Result<ArcStr> {
     }
 
     let exe = std::env::current_exe()
-        .map_err(|e| anyhow::anyhow!("failed to determine executable path: {e}"))
+        .map_err(|e| "failed to determine executable path: {e}")
         .map(|p| convert_to_forward_slashes(&p.to_string_lossy()));
 
     if let Ok(exe) = &exe
@@ -262,7 +266,7 @@ pub fn getModelicaPath(runningTestsuite: bool) -> Result<ArcStr> {
         Ok(env) if !env.is_empty() => ArcStr::from(env),
         _ => {
             if runningTestsuite {
-                bail!("When using --running-testsuite, OPENMODELICALIBRARY must be set");
+                return Err("When using --running-testsuite, OPENMODELICALIBRARY must be set");
             }
             // `getHomeDir` locks `STATE` itself, so resolve it before re-locking.
             let home = getHomeDir(false);

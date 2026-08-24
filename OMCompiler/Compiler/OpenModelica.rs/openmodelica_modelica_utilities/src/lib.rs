@@ -36,19 +36,32 @@ fn arena_alloc(len: usize) -> *mut c_char {
     })
 }
 
-/// Allocation used outside simulation mode. Native: the C runtime's real
-/// `ModelicaAllocateString`, one hop up the symbol chain (past ours) — present when
-/// a runtime library is loaded (`-d=gen`); a leaking `malloc` otherwise (the caller
-/// contract is that the buffer is not freed by the caller). Wasm: no C runtime, so
-/// the arena is the only allocator.
+/// Allocation used outside simulation mode. Native: the C runtime's own
+/// allocator, one hop up the symbol chain (past ours) — present when a runtime
+/// library is loaded (`-d=gen`, or the FFI evaluation of an external "C"
+/// function); a leaking `malloc` otherwise (the caller contract is that the buffer
+/// is not freed by the caller). Wasm: no C runtime, so the arena is the only
+/// allocator.
+///
+/// The hop must target the leaf `ModelicaAllocateStringWithErrorReturn`: the C
+/// runtime's `ModelicaAllocateString` only wraps it, and that inner call resolves
+/// back to this crate's interposing definition — an unbounded cycle.
 #[cfg(not(target_arch = "wasm32"))]
 fn non_sim_alloc(len: usize) -> *mut c_char {
-    let next = unsafe { libc::dlsym(libc::RTLD_NEXT, c"ModelicaAllocateString".as_ptr()) };
+    let next =
+        unsafe { libc::dlsym(libc::RTLD_NEXT, c"ModelicaAllocateStringWithErrorReturn".as_ptr()) };
     if !next.is_null() {
         let f: extern "C" fn(usize) -> *mut c_char = unsafe { std::mem::transmute(next) };
-        return f(len);
+        let res = f(len);
+        if !res.is_null() {
+            return res;
+        }
     }
-    unsafe { libc::malloc(len + 1) as *mut c_char }
+    let res = unsafe { libc::malloc(len + 1) as *mut c_char };
+    if !res.is_null() {
+        unsafe { *res.add(len) = 0 };
+    }
+    res
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -99,4 +112,56 @@ pub extern "C" fn omrs_sim_external_begin() {
 #[unsafe(no_mangle)]
 pub extern "C" fn omrs_sim_external_end() {
     sim_external_end();
+}
+
+// ---------------------------------------------------------------------------
+// ModelicaMessage / ModelicaWarning
+// ---------------------------------------------------------------------------
+//
+// The C runtime routes these to `OMC_LOG_STDOUT`, the stream `Streams.print`'s
+// output reaches the simulation log through — but the compiler process never
+// enables it. So the wasm-jit host rebinds the runtime's
+// `OpenModelica_ModelicaVFormat{Message,Warning}` slots (dynload +
+// runtime_error_shim.c) and the rendered message arrives here instead.
+
+/// C's `messageText` prefixes (util/omc_error.c: `%-17s | %-7s | `), for a
+/// message's first line and for its wrapped lines.
+pub const LOG_STDOUT_INFO: &str = "LOG_STDOUT        | info    | ";
+pub const LOG_STDOUT_WARNING: &str = "LOG_STDOUT        | warning | ";
+pub const LOG_STDOUT_ERROR: &str = "LOG_STDOUT        | error   | ";
+const LOG_CONT: &str = "|                 | |       | ";
+
+/// Prefix each line of a `\n`-separated message, the first with `prefix`.
+pub fn format_log_stdout(msg: &str, prefix: &str) -> String {
+    let mut out = String::new();
+    for (i, line) in msg.split('\n').enumerate() {
+        out.push_str(if i == 0 { prefix } else { LOG_CONT });
+        out.push_str(line);
+        out.push('\n');
+    }
+    out
+}
+
+/// Emit `msg` to the running simulation's captured stdout if an external call is
+/// in flight; returns whether it was taken. The caller's format string
+/// `\n`-terminates the line, which the prefixing re-adds.
+fn take_message(msg: *const c_char, prefix: &str) -> bool {
+    if !SIM_MODE.with(Cell::get) || msg.is_null() {
+        return false;
+    }
+    let text = unsafe { std::ffi::CStr::from_ptr(msg) }.to_string_lossy().into_owned();
+    let line = format_log_stdout(text.strip_suffix('\n').unwrap_or(&text), prefix);
+    openmodelica_wasi::wasi::stdout_write(line.as_bytes());
+    true
+}
+
+// The two hooks the simulation host hands to
+// `dynload::install_modelica_message_interception`.
+
+pub extern "C" fn modelica_message_hook(msg: *const c_char) -> i32 {
+    take_message(msg, LOG_STDOUT_INFO) as i32
+}
+
+pub extern "C" fn modelica_warning_hook(msg: *const c_char) -> i32 {
+    take_message(msg, LOG_STDOUT_WARNING) as i32
 }

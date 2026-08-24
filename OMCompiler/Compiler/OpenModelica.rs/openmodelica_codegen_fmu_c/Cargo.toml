@@ -18,7 +18,6 @@ openmodelica_codegen.workspace=true
 openmodelica_codegen_cfunctions.workspace=true
 openmodelica_codegen_c.workspace=true
 openmodelica_codegen_fmu.workspace=true
-anyhow.workspace=true
 const-str.workspace=true
 arcstr.workspace=true
 loop_unwrap.workspace=true

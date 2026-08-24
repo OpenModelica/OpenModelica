@@ -8,7 +8,6 @@ metamodelica.workspace = true
 openmodelica_ast.workspace = true
 openmodelica_frontend_dump.workspace = true
 openmodelica_util.workspace = true
-anyhow.workspace = true
 const-str.workspace=true
 arcstr.workspace=true
 loop_unwrap.workspace=true

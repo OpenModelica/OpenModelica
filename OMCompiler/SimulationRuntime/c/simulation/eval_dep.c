@@ -195,62 +195,69 @@ void activateEvalDependencies(EVAL_SELECTION* selection)
  * OpenModelica specific stuff
  * * * * * * * * * * * * * * */
 
-typedef struct hash_varName_eqIndex
+typedef struct hash_varName_index
 {
   const char *id;     // variable name
-  size_t val;         // equation index
+  size_t varIndex;    // variable index
+  size_t eqIndex;     // equation index
   UT_hash_handle hh;
-} hash_varName_eqIndex;
+} hash_varName_index;
 
-static hash_varName_eqIndex *varIndex_ht = NULL;
+static hash_varName_index *varName_ht = NULL;
 
 static void addVarToHashTable(const char *name, size_t index)
 {
-  hash_varName_eqIndex *s;
-  HASH_FIND_STR(varIndex_ht, name, s);
-  if (s) {
+  hash_varName_index *s;
+  HASH_FIND_STR(varName_ht, name, s);
+  assertStreamPrint(NULL, s, "Variable %s was not initialized in the DAG hash table.", name);
+  if (s->eqIndex != (size_t)(-1)) {
     errorStreamPrint(OMC_LOG_STDOUT, 1, "Variable %s is solved in more than one equation.", name);
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "originally solved in %zu, now in %zu", s->val, index);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "originally solved in %zu, now in %zu", s->eqIndex, index);
     messageClose(OMC_LOG_STDOUT);
   } else {
-    s = (hash_varName_eqIndex *)malloc(sizeof *s);
-    s->id = name;
-    s->val = index;
-    HASH_ADD_KEYPTR(hh, varIndex_ht, s->id, strlen(s->id), s);
+    s->eqIndex = index;
   }
 }
 
 static void clearHashTable(void)
 {
-  hash_varName_eqIndex *s, *tmp;
+  hash_varName_index *s, *tmp;
 
-  HASH_ITER(hh, varIndex_ht, s, tmp) {
-    HASH_DEL(varIndex_ht, s);
+  HASH_ITER(hh, varName_ht, s, tmp) {
+    HASH_DEL(varName_ht, s);
     free(s);
   }
-  varIndex_ht = NULL;
+  varName_ht = NULL;
+}
+
+static void buildVarNameHashTable(MODEL_DATA *modelData)
+{
+  for (int i = 0; i < modelData->nVariablesReal; ++i) {
+    const char *name = modelData->realVarsData[i].info.name;
+    hash_varName_index *s;
+    HASH_FIND_STR(varName_ht, name, s);
+    if (!s) {
+      s = (hash_varName_index *)malloc(sizeof *s);
+      s->id = name;
+      s->varIndex = modelData->realVarsData[i].info.id >= 1000 ? (size_t)(modelData->realVarsData[i].info.id - 1000) : (size_t)(-1);
+      s->eqIndex = (size_t)(-1);
+      HASH_ADD_KEYPTR(hh, varName_ht, s->id, strlen(s->id), s);
+    }
+  }
 }
 
 /**
  * @brief Get variable index from name
  *
- * @param modelData   Pointer to model data structure
  * @param name        Name of variable
  * @return size_t     Index of variable if it exists else -1
  */
-static size_t varIndexFromName(MODEL_DATA *modelData, const char *name)
+static size_t varIndexFromName(const char *name)
 {
-  /* for now only look at real vars */
-  for (int i = 0; i < modelData->nVariablesReal; ++i) {
-    if (strcmp(modelData->realVarsData[i].info.name, name) == 0) {
-      if (modelData->realVarsData[i].info.id >= 1000) {
-        return (size_t)(modelData->realVarsData[i].info.id - 1000);
-      } else {
-        return (size_t)(-1);
-      }
-    }
-  }
-  return (size_t)(-1);
+  hash_varName_index *s;
+
+  HASH_FIND_STR(varName_ht, name, s);
+  return s ? s->varIndex : (size_t)(-1);
 }
 
 /**
@@ -268,12 +275,14 @@ void buildEvalDAG_ODE(MODEL_DATA *modelData, size_t nEqns, const size_t* ixs)
   EVAL_DAG *dag = allocEvalDAG(modelData->nVariablesReal, nEqns);
   modelData->dag = dag;
 
+  buildVarNameHashTable(modelData);
+
   for (size_t i = 0; i < dag->nEqns; ++i) {
     EQUATION_INFO eqInfo = modelInfoGetEquation(&modelData->modelDataXml, ixs[i]);
 
     /* see what variables it defines */
     for (size_t j = 0; j < eqInfo.numVar; ++j) {
-      size_t varIndex = varIndexFromName(modelData, eqInfo.vars[j]);
+      size_t varIndex = varIndexFromName(eqInfo.vars[j]);
       if (varIndex != (size_t)(-1)) {
         /* store (varName -> eqIndex) in hash table */
         addVarToHashTable(eqInfo.vars[j], i);
@@ -300,12 +309,12 @@ void buildEvalDAG_ODE(MODEL_DATA *modelData, size_t nEqns, const size_t* ixs)
 
     for (size_t j = 0; j < eqInfo.numVarUsed; ++j) {
       /* look up variable in hash table */
-      hash_varName_eqIndex *s;
-      HASH_FIND_STR(varIndex_ht, eqInfo.varsUsed[j], s);
+      hash_varName_index *s;
+      HASH_FIND_STR(varName_ht, eqInfo.varsUsed[j], s);
       /* if it exists, add the corresponding equation to the dependency */
       // TODO reduce size of eqDep if used variables are not solved in the
       // system corresponding to this DAG
-      dag->eqDep[i][j] = s ? s->val : (size_t)(-1);
+      dag->eqDep[i][j] = s ? s->eqIndex : (size_t)(-1);
     }
   }
 
@@ -328,12 +337,14 @@ void buildEvalDAG_Jac(JACOBIAN* jacobian, MODEL_DATA *modelData, size_t nEqns, c
   EVAL_DAG *dag = allocEvalDAG(jacobian->sizeRows + jacobian->sizeTmpVars, nEqns);
   jacobian->dag = dag;
 
+  buildVarNameHashTable(modelData);
+
   for (size_t i = 0; i < dag->nEqns; ++i) {
     EQUATION_INFO eqInfo = modelInfoGetEquation(&modelData->modelDataXml, ixs[i]);
 
     /* see what variables it defines */
     for (size_t j = 0; j < eqInfo.numVar; ++j) {
-      size_t varIndex = varIndexFromName(modelData, eqInfo.vars[j]);
+      size_t varIndex = varIndexFromName(eqInfo.vars[j]);
       if (varIndex != (size_t)(-1)) {
         /* store (varName -> eqIndex) in hash table */
         addVarToHashTable(eqInfo.vars[j], i);
@@ -360,12 +371,12 @@ void buildEvalDAG_Jac(JACOBIAN* jacobian, MODEL_DATA *modelData, size_t nEqns, c
 
     for (size_t j = 0; j < eqInfo.numVarUsed; ++j) {
       /* look up variable in hash table */
-      hash_varName_eqIndex *s;
-      HASH_FIND_STR(varIndex_ht, eqInfo.varsUsed[j], s);
+      hash_varName_index *s;
+      HASH_FIND_STR(varName_ht, eqInfo.varsUsed[j], s);
       /* if it exists, add the corresponding equation to the dependency */
       // TODO reduce size of eqDep if used variables are not solved in the
       // system corresponding to this DAG
-      dag->eqDep[i][j] = s ? s->val : (size_t)(-1);
+      dag->eqDep[i][j] = s ? s->eqIndex : (size_t)(-1);
     }
   }
 
