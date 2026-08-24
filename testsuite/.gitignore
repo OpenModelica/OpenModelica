@@ -9,8 +9,6 @@
 *.mos.result.xml
 *.mo.result.xml
 /failed.*
-difftool/lex.yy.c
-difftool/lex.yy.wsl.c
 openmodelica/bootstrapping/CodegenC.*
 openmodelica/bootstrapping/CodegenUtil.tpl
 openmodelica/bootstrapping/SimCodeTV.mo

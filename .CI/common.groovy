@@ -138,7 +138,9 @@ void partest(partition=1,partitionmodulo=1,cache=true,extraArgs='') {
   """)
 
   } else {
-  sh "${makeCommand()} -C testsuite/difftool clean && ${makeCommand()} --output-sync=recurse -C testsuite/difftool"
+  // omc-diff is built and installed into build/bin by the CMake 'install' target
+  // (testsuite/difftool/CMakeLists.txt), so it travels with the stashed build
+  // tree; just check the stashed one is usable, like partestRust does.
   sh 'build/bin/omc-diff -v1.4'
 
   // Susan's generated *.mo live in the CMake build tree; rtest's default guess
@@ -184,7 +186,7 @@ String generatedMoDir() {
 // Each dependency has a standalone Makefile that needs nothing but that omc,
 // which is what libraries/CMakeLists.txt and testsuite/CMakeLists.txt wrap in
 // their libs-for-testing / reference-files / ffi-test-lib targets. omc-diff is
-// not built here: partest() rebuilds it from testsuite/difftool anyway.
+// not built here: the CMake 'install' target already put it in build/bin.
 void makeLibsAndCache() {
   sh "test ! -z '${env.LIBRARIES}'"
   // If we don't have any result, copy to the master to get a somewhat decent cache
@@ -201,7 +203,7 @@ void makeLibsAndCache() {
   ls -lh libraries/.openmodelica/cache/
   """
   def cmd = """#!/bin/bash -xe
-  # libs-for-testing: installs the test libraries with the CMake-built omc
+  # libs-for-testing: installs the test libraries with the installed omc
   ${makeCommand()} -C libraries lib-for-testing
   # reference-files: xz decompression only
   ${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse -C testsuite/ReferenceFiles
@@ -300,12 +302,13 @@ void sanityCheck(String installDir, Boolean buildCpp) {
  *                   (not a pre-joined string); they are joined with spaces
  *                   before being passed to the cmake CLI.
  * @param cmake_exe  the cmake executable to invoke.
- * @param testDeps   also build the 'testsuite-depends' target. Pass false when a
- *                   later stage runs makeLibsAndCache() anyway: that one links the
- *                   shared omlibrary cache first, so building the libraries here
- *                   would just download them again uncached.
+ * @param testDeps   also build the 'testsuite-depends' target. Pass false on every
+ *                   path that goes on to partest(): those all call
+ *                   makeLibsAndCache() first, and that one links the shared
+ *                   omlibrary cache before building the same dependencies, so
+ *                   doing it here just downloads them a second time uncached.
  */
-void buildOMC_CMake(List cmake_args, cmake_exe='cmake', Boolean testDeps=true) {
+void buildOMC(List cmake_args, cmake_exe='cmake', Boolean testDeps=true) {
   echo "Running on: ${env.NODE_NAME}"
   standardSetup()
 
@@ -491,7 +494,7 @@ void buildRustOMC() {
   // testsuite-depends (above) builds ffi-test-lib into the testsuite source tree;
   // partestRust only unstashes this stash and never rebuilds it, so carry the .so
   // along or the flattening/modelica/ffi tests can't find libFFITestLib.so.
-  stash name: 'omc-cmake-rust',
+  stash name: 'omc-rust',
         includes: 'build/**,' +
                   'testsuite/flattening/modelica/ffi/FFITest/Resources/Library/**'
   // The mmtorust/susan-generated .rs, so the unit-tests-rust stage runs cargo test
@@ -508,7 +511,7 @@ void buildRustOMC() {
                   'build_cmake/rust-wasi-pic-sysroot/**,' +
                   'build_cmake/rust-sundials-wasm/**,' +
                   'build_cmake/downloads/wasi_snapshot_preview1.reactor.wasm'
-  stash name: 'omc-cmake-rust-gui-inputs',
+  stash name: 'omc-rust-gui-inputs',
         includes: 'build_cmake/OMCompiler/Compiler/rust-target/release/libOpenModelicaCompiler.so,' +
                   'build_cmake/OMCompiler/Compiler/scripting-api-qt/**'
   // The cross-built FMU loaders for the web stage. Not stashed in place: that is
@@ -585,7 +588,7 @@ void buildRustWeb() {
   unstash 'wasm-jit-runtime'
   unstash 'runtime-sources-mo'
   restoreGeneratedSrc()
-  unstash 'omc-cmake-rust-gui-inputs'
+  unstash 'omc-rust-gui-inputs'
   unstash 'fmu-loaders'
   configureWeb('-DRUST_OMC_WEB_QT=OFF')
   withEmSccache {
@@ -605,7 +608,7 @@ void buildRustWebQt() {
   unstash 'wasm-jit-runtime'
   unstash 'runtime-sources-mo'
   restoreGeneratedSrc()
-  unstash 'omc-cmake-rust-gui-inputs'
+  unstash 'omc-rust-gui-inputs'
   configureWeb('-DRUST_OMC_WEB_QT=OFF -DRUST_OMC_WEB_QT_STANDALONE=ON -DOMEDIT_WASM_OPTIMIZE=ON')
   withEmSccache {
     sh "cmake --build build_cmake --parallel ${numPhysicalCPU()} --target rust_omshell_qt_web rust_omnotebook_qt_web rust_omedit_qt_web"
@@ -640,7 +643,7 @@ void assembleWeb() {
 
 void buildRustGUI() {
   standardSetup()
-  unstash 'omc-cmake-rust-gui-inputs'
+  unstash 'omc-rust-gui-inputs'
   sh """
     cmake -S . -B build_cmake \
       -DCMAKE_BUILD_TYPE=Release \
@@ -667,7 +670,7 @@ void buildRustGUI() {
 // index.json is copied into place first so omc uses it instead of downloading.
 void partestRust(partition) {
   standardSetup()
-  unstash 'omc-cmake-rust'
+  unstash 'omc-rust'
   // OMSimulator + libomcruntime aren't produced by the Rust omc build; pull the
   // prebuilt binaries from the clang job (file sets are disjoint from build/**'s
   // rust omc, so this adds to the tree without overwriting it). Needed by the
@@ -792,7 +795,7 @@ def getQtMajorVersion(qtVersion) {
 //
 // @param qtVersion 'qt5' or 'qt6'.
 void buildGUI(qtVersion) {
-  buildOMC_CMake([
+  buildOMC([
     // RelWithDebInfo, not Release: OMEdit's crash report shells out to gdb
     // (CrashReport/GDBBacktrace.cpp — the in-process backtrace.c is _WIN32-only),
     // and without -g that backtrace has no line numbers. The qmake build used to
@@ -1034,25 +1037,29 @@ Map evaluateBuildFlags() {
 // under Groovy's 64kB method-size limit.
 // ----------------------------------------------------------------------------
 
-// The jammy CMake build of omc. Its install tree is what the testsuite-gcc
-// stages run against (partestStashed), so keep the flags in sync with what
-// those tests need.
-void buildCMakeGccOMC() {
-  buildOMC_CMake([
+// The jammy/gcc build of omc. Its install tree is what the testsuite-gcc stages
+// run against (partestStashed), so keep the flags in sync with what those tests
+// need. buildClangOMC() below is its clang counterpart, tested by testsuite-clang.
+void buildGccOMC() {
+  buildOMC([
     "-DCMAKE_BUILD_TYPE=Release",
     "-DOM_USE_CCACHE=OFF",
-    "-DCMAKE_INSTALL_PREFIX=build"])
+    "-DCMAKE_INSTALL_PREFIX=build",
+    // Named explicitly rather than relying on the image default, so this stays
+    // the gcc half of the gcc/clang pair even if the image's default changes.
+    "-DCMAKE_C_COMPILER=gcc",
+    "-DCMAKE_CXX_COMPILER=g++"], 'cmake', false)
 
   // Susan's *.mo and Autoconf.mo travel along because the bootstrapping tests
   // load the compiler sources by path (see partestStashed).
-  stash name: 'omc-cmake-gcc',
+  stash name: 'omc-gcc',
         includes: 'build/**,' +
                   'build_cmake/OMCompiler/Compiler/generated-mo/**,' +
                   'OMCompiler/Compiler/Util/Autoconf.mo'
 }
 
 void buildClangOMC() {
-  buildOMC_CMake([
+  buildOMC([
     "-DCMAKE_BUILD_TYPE=Release",
     "-DOM_USE_CCACHE=OFF",
     "-DCMAKE_INSTALL_PREFIX=build",
@@ -1103,8 +1110,7 @@ void checks() {
   stash name: 'bibliography', includes: 'doc/bibliography/openmodelica.org-bibgen/*.md'
 }
 
-// A partest shard against a stashed CMake install tree (see buildCMakeGccOMC,
-// buildClangOMC).
+// A partest shard against a stashed install tree (see buildGccOMC, buildClangOMC).
 void partestStashed(stashName, partition, partitionmodulo) {
   standardSetup()
   unstash stashName

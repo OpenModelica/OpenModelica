@@ -41,7 +41,7 @@ pipeline {
           // RelWithDebInfo is the CMake stand-in for the old 'CFLAGS=-g': the
           // point of this job is the debug symbols in the shipped tarball.
           // The GUI clients are part of the same CMake build.
-          common.buildOMC_CMake([
+          common.buildOMC([
             "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
             "-DOM_USE_CCACHE=OFF",
             "-DCMAKE_INSTALL_PREFIX=build",

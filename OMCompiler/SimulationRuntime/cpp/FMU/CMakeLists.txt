@@ -1,34 +1,33 @@
-if(OPENMODELICA_NEW_CMAKE_BUILD)
-  include(cmake_3.14.cmake)
-else(OPENMODELICA_NEW_CMAKE_BUILD)
+#####################################################################################################
+# OMCppFMU
+set(OMC_SIMRT_CPP_FMU_SOURCES FMULogger.cpp)
 
-cmake_minimum_required(VERSION 3.5)
+add_library(OMCppFMU SHARED)
+add_library(omc::simrt::cpp::fmu ALIAS OMCppFMU)
 
-project(${FMUName})
+target_sources(OMCppFMU PRIVATE ${OMC_SIMRT_CPP_FMU_SOURCES})
 
-add_library(${FMUName} FMULogger.cpp)
+target_link_libraries(OMCppFMU PUBLIC omc::simrt::cpp::config)
+target_link_libraries(OMCppFMU PUBLIC omc::simrt::cpp::core::utils::extension)
 
-if(NOT BUILD_SHARED_LIBS)
-  set_target_properties(${FMUName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
-endif(NOT BUILD_SHARED_LIBS)
+install(TARGETS OMCppFMU)
 
-target_link_libraries(${FMUName} ${ExtensionUtilitiesName}  ${ModelicaName})
-add_precompiled_header(${FMUName} Core/Modelica.h)
+# OMCppFMU_static
+add_library(OMCppFMU_static STATIC)
+add_library(omc::simrt::cpp::fmu::static ALIAS OMCppFMU_static)
 
-if(MSVC)
-install(FILES $<TARGET_PDB_FILE:${FMUName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
-endif()
+target_sources(OMCppFMU_static PRIVATE ${OMC_SIMRT_CPP_FMU_SOURCES})
 
-install(TARGETS ${FMUName} DESTINATION ${LIBINSTALLEXT})
-install(FILES
-  ${CMAKE_SOURCE_DIR}/FMU/fmiModelFunctions.h
-  ${CMAKE_SOURCE_DIR}/FMU/fmiModelTypes.h
-  ${CMAKE_SOURCE_DIR}/FMU/FMUGlobalSettings.h
-  ${CMAKE_SOURCE_DIR}/FMU/FMULogger.h
-  ${CMAKE_SOURCE_DIR}/FMU/FMUWrapper.h
-  ${CMAKE_SOURCE_DIR}/FMU/FMULibInterface.h
-  ${CMAKE_SOURCE_DIR}/FMU/IFMUInterface.h
-  ${CMAKE_SOURCE_DIR}/FMU/FactoryExport.h
-  DESTINATION include/omc/cpp/FMU)
+target_compile_definitions(OMCppFMU_static PRIVATE RUNTIME_STATIC_LINKING)
 
-  endif(OPENMODELICA_NEW_CMAKE_BUILD)
+target_link_libraries(OMCppFMU_static PUBLIC omc::simrt::cpp::config)
+
+install(TARGETS OMCppFMU_static)
+##
+
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        TYPE INCLUDE
+        FILES_MATCHING
+        PATTERN *.h
+)

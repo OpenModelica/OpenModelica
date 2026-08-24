@@ -512,9 +512,6 @@ if ($check_proc_cpu) {
     }
   }
 }
-# Make sure that omc-diff is generated before trying to run any tests.
-system("make --quiet -j$thread_count omc-diff ReferenceFiles > /dev/null 2>&1");
-
 # I really don't think this is needed anymore!
 # symlink('../Compiler', 'Compiler');
 
