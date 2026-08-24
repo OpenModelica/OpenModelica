@@ -79,6 +79,7 @@ unsafe extern "C" {
 /// bridges to `wasi:cli/stdout`.
 mod stdio {
     const STDOUT: i32 = 1;
+    const STDERR: i32 = 2;
 
     #[repr(C)]
     struct Ciovec {
@@ -92,19 +93,28 @@ mod stdio {
         fn fd_write(fd: i32, iovs: *const Ciovec, iovs_len: usize, nwritten: *mut usize) -> i32;
     }
 
-    /// C's `printf` + `fflush(NULL)`: written whole and now, so it interleaves
-    /// with the importer's own output in the order the two produced it.
-    pub fn print(bytes: &[u8]) {
+    fn write(fd: i32, bytes: &[u8]) {
         let mut rest = bytes;
         while !rest.is_empty() {
             let iov = Ciovec { buf: rest.as_ptr(), len: rest.len() };
             let mut n = 0usize;
-            let rc = unsafe { fd_write(STDOUT, &iov, 1, &mut n) };
+            let rc = unsafe { fd_write(fd, &iov, 1, &mut n) };
             if rc != 0 || n == 0 || n > rest.len() {
                 return;
             }
             rest = &rest[n..];
         }
+    }
+
+    /// C's `printf` + `fflush(NULL)`: written whole and now, so it interleaves
+    /// with the importer's own output in the order the two produced it.
+    pub fn print(bytes: &[u8]) {
+        write(STDOUT, bytes);
+    }
+
+    /// The same for fd 2, where C's `omc_assert_fmi` writes a thread-less assertion.
+    pub fn stderr(bytes: &[u8]) {
+        write(STDERR, bytes);
     }
 }
 
@@ -243,6 +253,13 @@ pub extern "C" fn rt_assert_warning(
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_print(str: i32) {
     stdio::print(rt_string(str).as_bytes());
+}
+
+/// Where the runtime's `omc_assert` writes: it has no WASI of its own.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_stderr_write(ptr: *const u8, len: usize) {
+    let bytes = unsafe { core::slice::from_raw_parts(ptr, len) };
+    stdio::stderr(bytes);
 }
 
 /// Per-row assert formatting: the FMI master steps the model instead of the emitted

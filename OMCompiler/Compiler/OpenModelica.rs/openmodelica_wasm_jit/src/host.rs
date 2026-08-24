@@ -824,7 +824,34 @@ pub mod native_stdout {
     }
 
     pub fn install() {
-        openmodelica_wasi::wasi::set_native_capture(begin, end);
+        openmodelica_wasi::wasi::set_native_capture(openmodelica_wasi::wasi::NativeCapture {
+            begin,
+            write,
+            end,
+        });
+    }
+
+    /// C's `messageText`: written whole and now, so our log lines and a `dlopen`ed
+    /// external's own output reach the log in the order the two produced them.
+    /// To the capture's own fd, which fds 1 and 2 are dups of: fd 1 may be
+    /// redirected on top of ours, as the Ipopt solve pipes it.
+    fn write(bytes: &[u8], _is_err: bool) -> bool {
+        let Some(fd) = ACTIVE.with(|a| a.borrow().as_ref().map(|r| r.fd)) else {
+            return false;
+        };
+        let mut rest = bytes;
+        unsafe {
+            // Whatever an external left in libc's buffers happened before this line.
+            libc::fflush(std::ptr::null_mut());
+            while !rest.is_empty() {
+                let n = libc::write(fd, rest.as_ptr() as *const _, rest.len());
+                if n <= 0 {
+                    break;
+                }
+                rest = &rest[n as usize..];
+            }
+        }
+        true
     }
 
     fn begin() {
