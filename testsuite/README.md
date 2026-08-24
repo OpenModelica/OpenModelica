@@ -11,11 +11,11 @@ Templates for writing testfiles are:
 * mosfiles/simulation_failed_template.mos
 
 rtest special directives added to help creating testcases:
-* cflags: +d=xyz  
-  Will insert the text as arguments to omc.  
-  Useful if you e.g. want to disable compiling functions with gcc while you flatten code.  
+* cflags: +d=xyz
+  Will insert the text as arguments to omc.
+  Useful if you e.g. want to disable compiling functions with gcc while you flatten code.
   You can also set the environment variable RTEST_OMCFLAGS if you want to insert these flags for all commands you run.
-* setup_command: gcc ...  
+* setup_command: gcc ...
   Will execute the provided command before running omc.
   A command that builds an external "C" library should not name a compiler
   directly; use the variables rtest exports so the test also works for the
@@ -37,7 +37,7 @@ rtest special directives added to help creating testcases:
   at another toolchain. The wasm values are used when the target under test is
   wasm-jit (`OPENMODELICA_TEST_SIMCODETARGET` or `--simCodeTarget=` in
   `RTEST_OMCFLAGS`).
-* teardown_command: rm -f ...  
+* teardown_command: rm -f ...
   Will execute the provided command after running omc.
 * suite: metamodelica, 63bit
   Puts the test in one or more test suites, so that a run which cannot support
@@ -58,7 +58,7 @@ rtest special directives added to help creating testcases:
   Every test listed in a makefile outside `TESTFILES` carries this tag; keep the
   two in sync when a test is enabled or disabled.
 
-**NOTE**:  
+**NOTE**:
 A test MUST have the finishing "end ..." at the same indentation level as the "model ..." otherwise there will be a warning(perl -w rtest file) for the next test that are executed.
 
 NEVER do this:
@@ -84,8 +84,8 @@ Then perl is happy. (no warnings and errornously failed testcases).
 3. Add your test files (*.mo and *.mos) -> @TESTFILES
 4. Add any failing tests -> @FAILINGTESTFILES, and mark each of them with
    `// suite: disabled` in its header
-5. Add any other files that are needed (e.g. C files with external functions ...) at -> @DEPENDENCIES  
-   If you have many dependency files then add them to the directory and just run "make getdeps"  
+5. Add any other files that are needed (e.g. C files with external functions ...) at -> @DEPENDENCIES
+   If you have many dependency files then add them to the directory and just run "make getdeps"
    This will give you the list of files in 'deps.txt'. Copy the list it as it is.
 2. Add the folder
 
@@ -94,10 +94,10 @@ Then perl is happy. (no warnings and errornously failed testcases).
 
 The testsuite consists of modelica files (.mo) and modelica script files (.mos) in the directories mofiles and mosfiles.
 
-1. `make`  
+1. `make`
    Will make all tests that currently should pass. Use this before checking in.
 
-2. `rtest` in directory mofiles  
+2. `rtest` in directory mofiles
    Will run all tests in the directory, except the ones marked `// suite: disabled`.
    Add `-disabled` to run those too.
 

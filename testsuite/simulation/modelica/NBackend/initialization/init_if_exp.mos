@@ -16,11 +16,309 @@ setCommandLineOptions("-d=dumpSimCode"); getErrorString();
 simulate(init_if_exp); getErrorString();
 
 // Result:
-// Error processing file: init_if_exp.mos
-// [simulation/modelica/NBackend/initialization/init_if_exp.mos:52:1-52:1:writable] Error: Parser error: Unexpected token near: < (LESS)
+// true
+// ""
+// true
+// ""
+// #############################
 //
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
+//     SimCode (init_if_exp)
 //
-// Execution failed!
+// #############################
+// ============
+//   SimVars
+// ============
+// Algebraic Variables (2)
+// *************************
+//   (0)[ALGB] (1) Real u
+//   (1)[ALGB] (1) Real y
+//
+// Residual Variables (2)
+// ************************
+//   (0)[RES-] (1) Real $RES_SIM_0
+//   (1)[RES-] (1) Real $RES_SIM_1
+//
+// Initial Partition
+// -------------------
+//   (6) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{y}
+//   --(4) 0 = (-1.0) + (y + y ^ 2.0)
+//   (3) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{u}
+//   --(1) 0 = (u ^ 3.0 + u) - y
+//
+// Algebraic Partition 1
+// -----------------------
+//   (11) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{y, u}
+//   --(7) 0 = (u ^ 3.0 + u) - y
+//   --(8) 0 = (-1.0) + u
+//
+// Event Partition
+// -----------------
+//
+// ==========================================================
+//   SimCode Jacobian INI_NLS_JAC_1(idx = 1, partition = 1)
+// ==========================================================
+//
+// SeedVars (size = 1)
+// *********************
+//   (0)[SEED] (1) Real $SEED_ALG_LS_JAC_1.y
+//
+// TmpVars (size = 0)
+// ********************
+//
+// ResultVars (size = 1)
+// ***********************
+//
+// Column Equations (size = 1)
+// -----------------------------
+//   (5) $pDER_ALG_LS_JAC_1.$RES_SIM_1 := $SEED_ALG_LS_JAC_1.y + 2.0 * y * $SEED_ALG_LS_JAC_1.y
+//
+// Resizable Sparsity Pattern
+// ----------------------------
+// $RES_SIM_1 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_1} ... {($SEED_ALG_LS_JAC_1.y, {}, false)}
+//
+// ==========================================================
+//   SimCode Jacobian INI_NLS_JAC_2(idx = 0, partition = 0)
+// ==========================================================
+//
+// SeedVars (size = 1)
+// *********************
+//   (0)[SEED] (1) Real $SEED_ALG_LS_JAC_1.u
+//
+// TmpVars (size = 0)
+// ********************
+//
+// ResultVars (size = 1)
+// ***********************
+//
+// Column Equations (size = 1)
+// -----------------------------
+//   (2) $pDER_ALG_LS_JAC_1.$RES_SIM_0 := 3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.u
+//
+// Resizable Sparsity Pattern
+// ----------------------------
+// $RES_SIM_0 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_0} ... {($SEED_ALG_LS_JAC_1.u, {}, false)}
+//
+// =========================================================
+//   SimCode Jacobian ALG_LS_JAC_1(idx = 2, partition = 2)
+// =========================================================
+//
+// SeedVars (size = 2)
+// *********************
+//   (0)[SEED] (1) Real $SEED_ALG_LS_JAC_1.y
+//   (1)[SEED] (1) Real $SEED_ALG_LS_JAC_1.u
+//
+// TmpVars (size = 0)
+// ********************
+//
+// ResultVars (size = 2)
+// ***********************
+//
+// Column Equations (size = 2)
+// -----------------------------
+//   (10) $pDER_ALG_LS_JAC_1.$RES_SIM_0 := (3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.u) - $SEED_ALG_LS_JAC_1.y
+//   (9) $pDER_ALG_LS_JAC_1.$RES_SIM_1 := $SEED_ALG_LS_JAC_1.u
+//
+// Resizable Sparsity Pattern
+// ----------------------------
+// $RES_SIM_0 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_0} ... {($SEED_ALG_LS_JAC_1.y, {}, false), ($SEED_ALG_LS_JAC_1.u, {}, false)}
+// $RES_SIM_1 ... {$pDER_ALG_LS_JAC_1.$RES_SIM_1} ... {($SEED_ALG_LS_JAC_1.u, {}, false)}
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian A(idx = 3, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian B(idx = 5, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian C(idx = 6, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian D(idx = 7, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian F(idx = 8, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian H(idx = 9, partition = 0)
+// ======================================================
+//
+// ========================================================
+//   [EMPTY] SimCode Jacobian ADJ(idx = 4, partition = 0)
+// ========================================================
+//
+// =============================================================
+//   [EMPTY] SimCode Jacobian OPT_LFG(idx = 10, partition = 0)
+// =============================================================
+//
+// =============================================================
+//   [EMPTY] SimCode Jacobian OPT_MRF(idx = 11, partition = 0)
+// =============================================================
+//
+// ============================================================
+//   [EMPTY] SimCode Jacobian OPT_R0(idx = 12, partition = 0)
+// ============================================================
+//
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations:
+// ========================================
+//
+// 11:  (NONLINEAR) index:2 jacobian: true
+// crefs: y , u
+// 	7: u ^ 3.0 + u - y (RESIDUAL)
+// 	8: -1.0 + u (RESIDUAL)
+// 	Jacobian idx: 2
+// 	10: $pDER_ALG_LS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.y [Real]
+// 	9: $pDER_ALG_LS_JAC_1.$RES_SIM_1=$SEED_ALG_LS_JAC_1.u [Real]
+//
+//
+// ========================================
+//
+//
+//
+// odeEquations (0 systems):
+// ========================================
+// ========================================
+//
+//
+//
+// algebraicEquations (1 systems):
+// ========================================
+// 11:  (NONLINEAR) index:2 jacobian: true
+// crefs: y , u
+// 	7: u ^ 3.0 + u - y (RESIDUAL)
+// 	8: -1.0 + u (RESIDUAL)
+// 	Jacobian idx: 2
+// 	10: $pDER_ALG_LS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.y [Real]
+// 	9: $pDER_ALG_LS_JAC_1.$RES_SIM_1=$SEED_ALG_LS_JAC_1.u [Real]
+//
+//
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (2)
+// ========================================
+// 6:  (NONLINEAR) index:1 jacobian: true
+// crefs: y
+// 	4: -1.0 + y + y ^ 2.0 (RESIDUAL)
+// 	Jacobian idx: 1
+// 	5: $pDER_ALG_LS_JAC_1.$RES_SIM_1=$SEED_ALG_LS_JAC_1.y + 2.0 * y * $SEED_ALG_LS_JAC_1.y [Real]
+//
+//
+// 3:  (NONLINEAR) index:0 jacobian: true
+// crefs: u
+// 	1: u ^ 3.0 + u - y (RESIDUAL)
+// 	Jacobian idx: 0
+// 	2: $pDER_ALG_LS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.u [Real]
+//
+//
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (0)
+// ========================================
+//
+// removedInitialEquations:
+// ========================================
+//
+// startValueEquations:
+// ========================================
+//
+// nominalValueEquations:
+// ========================================
+//
+// minValueEquations:
+// ========================================
+//
+// maxValueEquations:
+// ========================================
+//
+// parameterEquations:
+// ========================================
+//
+// removedEquations:
+// ========================================
+//
+// algorithmAndEquationAsserts:
+// ========================================
+//
+// equationsForZeroCrossings:
+// ========================================
+//
+// generic calls:
+// ========================================
+//
+// jacobianEquations:
+// ========================================
+//
+// jacobianMatrices:
+// ========================================
+// 	Jacobian idx: 1
+// 	5: $pDER_ALG_LS_JAC_1.$RES_SIM_1=$SEED_ALG_LS_JAC_1.y + 2.0 * y * $SEED_ALG_LS_JAC_1.y [Real]
+//
+// 	Jacobian idx: 0
+// 	2: $pDER_ALG_LS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.u [Real]
+//
+// 	Jacobian idx: 2
+// 	10: $pDER_ALG_LS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.y [Real]
+// 	9: $pDER_ALG_LS_JAC_1.$RES_SIM_1=$SEED_ALG_LS_JAC_1.u [Real]
+//
+// 	Jacobian idx: 3
+//
+// 	Jacobian idx: 5
+//
+// 	Jacobian idx: 6
+//
+// 	Jacobian idx: 7
+//
+// 	Jacobian idx: 8
+//
+// 	Jacobian idx: 9
+//
+// 	Jacobian idx: 4
+//
+// 	Jacobian idx: 10
+//
+// 	Jacobian idx: 11
+//
+// 	Jacobian idx: 12
+//
+//
+// modelInfo:
+// ========================================
+// algVars (2)
+// ----------------------
+// index:0: u (no alias)  initial: 	no arrCref index:(1) []
+// index:1: y (no alias)  initial: 	no arrCref index:(2) []
+// functions:
+// -----------
+//
+// record SimulationResult
+//     resultFile = "init_if_exp_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'init_if_exp', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
 // endResult

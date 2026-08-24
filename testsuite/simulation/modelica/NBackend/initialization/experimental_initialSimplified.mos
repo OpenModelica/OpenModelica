@@ -89,10 +89,6 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // Algebraic Partition 1
 // -----------------------
-<<<<<<< HEAD
-//   (20) y2 := y_fix
-//   (19) Alias of 11
-=======
 //   (31) Nonlinear System (size = 6, homotopy = true, mixed = false, torn = true)
 //   --Iteration Vars:{$FUN_3, u, y2, $FUN_2, y1, $FUN_1}
 //   --(19) 0 = sin(1e-6 * u) - $FUN_3
@@ -101,24 +97,10 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //   --(22) 0 = sqrt(y1) - $FUN_2
 //   --(23) 0 = (u ^ 3.0 + $FUN_1) - y1
 //   --(24) 0 = sin(u) - $FUN_1
->>>>>>> master
 //
 // Event Partition
 // -----------------
 //
-<<<<<<< HEAD
-// ============================================================
-//   SimCode Jacobian INI_NLS_JAC_1_0(idx = 0, partition = 0)
-// ============================================================
-//
-// SeedVars (size = 5)
-// *********************
-//   (0)[SEED] (1) Real $SEED_INI_NLS_JAC_1_0.u
-//   (1)[SEED] (1) Real $SEED_INI_NLS_JAC_1_0.$FUN_3
-//   (2)[SEED] (1) Real $SEED_INI_NLS_JAC_1_0.$FUN_2
-//   (3)[SEED] (1) Real $SEED_INI_NLS_JAC_1_0.y1
-//   (4)[SEED] (1) Real $SEED_INI_NLS_JAC_1_0.$FUN_1
-=======
 // =========================================================
 //   SimCode Jacobian INI_LS_JAC_1(idx = 0, partition = 0)
 // =========================================================
@@ -130,7 +112,6 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //   (2)[SEED] (1) Real $SEED_ALG_LS_JAC_1.$FUN_2
 //   (3)[SEED] (1) Real $SEED_ALG_LS_JAC_1.y1
 //   (4)[SEED] (1) Real $SEED_ALG_LS_JAC_1.$FUN_1
->>>>>>> master
 //
 // TmpVars (size = 0)
 // ********************
@@ -140,80 +121,6 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // Column Equations (size = 5)
 // -----------------------------
-<<<<<<< HEAD
-//   (10) $pDER_INI_NLS_JAC_1_0.$RES_AUX_5 := cos(1e-6 * u) * (1e-6 * $SEED_INI_NLS_JAC_1_0.u) - $SEED_INI_NLS_JAC_1_0.$FUN_3
-//   (9) $pDER_INI_NLS_JAC_1_0.$RES_SIM_0 := $SEED_INI_NLS_JAC_1_0.$FUN_2 + $SEED_INI_NLS_JAC_1_0.$FUN_3
-//   (8) $pDER_INI_NLS_JAC_1_0.$RES_AUX_6 := (0.5 / y1 ^ 0.5) * $SEED_INI_NLS_JAC_1_0.y1 - $SEED_INI_NLS_JAC_1_0.$FUN_2
-//   (7) $pDER_INI_NLS_JAC_1_0.$RES_SIM_1 := (3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1_0.u + $SEED_INI_NLS_JAC_1_0.$FUN_1) - $SEED_INI_NLS_JAC_1_0.y1
-//   (6) $pDER_INI_NLS_JAC_1_0.$RES_AUX_7 := cos(u) * $SEED_INI_NLS_JAC_1_0.u - $SEED_INI_NLS_JAC_1_0.$FUN_1
-//
-// Sparsity Pattern Cols
-// ***********************
-//   0:	{0, 1}
-//   1:	{1, 2}
-//   2:	{2, 3}
-//   3:	{0, 3, 4}
-//   4:	{0, 4}
-//
-// Sparsity Pattern Rows
-// ***********************
-//   0:	{0, 3, 4}
-//   1:	{0, 1}
-//   2:	{1, 2}
-//   3:	{2, 3}
-//   4:	{3, 4}
-//
-// Sparsity Coloring Columns
-// ***************************
-//   {2, 0}
-//   {3, 1}
-//   {4}
-//
-// Sparsity Coloring Rows
-// ************************
-//   {2, 0}
-//   {3, 1}
-//   {4}
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian A(idx = 1, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian B(idx = 3, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian C(idx = 4, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian D(idx = 5, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian F(idx = 6, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian H(idx = 7, partition = 0)
-// ======================================================
-//
-// ========================================================
-//   [EMPTY] SimCode Jacobian ADJ(idx = 2, partition = 0)
-// ========================================================
-//
-// ============================================================
-//   [EMPTY] SimCode Jacobian OPT_LFG(idx = 8, partition = 0)
-// ============================================================
-//
-// ============================================================
-//   [EMPTY] SimCode Jacobian OPT_MRF(idx = 9, partition = 0)
-// ============================================================
-//
-// ============================================================
-//   [EMPTY] SimCode Jacobian OPT_R0(idx = 10, partition = 0)
-=======
 //   (10) $pDER_ALG_LS_JAC_1.$RES_AUX_5 := cos(1e-6 * u) * (1e-6 * $SEED_ALG_LS_JAC_1.u) - $SEED_ALG_LS_JAC_1.$FUN_3
 //   (9) $pDER_ALG_LS_JAC_1.$RES_SIM_0 := $SEED_ALG_LS_JAC_1.$FUN_2 + $SEED_ALG_LS_JAC_1.$FUN_3
 //   (8) $pDER_ALG_LS_JAC_1.$RES_AUX_6 := (0.5 / y1 ^ 0.5) * $SEED_ALG_LS_JAC_1.y1 - $SEED_ALG_LS_JAC_1.$FUN_2
@@ -303,7 +210,6 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // ============================================================
 //   [EMPTY] SimCode Jacobian OPT_R0(idx = 11, partition = 0)
->>>>>>> master
 // ============================================================
 //
 //
@@ -316,10 +222,6 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // allEquations:
 // ========================================
 //
-<<<<<<< HEAD
-// 20: y2=y_fix [Real]
-// 19: alias of 11
-=======
 // 31:  (NONLINEAR) index:1 jacobian: true
 // crefs: $FUN_3 , u , y2 , $FUN_2 , y1 , $FUN_1
 // 	19: sin(1e-6 * u) - $FUN_3 (RESIDUAL)
@@ -337,7 +239,6 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // 	25: $pDER_ALG_LS_JAC_1.$RES_AUX_7=cos(u) * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_1 [Real]
 //
 //
->>>>>>> master
 // ========================================
 //
 //
@@ -350,10 +251,6 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // algebraicEquations (1 systems):
 // ========================================
-<<<<<<< HEAD
-// 20: y2=y_fix [Real]
-// 19: alias of 11
-=======
 // 31:  (NONLINEAR) index:1 jacobian: true
 // crefs: $FUN_3 , u , y2 , $FUN_2 , y1 , $FUN_1
 // 	19: sin(1e-6 * u) - $FUN_3 (RESIDUAL)
@@ -371,7 +268,6 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // 	25: $pDER_ALG_LS_JAC_1.$RES_AUX_7=cos(u) * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_1 [Real]
 //
 //
->>>>>>> master
 // ========================================
 //
 //
@@ -392,19 +288,11 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // 	4: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
 // 	5: sin(u) - $FUN_1 (RESIDUAL)
 // 	Jacobian idx: 0
-<<<<<<< HEAD
-// 	10: $pDER_INI_NLS_JAC_1_0.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_INI_NLS_JAC_1_0.u - $SEED_INI_NLS_JAC_1_0.$FUN_3 [Real]
-// 	9: $pDER_INI_NLS_JAC_1_0.$RES_SIM_0=$SEED_INI_NLS_JAC_1_0.$FUN_2 + $SEED_INI_NLS_JAC_1_0.$FUN_3 [Real]
-// 	8: $pDER_INI_NLS_JAC_1_0.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_INI_NLS_JAC_1_0.y1 - $SEED_INI_NLS_JAC_1_0.$FUN_2 [Real]
-// 	7: $pDER_INI_NLS_JAC_1_0.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1_0.u + $SEED_INI_NLS_JAC_1_0.$FUN_1 - $SEED_INI_NLS_JAC_1_0.y1 [Real]
-// 	6: $pDER_INI_NLS_JAC_1_0.$RES_AUX_7=cos(u) * $SEED_INI_NLS_JAC_1_0.u - $SEED_INI_NLS_JAC_1_0.$FUN_1 [Real]
-=======
 // 	10: $pDER_ALG_LS_JAC_1.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_3 [Real]
 // 	9: $pDER_ALG_LS_JAC_1.$RES_SIM_0=$SEED_ALG_LS_JAC_1.$FUN_2 + $SEED_ALG_LS_JAC_1.$FUN_3 [Real]
 // 	8: $pDER_ALG_LS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_ALG_LS_JAC_1.y1 - $SEED_ALG_LS_JAC_1.$FUN_2 [Real]
 // 	7: $pDER_ALG_LS_JAC_1.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.$FUN_1 - $SEED_ALG_LS_JAC_1.y1 [Real]
 // 	6: $pDER_ALG_LS_JAC_1.$RES_AUX_7=cos(u) * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_1 [Real]
->>>>>>> master
 //
 //
 // ========================================
@@ -452,22 +340,10 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // jacobianEquations:
 // ========================================
-// 25: $pDER_INI_NLS_JAC_1_0.$RES_AUX_7=cos(u) * $SEED_INI_NLS_JAC_1_0.u - $SEED_INI_NLS_JAC_1_0.$FUN_1 [Real]
-// 24: $pDER_INI_NLS_JAC_1_0.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1_0.u + $SEED_INI_NLS_JAC_1_0.$FUN_1 - $SEED_INI_NLS_JAC_1_0.y1 [Real]
-// 23: $pDER_INI_NLS_JAC_1_0.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_INI_NLS_JAC_1_0.y1 - $SEED_INI_NLS_JAC_1_0.$FUN_2 [Real]
-// 22: $pDER_INI_NLS_JAC_1_0.$RES_SIM_0=$SEED_INI_NLS_JAC_1_0.$FUN_2 + $SEED_INI_NLS_JAC_1_0.$FUN_3 [Real]
-// 21: $pDER_INI_NLS_JAC_1_0.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_INI_NLS_JAC_1_0.u - $SEED_INI_NLS_JAC_1_0.$FUN_3 [Real]
 //
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
-<<<<<<< HEAD
-// 	10: $pDER_INI_NLS_JAC_1_0.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_INI_NLS_JAC_1_0.u - $SEED_INI_NLS_JAC_1_0.$FUN_3 [Real]
-// 	9: $pDER_INI_NLS_JAC_1_0.$RES_SIM_0=$SEED_INI_NLS_JAC_1_0.$FUN_2 + $SEED_INI_NLS_JAC_1_0.$FUN_3 [Real]
-// 	8: $pDER_INI_NLS_JAC_1_0.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_INI_NLS_JAC_1_0.y1 - $SEED_INI_NLS_JAC_1_0.$FUN_2 [Real]
-// 	7: $pDER_INI_NLS_JAC_1_0.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_INI_NLS_JAC_1_0.u + $SEED_INI_NLS_JAC_1_0.$FUN_1 - $SEED_INI_NLS_JAC_1_0.y1 [Real]
-// 	6: $pDER_INI_NLS_JAC_1_0.$RES_AUX_7=cos(u) * $SEED_INI_NLS_JAC_1_0.u - $SEED_INI_NLS_JAC_1_0.$FUN_1 [Real]
-=======
 // 	10: $pDER_ALG_LS_JAC_1.$RES_AUX_5=cos(1e-6 * u) * 1e-6 * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_3 [Real]
 // 	9: $pDER_ALG_LS_JAC_1.$RES_SIM_0=$SEED_ALG_LS_JAC_1.$FUN_2 + $SEED_ALG_LS_JAC_1.$FUN_3 [Real]
 // 	8: $pDER_ALG_LS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_ALG_LS_JAC_1.y1 - $SEED_ALG_LS_JAC_1.$FUN_2 [Real]
@@ -481,9 +357,8 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // 	27: $pDER_ALG_LS_JAC_1.$RES_AUX_6=0.5 / y1 ^ 0.5 * $SEED_ALG_LS_JAC_1.y1 - $SEED_ALG_LS_JAC_1.$FUN_2 [Real]
 // 	26: $pDER_ALG_LS_JAC_1.$RES_SIM_1=3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.$FUN_1 - $SEED_ALG_LS_JAC_1.y1 [Real]
 // 	25: $pDER_ALG_LS_JAC_1.$RES_AUX_7=cos(u) * $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.$FUN_1 [Real]
->>>>>>> master
 //
-// 	Jacobian idx: 1
+// 	Jacobian idx: 2
 //
 // 	Jacobian idx: 4
 //
@@ -493,8 +368,6 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // 	Jacobian idx: 7
 //
-// 	Jacobian idx: 2
-//
 // 	Jacobian idx: 8
 //
 // 	Jacobian idx: 3
@@ -503,11 +376,8 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // 	Jacobian idx: 10
 //
-<<<<<<< HEAD
-=======
 // 	Jacobian idx: 11
 //
->>>>>>> master
 //
 // modelInfo:
 // ========================================

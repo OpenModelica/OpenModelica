@@ -19,11 +19,10 @@ setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolic --tearing
 buildModel(tornNLSJacobianRows); getErrorString();
 
 // Result:
-// Error processing file: tornNLSJacobianRows.mos
-// [simulation/modelica/NBackend/differentation/tornNLSJacobianRows.mos:26:1-26:1:writable] Error: Parser error: Unexpected token near: < (LESS)
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// true
+// ""
+// true
+// ""
+// {"tornNLSJacobianRows", "tornNLSJacobianRows_init.xml"}
+// ""
 // endResult
