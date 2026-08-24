@@ -791,15 +791,13 @@ def getQtMajorVersion(qtVersion) {
 // and the OMEdit tests are CTest tests whose registered command lines hold
 // absolute paths into the build tree — so building them on one agent and running
 // them on another (which is what the old stash/unstash split did) is not safe.
-// ccache keeps the rebuild cheap.
+// So each of these two stages does a full, uncached build of omc.
 //
 // @param qtVersion 'qt5' or 'qt6'.
 void buildGUI(qtVersion) {
   buildOMC([
-    // RelWithDebInfo, not Release: OMEdit's crash report shells out to gdb
-    // (CrashReport/GDBBacktrace.cpp — the in-process backtrace.c is _WIN32-only),
-    // and without -g that backtrace has no line numbers. The qmake build used to
-    // add -g to release builds for exactly this reason.
+    "-DOM_USE_CCACHE=OFF",
+    // RelWithDebInfo: OMEdit's crash report shells out to gdb and prints line number
     "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
     "-DCMAKE_INSTALL_PREFIX=build",
     "-DCMAKE_C_COMPILER=clang",
