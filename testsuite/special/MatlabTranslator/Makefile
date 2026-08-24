@@ -1,16 +1,18 @@
-OMC = ../../../build/bin/omc
+OMC := $(shell test -e ../../../build/install_cmake/bin/omc && echo ../../../build/install_cmake/bin/omc \
+               || echo ../../../build_cmake/install_cmake/bin/omc )
+OMC := $(shell realpath $(OMC))
+
+OMC_GENERATED_MO_DIR := $(shell test -e ../../../build_cmake/OMCompiler/Compiler/generated-mo/Template/AbsynDumpTpl.mo && echo ../../../build_cmake/OMCompiler/Compiler/generated-mo \
+                                || echo ../../../build/OMCompiler/Compiler/generated-mo)
+OMC_GENERATED_MO_DIR := $(shell realpath $(OMC_GENERATED_MO_DIR))
 
 test:
 	@echo Running MatlabTranslator
-	@$(OMC) SCRIPT.mos 
-	
+	@OMC_GENERATED_MO_DIR=$(OMC_GENERATED_MO_DIR) $(OMC) SCRIPT.mos
+
 parser:
 	@echo Genereating lexer and parser components
-	@$(OMC) OMCC.mos 
-	
-
-GEN_FILES=LexerModelica.mo LexTableModelica.mo LexerCodeModelica.mo ParserModelica.mo ParseTableModelica.mo ParseCodeModelica.mo TokenModelica.mo
-
+	@$(OMC) OMCC.mos
 
 DEPENDENCIES = \
 *.mo \
@@ -21,12 +23,11 @@ lexerModelica.l \
 parserModelica.y \
 ParseCode.tmo \
 LexerCode.tmo \
-Makefile 
-	
+Makefile
+
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
-# Cleans all files that are not listed as dependencies 
+# Cleans all files that are not listed as dependencies
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
 	@rm -f $(CLEAN)
-
