@@ -5,7 +5,6 @@ def shouldWeBuildEnterpriseLinux
 def shouldWeBuildFedora
 def shouldWeEnableMacOSCMakeBuild
 def shouldWeBuildWindows
-def shouldWeDisableAllCMakeBuilds
 def shouldWeRunTests
 def shouldWeRunRustTests
 
@@ -65,29 +64,7 @@ pipeline {
     stage('setup') {
       parallel {
         // Linux build stages
-        stage('gcc') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args '''
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
-            }
-          }
-          environment {
-            QTDIR = "/usr/lib/qt4"
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script { common.buildGccOMC() }
-          }
-        }
-        stage('clang') {
+        stage('jammy-clang') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -106,7 +83,7 @@ pipeline {
             script { common.buildClangOMC() }
           }
         }
-        stage('cmake-jammy-gcc') {
+        stage('jammy-gcc') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -122,10 +99,10 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.buildCMakeGccOMC() }
+            script { common.buildGccOMC() }
           }
         }
-        stage('cmake-alpine-clang') {
+        stage('alpine-clang') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:alpine-3.24'
@@ -146,16 +123,11 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-DOM_USE_CCACHE=OFF",
-                "-DCMAKE_INSTALL_PREFIX=build",
-                "-DCMAKE_C_COMPILER=clang",
-                "-DCMAKE_CXX_COMPILER=clang++"])
+              common.buildClangOMC()
             }
           }
         }
-        stage('cmake-enterprise-linux-gcc') {
+        stage('enterprise-linux-gcc') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:almalinux-10'
@@ -176,7 +148,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
+              common.buildOMC([
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOM_USE_CCACHE=OFF",
                 "-DCMAKE_INSTALL_PREFIX=build",
@@ -187,7 +159,7 @@ pipeline {
             }
           }
         }
-        stage('cmake-fedora-gcc') {
+        stage('fedora-gcc') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:fedora-44'
@@ -208,18 +180,13 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-DOM_USE_CCACHE=OFF",
-                "-DCMAKE_INSTALL_PREFIX=build",
-                "-DCMAKE_C_COMPILER=gcc",
-                "-DCMAKE_CXX_COMPILER=g++"])
+              common.buildGccOMC()
             }
           }
         }
 
         // macOS build stages
-        stage('cmake-macos-arm64-gcc') {
+        stage('macos-arm64-gcc') {
           agent {
             node {
               label 'M1'
@@ -234,7 +201,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
+              common.buildOMC([
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DOM_USE_CCACHE=OFF",
                 "-DCMAKE_INSTALL_PREFIX=build",
@@ -249,7 +216,7 @@ pipeline {
         }
 
         // Windows build stages
-        stage('cmake-OMDev-gcc') {
+        stage('OMDev-gcc') {
           agent {
             node {
               label 'windows-no-release'
@@ -264,7 +231,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake([
+              common.buildOMC([
                 '-DCMAKE_BUILD_TYPE=Release',
                 '-DCMAKE_INSTALL_PREFIX=build',
                 '-G "MSYS Makefiles"'])
@@ -274,7 +241,7 @@ pipeline {
 
         // The Rust (mmtorust) omc port, GUI off; the GUI is built in parallel
         // with the tests by the 'build-gui-rust' stage. See common.buildRustOMC().
-        stage('cmake-rust-clang') {
+        stage('rust-clang') {
           agent {
             docker {
               alwaysPull true
@@ -363,7 +330,7 @@ pipeline {
           }
         }
 
-        stage('04 testsuite-cmake-gcc 1/3') {
+        stage('04 testsuite-gcc 1/3') {
           agent {
             label 'linux'
           }
@@ -382,13 +349,13 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestCMakeStashed('omc-cmake-gcc', 1, 3)
+                common.partestStashed('omc-gcc', 1, 3)
               }
             }
           }
         }
 
-        stage('05 testsuite-cmake-gcc 2/3') {
+        stage('05 testsuite-gcc 2/3') {
           agent {
             label 'linux'
           }
@@ -407,13 +374,13 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestCMakeStashed('omc-cmake-gcc', 2, 3)
+                common.partestStashed('omc-gcc', 2, 3)
               }
             }
           }
         }
 
-        stage('06 testsuite-cmake-gcc 3/3') {
+        stage('06 testsuite-gcc 3/3') {
           agent {
             label 'linux'
           }
@@ -432,7 +399,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
-                common.partestCMakeStashed('omc-cmake-gcc', 3, 3)
+                common.partestStashed('omc-gcc', 3, 3)
               }
             }
           }
@@ -514,7 +481,7 @@ pipeline {
         }
 
         // The WebAssembly/web bundle, embedding the wasm-jit runtime built by
-        // the cmake-rust-clang stage (OM_OMC_WASM forces the Rust port and a
+        // the rust-clang stage (OM_OMC_WASM forces the Rust port and a
         // wasm32 build of just the browser/Node deliverable).
         stage('10 web target') {
           agent {
@@ -693,7 +660,7 @@ pipeline {
           }
         }
 
-        stage('16 build-gui-clang-qt5') {
+        stage('16 build-gui-clang-qt5 + omedit-testsuite') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
@@ -702,11 +669,18 @@ pipeline {
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
             }
           }
+          environment {
+            // makeLibsAndCache() only reads runtest.db from RUNTESTDB (and
+            // tolerates it being absent); the omlibrary cache is the one that
+            // matters here, so no runtest volume is mounted.
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
           options {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.buildGUIAndStash('omc-clang', 'qt5', 'omedit-testsuite-clang-qt5') }
+            script { common.buildGUI('qt5') }
           }
         }
 
@@ -723,7 +697,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
-            script { common.buildGUIAndStash('omc-clang', 'qt6', 'omedit-testsuite-clang-qt6') }
+            script { common.buildGUI('qt6') }
           }
         }
 
@@ -845,7 +819,7 @@ pipeline {
         }
       }
     }
-    stage('FMPy + OMEdit testsuite') {
+    stage('FMPy') {
       parallel {
         // Merge stages 10 + 10b into the published web zip.
         stage('assemble-web') {
@@ -880,50 +854,6 @@ pipeline {
           }
           steps {
             script { common.fmpyLinux() }
-          }
-        }
-        stage('clang-qt5-omedit-testsuite') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt5', 'qt5')
-            }
-          }
-        }
-        stage('clang-qt6-omedit-testsuite') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          options {
-            retry(count: 2, conditions: [nonresumable()])
-          }
-          steps {
-            script {
-              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt6', 'qt6')
-            }
           }
         }
       }
@@ -1038,5 +968,5 @@ pipeline {
 
 /* Note: If getting "Unexpected end of /proc/mounts line" , flatten the docker image:
  * https://stackoverflow.com/questions/46138549/docker-openmpi-and-unexpected-end-of-proc-mounts-line
- * Or use a newer OS image with fixed hwloc, or disable hwloc in the configure script
+ * Or use a newer OS image with fixed hwloc.
  */

@@ -42,6 +42,21 @@ All commits should adhere to the following simple guidelines (the Jenkins job ch
 * For OpenModelica-testsuite: Any added or modified reference file needs to use [filterSimulationResults](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/scripting_api.html#filtersimulationresults) to create a file with a minimal number of trajectories and output points in order to reduce the file size. It is often possible to reduce a file from 20MB to 10kB without significant losses.
 * Use short lines in commit messages in order for github and git tools to display properly in terminal / web GUI.
 
+## Git hooks
+
+`common/` ships two hooks that check the last two guidelines above for you. The
+removed `configure` script used to install them; install them by hand with:
+
+```bash
+cd OpenModelica
+ln -s "$PWD/common/pre-commit.sh" "$(git rev-parse --git-dir)/hooks/pre-commit"
+ln -s "$PWD/common/commit-msg.sh" "$(git rev-parse --git-dir)/hooks/commit-msg"
+```
+
+`pre-commit.sh` strips trailing whitespace from the lines you are committing, and
+`commit-msg.sh` enforces the 50/72 commit-message layout. Bypass either with
+`git commit --no-verify`.
+
 ## Working with the OpenModelica/OMCompiler/3rdParty submodule
 
 If you need to make changes to OMCompiler-3rdParty the procedure is as follows:

@@ -72,8 +72,8 @@ if(WIN32)
     endif()
   endif()
 endif()
-# Build dir first: it holds the CMake-generated omc_config.unix.h (the source dir
-# may hold the autotools build's copy); source dir provides omc_config.h itself.
+# Build dir first: it holds the CMake-generated omc_config.unix.h (a stale copy
+# may linger in the source dir); source dir provides omc_config.h itself.
 target_include_directories(omc_config INTERFACE ${OMCompiler_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 
