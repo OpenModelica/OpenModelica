@@ -14,12 +14,17 @@ default = ["std"]
 # Host builds enable `std` (native + the wasm32 web omc, both have std). The
 # in-wasm runtime builds `no_std` (`default-features = false`), where the solver
 # math routes through `libm` and daskr is `no_std` too.
-std = ["daskr/std"]
+std = ["daskr/std", "openmodelica_solvers/std"]
 # Compile the CVODE/IDA driver paths without linking an archive: the symbols stay
 # undefined and become wasm imports the FMI3 adapter resolves at FMU-link time.
-sundials_extern = []
+sundials_extern = ["openmodelica_solvers/sundials_extern"]
 
 [dependencies]
+# The engine-independent solvers (gbode, the fixed-step ones, SUNDIALS), driven
+# through `openmodelica_solvers::Ode`, which `driver::EngineOde` implements over
+# a model in wasm linear memory. Their modules are re-exported from this crate's
+# root, so `sim_meta::gbode` and friends still name them.
+openmodelica_solvers = { path = "../openmodelica_solvers", default-features = false }
 # The DAE solver for the DASSL driver. no_std-capable; the host pulls its `std`
 # feature via this crate's `std`.
 daskr = { path = "../daskr", default-features = false }

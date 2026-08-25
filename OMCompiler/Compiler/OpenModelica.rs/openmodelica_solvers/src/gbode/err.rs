@@ -7,7 +7,7 @@ use alloc::vec::Vec;
 
 use super::tableau::{ErrMethod, Estimator};
 use super::{Gbode, Ode};
-use crate::driver::Result;
+use crate::Result;
 use crate::gbode::math::{abs, pow};
 
 /// C's `MAX_GBODE_FIRK_STAGES`: the two-step estimator's weight tables only go
@@ -18,7 +18,7 @@ impl Gbode {
     /// C's `gbEstimateError`: run the active estimator and record its order as the
     /// one the controller works with. `None` ⇒ the estimator failed and the step
     /// must be rejected.
-    pub(super) fn estimate_error(&mut self, ode: &mut Ode) -> Result<Option<i32>> {
+    pub(super) fn estimate_error(&mut self, ode: &mut dyn Ode) -> Result<Option<i32>> {
         let active = self.tableau.active;
         let order = self.evaluate_error(ode, Some(active))?;
         if let Some(order) = order {
@@ -30,7 +30,7 @@ impl Gbode {
     /// C's `evaluateError`, dispatching on the estimator kind.
     fn evaluate_error(
         &mut self,
-        ode: &mut Ode,
+        ode: &mut dyn Ode,
         estimator: Option<Estimator>,
     ) -> Result<Option<i32>> {
         let Some(est) = estimator else { return Ok(None) };
@@ -145,7 +145,7 @@ impl Gbode {
     }
 
     /// C's `gbContractiveDefectErrorEstimator`.
-    fn contractive_defect_estimate(&mut self, ode: &mut Ode) -> Result<()> {
+    fn contractive_defect_estimate(&mut self, ode: &mut dyn Ode) -> Result<()> {
         let n = self.n_states;
         let n_stages = self.tableau.n_stages;
         // C reuses `kRight` of the previous step as `f(t_n, y_n)` when the method

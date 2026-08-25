@@ -4,11 +4,11 @@
 //! driver leaves root finding to it.
 
 use super::{Gbode, Ode, MINIMAL_STEP_SIZE};
-use crate::driver::Result;
+use crate::Result;
 use crate::gbode::math::abs;
 
 impl Gbode {
-    fn zc_at(&mut self, ode: &mut Ode, t: f64) -> Result<()> {
+    fn zc_at(&mut self, ode: &mut dyn Ode, t: f64) -> Result<()> {
         let n = self.n_states;
         let mut y = vec![0.0; n];
         self.interpolate_step(t, &mut y);
@@ -26,19 +26,24 @@ impl Gbode {
 
     /// C's `checkZeroCrossings`: does one of the crossings we are hunting flip
     /// between `zc_pre` and `zc`? (i.e. is the root in the left half?)
+    ///
+    /// C compares against the ±1 its zero-crossing functions emit; comparing the
+    /// signs instead is the same test for those and the one that also works for
+    /// a model whose crossings are the relation's own value, as an FMU's event
+    /// indicators are.
     fn crossing_in_left(&self) -> bool {
         self.event_ids.iter().any(|&i| {
-            (self.zc[i] == -1.0 && self.zc_pre[i] == 1.0)
-                || (self.zc[i] == 1.0 && self.zc_pre[i] == -1.0)
+            let (a, b) = (sign(self.zc[i]), sign(self.zc_pre[i]));
+            (a == -1 && b == 1) || (a == 1 && b == -1)
         })
     }
 
     /// C's `bisection_gb` + `findRoot_gb`: narrow `[a, b]` down to the first event
     /// in the interval and return its time (C returns the right end of the final
     /// bracket, so the event is not missed).
-    fn find_root(&mut self, ode: &mut Ode, mut a: f64, mut b: f64) -> Result<f64> {
+    fn find_root(&mut self, ode: &mut dyn Ode, mut a: f64, mut b: f64) -> Result<f64> {
         let ttol = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE * abs(b - a);
-        let mut n = crate::driver::bisection_iterations(b - a, ttol);
+        let mut n = crate::bisection_iterations(b - a, ttol);
         self.zc_backup.copy_from_slice(&self.zc);
         while abs(b - a) > MINIMAL_STEP_SIZE && n > 0 {
             n -= 1;
@@ -59,7 +64,7 @@ impl Gbode {
     /// C's `checkForEvents`: evaluate the crossings at the right end of the
     /// accepted step and, if any flipped, bisect for the first one. Leaves
     /// `zc_pre` holding the values it was called with.
-    pub(super) fn check_for_events(&mut self, ode: &mut Ode) -> Result<Option<f64>> {
+    pub(super) fn check_for_events(&mut self, ode: &mut dyn Ode) -> Result<Option<f64>> {
         if self.zc.is_empty() {
             return Ok(None);
         }
@@ -89,7 +94,7 @@ impl Gbode {
 
     /// Latch the crossing values at `(t, y)` as the base later steps compare
     /// against, C's `saveZeroCrossings`.
-    pub(super) fn latch_crossings_at(&mut self, ode: &mut Ode, t: f64, y: &[f64]) -> Result<()> {
+    pub(super) fn latch_crossings_at(&mut self, ode: &mut dyn Ode, t: f64, y: &[f64]) -> Result<()> {
         if self.zc.is_empty() {
             return Ok(());
         }

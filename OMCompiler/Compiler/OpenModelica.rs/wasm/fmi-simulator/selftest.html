@@ -1,0 +1,88 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>FMI driver self-test</title>
+<!--
+  Runs an FMU through the driver without any of the page's interface, so the
+  browser half can be checked from a script:
+
+      selftest.html?fmu=<url>&interface=me|cs&stop=<time>
+
+  It prints one line per step and ends with `SELFTEST ok` or `SELFTEST failed`.
+  The outcome is also requested from the server as `/__selftest?...`, so a
+  headless run can read it out of the server's log without a debugger.
+-->
+<style>body { font: 13px ui-monospace, monospace; padding: 1rem; } .fail { color: #b00; }</style>
+<pre id="out"></pre>
+<script type="module">
+import { Session } from './session.js';
+
+const out = document.getElementById('out');
+const report = (status, detail) =>
+  fetch(`/__selftest?status=${status}&detail=${encodeURIComponent(detail)}`).catch(() => {});
+
+const say = (text, cls = '') => {
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = text;
+  out.appendChild(line);
+  console.log(text);
+};
+
+const params = new URLSearchParams(location.search);
+const url = params.get('fmu');
+const kind = params.get('interface') || 'cs';
+const stop = params.get('stop') ? Number(params.get('stop')) : undefined;
+
+let batches = 0;
+const session = new Session({
+  onLog: (tag, text) => say(`  [${tag}] ${text}`),
+  onProgress: () => {},
+  onSamples: () => { batches++; },
+});
+
+try {
+  if (!url) throw new Error('no ?fmu= given');
+  const archive = await (await fetch(url)).arrayBuffer();
+  say(`loading ${url}`);
+  const info = await session.load(archive);
+  say(`FMI ${info.fmiVersion} ${info.modelName}: ${info.numberOfContinuousStates} states, ` +
+      `${info.numberOfEventIndicators} event indicators, ${info.variables.length} variables`);
+
+  const t0 = performance.now();
+  const result = await session.run({ interface: kind, stopTime: stop });
+  const ms = Math.round(performance.now() - t0);
+  say(`${kind}: ${result.rows} rows, ${result.columns.length} columns in ${ms} ms`);
+  say(`summary ${JSON.stringify(result.summary)}`);
+  const last = (i) => result.values[(result.rows - 1) * result.stride + i + 1];
+  for (const [i, c] of result.columns.slice(0, 4).entries()) say(`  ${c.name} = ${last(i)}`);
+
+  say(`live sample batches: ${batches}`);
+
+  // Cancelling: ask a long run to stop and check it comes back with what it
+  // had. Without shared memory there is nothing to ask through, so the check
+  // only runs where the page is cross-origin isolated.
+  if (session.cancel !== undefined && typeof SharedArrayBuffer === 'function') {
+    const long = session.run({ interface: kind, stopTime: (stop ?? 1) * 200 });
+    setTimeout(() => session.cancel(), 400);
+    const stopped = await long;
+    say(`cancelled after ${stopped.rows} rows (cancelled=${stopped.summary.cancelled})`);
+    if (!stopped.summary.cancelled) throw new Error('the run did not stop when asked');
+    // The FMU is still loaded: another run must work.
+    const again = await session.run({ interface: kind, stopTime: stop });
+    say(`after cancelling: ${again.rows} rows`);
+    if (!again.rows) throw new Error('the FMU was lost when the run was cancelled');
+  }
+
+  const mat = await session.mat('/selftest_res.mat');
+  say(`result file: ${mat ? mat.length + ' bytes' : 'not written'}`);
+  if (!result.rows) throw new Error('the run produced no samples');
+  if (!mat || mat.length < 100) throw new Error('the result file is missing or too small');
+  say('SELFTEST ok');
+  await report('ok', `${result.rows} rows, ${batches} live batches, ` +
+    `cancel ${typeof SharedArrayBuffer === 'function' ? 'checked' : 'not checked (no shared memory)'}, ` +
+    JSON.stringify(result.summary));
+} catch (e) {
+  say(`SELFTEST failed: ${e.message}`, 'fail');
+  await report('failed', e.message);
+}
+</script>

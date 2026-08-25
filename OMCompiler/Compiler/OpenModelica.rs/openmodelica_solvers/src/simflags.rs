@@ -967,7 +967,7 @@ pub fn hom_tuning(f: &SimFlags) -> HomTuning {
 /// C's `simulation_runtime.cpp` startup notices for the flags that move a solver
 /// constant, in its order. Rendered by the caller, which owns the run's log.
 pub fn notices(f: &SimFlags) -> Vec<(crate::omclog::LogType, String)> {
-    let g = |v: f64| crate::driver::format_g(v, 6);
+    let g = |v: f64| crate::format_g(v, 6);
     let ff = |v: f64| crate::omclog::f(v, 0, 6);
     let mut out = Vec::new();
     for (name, v) in [

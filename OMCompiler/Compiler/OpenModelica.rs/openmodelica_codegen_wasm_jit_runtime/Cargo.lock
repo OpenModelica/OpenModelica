@@ -102,6 +102,15 @@ dependencies = [
  "daskr",
  "libm",
  "openmodelica_mat_writer",
+ "openmodelica_solvers",
+]
+
+[[package]]
+name = "openmodelica_solvers"
+version = "0.1.0"
+dependencies = [
+ "daskr",
+ "libm",
 ]
 
 [[package]]

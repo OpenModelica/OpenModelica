@@ -366,7 +366,7 @@ pub fn close(stream: Stream) {
         s.xml
     });
     if end {
-        crate::driver::log_line(stream, INFO, "</message>\n");
+        crate::log_line(stream, INFO, "</message>\n");
     }
 }
 
@@ -383,7 +383,7 @@ pub fn close_warning(stream: Stream) {
         s.xml
     });
     if end {
-        crate::driver::log_line(stream, INFO, "</message>\n");
+        crate::log_line(stream, INFO, "</message>\n");
     }
 }
 
@@ -423,7 +423,7 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
             s.level[i] += 1;
         }
     });
-    crate::driver::log_line(stream, ty, &out);
+    crate::log_line(stream, ty, &out);
 }
 
 /// C's `messageXML`: the whole message as one element's `text` attribute, left
@@ -443,12 +443,12 @@ fn message_xml(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
         }
     }
     out.push_str(if indent_next { "\">\n" } else { "\" />\n" });
-    crate::driver::log_line(stream, ty, &out);
+    crate::log_line(stream, ty, &out);
 }
 
 /// C's `%<width>.<prec>g`.
 pub fn g(v: f64, width: usize, prec: i32) -> String {
-    pad(crate::driver::format_g(v, prec), width)
+    pad(crate::format_g(v, prec), width)
 }
 
 /// C's `%<width>.<prec>f`: fixed point, no exponent.
@@ -655,7 +655,7 @@ mod tests {
     use alloc::vec::Vec;
 
     fn capture(f: impl FnOnce()) -> String {
-        crate::driver::set_log_sink(sink);
+        crate::set_log_sink(sink);
         SINK.with(|s| s.borrow_mut().clear());
         f();
         SINK.with(|s| s.borrow().clone())

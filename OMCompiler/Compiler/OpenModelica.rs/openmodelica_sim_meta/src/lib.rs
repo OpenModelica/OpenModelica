@@ -25,21 +25,21 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 pub mod driver;
-pub mod fixedstep;
-pub mod gbode;
 pub mod linearize;
-pub mod omclog;
+// The solvers and the flags/logging they read live in `openmodelica_solvers`,
+// which knows nothing about `SimData`; re-exported here so `sim_meta::gbode`
+// (and the paths the codegen already uses) still name them.
+pub use openmodelica_solvers::{fixedstep, gbode, omclog, simflags};
 /// `-csvInput`, which needs a filesystem: host builds only.
 #[cfg(feature = "std")]
 pub(crate) mod extinput;
 pub mod optimization;
 pub(crate) mod qss;
 pub mod rtclock;
-pub mod simflags;
 pub mod sync;
 pub mod sysstat;
 #[cfg(sundials)]
-pub mod sundials;
+pub use openmodelica_solvers::sundials;
 
 /// Whether this build's driver has the real CVODE and IDA linked in (`build.rs`),
 /// so a `-s=cvode`/`-s=ida` (or `method=`) run can be served.

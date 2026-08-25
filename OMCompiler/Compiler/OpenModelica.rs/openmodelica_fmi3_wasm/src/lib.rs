@@ -410,6 +410,10 @@ struct MeState {
     /// String parameter sets, applied after `run_initialization` so init equations
     /// don't clobber them (cf `init_overrides`).
     init_string_overrides: Vec<(u32, String)>,
+    /// The ODE Jacobian for the point the model holds, and whether it is still
+    /// the point it was assembled at.
+    jacobian_cache: Vec<f64>,
+    jacobian_valid: bool,
     /// Sample schedule, loaded once the model's `initSample` has run.
     samples: Option<Samples>,
     /// Synchronous clocks (C's `initSynchronous`), for a model that has any.
@@ -463,12 +467,53 @@ impl MeState {
         let _ = e.call1("functionOutputs", self.sim_data);
     }
 
+    /// The state a value reference reads, when it is one of the continuous
+    /// states (or one of their derivatives): `SimData` keeps the states first
+    /// and their derivatives right after.
+    fn state_index(&self, vr: u32) -> Option<usize> {
+        let off = self.vrs.resolve(vr).filter(|v| v.negate == Neg::None)?.off;
+        let i = off.checked_sub(REAL_OFF)? / 8;
+        (i < self.layout.n_states).then_some(i as usize)
+    }
+
+    fn derivative_index(&self, vr: u32) -> Option<usize> {
+        let off = self.vrs.resolve(vr).filter(|v| v.negate == Neg::None)?.off;
+        let i = off.checked_sub(REAL_OFF)? / 8;
+        (i >= self.layout.n_states && i < 2 * self.layout.n_states)
+            .then_some((i - self.layout.n_states) as usize)
+    }
+
+    /// The ODE Jacobian at the point the model currently holds, column-major.
+    /// Assembled once per point: the states and the time both invalidate it, so
+    /// a master asking for one seed after another pays for a single assembly.
+    fn jacobian(&mut self, n: usize) -> Result<&[f64], Status> {
+        if self.jacobian_valid {
+            return Ok(&self.jacobian_cache);
+        }
+        let jac = self.meta.jac_a.as_ref().ok_or(Status::Error)?;
+        if jac.sym.is_none() || jac.n as usize != n {
+            return Err(Status::Error);
+        }
+        self.jacobian_cache.clear();
+        self.jacobian_cache.resize(n * n, 0.0);
+        let mut e = Engine;
+        let matrix = &mut self.jacobian_cache;
+        driver::eval_sym_jacobian(&mut e, self.sim_data, jac, 0, true, &mut |row, col, _, v| {
+            matrix[col * n + row] = v;
+        })
+        .map_err(|_| Status::Error)?;
+        self.jacobian_valid = true;
+        Ok(&self.jacobian_cache)
+    }
+
     /// C's `updateIfNeeded`. In Initialization Mode the update is the initial
     /// solve, with the sets made so far as start values.
     fn update_if_needed(&mut self) -> driver::Result<()> {
         if !self.need_update {
             return Ok(());
         }
+        // The point moved, so a Jacobian assembled at the old one is stale.
+        self.jacobian_valid = false;
         if self.mode == Mode::Init {
             self.run_init()?;
         } else {
@@ -589,6 +634,8 @@ fn new_state() -> Option<MeState> {
         init_string_overrides: Vec::new(),
         samples: None,
         sync: None,
+        jacobian_cache: Vec::new(),
+        jacobian_valid: false,
     };
     st.seed_start_state();
     Some(st)
@@ -1075,13 +1122,40 @@ macro_rules! shared_instance_methods {
         Status::Ok
     }
 
+    /// `d(derivatives)/d(states) · seed`, out of the model's symbolic Jacobian.
+    ///
+    /// Lets an importer integrate the FMU with the Jacobian the model was
+    /// compiled with instead of differencing it. Only derivatives with respect
+    /// to states are answered — the only block the symbolic Jacobian holds.
     fn get_directional_derivative(
         &self,
-        _: Vec<u32>,
-        _: Vec<u32>,
-        _: Vec<f64>,
+        unknowns: Vec<u32>,
+        knowns: Vec<u32>,
+        seed: Vec<f64>,
     ) -> Result<Vec<f64>, Status> {
-        Err(Status::Error)
+        if knowns.len() != seed.len() {
+            return Err(Status::Error);
+        }
+        let mut st = self.st.borrow_mut();
+        if st.update_if_needed().is_err() {
+            return Err(Status::Error);
+        }
+        let n = st.layout.n_states as usize;
+        let rows: Vec<usize> = unknowns.iter().filter_map(|vr| st.derivative_index(*vr)).collect();
+        let cols: Vec<usize> = knowns.iter().filter_map(|vr| st.state_index(*vr)).collect();
+        if rows.len() != unknowns.len() || cols.len() != knowns.len() {
+            return Err(Status::Error);
+        }
+        let jacobian = st.jacobian(n)?;
+        Ok(rows
+            .iter()
+            .map(|&row| {
+                cols.iter()
+                    .zip(&seed)
+                    .map(|(&col, s)| jacobian[col * n + row] * s)
+                    .sum()
+            })
+            .collect())
     }
     fn get_adjoint_derivative(
         &self,

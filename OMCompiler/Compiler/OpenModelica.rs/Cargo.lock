@@ -6575,6 +6575,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_fmi"
+version = "0.1.0"
+dependencies = [
+ "roxmltree",
+ "wasmparser 0.252.0",
+ "wit-component",
+ "wit-parser 0.252.0",
+ "zip",
+]
+
+[[package]]
+name = "openmodelica_fmi_driver"
+version = "0.1.0"
+dependencies = [
+ "libloading 0.8.9",
+ "openmodelica_fmi",
+ "openmodelica_mat_writer",
+ "openmodelica_solvers",
+]
+
+[[package]]
 name = "openmodelica_frontend"
 version = "0.1.0"
 dependencies = [
@@ -6794,6 +6815,7 @@ dependencies = [
  "daskr",
  "libm",
  "openmodelica_mat_writer",
+ "openmodelica_solvers",
 ]
 
 [[package]]
@@ -6832,6 +6854,14 @@ dependencies = [
  "openmodelica_simcode_types",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
+]
+
+[[package]]
+name = "openmodelica_solvers"
+version = "0.1.0"
+dependencies = [
+ "daskr",
+ "libm",
 ]
 
 [[package]]

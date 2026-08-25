@@ -1237,6 +1237,31 @@ function(omc_rust_fmu_aot_module)
   add_dependencies(rust_fmu_aot rust_wasm)
 endfunction()
 
+# The FMI masters for the browser: `openmodelica_fmi_web` built for
+# wasm32-wasip1 and staged as web/fmi-simulator/openmodelica_fmi_web.wasm, where
+# the page's worker loads it. wasip1 so the result file is written through WASI
+# like every other simulation's; always release, since this *is* the solver.
+#
+# Its own `[workspace]` and target dir, so a wasm-only cdylib never enters the
+# host workspace's resolution. Reads omc_rust_setup_wasm's _web_dir.
+function(omc_rust_fmi_driver_module)
+  set(_fmi_src ${RUST_OMC_DIR}/openmodelica_fmi_web)
+  set(_fmi_target_dir ${CMAKE_CURRENT_BINARY_DIR}/fmi-driver-target)
+  set(_fmi_artifact ${_fmi_target_dir}/wasm32-wasip1/release/openmodelica_fmi_web.wasm)
+  add_custom_target(rust_fmi_driver ALL
+    WORKING_DIRECTORY ${_fmi_src}
+    JOB_SERVER_AWARE TRUE
+    COMMAND ${CARGO_ENV} ${CARGO_EXECUTABLE} build --release
+            --manifest-path ${_fmi_src}/Cargo.toml
+            --target wasm32-wasip1 --target-dir ${_fmi_target_dir}
+    COMMAND ${CMAKE_COMMAND} -E copy ${_fmi_artifact}
+            ${_web_dir}/fmi-simulator/openmodelica_fmi_web.wasm
+    COMMENT "Rust: FMI masters (wasm32-wasip1) -> ${_web_dir}/fmi-simulator/openmodelica_fmi_web.wasm"
+    VERBATIM)
+  # rust_wasm recreates ${_web_dir}, so the copy has to follow it.
+  add_dependencies(rust_fmi_driver rust_wasm)
+endfunction()
+
 # Assemble the Qt OMShell web page. Unlike the egui/dioxus pages (Rust crates the
 # rust_wasm cargo invocation already built), this is the C++ Qt OMShell compiled
 # with Qt for WebAssembly — a separate toolchain, so it is a nested cmake build
@@ -1591,7 +1616,12 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/openmodelica_animation_wasm/Cargo.toml
         ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html
         ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu.js
-        ${RUST_OMC_DIR}/wasm/fmi-simulator/master.js
+        ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu-core.js
+        ${RUST_OMC_DIR}/wasm/fmi-simulator/driver.js
+        ${RUST_OMC_DIR}/wasm/fmi-simulator/session.js
+        ${RUST_OMC_DIR}/wasm/fmi-simulator/fmi-worker.js
+        ${RUST_OMC_DIR}/wasm/fmi-simulator/wasi.js
+        ${RUST_OMC_DIR}/wasm/fmi-simulator/selftest.html
         ${_three_js})
     set(_web_launcher_extra
         # The chart engine and the shared look, imported by both simulator pages.
@@ -1632,7 +1662,12 @@ function(omc_rust_setup_wasm)
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/fmi-simulator/index.html
                 ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu.js
-                ${RUST_OMC_DIR}/wasm/fmi-simulator/master.js
+                ${RUST_OMC_DIR}/wasm/fmi-simulator/fmu-core.js
+                ${RUST_OMC_DIR}/wasm/fmi-simulator/driver.js
+                ${RUST_OMC_DIR}/wasm/fmi-simulator/session.js
+                ${RUST_OMC_DIR}/wasm/fmi-simulator/fmi-worker.js
+                ${RUST_OMC_DIR}/wasm/fmi-simulator/wasi.js
+                ${RUST_OMC_DIR}/wasm/fmi-simulator/selftest.html
                 ${_web_dir}/fmi-simulator/
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${_jco_vendor}/js-component-bindgen-component.js
@@ -1711,6 +1746,7 @@ function(omc_rust_setup_wasm)
   # built only for the browser host.
   if(_host STREQUAL "web")
     omc_rust_fmu_aot_module()
+    omc_rust_fmi_driver_module()
   endif()
 
   if(OM_ENABLE_GUI_CLIENTS)
