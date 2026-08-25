@@ -80,6 +80,57 @@ pub enum Lss {
     Lis = 5,
 }
 
+/// `-cvodeLinearMultistepMethod`, the multistep formula CVODE integrates with.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CvodeLmm {
+    Adams,
+    /// C's default.
+    Bdf,
+}
+
+/// `-cvodeNonlinearSolverIteration`, how CVODE solves the implicit stage.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CvodeIter {
+    FixedPoint,
+    Newton,
+}
+
+impl CvodeLmm {
+    pub fn name(self) -> &'static str {
+        match self {
+            CvodeLmm::Adams => "CV_ADAMS",
+            CvodeLmm::Bdf => "CV_BDF",
+        }
+    }
+    /// `ADAMS_Q_MAX` / `BDF_Q_MAX`.
+    pub fn max_order(self) -> i32 {
+        match self {
+            CvodeLmm::Adams => 12,
+            CvodeLmm::Bdf => 5,
+        }
+    }
+}
+
+impl CvodeIter {
+    pub fn name(self) -> &'static str {
+        match self {
+            CvodeIter::FixedPoint => "CV_ITER_FIXED_POINT",
+            CvodeIter::Newton => "CV_ITER_NEWTON",
+        }
+    }
+}
+
+/// `cvodeGetConfig`: `-cvodeLinearMultistepMethod` defaults to BDF, and the
+/// iteration defaults to the one that suits it.
+pub fn cvode_config(f: &SimFlags) -> (CvodeLmm, CvodeIter) {
+    let lmm = f.cvode_lmm.unwrap_or(CvodeLmm::Bdf);
+    let iter = f.cvode_iter.unwrap_or(match lmm {
+        CvodeLmm::Adams => CvodeIter::FixedPoint,
+        CvodeLmm::Bdf => CvodeIter::Newton,
+    });
+    (lmm, iter)
+}
+
 /// `-idaLS`, the linear solver IDA's Newton iteration uses.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IdaLs {
@@ -158,6 +209,10 @@ pub struct SimFlags {
     pub step_size: Option<f64>,
     /// `-jacobianNominalFactor`: scales the ODE Jacobian's FD step floor.
     pub jacobian_nominal_factor: Option<f64>,
+    /// `-cvodeLinearMultistepMethod` / `-cvodeNonlinearSolverIteration`, read
+    /// through [`cvode_config`].
+    pub cvode_lmm: Option<CvodeLmm>,
+    pub cvode_iter: Option<CvodeIter>,
     /// `-idaLS`
     pub ida_ls: Option<IdaLs>,
     /// `-idaSensitivity`: IDAS forward sensitivities w.r.t. the parameters
@@ -396,6 +451,10 @@ pub fn supported(cap: Capabilities) -> Vec<(&'static str, Vec<&'static str>)> {
     ];
     if cap.ida {
         menu.push(("idaLS", offered(IDA_LS_VALUES, cap)));
+    }
+    if cap.cvode {
+        menu.push(("cvodeLinearMultistepMethod", offered(CVODE_LMM_VALUES, cap)));
+        menu.push(("cvodeNonlinearSolverIteration", offered(CVODE_ITER_VALUES, cap)));
     }
     menu
 }
@@ -799,6 +858,12 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 )
             }
             "idaLS" => f.ida_ls = Some(pick("idaLS", &value(name)?, IDA_LS_VALUES)?),
+            "cvodeLinearMultistepMethod" => {
+                f.cvode_lmm = Some(pick(name, &value(name)?, CVODE_LMM_VALUES)?)
+            }
+            "cvodeNonlinearSolverIteration" => {
+                f.cvode_iter = Some(pick(name, &value(name)?, CVODE_ITER_VALUES)?)
+            }
             "idaSensitivity" => f.ida_sensitivity = true,
             "idaMaxErrorTestFails" => f.ida_max_err_test_fails = Some(int(name, &value(name)?)?),
             "idaMaxNonLinIters" => f.ida_max_nonlin_iters = Some(int(name, &value(name)?)?),
@@ -1172,8 +1237,8 @@ impl Offer {
     }
 }
 
-/// `-s`. `symSolver*` parse so the unsupported-*method* error reports them, not the
-/// flag parser.
+/// `-s`. `symSolver*` need a model translated with `--symSolver`, so they are
+/// accepted but never offered.
 const SOLVERS: &[Value<Solver>] = &[
     ("dassl", Solver::Dassl, Offer::Always),
     ("dasslrt", Solver::Dassl, Offer::Never),
@@ -1225,6 +1290,16 @@ const LSS_VALUES: &[Value<Lss>] = &[
     ("rsparse", Lss::Rsparse, Offer::Always),
     ("klu", Lss::Klu, Offer::WithSundials),
     ("umfpack", Lss::Umfpack, Offer::WithSundials),
+];
+
+const CVODE_LMM_VALUES: &[Value<CvodeLmm>] = &[
+    ("CV_BDF", CvodeLmm::Bdf, Offer::Always),
+    ("CV_ADAMS", CvodeLmm::Adams, Offer::Always),
+];
+
+const CVODE_ITER_VALUES: &[Value<CvodeIter>] = &[
+    ("CV_ITER_NEWTON", CvodeIter::Newton, Offer::Always),
+    ("CV_ITER_FIXED_POINT", CvodeIter::FixedPoint, Offer::Always),
 ];
 
 /// `-idaLS`. All five reach a SUNLinearSolver; the whole entry rides on `cap.ida`.
@@ -1434,6 +1509,8 @@ mod tests {
             ("ls", names(LS_VALUES)),
             ("lss", names(LSS_VALUES)),
             ("idaLS", names(IDA_LS_VALUES)),
+            ("cvodeLinearMultistepMethod", names(CVODE_LMM_VALUES)),
+            ("cvodeNonlinearSolverIteration", names(CVODE_ITER_VALUES)),
         ];
         for cap in [NOTHING, Capabilities { klu: true, ..NOTHING }, EVERYTHING] {
             let menu = supported(cap);

@@ -65,6 +65,7 @@ unsafe extern "C" {
     fn functionUpdateSynchronous(sim_data: u32, base_idx: u32);
     fn functionEquationsSynchronous(sim_data: u32, idx: u32);
     fn callExternalObjectDestructors(sim_data: u32);
+    fn symbolicInlineSystem(sim_data: u32);
     fn om_meta_ptr() -> u32;
     fn om_meta_len() -> u32;
 }
@@ -309,6 +310,7 @@ impl SimEngine for Engine {
                 "initSample" => initSample(arg),
                 "functionInitSynchronous" => functionInitSynchronous(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
+                "symbolicInlineSystem" => symbolicInlineSystem(arg),
                 _ => return Err(UNKNOWN_MODEL_FN),
             }
         }

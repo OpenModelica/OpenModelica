@@ -4165,6 +4165,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let mut linz = build_linz_plan(sim_code, vars, n_states)?;
     // `-reconcile`: F/H, laid out right behind them.
     let mut recon = datarecon::build_plan(sim_code, vars);
+    let sym_solver = sym_solver_kind()?;
     let layout = SimLayout::new(
         n_states,
         n_real_alg,
@@ -4194,6 +4195,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         if optimization::is_optimization(sim_code) { 2 * n_states + n_real_alg } else { 0 },
         bound_attr_equations(sim_code).len() as u32,
         removed_init_residuals(sim_code).len() as u32,
+        sym_solver,
         has_when,
         has_homotopy,
         homotopy_method()?,
@@ -4219,6 +4221,30 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // group needs finalizing too.
     if dae_mode.is_some() {
         finalize_array_groups(&mut var_map)?;
+    }
+    // The inline equations' `__OMC_DT` and `<state>$Old` operands: `SimCodeUtil`
+    // only ever put them in the cref->SimVar table, so no `modelInfo.vars` walk
+    // reaches them.
+    if sym_solver > 0 {
+        Arc::make_mut(&mut var_map.vars).insert(
+            "__OMC_DT".to_string(),
+            SimSlot { off: layout.inline_dt_off, wty: WTy::F64, negate: Neg::None, heap: false },
+        );
+        for (i, sv) in states.iter().enumerate() {
+            let old = openmodelica_frontend_base::ComponentReference::appendStringLastIdent(
+                arcstr::literal!("$Old"),
+                sv.name.clone(),
+            )?;
+            Arc::make_mut(&mut var_map.vars).insert(
+                sim_cref_key(&old)?,
+                SimSlot {
+                    off: layout.alg_old_off + (i as u32) * 8,
+                    wty: WTy::F64,
+                    negate: Neg::None,
+                    heap: false,
+                },
+            );
+        }
     }
     let sens_params = push_sensitivity_vars(&sens_vars, n_sens_par, vars, &layout, &mut result_vars)?;
     let var_units = collect_var_units(vars)?;
@@ -4253,6 +4279,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     index_list(&sim_code.startValueEquations, &mut eq_index);
     index_list(&sim_code.algorithmAndEquationAsserts, &mut eq_index);
     index_list(&sim_code.equationsForZeroCrossings, &mut eq_index);
+    index_list(&sim_code.inlineEquations, &mut eq_index);
     for e in dae_eqs.iter() {
         index_eq_recursive(&e.0, &mut eq_index);
     }
@@ -4410,6 +4437,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let assert_eqs = flatten_eqs(&sim_code.algorithmAndEquationAsserts);
     let ode_eqs = flatten_eqs_ll(&sim_code.odeEquations);
     let zc_eqs = flatten_eqs(&sim_code.equationsForZeroCrossings);
+    let inline_eqs = flatten_eqs(&sim_code.inlineEquations);
     // Register every nonlinear system with the runtime solver `rt_solve_nls`
     // *before* lowering the equation functions (which call it): assign each a
     // shared-table job and thread the map through `var_map`. The systems' own
@@ -4421,7 +4449,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let clocked = clocked_eqs(sim_code);
     let nls_scan: Vec<Vec<Arc<SimCode::SimEqSystem>>> = [
         &param_eqs, &initial_eqs, &lambda0_eqs, &ode_eqs, &algebraic_eqs, &dae_only_eqs, &zc_eqs,
-        &assert_eqs, &removed_init_eqs, &clocked,
+        &assert_eqs, &removed_init_eqs, &clocked, &inline_eqs,
     ]
     .iter()
     .map(|l| eqs_with_nested(l.as_slice()))
@@ -5105,6 +5133,13 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
             Some(idx)
         }
     };
+    // C's `symbolicInlineSystem`. Emitted (empty without `--symSolver`) either way,
+    // so every module's entry points sit at the same indices.
+    let sym_inline_idx = {
+        let idx = import_base + bodies.len() as u32;
+        splits.push(build_split_fn("symbolicInlineSystem", &eq_units(&inline_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+        idx
+    };
 
     // C's `functionDAE`: `functionLocalKnownVars` + `allEquations` in the discrete
     // context, which `-reconcile` re-solves the model with.
@@ -5189,6 +5224,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     if let Some(ti) = dae_fn_type {
         functions.function(ti); // evaluateDAEResiduals: (i32, i32) -> ()
     }
+    functions.function(eqfn_type); // symbolicInlineSystem: (i32) -> ()
     if recon_dae_idx.is_some() {
         functions.function(eqfn_type); // functionDAE: (i32) -> ()
     }
@@ -5335,6 +5371,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     if let Some(idx) = dae_residuals_idx {
         exports.export("evaluateDAEResiduals", we::ExportKind::Func, idx);
     }
+    exports.export("symbolicInlineSystem", we::ExportKind::Func, sym_inline_idx);
 
     // --- Name section: without it a trap backtrace is bare function indices. The
     // unnamed remainder is the NLS callbacks, the closure thunks and `start`. ---
@@ -5408,6 +5445,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     if let Some(idx) = dae_residuals_idx {
         names.push((idx, "evaluateDAEResiduals".to_string()));
     }
+    names.push((sym_inline_idx, "symbolicInlineSystem".to_string()));
     for s in &splits {
         for k in 0..s.count {
             names.push((chunk_base + (s.first + k) as u32, format!("{}${k}", s.name)));
@@ -5551,6 +5589,13 @@ fn homotopy_method() -> Result<openmodelica_sim_meta::HomotopyMethod> {
     } else {
         H::LocalEquidistant
     })
+}
+
+/// C's `compiledWithSymSolver`: which `--symSolver` variant generated the model's
+/// inline update equations, 0 for none.
+fn sym_solver_kind() -> Result<u8> {
+    Ok(openmodelica_util::Flags::getConfigEnum(openmodelica_util::Flags::SYM_SOLVER.clone())?
+        .clamp(0, 2) as u8)
 }
 
 /// C's `LOG_STDOUT` "… changed to …" lines, ahead of everything the run prints.
@@ -7823,6 +7868,7 @@ fn nls_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
     scan(flatten_eqs_ll(&sim_code.odeEquations));
     scan(flatten_eqs_ll(&sim_code.algebraicEquations));
     scan(flatten_eqs(&sim_code.allEquations));
+    scan(flatten_eqs(&sim_code.inlineEquations));
     scan(clocked_eqs(sim_code));
     if let Some(d) = &sim_code.daeModeData {
         scan(flatten_eqs_ll(&d.daeEquations));
@@ -8203,6 +8249,7 @@ fn lin_jac_systems(sim_code: &SimCode::SimCode) -> Vec<Arc<SimCode::LinearSystem
     scan(flatten_eqs_ll(&sim_code.odeEquations));
     scan(flatten_eqs_ll(&sim_code.algebraicEquations));
     scan(flatten_eqs(&sim_code.allEquations));
+    scan(flatten_eqs(&sim_code.inlineEquations));
     scan(clocked_eqs(sim_code));
     if let Some(d) = &sim_code.daeModeData {
         scan(flatten_eqs_ll(&d.daeEquations));
@@ -8617,6 +8664,7 @@ fn has_method1_linear(sim_code: &SimCode::SimCode) -> bool {
         &sim_code.removedEquations,
         &sim_code.startValueEquations,
         &sim_code.equationsForZeroCrossings,
+        &sim_code.inlineEquations,
     ];
     lists.iter().any(|l| lst(l).any(walk))
         || lst(&sim_code.odeEquations).chain(lst(&sim_code.algebraicEquations)).any(|p| lst(p).any(walk))

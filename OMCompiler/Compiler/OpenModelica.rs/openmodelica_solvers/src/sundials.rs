@@ -18,6 +18,7 @@ pub type SunIndex = i32;
 pub type NVector = *mut c_void;
 pub type SunMatrix = *mut c_void;
 type SunLinearSolver = *mut c_void;
+type SunNonlinearSolver = *mut c_void;
 type SunContext = *mut c_void;
 type SunLogger = *mut c_void;
 type SunErrHandlerFn = unsafe extern "C" fn(
@@ -35,6 +36,7 @@ pub type RhsFn = unsafe extern "C" fn(f64, NVector, NVector, *mut c_void) -> c_i
 /// `int g(realtype t, N_Vector y, realtype *gout, void *user_data)`.
 pub type RootFn = unsafe extern "C" fn(f64, NVector, *mut f64, *mut c_void) -> c_int;
 
+const CV_ADAMS: c_int = 1;
 const CV_BDF: c_int = 2;
 const CV_NORMAL: c_int = 1;
 
@@ -136,7 +138,11 @@ unsafe extern "C" {
     fn SUNLinSol_SPBCGS(y: NVector, pretype: c_int, maxl: c_int, ctx: SunContext) -> SunLinearSolver;
     fn SUNLinSol_SPTFQMR(y: NVector, pretype: c_int, maxl: c_int, ctx: SunContext) -> SunLinearSolver;
 
+    fn SUNNonlinSol_FixedPoint(y: NVector, m: c_int, ctx: SunContext) -> SunNonlinearSolver;
+    fn SUNNonlinSolFree(s: SunNonlinearSolver) -> c_int;
+
     fn CVodeCreate(lmm: c_int, ctx: SunContext) -> *mut c_void;
+    fn CVodeSetNonlinearSolver(mem: *mut c_void, nls: SunNonlinearSolver) -> c_int;
     fn CVodeFree(mem: *mut *mut c_void);
     fn CVodeInit(mem: *mut c_void, f: RhsFn, t0: f64, y0: NVector) -> c_int;
     fn CVodeReInit(mem: *mut c_void, t0: f64, y0: NVector) -> c_int;
@@ -188,6 +194,10 @@ pub struct Cvode {
     /// Dense iteration matrix and its solver, owned for the lifetime of `mem`.
     jac: SunMatrix,
     lin_sol: SunLinearSolver,
+    /// `CV_ITER_FIXED_POINT` only: the fixed-point module and its work vector.
+    /// Null under CVODE's built-in Newton.
+    nonlin_sol: SunNonlinearSolver,
+    y_nonlin: NVector,
     n: usize,
     n_roots: usize,
     roots: Vec<c_int>,
@@ -210,6 +220,7 @@ impl Cvode {
     /// [`set_user_data`]. `None` if any SUNDIALS allocation or setup call fails.
     ///
     /// [`set_user_data`]: Cvode::set_user_data
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         t0: f64,
         y0: &[f64],
@@ -218,7 +229,10 @@ impl Cvode {
         n_roots: usize,
         rhs: RhsFn,
         root: Option<RootFn>,
+        config: (crate::simflags::CvodeLmm, crate::simflags::CvodeIter),
     ) -> Option<Cvode> {
+        use crate::simflags::{CvodeIter, CvodeLmm};
+        let (lmm, iter) = config;
         let n = y0.len();
         let ctx = sun_context();
         if ctx.is_null() {
@@ -234,6 +248,8 @@ impl Cvode {
             atol: core::ptr::null_mut(),
             jac: core::ptr::null_mut(),
             lin_sol: core::ptr::null_mut(),
+            nonlin_sol: core::ptr::null_mut(),
+            y_nonlin: core::ptr::null_mut(),
             n,
             n_roots,
             roots: vec![0; n_roots.max(1)],
@@ -247,9 +263,27 @@ impl Cvode {
                 return None;
             }
             cv.lin_sol = SUNLinSol_Dense(cv.y, cv.jac, ctx);
-            cv.mem = CVodeCreate(CV_BDF, ctx);
+            cv.mem = CVodeCreate(
+                match lmm {
+                    CvodeLmm::Adams => CV_ADAMS,
+                    CvodeLmm::Bdf => CV_BDF,
+                },
+                ctx,
+            );
             if cv.lin_sol.is_null() || cv.mem.is_null() {
                 return None;
+            }
+            // Anderson acceleration over as many vectors as the system has states,
+            // as `cvode_solver.c` sizes it.
+            if iter == CvodeIter::FixedPoint {
+                cv.y_nonlin = N_VNew_Serial(n as SunIndex, ctx);
+                if cv.y_nonlin.is_null() {
+                    return None;
+                }
+                cv.nonlin_sol = SUNNonlinSol_FixedPoint(cv.y_nonlin, n as c_int, ctx);
+                if cv.nonlin_sol.is_null() {
+                    return None;
+                }
             }
         }
         cv.set_y(y0);
@@ -262,6 +296,8 @@ impl Cvode {
                 && CVodeSetLinearSolver(cv.mem, cv.lin_sol, cv.jac) == CV_SUCCESS
                 // NULL: CVODE's internal difference-quotient dense Jacobian, as in C.
                 && CVodeSetJacFn(cv.mem, core::ptr::null()) == CV_SUCCESS
+                && (cv.nonlin_sol.is_null()
+                    || CVodeSetNonlinearSolver(cv.mem, cv.nonlin_sol) == CV_SUCCESS)
                 && match root {
                     Some(g) => CVodeRootInit(cv.mem, n_roots as c_int, g) == CV_SUCCESS,
                     None => true,
@@ -270,7 +306,7 @@ impl Cvode {
                 && CVodeSetMinStep(cv.mem, 1e-12) == CV_SUCCESS
                 && CVodeSetMaxStep(cv.mem, 0.0) == CV_SUCCESS
                 && CVodeSetInitStep(cv.mem, 0.0) == CV_SUCCESS
-                && CVodeSetMaxOrd(cv.mem, 5) == CV_SUCCESS
+                && CVodeSetMaxOrd(cv.mem, lmm.max_order()) == CV_SUCCESS
                 && CVodeSetMaxConvFails(cv.mem, 10) == CV_SUCCESS
                 && CVodeSetStabLimDet(cv.mem, 0) == CV_SUCCESS
                 && CVodeSetMaxNonlinIters(cv.mem, 5) == CV_SUCCESS
@@ -377,6 +413,8 @@ impl Drop for Cvode {
     fn drop(&mut self) {
         unsafe {
             CVodeFree(&mut self.mem);
+            SUNNonlinSolFree(self.nonlin_sol);
+            N_VDestroy(self.y_nonlin);
             SUNLinSolFree(self.lin_sol);
             SUNMatDestroy(self.jac);
             N_VDestroy(self.atol);

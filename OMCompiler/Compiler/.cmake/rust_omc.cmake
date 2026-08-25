@@ -489,9 +489,13 @@ target_include_directories(lis PRIVATE
     EXCLUDE_FROM_ALL ON)
   add_dependencies(rust_sundials_wasm rust_suitesparse_wasm)
 
-  # Collect all .a into RUST_SUNDIALS_WASM_DIR/lib/.
+  # RUST_SUNDIALS_WASM_DIR is the whole wasm SUNDIALS hand-off: lib/ for the wasip1
+  # runtime to link, include/ for the PIC dylink build to compile against. A CI
+  # stage with only this directory, not the ExternalProject tree, can do both.
   add_custom_target(rust_sundials_collect
     COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_WASM_DIR}/lib
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      ${_sundials_ep_build}/include ${RUST_SUNDIALS_WASM_DIR}/include
     COMMAND ${CMAKE_COMMAND} -E copy
       ${_suitesparse_ep_build}/KLU/libklu.a
       ${_suitesparse_ep_build}/UMFPACK/libumfpack.a
@@ -510,7 +514,7 @@ target_include_directories(lis PRIVATE
       ${_sundials_ep_build}/src/sunlinsol/klu/libsundials_sunlinsolklu.a
       ${_lis_ep_build}/liblis.a
       ${RUST_SUNDIALS_WASM_DIR}/lib/
-    COMMENT "Rust: collecting SUNDIALS/KLU/Lis wasm archives -> ${RUST_SUNDIALS_WASM_DIR}/lib/"
+    COMMENT "Rust: collecting SUNDIALS/KLU/Lis wasm archives + headers -> ${RUST_SUNDIALS_WASM_DIR}/"
     VERBATIM)
   add_dependencies(rust_sundials_collect rust_sundials_wasm rust_lis_wasm)
 
@@ -666,9 +670,9 @@ if(RUST_OMC_ENABLE_SUNDIALS)
   list(APPEND CARGO_ENV
        "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials"
        "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse"
-       # The PIC dylink side module compiles the sources again and needs the
-       # `sundials_config.h` the wasm ExternalProject generates.
-       "OMC_SUNDIALS_WASM_INCLUDE=${_sundials_ep_build}/include")
+       # The PIC dylink side module compiles the sources again, so it needs the
+       # generated `sundials_config.h` rust_sundials_collect puts here.
+       "OMC_SUNDIALS_WASM_INCLUDE=${RUST_SUNDIALS_WASM_DIR}/include")
 endif()
 
 # Always via ${CARGO_BUILD} so target/ is never the in-source default.

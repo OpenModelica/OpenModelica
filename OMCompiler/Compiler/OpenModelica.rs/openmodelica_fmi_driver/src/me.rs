@@ -15,7 +15,8 @@ use crate::record::Recorder;
 use crate::{Error, Options, Result, Solver};
 use openmodelica_fmi::ModelDescription;
 use openmodelica_solvers::dassl::{Dassl, DasslStep};
-use openmodelica_solvers::fixedstep::{FixedKind, FixedProgress, FixedStep};
+use openmodelica_solvers::events::StepEnd;
+use openmodelica_solvers::fixedstep::{FixedKind, FixedStep};
 use openmodelica_solvers::gbode::{GbStep, Gbode};
 use openmodelica_solvers::Ode;
 
@@ -268,8 +269,8 @@ impl Integrator {
                 GbStep::Reached | GbStep::Stepped => Ok(None),
             },
             Integrator::Fixed(fs) => match fs.step(ode, t, y, yp, target.min(limit))? {
-                FixedProgress::Root(te) => Ok(Some(te)),
-                FixedProgress::Reached => Ok(None),
+                StepEnd::Root(te) => Ok(Some(te)),
+                StepEnd::Reached => Ok(None),
             },
         }
     }

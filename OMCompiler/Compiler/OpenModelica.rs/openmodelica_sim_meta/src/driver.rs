@@ -19,6 +19,8 @@ use core::cell::RefCell;
 use crate::omclog;
 use crate::rtclock;
 use crate::simflags::JacobianMethod;
+#[cfg(sundials)]
+use crate::simflags::{CvodeIter, CvodeLmm};
 use crate::sync::SYNC_EPS;
 use crate::{
     JacAInfo, Layout as SimLayout, MetaKind as ResultKind, Neg, REAL_OFF, SimMeta, SolveStats, StateSetInfo,
@@ -335,6 +337,7 @@ pub const MODEL_FNS: &[&str] = &[
     "functionDAE",
     "reconJacF",
     "reconJacH",
+    "symbolicInlineSystem",
 ];
 
 /// The clock a model entry point runs under, where `CodegenC.tpl` ticks one inside
@@ -1055,6 +1058,25 @@ pub fn read_f64(e: &dyn SimEngine, addr: u32) -> Result<f64> {
 /// Write one little-endian f64 to linear memory at byte address `addr`.
 pub fn write_f64(e: &mut dyn SimEngine, addr: u32, v: f64) -> Result<()> {
     e.write_bytes(addr, &v.to_le_bytes())
+}
+
+/// Read a contiguous run of little-endian f64 starting at `addr`.
+pub fn read_f64s(e: &dyn SimEngine, addr: u32, out: &mut [f64]) -> Result<()> {
+    let mut bytes = vec![0u8; out.len() * 8];
+    e.read_bytes(addr, &mut bytes)?;
+    for (i, v) in out.iter_mut().enumerate() {
+        *v = f64::from_le_bytes(bytes[i * 8..i * 8 + 8].try_into().unwrap());
+    }
+    Ok(())
+}
+
+/// Write a contiguous run of little-endian f64 starting at `addr`.
+pub fn write_f64s(e: &mut dyn SimEngine, addr: u32, v: &[f64]) -> Result<()> {
+    let mut bytes = vec![0u8; v.len() * 8];
+    for (i, x) in v.iter().enumerate() {
+        bytes[i * 8..i * 8 + 8].copy_from_slice(&x.to_le_bytes());
+    }
+    e.write_bytes(addr, &bytes)
 }
 
 /// Write one little-endian i32 to linear memory at byte address `addr`.
@@ -3611,7 +3633,7 @@ fn is_dassl(method: &str) -> bool {
 /// with a symbolic Jacobian and `""` the dassl default.
 fn check_method(method: &str) -> bool {
     is_dassl(method)
-        || matches!(method, "euler" | "rungekutta" | "gbode" | "qss")
+        || matches!(method, "euler" | "rungekutta" | "gbode" | "qss" | "symSolver" | "symSolverSsc")
         || (matches!(method, "cvode" | "ida") && cfg!(sundials))
         // `optimize()`; `drive` handles it before the integrators, and reports
         // C's "Ipopt is needed but not available." when it was not linked.
@@ -3768,7 +3790,13 @@ fn make_driver_resolved(
     // A clocked partition is an event source too, and only `EventsDriver` has the
     // timer list and the consistent restart a tick needs.
     let events = layout.n_samples > 0 || layout.n_zc > 0 || !model.clocks.is_empty();
-    if events || method == "gbode" || layout.dae_mode() {
+    let sym = sym_kind(method, layout).is_some();
+    // C runs the step anyway and the generated `symbolicInlineSystem` stub fails it;
+    // naming the missing translation flag is more use than that.
+    if !sym && matches!(method, "symSolver" | "symSolverSsc") {
+        return Err(NO_SYM_SOLVER);
+    }
+    if events || method == "gbode" || sym || layout.dae_mode() {
         let label = match method {
             "cvode" => "cvode-events",
             "ida" if events => "ida-events",
@@ -3776,6 +3804,8 @@ fn make_driver_resolved(
             "gbode" => "gbode",
             "euler" => "euler-events",
             "rungekutta" => "rungekutta",
+            "symSolver" => "symSolver",
+            "symSolverSsc" => "symSolverSsc",
             _ => "dassl-events",
         };
         return Ok((Box::new(EventsDriver::new(e, model, sim_data, method, gbode)?), label));
@@ -3802,6 +3832,9 @@ fn csv_input_given() -> bool {
     #[cfg(not(feature = "std"))]
     false
 }
+
+const NO_SYM_SOLVER: &str = "CodegenWasmJit: the model was not translated with \
+--symSolver=impEuler or --symSolver=expEuler, so it has no symbolic inline system to step";
 
 /// Listing what `make_driver` accepts; `simflags::check` rejects the rest earlier,
 /// so this is only reached by a `method=` the model was compiled with.
@@ -4219,6 +4252,9 @@ struct ResCtx {
     n_states: usize,
     /// `SimData` offset of the nonlinear-solve failure flag.
     nls_fail_off: u32,
+    /// `--symSolver`'s `inlineData`: the `__OMC_DT` slot and the `y$Old` region.
+    inline_dt_off: u32,
+    alg_old_off: u32,
     /// Number of residual (right-hand-side) evaluations, for the bench line.
     nfe: u64,
     /// `SimData` offset of the root callback's own g-value buffer (C's `gout`).
@@ -5202,6 +5238,8 @@ impl Driver for DasslDriver {
             ders_base,
             n_states,
             nls_fail_off: layout.nls_fail_off,
+            inline_dt_off: layout.inline_dt_off,
+            alg_old_off: layout.alg_old_off,
             nfe: self.nfe,
             zc_probe_off: 0,
             zc_off: 0,
@@ -5430,6 +5468,9 @@ enum Solver {
     /// `-s=euler` / `-s=rungekutta`: one step per output interval, events located
     /// by bisecting the step afterwards.
     Fixed(crate::fixedstep::FixedStep),
+    /// `-s=symSolver` / `-s=symSolverSsc`: the model's own symbolic update
+    /// equations, events located the same way.
+    Sym(openmodelica_solvers::symsolver::SymSolver),
 }
 
 /// DASKR's work arrays and options.
@@ -5557,22 +5598,43 @@ struct CvodeState {
     rtol: f64,
     atol: Vec<f64>,
     n_roots: usize,
+    /// `cvodeGetConfig`'s two picks, resolved when the run's flags were parsed.
+    config: CvodeConfig,
     work_retries: u32,
     /// Whether building the block still logs the banner; an FMU already did, at
     /// `fmi2Instantiate`.
     banner: bool,
 }
 
-/// `cvode_solver_initial`'s `LOG_SOLVER` banner. Every line but the tolerance and
-/// the root-finding answer reports a configuration this port fixes.
 #[cfg(sundials)]
-fn log_cvode_configuration(rtol: f64, root_finding: bool) {
+type CvodeConfig = (CvodeLmm, CvodeIter);
+
+/// `cvode_solver_initial`'s `LOG_SOLVER` banner.
+#[cfg(sundials)]
+fn log_cvode_configuration(rtol: f64, root_finding: bool, config: CvodeConfig) {
+    // C's compatibility warning, before the banner it belongs to.
+    let (lmm, iter) = config;
+    if (lmm == CvodeLmm::Adams) != (iter == CvodeIter::FixedPoint) {
+        omclog::warning(
+            omclog::SOLVER,
+            true,
+            &format!("Combination of {} and {} not recommended.", lmm.name(), iter.name()),
+        );
+        for line in [
+            "Use simflags -cvodeLinearMultistepMethod and -cvodeNonlinearSolverIteration to set.",
+            "Use (CV_BDF, CV_ITER_NEWTON) for stiff problems (Default) or",
+            "Use (CV_ADAMS, CV_ITER_FIXED_POINT) for nonstiff problems.",
+        ] {
+            omclog::warning(omclog::SOLVER, false, line);
+        }
+        omclog::close(omclog::SOLVER);
+    }
     for line in [
-        "CVODE linear multistep method CV_BDF",
-        "CVODE maximum integration order CV_ITER_NEWTON",
-        "CVODE use equidistant time grid YES",
+        format!("CVODE linear multistep method {}", lmm.name()),
+        format!("CVODE maximum integration order {}", iter.name()),
+        "CVODE use equidistant time grid YES".to_string(),
     ] {
-        omclog::info(omclog::SOLVER, false, line);
+        omclog::info(omclog::SOLVER, false, &line);
     }
     omclog::info(
         omclog::SOLVER,
@@ -5587,13 +5649,14 @@ fn log_cvode_configuration(rtol: f64, root_finding: bool) {
         &format!("CVODE uses internal root finding method {}", if root_finding { "YES" } else { "NO" }),
     );
     for line in [
-        "CVODE maximum absolut step size 0",
-        "CVODE initial step size is set automatically",
-        "CVODE maximum integration order 5",
-        "CVODE maximum number of nonlinear convergence failures permitted during one step 10",
-        "CVODE BDF stability limit detection algorithm OFF",
+        "CVODE maximum absolut step size 0".to_string(),
+        "CVODE initial step size is set automatically".to_string(),
+        format!("CVODE maximum integration order {}", lmm.max_order()),
+        "CVODE maximum number of nonlinear convergence failures permitted during one step 10"
+            .to_string(),
+        "CVODE BDF stability limit detection algorithm OFF".to_string(),
     ] {
-        omclog::info(omclog::SOLVER, false, line);
+        omclog::info(omclog::SOLVER, false, &line);
     }
 }
 
@@ -5608,11 +5671,11 @@ impl CvodeState {
             None => {
                 let root = (self.n_roots > 0).then_some(cvode_root as crate::sundials::RootFn);
                 let cv = crate::sundials::Cvode::new(
-                    *t, y, self.rtol, &self.atol, self.n_roots, cvode_rhs, root,
+                    *t, y, self.rtol, &self.atol, self.n_roots, cvode_rhs, root, self.config,
                 )
                 .ok_or("CodegenWasmJit: CVODE initialization failed")?;
                 if self.banner {
-                    log_cvode_configuration(self.rtol, self.n_roots > 0);
+                    log_cvode_configuration(self.rtol, self.n_roots > 0, self.config);
                 }
                 self.cv.insert(cv)
             }
@@ -5835,6 +5898,9 @@ pub struct EngineOde<'a> {
     pub states_base: u32,
     pub ders_base: u32,
     pub nls_fail_off: u32,
+    /// `--symSolver`'s `inlineData` slots (see [`openmodelica_solvers::symsolver`]).
+    pub inline_dt_off: u32,
+    pub alg_old_off: u32,
     pub ctx_addr: u32,
     /// Sparsity + coloring for the finite-difference Jacobian; `None` ⇒ dense
     /// column-by-column differencing.
@@ -5966,6 +6032,29 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
     }
 }
 
+/// `--symSolver`'s generated update equations over the same handle: they read the
+/// model clock, `inlineData->dt` and `inlineData->algOldVars` and write the states.
+impl openmodelica_solvers::symsolver::InlineOde for EngineOde<'_> {
+    fn set_alg_old(&mut self, y: &[f64]) -> Result<()> {
+        write_f64s(self.e, self.sim_data + self.alg_old_off, y)
+    }
+
+    fn get_states(&mut self, y: &mut [f64]) -> Result<()> {
+        read_f64s(self.e, self.states_base, y)
+    }
+
+    fn set_states(&mut self, y: &[f64]) -> Result<()> {
+        write_f64s(self.e, self.states_base, y)
+    }
+
+    fn inline_eval(&mut self, t: f64, dt: f64) -> Result<()> {
+        // `write_time` is also C's `externalInputUpdate` + `input_function`.
+        write_time(self.e, self.sim_data, t)?;
+        write_f64(self.e, self.sim_data + self.inline_dt_off, dt)?;
+        self.e.call1("symbolicInlineSystem", self.sim_data)
+    }
+}
+
 fn model_ode<'a>(
     e: &'a mut (dyn SimEngine + 'static),
     ctx: &'a ResCtx,
@@ -5980,6 +6069,8 @@ fn model_ode<'a>(
         states_base,
         ders_base,
         nls_fail_off: ctx.nls_fail_off,
+        inline_dt_off: ctx.inline_dt_off,
+        alg_old_off: ctx.alg_old_off,
         ctx_addr: ctx.ctx_addr,
         jac_a: unsafe { ctx.jac.as_ref() },
         nominals,
@@ -5988,6 +6079,16 @@ fn model_ode<'a>(
         zc_off: ctx.zc_off,
         calls: 0,
     }
+}
+
+/// Whether `method` asks for the model's symbolic update equations, and which
+/// `--symSolver` variant they were generated as. `None` for every other method,
+/// and for a model that carries no inline system.
+fn sym_kind(method: &str, layout: &SimLayout) -> Option<openmodelica_solvers::symsolver::SymKind> {
+    if !matches!(method, "symSolver" | "symSolverSsc") {
+        return None;
+    }
+    openmodelica_solvers::symsolver::SymKind::from_code(layout.sym_solver)
 }
 
 /// C's `-s=euler`/`-s=rungekutta`, the two schemes [`crate::fixedstep`] serves.
@@ -6112,6 +6213,7 @@ impl SolverCore {
                     rtol: tol,
                     atol,
                     n_roots: nrt as usize,
+                    config: crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
                     work_retries: 0,
                     banner: true,
                 })
@@ -6132,6 +6234,14 @@ impl SolverCore {
         let solver = Solver::Daskr(DaskrState::new(model, n_states, nrt, rtol, atol));
         let solver = if let Some(kind) = fixed_kind(method) {
             Solver::Fixed(crate::fixedstep::FixedStep::new(kind, n_states, layout.n_zc as usize))
+        } else if let Some(kind) = sym_kind(method, layout) {
+            Solver::Sym(openmodelica_solvers::symsolver::SymSolver::new(
+                kind,
+                method == "symSolverSsc",
+                n_states,
+                layout.n_zc as usize,
+                tol,
+            ))
         } else if let Some(mut g) = gbode {
             g.set_experiment(model.start_time, model.stop_time, model.step_size());
             g.set_nominals(&nominals);
@@ -6324,15 +6434,17 @@ impl SolverCore {
             Solver::Gbode(g) => g.restart(),
             // The fixed-step solvers carry no step history to invalidate.
             Solver::Fixed(_) => {}
+            // C's `didEventStep`: `first_step` re-seeds the inner integrator.
+            Solver::Sym(s) => s.restart(),
         }
         Ok(())
     }
 
     /// A time event changes discrete state the derivative may depend on, so a
-    /// solver that carries its own step history has to re-initialize. gbode always
-    /// does, as C's `didEventStep` is set for time events too.
+    /// solver that carries its own step history has to re-initialize. gbode and the
+    /// sym solvers always do, as C's `didEventStep` is set for time events too.
     fn restart_after_time_event(&self) -> bool {
-        matches!(self.solver, Solver::Gbode(_))
+        matches!(self.solver, Solver::Gbode(_) | Solver::Sym(_))
     }
 
     /// Recompute `yp` after an event, as C's `updateContinuousSystem` does: a
@@ -6402,6 +6514,8 @@ impl SolverCore {
             ders_base: self.ders_base,
             n_states: self.n_states,
             nls_fail_off: layout.nls_fail_off,
+            inline_dt_off: layout.inline_dt_off,
+            alg_old_off: layout.alg_old_off,
             nfe: self.nfe,
             zc_probe_off: layout.zc_probe_off,
             zc_off: layout.zc_off,
@@ -6416,7 +6530,7 @@ impl SolverCore {
                 // gbode differences the ODE Jacobian itself and takes the pattern
                 // from here; the fixed-step solvers need none.
                 Solver::Gbode(_) => self.jac_a.as_ref().map_or(core::ptr::null(), |j| j as *const JacAInfo),
-                Solver::Fixed(_) => core::ptr::null(),
+                Solver::Fixed(_) | Solver::Sym(_) => core::ptr::null(),
             },
             jac_method: match &self.solver {
                 Solver::Daskr(d) => d.jac_method,
@@ -6425,7 +6539,7 @@ impl SolverCore {
                 // None of these reach `dassl_jac`/`ida_jac`.
                 #[cfg(sundials)]
                 Solver::Cvode(_) => JacobianMethod::InternalNumJac,
-                Solver::Gbode(_) | Solver::Fixed(_) => JacobianMethod::InternalNumJac,
+                Solver::Gbode(_) | Solver::Fixed(_) | Solver::Sym(_) => JacobianMethod::InternalNumJac,
             },
             jac_gp: vec![0.0; self.n_unknowns],
             jac_ysave: vec![0.0; self.n_unknowns],
@@ -6480,8 +6594,16 @@ impl SolverCore {
                     let e = unsafe { &mut *ctx.engine };
                     let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals, &self.maxs);
                     match f.step(&mut ode, &mut self.t, &mut self.y, &mut self.yp, target)? {
-                        crate::fixedstep::FixedProgress::Reached => Progress::Reached,
-                        crate::fixedstep::FixedProgress::Root(_) => Progress::Root,
+                        openmodelica_solvers::events::StepEnd::Reached => Progress::Reached,
+                        openmodelica_solvers::events::StepEnd::Root(_) => Progress::Root,
+                    }
+                }
+                Solver::Sym(s) => {
+                    let e = unsafe { &mut *ctx.engine };
+                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals, &self.maxs);
+                    match s.step(&mut ode, &mut self.t, &mut self.y, &mut self.yp, target)? {
+                        openmodelica_solvers::events::StepEnd::Reached => Progress::Reached,
+                        openmodelica_solvers::events::StepEnd::Root(_) => Progress::Root,
                     }
                 }
                 Solver::Gbode(g) => {
@@ -6549,6 +6671,11 @@ impl SolverCore {
                 stats.steps = f.steps;
                 stats.res_evals = self.nfe;
             }
+            Solver::Sym(s) => {
+                stats.steps = s.steps;
+                // The inline evaluations, which is what C counts as `nCallsODE`.
+                stats.res_evals = s.calls_ode;
+            }
             Solver::Gbode(g) => {
                 let s = g.stats();
                 stats.steps = s.steps;
@@ -6577,7 +6704,7 @@ impl SolverCore {
             Solver::Ida(_) => true,
             Solver::Gbode(_) => true,
             // C's fixed-step solvers land on the output grid by construction.
-            Solver::Fixed(_) => false,
+            Solver::Fixed(_) | Solver::Sym(_) => false,
         }
     }
 
@@ -6592,6 +6719,7 @@ impl SolverCore {
             Solver::Ida(s) => s.ida.as_ref().map(|ida| pos(ida.roots())).unwrap_or_default(),
             Solver::Gbode(g) => vec![g.root_index()],
             Solver::Fixed(f) => vec![f.root_index()],
+            Solver::Sym(s) => vec![s.root_index()],
         }
     }
 
@@ -6994,7 +7122,11 @@ pub fn log_cs_solver_setup(model: &SimModel, defer: CsDefer) {
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
         let mask = omclog::mask();
         omclog::set_mask(mask | (1 << omclog::SOLVER));
-        log_cvode_configuration(tol, defer == CsDefer::Any);
+        log_cvode_configuration(
+            tol,
+            defer == CsDefer::Any,
+            crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
+        );
         omclog::set_mask(mask);
     }
     #[cfg(not(sundials))]
@@ -7781,8 +7913,11 @@ impl CvodeDriver {
             None
         } else {
             Some(
-                crate::sundials::Cvode::new(start, &y, tol, &atol, 0, cvode_rhs, None)
-                    .ok_or("CodegenWasmJit: CVODE initialization failed")?,
+                crate::sundials::Cvode::new(
+                    start, &y, tol, &atol, 0, cvode_rhs, None,
+                    crate::simflags::with_flags(|f| crate::simflags::cvode_config(&f)),
+                )
+                .ok_or("CodegenWasmJit: CVODE initialization failed")?,
             )
         };
 
@@ -7872,6 +8007,8 @@ impl Driver for CvodeDriver {
             ders_base: self.ders_base,
             n_states,
             nls_fail_off: layout.nls_fail_off,
+            inline_dt_off: layout.inline_dt_off,
+            alg_old_off: layout.alg_old_off,
             nfe: 0,
             zc_probe_off: 0,
             zc_off: 0,
@@ -8816,6 +8953,8 @@ impl Driver for IdaDriver {
             ders_base: self.ders_base,
             n_states,
             nls_fail_off: layout.nls_fail_off,
+            inline_dt_off: layout.inline_dt_off,
+            alg_old_off: layout.alg_old_off,
             nfe: 0,
             zc_probe_off: 0,
             zc_off: 0,

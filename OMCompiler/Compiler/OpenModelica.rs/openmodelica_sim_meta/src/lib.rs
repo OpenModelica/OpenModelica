@@ -294,6 +294,15 @@ pub struct Layout {
     /// prints those values from inside that function, which the driver cannot.
     pub n_attr_log: u32,
     pub attr_log_off: u32,
+    /// C's `compiledWithSymSolver` (`--symSolver`): 0 none, 1 `impEuler`, 2
+    /// `expEuler`. Nonzero ⇒ the module exports `symbolicInlineSystem` and the two
+    /// regions below exist.
+    pub sym_solver: u8,
+    /// C's `simulationInfo->inlineData`: the step size `__OMC_DT` (f64) the inline
+    /// equations read, and the `<state>$Old` values (one f64 per state) they step
+    /// from.
+    pub inline_dt_off: u32,
+    pub alg_old_off: u32,
     /// Residuals `functionRemovedInitialEquations` checks; 0 ⇒ it is a stub.
     pub n_removed_init: u32,
     /// The rejected residual (f64) and its 1-based index (i32); index 0 ⇒ consistent.
@@ -334,6 +343,7 @@ impl Layout {
         n_opt_attr: u32,
         n_attr_log: u32,
         n_removed_init: u32,
+        sym_solver: u8,
         has_when: bool,
         has_homotopy: bool,
         homotopy_method: HomotopyMethod,
@@ -395,7 +405,9 @@ impl Layout {
         let attr_log_off = (opt_use_nom_off + n_opt_attr * 4 + 7) & !7;
         let removed_init_res_off = attr_log_off + n_attr_log * 8;
         let removed_init_idx_off = removed_init_res_off + 8;
-        let total = removed_init_idx_off + 4;
+        let inline_dt_off = (removed_init_idx_off + 4 + 7) & !7;
+        let alg_old_off = inline_dt_off + if sym_solver > 0 { 8 } else { 0 };
+        let total = alg_old_off + if sym_solver > 0 { n_states * 8 } else { 0 };
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, homotopy_method, has_init_lambda0, has_history_ops, has_old_real, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off, old_real_off,
@@ -406,7 +418,8 @@ impl Layout {
             n_base_clocks, clock_off, n_sub_clocks, subclock_off, clock_fire_off, linz_off, n_linz,
             n_opt_attr, opt_min_off, opt_max_off, opt_nom_off, opt_use_nom_off,
             n_attr_log, attr_log_off,
-            n_removed_init, removed_init_res_off, removed_init_idx_off, total,
+            n_removed_init, removed_init_res_off, removed_init_idx_off,
+            sym_solver, inline_dt_off, alg_old_off, total,
         }
     }
 
@@ -1285,7 +1298,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 14;
+const VERSION: u32 = 15;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1323,10 +1336,12 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.n_opt_attr, l.opt_min_off, l.opt_max_off, l.opt_nom_off, l.opt_use_nom_off,
         l.n_attr_log, l.attr_log_off,
         l.n_removed_init, l.removed_init_res_off, l.removed_init_idx_off,
+        l.inline_dt_off, l.alg_old_off,
         l.total,
     ] {
         put_u32(o, v);
     }
+    o.push(l.sym_solver);
     o.push(l.has_when as u8);
     o.push(l.has_homotopy as u8);
     o.push(l.homotopy_method.code());
@@ -1756,7 +1771,10 @@ impl<'a> Reader<'a> {
             n_removed_init: self.u32()?,
             removed_init_res_off: self.u32()?,
             removed_init_idx_off: self.u32()?,
+            inline_dt_off: self.u32()?,
+            alg_old_off: self.u32()?,
             total: self.u32()?,
+            sym_solver: 0,
             has_when: false,
             has_homotopy: false,
             homotopy_method: HomotopyMethod::default(),
@@ -1764,6 +1782,7 @@ impl<'a> Reader<'a> {
             has_history_ops: false,
             has_old_real: false,
         };
+        l.sym_solver = self.u8()?;
         l.has_when = self.u8()? != 0;
         l.has_homotopy = self.u8()? != 0;
         l.homotopy_method = HomotopyMethod::from_code(self.u8()?);
@@ -2089,7 +2108,7 @@ mod tests {
         SimMeta {
             // Every flag non-default, so the round-trip covers the flag block.
             layout: Layout::new(
-                2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, true, true,
+                2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, 2, true, true,
                 HomotopyMethod::LocalAdaptive, true, true, true,
             ),
             start_time: 0.0,
