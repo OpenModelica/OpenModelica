@@ -801,6 +801,11 @@ void ctestRust() {
     "OMC_SUNDIALS_WASM_DIR=${env.WORKSPACE}/build_cmake/rust-sundials-wasm",
     "OMC_WASI_P1_ADAPTER=${env.WORKSPACE}/build_cmake/downloads/wasi_snapshot_preview1.reactor.wasm",
     "OMC_EXTERNAL_C_SOURCES=${env.WORKSPACE}/OMCompiler/SimulationRuntime/ModelicaExternalC/C-Sources",
+    // Without these the SUNDIALS dylink is empty and the FMU link test skips it.
+    // The include dir is under rust-sundials-wasm because that is what is stashed.
+    "OMC_SUNDIALS_SOURCES=${env.WORKSPACE}/OMCompiler/3rdParty/sundials",
+    "OMC_SUITESPARSE_SOURCES=${env.WORKSPACE}/OMCompiler/3rdParty/SuiteSparse",
+    "OMC_SUNDIALS_WASM_INCLUDE=${env.WORKSPACE}/build_cmake/rust-sundials-wasm/include",
   ]
   try {
     withSccache(wasmEnv) {

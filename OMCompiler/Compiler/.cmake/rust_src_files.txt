@@ -367,6 +367,7 @@ openmodelica_simcode_util/Cargo.toml
 openmodelica_solvers/Cargo.toml
 openmodelica_solvers/build.rs
 openmodelica_solvers/src/dassl.rs
+openmodelica_solvers/src/events.rs
 openmodelica_solvers/src/fixedstep.rs
 openmodelica_solvers/src/gbode/conf.rs
 openmodelica_solvers/src/gbode/ctrl.rs
@@ -386,6 +387,7 @@ openmodelica_solvers/src/lib.rs
 openmodelica_solvers/src/omclog.rs
 openmodelica_solvers/src/simflags.rs
 openmodelica_solvers/src/sundials.rs
+openmodelica_solvers/src/symsolver.rs
 openmodelica_susan/Cargo.toml
 openmodelica_susan/src/main.rs
 openmodelica_tpl/Cargo.toml

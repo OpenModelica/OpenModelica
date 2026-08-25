@@ -19,10 +19,12 @@ use alloc::string::{String, ToString};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 pub mod dassl;
+pub mod events;
 pub mod fixedstep;
 pub mod gbode;
 pub mod omclog;
 pub mod simflags;
+pub mod symsolver;
 #[cfg(sundials)]
 pub mod sundials;
 
