@@ -1,4 +1,4 @@
-set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/ParModelica/auto)
+set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/c/ParModelica/auto)
 
 if(APPLE)
   # MacPorts installs the Boost configuration file in a non-standard location,
@@ -32,11 +32,6 @@ target_link_libraries(ParModelicaAuto PUBLIC Boost::graph)
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
   target_compile_options(ParModelicaAuto PRIVATE -Wno-deprecated-declarations)
 endif()
-
-# add_executable(ParModelicaAutoTest)
-# target_sources(ParModelicaAutoTest PRIVATE test_task_graph.cpp)
-# target_link_libraries(ParModelicaAutoTest PRIVATE ParModelicaAuto)
-
 
 install(TARGETS ParModelicaAuto)
 install(FILES om_pm_interface.hpp

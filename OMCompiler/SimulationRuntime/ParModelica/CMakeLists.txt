@@ -1,3 +1,6 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(OpenModelicaSimulationRuntimeParModelica LANGUAGES CXX)
 
 if(APPLE)
   # MacPorts installs the Boost configuration file in a non-standard location,

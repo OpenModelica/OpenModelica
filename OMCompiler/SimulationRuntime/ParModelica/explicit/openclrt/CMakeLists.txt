@@ -1,6 +1,4 @@
-set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/ParModelica/auto)
-
-find_package(OpenCL REQUIRED)
+set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/c/ParModelica/explicit/openclrt)
 
 set(PARMODEXP_SOURCES omc_ocl_memory_ops.cpp
                     omc_ocl_interface.cpp
