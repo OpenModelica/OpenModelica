@@ -1098,7 +1098,7 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-3.30573e-05)^(0.166667)
 // LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
 // LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-2.9414e-06)^(0.166667)
-// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.000585541)^(0.166667)
+// LOG_ASSERT        | debug   | TestInversePlant.BackwardOffDesignHomotopy_02nls.c:118: Invalid root: (-0.000843571)^(0.166667)
 // LOG_ASSERT        | warning | The following assertion has been violated during initialization at time 0.000000
 // LOG_ASSERT        | debug   | Model error: Argument of sqrt(plant.TIT / plant.Tnom) was -0.541531 should be >= 0
 // LOG_STDOUT        | warning | While solving non-linear system an assertion failed during initialization.
@@ -1165,8 +1165,6 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // LOG_ASSERT        | error   | Failed to solve the initialization problem with global homotopy with equidistant step size.
 // LOG_ASSERT        | debug   | Unable to solve initialization problem.
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
-// double free or corruption (!prev)
-// Aborted (core dumped)
 // "
 // end SimulationResult;
 // ""
