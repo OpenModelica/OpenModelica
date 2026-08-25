@@ -6473,6 +6473,7 @@ dependencies = [
  "openmodelica_frontend_types",
  "openmodelica_nbackend",
  "openmodelica_nf_frontend",
+ "openmodelica_omgraphics",
  "openmodelica_program_util",
  "openmodelica_script_util",
  "openmodelica_simcode_types",
@@ -7054,6 +7055,17 @@ dependencies = [
  "openmodelica_frontend_types",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
+]
+
+[[package]]
+name = "openmodelica_omgraphics"
+version = "0.1.0"
+dependencies = [
+ "arcstr",
+ "flate2",
+ "metamodelica",
+ "openmodelica_util",
+ "openmodelica_wasi",
 ]
 
 [[package]]

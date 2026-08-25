@@ -371,6 +371,7 @@ pub(crate) fn reset_caches() {
         KLU_CACHE.with(|c| c.borrow_mut().clear());
         UMFPACK_CACHE.with(|c| c.borrow_mut().clear());
         KIN_CACHE.with(|c| c.borrow_mut().clear());
+        crate::lis::reset_caches();
     }
 }
 

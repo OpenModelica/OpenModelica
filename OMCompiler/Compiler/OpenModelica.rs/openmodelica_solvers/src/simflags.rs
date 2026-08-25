@@ -66,6 +66,7 @@ pub enum Ls {
     TotalPivot = 3,
     Klu = 4,
     Umfpack = 5,
+    Lis = 6,
 }
 
 /// `-lss`. `Rsparse` is wasm-jit's own solver, not a C runtime value.
@@ -76,6 +77,7 @@ pub enum Lss {
     Klu = 2,
     Rsparse = 3,
     Umfpack = 4,
+    Lis = 5,
 }
 
 /// `-idaLS`, the linear solver IDA's Newton iteration uses.
@@ -1205,10 +1207,12 @@ const NLS_LS_VALUES: &[Value<NlsLs>] = &[
 ];
 
 /// `-ls`. `lapack` is partial-pivot LU falling back to the total-pivot search,
-/// which `totalpivot` goes straight to.
+/// which `totalpivot` goes straight to. `lis` rides the same archive bundle as
+/// klu/umfpack, hence the same capability.
 const LS_VALUES: &[Value<Ls>] = &[
     ("default", Ls::Default, Offer::Never),
     ("lapack", Ls::Lapack, Offer::Always),
+    ("lis", Ls::Lis, Offer::WithSundials),
     ("totalpivot", Ls::TotalPivot, Offer::Always),
     ("klu", Ls::Klu, Offer::WithSundials),
     ("umfpack", Ls::Umfpack, Offer::WithSundials),
@@ -1217,6 +1221,7 @@ const LS_VALUES: &[Value<Ls>] = &[
 /// `-lss`
 const LSS_VALUES: &[Value<Lss>] = &[
     ("default", Lss::Default, Offer::Never),
+    ("lis", Lss::Lis, Offer::WithSundials),
     ("rsparse", Lss::Rsparse, Offer::Always),
     ("klu", Lss::Klu, Offer::WithSundials),
     ("umfpack", Lss::Umfpack, Offer::WithSundials),

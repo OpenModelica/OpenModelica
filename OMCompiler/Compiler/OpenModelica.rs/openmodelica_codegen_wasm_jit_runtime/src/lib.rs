@@ -53,6 +53,9 @@ mod spatial;
 // when the build script found them, so `cfg(sundials)` gates the calls; the module
 // itself compiles everywhere for its capability report.
 mod sundials;
+// `-ls lis` / `-lss lis`. Same archive bundle as SUNDIALS, so the same cfg.
+#[cfg(sundials)]
+mod lis;
 
 use alloc::format;
 use alloc::string::String;
@@ -2468,6 +2471,7 @@ pub extern "C" fn rt_lin_solves() -> u64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_ls_begin(eq_index: i32, size: u32, nnz: u32) {
     sysstats::begin(eq_index, false, size, nnz);
+    nls::set_no_throw_div_zero(true);
 }
 
 /// Leave the linear system [`rt_ls_begin`] entered. Iterations and evaluations are
@@ -2503,14 +2507,15 @@ pub extern "C" fn rt_stats_start(on: u32) {
 /// Solve the dense `n`×`n` system `A x = b` in place: `A` is `a_ptr` as `n*n`
 /// f64 in **column-major** order, `b` is `b_ptr` as `n` f64. On success `b ← x`
 /// and 0 is returned; 1 only when the system is genuinely unsolvable. `A` is left
-/// intact for [`rt_linsolve_totalpivot`].
+/// intact for [`rt_linsolve_totalpivot`]. `x_ptr` is C's `aux_x`, read only by the
+/// iterative `-ls lis`.
 ///
 /// LU with partial pivoting (like C's `dgesv`), then a total-pivot search on a
 /// singular matrix, mirroring C's `LS_DEFAULT`; `-ls=klu`/`-ls=umfpack` use
-/// SuiteSparse instead. `method1`: a [`rt_ls_check_step`] follows, and is what
-/// decides whether the system is solved.
+/// SuiteSparse instead and `-ls=lis` the real Lis. `method1`: a
+/// [`rt_ls_check_step`] follows, and is what decides whether the system is solved.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64, method1: i32) -> i32 {
+pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_index: i32, time: f64, method1: i32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     sysstats::mark_assembly_done();
     let n = n as usize;
@@ -2519,7 +2524,19 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, tim
         solvers::Ls::TotalPivot => {}
         solvers::Ls::Klu => ls_start_log(eq_index, n, time, "Klu"),
         solvers::Ls::Umfpack => ls_start_log(eq_index, n, time, "UMFPACK"),
+        solvers::Ls::Lis => ls_start_log(eq_index, n, time, "Lis"),
         solvers::Ls::Lapack => ls_start_log(eq_index, n, time, "Lapack"),
+    }
+    #[cfg(sundials)]
+    if matches!(solvers::ls(), solvers::Ls::Lis) {
+        let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
+        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+        let x0 = lis_initial_guess(x_ptr, n);
+        let ret = lis::solve_dense(a, b, &x0, n, eq_index, time);
+        if ret == 0 && method1 == 0 {
+            ls_solved(eq_index);
+        }
+        return ret;
     }
     #[cfg(sundials)]
     match solvers::ls() {
@@ -2576,6 +2593,15 @@ pub extern "C" fn rt_linsolve_totalpivot(a_ptr: u32, b_ptr: u32, n: u32, eq_inde
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
     ls_total_pivot(a, b, n, eq_index, time)
+}
+
+/// C's `aux_x`, which `solveLis` seeds the iteration with (`-initx_zeros 0`).
+#[cfg(sundials)]
+fn lis_initial_guess(x_ptr: u32, n: usize) -> alloc::vec::Vec<f64> {
+    match x_ptr {
+        0 => alloc::vec![0.0f64; n],
+        p => unsafe { core::slice::from_raw_parts(p as *const f64, n) }.to_vec(),
+    }
 }
 
 /// C's per-solver `Start solving Linear System …` line.
@@ -2771,18 +2797,27 @@ pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_p
 }
 
 /// Solve `A x = b` from a dense column-major `A` (`a_ptr`, `n*n` f64) with the
-/// `-lss` solver: its structural nonzeros are scanned into CSC first. There is no
-/// system handle, so nothing is cached. 0 ok, 1 singular.
+/// `-lss` solver: its structural nonzeros are scanned into CSC first. The direct
+/// solvers cache no factorization here (they are handed no pattern to analyse).
+/// 0 ok, 1 singular. `x_ptr` is C's `aux_x`, read only by the iterative `-lss lis`.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, n: u32) -> i32 {
+pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_index: i32, time: f64) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     sysstats::mark_assembly_done();
     let n = n as usize;
     #[cfg(sundials)]
+    if matches!(solvers::lss(), solvers::Lss::Lis) {
+        let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
+        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+        let x0 = lis_initial_guess(x_ptr, n);
+        return lis::solve_dense(a, b, &x0, n, eq_index, time);
+    }
+    let _ = (eq_index, time);
+    #[cfg(sundials)]
     match solvers::lss() {
         solvers::Lss::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
         solvers::Lss::Umfpack => return (sundials::umfpack_solve_dense(a_ptr, b_ptr, n) != 0) as i32,
-        solvers::Lss::Rsparse => {}
+        _ => {} // rsparse below; Lis returned above
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
 
@@ -2852,17 +2887,29 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
     rowidx: u32,
     values: u32,
     b_ptr: u32,
+    x_ptr: u32,
     n: u32,
     nnz: u32,
     time: f64,
 ) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     sysstats::mark_assembly_done();
+    #[cfg(sundials)]
+    if matches!(solvers::lss(), solvers::Lss::Lis) {
+        ls_start_log(handle as i32, n as usize, time, "Lis");
+        let n = n as usize;
+        let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
+        let rowi = unsafe { core::slice::from_raw_parts(rowidx as *const i32, nnz as usize) };
+        let vals = unsafe { core::slice::from_raw_parts(values as *const f64, nnz as usize) };
+        let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+        let x0 = lis_initial_guess(x_ptr, n);
+        return lis::solve_csc(handle, colp, rowi, vals, b, &x0, n, handle as i32, time);
+    }
     let (backend, name) = match solvers::lss() {
-        solvers::Lss::Klu => (solvers::Sparse::Klu, "Klu"),
         solvers::Lss::Umfpack => (solvers::Sparse::Umfpack, "UMFPACK"),
         // rsparse stands in for KLU where SuiteSparse is absent; C's name for it.
         solvers::Lss::Rsparse => (solvers::Sparse::Rsparse, "Klu"),
+        _ => (solvers::Sparse::Klu, "Klu"), // Lis returned above
     };
     ls_start_log(handle as i32, n as usize, time, name);
     lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz, backend)

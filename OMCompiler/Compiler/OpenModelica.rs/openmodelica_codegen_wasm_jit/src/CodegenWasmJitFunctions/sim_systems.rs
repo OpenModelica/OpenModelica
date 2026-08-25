@@ -671,14 +671,15 @@ pub(crate) fn compile_linear_system(
     let data = ctx.sim()?.data_local;
 
     // One scratch block: A (n*n, column-major) | b (n) | res0 (n) | rescol (n) |
-    // x0 (n) | offs (n i32 slot offsets, so the probe loop can index unknown
-    // `col` at run time).
+    // x0 (n) | aux (n) | offs (n i32 slot offsets, so the probe loop can index
+    // unknown `col` at run time).
     let a_off: u32 = 0;
     let b_off: u32 = (n * n * 8) as u32;
     let res0_off: u32 = ((n * n + n) * 8) as u32;
     let rescol_off: u32 = ((n * n + 2 * n) * 8) as u32;
     let x0_off: u32 = ((n * n + 3 * n) * 8) as u32;
-    let offs_off: u32 = ((n * n + 4 * n) * 8) as u32;
+    let aux_off: u32 = ((n * n + 4 * n) * 8) as u32;
+    let offs_off: u32 = ((n * n + 5 * n) * 8) as u32;
     let scratch_bytes: u32 = offs_off + (n * 4) as u32;
 
     let base = ctx.alloc_temp(WTy::I32);
@@ -716,6 +717,7 @@ pub(crate) fn compile_linear_system(
     };
 
     // --- b = -r(x0): residual at the probe point into res0, then negate into b. ---
+    emit_aux_x(ctx, base, aux_off, &slots)?;
     emit_init_x0(ctx, base, x0_off, &slots, method1)?;
     emit_residual_eval(ctx, base, res_exps, res0_off, lower_inner)?;
     for i in 0..n {
@@ -777,7 +779,7 @@ pub(crate) fn compile_linear_system(
     // --- solve, scatter, recover the torn variables, free the scratch. `res0` is
     // spent by now, so the step check reuses it. ---
     let m1 = method1.then_some(Method1 { res_off: res0_off, res_exps });
-    emit_lin_solve_scatter(ctx, base, b_off, n, &slots, use_sparse, m1, index, lower_inner)
+    emit_lin_solve_scatter(ctx, base, b_off, aux_off, n, &slots, use_sparse, m1, index, lower_inner)
 }
 
 /// The `(index, time)` a solver's warnings need.
@@ -841,6 +843,23 @@ fn emit_init_x0(ctx: &mut FnCtx, base: u32, x0_off: u32, slots: &[u32], method1:
         ctx.emit(I::LocalGet(data));
         ctx.emit(I::F64Load(mem_arg(off, 3)));
         ctx.emit(I::F64Store(mem_arg(x0_off + (j as u32) * 8, 3)));
+    }
+    Ok(())
+}
+
+/// C's `aux_x`, filled from `localData[1]` before `solve_linear_system`: the
+/// previous solution, read only by the iterative `-ls lis` / `-lss lis`. Emit
+/// before anything overwrites the unknowns.
+fn emit_aux_x(ctx: &mut FnCtx, base: u32, aux_off: u32, slots: &[u32]) -> Result<()> {
+    use we::Instruction as I;
+    let sim = ctx.sim()?;
+    let data = sim.data_local;
+    let old_real = sim.old_real;
+    for (j, &off) in slots.iter().enumerate() {
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::F64Load(mem_arg(old_slot(old_real, off).unwrap_or(off), 3)));
+        ctx.emit(I::F64Store(mem_arg(aux_off + (j as u32) * 8, 3)));
     }
     Ok(())
 }
@@ -966,13 +985,14 @@ fn emit_lin_step(
 }
 
 /// Solve the assembled dense `A dx = b` (column-major `A` at `base+0`, `b` at
-/// `base+b_off`), then scatter/recover/free. `use_sparse` picks
-/// `rt_solve_lin_dense_sparse` vs `rt_linsolve`.
+/// `base+b_off`, C's `aux_x` at `base+aux_off`), then scatter/recover/free.
+/// `use_sparse` picks `rt_solve_lin_dense_sparse` vs `rt_linsolve`.
 #[allow(clippy::too_many_arguments)]
 fn emit_lin_solve_scatter(
     ctx: &mut FnCtx,
     base: u32,
     b_off: u32,
+    aux_off: u32,
     n: usize,
     slots: &[u32],
     use_sparse: bool,
@@ -985,10 +1005,13 @@ fn emit_lin_solve_scatter(
     ctx.emit(I::LocalGet(base));
     ctx.emit(I::I32Const(b_off as i32));
     ctx.emit(I::I32Add); // b_ptr
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::I32Const(aux_off as i32));
+    ctx.emit(I::I32Add); // x_ptr
     ctx.emit(I::I32Const(n as i32));
+    emit_linsolve_context(ctx, index)?;
     let solver = if use_sparse { "rt_solve_lin_dense_sparse" } else { "rt_linsolve" };
     if !use_sparse {
-        emit_linsolve_context(ctx, index)?;
         ctx.emit(I::I32Const(m1.is_some() as i32)); // a step check follows
     }
     ctx.emit(I::Call(rt_index(solver)?));
@@ -1181,7 +1204,8 @@ pub(crate) fn compile_linear_system_analytic(
     ctx.emit(I::End);
 
     let m1 = Method1 { res_off, res_exps };
-    emit_lin_solve_scatter(ctx, base, b_off, n, &slots, use_sparse, Some(m1), index, lower_inner)
+    // A method-1 system probes at the previous solution, so `xold` is C's `aux_x`.
+    emit_lin_solve_scatter(ctx, base, b_off, xold_off, n, &slots, use_sparse, Some(m1), index, lower_inner)
 }
 
 /// Greedy distance-1 column coloring (Curtis-Powell-Reid) of the CSC pattern:
@@ -1495,7 +1519,7 @@ pub(crate) fn compile_linear_system_analytic_csc(
     ctx.emit(I::End); // color loop
     ctx.emit(I::End); // color block
 
-    // rt_solve_lin_sparse_cached(handle, colptr, rowidx, values, b, n, nnz).
+    // rt_solve_lin_sparse_cached(handle, colptr, rowidx, values, b, x, n, nnz, time).
     ctx.emit(I::I32Const(handle));
     ctx.emit(I::LocalGet(base));
     ctx.emit(I::I32Const(colptr_off as i32));
@@ -1506,6 +1530,9 @@ pub(crate) fn compile_linear_system_analytic_csc(
     ctx.emit(I::LocalGet(base)); // values_off == 0
     ctx.emit(I::LocalGet(base));
     ctx.emit(I::I32Const(b_off as i32));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::I32Const(xold_off as i32)); // C's `aux_x`
     ctx.emit(I::I32Add);
     ctx.emit(I::I32Const(n as i32));
     ctx.emit(I::I32Const(nnz as i32));
@@ -1589,9 +1616,10 @@ pub(crate) fn compile_linear_system_symbolic(
     let use_sparse = lin_use_sparse(n, a_entries.len());
 
     let base = ctx.alloc_temp(WTy::I32);
-    // `b` lives at the same offset in both layouts (after the matrix region), so
-    // the scatter/solve `b` handling is shared.
+    // `b` and `aux` live at the same offsets in both layouts (after the matrix
+    // region), so the scatter/solve handling is shared.
     let b_off: u32;
+    let aux_off: u32;
 
     if use_sparse {
         // CSC layout: colptr (n+1 i32) | rowidx (nnz i32) | values (nnz f64) | b (n f64).
@@ -1611,7 +1639,8 @@ pub(crate) fn compile_linear_system_symbolic(
         let rowidx_off: u32 = ((n + 1) * 4) as u32;
         let values_off: u32 = rowidx_off + (nnz * 4) as u32;
         b_off = values_off + (nnz * 8) as u32;
-        let scratch_bytes: u32 = b_off + (n * 8) as u32;
+        aux_off = b_off + (n * 8) as u32;
+        let scratch_bytes: u32 = aux_off + (n * 8) as u32;
         ctx.emit(I::I32Const(scratch_bytes as i32));
         ctx.emit(I::Call(rt_index("rt_alloc")?));
         ctx.emit(I::LocalSet(base));
@@ -1634,9 +1663,11 @@ pub(crate) fn compile_linear_system_symbolic(
             ctx.emit(I::F64Store(mem_arg(values_off + (k as u32) * 8, 3)));
         }
         emit_b_exps(ctx, base, b_off, b_exps)?;
-        // rt_solve_lin_sparse_cached(handle, colptr, rowidx, values, b, n, nnz). The
-        // pattern is a compile-time constant, so the system index keys the runtime's
-        // cache and the symbolic factorization is computed once per run, as in C.
+        emit_aux_x(ctx, base, aux_off, &slots)?;
+        // rt_solve_lin_sparse_cached(handle, colptr, rowidx, values, b, x, n, nnz,
+        // time). The pattern is a compile-time constant, so the system index keys
+        // the runtime's cache and the symbolic factorization is computed once per
+        // run, as in C.
         ctx.emit(I::I32Const(index));
         ctx.emit(I::LocalGet(base)); // colptr (off 0)
         ctx.emit(I::LocalGet(base));
@@ -1648,15 +1679,19 @@ pub(crate) fn compile_linear_system_symbolic(
         ctx.emit(I::LocalGet(base));
         ctx.emit(I::I32Const(b_off as i32));
         ctx.emit(I::I32Add);
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::I32Const(aux_off as i32));
+        ctx.emit(I::I32Add);
         ctx.emit(I::I32Const(n as i32));
         ctx.emit(I::I32Const(nnz as i32));
         emit_sim_time(ctx)?;
         ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
     } else {
-        // Dense layout: A (n*n column-major) | b (n).
+        // Dense layout: A (n*n column-major) | b (n) | aux (n).
         let a_off: u32 = 0;
         b_off = (n * n * 8) as u32;
-        let scratch_bytes: u32 = ((n * n + n) * 8) as u32;
+        aux_off = ((n * n + n) * 8) as u32;
+        let scratch_bytes: u32 = ((n * n + 2 * n) * 8) as u32;
         ctx.emit(I::I32Const(scratch_bytes as i32));
         ctx.emit(I::Call(rt_index("rt_alloc")?));
         ctx.emit(I::LocalSet(base));
@@ -1675,10 +1710,14 @@ pub(crate) fn compile_linear_system_symbolic(
             ctx.emit(I::F64Store(mem_arg(elem_off, 3)));
         }
         emit_b_exps(ctx, base, b_off, b_exps)?;
-        // rt_linsolve(a_ptr, b_ptr, n, index, time, method1).
+        emit_aux_x(ctx, base, aux_off, &slots)?;
+        // rt_linsolve(a_ptr, b_ptr, x_ptr, n, index, time, method1).
         ctx.emit(I::LocalGet(base)); // a_ptr (a_off == 0)
         ctx.emit(I::LocalGet(base));
         ctx.emit(I::I32Const(b_off as i32));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::I32Const(aux_off as i32));
         ctx.emit(I::I32Add);
         ctx.emit(I::I32Const(n as i32));
         emit_linsolve_context(ctx, index)?;
