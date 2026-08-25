@@ -332,6 +332,9 @@ pub const MODEL_FNS: &[&str] = &[
     "functionZeroCrossingsEquations",
     "functionJacA_constantEqns",
     "functionJacA_column",
+    "functionDAE",
+    "reconJacF",
+    "reconJacH",
 ];
 
 /// The clock a model entry point runs under, where `CodegenC.tpl` ticks one inside
@@ -966,6 +969,45 @@ fn set_no_throw(v: bool) {
     if p != 0 {
         let f: fn(bool) = unsafe { core::mem::transmute(p) };
         f(v);
+    }
+}
+
+/// C's error report for a `-reconcile*` run whose simulation failed.
+#[cfg(feature = "std")]
+fn report_run_failure(model: &SimMeta) {
+    crate::datarecon::report_run_failure(model);
+}
+#[cfg(not(feature = "std"))]
+fn report_run_failure(_model: &SimMeta) {}
+
+/// The `-reconcile*` procedures; a runtime without a filesystem has none.
+#[cfg(feature = "std")]
+pub fn reconcile(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32) -> (alloc::string::String, Result<()>) {
+    crate::datarecon::reconcile(e, model, sim_data)
+}
+#[cfg(not(feature = "std"))]
+pub fn reconcile(_e: &mut dyn SimEngine, _model: &SimMeta, _sim_data: u32) -> (alloc::string::String, Result<()>) {
+    (alloc::string::String::new(), Ok(()))
+}
+
+/// C's `OpenModelica_uriToFilename`, which needs the compiler's class-directory
+/// table. The host installs its own; without one a `modelica://` URI is left as
+/// written, and `file://` is stripped.
+pub type UriResolver = fn(&str) -> alloc::string::String;
+static URI_RESOLVER: AtomicUsize = AtomicUsize::new(0);
+pub fn set_uri_resolver(f: UriResolver) {
+    URI_RESOLVER.store(f as usize, Ordering::Relaxed);
+}
+pub(crate) fn uri_to_filename(uri: &str) -> alloc::string::String {
+    use alloc::string::ToString;
+    let p = URI_RESOLVER.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: UriResolver = unsafe { core::mem::transmute(p) };
+        return f(uri);
+    }
+    match uri.strip_prefix("file://") {
+        Some(path) => path.to_string(),
+        None => uri.to_string(),
     }
 }
 
@@ -3935,7 +3977,15 @@ pub fn drive(
             eprintln!("wasm-jit sim [{label}]: {}", line.join(" "));
         }
     }
-    let rows = outcome?;
+    let rows = match outcome {
+        Ok(rows) => rows,
+        // C's `dataReconciliation(data, threadData, status)` with a non-zero status:
+        // the run failed, so the procedure writes its error report and exits.
+        Err(e) => {
+            report_run_failure(model);
+            return Err(e);
+        }
+    };
     stats.method = label;
 
     // C's `finishSimulation` order: this line, then the caller's LOG_STATS block.
@@ -3944,8 +3994,19 @@ pub fn drive(
         write_output_vars(e, model, sim_data, &rows, n_reals as usize, &out_names)?;
     }
 
-    let lin = crate::linearize::linearize(e, model, sim_data)?;
+    // C runs the `-reconcile*` procedures between the solver and `linearize`, and
+    // prints their output after the run's success line — which is where the
+    // caller's capture split puts anything logged past the teardown below.
+    let (recon_log, recon_res) = reconcile(e, model, sim_data);
+    let lin = match recon_res.is_ok() {
+        true => crate::linearize::linearize(e, model, sim_data)?,
+        false => None,
+    };
     let params = finalize_run(e, model, sim_data)?;
+    if !recon_log.is_empty() {
+        log_line(crate::omclog::STDOUT, crate::omclog::INFO, &recon_log);
+    }
+    recon_res?;
     rtclock::accumulate(rtclock::TOTAL);
     (stats.timers, stats.tcalls) = rtclock::snapshot();
     stats.systems = e.sys_stats();

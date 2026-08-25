@@ -149,6 +149,7 @@ openmodelica_codegen_fmu_omsi/Cargo.toml
 openmodelica_codegen_graphml/Cargo.toml
 openmodelica_codegen_wasm_jit/Cargo.toml
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/datarecon.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/linearize.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/native_fmu.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/optimization.rs
@@ -340,6 +341,7 @@ openmodelica_scripting_qt/src/lib.rs
 openmodelica_sim_meta/Cargo.toml
 openmodelica_sim_meta/build.rs
 openmodelica_sim_meta/gen_tableau.py
+openmodelica_sim_meta/src/datarecon.rs
 openmodelica_sim_meta/src/driver.rs
 openmodelica_sim_meta/src/extinput.rs
 openmodelica_sim_meta/src/lib.rs

@@ -127,6 +127,9 @@ pub fn set_log_sink(f: LogSink) {
 }
 
 pub fn log_line(stream: omclog::Stream, ty: omclog::LogType, s: &str) {
+    if omclog::capture_line(s) {
+        return;
+    }
     let p = LOG_SINK.load(Ordering::Relaxed);
     if p != 0 {
         let f: LogSink = unsafe { core::mem::transmute(p) };

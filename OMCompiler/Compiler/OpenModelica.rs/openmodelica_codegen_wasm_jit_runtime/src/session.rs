@@ -61,8 +61,8 @@ fn cancel_hook() -> bool {
 #[allow(dead_code)]
 pub const N_SLOTS: u32 = driver::MODEL_FNS.len() as u32;
 
-/// `present_mask` is a `u32` on both sides, so the list cannot outgrow it.
-const _: () = assert!(N_SLOTS <= 32);
+/// `present_mask` is a `u64` on both sides, so the list cannot outgrow it.
+const _: () = assert!(N_SLOTS <= 64);
 
 fn slot_of(name: &str) -> Option<u32> {
     driver::MODEL_FNS.iter().position(|&n| n == name).map(|i| i as u32)
@@ -75,12 +75,12 @@ fn slot_of(name: &str) -> Option<u32> {
 /// `rt_solve_nls` already do).
 struct InWasmEngine {
     fn_base: u32,
-    present_mask: u32,
+    present_mask: u64,
 }
 
 impl InWasmEngine {
     fn present(&self, slot: u32) -> bool {
-        self.present_mask & (1 << slot) != 0
+        self.present_mask & (1u64 << slot) != 0
     }
 }
 
@@ -291,7 +291,7 @@ pub extern "C" fn rt_sim_set_overrides(ptr: u32, len: u32) -> i32 {
 /// `present_mask` bit `s` is set iff slot `s` holds a real funcref. Returns 0 on
 /// success, <0 on error.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, present_mask: u32) -> i32 {
+pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, present_mask: u64) -> i32 {
     // Any prior session is dropped (frees its buffers) before starting a new one.
     *session() = None;
     crate::reset_lin_solves();

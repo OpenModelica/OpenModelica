@@ -261,6 +261,59 @@ mod store {
     pub use imp::with;
 }
 
+/// Where [`crate::driver::log_line`] puts a line while a capture is open. Same
+/// storage pattern as [`store`]: thread-local under `std`, a static in-wasm.
+mod capture_store {
+    #[cfg(feature = "std")]
+    mod imp {
+        use alloc::string::String;
+        use core::cell::RefCell;
+        std::thread_local! {
+            static BUF: RefCell<Option<String>> = const { RefCell::new(None) };
+        }
+        pub fn with<R>(f: impl FnOnce(&mut Option<String>) -> R) -> R {
+            BUF.with(|c| f(&mut c.borrow_mut()))
+        }
+    }
+
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use alloc::string::String;
+        use core::cell::UnsafeCell;
+        struct Store(UnsafeCell<Option<String>>);
+        unsafe impl Sync for Store {}
+        static BUF: Store = Store(UnsafeCell::new(None));
+        pub fn with<R>(f: impl FnOnce(&mut Option<String>) -> R) -> R {
+            f(unsafe { &mut *BUF.0.get() })
+        }
+    }
+
+    pub use imp::with;
+}
+
+/// Start diverting log lines into a buffer. `-reconcile` runs while the model is
+/// still alive but prints after the run's success line, so its lines are held here
+/// until the caller places them.
+pub fn start_capture() {
+    capture_store::with(|b| *b = Some(String::new()));
+}
+
+/// End the diversion and return what was captured.
+pub fn take_capture() -> String {
+    capture_store::with(|b| b.take()).unwrap_or_default()
+}
+
+/// `true` when the line was captured and must not reach the sink.
+pub(crate) fn capture_line(s: &str) -> bool {
+    capture_store::with(|b| match b {
+        Some(buf) => {
+            buf.push_str(s);
+            true
+        }
+        None => false,
+    })
+}
+
 /// Install the run's active streams, and reset the indentation state so a run never
 /// inherits an unclosed block.
 pub fn set_mask(m: Mask) {

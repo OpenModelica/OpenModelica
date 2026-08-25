@@ -1598,11 +1598,11 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         .ok_or_else(|| "CodegenWasmJit: runtime has no __indirect_function_table export")?;
     let n_slots = crate::model::INWASM_SLOT_NAMES.len() as u64;
     let fn_base = wts(table.grow(&mut store, n_slots, wasmtime::Ref::Func(None)))?;
-    let mut present_mask: u32 = 0;
+    let mut present_mask: u64 = 0;
     for (slot, name) in crate::model::INWASM_SLOT_NAMES.iter().enumerate() {
         if let Some(f) = instance.get_func(&mut store, name) {
             wts(table.set(&mut store, fn_base + slot as u64, wasmtime::Ref::Func(Some(f))))?;
-            present_mask |= 1 << slot;
+            present_mask |= 1u64 << slot;
         }
     }
 
@@ -1629,7 +1629,7 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         return Err("CodegenWasmJit: the runtime rejected the simulation flags".to_string());
     }
 
-    let start = wts(rt_inst.get_typed_func::<(u32, u32, u32, u32), i32>(&mut store, "rt_sim_start"))?;
+    let start = wts(rt_inst.get_typed_func::<(u32, u32, u32, u64), i32>(&mut store, "rt_sim_start"))?;
     let gf = |store: &mut Store, name: &'static str| wts(rt_inst.get_typed_func::<(), u32>(store, name));
     // Assembled before the run starts so that an initialization `assert()`, which
     // traps out of `rt_sim_start`, is decoded through the same `SimEngine` as one

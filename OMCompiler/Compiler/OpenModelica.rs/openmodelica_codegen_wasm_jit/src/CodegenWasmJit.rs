@@ -107,6 +107,9 @@ pub(crate) mod linearize;
 #[path = "CodegenWasmJit/optimization.rs"]
 pub(crate) mod optimization;
 
+#[path = "CodegenWasmJit/datarecon.rs"]
+pub(crate) mod datarecon;
+
 /// Iterate a MetaModelica `List` (which is `IntoIterator` by reference, not via
 /// an `.iter()` method).
 pub(crate) fn lst<T: Clone>(l: &Arc<List<T>>) -> impl Iterator<Item = &T> {
@@ -1423,12 +1426,20 @@ mod session {
                             let rows = driver.take_rows();
                             let mut stats = SolveStats::default();
                             driver.fill_stats(&sess.meta, &mut stats);
-                            let lin = openmodelica_sim_meta::linearize::linearize(
-                                &mut **engine,
-                                &sess.meta,
-                                *sim_data,
-                            )?;
+                            // C's order: the `-reconcile*` procedures, then `-l`.
+                            let (recon_log, recon_res) =
+                                sim_driver::reconcile(&mut **engine, &sess.meta, *sim_data);
+                            let lin = match recon_res.is_ok() {
+                                true => openmodelica_sim_meta::linearize::linearize(
+                                    &mut **engine,
+                                    &sess.meta,
+                                    *sim_data,
+                                )?,
+                                false => None,
+                            };
                             let params = sim_driver::finalize_run(&mut **engine, &sess.meta, *sim_data)?;
+                            stats_block.push_str(&recon_log);
+                            recon_res?;
                             let run = sim_driver::RunResult {
                                 rows,
                                 n_reals: model.layout.n_row_total(),
@@ -4105,6 +4116,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // Jacobian scratch region: nonlinear-system slots + torn-linear slots (after).
     let nls_jac_scratch_f64 = nls_jac_scratch_f64(sim_code) + lin_jac_scratch_f64(sim_code);
     let all_eqs = flatten_eqs(&sim_code.allEquations);
+    // `-reconcile` re-solves with C's `functionDAE`, which is these plus the local
+    // known variables; `all_eqs` itself is consumed by `functionAlgebraics` below.
+    let all_eqs_for_dae = all_eqs.clone();
+    let local_known_eqs = flatten_eqs(&sim_code.localKnownVars);
     // `--daeMode`: `allEquations`/`odeEquations` are empty and the whole continuous
     // system is `daeModeData.daeEquations`, the residual `F(t, y, y') = 0`.
     let dae_mode = sim_code.daeModeData.as_ref();
@@ -4142,6 +4157,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let n_sub_clocks: u32 = clocks.iter().map(|c| c.meta.sub.len() as u32).sum();
     // `-l`: the symbolic A/B/C/D and the scratch their column equations need.
     let mut linz = build_linz_plan(sim_code, vars, n_states)?;
+    // `-reconcile`: F/H, laid out right behind them.
+    let mut recon = datarecon::build_plan(sim_code, vars);
     let layout = SimLayout::new(
         n_states,
         n_real_alg,
@@ -4165,7 +4182,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         dae_alg_vars.len() as u32,
         clocks.len() as u32,
         n_sub_clocks,
-        linz.n_scratch_f64(),
+        linz.n_scratch_f64() + recon.n_scratch_f64(),
         // The optimizer's attribute arrays: one entry per real variable, only for a
         // model that carries an optimization problem.
         if optimization::is_optimization(sim_code) { 2 * n_states + n_real_alg } else { 0 },
@@ -4440,6 +4457,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // Same, for the `-l` matrices; "A" there is the ODE state Jacobian, so these
     // are also the slots the integrators seed and read.
     let linz_jac_infos = build_linz_jac_infos(&linz, &layout, &mut var_map)?;
+    let recon_base = layout.linz_off + linz.n_scratch_f64() * 8;
+    let mut recon_jac_infos = datarecon::build_jac_infos(&recon, recon_base, &mut var_map)?;
     var_map.nls_jobs = Arc::new(nls_jobs);
     var_map.generic_calls = Arc::new(
         lst(&sim_code.generic_loop_calls).map(|c| (generic_call_index(c), c.clone())).collect(),
@@ -4673,6 +4692,14 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         &mut linz, &linz_jac_infos, optimization::is_optimization(sim_code), &layout, &var_map,
         &eq_index, &by_name, &mut literals,
     )?;
+    // Same for F/H, before the metadata is built: a matrix that does not lower is
+    // dropped from the plan, and `ReconInfo` must not advertise it.
+    let recon_jac_fns = match recon.present {
+        true => Some(datarecon::build_jac_fns(
+            &mut recon, &mut recon_jac_infos, &var_map, &eq_index, &by_name, &mut literals,
+        )?),
+        false => None,
+    };
     // C's `JACOBIAN_AVAILABLE`: "A" lowered, at a shape indexable by state.
     if let (Some(info), Some(sym_info)) = (jac_a.as_mut(), linz_jac_infos[0].as_ref())
         && linz.jacs[0].is_some()
@@ -4751,6 +4778,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         clocks.iter().map(|c| c.meta.clone()).collect(),
         build_lin_info(&linz, vars, &var_map)?,
         opt_info, input_vars,
+        datarecon::build_recon_info(
+            sim_code, vars, &recon, &recon_jac_infos, &var_map,
+            mi.varInfo.numRelatedBoundaryConditions.max(0) as u32,
+        )?,
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
     let meta_len = meta_bytes.len() as u32;
@@ -5030,6 +5061,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         bodies.extend(opt_jac_fns);
         base
     };
+    // `-reconcile`'s F/H, only for a model the extraction algorithm ran on.
+    let recon_jac_idx = recon_jac_fns.map(|fns| {
+        let base = import_base + bodies.len() as u32;
+        bodies.extend(fns);
+        base
+    });
     // Synchronous features. Always emitted, as the C target emits them (empty
     // without clocked partitions): an FMU adapter cannot import them
     // conditionally without leaving a clock-free model's `env` import unresolved.
@@ -5059,6 +5096,19 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         Some(ty) => {
             let idx = import_base + bodies.len() as u32;
             splits.push(build_split_fn("evaluateDAEResiduals", &dae_units(&dae_eqs), 2, ty, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+            Some(idx)
+        }
+    };
+
+    // C's `functionDAE`: `functionLocalKnownVars` + `allEquations` in the discrete
+    // context, which `-reconcile` re-solves the model with.
+    let recon_dae_idx = match recon.present {
+        false => None,
+        true => {
+            let idx = import_base + bodies.len() as u32;
+            let mut units = eq_units(&local_known_eqs);
+            units.extend(eq_units(&all_eqs_for_dae));
+            splits.push(build_split_fn("functionDAE", &units, 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
             Some(idx)
         }
     };
@@ -5123,12 +5173,18 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     for _ in 0..OPT_JAC_FNS.len() {
         functions.function(eqfn_type); // optJac{B,C,D}{_const,}: (i32) -> ()
     }
+    for _ in 0..(if recon.present { datarecon::JAC_FNS.len() } else { 0 }) {
+        functions.function(eqfn_type); // reconJacF / reconJacH: (i32) -> ()
+    }
     functions.function(eqfn_type); // functionInitSynchronous: (i32) -> ()
     functions.function(sync_fn_type); // functionUpdateSynchronous: (i32, i32) -> ()
     functions.function(sync_fn_type); // functionEquationsSynchronous: (i32, i32) -> ()
     functions.function(eqfn_type); // functionRemovedInitialEquations: (i32) -> ()
     if let Some(ti) = dae_fn_type {
         functions.function(ti); // evaluateDAEResiduals: (i32, i32) -> ()
+    }
+    if recon_dae_idx.is_some() {
+        functions.function(eqfn_type); // functionDAE: (i32) -> ()
     }
     for s in &splits {
         for _ in 0..s.count {
@@ -5257,6 +5313,14 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     for (k, name) in OPT_JAC_FNS.iter().enumerate() {
         exports.export(*name, we::ExportKind::Func, opt_jac_idx + k as u32);
     }
+    if let Some(base) = recon_jac_idx {
+        for (k, name) in datarecon::JAC_FNS.iter().enumerate() {
+            exports.export(name, we::ExportKind::Func, base + k as u32);
+        }
+    }
+    if let Some(idx) = recon_dae_idx {
+        exports.export("functionDAE", we::ExportKind::Func, idx);
+    }
     let (sync_init, sync_update, sync_eqs) = sync_idx;
     exports.export("functionRemovedInitialEquations", we::ExportKind::Func, removed_init_idx);
     exports.export("functionInitSynchronous", we::ExportKind::Func, sync_init);
@@ -5324,6 +5388,14 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         names.push((idx, name.to_string()));
     }
     names.push((removed_init_idx, "functionRemovedInitialEquations".to_string()));
+    if let Some(base) = recon_jac_idx {
+        for (k, name) in datarecon::JAC_FNS.iter().enumerate() {
+            names.push((base + k as u32, name.to_string()));
+        }
+    }
+    if let Some(idx) = recon_dae_idx {
+        names.push((idx, "functionDAE".to_string()));
+    }
     names.push((sync_init, "functionInitSynchronous".to_string()));
     names.push((sync_update, "functionUpdateSynchronous".to_string()));
     names.push((sync_eqs, "functionEquationsSynchronous".to_string()));
@@ -5755,6 +5827,7 @@ fn build_sim_meta(
     lin: Option<openmodelica_sim_meta::LinInfo>,
     opt: Option<openmodelica_sim_meta::OptInfo>,
     inputs: Vec<openmodelica_sim_meta::InputVar>,
+    recon: Option<openmodelica_sim_meta::ReconInfo>,
 ) -> openmodelica_sim_meta::SimMeta {
     openmodelica_sim_meta::SimMeta {
         layout: *layout,
@@ -5786,6 +5859,7 @@ fn build_sim_meta(
         lin,
         opt,
         inputs,
+        recon,
     }
 }
 
@@ -6081,7 +6155,7 @@ fn assigned_cref_keys(eqs: &[Arc<SimCode::SimEqSystem>]) -> std::collections::Ha
 
 /// The lowering context every generated `SimData*` function shares: local 0 is the
 /// `SimData` pointer, and every slot comes from the one variable map.
-fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
+pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
     SimCtx {
         data_local: 0,
         vars: var_map.vars.clone(),
@@ -7632,7 +7706,7 @@ fn nls_jac_result_rows(jm: &SimCode::JacobianMatrix, n: usize) -> Option<Vec<usi
 /// The seed slot offsets in *column* order (`SimVar.index`, what the C template
 /// indexes `jacobian->seedVars[]` with), from the offsets registered for
 /// `jm.seedVars`. `None` unless the indices are a permutation of `0..n`.
-fn jac_seed_offs_by_column(jm: &SimCode::JacobianMatrix, offs: &[u32], n: usize) -> Option<Vec<u32>> {
+pub(crate) fn jac_seed_offs_by_column(jm: &SimCode::JacobianMatrix, offs: &[u32], n: usize) -> Option<Vec<u32>> {
     let mut by_col = vec![u32::MAX; n];
     for (sv, &off) in lst(&jm.seedVars).zip(offs) {
         let c = usize::try_from(sv.index).ok()?;
@@ -7986,7 +8060,7 @@ fn build_lin_info(
 }
 
 /// A Jacobian the emitter cannot lower is not an error, so its attempt reports here.
-const JAC_CHECKPOINT: ArcStr = arcstr::literal!("wasm-jit symbolic Jacobian");
+pub(crate) const JAC_CHECKPOINT: ArcStr = arcstr::literal!("wasm-jit symbolic Jacobian");
 
 /// Lower the symbolic Jacobians' columns: `linearJac<X>` for `-l`, the
 /// `functionJacA_{constantEqns,column}` pair the integrators drive, and for an
@@ -8633,7 +8707,7 @@ fn eq_index_of(eq: &SimCode::SimEqSystem) -> i32 {
 /// standalone `wasm-merge` (and the interactive shared table) then always resolve
 /// them; the shared driver only calls one when the corresponding metadata count is
 /// nonzero, so the stub is never entered.
-fn empty_eqfn() -> we::Function {
+pub(crate) fn empty_eqfn() -> we::Function {
     let mut f = we::Function::new([]);
     f.instruction(&we::Instruction::End);
     f
