@@ -78,13 +78,14 @@
 #define threadData NULL
 #define omc_dummyFileInfo __LINE__
 
-#ifdef DOUBLE_PREC_AVAILABLE
+/* modelica_integer must have the exact same size as on the host */
 typedef long  modelica_integer;
-typedef double modelica_real;
-#else
-typedef float modelica_real;
-typedef int  modelica_integer;
+
+/* ocl_get_device() rejects devices without fp64, so this should be unreachable. */
+#ifndef DOUBLE_PREC_AVAILABLE
+#error "ParModelica requires an OpenCL device with double precision (cl_khr_fp64)"
 #endif
+typedef double modelica_real;
 
 typedef bool modelica_boolean;
 typedef modelica_integer _index_t;

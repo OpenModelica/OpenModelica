@@ -2377,7 +2377,7 @@ annotation(preferredView="text");
 end getDefaultOpenCLDevice;
 
 function setDefaultOpenCLDevice
-  "Sets the default OpenCL device to be used."
+  "Sets the default OpenCL device to be used. 0 selects one automatically."
   input Integer defdevid;
   output Boolean success;
 algorithm
