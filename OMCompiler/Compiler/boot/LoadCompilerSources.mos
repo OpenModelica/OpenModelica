@@ -537,6 +537,7 @@ if true then /* Suppress output */
     "../Util/HashTableCrToCrEqLst.mo",
     "../Util/HashTableSimCodeEqCache.mo",
     "../Util/HashTableSM1.mo",
+    "../Util/OMGraphics.mo",
     "../Util/OMSimulatorExt.mo",
     "../Util/PriorityQueue.mo",
     "../Util/Rational.mo",
