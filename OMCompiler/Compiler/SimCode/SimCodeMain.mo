@@ -71,6 +71,7 @@ import CodegenEmbeddedC;
 import CodegenFMU;
 import CodegenFMU2;
 import CodegenFMU3;
+import CodegenFMUCommon;
 import CodegenFMUCpp;
 import CodegenOMSICpp;
 import CodegenFMUCppHpcom;
@@ -896,7 +897,7 @@ algorithm
             String path;
           case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(path=path)) then System.readFile(path);
           case SOME(flags as SimCode.FMI_SIMULATION_FLAGS()) then
-            Tpl.textString(CodegenFMU.fmuSimulationFlagsFile(Tpl.emptyTxt, flags));
+            Tpl.textString(CodegenFMUCommon.fmuSimulationFlagsFile(Tpl.emptyTxt, flags));
           else "";
         end match;
         if FMI.isFMIMEType(FMUType) and FMI.isFMICSType(FMUType) then

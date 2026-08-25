@@ -447,7 +447,7 @@ self.onmessage = async (ev) => {
           `buildModelFMU(${a.name}, version="3.0", fmuType="${fmuType}", platforms={${platforms}}${method})`, status)).trim();
         const path = unquote(res);
         if (!path || !path.endsWith('.fmu')) {
-          const err = omc_eval('getErrorString()');
+          const err = unquote(omc_eval('getErrorString()'));
           if (cancelFlag && Atomics.load(cancelFlag, 0)) { clearCancel(); return reply({ ok: false, cancelled: true }); }
           return reply({ ok: false, error: err.trim() || 'FMU export failed.' });
         }

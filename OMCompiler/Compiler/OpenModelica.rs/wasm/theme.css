@@ -67,6 +67,10 @@ input, select {
 .charts { flex:1 1 auto; overflow-y:auto; padding:8px 10px; display:flex; flex-direction:column; gap:8px; }
 .charts[hidden] { display:none; }
 .charts-empty { margin:auto; color:var(--muted); text-align:center; padding:20px; }
+/* Carrying a compiler diagnostic: fills the area from the top and scrolls. */
+.charts-empty.err { margin:0; align-self:stretch; text-align:left; padding:12px 14px;
+  color:var(--err); white-space:pre-wrap; overflow-wrap:anywhere;
+  font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace; }
 .fig-head { color:var(--teal); font-weight:650; font-size:14px; margin:2px 2px -2px; }
 .chart-card { flex:0 0 auto; border:1px solid var(--border); border-radius:6px; background:var(--panel); padding:6px 8px 8px; }
 .chart-card.solo { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }

@@ -888,6 +888,23 @@ match simulationSettings
     >>
 end DefaultExperimentAttribute;
 
+template fmuSimulationFlagsFile(FmiSimulationFlags fmiSimulationFlags)
+  "Generates <fmiPrefix>_flags.json file for FMUs with custom simulation flags.
+   Lives in the codegen_fmu tier: the wasm export ships the same file and reads
+   its solver back out of it, so it must not depend on the C target."
+ ::=
+  match fmiSimulationFlags
+  case flags as FMI_SIMULATION_FLAGS(__) then
+  let fileContent = (flags.nameValueTuples |> (name, value) =>
+      '"<%name%>" : "<%value%>"'
+      ;separator=",\n")
+    <<
+    {
+      <%fileContent%>
+    }
+    >>
+end fmuSimulationFlagsFile;
+
 annotation(__OpenModelica_Interface="codegen_fmu");
 end CodegenFMUCommon;
 

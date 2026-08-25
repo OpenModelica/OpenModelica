@@ -773,6 +773,12 @@ pub fn fmu_cs_solvers() -> Vec<&'static str> {
         .unwrap_or_default()
 }
 
+/// `CodegenWasmJit.fmuCsSolvers`: [`fmu_cs_solvers`] for the MetaModelica side,
+/// which folds an accepted `method=` into the FMU's `_flags.json`.
+pub fn fmuCsSolvers() -> Arc<List<ArcStr>> {
+    Arc::new(fmu_cs_solvers().into_iter().map(ArcStr::from).collect())
+}
+
 /// The `platforms=` values `buildModelFMU` can serve besides `"wasm"`: those this
 /// omc has a loader library for.
 pub fn fmu_platforms() -> Vec<String> {
