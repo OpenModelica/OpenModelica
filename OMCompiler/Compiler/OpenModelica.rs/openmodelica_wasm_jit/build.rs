@@ -435,7 +435,7 @@ fn build_native_loader(
 /// the FMI3 adapter: a failure means a broken build environment.
 ///
 /// `build-std=std` because the precompiled `libstd` is not PIC and a dylink side
-/// module has to be.
+/// module has to be; `+simd128` for faer's kernels.
 fn build_lapack_dylink(crate_dir: &Path, out_dir: &Path) {
     let dest = out_dir.join("liblapack.wasm");
     let stamp = out_dir.join("liblapack.wasm.hash");
@@ -598,7 +598,8 @@ fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant) {
 /// since the runtime it links is a std crate); `--allow-undefined` because
 /// `__heap_base`/`__heap_end` become imports the linker supplies;
 /// `-Zcodegen-backend=llvm` because the workspace default cranelift cannot target
-/// wasm and RUSTFLAGS here replaces the crate's `.cargo/config.toml`.
+/// wasm and RUSTFLAGS here replaces the crate's `.cargo/config.toml`; `+simd128`
+/// for the faer kernels the dense solve reaches, as in `liblapack.wasm`.
 fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant) -> Result<PathBuf, String> {
     let target = "wasm32-unknown-unknown";
     // Separate target dirs: the worlds differ only by feature, and sharing one
@@ -607,7 +608,7 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant) 
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
     let rustflags = "-Zcodegen-backend=llvm -Crelocation-model=pic \
         -Clink-arg=--experimental-pic -Clink-arg=--shared -Clink-arg=--no-entry \
-        -Clink-arg=--allow-undefined";
+        -Clink-arg=--allow-undefined -Ctarget-feature=+simd128";
     let mut cmd = Command::new(cargo);
     cmd.current_dir(adapter_dir)
         .args(["build", "-Z", "build-std=std,panic_abort", "--release", "--target", target])

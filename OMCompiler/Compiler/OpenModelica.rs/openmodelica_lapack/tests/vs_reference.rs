@@ -72,6 +72,19 @@ unsafe extern "C" {
               b: *mut f64, ldb: *const i32, info: *mut i32);
     fn dgbsv_(n: *const i32, kl: *const i32, ku: *const i32, nrhs: *const i32, ab: *mut f64,
               ldab: *const i32, ipiv: *mut i32, b: *mut f64, ldb: *const i32, info: *mut i32);
+    fn dggev_(jobvl: *const c_char, jobvr: *const c_char, n: *const i32, a: *mut f64,
+              lda: *const i32, b: *mut f64, ldb: *const i32, alphar: *mut f64,
+              alphai: *mut f64, beta: *mut f64, vl: *mut f64, ldvl: *const i32,
+              vr: *mut f64, ldvr: *const i32, work: *mut f64, lwork: *const i32,
+              info: *mut i32);
+    fn dhgeqz_(job: *const c_char, compq: *const c_char, compz: *const c_char, n: *const i32,
+               ilo: *const i32, ihi: *const i32, h: *mut f64, ldh: *const i32, t: *mut f64,
+               ldt: *const i32, alphar: *mut f64, alphai: *mut f64, beta: *mut f64,
+               q: *mut f64, ldq: *const i32, z: *mut f64, ldz: *const i32, work: *mut f64,
+               lwork: *const i32, info: *mut i32);
+    fn dtrevc_(side: *const c_char, howmny: *const c_char, select: *mut i32, n: *const i32,
+               t: *const f64, ldt: *const i32, vl: *mut f64, ldvl: *const i32, vr: *mut f64,
+               ldvr: *const i32, mm: *const i32, m: *mut i32, work: *mut f64, info: *mut i32);
     fn dgegv_(jobvl: *const c_char, jobvr: *const c_char, n: *const i32, a: *mut f64,
               lda: *const i32, b: *mut f64, ldb: *const i32, alphar: *mut f64, alphai: *mut f64,
               beta: *mut f64, vl: *mut f64, ldvl: *const i32, vr: *mut f64, ldvr: *const i32,
@@ -88,6 +101,14 @@ unsafe extern "C" {
 /// A deterministic well-conditioned pseudo-random matrix. A fixed LCG rather than
 /// a dependency, and diagonally dominated so the comparison is about the
 /// algorithms and not about which one loses a badly conditioned problem first.
+// DTRSM is BLAS, not LAPACK.
+#[link(name = "blas")]
+unsafe extern "C" {
+    fn dtrsm_(side: *const c_char, uplo: *const c_char, transa: *const c_char,
+              diag: *const c_char, m: *const i32, n: *const i32, alpha: *const f64,
+              a: *const f64, lda: *const i32, b: *mut f64, ldb: *const i32);
+}
+
 fn rand_mat(m: usize, n: usize, seed: u64) -> Vec<f64> {
     let mut s = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
     let mut next = || {
@@ -158,7 +179,8 @@ fn c(s: &str) -> c_char {
 
 #[test]
 fn dgetrf_matches() {
-    for (m, n) in [(5, 5), (7, 4), (4, 7), (1, 1)] {
+    // Sizes on both sides of `FAER_LU_MIN`, so the port and faer are both checked.
+    for (m, n) in [(5, 5), (7, 4), (4, 7), (1, 1), (20, 20), (24, 18), (18, 24)] {
         let a0 = rand_mat(m, n, 11 + m as u64 * 10 + n as u64);
         let (mut a, mut want) = (a0.clone(), a0.clone());
         let mut ipiv = vec![0i32; m.min(n)];
@@ -174,41 +196,45 @@ fn dgetrf_matches() {
 
 #[test]
 fn dgesv_matches() {
-    let n = 6;
-    let a0 = rand_mat(n, n, 21);
-    let b0 = rand_mat(n, 2, 22);
-    let (mut a, mut want_a) = (a0.clone(), a0.clone());
-    let (mut b, mut want_b) = (b0.clone(), b0.clone());
-    let (mut ipiv, mut wipiv) = (vec![0i32; n], vec![0i32; n]);
-    let mut winfo = 0;
-    let info = om::dgesv(n, 2, &mut a, n, &mut ipiv, &mut b, n);
-    unsafe {
-        dgesv_(&i(n), &i(2), want_a.as_mut_ptr(), &i(n), wipiv.as_mut_ptr(), want_b.as_mut_ptr(),
-               &i(n), &mut winfo)
-    };
-    assert_eq!(info, winfo, "dgesv: INFO");
-    same_i(&ipiv, &wipiv, "dgesv: IPIV");
-    same(&a, &want_a, "dgesv: factored A");
-    same(&b, &want_b, "dgesv: X");
+    for n in [6, 20] {
+        let a0 = rand_mat(n, n, 21);
+        let b0 = rand_mat(n, 2, 22);
+        let (mut a, mut want_a) = (a0.clone(), a0.clone());
+        let (mut b, mut want_b) = (b0.clone(), b0.clone());
+        let (mut ipiv, mut wipiv) = (vec![0i32; n], vec![0i32; n]);
+        let mut winfo = 0;
+        let info = om::dgesv(n, 2, &mut a, n, &mut ipiv, &mut b, n);
+        unsafe {
+            dgesv_(&i(n), &i(2), want_a.as_mut_ptr(), &i(n), wipiv.as_mut_ptr(), want_b.as_mut_ptr(),
+                   &i(n), &mut winfo)
+        };
+        assert_eq!(info, winfo, "dgesv {n}: INFO");
+        same_i(&ipiv, &wipiv, &format!("dgesv {n}: IPIV"));
+        same(&a, &want_a, &format!("dgesv {n}: factored A"));
+        same(&b, &want_b, &format!("dgesv {n}: X"));
+    }
 }
 
 #[test]
 fn dgetrs_matches() {
-    let n = 5;
-    let a0 = rand_mat(n, n, 31);
-    let b0 = rand_mat(n, 3, 32);
-    let (mut lu, mut ipiv) = (a0.clone(), vec![0i32; n]);
-    om::dgetrf(n, n, &mut lu, n, &mut ipiv);
-    for t in ["N", "T"] {
-        let (mut b, mut want) = (b0.clone(), b0.clone());
-        let mut winfo = 0;
-        let info = om::dgetrs(t, n, 3, &lu, n, &ipiv, &mut b, n);
-        unsafe {
-            dgetrs_(&c(t), &i(n), &i(3), lu.as_ptr(), &i(n), ipiv.as_ptr(), want.as_mut_ptr(),
-                    &i(n), &mut winfo)
-        };
-        assert_eq!(info, winfo, "dgetrs {t}: INFO");
-        same(&b, &want, &format!("dgetrs {t}: X"));
+    // `FAER_SOLVE_MIN` is well above the LU crossover, so the larger `n` here is
+    // the one that reaches faer's solve.
+    for n in [5, 256] {
+        let a0 = rand_mat(n, n, 31);
+        let b0 = rand_mat(n, 3, 32);
+        let (mut lu, mut ipiv) = (a0.clone(), vec![0i32; n]);
+        om::dgetrf(n, n, &mut lu, n, &mut ipiv);
+        for t in ["N", "T"] {
+            let (mut b, mut want) = (b0.clone(), b0.clone());
+            let mut winfo = 0;
+            let info = om::dgetrs(t, n, 3, &lu, n, &ipiv, &mut b, n);
+            unsafe {
+                dgetrs_(&c(t), &i(n), &i(3), lu.as_ptr(), &i(n), ipiv.as_ptr(), want.as_mut_ptr(),
+                        &i(n), &mut winfo)
+            };
+            assert_eq!(info, winfo, "dgetrs {n} {t}: INFO");
+            same(&b, &want, &format!("dgetrs {n} {t}: X"));
+        }
     }
 }
 
@@ -871,10 +897,12 @@ fn dgegv_eigenvalues_match() {
     }
 }
 
-/// The documented gap: a singular `B` gives LAPACK an infinite eigenvalue and
-/// gives this crate `INFO = n+1`. The point of the test is that it is refused
-/// rather than answered wrongly.
+/// The gap the `B^-1 A` reduction has and the QZ does not: a singular `B` means
+/// an infinite eigenvalue. Without `faer-backend` the reduction refuses it
+/// (`INFO = n+1`) rather than answering it wrongly; with faer it is answered,
+/// with the `BETA = 0` LAPACK reports.
 #[test]
+#[cfg(not(feature = "faer-backend"))]
 fn dgegv_refuses_a_singular_b() {
     let n = 5;
     let a = rand_mat(n, n, 253);
@@ -911,7 +939,10 @@ fn ratios(ar: &[f64], ai: &[f64], be: &[f64]) -> Vec<f64> {
     v.into_iter().flat_map(|(r, i)| [r, i]).collect()
 }
 
+/// Eigenvectors need a QZ, so the reduction refuses them; `dggev_computes_
+/// eigenvectors` is the faer-backend counterpart.
 #[test]
+#[cfg(not(feature = "faer-backend"))]
 fn dgegv_rejects_eigenvector_requests() {
     let n = 3;
     let (a, b) = (rand_mat(n, n, 261), rand_mat(n, n, 262));
@@ -965,4 +996,324 @@ fn dgbsv_matches() {
     };
     assert_eq!(info, winfo, "dgbsv: INFO");
     same(&b, &wb, "dgbsv: X");
+}
+
+// ── the QZ routines, which only exist with `faer-backend` ────────────────────
+
+/// `DGGEV` against LAPACK: eigenvalues as a set, and every right eigenvector
+/// checked by its own residual `|beta*A*x - alpha*B*x|` rather than against
+/// LAPACK's vectors, since an eigenvector is only defined up to scale.
+#[test]
+#[cfg(feature = "faer-backend")]
+fn dggev_matches() {
+    for (n, seed) in [(4usize, 271u64), (6, 272), (9, 273)] {
+        let a0 = rand_mat(n, n, seed);
+        let b0 = rand_mat(n, n, seed + 5000);
+        let (mut ar, mut ai, mut be) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
+        let (mut lar, mut lai, mut lbe) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
+        let mut vr = vec![0.0f64; n * n];
+        let mut lvr = vec![0.0f64; n * n];
+        let (mut wa, mut wb) = (a0.clone(), b0.clone());
+        let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
+        let info = om::gev::dggev("N", "V", n, &a0, n, &b0, n, &mut ar, &mut ai, &mut be,
+                                  &mut [], 1, &mut vr, n);
+        unsafe {
+            dggev_(&c("N"), &c("V"), &i(n), wa.as_mut_ptr(), &i(n), wb.as_mut_ptr(), &i(n),
+                   lar.as_mut_ptr(), lai.as_mut_ptr(), lbe.as_mut_ptr(),
+                   core::ptr::null_mut(), &i(1), lvr.as_mut_ptr(), &i(n),
+                   work.as_mut_ptr(), &i(64 * n), &mut winfo)
+        };
+        assert_eq!((info, winfo), (0, 0), "dggev {n}x{n}: INFO");
+        same(&ratios(&ar, &ai, &be), &ratios(&lar, &lai, &lbe), &format!("dggev {n}x{n}"));
+
+        // beta*A*x = alpha*B*x, with a conjugate pair read out of two columns.
+        let scale = a0.iter().chain(&b0).fold(1.0f64, |m, v| m.max(v.abs()));
+        let mut k = 0;
+        while k < n {
+            let pair = ai[k] != 0.0;
+            for r in 0..n {
+                let (mut are, mut aim, mut bre, mut bim) = (0.0, 0.0, 0.0, 0.0);
+                for cl in 0..n {
+                    let (xr, xi) = (vr[cl + k * n], if pair { vr[cl + (k + 1) * n] } else { 0.0 });
+                    are += a0[r + cl * n] * xr;
+                    aim += a0[r + cl * n] * xi;
+                    bre += b0[r + cl * n] * xr;
+                    bim += b0[r + cl * n] * xi;
+                }
+                // (ar + i*ai) * (bre + i*bim) vs beta * (are + i*aim)
+                let lre = ar[k] * bre - ai[k] * bim;
+                let lim = ar[k] * bim + ai[k] * bre;
+                assert!((be[k] * are - lre).abs() <= 1e-9 * scale
+                        && (be[k] * aim - lim).abs() <= 1e-9 * scale,
+                    "dggev {n}x{n}: eigenvector {k} row {r} residual");
+            }
+            k += if pair { 2 } else { 1 };
+        }
+    }
+}
+
+/// `DGGEV` on a singular `B`: the infinite eigenvalue the `B^-1 A` reduction
+/// could not represent.
+#[test]
+#[cfg(feature = "faer-backend")]
+fn dggev_reports_infinite_eigenvalues() {
+    let n = 5;
+    let a = rand_mat(n, n, 253);
+    let mut b = rand_mat(n, n, 1253);
+    for r in 0..n {
+        b[r + (n - 1) * n] = b[r];
+    }
+    let (mut ar, mut ai, mut be) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
+    let (mut lar, mut lai, mut lbe) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
+    let (mut wa, mut wb) = (a.clone(), b.clone());
+    let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
+    let info = om::gev::dggev("N", "N", n, &a, n, &b, n, &mut ar, &mut ai, &mut be,
+                              &mut [], 1, &mut [], 1);
+    unsafe {
+        dggev_(&c("N"), &c("N"), &i(n), wa.as_mut_ptr(), &i(n), wb.as_mut_ptr(), &i(n),
+               lar.as_mut_ptr(), lai.as_mut_ptr(), lbe.as_mut_ptr(), core::ptr::null_mut(),
+               &i(1), core::ptr::null_mut(), &i(1), work.as_mut_ptr(), &i(64 * n), &mut winfo)
+    };
+    assert_eq!((info, winfo), (0, 0), "dggev singular B: INFO");
+    assert!(be.iter().any(|v| v.abs() < 1e-12), "no infinite eigenvalue: {be:?}");
+    same(&ratios(&ar, &ai, &be), &ratios(&lar, &lai, &lbe), "dggev singular B");
+}
+
+/// `DHGEQZ` on an already Hessenberg-triangular pair, which is how MSL calls it.
+#[test]
+#[cfg(feature = "faer-backend")]
+fn dhgeqz_matches() {
+    for (n, seed) in [(4usize, 281u64), (7, 282)] {
+        // A upper Hessenberg, B upper triangular: DHGEQZ's precondition.
+        let mut a0 = rand_mat(n, n, seed);
+        let mut b0 = rand_mat(n, n, seed + 5000);
+        for j in 0..n {
+            for r in j + 2..n {
+                a0[r + j * n] = 0.0;
+            }
+            for r in j + 1..n {
+                b0[r + j * n] = 0.0;
+            }
+        }
+        let (mut ar, mut ai, mut be) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
+        let (mut lar, mut lai, mut lbe) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
+        let (mut h, mut t) = (a0.clone(), b0.clone());
+        let (mut lh, mut lt) = (a0.clone(), b0.clone());
+        let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
+        let info = om::eig::dhgeqz("E", "N", "N", n, &mut h, n, &mut t, n, &mut ar, &mut ai,
+                                   &mut be, &mut [], 1, &mut [], 1);
+        unsafe {
+            dhgeqz_(&c("E"), &c("N"), &c("N"), &i(n), &i(1), &i(n), lh.as_mut_ptr(), &i(n),
+                    lt.as_mut_ptr(), &i(n), lar.as_mut_ptr(), lai.as_mut_ptr(),
+                    lbe.as_mut_ptr(), core::ptr::null_mut(), &i(1), core::ptr::null_mut(),
+                    &i(1), work.as_mut_ptr(), &i(64 * n), &mut winfo)
+        };
+        assert_eq!((info, winfo), (0, 0), "dhgeqz {n}x{n}: INFO");
+        same(&ratios(&ar, &ai, &be), &ratios(&lar, &lai, &lbe), &format!("dhgeqz {n}x{n}"));
+    }
+}
+
+/// `DTREVC` with `howmny = "A"` — the eigenvectors of `T` itself, which is what
+/// MSL's wrapper asks for. Compared by residual, since sign and scale are free.
+#[test]
+fn dtrevc_matches() {
+    for (n, seed) in [(4usize, 291u64), (6, 292)] {
+        // A real Schur form: quasi-upper-triangular, from DGEES on a random matrix.
+        let a0 = rand_mat(n, n, seed);
+        let mut t = a0.clone();
+        let (mut wr, mut wi) = (vec![0.0f64; n], vec![0.0f64; n]);
+        let mut vs = vec![0.0f64; n * n];
+        assert_eq!(om::dgees("N", "N", n, &mut t, n, &mut wr, &mut wi, &mut vs, n), 0);
+
+        let mut vr = vec![0.0f64; n * n];
+        let mut lvr = vec![0.0f64; n * n];
+        let (mut m, mut lm) = (0i32, 0i32);
+        let mut work = vec![0.0f64; 4 * n];
+        let mut winfo = 0;
+        let mut select = vec![0i32; n];
+        let info = om::trevc::dtrevc_lapack("R", "A", n, &t, n, &mut [], 1, &mut vr, n, n, &mut m);
+        unsafe {
+            dtrevc_(&c("R"), &c("A"), select.as_mut_ptr(), &i(n), t.as_ptr(), &i(n),
+                    core::ptr::null_mut(), &i(1), lvr.as_mut_ptr(), &i(n), &i(n), &mut lm,
+                    work.as_mut_ptr(), &mut winfo)
+        };
+        assert_eq!((info, winfo, m, lm), (0, 0, n as i32, n as i32), "dtrevc {n}x{n}");
+        // T*x = lambda*x for each column, the invariant that fixes the free scale.
+        let scale = t.iter().fold(1.0f64, |v, x| v.max(x.abs()));
+        let mut k = 0;
+        while k < n {
+            let pair = wi[k] != 0.0;
+            for r in 0..n {
+                let (mut tre, mut tim) = (0.0, 0.0);
+                for cl in 0..n {
+                    let (xr, xi) = (vr[cl + k * n], if pair { vr[cl + (k + 1) * n] } else { 0.0 });
+                    tre += t[r + cl * n] * xr;
+                    tim += t[r + cl * n] * xi;
+                }
+                let (xr, xi) = (vr[r + k * n], if pair { vr[r + (k + 1) * n] } else { 0.0 });
+                assert!((tre - (wr[k] * xr - wi[k] * xi)).abs() <= 1e-9 * scale
+                        && (tim - (wr[k] * xi + wi[k] * xr)).abs() <= 1e-9 * scale,
+                    "dtrevc {n}x{n}: eigenvector {k} row {r} residual");
+            }
+            k += if pair { 2 } else { 1 };
+        }
+    }
+}
+
+/// A sweep rather than a handful of sizes: the conjugate-pair convention is the
+/// kind of thing that is right on one matrix and wrong on the next, so every
+/// eigenvalue-returning routine is checked over many shapes and seeds.
+#[test]
+fn eigen_sweep_matches() {
+    let (mut pairs, mut checked) = (0usize, 0usize);
+    for n in [2usize, 3, 4, 5, 6, 8, 10, 12, 16, 20] {
+        for seed in 0..15u64 {
+            let a0 = rand_mat(n, n, seed * 7919 + n as u64);
+            let b0 = rand_mat(n, n, seed * 7919 + n as u64 + 5000);
+            let scale = a0.iter().fold(1.0f64, |m, v| m.max(v.abs()));
+            let lw = 64 * n + 100;
+            let mut work = vec![0.0f64; lw];
+
+            // dgeev
+            let (mut wr, mut wi) = (vec![0.0f64; n], vec![0.0f64; n]);
+            let (mut lwr, mut lwi) = (vec![0.0f64; n], vec![0.0f64; n]);
+            let mut wa = a0.clone();
+            let (mut vr, mut lvr) = (vec![0.0f64; n * n], vec![0.0f64; n * n]);
+            let mut winfo = 0;
+            let info = om::dgeev("N", "V", n, &a0, n, &mut wr, &mut wi, &mut [], 1, &mut vr, n);
+            unsafe {
+                dgeev_(&c("N"), &c("V"), &i(n), wa.as_mut_ptr(), &i(n), lwr.as_mut_ptr(),
+                       lwi.as_mut_ptr(), core::ptr::null_mut(), &i(1), lvr.as_mut_ptr(), &i(n),
+                       work.as_mut_ptr(), &i(lw), &mut winfo)
+            };
+            assert_eq!((info, winfo), (0, 0), "dgeev {n}x{n} seed {seed}: INFO");
+            same(&in_order(&sorted_eig(&wr, &wi).0, &sorted_eig(&wr, &wi).1),
+                 &in_order(&sorted_eig(&lwr, &lwi).0, &sorted_eig(&lwr, &lwi).1),
+                 &format!("dgeev {n}x{n} seed {seed}"));
+            pairs += wi.iter().filter(|v| **v != 0.0).count();
+            checked += n;
+
+            // dggev
+            let (mut ar, mut ai, mut be) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
+            let (mut lar, mut lai, mut lbe) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
+            let (mut wa, mut wb) = (a0.clone(), b0.clone());
+            let info = om::gev::dggev("N", "N", n, &a0, n, &b0, n, &mut ar, &mut ai, &mut be,
+                                      &mut [], 1, &mut [], 1);
+            unsafe {
+                dggev_(&c("N"), &c("N"), &i(n), wa.as_mut_ptr(), &i(n), wb.as_mut_ptr(), &i(n),
+                       lar.as_mut_ptr(), lai.as_mut_ptr(), lbe.as_mut_ptr(),
+                       core::ptr::null_mut(), &i(1), core::ptr::null_mut(), &i(1),
+                       work.as_mut_ptr(), &i(lw), &mut winfo)
+            };
+            assert_eq!((info, winfo), (0, 0), "dggev {n}x{n} seed {seed}: INFO");
+            same(&ratios(&ar, &ai, &be), &ratios(&lar, &lai, &lbe),
+                 &format!("dggev {n}x{n} seed {seed}"));
+            pairs += ai.iter().filter(|v| **v != 0.0).count();
+            checked += n;
+            let _ = scale;
+        }
+    }
+    assert!(pairs > 100, "the sweep saw only {pairs} complex eigenvalues, too few to mean much");
+    println!("{checked} eigenvalues checked, {pairs} of them complex");
+}
+
+/// `D*M*D^-1` has `M`'s eigenvalues exactly, and `DGEBAL` is what lets the QR
+/// iteration see that. faer's `evd_real` does not balance on its own, so this is
+/// the test that the wrapper still does: at `spread = 1e10` an unbalanced
+/// iteration returns a conjugate pair as two real eigenvalues.
+#[test]
+fn eigen_balancing_matches() {
+    for spread in [1e6f64, 1e10] {
+        for seed in 0..5u64 {
+            let n = 6;
+            let m = rand_mat(n, n, seed * 104729 + 17);
+            let d: Vec<f64> = (0..n).map(|i| spread.powf(i as f64 / (n - 1) as f64 - 0.5)).collect();
+            let mut a = vec![0.0f64; n * n];
+            for j in 0..n {
+                for i in 0..n {
+                    a[i + j * n] = d[i] * m[i + j * n] / d[j];
+                }
+            }
+
+            let (mut wr, mut wi) = (vec![0.0f64; n], vec![0.0f64; n]);
+            let mut vr = vec![0.0f64; n * n];
+            let info = om::dgeev("N", "V", n, &a, n, &mut wr, &mut wi, &mut [], 1, &mut vr, n);
+            let (mut lwr, mut lwi) = (vec![0.0f64; n], vec![0.0f64; n]);
+            let (mut lvr, mut wa) = (vec![0.0f64; n * n], a.clone());
+            let (lw, mut winfo) = (64 * n + 100, 0);
+            let mut work = vec![0.0f64; lw];
+            unsafe {
+                dgeev_(&c("N"), &c("V"), &i(n), wa.as_mut_ptr(), &i(n), lwr.as_mut_ptr(),
+                       lwi.as_mut_ptr(), core::ptr::null_mut(), &i(1), lvr.as_mut_ptr(), &i(n),
+                       work.as_mut_ptr(), &i(lw), &mut winfo)
+            };
+            let what = format!("dgeev spread {spread:e} seed {seed}");
+            assert_eq!((info, winfo), (0, 0), "{what}: INFO");
+            let (sr, si) = sorted_eig(&wr, &wi);
+            let (lsr, lsi) = sorted_eig(&lwr, &lwi);
+            same(&in_order(&sr, &si), &in_order(&lsr, &lsi), &what);
+
+            // DGEBAK is what makes the vectors those of A rather than of the
+            // balanced matrix, so each is checked against A itself.
+            let scale = a.iter().fold(1.0f64, |m, v| m.max(v.abs()));
+            let mut k = 0;
+            while k < n {
+                let pair = wi[k] != 0.0;
+                for r in 0..n {
+                    let (mut are, mut aim) = (0.0, 0.0);
+                    for cl in 0..n {
+                        are += a[r + cl * n] * vr[cl + k * n];
+                        if pair {
+                            aim += a[r + cl * n] * vr[cl + (k + 1) * n];
+                        }
+                    }
+                    let (xr, xi) = (vr[r + k * n], if pair { vr[r + (k + 1) * n] } else { 0.0 });
+                    assert!((are - (wr[k] * xr - wi[k] * xi)).abs() <= TOL * scale
+                            && (aim - (wr[k] * xi + wi[k] * xr)).abs() <= TOL * scale,
+                        "{what}: eigenvector {k} row {r} residual");
+                }
+                k += if pair { 2 } else { 1 };
+            }
+        }
+    }
+}
+
+/// Eigenvalues as a sorted pair of lists, so the comparison does not depend on
+/// the order the iteration happened to converge in.
+fn sorted_eig(wr: &[f64], wi: &[f64]) -> (Vec<f64>, Vec<f64>) {
+    let mut v: Vec<(f64, f64)> = wr.iter().zip(wi).map(|(r, i)| (*r, *i)).collect();
+    v.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.total_cmp(&b.1)));
+    (v.iter().map(|x| x.0).collect(), v.iter().map(|x| x.1).collect())
+}
+
+
+/// `DTRSM` over every side/uplo/trans/diag combination — 16 of them, and the
+/// mapping onto faer transposes both the matrix and the triangle, so a sign or
+/// side error would hide in exactly one of them.
+#[test]
+fn dtrsm_matches() {
+    for &(m, n) in &[(5usize, 3usize), (4, 4), (3, 6)] {
+        for side in ["L", "R"] {
+            let k = if side == "L" { m } else { n };
+            let a0 = rand_mat(k, k, 601 + k as u64);
+            let b0 = rand_mat(m, n, 733 + m as u64);
+            for uplo in ["U", "L"] {
+                for transa in ["N", "T"] {
+                    for diag in ["N", "U"] {
+                        for &alpha in &[1.0f64, -0.75] {
+                            let (mut b, mut wb) = (b0.clone(), b0.clone());
+                            om::blas::dtrsm(side, uplo, transa, diag, m, n, alpha, &a0, k,
+                                            &mut b, m);
+                            unsafe {
+                                dtrsm_(&c(side), &c(uplo), &c(transa), &c(diag), &i(m), &i(n),
+                                       &alpha, a0.as_ptr(), &i(k), wb.as_mut_ptr(), &i(m))
+                            };
+                            same(&b, &wb,
+                                 &format!("dtrsm {side}/{uplo}/{transa}/{diag} {m}x{n} a={alpha}"));
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

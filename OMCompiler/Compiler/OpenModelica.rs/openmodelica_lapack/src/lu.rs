@@ -1,20 +1,39 @@
 //! LU with partial pivoting and the routines built on it: `DGETRF`, `DGETRS`,
 //! `DGETRI`, `DGESV`, `DGESVX`, plus `DLANGE` and `DGECON`.
 //!
-//! `dgetrf` is LAPACK's unblocked `DGETF2` kernel, so `A` comes back holding the
-//! packed `L\U` and `IPIV` the 1-based row interchanges — the same bytes the
-//! reference implementation writes, which `Modelica.Math.Matrices.LU` exposes to
-//! Modelica code directly.
+//! `A` comes back holding the packed `L\U` and `IPIV` the 1-based row
+//! interchanges, the layout `Modelica.Math.Matrices.LU` exposes to Modelica code
+//! directly. `dgetrf_ref` is LAPACK's unblocked `DGETF2` kernel step for step;
+//! faer factors the larger matrices, to the same convention.
 
 
 use crate::blas::{at, dscal, idamax, set, swap_rows};
 use crate::{abs, opt};
+
+/// Backend crossovers for the LU pair, measured on x86-64 and under wasm: at the
+/// size a Modelica torn linear system usually has, faer's blocking and the `IPIV`
+/// packaging around it cost more than the factorization, and its triangular solve
+/// only pays off far later still. `IPIV` means the same thing either way, so a
+/// factor from one backend solves with the other.
+#[cfg(feature = "faer-backend")]
+const FAER_LU_MIN: usize = 16;
+#[cfg(feature = "faer-backend")]
+const FAER_SOLVE_MIN: usize = 256;
 
 /// `A = P*L*U` by Gaussian elimination with partial pivoting (`DGETRF`). `A` is
 /// `m`×`n` column-major with leading dimension `lda`, overwritten by the factors;
 /// `ipiv` (length `min(m, n)`) receives the 1-based pivot rows. Returns `INFO`:
 /// `0`, or `i > 0` when `U(i,i)` is exactly zero.
 pub fn dgetrf(m: usize, n: usize, a: &mut [f64], lda: usize, ipiv: &mut [i32]) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    if m.min(n) >= FAER_LU_MIN {
+        return crate::faer_backend::dgetrf(m, n, a, lda, ipiv);
+    }
+    dgetrf_ref(m, n, a, lda, ipiv)
+}
+
+/// The port of `DGETF2`: the small-`n` and faer-free path.
+pub fn dgetrf_ref(m: usize, n: usize, a: &mut [f64], lda: usize, ipiv: &mut [i32]) -> i32 {
     let mut info = 0;
     for j in 0..m.min(n) {
         let p = j + idamax(&a[j + j * lda..m + j * lda]);
@@ -60,6 +79,25 @@ pub fn dgetrs(
     b: &mut [f64],
     ldb: usize,
 ) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    if n >= FAER_SOLVE_MIN {
+        return crate::faer_backend::dgetrs(trans, n, nrhs, a, lda, ipiv, b, ldb);
+    }
+    dgetrs_ref(trans, n, nrhs, a, lda, ipiv, b, ldb)
+}
+
+/// The port of `DGETRS`: the small-`n` and faer-free path.
+#[allow(clippy::too_many_arguments)]
+pub fn dgetrs_ref(
+    trans: &str,
+    n: usize,
+    nrhs: usize,
+    a: &[f64],
+    lda: usize,
+    ipiv: &[i32],
+    b: &mut [f64],
+    ldb: usize,
+) -> i32 {
     let notran = opt(trans) == b'N';
     if notran {
         apply_pivots(n, nrhs, ipiv, b, ldb, false);
@@ -88,6 +126,14 @@ fn apply_pivots(n: usize, nrhs: usize, ipiv: &[i32], b: &mut [f64], ldb: usize, 
 /// `inv(A)` from the factors `dgetrf` left (`DGETRI`); `a` is overwritten.
 /// Returns `INFO`: `i > 0` when `U(i,i)` is zero, so `A` is singular.
 pub fn dgetri(n: usize, a: &mut [f64], lda: usize, ipiv: &[i32]) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dgetri(n, a, lda, ipiv);
+    #[cfg(not(feature = "faer-backend"))]
+    dgetri_ref(n, a, lda, ipiv)
+}
+
+/// The port of `DGETRI`, kept as the faer-free fallback.
+pub fn dgetri_ref(n: usize, a: &mut [f64], lda: usize, ipiv: &[i32]) -> i32 {
     for j in 0..n {
         if at(a, lda, j, j) == 0.0 {
             return (j + 1) as i32;

@@ -286,6 +286,7 @@ openmodelica_frontend_inst/Cargo.toml
 openmodelica_frontend_types/Cargo.toml
 openmodelica_lapack/Cargo.lock
 openmodelica_lapack/Cargo.toml
+openmodelica_lapack/LICENSE-FAER
 openmodelica_lapack/LICENSE-LAPACK
 openmodelica_lapack/src/band.rs
 openmodelica_lapack/src/bdsqr.rs
@@ -294,6 +295,8 @@ openmodelica_lapack/src/blas.rs
 openmodelica_lapack/src/chol.rs
 openmodelica_lapack/src/dqds.rs
 openmodelica_lapack/src/eig.rs
+openmodelica_lapack/src/faer_backend.rs
+openmodelica_lapack/src/faer_real_schur.rs
 openmodelica_lapack/src/fortran.rs
 openmodelica_lapack/src/gev.rs
 openmodelica_lapack/src/hqr.rs
@@ -304,7 +307,9 @@ openmodelica_lapack/src/rz.rs
 openmodelica_lapack/src/svd.rs
 openmodelica_lapack/src/trevc.rs
 openmodelica_lapack/tests/reference.rs
+openmodelica_lapack/tests/small_gevd.rs
 openmodelica_lapack/tests/vs_reference.rs
+openmodelica_lapack/vendor-faer-real-schur.sh
 openmodelica_mat_writer/Cargo.toml
 openmodelica_mat_writer/src/lib.rs
 openmodelica_modelica_utilities/Cargo.toml

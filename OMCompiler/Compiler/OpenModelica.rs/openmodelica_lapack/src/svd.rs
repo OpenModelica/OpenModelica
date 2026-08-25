@@ -28,6 +28,27 @@ pub fn dgesvd(
     vt: &mut [f64],
     ldvt: usize,
 ) -> i32 {
+    #[cfg(feature = "faer-backend")]
+    return crate::faer_backend::dgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt);
+    #[cfg(not(feature = "faer-backend"))]
+    dgesvd_ref(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt)
+}
+
+/// The port of reference `DGESVD`, kept as the faer-free fallback.
+#[allow(clippy::too_many_arguments)]
+pub fn dgesvd_ref(
+    jobu: &str,
+    jobvt: &str,
+    m: usize,
+    n: usize,
+    a: &mut [f64],
+    lda: usize,
+    s: &mut [f64],
+    u: &mut [f64],
+    ldu: usize,
+    vt: &mut [f64],
+    ldvt: usize,
+) -> i32 {
     let (ju, jvt) = (opt(jobu), opt(jobvt));
     let (wntua, wntus, wntuo, wntun) =
         (ju == b'A', ju == b'S', ju == b'O', ju == b'N');
