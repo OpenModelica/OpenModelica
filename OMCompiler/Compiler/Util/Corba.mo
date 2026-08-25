@@ -56,40 +56,40 @@ encapsulated package Corba
 
 public function haveCorba
   output Boolean b;
-  external "C" b=Corba_haveCorba() annotation(Library = {"omcruntime", "OpenModelicaCorba"});
+  external "C" b=Corba_haveCorba() annotation(Library = {"omcruntime"});
 end haveCorba;
 
 public function setObjectReferenceFilePath
   input String inObjectReferenceFilePath;
-  external "C" Corba_setObjectReferenceFilePath(inObjectReferenceFilePath) annotation(Library = {"omcruntime", "OpenModelicaCorba"});
+  external "C" Corba_setObjectReferenceFilePath(inObjectReferenceFilePath) annotation(Library = {"omcruntime"});
 end setObjectReferenceFilePath;
 
 public function setSessionName
   input String inSessionName;
 
-  external "C" Corba_setSessionName(inSessionName) annotation(Library = {"omcruntime", "OpenModelicaCorba"});
+  external "C" Corba_setSessionName(inSessionName) annotation(Library = {"omcruntime"});
 end setSessionName;
 
 public function initialize
 
-  external "C" Corba_initialize() annotation(Library = {"omcruntime","OpenModelicaCorba"});
+  external "C" Corba_initialize() annotation(Library = {"omcruntime"});
 end initialize;
 
 public function waitForCommand
   output String outString;
 
-  external "C" outString=Corba_waitForCommand() annotation(Library = {"omcruntime","OpenModelicaCorba"});
+  external "C" outString=Corba_waitForCommand() annotation(Library = {"omcruntime"});
 end waitForCommand;
 
 public function sendreply
   input String inString;
 
-  external "C" Corba_sendreply(inString) annotation(Library = {"omcruntime","OpenModelicaCorba"});
+  external "C" Corba_sendreply(inString) annotation(Library = {"omcruntime"});
 end sendreply;
 
 public function close
 
-  external "C" Corba_close() annotation(Library = {"omcruntime","OpenModelicaCorba"});
+  external "C" Corba_close() annotation(Library = {"omcruntime"});
 end close;
 
 annotation(__OpenModelica_Interface="util");

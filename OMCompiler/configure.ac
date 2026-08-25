@@ -689,7 +689,6 @@ AS_IF([test "x$with_colpack" = xyes],
   OMC_HAVE_COLPACK="/* #define OMC_HAVE_COLPACK */ /* Without ColPack*/"
 ])
 
-m4_include([common/m4/corba.m4])
 
 AC_MSG_CHECKING([for OpenCL])
 AC_CHECK_HEADER([CL/cl.h],[OPENCL="Yes"],[

@@ -2198,21 +2198,13 @@ algorithm
     case Absyn.STRING(str) guard str=="Lapack" or str=="lapack"
       then ({"lapack_win32_MT.lib", "f2c.lib"}, {});
 
-    // omcruntime on windows needs linking with mico2313 and wsock and then some :)
+    // omcruntime on windows needs linking with wsock and then some :)
     case Absyn.STRING("omcruntime")
       algorithm
         true := "Windows_NT" == Autoconf.os;
         strs := {"f2c.lib", "initialization.lib", "libexpat.lib", "math-support.lib", "meta.lib", "ModelicaExternalC.lib", "results.lib", "simulation.lib", "solver.lib", "sundials_kinsol.lib", "sundials_nvecserial.lib", "sundials_sunlinsolklu", "util.lib", "lapack_win32_MT.lib"};
       then
         (strs, {});
-
-    // Wonder if there may be issues if we have duplicates in the Corba libs
-    // and the other libs. Some other developer will probably swear over this
-    // hack some day, but at least I get an early weekend.
-    case Absyn.STRING("OpenModelicaCorba")
-      algorithm
-        str := Autoconf.corbaLibs;
-      then ({str},{});
 
     case Absyn.STRING("fmilib")
       then ({"fmilib.lib","shlwapi.lib"},{});
@@ -2292,21 +2284,13 @@ algorithm
     case Absyn.STRING(str as "omcruntime")
       algorithm
         if "Windows_NT" == Autoconf.os then
-          // omcruntime on windows needs linking with mico2313 and wsock and then some :)
+          // omcruntime on windows needs linking with wsock and then some :)
           str := "-l" + str;
           strs := str :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-ltre" :: "-lws2_32" :: "-lRpcrt4" :: "-lregex" :: {};
         else
           strs := Autoconf.systemLibs;
         end if;
       then  (strs,{});
-
-    // Wonder if there may be issues if we have duplicates in the Corba libs
-    // and the other libs. Some other developer will probably swear over this
-    // hack some day, but at least I get an early weekend.
-    case Absyn.STRING("OpenModelicaCorba")
-      algorithm
-        str := Autoconf.corbaLibs;
-      then ({str},{});
 
     case Absyn.STRING("fmilib")
       then (if Autoconf.os=="Windows_NT" then {"-lfmilib","-lshlwapi"} else {"-lfmilib"},{});

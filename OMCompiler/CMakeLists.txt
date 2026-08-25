@@ -37,13 +37,6 @@ omc_option(OM_OMC_ENABLE_COLPACK "Should we enable graph coloring with ColPack."
 
 omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
 
-# CORBA (omniORB) support for the omc server loop (-d=interactiveCorba /
-# --interactive=corba). The GUI clients talk to omc over ZeroMQ nowadays, so this
-# is only needed for legacy clients (OMOptim, older OMPython/OMShell setups) and
-# is off by default. Enabling it needs omniORB: on MinGW it comes with OMDev,
-# elsewhere it has to be installed (see cmake/modules/FindOmniORB.cmake).
-omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
-
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 
 # Build the Rust (mmtorust) omc port instead of the bootstrapped C omc. When ON,

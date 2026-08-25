@@ -50,7 +50,7 @@ if(OM_OMC_ENABLE_RUST)
   # no `pub mod Autoconf;`, so the hand-written OMSimulatorExt.rs
   # (`use crate::Autoconf;`) fails to build. The Rust port only needs the package
   # to parse: its runtime values are never used (Autoconf.rs is hand-maintained),
-  # so substitute the .in without the C build's ldflags/Corba/etc. plumbing. The
+  # so substitute the .in without the C build's ldflags/etc. plumbing. The
   # only @vars@ used in non-string positions are OMC_TARGET_ARCH_IS_64 and
   # WITH_HWLOC (set by omc_config_unix.cmake above) and BSTATIC (set here); the
   # rest are strings and may be empty. Written to the BUILD tree (RUST_AUTOCONF_MO,
