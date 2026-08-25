@@ -73,11 +73,8 @@ pub type TwoStepWeightsFn = fn(f64, &mut [f64], &mut [f64]) -> f64;
 /// the complex 2x2 blocks follow; any leftover coupling lives in the strictly lower
 /// triangular `L` and is handled by forward substitution.
 ///
-/// Carried for every FIRK method that has it, but the decoupled solve that consumes
-/// it is not implemented yet — [`super::nls`] does the coupled solve instead — so
-/// only `a_part_inv`/`rho` (to rebuild `K` from the stage values) and `gamma` (for
-/// the contractive-defect estimator) are read so far.
-#[allow(dead_code)]
+/// Consumed by [`super::nls`]'s `solve_firk_t`; a FIRK tableau without one gets
+/// the coupled solve instead.
 pub struct TTransform {
     pub a_part_inv: Vec<f64>,
     pub t: Vec<f64>,

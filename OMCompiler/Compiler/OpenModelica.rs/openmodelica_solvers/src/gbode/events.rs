@@ -18,7 +18,7 @@ impl Gbode {
     }
 
     /// C's `checkForStateEvent`: which crossings changed sign against `zc_pre`.
-    fn changed_crossings(&self) -> Vec<usize> {
+    pub(super) fn changed_crossings(&self) -> Vec<usize> {
         (0..self.zc.len())
             .filter(|&i| sign(self.zc[i]) != sign(self.zc_pre[i]))
             .collect()
@@ -31,7 +31,7 @@ impl Gbode {
     /// signs instead is the same test for those and the one that also works for
     /// a model whose crossings are the relation's own value, as an FMU's event
     /// indicators are.
-    fn crossing_in_left(&self) -> bool {
+    pub(super) fn crossing_in_left(&self) -> bool {
         self.event_ids.iter().any(|&i| {
             let (a, b) = (sign(self.zc[i]), sign(self.zc_pre[i]));
             (a == -1 && b == 1) || (a == 1 && b == -1)

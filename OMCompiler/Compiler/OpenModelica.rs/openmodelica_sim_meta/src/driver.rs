@@ -3668,10 +3668,15 @@ fn alloc_gbode(
         return Ok(None);
     }
     let layout = &model.layout;
-    let colors = model.jac_a.as_ref().map_or(0, |j| j.colors.len());
+    let jac_a = match env_var("OMC_WASM_NO_ANALYTIC_JAC").is_some() {
+        true => None,
+        false => model.jac_a.as_ref(),
+    };
+    let colors = jac_a.map_or(0, |j| j.colors.len());
+    let sym = jac_a.is_some_and(|j| j.sym.is_some());
     let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
     let gb =
-        crate::gbode::Gbode::new(layout.n_states as usize, tol, layout.n_zc as usize, colors)
+        crate::gbode::Gbode::new(layout.n_states as usize, tol, layout.n_zc as usize, colors, sym)
             .map_err(leak_error)?;
     Ok(Some(alloc::boxed::Box::new(gb)))
 }
@@ -4905,6 +4910,12 @@ fn read_state_nominals(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> 
     Ok(nominals)
 }
 
+/// The states' `max` attributes, read like the nominals; gbode's FD step flips
+/// its sign at the bound, as C's `gbode_setVarAttributes` data has it do.
+fn read_state_maxs(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Vec<f64>> {
+    (0..layout.n_states).map(|i| read_f64(e, sim_data + layout.state_max_off + i * 8)).collect()
+}
+
 /// Per-state DASSL tolerances as in `dassl.c`: rtol `tol`, atol `tol·nominal[i]`.
 fn dassl_tolerances(tol: f64, nominals: &[f64]) -> (Vec<f64>, Vec<f64>) {
     (vec![tol; nominals.len()], nominals.iter().map(|n| tol * n).collect())
@@ -5789,6 +5800,8 @@ struct SolverCore {
     /// its `euler_ex_step` calls there all the same.
     walk_steps: u64,
     nominals: Vec<f64>,
+    /// State `max` attributes, for gbode's finite-difference step sign.
+    maxs: Vec<f64>,
     /// Relative tolerance, for the numerical Jacobian's first step.
     tol: f64,
     /// Chattering detector: a ring of the last [`CHATTER_LIMIT`] state-event times
@@ -5827,6 +5840,7 @@ pub struct EngineOde<'a> {
     /// column-by-column differencing.
     pub jac_a: Option<&'a JacAInfo>,
     pub nominals: &'a [f64],
+    pub maxs: &'a [f64],
     pub nominal_factor: f64,
     /// Base of the zero-crossing value region.
     pub zc_off: u32,
@@ -5884,6 +5898,10 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
         self.nominal_factor
     }
 
+    fn maxs(&self) -> &[f64] {
+        self.maxs
+    }
+
     fn jac_colors(&self) -> &[Vec<u32>] {
         self.jac_a.map_or(&[], |j| &j.colors)
     }
@@ -5900,6 +5918,49 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
         set_context_algebraic(self.e, self.ctx_addr);
     }
 
+    fn has_jacobian_vector(&self) -> bool {
+        self.jac_a.is_some_and(|j| j.sym.is_some())
+    }
+
+    /// `out = ∂f/∂y · seed` through the model's symbolic Jacobian column
+    /// equations (`functionJacA_column`), which are linear in the seed.
+    fn jacobian_vector(&mut self, t: f64, y: &[f64], seed: &[f64], out: &mut [f64]) -> bool {
+        let Some(jac) = self.jac_a else { return false };
+        let Some(sym) = jac.sym.as_ref() else { return false };
+        let n = jac.n as usize;
+        if sym.seed_offs.len() != n || sym.result_offs.len() != n {
+            return false;
+        }
+        let run = (|| -> Result<()> {
+            write_time(self.e, self.sim_data, t)?;
+            let mut bytes = vec![0u8; y.len() * 8];
+            for (i, v) in y.iter().enumerate() {
+                bytes[i * 8..i * 8 + 8].copy_from_slice(&v.to_le_bytes());
+            }
+            self.e.write_bytes(self.states_base, &bytes)?;
+            set_context(self.e, self.ctx_addr, CONTEXT_SYM_JACOBIAN);
+            for (c, &off) in sym.seed_offs.iter().enumerate() {
+                write_f64(self.e, self.sim_data + off, seed[c])?;
+            }
+            if sym.has_constant {
+                self.e.call1("functionJacA_constantEqns", self.sim_data)?;
+            }
+            self.e.call1("functionJacA_column", self.sim_data)?;
+            for (r, &off) in sym.result_offs.iter().enumerate() {
+                out[r] = match off {
+                    u32::MAX => 0.0,
+                    off => read_f64(self.e, self.sim_data + off)?,
+                };
+            }
+            for &off in &sym.seed_offs {
+                write_f64(self.e, self.sim_data + off, 0.0)?;
+            }
+            Ok(())
+        })();
+        set_context(self.e, self.ctx_addr, CONTEXT_ALGEBRAIC);
+        run.is_ok()
+    }
+
     fn calls(&self) -> u64 {
         self.calls
     }
@@ -5911,6 +5972,7 @@ fn model_ode<'a>(
     states_base: u32,
     ders_base: u32,
     nominals: &'a [f64],
+    maxs: &'a [f64],
 ) -> EngineOde<'a> {
     EngineOde {
         e,
@@ -5921,6 +5983,7 @@ fn model_ode<'a>(
         ctx_addr: ctx.ctx_addr,
         jac_a: unsafe { ctx.jac.as_ref() },
         nominals,
+        maxs,
         nominal_factor: ctx.nominal_factor,
         zc_off: ctx.zc_off,
         calls: 0,
@@ -6038,6 +6101,7 @@ impl SolverCore {
         // Per-state nominal-scaled tolerances (see `dassl_tolerances`); CVODE and
         // IDA take the same ones, as `cvode_solver_initial`/`ida_solver_initial` do.
         let nominals = read_state_nominals(e, sim_data, layout)?;
+        let maxs = read_state_maxs(e, sim_data, layout)?;
         let (rtol, atol) = dassl_tolerances(tol, &nominals);
         let _ = method;
         #[cfg(sundials)]
@@ -6093,6 +6157,7 @@ impl SolverCore {
             time_events: 0,
             walk_steps: 0,
             nominals,
+            maxs,
             tol,
             chatter_times: [0.0; CHATTER_LIMIT],
             chatter_idx: 0,
@@ -6413,7 +6478,7 @@ impl SolverCore {
                 }
                 Solver::Fixed(f) => {
                     let e = unsafe { &mut *ctx.engine };
-                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals);
+                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals, &self.maxs);
                     match f.step(&mut ode, &mut self.t, &mut self.y, &mut self.yp, target)? {
                         crate::fixedstep::FixedProgress::Reached => Progress::Reached,
                         crate::fixedstep::FixedProgress::Root(_) => Progress::Root,
@@ -6421,7 +6486,7 @@ impl SolverCore {
                 }
                 Solver::Gbode(g) => {
                     let e = unsafe { &mut *ctx.engine };
-                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals);
+                    let mut ode = model_ode(e, ctx, self.states_base, self.ders_base, &self.nominals, &self.maxs);
                     let limit = self.sample_limit;
                     match g.step(&mut ode, target, limit, &mut self.t, &mut self.y)? {
                         crate::gbode::GbStep::Reached => Progress::Reached,

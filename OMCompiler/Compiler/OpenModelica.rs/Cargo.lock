@@ -7177,6 +7177,7 @@ version = "0.1.0"
 dependencies = [
  "daskr",
  "libm",
+ "rsparse",
 ]
 
 [[package]]

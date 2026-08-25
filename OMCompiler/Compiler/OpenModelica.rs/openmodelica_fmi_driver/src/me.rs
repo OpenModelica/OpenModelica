@@ -212,6 +212,8 @@ impl Integrator {
         nz: usize,
         tolerance: f64,
         nominals: &[f64],
+        jac_colors: usize,
+        directional: bool,
     ) -> Result<Integrator> {
         // With no continuous states there is nothing to integrate and nothing
         // for gbode's Newton matrix to factor: every solver degenerates to
@@ -220,7 +222,7 @@ impl Integrator {
         Ok(match solver {
             Solver::Dassl => Integrator::Dassl(Box::new(Dassl::new(nx, nz, tolerance, nominals))),
             Solver::Gbode => {
-                let gb = Gbode::new(nx, tolerance, nz, 0)
+                let gb = Gbode::new(nx, tolerance, nz, jac_colors, directional)
                     .map_err(|e| Error::Unsupported(format!("this solver configuration: {e}")))?;
                 Integrator::Gbode(Box::new(gb))
             }
@@ -344,15 +346,6 @@ pub fn simulate(
         rec.sample(common, opts.start_time)?;
     }
 
-    let tolerance = opts.tolerance.unwrap_or(1e-6);
-    let mut integrator = Integrator::new(opts.solver, nx, nz, tolerance, &nominals)?;
-    integrator.set_experiment(opts);
-    integrator.set_nominals(&nominals);
-
-    let needs_completed_step = md
-        .interface(openmodelica_fmi::InterfaceKind::ModelExchange)
-        .is_some_and(|i| i.needs_completed_integrator_step);
-
     let states = md.continuous_states();
     let (colors, rows_by_col) = jacobian_sparsity(md, &states);
     // `<ContinuousStateDerivative valueReference=…>` lists the derivatives in
@@ -369,6 +362,16 @@ pub fn simulate(
             .is_some_and(|i| i.provides_directional_derivatives)
         && derivative_vrs.len() == states.len()
         && !states.is_empty();
+
+    let tolerance = opts.tolerance.unwrap_or(1e-6);
+    let mut integrator =
+        Integrator::new(opts.solver, nx, nz, tolerance, &nominals, colors.len(), directional)?;
+    integrator.set_experiment(opts);
+    integrator.set_nominals(&nominals);
+
+    let needs_completed_step = md
+        .interface(openmodelica_fmi::InterfaceKind::ModelExchange)
+        .is_some_and(|i| i.needs_completed_integrator_step);
     let mut ode = FmuOde {
         inst,
         inputs: &mut inputs,
