@@ -3,8 +3,12 @@
 # Macro for adding a corba target. Takes a corba source file, e.g. my_source.idl,
 # and generates my_source.cc and my_source.h in the specified output directory.
 #
+# The base flags mirror IDLCMD from the autotools build (common/m4/corba.m4):
+#   omniidl -bcxx -Wbh=.h -Wbs=.cc
+# with -C<output_directory> added so nothing is generated into the source tree.
+#
 # Usage:
-#   omc_add_omniorb_corba_target(${idl_compiler} ${corba_source_file} ${output_directory})
+#   omc_add_omniorb_corba_target(${idl_compiler} ${corba_source_file} ${output_directory} [extra_flags...])
 #
 # Inputs:
 #   idl_compiler: The idl compiler to be used.
@@ -12,6 +16,7 @@
 #   output_directory: A directory where the outputs should be generated. It is
 #                     recommended to make this a directory in the build folder
 #                     instead of the source folder.
+#   extra_flags: Optional additional flags passed on to the idl compiler.
 
 macro(omc_add_omniorb_corba_target idl_compiler corba_source_file output_directory)
 
@@ -19,7 +24,7 @@ macro(omc_add_omniorb_corba_target idl_compiler corba_source_file output_directo
 
     add_custom_command(
         DEPENDS ${corba_source_file}
-        COMMAND ${idl_compiler} -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
+        COMMAND ${idl_compiler} -bcxx -Wbh=.h -Wbs=.cc ${ARGN}
                     -C${output_directory} ${corba_source_file}
         OUTPUT ${output_directory}/${file_name_no_ext}.cc ${output_directory}/${file_name_no_ext}.h
         COMMENT "Generating ${file_name_no_ext}.cc ${file_name_no_ext}.h from ${corba_source_file}"
@@ -30,4 +35,3 @@ macro(omc_add_omniorb_corba_target idl_compiler corba_source_file output_directo
 
 
 endmacro(omc_add_omniorb_corba_target)
-

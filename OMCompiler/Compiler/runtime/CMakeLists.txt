@@ -102,7 +102,21 @@ if(UNIX AND NOT APPLE)
 endif()
 
 # Corba support
+#
+# This mirrors the autotools build (common/m4/corba.m4 + Compiler/runtime/Makefile.in):
+# omniidl compiles omc_communication.idl into omc_communication.{cc,h}, which are
+# built together with omc_communication_impl.cpp and Corba_omc.cpp (the latter pulls
+# in corbaimpl.cpp) and linked against the omniORB libraries. With corba disabled the
+# stub implementation is used instead, and Corba_haveCorba() reports 0.
 if(OM_OMC_USE_CORBA)
+  # Include the macro for compiling corba targets.
+  include(.cmake/omc_omniorb_corba_target.cmake)
+
+  # Extra flags handed to omniidl, and the omniORB libraries to link against.
+  # Both are filled in by the platform specific setup below.
+  set(OMNIIDL_EXTRA_FLAGS "")
+  set(OMNIORB_LIBRARIES "")
+
   if(MINGW)
     if(DEFINED ENV{MSYSTEM_PREFIX})
       string(FIND $ENV{MSYSTEM_PREFIX} "ucrt64" IS_UCRT64)
@@ -112,27 +126,30 @@ if(OM_OMC_USE_CORBA)
     endif()
     # setup omniORB for MinGW OMDev
     include(.cmake/omdev_omniorb_setup.cmake)
-    # Include the macro for compiling corba targets.
-    include(.cmake/omc_omniorb_corba_target.cmake)
-
-    # Make a directory specifically for generated files
-    set(GENERATED_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
-    file(MAKE_DIRECTORY ${GENERATED_DIRECTORY})
-
-    # add a corba target for omc_communication.idl. The outputs will be put in the generated files directory.
-    omc_add_omniorb_corba_target(${OMNIIDL_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/omc_communication.idl
-                                 ${GENERATED_DIRECTORY})
-    # Add the generated files to the sources of the library
-    target_sources(omcruntime PRIVATE ${GENERATED_DIRECTORY}/omc_communication.cc omc_communication_impl.cpp
-                                      Corba_omc.cpp)
-
-    target_link_libraries(omcruntime PUBLIC omdev::omniORB::omniORB420_rt)
-    target_link_libraries(omcruntime PUBLIC omdev::omniORB::omnithread40_rt)
-    target_compile_definitions(omcruntime PRIVATE USE_CORBA)
-    target_include_directories(omcruntime PRIVATE ${GENERATED_DIRECTORY})
-  else() # Not MinGW
-    message(FATAL "Corba support for non-MinGW omc builds is not yet implemented.")
+    # The OMDev omniidl is a python script that needs its bundled modules, and -T
+    # keeps it from writing preprocessor output next to the source.
+    set(OMNIIDL_EXTRA_FLAGS -T -p../../lib/python -Wbdebug)
+    set(OMNIORB_LIBRARIES omdev::omniORB::omniORB420_rt omdev::omniORB::omnithread40_rt)
+  else() # Not MinGW. Look for a system/user installed omniORB.
+    find_package(OmniORB REQUIRED)
+    set(OMNIIDL_EXE ${OmniORB_IDL_COMPILER})
+    set(OMNIORB_LIBRARIES OmniORB::OmniORB)
   endif()
+
+  # Make a directory specifically for generated files
+  set(GENERATED_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
+  file(MAKE_DIRECTORY ${GENERATED_DIRECTORY})
+
+  # add a corba target for omc_communication.idl. The outputs will be put in the generated files directory.
+  omc_add_omniorb_corba_target(${OMNIIDL_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/omc_communication.idl
+                               ${GENERATED_DIRECTORY} ${OMNIIDL_EXTRA_FLAGS})
+  # Add the generated files to the sources of the library
+  target_sources(omcruntime PRIVATE ${GENERATED_DIRECTORY}/omc_communication.cc omc_communication_impl.cpp
+                                    Corba_omc.cpp)
+
+  target_link_libraries(omcruntime PUBLIC ${OMNIORB_LIBRARIES})
+  target_compile_definitions(omcruntime PRIVATE USE_CORBA)
+  target_include_directories(omcruntime PRIVATE ${GENERATED_DIRECTORY})
 else() # No corba support requested. Use the stub file.
   target_sources(omcruntime PRIVATE corbaimpl_stub_omc.c)
 endif(OM_OMC_USE_CORBA)
@@ -242,5 +259,20 @@ if(NOT OMC_PARMODELICA_TBB_LINK_NAME)
   set(OMC_PARMODELICA_TBB_LINK_NAME tbb)
 endif()
 set(PARMODELICAAUTO_LDFLAGS " -lParModelicaAuto -l${OMC_PARMODELICA_TBB_LINK_NAME} ")
+
+# @CORBALIBS@ -> Autoconf.corbaLibs. These flags are appended verbatim to the link
+# line of generated code that has an external function annotated with
+# Library="OpenModelicaCorba" (see SimCodeFunctionUtil.getLibraryStringInGccFormat).
+# The autotools build set this to "-lomniORB4 -lomnithread -lpthread" in
+# common/m4/corba.m4, and to the empty string when corba was disabled.
+if(OM_OMC_USE_CORBA)
+  if(MINGW)
+    set(CORBALIBS "-lomniORB420_rt -lomnithread40_rt")
+  else()
+    set(CORBALIBS "${OmniORB_LINK_FLAGS}")
+  endif()
+else()
+  set(CORBALIBS "")
+endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
