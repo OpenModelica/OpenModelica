@@ -64,14 +64,6 @@
 # 64-bit modelica_integer (then labs), the port's Integer is i32 so the embedded
 # hash value differs. Only those hash numbers differ; not fixable without i64.
 ./openmodelica/interactive-API/Obfuscation1.mos
-#
-# Library version: the image ships Modelica 3.2.3+maint and 4.1.0 only. This
-# test does loadModel(Modelica,{"3.1"}) and dumps MSL annotations/algorithms
-# (Resistor docs, Blocks.Sources.BooleanTable); 3.2.3 differs from the recorded
-# 3.1 content (<i>/<HTML> vs <em>/<html>, different BooleanTable body). The boot
-# omc produces the same 3.2.3 content — purely a library-version mismatch, not a
-# port codegen difference.
-./openmodelica/interactive-API/interactive_api_calls.mos
 # Backend does operations in different order
 ./simulation/modelica/NBackend/differentation/adjoint_jacobian2.mos
 ./simulation/modelica/NBackend/functions/function_annotation_der.mos

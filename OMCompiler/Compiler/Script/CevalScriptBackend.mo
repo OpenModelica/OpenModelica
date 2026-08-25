@@ -85,6 +85,7 @@ import DAEQuery;
 import DAEUtil;
 import Debug;
 import DiffAlgorithm;
+import ContainerImage;
 import Dump;
 import Error;
 import ErrorExt;
@@ -119,6 +120,7 @@ import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
 import Obfuscate;
+import OMGraphics;
 import PackageManagement;
 import Parser;
 import Print;
@@ -1268,6 +1270,7 @@ algorithm
     case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::Values.BOOL(_)::Values.STRING(str3)::_)
       algorithm
         simSettings := fmuSimulationSettings(className, filenameprefix, str3);
+        fmuMethodToSimulationFlag(str3);
         (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars), SOME(simSettings));
       then
         ret_val;
@@ -3896,6 +3899,7 @@ protected function configureFMU_cmake
   input String logfile;
   input list<String> externalLibLocations;
   input Boolean isWindows;
+  input Boolean needs3rdPartyLibs;
 protected
   String fmuSourceDir;
   String CMAKE_GENERATOR = "", CMAKE_BUILD_TYPE;
@@ -3929,10 +3933,16 @@ algorithm
       String cmd;
       String cmakeCall;
       String crossTriple, buildDir, fmiTarget;
+      String externalIncludeDirsFile;
       list<String> dockerImgArgs;
+      ContainerImage.ContainerImage dockerImage;
+      list<String> dockerArguments;
+      String dockerRunArgs;
+      Boolean isTrustedImage;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
       String dockerLogFile;
+      String cmake_toolchain;
       list<String> locations;
     case {"dynamic"}
       algorithm
@@ -3974,6 +3984,12 @@ algorithm
         then();
     case crossTriple::"docker"::"run"::dockerImgArgs
       algorithm
+        (dockerImage, dockerArguments) := ContainerImage.parseWithArgs(dockerImgArgs);
+        dockerImage := ContainerImage.getDigestSha(dockerImage);
+        Error.addCompilerNotification("Using docker image '" + ContainerImage.toString(dockerImage) + "' for cross compilation.");
+        (_, isTrustedImage) := ContainerImage.isTrustedOpenModelicaImage(dockerImage);
+        dockerRunArgs := stringDelimitList(dockerArguments, " ") + " " + ContainerImage.toString(dockerImage);
+
         uid := System.getuid();
         cidFile := fmutmp+".cidfile";
 
@@ -3982,6 +3998,20 @@ algorithm
         // Remove old log file
         if System.regularFileExists(dockerLogFile) then
           System.removeFile(dockerLogFile);
+        end if;
+
+        // Only download trusted images automatically, and only if the signature
+        // can be verified. Images that are already on this machine are used as is.
+        if isTrustedImage and not ContainerImage.isAvailableLocally(dockerImage) then
+          if ContainerImage.isCosignAvailable() then
+            // Verify the image in the registry first, it's only downloaded if the signature is valid.
+            ContainerImage.assertSignature(dockerImage);
+            ContainerImage.pull(dockerImage);
+          else
+            Error.addCompilerError("Refusing to download container image '" + ContainerImage.toString(dockerImage) + "' without verifying its signature.");
+            Error.addCompilerNotification("Download the image manually with `" + ContainerImage.pullCommand(dockerImage) + "` and run the FMU export again.");
+            fail();
+          end if;
         end if;
 
         // Create a docker volume for the FMU since we can't forward volumes
@@ -4007,8 +4037,20 @@ algorithm
         cmd := "docker cp " + defaultFmiIncludeDirectoy + " " + containerID + ":/data/fmiInclude";
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
-        // Copy the external library files to the container
+        // Copy the external library and include files to the container
         (locations,_) := SimCodeUtil.getDirectoriesForDLLsFromLinkLibs(externalLibLocations);
+        // SimCodeMain noted the external include directories of the model next to the
+        // generated sources. Without them the cross compiler can't find the headers of
+        // external libraries. See https://github.com/OpenModelica/OpenModelica/issues/9509
+        externalIncludeDirsFile := fmutmp + "/.external_include_dirs";
+        if System.regularFileExists(externalIncludeDirsFile) then
+          locations := listAppend(System.strtok(System.readFile(externalIncludeDirsFile), "\n"), locations);
+        end if;
+        // CVODE_DIRECTORY is not one of the model's link directories, so nothing would
+        // copy it for a model that has no external libraries of its own.
+        if needs3rdPartyLibs then
+          locations := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc" :: locations;
+        end if;
         for loc in locations loop
           if System.directoryExists(loc) then
             // Create path
@@ -4030,12 +4072,20 @@ algorithm
         else
           fmiTarget := "";
         end if;
-        cmakeCall := "cmake -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
+
+        if isTrustedImage then
+          cmake_toolchain := "-DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/" + crossTriple + ".cmake ";
+        else
+          cmake_toolchain := "";
+        end if;
+
+        cmakeCall := "cmake " + cmake_toolchain +
+                            "-DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
                             "-DDOCKER_VOL_DIR=/fmu " +
                             fmiTarget +
                             CMAKE_BUILD_TYPE +
                             " ..";
-        cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu -e CROSS_TRIPLE=" + crossTriple + " " + stringDelimitList(dockerImgArgs," ") +
+        cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + dockerRunArgs +
                " sh -c " + dquote +
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
@@ -4049,21 +4099,26 @@ algorithm
         // Docker cp can't handle too long names on Windows.
         // Workaround: Zip it in the container, copy it to host, unzip it
         if isWindows then
-          cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + stringDelimitList(dockerImgArgs," ") +
+          cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + dockerRunArgs +
                  " tar -zcf comp-fmutmp.tar.gz " + fmutmp;
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
           cmd := "docker cp " + containerID + ":/data/comp-fmutmp.tar.gz .";
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
-          System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz");
+          if 0 <> System.systemCall("tar zxf comp-fmutmp.tar.gz && rm comp-fmutmp.tar.gz", outFile=dockerLogFile) then
+            // Otherwise the failure only surfaces later as "Build commands returned
+            // success, but <name>.fmu does not exist".
+            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to unpack comp-fmutmp.tar.gz:\n" + System.readFile(dockerLogFile)});
+            fail();
+          end if;
         else
           cmd := "docker cp " + containerID + ":/data/" + fmutmp + "/ .";
           runDockerCmd(cmd, dockerLogFile, cleanup=false, volumeID=volumeID, containerID=containerID);
         end if;
 
         // Cleanup
-        System.systemCall("docker rm " + containerID);
-        System.systemCall("docker volume rm " + volumeID);
+        System.systemCall("docker rm " + containerID, outFile=dockerLogFile);
+        System.systemCall("docker volume rm " + volumeID, outFile=dockerLogFile);
 
         // Copy log file into resources directory
         System.copyFile(dockerLogFile, logfile);
@@ -4094,10 +4149,10 @@ algorithm
 
     if cleanup then
       if not stringEqual(containerID, "") then
-        System.systemCall("docker rm " + containerID);
+        System.systemCall("docker rm " + containerID, outFile=logfile);
       end if;
       if not stringEqual(volumeID, "") then
-        System.systemCall("docker volume rm " + volumeID);
+        System.systemCall("docker volume rm " + volumeID, outFile=logfile);
       end if;
     end if;
 
@@ -4230,7 +4285,7 @@ algorithm
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
           // Cleanup
-          System.systemCall("docker volume rm " + volumeID);
+          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
           fail();
         elseif verbose then
            print(cmd + "\n" + System.readFile(logfile) +"\n");
@@ -4242,8 +4297,8 @@ algorithm
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
           // Cleanup
-          System.systemCall("docker rm " + containerID);
-          System.systemCall("docker volume rm " + volumeID);
+          System.systemCall("docker rm " + containerID, outFile=logfile);
+          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
           fail();
         elseif verbose then
            print(cmd + "\n" + System.readFile(logfile) +"\n");
@@ -4253,8 +4308,8 @@ algorithm
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
           // Cleanup
-          System.systemCall("docker rm " + containerID);
-          System.systemCall("docker volume rm " + volumeID);
+          System.systemCall("docker rm " + containerID, outFile=logfile);
+          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
           fail();
         elseif verbose then
            print(cmd + "\n" + System.readFile(logfile) +"\n");
@@ -4265,10 +4320,10 @@ algorithm
                nozip + dquote;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + ":\n" + System.readFile(logfile)});
-          System.removeFile(logfile);
           // Cleanup
-          System.systemCall("docker rm " + containerID);
-          System.systemCall("docker volume rm " + volumeID);
+          System.systemCall("docker rm " + containerID, outFile=logfile);
+          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
+          System.removeFile(logfile);
           fail();
         elseif verbose then
            print(cmd + "\n" + System.readFile(logfile) +"\n");
@@ -4282,8 +4337,8 @@ algorithm
            print(cmd + "\n" + System.readFile(logfile) +"\n");
         end if;
         // Cleanup
-        System.systemCall("docker rm " + containerID);
-        System.systemCall("docker volume rm " + volumeID);
+        System.systemCall("docker rm " + containerID, outFile=logfile);
+        System.systemCall("docker volume rm " + volumeID, outFile=logfile);
       then true;
     else
       algorithm
@@ -4429,7 +4484,7 @@ protected function generateFMI3GraphicalRepresentation
   input String fmutmp;
   input String modelIdentifier;
 protected
-  Integer handle, nConn, i, pngOk;
+  Integer handle, nConn, i;
   String svg, grepr, modelName, taiDir, taiFile, content;
   String info, cname, ibase, sx1, sy1, sx2, sy2, csvg, tgr;
   list<String> parts;
@@ -4449,17 +4504,16 @@ algorithm
       taiDir := fmutmp + "/terminalsAndIcons/";
       taiFile := taiDir + "terminalsAndIcons.xml";
 
-      svg := OMGraphics_iconSVGFromHandle(handle, modelName);
-      grepr := OMGraphics_graphicalRepresentationXMLFromHandle(handle, 0.5);
-      nConn := OMGraphics_placedConnectorCount(handle);
+      svg := OMGraphics.iconSVGFromHandle(handle, modelName);
+      grepr := OMGraphics.graphicalRepresentationXMLFromHandle(handle, 0.5);
+      nConn := OMGraphics.placedConnectorCount(handle);
 
       // model icon -> terminalsAndIcons/icon.png (mandatory) + icon.svg (optional
       // companion). The fixed name "icon" is the FMI 3.0 convention for the FMU
       // icon "without terminals".
       if svg <> "" then
         Util.createDirectoryTree(taiDir);
-        pngOk := OMGraphics_writeIconPNGFromHandle(handle, modelName, taiDir + "icon.png");
-        if pngOk == 1 then
+        if OMGraphics.writeIconPNGFromHandle(handle, modelName, taiDir + "icon.png") then
           System.writeFile(taiDir + "icon.svg", svg);
         else
           // icon.png is mandatory for the <Icon> in <GraphicalRepresentation>;
@@ -4484,7 +4538,7 @@ algorithm
         // direction) is produced by SimCode from the flat model; here we only add
         // the graphics, matched to the existing <Terminal> by the connector name.
         for i in 0:nConn-1 loop
-          info := OMGraphics_placedConnectorInfo(handle, i);
+          info := OMGraphics.placedConnectorInfo(handle, i);
           parts := System.strtok(info, "\t"); // name, iconBaseName, x1, y1, x2, y2
           if listLength(parts) == 6 then
             cname := listGet(parts, 1);
@@ -4499,9 +4553,8 @@ algorithm
               // (mandatory) + <ibase>.svg (optional). iconBaseName is mandatory on
               // TerminalGraphicalRepresentation, so only emit the element when the
               // PNG was actually written (a dangling iconBaseName is invalid).
-              pngOk := OMGraphics_writePlacedConnectorIconPNG(handle, i, taiDir + ibase + ".png");
-              if pngOk == 1 then
-                csvg := OMGraphics_placedConnectorIconSVG(handle, i);
+              if OMGraphics.writePlacedConnectorIconPNG(handle, i, taiDir + ibase + ".png") then
+                csvg := OMGraphics.placedConnectorIconSVG(handle, i);
                 if csvg <> "" then
                   System.writeFile(taiDir + ibase + ".svg", csvg);
                 end if;
@@ -4589,70 +4642,56 @@ algorithm
   end if;
 end insertBeforeTerminalClose;
 
-protected function OMGraphics_iconSVGFromHandle
-  "Render the model Icon (issue #15219 model-instance reference handle) to an SVG
-   document via the OMGraphics runtime library. Empty string if there is no icon."
-  input Integer handle;
-  input String modelName;
-  output String svg;
-  external "C" svg = OMGraphics_iconSVGFromHandle(handle, modelName) annotation(Library = "omcruntime");
-end OMGraphics_iconSVGFromHandle;
+protected function fmuMethodToSimulationFlag
+  "`buildModelFMU(method=...)` names the integrator a Co-Simulation FMU embeds,
+   but an FMU reads its solver from `resources/<prefix>_flags.json`, which only
+   `--fmiFlags` writes. So fold an explicit method in there, unless the caller
+   already said `s:`.
 
-protected function OMGraphics_graphicalRepresentationXMLFromHandle
-  "Build the FMI 3.0 <GraphicalRepresentation> element for the model Icon (issue
-   #15219 model-instance reference handle). Empty string if there is no icon."
-  input Integer handle;
-  input Real scaleToMm;
-  output String xml;
-  external "C" xml = OMGraphics_graphicalRepresentationXMLFromHandle(handle, scaleToMm) annotation(Library = "omcruntime");
-end OMGraphics_graphicalRepresentationXMLFromHandle;
+   Only `euler` and `cvode`: those are the values an FMU's `s` flag accepts, and a
+   model's own `dassl` default must not become an `s:dassl` the FMU rejects at
+   instantiation. `buildModelFMU` restores the flag store afterwards."
+  input String method;
+protected
+  list<String> fmiFlags;
+algorithm
+  if method == "<default>" or not (method == "euler" or method == "cvode") then
+    return;
+  end if;
+  fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
+  for f in fmiFlags loop
+    if StringUtil.startsWith(f, "s:") then
+      return;
+    end if;
+  end for;
+  // `none` and a `*.json` path are whole-value settings, not a list to extend.
+  if not listEmpty(fmiFlags) and not stringEq(listHead(fmiFlags), "default") then
+    return;
+  end if;
+  FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, {"s:" + method});
+end fmuMethodToSimulationFlag;
 
-protected function OMGraphics_placedConnectorCount
-  "Number of top-level connector components that have a graphical placement (the
-   graphical ports of the model)."
-  input Integer handle;
-  output Integer n;
-  external "C" n = OMGraphics_placedConnectorCount(handle) annotation(Library = "omcruntime");
-end OMGraphics_placedConnectorCount;
-
-protected function OMGraphics_placedConnectorInfo
-  "Tab-separated graphical info for placed connector `index`:
-   name, iconBaseName, x1, y1, x2, y2 (placement bounding box in icon coordinates)."
-  input Integer handle;
-  input Integer index;
-  output String info;
-  external "C" info = OMGraphics_placedConnectorInfo(handle, index) annotation(Library = "omcruntime");
-end OMGraphics_placedConnectorInfo;
-
-protected function OMGraphics_placedConnectorIconSVG
-  "Render the connector-type icon (the port symbol) of placed connector `index`
-   to SVG. Empty string if it has no icon."
-  input Integer handle;
-  input Integer index;
-  output String svg;
-  external "C" svg = OMGraphics_placedConnectorIconSVG(handle, index) annotation(Library = "omcruntime");
-end OMGraphics_placedConnectorIconSVG;
-
-protected function OMGraphics_writeIconPNGFromHandle
-  "Rasterise the model Icon to a PNG and write it to `path` (FMI 3.0 requires a
-   PNG icon file). Returns 1 on success, 0 otherwise. PNG bytes are binary, so
-   the C side writes the file rather than returning it as a String."
-  input Integer handle;
-  input String modelName;
-  input String path;
-  output Integer ok;
-  external "C" ok = OMGraphics_writeIconPNGFromHandle(handle, modelName, path) annotation(Library = "omcruntime");
-end OMGraphics_writeIconPNGFromHandle;
-
-protected function OMGraphics_writePlacedConnectorIconPNG
-  "Rasterise placed connector `index`'s port icon to a PNG and write it to
-   `path`. Returns 1 on success, 0 otherwise."
-  input Integer handle;
-  input Integer index;
-  input String path;
-  output Integer ok;
-  external "C" ok = OMGraphics_writePlacedConnectorIconPNG(handle, index, path) annotation(Library = "omcruntime");
-end OMGraphics_writePlacedConnectorIconPNG;
+protected function reportFMUPlatformsBuilt
+  "The platform progress the C export reports around each platform's compile.
+   A wasm FMU is already linked by the time `translateModel` returns, so the pair
+   is reported once the .fmu is there — which is where the C export's own
+   messages land relative to the translation's, so the log reads the same either
+   way."
+  input list<String> platforms;
+protected
+  Integer platformIndex = 0, platformCount = listLength(platforms);
+  String platformName;
+algorithm
+  for platform in platforms loop
+    platformIndex := platformIndex + 1;
+    platformName := listGet(Util.stringSplitAtChar(platform, " "), 1);
+    System.reportProgress(intDiv((platformIndex - 1) * 1000, platformCount), 4 /* PHASE_BACKEND */);
+    System.reportProgressMessage("Building FMU for " + platformName + " (" + String(platformIndex) + "/" + String(platformCount) + ")");
+    Error.addCompilerNotification("Building FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
+    Error.addCompilerNotification("Finished FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
+  end for;
+  System.reportProgress(1000, 4 /* PHASE_BACKEND */);
+end reportFMUPlatformsBuilt;
 
 protected function fmuSimulationSettings
   "The SimulationSettings an FMU export runs with: the model's experiment defaults,
@@ -4728,6 +4767,8 @@ protected
   list<String> libs;
   Boolean isWindows;
   Boolean needs3rdPartyLibs;
+  Integer platformIndex, platformCount;
+  String platformName;
   String FMUType = inFMUType;
   // FMI 1.0 is deprecated and the wasm export does not serve it; such a request
   // is the C export's business even under the wasm simCodeTarget.
@@ -4818,7 +4859,9 @@ algorithm
     if not System.regularFileExists(fmuTargetName + ".fmu") then
       Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"wasm FMU export produced no " + fmuTargetName + ".fmu"});
       outValue := Values.STRING("");
+      return;
     end if;
+    reportFMUPlatformsBuilt(platforms);
     return;
   end if;
 
@@ -4867,18 +4910,34 @@ algorithm
   end if;
 
   // Configure the FMU Makefile
+  // Compiling for several platforms takes minutes per platform, so report which one is
+  // being built. Error.checkCancel() hands the thread to the host UI between platforms,
+  // which is what keeps OMEdit responsive and lets Cancel through.
+  platformCount := listLength(platforms);
+  platformIndex := 0;
   for platform in platforms loop
-    configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
+    platformIndex := platformIndex + 1;
+    platformName := listGet(Util.stringSplitAtChar(platform, " "), 1);
+    Error.checkCancel();
+    System.reportProgress(intDiv((platformIndex - 1) * 1000, platformCount), 4 /* PHASE_BACKEND */);
+    System.reportProgressMessage("Building FMU for " + platformName + " (" + String(platformIndex) + "/" + String(platformCount) + ")");
+    Error.addCompilerNotification("Building FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
+
+    configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(platformName,"/","-")+".log";
     if Flags.getConfigBool(Flags.FMU_CMAKE_BUILD) then
-      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows);
+      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows, needs3rdPartyLibs);
     else
       configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
     end if;
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
     end if;
+    Error.addCompilerNotification("Finished FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
     ExecStat.execStat("buildModelFMU: Generate platform " + platform);
   end for;
+  System.reportProgress(1000, 4 /* PHASE_BACKEND */);
+  System.reportProgressMessage("Packing FMU");
+  Error.checkCancel();
 
   // check for '--fmiSource=false' or '--fmiFilter=blackBox' and remove the sources directory before packing the fmu
   if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then

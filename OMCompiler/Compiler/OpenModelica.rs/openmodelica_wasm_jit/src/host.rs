@@ -159,13 +159,13 @@ impl openmodelica_sim_meta::driver::SimEngine for MemEngine<'_> {
     fn write_bytes(&mut self, _addr: u32, _buf: &[u8]) -> metamodelica::Result<()> {
         Err("wasm-jit: MemEngine is read-only")
     }
-    fn call1(&mut self, _name: &str, _arg: u32) -> metamodelica::Result<()> {
+    fn call1_raw(&mut self, _name: &str, _arg: u32) -> metamodelica::Result<()> {
         Err("wasm-jit: MemEngine cannot call the model")
     }
-    fn call1_if_present(&mut self, _name: &str, _arg: u32) -> metamodelica::Result<()> {
+    fn call1_if_present_raw(&mut self, _name: &str, _arg: u32) -> metamodelica::Result<()> {
         Err("wasm-jit: MemEngine cannot call the model")
     }
-    fn call2(&mut self, _name: &str, _a: u32, _b: u32) -> metamodelica::Result<()> {
+    fn call2_raw(&mut self, _name: &str, _a: u32, _b: u32) -> metamodelica::Result<()> {
         Err("wasm-jit: MemEngine cannot call the model")
     }
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> metamodelica::Result<u32> {
@@ -501,6 +501,8 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     wt(linker.func_wrap("env", "rt_host_init_done", || openmodelica_sim_meta::driver::signal_init_done()))?;
     wt(linker.func_wrap("env", "rt_host_set_no_throw", |v: i32| set_no_throw_asserts(v != 0)))?;
     wt(linker.func_wrap("env", "rt_host_runtime_error", || openmodelica_sim_meta::driver::note_runtime_error_flag()))?;
+    // The external "C" libraries are the host's, so C's `RHSFinalFlag` is too.
+    wt(linker.func_wrap("env", "rt_host_rhs_final", |v: i32| openmodelica_util::dynload::set_rhs_final_flag(v != 0)))?;
     // The model's violations land here even when the driver runs in-wasm; hand
     // them over so that driver can format the `LOG_ASSERT` block.
     wt(linker.func_wrap(
@@ -702,6 +704,8 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
     imports.define("env", "rt_host_init_done", Function::new_typed(store, || openmodelica_sim_meta::driver::signal_init_done()));
     imports.define("env", "rt_host_set_no_throw", Function::new_typed(store, |v: i32| set_no_throw_asserts(v != 0)));
     imports.define("env", "rt_host_runtime_error", Function::new_typed(store, || openmodelica_sim_meta::driver::note_runtime_error_flag()));
+    // The wasmer host has no external-library loader, so the flag has nowhere to go.
+    imports.define("env", "rt_host_rhs_final", Function::new_typed(store, |_v: i32| {}));
     // See the wasmtime counterpart.
     imports.define(
         "env",
@@ -789,6 +793,17 @@ pub fn define_uri_import(
     imports.define("rt", "rt_uri_to_filename", f);
 }
 
+/// libc's `stdout`, where a host `external "C"` prints, is a different buffer
+/// from ours; flush both around a call so the two stay in order.
+pub fn flush_stdio() {
+    use std::io::Write;
+    let _ = std::io::stdout().flush();
+    #[cfg(not(target_arch = "wasm32"))]
+    unsafe {
+        libc::fflush(std::ptr::null_mut());
+    }
+}
+
 /// Redirect the process's stdout/stderr into the run's log for one capture phase
 /// (`openmodelica_wasi::wasi::set_native_capture`). A temp file, not a pipe, which
 /// would deadlock on its buffer with nothing draining it; `fflush(NULL)` empties
@@ -809,7 +824,34 @@ pub mod native_stdout {
     }
 
     pub fn install() {
-        openmodelica_wasi::wasi::set_native_capture(begin, end);
+        openmodelica_wasi::wasi::set_native_capture(openmodelica_wasi::wasi::NativeCapture {
+            begin,
+            write,
+            end,
+        });
+    }
+
+    /// C's `messageText`: written whole and now, so our log lines and a `dlopen`ed
+    /// external's own output reach the log in the order the two produced them.
+    /// To the capture's own fd, which fds 1 and 2 are dups of: fd 1 may be
+    /// redirected on top of ours, as the Ipopt solve pipes it.
+    fn write(bytes: &[u8], _is_err: bool) -> bool {
+        let Some(fd) = ACTIVE.with(|a| a.borrow().as_ref().map(|r| r.fd)) else {
+            return false;
+        };
+        let mut rest = bytes;
+        unsafe {
+            // Whatever an external left in libc's buffers happened before this line.
+            libc::fflush(std::ptr::null_mut());
+            while !rest.is_empty() {
+                let n = libc::write(fd, rest.as_ptr() as *const _, rest.len());
+                if n <= 0 {
+                    break;
+                }
+                rest = &rest[n as usize..];
+            }
+        }
+        true
     }
 
     fn begin() {

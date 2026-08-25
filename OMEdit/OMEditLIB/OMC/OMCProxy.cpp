@@ -76,6 +76,7 @@ void System_clearCancel();                              // classic C omc runtime
 void System_setPumpCallback(void (*cb)(void));
 int System_progressPermille();
 int System_progressPhase();
+const char* System_progressMessage();                   // label of the step in progress, "" if none
 #endif
 }
 
@@ -441,6 +442,25 @@ QByteArray omcWorkerReadFile(const char *path) {
   return data;
 }
 
+// Worker-VFS file write, backing the QAbstractFileEngine's write side; entries are
+// overwritten, there is no remove. Deliberately does NOT wait for the reply: files
+// get written from anywhere (a QSettings sync, a destructor, code before exec()) and
+// blocking on the worker there corrupts Qt's pending-event machinery. Ordering holds
+// anyway — Module.__omcSend is one serialised queue.
+EM_JS(void, omedit_post_vfs_put, (const char *path, const char *bytes, int len), {
+  Module.__omcSend({ cmd: "vfsPut", path: UTF8ToString(path),
+                     bytes: HEAPU8.slice(bytes, bytes + len) })
+    .then((r) => { if (!r || !r.ok) console.error("[OMEdit-wasm] vfsPut refused", UTF8ToString(path)); })
+    .catch((e) => console.error("[OMEdit-wasm] vfsPut failed", e));
+});
+
+bool omcWorkerWriteFile(const char *path, const QByteArray &data)
+{
+  if (!omedit_worker_ready()) return false;
+  omedit_post_vfs_put(path, data.constData(), data.size());
+  return true;
+}
+
 // Worker-VFS directory listing (WASI fd_readdir), backing QDir over worker paths.
 // Returns the immediate child names of dir; directories carry a trailing '/'.
 EM_JS(int, omedit_post_vfs_list, (const char *path), {
@@ -514,9 +534,15 @@ static void omcDriveNativeProgress()
 #if defined(OMC_RUST_ABI)
   int phase = omc_compiler_progress_phase();
   int permille = omc_compiler_progress_permille();
+  // The Rust runtime has no message channel yet, so the phase label is all there is.
+  const QString label = omcPhaseLabel(phase);
 #else
   int phase = System_progressPhase();
   int permille = System_progressPermille();
+  // A step that names itself, e.g. which FMU platform is being built, says more
+  // than the generic phase label.
+  const char *message = System_progressMessage();
+  const QString label = (message && *message) ? QString::fromUtf8(message) : omcPhaseLabel(phase);
 #endif
   if (phase == 0) return; // nothing reported yet
   QProgressBar *bar = w->getProgressBar();
@@ -530,7 +556,7 @@ static void omcDriveNativeProgress()
     bar->setRange(0, 1000);
     bar->setValue(permille);
   }
-  w->getStatusBar()->showMessage(omcPhaseLabel(phase));
+  w->getStatusBar()->showMessage(label);
 }
 
 static void omcClearNativeProgress()
@@ -2421,15 +2447,17 @@ bool OMCProxy::existClass(QString className)
 }
 
 /*!
-  Renames a class.
-  \param oldName - the class old name.
-  \param newName - the class new name.
-  \return true on success.
-  */
-bool OMCProxy::renameClass(QString oldName, QString newName)
+ * \brief OMCProxy::renameClass
+ * Renames a class and updates references to it.
+ * \param oldName - The path of the class to rename.
+ * \param newName - The new non-qualified name of the class.
+ * \return Returns a list of classes that were changed.
+ */
+QList<QString> OMCProxy::renameClass(QString oldName, QString newName)
 {
-  sendCommand("renameClass(" + oldName + ", " + newName + ")");
-  return StringHandler::unparseBool(getResult());
+  QList<QString> result = mpOMCInterface->renameClass(oldName, newName);
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!

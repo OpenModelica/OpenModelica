@@ -41,12 +41,27 @@ fn report_assert(info: &AssertInfo) {
 /// driver. Idempotent; call before entering the driver.
 /// The driver's log lines join the model's captured stdout, so the run's log has
 /// them in the order they happened.
-fn log_to_stdout(s: &str) {
+/// A real stdout takes the line as formatted; the stream and type are already in
+/// its header columns.
+fn log_to_stdout(
+    _stream: openmodelica_sim_meta::omclog::Stream,
+    _ty: openmodelica_sim_meta::omclog::LogType,
+    s: &str,
+) {
     openmodelica_wasi::wasi::stdout_write(s.as_bytes());
+}
+
+/// C's `OpenModelica_uriToFilename`, which `-reconcile`'s input files may use.
+fn uri_to_filename(uri: &str) -> String {
+    match metamodelica::uriToFilename(arcstr::ArcStr::from(uri)) {
+        Ok(path) => path.to_string(),
+        Err(_) => uri.to_string(),
+    }
 }
 
 pub fn init_host_hooks() {
     set_cancel_hook(metamodelica::cancel::check_cancel);
+    openmodelica_sim_meta::driver::set_uri_resolver(uri_to_filename);
     openmodelica_sim_meta::driver::set_log_sink(log_to_stdout);
     set_assert_reporter(report_assert);
     // The host driver shares this process with `rt_assert`, so it sets the flag

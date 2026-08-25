@@ -2,9 +2,8 @@
 //
 // Rust port of `OMCompiler/Compiler/Util/Lapack.mo`'s `external "C"`
 // declarations, which are thin FFI shims into `runtime/lapackimpl.c`. Like the
-// C runtime, we bind the system LAPACK directly through its Fortran ABI (the
-// `d*_` symbols, linked via `build.rs`) and reproduce the matrix/vector
-// marshalling that `lapackimpl.c` performs:
+// C runtime, we call LAPACK through its Fortran ABI (the `d*_` symbols) and
+// reproduce the matrix/vector marshalling that `lapackimpl.c` performs:
 //
 //   * MetaModelica matrices are `list<list<Real>>` (a list of rows). LAPACK
 //     expects column-major storage with leading dimension equal to the row
@@ -18,10 +17,16 @@
 // `CHARACTER*1` arguments (`trans`, `jobvl`, …) are passed without the hidden
 // Fortran string-length argument, exactly as `lapackimpl.c` does — LAPACK only
 // inspects the first character via `LSAME` and never reads the length. The
-// LAPACK `integer` type is 32-bit on the system (reference/OpenBLAS LP64
-// build), matching the port's `Integer`.
+// LAPACK `integer` type is 32-bit, matching the port's `Integer`.
+//
+// The `d*_` symbols come from `openmodelica_lapack` on every target, not from a
+// system `liblapack.so` (wasm has none, Windows has no MSVC-ABI build).
+// `extern crate` because nothing here *names* that crate, so rustc would
+// otherwise have no reason to link the rlib they live in.
 
 #![allow(non_snake_case)]
+
+extern crate openmodelica_lapack;
 
 use std::sync::Arc;
 

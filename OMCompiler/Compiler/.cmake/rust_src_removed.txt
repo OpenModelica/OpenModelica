@@ -1,3 +1,23 @@
 # Files removed from the source tree that should be cleaned from synced copies.
 # One relative path per line (relative to OpenModelica.rs/).
 openmodelica_codegen_wasm_jit/build.rs
+openmodelica_lapack/src/parallel.rs
+openmodelica_lapack/tests/parallel.rs
+openmodelica_sim_meta/src/fixedstep.rs
+openmodelica_sim_meta/src/omclog.rs
+openmodelica_sim_meta/src/simflags.rs
+openmodelica_sim_meta/src/sundials.rs
+openmodelica_sim_meta/src/gbode/conf.rs
+openmodelica_sim_meta/src/gbode/ctrl.rs
+openmodelica_sim_meta/src/gbode/err.rs
+openmodelica_sim_meta/src/gbode/events.rs
+openmodelica_sim_meta/src/gbode/interp.rs
+openmodelica_sim_meta/src/gbode/math.rs
+openmodelica_sim_meta/src/gbode/mod.rs
+openmodelica_sim_meta/src/gbode/nls.rs
+openmodelica_sim_meta/src/gbode/step.rs
+openmodelica_sim_meta/src/gbode/tableau.rs
+openmodelica_sim_meta/src/gbode/tableau_data.rs
+wasm/fmi-simulator/master.js
+openmodelica_backend_main/src/OMGraphicsExt.rs
+openmodelica_backend_main/src/ModelInstanceReference.rs

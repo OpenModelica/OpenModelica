@@ -42,7 +42,9 @@ readFile("modelDescription.tmp.xml");
 // true
 // ""
 // "testDID.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <fmiModelDescription

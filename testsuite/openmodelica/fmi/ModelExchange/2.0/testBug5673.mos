@@ -1,7 +1,7 @@
 // name:  testBug5673
 // keywords: FMI 2.0 export
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml Bug5673.xml
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml Bug5673.xml aliasCheck*
 // cflags: -d=-newInst,omedit
 
 loadString("
@@ -119,7 +119,9 @@ readFile("Bug5673.xml"); getErrorString();
 // "
 // ""
 // "aliasCheck.test2.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // 0

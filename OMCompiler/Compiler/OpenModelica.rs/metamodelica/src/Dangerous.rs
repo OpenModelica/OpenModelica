@@ -65,6 +65,18 @@ pub unsafe fn arrayInitSlot<A>(arr: Array<A>, index: i32, val: A) -> Array<A> {
     arr
 }
 
+/// [`arrayInitSlot`] with `arrayUpdate`'s bounds check.
+///
+/// # Safety
+/// As [`arrayInitSlot`], minus the in-bounds requirement.
+pub unsafe fn arrayInitSlotChecked<A>(arr: Array<A>, index: i32, val: A) -> Result<Array<A>> {
+    if index < 1 || index as usize > arr.borrow().len() {
+        return Err("array index out of bounds");
+    }
+    #[allow(unsafe_op_in_unsafe_fn)]
+    Ok(unsafe { arrayInitSlot(arr, index, val) })
+}
+
 /// Creates a new array with uninitialized elements.
 /// The MetaModelica signature takes a `dummy` argument purely as a type witness;
 /// the codegen drops it because Rust generics already carry the element type.

@@ -2,7 +2,7 @@
 // keywords: fmu export cli
 // status: correct
 // depends: ExportFMUCLI.mo
-// teardown_command: rm -rf ExportFMUCLI.fmu ExportFMUCLI_* export_fmu_test_*.mo export_fmu_output*.log ExportFMUCLI3.fmu ExportFMUCLI3_*
+// teardown_command: rm -rf ExportFMUCLI.fmu ExportFMUCLI_* export_fmu_test_*.mo export_fmu_output*.log ExportFMUCLI3.fmu ExportFMUCLI3_* ExportFMUCLI.log
 // cflags: -d=-newInst
 //
 // Tests the --export-fmu CLI option.
@@ -31,11 +31,17 @@ getErrorString();
 // ""
 // true
 // ""
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+//
+// "
 // true
 // 0
 // ""
 // true
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+//
+// "
 // ""
 // endResult

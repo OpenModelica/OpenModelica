@@ -51,9 +51,15 @@ pub(crate) mod dl {
 
     // dlopen flags mirror `SystemImpl__loadLibrary` in the C runtime.
     #[cfg(target_os = "linux")]
-    const FLAGS: c_int = libc::RTLD_LOCAL | libc::RTLD_NOW | libc::RTLD_DEEPBIND;
+    const LOCAL: c_int = libc::RTLD_LOCAL | libc::RTLD_DEEPBIND;
     #[cfg(not(target_os = "linux"))]
-    const FLAGS: c_int = libc::RTLD_LOCAL | libc::RTLD_NOW;
+    const LOCAL: c_int = libc::RTLD_LOCAL;
+
+    const FLAGS: c_int = LOCAL | libc::RTLD_NOW;
+
+    fn flags(lazy: bool) -> c_int {
+        LOCAL | if lazy { libc::RTLD_LAZY } else { libc::RTLD_NOW }
+    }
 
     // C-runtime shared objects external-function libraries link against
     // (DT_NEEDED), preloaded RTLD_GLOBAL so the loader resolves them.
@@ -70,10 +76,15 @@ pub(crate) mod dl {
     }
 
     pub fn open(path: &str) -> Result<usize> {
+        open_with_binding(path, false)
+    }
+
+    pub fn open_with_binding(path: &str, lazy: bool) -> Result<usize> {
         let c = CString::new(path).map_err(|_| "dynload: NUL byte in path")?;
         unsafe { libc::dlerror() }; // clear any stale error
-        let h = unsafe { libc::dlopen(c.as_ptr(), FLAGS) };
+        let h = unsafe { libc::dlopen(c.as_ptr(), flags(lazy)) };
         if h.is_null() {
+            super::record_load_error(last_error());
             return Err("dlopen `{path}`: {}");
         }
         Ok(h as usize)
@@ -158,9 +169,16 @@ pub(crate) mod dl {
     }
 
     pub fn open(path: &str) -> Result<usize> {
+        open_with_binding(path, false)
+    }
+
+    /// Windows resolves imports when the module is loaded and offers no way to
+    /// defer it, so `lazy` has nothing to select here.
+    pub fn open_with_binding(path: &str, _lazy: bool) -> Result<usize> {
         let c = CString::new(path).map_err(|_| "dynload: NUL byte in path")?;
         let h = unsafe { LoadLibraryA(c.as_ptr()) };
         if h.is_null() {
+            super::record_load_error(last_error());
             return Err("LoadLibrary `{path}`: {}");
         }
         Ok(h as usize)
@@ -377,14 +395,40 @@ fn ensure_runtime_solibs() {
 /// `System.loadLibrary`: open the shared object and return a handle.
 /// `relative` resolves the name against the current directory like the C
 /// runtime (`./name`); an empty name opens the running process.
+/// Why the last [`load_library`] failed, for a caller searching a list of
+/// candidate paths: the error it reports is about the whole list, so each
+/// path's reason has to survive until it gives up. Mirrors
+/// `last_load_library_error` in the C runtime.
+static LAST_LOAD_ERROR: Mutex<String> = Mutex::new(String::new());
+
+pub(crate) fn record_load_error(msg: String) {
+    *LAST_LOAD_ERROR.lock().unwrap() = msg;
+}
+
+/// `System.getLoadLibraryError`.
+pub fn last_load_error() -> String {
+    LAST_LOAD_ERROR.lock().unwrap().clone()
+}
+
 pub fn load_library(path: &str, relative: bool, debug: bool) -> Result<i32> {
+    load_library_with_binding(path, relative, debug, false)
+}
+
+/// `System.loadLibraryLazy`: as [`load_library`], but binds symbols when they
+/// are used rather than when the library is loaded.
+pub fn load_library_lazy(path: &str, relative: bool, debug: bool) -> Result<i32> {
+    load_library_with_binding(path, relative, debug, true)
+}
+
+fn load_library_with_binding(path: &str, relative: bool, debug: bool, lazy: bool) -> Result<i32> {
     ensure_runtime_solibs();
+    record_load_error(String::new());
     let handle = if path.is_empty() {
         dl::open_self()?
     } else if relative && !path.starts_with('/') {
-        dl::open(&format!("./{path}"))?
+        dl::open_with_binding(&format!("./{path}"), lazy)?
     } else {
-        dl::open(path)?
+        dl::open_with_binding(path, lazy)?
     };
     let mut reg = REGISTRY.lock().unwrap();
     let idx = reg.next_lib;
@@ -461,27 +505,127 @@ fn ensure_sim_libs() {
 /// target would have linked into the simulation executable. Loaded once per path (a
 /// model may be resimulated), into the global scope so they resolve against the C
 /// runtime's `ModelicaError` and each other. Returns why any that would not load did
-/// not, alongside the handles.
+/// not, alongside the handles, in the declared order.
+///
+/// One of them may leave a symbol a later one defines undefined, which the C target's
+/// single link resolves but a loader binding one library at a time does not, so retry
+/// the ones that would not load until a pass loads nothing new.
 pub fn load_external_libraries(paths: &[String]) -> (Vec<usize>, Vec<String>) {
-    static LOADED: LazyLock<Mutex<HashMap<String, std::result::Result<usize, String>>>> =
-        LazyLock::new(|| Mutex::new(HashMap::new()));
+    static LOADED: LazyLock<Mutex<HashMap<String, usize>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
     ensure_sim_libs();
     let mut loaded = LOADED.lock().unwrap();
-    let mut handles = Vec::new();
-    let mut errors = Vec::new();
-    for path in paths {
-        match loaded.entry(path.clone()).or_insert_with(|| dl::open_global_deferred(path)) {
-            Ok(h) => handles.push(*h),
-            Err(e) => errors.push(format!("`{path}` could not be loaded: {e}")),
+    let mut handles: Vec<Option<usize>> = paths.iter().map(|p| loaded.get(p).copied()).collect();
+    let mut errors: Vec<String> = vec![String::new(); paths.len()];
+    loop {
+        let mut progress = false;
+        for (i, path) in paths.iter().enumerate() {
+            if handles[i].is_some() {
+                continue;
+            }
+            match dl::open_global_deferred(path) {
+                Ok(h) => {
+                    loaded.insert(path.clone(), h);
+                    handles[i] = Some(h);
+                    progress = true;
+                }
+                Err(e) => errors[i] = e,
+            }
+        }
+        if !progress {
+            break;
         }
     }
-    (handles, errors)
+    let errors = paths
+        .iter()
+        .zip(&handles)
+        .zip(errors)
+        .filter(|((_, h), _)| h.is_none())
+        .map(|((path, _), e)| format!("`{path}` could not be loaded: {e}"))
+        .collect();
+    (handles.into_iter().flatten().collect(), errors)
 }
 
 /// Resolve against `handles` — the model's own libraries, which shadow a same-named
 /// symbol elsewhere — then against the process image.
 pub fn external_symbol_in(handles: &[usize], name: &str) -> Option<usize> {
-    handles.iter().find_map(|&h| dl::sym(h, name)).or_else(|| external_symbol(name))
+    symbol_in(handles, name).or_else(|| external_symbol(name))
+}
+
+/// Resolve against `handles` alone: for [`usertab`] the process image holds a
+/// fallback, so only the model's own definition is an answer.
+pub fn symbol_in(handles: &[usize], name: &str) -> Option<usize> {
+    handles.iter().find_map(|&h| dl::sym(h, name))
+}
+
+/// C's `RHSFinalFlag` (`dassl.c`). External C source declares it `extern` and
+/// reads it, so it has to be a real exported symbol of the compiler image.
+#[unsafe(no_mangle)]
+pub static mut RHSFinalFlag: libc::c_int = 0;
+
+/// A library the linker could only build with a definition of its own (see
+/// `ExtArchives::link_attempt`) reads a different `int` from the one above, so
+/// every copy is kept in step.
+static RHS_FINAL_COPIES: Mutex<Vec<usize>> = Mutex::new(Vec::new());
+
+/// Record the `RHSFinalFlag` each of `handles` exports, if it is not ours.
+pub fn register_rhs_final_flag(handles: &[usize]) {
+    let mine = (&raw const RHSFinalFlag) as usize;
+    let mut copies = RHS_FINAL_COPIES.lock().unwrap();
+    copies.clear();
+    for &h in handles {
+        if let Some(addr) = dl::sym(h, "RHSFinalFlag")
+            && addr != mine
+            && !copies.contains(&addr)
+        {
+            copies.push(addr);
+        }
+    }
+}
+
+/// Set [`RHSFinalFlag`] and every copy [`register_rhs_final_flag`] found.
+pub fn set_rhs_final_flag(value: bool) {
+    let v = value as libc::c_int;
+    unsafe { RHSFinalFlag = v };
+    for &addr in RHS_FINAL_COPIES.lock().unwrap().iter() {
+        unsafe { *(addr as *mut libc::c_int) = v };
+    }
+}
+
+static USERTAB: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+type UsertabFn = unsafe extern "C-unwind" fn(
+    *mut libc::c_char,
+    libc::c_int,
+    *mut libc::c_int,
+    *mut libc::c_int,
+    *mut *mut f64,
+) -> libc::c_int;
+
+pub fn set_usertab(addr: Option<usize>) {
+    USERTAB.store(addr.unwrap_or(0), std::sync::atomic::Ordering::Relaxed);
+}
+
+/// `usertab`, for a `tableOnFile` table with no `fileName`. Preempts the weak dummy
+/// `libModelicaStandardTables` carries: the compiler image comes first in the scope.
+#[unsafe(no_mangle)]
+pub unsafe extern "C-unwind" fn usertab(
+    table_name: *mut libc::c_char,
+    nipo: libc::c_int,
+    dim: *mut libc::c_int,
+    col_wise: *mut libc::c_int,
+    table: *mut *mut f64,
+) -> libc::c_int {
+    let hook = USERTAB.load(std::sync::atomic::Ordering::Relaxed);
+    if hook != 0 {
+        let f: UsertabFn = unsafe { std::mem::transmute(hook) };
+        return unsafe { f(table_name, nipo, dim, col_wise, table) };
+    }
+    // The runtime's own, so the installed interception reports and throws.
+    if let Some(addr) = dl::open_self().ok().and_then(|me| dl::sym(me, "ModelicaError")) {
+        let err: unsafe extern "C-unwind" fn(*const libc::c_char) = unsafe { std::mem::transmute(addr) };
+        unsafe { err(c"Function \"usertab\" is not implemented\n".as_ptr()) };
+    }
+    1
 }
 
 /// Install the panic-mode `ModelicaError`/`omc_assert` interception for the

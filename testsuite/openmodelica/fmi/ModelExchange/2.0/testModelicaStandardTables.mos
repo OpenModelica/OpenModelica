@@ -28,5 +28,7 @@ buildModelFMU(TableTest); getErrorString();
 // true
 // ""
 // "TableTest.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // endResult

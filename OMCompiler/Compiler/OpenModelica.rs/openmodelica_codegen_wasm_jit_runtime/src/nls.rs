@@ -25,6 +25,7 @@ pub const CONTEXT_ODE: u32 = 1;
 pub const CONTEXT_ALGEBRAIC: u32 = 2;
 pub const CONTEXT_EVENTS: u32 = 3;
 pub const CONTEXT_JACOBIAN: u32 = 4;
+pub const CONTEXT_SYM_JACOBIAN: u32 = 5;
 
 static EVAL_CONTEXT: AtomicU32 = AtomicU32::new(CONTEXT_ALGEBRAIC);
 
@@ -58,10 +59,27 @@ fn step_size() -> f64 {
 
 /// C's `threadData->currentErrorStage`, as two words the driver stores into: `[0]`
 /// the stage, `[1]` set when a model error was absorbed there.
-/// `ERROR_NONLINEARSOLVER` is [`NLS_DEPTH`], the runtime's own nesting, instead.
 pub const ERROR_SIMULATION: u32 = 0;
 pub const ERROR_INTEGRATOR: u32 = 1;
+/// `solve_nonlinear_system`'s own region, which begins after C's `updateInnerEquation`.
+pub const ERROR_NONLINEARSOLVER: u32 = 2;
+/// C's `MMC_TRY_INTERNAL(simulationJumpBuffer)`, which the driver holds over one step.
+pub const ERROR_SIMULATION_STEP: u32 = 3;
 static ERROR_STAGE: [AtomicU32; 2] = [AtomicU32::new(ERROR_SIMULATION), AtomicU32::new(0)];
+
+/// C's `saveJumpState`: the stage held over the solver region and put back after.
+struct StageGuard(u32);
+
+impl Drop for StageGuard {
+    fn drop(&mut self) {
+        ERROR_STAGE[0].store(self.0, Ordering::Relaxed);
+    }
+}
+
+fn enter_nls_stage() -> StageGuard {
+    let saved = ERROR_STAGE[0].swap(ERROR_NONLINEARSOLVER, Ordering::Relaxed);
+    StageGuard(saved)
+}
 
 /// Address of [`ERROR_STAGE`], so the driver marks a region with a store rather than
 /// a wasm call per evaluation (as for [`rt_context_addr`]).
@@ -148,13 +166,81 @@ fn attempt_aborted() -> bool {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_recovering() -> i32 {
     (NLS_DEPTH.load(Ordering::Relaxed) > 0
-        || ERROR_STAGE[0].load(Ordering::Relaxed) == ERROR_INTEGRATOR) as i32
+        || matches!(ERROR_STAGE[0].load(Ordering::Relaxed), ERROR_INTEGRATOR | ERROR_NONLINEARSOLVER))
+        as i32
+}
+
+/// Whether a `throwStreamPrint` model error unwinds into a catcher: the solver
+/// regions plus the step region. A failed `assert()` asks [`rt_nls_recovering`]
+/// alone -- `noThrowAsserts` suppresses it before any jump buffer sees it.
+fn error_caught() -> bool {
+    rt_nls_recovering() != 0 || ERROR_STAGE[0].load(Ordering::Relaxed) == ERROR_SIMULATION_STEP
 }
 
 /// Model side: flag that a recoverable assert fired at the current trial point.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_note_assert() {
     note_slot().store(1, Ordering::Relaxed);
+}
+
+/// Model side (emitted by `emit_assert`): a failed `assert()` the solver absorbs.
+/// C's `omc_assert_simulation` logs it where it fires, before the `longjmp` the
+/// solver catches. `sim_data` is 0 outside a simulation; the three String handles
+/// are this call's to release.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_nls_assert_failed(
+    msg: i32,
+    file: i32,
+    sline: i32,
+    scol: i32,
+    eline: i32,
+    ecol: i32,
+    read_only: i32,
+    cond: i32,
+    initial: i32,
+    sim_data: i32,
+) {
+    // C's `longjmp` ends the evaluation at its first model error, so the asserts
+    // after it never run. Here every frame returns and the rest carries on, so
+    // report only what C's jump would have reached -- as [`throw_stream`] does.
+    let report = throw_reports() && assert_logged();
+    note_slot().store(1, Ordering::Relaxed);
+    if report {
+        use openmodelica_sim_meta::TIME_OFF;
+        use openmodelica_sim_meta::driver::{AssertInfo, log_assert_block};
+        let info = AssertInfo {
+            msg: rt_string(msg),
+            file: rt_string(file),
+            read_only: read_only != 0,
+            line_start: sline,
+            col_start: scol,
+            line_end: eline,
+            col_end: ecol,
+        };
+        let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
+        log_assert_block(&info, &rt_string(cond), time, initial != 0);
+    }
+    for h in [msg, file, cond] {
+        if h != 0 {
+            crate::rt_release(h as u32);
+        }
+    }
+}
+
+/// C's stage switch in `va_omc_assert_simulation_withEquationIndexes`.
+fn assert_logged() -> bool {
+    match ERROR_STAGE[0].load(Ordering::Relaxed) {
+        ERROR_NONLINEARSOLVER => crate::omclog::active(crate::omclog::NLS),
+        ERROR_INTEGRATOR => crate::omclog::active(crate::omclog::SOLVER),
+        _ => true,
+    }
+}
+
+fn rt_string(h: i32) -> alloc::string::String {
+    if h == 0 {
+        return alloc::string::String::new();
+    }
+    alloc::string::String::from_utf8_lossy(unsafe { crate::str_bytes(h as u32) }).into_owned()
 }
 
 /// Where [`rt_nls_note_assert`] records: the residual's own flag, or the
@@ -168,7 +254,7 @@ fn note_slot() -> &'static AtomicU32 {
 /// `MMC_TRY_INTERNAL`, so inside a residual note the trial and let the caller return
 /// a dummy the solver discards. With neither stage open the error is fatal.
 pub(crate) fn model_error() {
-    if rt_nls_recovering() != 0 {
+    if error_caught() {
         rt_nls_note_assert();
         return;
     }
@@ -183,16 +269,19 @@ pub extern "C" fn rt_throw_stream(msg: u32) {
     throw_stream(core::str::from_utf8(unsafe { crate::str_bytes(msg) }).unwrap_or(""))
 }
 
+/// Whether the next [`throw_stream`] reports, for a caller with its own message.
+pub(crate) fn throw_reports() -> bool {
+    !(error_caught() && note_slot().load(Ordering::Relaxed) != 0)
+}
+
 pub(crate) fn throw_stream(s: &str) {
-    let recovering = rt_nls_recovering() != 0;
+    let recovering = error_caught();
     // C's `longjmp` leaves the rest of the evaluation unreached, so it reports one
     // throw per evaluation. Here each frame returns and the ones above it carry on:
     // report only the throw C's jump would have carried out.
-    if !(recovering && note_slot().load(Ordering::Relaxed) != 0) {
+    if throw_reports() {
         if recovering {
-            if crate::omclog::active(crate::omclog::ASSERT) {
-                crate::omclog::message_text(crate::omclog::DEBUG_TYPE, crate::omclog::ASSERT, false, s);
-            }
+            crate::omclog::debug(crate::omclog::ASSERT, false, s);
         } else {
             // Also arms the trap below to report as an assertion, not a crash.
             crate::note_runtime_error(s);
@@ -204,10 +293,19 @@ pub(crate) fn throw_stream(s: &str) {
     rt_nls_note_assert();
 }
 
+/// The same flag raised by a driver rather than a solve: C's `runOptimizer` holds
+/// it over the whole optimization.
+static NO_THROW_DIV_ZERO: AtomicU32 = AtomicU32::new(0);
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_no_throw_div_zero_addr() -> u32 {
+    (&NO_THROW_DIV_ZERO) as *const AtomicU32 as u32
+}
+
 /// C's `noThrowDivZero`, which `solve_nonlinear_system` holds over a solve: a
 /// division by zero at a trial point is the solver's to walk away from.
 fn no_throw_div_zero() -> bool {
-    NLS_DEPTH.load(Ordering::Relaxed) > 0
+    NLS_DEPTH.load(Ordering::Relaxed) > 0 || NO_THROW_DIV_ZERO.load(Ordering::Relaxed) != 0
 }
 
 /// The slow half of C's `__OMC_DIV_SIM` (util/division.h): the emitted code divides
@@ -342,22 +440,17 @@ pub(crate) fn lu_solve(a: &[f64], b: &mut [f64], n: usize) -> bool {
 }
 
 /// [`lu_solve`] reporting `dgesv`'s `info`: `None` on success, else the 0-based
-/// index of the first zero pivot on `U`'s diagonal.
+/// index of the first zero pivot, straight from `dgetrf`. `A` is copied because
+/// `dgetrf` factors in place and the caller keeps it for the total-pivot fallback.
 pub(crate) fn lu_solve_singular_pivot(a: &[f64], b: &mut [f64], n: usize) -> Option<usize> {
-    use nalgebra::{DMatrix, DVector};
-    let am = DMatrix::<f64>::from_column_slice(n, n, a);
-    let bv = DVector::<f64>::from_column_slice(b);
-    let lu = am.lu();
-    match lu.solve(&bv) {
-        Some(x) => {
-            b.copy_from_slice(x.as_slice());
-            None
-        }
-        None => {
-            let u = lu.u();
-            Some((0..n).find(|&i| u[(i, i)] == 0.0).unwrap_or(n.saturating_sub(1)))
-        }
+    let mut lu = a[..n * n].to_vec();
+    let mut ipiv = alloc::vec![0i32; n];
+    let info = openmodelica_lapack::dgetrf(n, n, &mut lu, n, &mut ipiv);
+    if info != 0 {
+        return Some((info.max(1) - 1) as usize);
     }
+    openmodelica_lapack::dgetrs("N", n, 1, &lu, n, &ipiv, b, n);
+    None
 }
 
 /// Total-pivot fallback for a singular / rank-deficient `A x = b`, a port of C's
@@ -1876,6 +1969,16 @@ fn note_jac_eval() {
     JAC_EVALS.fetch_add(1, Ordering::Relaxed);
 }
 
+/// C's `numberOfIterations`, `numberOfFEval` and `numberOfJEval` as run totals; a
+/// solve's own share is the difference across it, less what a nested solve took.
+fn sys_counts() -> [u64; 3] {
+    [
+        crate::rt_stat(STAT_NLS_ITER),
+        crate::rt_stat(STAT_NLS_RES),
+        JAC_EVALS.load(Ordering::Relaxed),
+    ]
+}
+
 fn counters_of(eq_index: u32) -> &'static mut [u64; 3] {
     let v = unsafe { &mut *COUNTERS.0.get() };
     let pos = match v.iter().position(|(i, _)| *i == eq_index) {
@@ -2174,6 +2277,7 @@ fn newton_c(
                     eval: &mut dyn FnMut(&[f64], &mut [f64]),
                     jaceval: &mut dyn FnMut(&[f64], &mut [f64])| {
         arm_attempt();
+        let t0 = crate::sysstats::tick();
         JAC_DEPTH.fetch_add(1, Ordering::Relaxed);
         if !has_jac {
             note_jac_eval();
@@ -2204,6 +2308,7 @@ fn newton_c(
             }
         }
         JAC_DEPTH.fetch_sub(1, Ordering::Relaxed);
+        crate::sysstats::add_jacobian_time(crate::sysstats::tick() - t0);
         !attempt_aborted()
     };
 
@@ -3077,6 +3182,9 @@ pub extern "C" fn rt_solve_nls(
         && (hom_method == HOM_GLOBAL_ADAPTIVE || hom_method == HOM_LOCAL_ADAPTIVE)
         && n > 1;
     let n = n as usize - usize::from(lambda_unknown);
+    // C's `solve_nonlinear_system` opens the system's clock before anything else.
+    crate::sysstats::begin(eq_index as i32, true, n as u32, nnz);
+    let sys0 = sys_counts();
     // Relation mode (C's hysteresis): Newton always holds relations (mode 0) so it
     // is smooth; mode 2 (init) is fresh throughout; mode 1 (event) re-solves with
     // fresh relations until the discrete state stabilizes (mixed-system iteration).
@@ -3280,6 +3388,8 @@ pub extern "C" fn rt_solve_nls(
     if log_nls {
         log_nls_enter(eq_index, time, &nlsx_old, &nominal);
     }
+    // C's `ERROR_NONLINEARSOLVER` region starts here, after `updateInnerEquation`.
+    let _stage = enter_nls_stage();
     let mut fvec = vec![0.0f64; n];
     let maxfev = n * 10000;
     // Last residual eval was at the returned `x`, so the epilogue need not repeat
@@ -3382,10 +3492,12 @@ pub extern "C" fn rt_solve_nls(
                 // `discrete_call` (which is only about holding relations).
                 let t =
                     HomotopyTrace { eq_index, time, discrete: saved_rel_fresh != 0, initial: saved_rel_fresh == 2 };
+                // C wraps `newtonAlgorithm`'s reporting in `OMC_ACTIVE_STREAM(LOG_NLS_V)`.
+                let trace = crate::omclog::active(crate::omclog::NLS_V).then_some(&t);
                 if homotopy_solver {
                     (converged, settled) = newton_c(
                         n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
-                        has_jac, Some(&t),
+                        has_jac, trace,
                     );
                     if !converged {
                         stat_inc(STAT_NLS_NEWTON_FAIL);
@@ -3644,6 +3756,8 @@ pub extern "C" fn rt_solve_nls(
     NLS_ASSERT_SEEN.store(saved_assert_seen, Ordering::Relaxed);
     NLS_THROW_SEEN.store(saved_throw_seen, Ordering::Relaxed);
 
+    let now = sys_counts();
+    crate::sysstats::end([now[0] - sys0[0], now[1] - sys0[1], now[2] - sys0[2]]);
     rt_free(x_ptr);
     rt_free(r_ptr);
     if has_jac {

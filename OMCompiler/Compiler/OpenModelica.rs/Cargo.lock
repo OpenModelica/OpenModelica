@@ -4589,7 +4589,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c75fb1225deed1c9af38c80ec0c312bab52c1509b3c602b97c36b525277fe8c"
 dependencies = [
  "fastrand 1.9.0",
- "nalgebra 0.31.4",
+ "nalgebra",
  "num-traits",
 ]
 
@@ -5378,22 +5378,7 @@ dependencies = [
  "num-complex",
  "num-rational",
  "num-traits",
- "simba 0.7.3",
- "typenum",
-]
-
-[[package]]
-name = "nalgebra"
-version = "0.33.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d43ddcacf343185dfd6de2ee786d9e8b1c2301622afab66b6c73baf9882abfd"
-dependencies = [
- "approx",
- "matrixmultiply",
- "num-complex",
- "num-rational",
- "num-traits",
- "simba 0.9.1",
+ "simba",
  "typenum",
 ]
 
@@ -6590,6 +6575,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_fmi"
+version = "0.1.0"
+dependencies = [
+ "roxmltree",
+ "wasmparser 0.252.0",
+ "wit-component",
+ "wit-parser 0.252.0",
+ "zip",
+]
+
+[[package]]
+name = "openmodelica_fmi_driver"
+version = "0.1.0"
+dependencies = [
+ "libloading 0.8.9",
+ "openmodelica_fmi",
+ "openmodelica_mat_writer",
+ "openmodelica_solvers",
+]
+
+[[package]]
 name = "openmodelica_frontend"
 version = "0.1.0"
 dependencies = [
@@ -6672,6 +6678,13 @@ dependencies = [
  "loop_unwrap",
  "metamodelica",
  "openmodelica_ast",
+]
+
+[[package]]
+name = "openmodelica_lapack"
+version = "0.1.0"
+dependencies = [
+ "libm",
 ]
 
 [[package]]
@@ -6801,7 +6814,9 @@ version = "0.1.0"
 dependencies = [
  "daskr",
  "libm",
+ "openmodelica_lapack",
  "openmodelica_mat_writer",
+ "openmodelica_solvers",
 ]
 
 [[package]]
@@ -6843,6 +6858,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_solvers"
+version = "0.1.0"
+dependencies = [
+ "daskr",
+ "libm",
+]
+
+[[package]]
 name = "openmodelica_susan"
 version = "0.1.0"
 dependencies = [
@@ -6881,8 +6904,8 @@ dependencies = [
  "loop_unwrap",
  "match_deref",
  "metamodelica",
- "nalgebra 0.33.3",
  "openmodelica_error",
+ "openmodelica_lapack",
  "openmodelica_util_datatypes_basic",
  "openmodelica_wasi",
  "rayon",
@@ -8784,19 +8807,6 @@ name = "simba"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2f3fd720c48c53cace224ae62bef1bbff363a70c68c4802a78b5cc6159618176"
-dependencies = [
- "approx",
- "num-complex",
- "num-traits",
- "paste",
- "wide",
-]
-
-[[package]]
-name = "simba"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c99284beb21666094ba2b75bbceda012e610f5479dfcc2d6e2426f53197ffd95"
 dependencies = [
  "approx",
  "num-complex",

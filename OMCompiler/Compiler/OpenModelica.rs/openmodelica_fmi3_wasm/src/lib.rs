@@ -31,7 +31,7 @@ use openmodelica_sim_meta::driver::{
     SimEngine,
 };
 #[cfg(feature = "cs")]
-use openmodelica_sim_meta::driver::{CsDriver, CsStep};
+use openmodelica_sim_meta::driver::{CsDefer, CsDriver, CsStep};
 use openmodelica_sim_meta::{decode, omclog, FmiVr, Layout, Neg, WTy, REAL_OFF, TIME_OFF};
 
 // ── Model kernel imports ─────────────────────────────────────────────────────
@@ -45,8 +45,9 @@ unsafe extern "C" {
     fn functionInitialEquations_lambda0(sim_data: u32);
     fn functionODE(sim_data: u32);
     fn functionAlgebraics(sim_data: u32);
+    fn functionOutputs(sim_data: u32);
     fn functionStateSetJacobians(sim_data: u32);
-    fn functionZeroCrossings(sim_data: u32);
+    fn functionZeroCrossings(sim_data: u32, gout: u32);
     fn functionZeroCrossingsEquations(sim_data: u32);
     fn functionUpdateRelations(sim_data: u32);
     fn functionCheckAsserts(sim_data: u32);
@@ -57,6 +58,8 @@ unsafe extern "C" {
     fn functionUpdateBoundParameters(sim_data: u32);
     fn functionUpdateBoundVariableAttributes(sim_data: u32);
     fn functionRemovedInitialEquations(sim_data: u32);
+    fn functionJacA_constantEqns(sim_data: u32);
+    fn functionJacA_column(sim_data: u32);
     fn initSample(sim_data: u32);
     fn functionInitSynchronous(sim_data: u32);
     fn functionUpdateSynchronous(sim_data: u32, base_idx: u32);
@@ -67,10 +70,53 @@ unsafe extern "C" {
 }
 
 // ── Messages ─────────────────────────────────────────────────────────────────
-// A component has no stdout, so the `log-message` callback (`fmi3LogMessage`) is
-// the FMU's only channel: `print`, assertions and the `-lv` solver lines all leave
-// through it, with the statuses and categories C's FMU gives them
-// (`fmu3_model_interface.c`).
+// Two channels, as C's FMU has: `messageText` prints the `-lv` streams to stdout,
+// and the `log-message` callback (`fmi3LogMessage`) carries what
+// `fmu3_model_interface.c` sends through `FILTERED_LOG`.
+
+/// The FMU's stdout, which for a component is WASI's: `fd_write` on the preview1
+/// descriptor, which the adapter `CodegenWasmJit::link_fmu_component` composes in
+/// bridges to `wasi:cli/stdout`.
+mod stdio {
+    const STDOUT: i32 = 1;
+    const STDERR: i32 = 2;
+
+    #[repr(C)]
+    struct Ciovec {
+        buf: *const u8,
+        len: usize,
+    }
+
+    #[link(wasm_import_module = "wasi_snapshot_preview1")]
+    unsafe extern "C" {
+        #[link_name = "fd_write"]
+        fn fd_write(fd: i32, iovs: *const Ciovec, iovs_len: usize, nwritten: *mut usize) -> i32;
+    }
+
+    fn write(fd: i32, bytes: &[u8]) {
+        let mut rest = bytes;
+        while !rest.is_empty() {
+            let iov = Ciovec { buf: rest.as_ptr(), len: rest.len() };
+            let mut n = 0usize;
+            let rc = unsafe { fd_write(fd, &iov, 1, &mut n) };
+            if rc != 0 || n == 0 || n > rest.len() {
+                return;
+            }
+            rest = &rest[n..];
+        }
+    }
+
+    /// C's `printf` + `fflush(NULL)`: written whole and now, so it interleaves
+    /// with the importer's own output in the order the two produced it.
+    pub fn print(bytes: &[u8]) {
+        write(STDOUT, bytes);
+    }
+
+    /// The same for fd 2, where C's `omc_assert_fmi` writes a thread-less assertion.
+    pub fn stderr(bytes: &[u8]) {
+        write(STDERR, bytes);
+    }
+}
 
 /// C's `logCategoriesNames`, which is also what `CodegenFMU3` declares in
 /// `modelDescription.xml`. `logFmi3Call` is unused: the adapter logs no call trace.
@@ -87,10 +133,6 @@ const CATEGORIES: [&str; 11] = [
     "logAll",
     "logFmi3Call",
 ];
-const CAT_EVENTS: u32 = 0;
-const CAT_SINGULAR_LS: u32 = 1;
-const CAT_NLS: u32 = 2;
-const CAT_DSS: u32 = 3;
 const CAT_WARNING: u32 = 4;
 const CAT_ERROR: u32 = 6;
 const CAT_ALL: u32 = 9;
@@ -98,13 +140,11 @@ const CAT_ALL: u32 = 9;
 struct Logger {
     /// `instanceName`, which the callback reports alongside the message.
     name: String,
-    /// `loggingOn`.
-    on: bool,
-    /// Bit per [`CATEGORIES`] index.
+    /// Bit per [`CATEGORIES`] index; empty until `loggingOn`.
     cats: u32,
 }
 
-static mut LOGGER: Logger = Logger { name: String::new(), on: false, cats: 0 };
+static mut LOGGER: Logger = Logger { name: String::new(), cats: 0 };
 
 /// The sink is a bare `fn(&str)`, so its context is a static (wasm, single-threaded).
 fn logger() -> &'static mut Logger {
@@ -134,30 +174,11 @@ fn fmi_log(status: Status, cat: u32, msg: &str) {
     }
 }
 
-/// The runtime's and driver's log lines: whatever stream they came from is lost
-/// by here, so the category is `logAll` rather than a per-line one.
-fn log_sink(s: &str) {
-    if logger().on {
-        log_raw(Status::Ok, CAT_ALL, s);
-    }
-}
-
-/// The `-lv` streams the model-diagnostics categories stand for. Only
-/// `set-debug-logging` reaches this: C's FMU leaves every stream but stdout and
-/// assert off.
-fn stream_mask(cats: u32) -> omclog::Mask {
-    let mut streams: Vec<&str> = Vec::new();
-    for (cat, stream) in [
-        (CAT_EVENTS, "LOG_EVENTS"),
-        (CAT_SINGULAR_LS, "LOG_LS"),
-        (CAT_NLS, "LOG_NLS"),
-        (CAT_DSS, "LOG_DSS"),
-    ] {
-        if cats & (1 << cat) != 0 || cats & (1 << CAT_ALL) != 0 {
-            streams.push(stream);
-        }
-    }
-    omclog::mask_from_streams(&streams).unwrap_or(omclog::ALWAYS_ON)
+/// The runtime's and driver's log lines. C's `messageText` prints every type with
+/// `printf`, so they go to stdout with the stream and type in the header, not to
+/// the logger.
+fn log_sink(_stream: omclog::Stream, _ty: omclog::LogType, s: &str) {
+    stdio::print(s.as_bytes());
 }
 
 /// C's `omcInstantiate`: every category follows `loggingOn` until
@@ -165,10 +186,9 @@ fn stream_mask(cats: u32) -> omclog::Mask {
 fn init_logging(name: String, logging_on: bool) {
     let l = logger();
     l.name = name;
-    l.on = logging_on;
     l.cats = if logging_on { !0 } else { 0 };
     driver::set_log_sink(log_sink);
-    omclog::set_mask(omclog::ALWAYS_ON);
+    omclog::set_mask(omclog::FMU_STREAMS);
 }
 
 /// The runtime `String` behind a handle, empty for the null handle.
@@ -228,10 +248,18 @@ pub extern "C" fn rt_assert_warning(
     fmi_log(Status::Warning, CAT_WARNING, &assert_message(msg, file, sline));
 }
 
-/// The `print` builtin.
+/// The `print` builtin: model output, which C sends to stdout unformatted — not a
+/// `-lv` stream.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_print(str: i32) {
-    log_sink(&rt_string(str));
+    stdio::print(rt_string(str).as_bytes());
+}
+
+/// Where the runtime's `omc_assert` writes: it has no WASI of its own.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_stderr_write(ptr: *const u8, len: usize) {
+    let bytes = unsafe { core::slice::from_raw_parts(ptr, len) };
+    stdio::stderr(bytes);
 }
 
 /// Per-row assert formatting: the FMI master steps the model instead of the emitted
@@ -255,7 +283,7 @@ impl SimEngine for Engine {
         dst.copy_from_slice(buf);
         Ok(())
     }
-    fn call1(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+    fn call1_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         unsafe {
             match name {
                 "functionParameters" => functionParameters(arg),
@@ -264,8 +292,8 @@ impl SimEngine for Engine {
                 "functionInitialEquations_lambda0" => functionInitialEquations_lambda0(arg),
                 "functionODE" => functionODE(arg),
                 "functionAlgebraics" => functionAlgebraics(arg),
+                "functionOutputs" => functionOutputs(arg),
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
-                "functionZeroCrossings" => functionZeroCrossings(arg),
                 "functionZeroCrossingsEquations" => functionZeroCrossingsEquations(arg),
                 "functionUpdateRelations" => functionUpdateRelations(arg),
                 "functionCheckAsserts" => functionCheckAsserts(arg),
@@ -276,6 +304,8 @@ impl SimEngine for Engine {
                 "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
                 "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
                 "functionRemovedInitialEquations" => functionRemovedInitialEquations(arg),
+                "functionJacA_constantEqns" => functionJacA_constantEqns(arg),
+                "functionJacA_column" => functionJacA_column(arg),
                 "initSample" => initSample(arg),
                 "functionInitSynchronous" => functionInitSynchronous(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
@@ -284,9 +314,10 @@ impl SimEngine for Engine {
         }
         Ok(())
     }
-    fn call2(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
+    fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
         unsafe {
             match name {
+                driver::MODEL_FN_ZC => functionZeroCrossings(a, b),
                 driver::MODEL_FN_UPDATE_SYNC => functionUpdateSynchronous(a, b),
                 driver::MODEL_FN_EQS_SYNC => functionEquationsSynchronous(a, b),
                 // Importing `evaluateDAEResiduals` would leave every non-DAE model
@@ -297,8 +328,8 @@ impl SimEngine for Engine {
         Ok(())
     }
     /// A name this adapter does not import is a function the model does not have.
-    fn call1_if_present(&mut self, name: &str, arg: u32) -> driver::Result<()> {
-        match self.call1(name, arg) {
+    fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+        match self.call1_raw(name, arg) {
             Err(UNKNOWN_MODEL_FN) => Ok(()),
             r => r,
         }
@@ -361,8 +392,10 @@ struct MeState {
     cs: Option<CsDriver>,
     /// `eventModeUsed` from instantiation: `do-step` stops at and reports each event
     /// for the master, rather than handling it internally.
+    /// FMI's `eventModeUsed`/`earlyReturnAllowed`, folded into who resolves an
+    /// event and where the step may stop.
     #[cfg(feature = "cs")]
-    event_mode: bool,
+    defer: openmodelica_sim_meta::driver::CsDefer,
     vrs: Vrs,
     mode: Mode,
     /// C's `_need_update`, consumed by `update_if_needed`.
@@ -377,6 +410,10 @@ struct MeState {
     /// String parameter sets, applied after `run_initialization` so init equations
     /// don't clobber them (cf `init_overrides`).
     init_string_overrides: Vec<(u32, String)>,
+    /// The ODE Jacobian for the point the model holds, and whether it is still
+    /// the point it was assembled at.
+    jacobian_cache: Vec<f64>,
+    jacobian_valid: bool,
     /// Sample schedule, loaded once the model's `initSample` has run.
     samples: Option<Samples>,
     /// Synchronous clocks (C's `initSynchronous`), for a model that has any.
@@ -423,13 +460,50 @@ impl MeState {
         let _ = driver::seed_start_state(&mut e, self.sim_data, &self.meta);
     }
 
-    /// Refresh algebraics/derivatives so getters report consistent values.
+    /// `functionOutputs`, not `functionAlgebraics`: a getter runs no discrete update.
     fn eval(&self) {
         let mut e = Engine;
         let _ = e.call1("functionODE", self.sim_data);
-        if !self.layout.has_when {
-            let _ = e.call1("functionAlgebraics", self.sim_data);
+        let _ = e.call1("functionOutputs", self.sim_data);
+    }
+
+    /// The state a value reference reads, when it is one of the continuous
+    /// states (or one of their derivatives): `SimData` keeps the states first
+    /// and their derivatives right after.
+    fn state_index(&self, vr: u32) -> Option<usize> {
+        let off = self.vrs.resolve(vr).filter(|v| v.negate == Neg::None)?.off;
+        let i = off.checked_sub(REAL_OFF)? / 8;
+        (i < self.layout.n_states).then_some(i as usize)
+    }
+
+    fn derivative_index(&self, vr: u32) -> Option<usize> {
+        let off = self.vrs.resolve(vr).filter(|v| v.negate == Neg::None)?.off;
+        let i = off.checked_sub(REAL_OFF)? / 8;
+        (i >= self.layout.n_states && i < 2 * self.layout.n_states)
+            .then_some((i - self.layout.n_states) as usize)
+    }
+
+    /// The ODE Jacobian at the point the model currently holds, column-major.
+    /// Assembled once per point: the states and the time both invalidate it, so
+    /// a master asking for one seed after another pays for a single assembly.
+    fn jacobian(&mut self, n: usize) -> Result<&[f64], Status> {
+        if self.jacobian_valid {
+            return Ok(&self.jacobian_cache);
         }
+        let jac = self.meta.jac_a.as_ref().ok_or(Status::Error)?;
+        if jac.sym.is_none() || jac.n as usize != n {
+            return Err(Status::Error);
+        }
+        self.jacobian_cache.clear();
+        self.jacobian_cache.resize(n * n, 0.0);
+        let mut e = Engine;
+        let matrix = &mut self.jacobian_cache;
+        driver::eval_sym_jacobian(&mut e, self.sim_data, jac, 0, true, &mut |row, col, _, v| {
+            matrix[col * n + row] = v;
+        })
+        .map_err(|_| Status::Error)?;
+        self.jacobian_valid = true;
+        Ok(&self.jacobian_cache)
     }
 
     /// C's `updateIfNeeded`. In Initialization Mode the update is the initial
@@ -438,6 +512,8 @@ impl MeState {
         if !self.need_update {
             return Ok(());
         }
+        // The point moved, so a Jacobian assembled at the old one is stale.
+        self.jacobian_valid = false;
         if self.mode == Mode::Init {
             self.run_init()?;
         } else {
@@ -550,7 +626,7 @@ fn new_state() -> Option<MeState> {
         #[cfg(feature = "cs")]
         cs: None,
         #[cfg(feature = "cs")]
-        event_mode: false,
+        defer: CsDefer::None,
         mode: Mode::Instantiated,
         need_update: true,
         init_overrides: Vec::new(),
@@ -558,6 +634,8 @@ fn new_state() -> Option<MeState> {
         init_string_overrides: Vec::new(),
         samples: None,
         sync: None,
+        jacobian_cache: Vec::new(),
+        jacobian_valid: false,
     };
     st.seed_start_state();
     Some(st)
@@ -590,12 +668,8 @@ macro_rules! shared_instance_methods {
                 None => unknown.push(c),
             }
         }
-        {
-            let l = logger();
-            l.on = logging_on;
-            l.cats = cats;
-        }
-        omclog::set_mask(stream_mask(cats));
+        // The `FILTERED_LOG` filter only: C leaves the `-lv` streams alone here.
+        logger().cats = cats;
         for c in unknown {
             log_raw(
                 Status::Warning,
@@ -648,10 +722,10 @@ macro_rules! shared_instance_methods {
         // action after init is an event iteration (`update-discrete-states`), which
         // must run through the driver's sample schedule, so build it eagerly.
         #[cfg(feature = "cs")]
-        if st.event_mode {
+        if st.defer != CsDefer::None {
             let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
-            let meta = st.meta.clone();
-            match CsDriver::new(&mut Engine, &meta, sim_data, t) {
+            let (meta, defer) = (st.meta.clone(), st.defer);
+            match CsDriver::new(&mut Engine, &meta, sim_data, t, defer) {
                 Ok(d) => st.cs = Some(d),
                 Err(_) => return Status::Error,
             }
@@ -673,7 +747,7 @@ macro_rules! shared_instance_methods {
         let mut e = Engine;
 
         #[cfg(feature = "cs")]
-        let up = if st.event_mode {
+        let up = if st.defer != CsDefer::None {
             // Route through the driver so its sample schedule advances in step with
             // the integrator (see `CsDriver::do_event_update`).
             let meta = st.meta.clone();
@@ -695,6 +769,10 @@ macro_rules! shared_instance_methods {
             Ok(up) => up,
             Err(err) => return Err(err_status(err)),
         };
+
+        // C's `discreteCall = 0` at the end of `functionDAE`: left in event mode, every
+        // later evaluation restores the relations and hides the next crossing.
+        st.write_i32(layout.rel_fresh_off, 0);
 
         // C's `internalEventUpdate`: the timers, then the earliest of the next
         // sample and the next activation.
@@ -1044,13 +1122,40 @@ macro_rules! shared_instance_methods {
         Status::Ok
     }
 
+    /// `d(derivatives)/d(states) · seed`, out of the model's symbolic Jacobian.
+    ///
+    /// Lets an importer integrate the FMU with the Jacobian the model was
+    /// compiled with instead of differencing it. Only derivatives with respect
+    /// to states are answered — the only block the symbolic Jacobian holds.
     fn get_directional_derivative(
         &self,
-        _: Vec<u32>,
-        _: Vec<u32>,
-        _: Vec<f64>,
+        unknowns: Vec<u32>,
+        knowns: Vec<u32>,
+        seed: Vec<f64>,
     ) -> Result<Vec<f64>, Status> {
-        Err(Status::Error)
+        if knowns.len() != seed.len() {
+            return Err(Status::Error);
+        }
+        let mut st = self.st.borrow_mut();
+        if st.update_if_needed().is_err() {
+            return Err(Status::Error);
+        }
+        let n = st.layout.n_states as usize;
+        let rows: Vec<usize> = unknowns.iter().filter_map(|vr| st.derivative_index(*vr)).collect();
+        let cols: Vec<usize> = knowns.iter().filter_map(|vr| st.state_index(*vr)).collect();
+        if rows.len() != unknowns.len() || cols.len() != knowns.len() {
+            return Err(Status::Error);
+        }
+        let jacobian = st.jacobian(n)?;
+        Ok(rows
+            .iter()
+            .map(|&row| {
+                cols.iter()
+                    .zip(&seed)
+                    .map(|(&col, s)| jacobian[col * n + row] * s)
+                    .sum()
+            })
+            .collect())
     }
     fn get_adjoint_derivative(
         &self,
@@ -1180,7 +1285,7 @@ impl GuestModelExchangeInstance for Instance {
         if st.layout.n_zc == 0 {
             return Ok(Vec::new());
         }
-        if e.call1("functionZeroCrossings", st.sim_data).is_err() {
+        if e.call2(driver::MODEL_FN_ZC, st.sim_data, st.sim_data + st.layout.zc_off).is_err() {
             return Err(Status::Error);
         }
         Ok((0..st.layout.n_zc).map(|i| st.read_f64(st.layout.zc_off + i * 8)).collect())
@@ -1208,7 +1313,10 @@ impl GuestModelExchangeInstance for Instance {
         &self,
         _no_set_fmu_state_prior_to_current_point: bool,
     ) -> Result<CompletedStepResult, Status> {
-        let st = self.st.borrow();
+        let mut st = self.st.borrow_mut();
+        // C's `internal_CompletedIntegratorStep`; it leaves `_need_update` set.
+        st.eval();
+        st.need_update = true;
         Ok(CompletedStepResult {
             enter_event_mode: false,
             terminate_simulation: st.read_i32(st.layout.terminate_off) != 0,
@@ -1241,7 +1349,7 @@ impl GuestCoSimulationInstance for Instance {
         _visible: bool,
         logging_on: bool,
         event_mode_used: bool,
-        _early_return_allowed: bool,
+        early_return_allowed: bool,
         _required_intermediate_variables: Vec<u32>,
     ) -> Option<CoSimulationInstance> {
         init_logging(instance_name, logging_on);
@@ -1249,13 +1357,18 @@ impl GuestCoSimulationInstance for Instance {
         // the FMU's `resources/` as this component's root, not the host path.
         openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
         let mut st = new_state()?;
-        st.event_mode = event_mode_used;
+        st.defer = match (event_mode_used, early_return_allowed) {
+            (false, _) => CsDefer::None,
+            (true, false) => CsDefer::AtTarget,
+            (true, true) => CsDefer::Any,
+        };
+        // C's `fmi2Instantiate` sets the internal solver up here, CS only.
+        driver::log_cs_solver_setup(&st.meta, st.defer);
         Some(CoSimulationInstance::new(Instance { st: RefCell::new(st) }))
     }
 
-    /// Integrate to the communication point. Under `eventModeUsed` it stops at the
-    /// first event and returns `event-handling-needed`; otherwise events are handled
-    /// internally.
+    /// Integrate to the communication point, reporting the events the instance's
+    /// [`CsDefer`] leaves to the master and resolving the rest.
     fn do_step(
         &self,
         current_communication_point: f64,
@@ -1264,7 +1377,7 @@ impl GuestCoSimulationInstance for Instance {
     ) -> Result<DoStepResult, Status> {
         let mut st = self.st.borrow_mut();
         let target = current_communication_point + communication_step_size;
-        let event_mode = st.event_mode;
+        let defer = st.defer;
         let meta = st.meta.clone();
         let mut e = Engine;
         // Build the driver on first use, over the initialized state at the start
@@ -1272,17 +1385,13 @@ impl GuestCoSimulationInstance for Instance {
         // Event Mode already built it in exit-initialization-mode.
         if st.cs.is_none() {
             let (sim_data, t) = (st.sim_data, st.read_f64(TIME_OFF));
-            match CsDriver::new(&mut e, &meta, sim_data, t) {
+            match CsDriver::new(&mut e, &meta, sim_data, t, defer) {
                 Ok(d) => st.cs = Some(d),
                 Err(e) => return Err(err_status(e)),
             }
         }
         let Some(mut driver) = st.cs.take() else { return Err(Status::Error) };
-        let outcome = if event_mode {
-            driver.step_to_event(&mut e, &meta, target)
-        } else {
-            driver.step_to(&mut e, &meta, target)
-        };
+        let outcome = driver.step_to(&mut e, &meta, target, defer);
         let last = driver.time();
         st.cs = Some(driver);
         // C's `fmi2DoStep`: the getters now report the new time's values.

@@ -145,6 +145,12 @@ extern char **environ;
 static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
 static modelica_integer last_ptr_index = -1;
 
+/* Why the last loadLibrary failed.  A caller that tries a list of candidate
+ * paths needs this: the error it reports is about the whole list, so the
+ * per-path dlerror() has to survive until it decides none of them worked.
+ * Cleared on every attempt, so it never describes an older failure. */
+static char last_load_library_error[1024] = "";
+
 static inline modelica_integer alloc_ptr(void);
 static inline void free_ptr(modelica_integer index);
 static void free_library(modelica_ptr_t lib, modelica_integer printDebug);
@@ -184,6 +190,9 @@ static const char *select_from_dir = NULL;
 static volatile int cancelRequested = 0;
 static volatile int progressPermille = -1;
 static volatile int progressPhase = 0;
+/* Free-form label for the step in progress, shown by the host instead of the
+ * generic phase label. GC-allocated; NULL until something reports one. */
+static const char *progressMessage = NULL;
 /* Host event-pump invoked at each cancel check; keeps an in-process GUI live
  * during a long call. NULL for the CLI. */
 static void (*pumpCallback)(void) = NULL;
@@ -612,8 +621,13 @@ int runProcess(const char* cmd, const char* outFile)
   startupInfo.cb         = sizeof(startupInfo);   // Size of struct in bytes
   startupInfo.dwFlags    |= STARTF_USESTDHANDLES; // Additional handles in hStdInput, hStdOutput and hStdError elements
   startupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
-  startupInfo.hStdError  = logFileHandle;
-  startupInfo.hStdOutput = logFileHandle;
+  /* Without an output file the child writes where we write, as it does on Unix
+   * where systemCall simply lets the fork inherit. STARTF_USESTDHANDLES with a
+   * NULL handle does not mean "inherit", it hands the child an invalid stdout:
+   * anything that checks its writes then fails, e.g. system("... | grep ...")
+   * returns grep's write-error status 2 and prints nothing. */
+  startupInfo.hStdError  = logFileHandle ? logFileHandle : GetStdHandle(STD_ERROR_HANDLE);
+  startupInfo.hStdOutput = logFileHandle ? logFileHandle : GetStdHandle(STD_OUTPUT_HANDLE);
 
   BOOL bSuccess = CreateProcessW(NULL,
     unicodeCommand,
@@ -1377,7 +1391,7 @@ static const char* SystemImpl__getUUIDStr(void)
 typedef void (*mmc_GC_function_set_gc_state)(mmc_GC_state_type*);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
+static int loadLibraryWithBinding(const char *str, int relativePath, int printDebug, int lazy)
 {
   char libname[MAXPATHLEN];
   char currentDirectory[MAXPATHLEN];
@@ -1387,6 +1401,10 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
   HMODULE h;
   const char* ctokens[2];
   mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
+
+  /* Windows resolves a module's imports when it is loaded and offers no way to
+   * defer it, so there is no lazy binding to select here. */
+  (void) lazy;
 
   if (str[0] != '\0') {
     /* adrpo: use BACKSLASH here as specified here: http://msdn.microsoft.com/en-us/library/ms684175(VS.85).aspx */
@@ -1425,6 +1443,7 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
             0, NULL );
     ctokens[0] = lpMsgBuf;
     ctokens[1] = libname;
+    snprintf(last_load_library_error, sizeof(last_load_library_error), "%s", (const char*) lpMsgBuf);
     c_add_message(NULL,-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to load `%s': %s.\n"), ctokens, 2);
     LocalFree(lpMsgBuf);
     return -1;
@@ -1444,7 +1463,7 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
 }
 
 #else
-int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
+static int loadLibraryWithBinding(const char *str, int relativePath, int printDebug, int lazy)
 {
   char libname[MAXPATHLEN];
   modelica_ptr_t lib = NULL;
@@ -1452,10 +1471,12 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
   void *h = NULL;
   mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
   const char* ctokens[2];
+  /* RTLD_NOW resolves every symbol in the library, so a library with one
+   * unresolvable symbol will not load even when the function being looked up
+   * is fine.  Binding lazily is the fallback for that case. */
+  int flags = RTLD_LOCAL | (lazy ? RTLD_LAZY : RTLD_NOW);
 #if defined(RTLD_DEEPBIND)
-  int flags = RTLD_LOCAL | RTLD_NOW | RTLD_DEEPBIND;
-#else
-  int flags = RTLD_LOCAL | RTLD_NOW;
+  flags |= RTLD_DEEPBIND;
 #endif
 
   if (str[0] != '\0') {
@@ -1472,6 +1493,7 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
   if (h == NULL) {
     ctokens[0] = dlerror();
     ctokens[1] = libname;
+    snprintf(last_load_library_error, sizeof(last_load_library_error), "%s", ctokens[0] ? ctokens[0] : "unknown error");
     c_add_message(NULL,-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to load `%s': %s.\n"), ctokens, 2);
     return -1;
   }
@@ -1491,6 +1513,23 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
   return libIndex;
 }
 #endif
+
+int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
+{
+  last_load_library_error[0] = '\0';
+  return loadLibraryWithBinding(str, relativePath, printDebug, 0 /* resolve now */);
+}
+
+int SystemImpl__loadLibraryLazy(const char *str, int relativePath, int printDebug)
+{
+  last_load_library_error[0] = '\0';
+  return loadLibraryWithBinding(str, relativePath, printDebug, 1 /* resolve on use */);
+}
+
+const char* SystemImpl__getLoadLibraryError(void)
+{
+  return last_load_library_error;
+}
 
 static inline modelica_integer alloc_ptr(void)
 {

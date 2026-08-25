@@ -117,10 +117,8 @@ fn sundials() {
         panic!("OMC_SUNDIALS_NATIVE_DIR={} is missing {missing:?}; the host SUNDIALS \
                 build failed (check the rust_sundials_native_collect CMake target)", lib.display());
     }
-    println!("cargo:rustc-link-search=native={}", lib.display());
-    for l in NATIVE_LIBS {
-        println!("cargo:rustc-link-lib=static={l}");
-    }
+    // The archives are linked by `openmodelica_solvers`, which owns the
+    // bindings; here the directory only decides the cfg.
     println!("cargo:rustc-cfg=sundials");
     match std::env::var("OMC_SUNDIALS_NATIVE_INDEX_SIZE").as_deref() {
         Ok("64") => println!("cargo:rustc-cfg=sundials_i64"),

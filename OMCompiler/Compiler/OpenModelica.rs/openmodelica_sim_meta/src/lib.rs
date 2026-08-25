@@ -25,19 +25,24 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 pub mod driver;
-pub mod fixedstep;
-pub mod gbode;
 pub mod linearize;
-pub mod omclog;
+// The solvers and the flags/logging they read live in `openmodelica_solvers`,
+// which knows nothing about `SimData`; re-exported here so `sim_meta::gbode`
+// (and the paths the codegen already uses) still name them.
+pub use openmodelica_solvers::{fixedstep, gbode, omclog, simflags};
 /// `-csvInput`, which needs a filesystem: host builds only.
 #[cfg(feature = "std")]
 pub(crate) mod extinput;
+/// `-reconcile*`, which needs a filesystem too.
+#[cfg(feature = "std")]
+pub mod datarecon;
 pub mod optimization;
 pub(crate) mod qss;
-pub mod simflags;
+pub mod rtclock;
 pub mod sync;
+pub mod sysstat;
 #[cfg(sundials)]
-pub mod sundials;
+pub use openmodelica_solvers::sundials;
 
 /// Whether this build's driver has the real CVODE and IDA linked in (`build.rs`),
 /// so a `-s=cvode`/`-s=ida` (or `method=`) run can be served.
@@ -197,6 +202,10 @@ pub struct Layout {
     /// per crossing). `delayZeroCrossing` reads it; the driver snapshots it from
     /// `zc_off` at init and after each accepted point/event.
     pub zc_pre_off: u32,
+    /// Where an integrator's root callback writes its g-values (one f64 per
+    /// crossing): C's `gout`, kept apart from `zc_off` so a probe never overwrites
+    /// the accepted-point snapshot.
+    pub zc_probe_off: u32,
     /// Number of indexed relations (hysteresis count).
     pub n_rel: u32,
     /// Base of the held relation values (one i32 per indexed relation).
@@ -357,7 +366,8 @@ impl Layout {
         let sample_active_off = sample_off + n_samples * 16;
         let zc_off = (sample_active_off + n_samples * 4 + 7) & !7;
         let zc_pre_off = zc_off + n_zc * 8;
-        let relations_off = zc_pre_off + n_zc * 8;
+        let zc_probe_off = zc_pre_off + n_zc * 8;
+        let relations_off = zc_probe_off + n_zc * 8;
         let rel_fresh_off = relations_off + n_rel * 4;
         let stored_rel_off = rel_fresh_off + 4;
         let relations_pre_off = stored_rel_off + n_rel * 4;
@@ -389,7 +399,7 @@ impl Layout {
         Layout {
             n_states, n_real_alg, has_when, has_homotopy, homotopy_method, has_init_lambda0, has_history_ops, has_old_real, lambda_off, rparam_off, int_off, iparam_off,
             bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off, old_real_off,
-            terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off,
+            terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off, zc_probe_off,
             n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
             mathevents_off, zctol_off, start_off, real_nom_off, state_nom_off, state_max_off, n_sens, sens_off,
             n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off,
@@ -643,6 +653,21 @@ pub struct JacAInfo {
     pub colors: Vec<Vec<u32>>,
     /// `rows_by_col[col]` = 0-based rows nonzero in column `col` (CSC).
     pub rows_by_col: Vec<Vec<u32>>,
+    /// The symbolic column evaluation — C's `JACOBIAN_AVAILABLE`; `None` is
+    /// `JACOBIAN_ONLY_SPARSITY`.
+    pub sym: Option<JacSym>,
+}
+
+/// What the host needs to drive `functionJacA_column`: C's `JACOBIAN` seed / result
+/// arrays, here plain `SimData` slots.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct JacSym {
+    /// Seed slot per differentiation column, in column order.
+    pub seed_offs: Vec<u32>,
+    /// Result slot per row; `u32::MAX` is a structural zero (no result variable).
+    pub result_offs: Vec<u32>,
+    /// `functionJacA_constantEqns` has a body (C's `jacobian->constantEqns`).
+    pub has_constant: bool,
 }
 
 /// `--daeMode` metadata the [`Layout`]'s scalars cannot carry.
@@ -712,6 +737,51 @@ pub struct LinInfo {
     /// Rows of each matrix: `nStates` for `A`/`B`, `nOutputVars` for `C`/`D`.
     pub jac_rows: [u32; 4],
     pub jac_cols: [u32; 4],
+}
+
+/// One variable a data-reconciliation list names, C's `dataReconciliationInputNames`
+/// / `dataReconciliationUnmeasuredVariables` entry paired with its `SimData` slot.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct ReconVar {
+    pub off: u32,
+    pub negate: Neg,
+    pub name: String,
+    /// C's `attribute.displayUnit` and `info.comment`, quoted by the reports.
+    pub unit: String,
+    pub comment: String,
+}
+
+/// A symbolic Jacobian the reconciliation drives (C's `INDEX_JAC_F` / `INDEX_JAC_H`).
+/// `off` is where the matching export writes the finished `rows * cols` matrix,
+/// column-major, as C's `getJacobianMatrixF` assembles it.
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
+pub struct ReconJac {
+    pub rows: u32,
+    pub cols: u32,
+    pub off: u32,
+}
+
+/// What `-reconcile`/`-reconcileBoundaryConditions`/`-reconcileState` need: the
+/// three variable lists C's `data_function`/`setc_function`/`setb_function` copy
+/// between `SimData` and `simulationInfo`, and the two Jacobians.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct ReconInfo {
+    /// C's `datainputVars`: the measured variables of interest, written before
+    /// each `functionDAE` and named in the reports.
+    pub input_vars: Vec<ReconVar>,
+    /// C's `setcVars`: the auxiliary conditions' residuals, read after it.
+    pub setc_vars: Vec<ReconVar>,
+    /// C's `setbVars`: the unmeasured variables of interest.
+    pub setb_vars: Vec<ReconVar>,
+    pub jac_f: Option<ReconJac>,
+    pub jac_h: Option<ReconJac>,
+    /// C's `modelData->nRelatedBoundaryConditions`, counted by the code generator.
+    pub n_related_boundary: u32,
+    /// C's `modelData->modelFileName` and `modelDir`, quoted by the HTML reports.
+    pub model_file: String,
+    pub model_dir: String,
+    /// C's `CONFIG_VERSION`, which the reports sign themselves with.
+    pub version: String,
 }
 
 /// The compile-time half of C's `SUBCLOCK_DATA` (its `CLOCK_STATS` live in `SimData`).
@@ -853,6 +923,13 @@ pub struct SolveStats {
     pub state_events: u64,
     pub time_events: u64,
     pub lin_solves: u64,
+    /// [`rtclock`] at the end of the run: seconds per clock, and how often each was
+    /// opened. Travels with the stats so an in-wasm run's timers reach the host.
+    pub timers: [f64; rtclock::N],
+    pub tcalls: [u64; rtclock::N],
+    /// Per linear/nonlinear system, for `LOG_STATS_V`. Read out of the wasm runtime
+    /// (which solves them) by the host after the run; empty unless it was on.
+    pub systems: alloc::vec::Vec<sysstat::SysStat>,
 }
 
 /// One FMI value reference and the `SimData` slot it names. The value references
@@ -933,6 +1010,8 @@ pub struct SimMeta {
     /// solver order — C reads the same list out of the `_info.json` `defines` array
     /// to name the unknowns in its `-lv=LOG_NLS` blocks.
     pub nls_vars: Vec<NlsVars>,
+    /// C's `modelData->nLinearSystems`, which `initializeLinearSystems` announces.
+    pub n_lin_systems: u32,
     /// `--daeMode` solver metadata; `Some` exactly when [`Layout::dae_mode`].
     pub dae: Option<DaeInfo>,
     /// Synchronous base clocks in `base_idx` order; empty for a model with no
@@ -946,14 +1025,18 @@ pub struct SimMeta {
     /// C's `modelData->nInputVars` / `inputNames`: each `input` variable in
     /// declaration order. `-csvInput` matches its columns against the names.
     pub inputs: Vec<InputVar>,
+    /// What the `-reconcile*` procedures need; `None` unless the model was
+    /// translated with `--preOptModules+=dataReconciliation`.
+    pub recon: Option<ReconInfo>,
 }
 
-/// One `input` variable, as `-csvInput` reaches it: `off` is a real input's `start`
-/// attribute slot (published by `setAllVarsToStart`) and any other type's own slot,
-/// which is where C's `input_function` puts it.
+/// One `input` variable. C writes the file's value both to the `start` attribute,
+/// for `setAllVarsToStart` to publish (`start_off`), and to the variable itself
+/// before every evaluation (`off`); a non-real input has only the one slot.
 #[derive(Clone, Debug, PartialEq)]
 pub struct InputVar {
     pub off: u32,
+    pub start_off: u32,
     pub wty: WTy,
     /// The result name the file's column header has to match.
     pub name: String,
@@ -1202,7 +1285,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 13;
+const VERSION: u32 = 14;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1231,7 +1314,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.n_states, l.n_real_alg, l.lambda_off, l.rparam_off, l.int_off, l.iparam_off, l.bool_off,
         l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off, l.old_real_off,
         l.terminate_off, l.terminal_off, l.initial_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
-        l.n_zc, l.zc_off, l.zc_pre_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
+        l.n_zc, l.zc_off, l.zc_pre_off, l.zc_probe_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
         l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
         l.real_nom_off, l.state_nom_off, l.state_max_off, l.n_sens, l.sens_off,
         l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off,
@@ -1259,6 +1342,15 @@ fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
             put_u32(o, j.n);
             put_u32s2(o, &j.colors);
             put_u32s2(o, &j.rows_by_col);
+            match &j.sym {
+                None => o.push(0),
+                Some(s) => {
+                    o.push(1);
+                    put_u32s(o, &s.seed_offs);
+                    put_u32s(o, &s.result_offs);
+                    o.push(s.has_constant as u8);
+                }
+            }
         }
     }
 }
@@ -1399,6 +1491,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
             put_str(&mut o, n);
         }
     }
+    put_u32(&mut o, m.n_lin_systems);
     match &m.dae {
         None => o.push(0),
         Some(d) => {
@@ -1494,8 +1587,40 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     put_u32(&mut o, m.inputs.len() as u32);
     for v in &m.inputs {
         put_u32(&mut o, v.off);
+        put_u32(&mut o, v.start_off);
         o.push(matches!(v.wty, WTy::F64) as u8);
         put_str(&mut o, &v.name);
+    }
+    match &m.recon {
+        None => o.push(0),
+        Some(rc) => {
+            o.push(1);
+            for list in [&rc.input_vars, &rc.setc_vars, &rc.setb_vars] {
+                put_u32(&mut o, list.len() as u32);
+                for v in list {
+                    put_u32(&mut o, v.off);
+                    o.push(v.negate.code());
+                    put_str(&mut o, &v.name);
+                    put_str(&mut o, &v.unit);
+                    put_str(&mut o, &v.comment);
+                }
+            }
+            for jac in [&rc.jac_f, &rc.jac_h] {
+                match jac {
+                    None => o.push(0),
+                    Some(j) => {
+                        o.push(1);
+                        put_u32(&mut o, j.rows);
+                        put_u32(&mut o, j.cols);
+                        put_u32(&mut o, j.off);
+                    }
+                }
+            }
+            put_u32(&mut o, rc.n_related_boundary);
+            put_str(&mut o, &rc.model_file);
+            put_str(&mut o, &rc.model_dir);
+            put_str(&mut o, &rc.version);
+        }
     }
     o
 }
@@ -1547,7 +1672,19 @@ impl<'a> Reader<'a> {
     fn jac(&mut self) -> Result<Option<JacAInfo>, &'static str> {
         Ok(match self.u8()? {
             0 => None,
-            _ => Some(JacAInfo { n: self.u32()?, colors: self.u32s2()?, rows_by_col: self.u32s2()? }),
+            _ => Some(JacAInfo {
+                n: self.u32()?,
+                colors: self.u32s2()?,
+                rows_by_col: self.u32s2()?,
+                sym: match self.u8()? {
+                    0 => None,
+                    _ => Some(JacSym {
+                        seed_offs: self.u32s()?,
+                        result_offs: self.u32s()?,
+                        has_constant: self.u8()? != 0,
+                    }),
+                },
+            }),
         })
     }
     fn layout(&mut self) -> Result<Layout, &'static str> {
@@ -1579,6 +1716,7 @@ impl<'a> Reader<'a> {
             n_zc: self.u32()?,
             zc_off: self.u32()?,
             zc_pre_off: self.u32()?,
+            zc_probe_off: self.u32()?,
             n_rel: self.u32()?,
             relations_off: self.u32()?,
             rel_fresh_off: self.u32()?,
@@ -1766,6 +1904,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         }
         nls_vars.push(NlsVars { eq_index, names });
     }
+    let n_lin_systems = r.u32()?;
     let dae = match r.u8()? {
         0 => None,
         _ => Some(DaeInfo { alg_offs: r.u32s()?, sparsity: r.jac()? }),
@@ -1891,13 +2030,52 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let mut inputs = Vec::new();
     for _ in 0..r.u32()? {
         let off = r.u32()?;
+        let start_off = r.u32()?;
         let wty = if r.u8()? != 0 { WTy::F64 } else { WTy::I32 };
-        inputs.push(InputVar { off, wty, name: r.string()? });
+        inputs.push(InputVar { off, start_off, wty, name: r.string()? });
     }
+    let recon = match r.u8()? {
+        0 => None,
+        _ => {
+            let mut lists = [Vec::new(), Vec::new(), Vec::new()];
+            for list in &mut lists {
+                for _ in 0..r.u32()? {
+                    let off = r.u32()?;
+                    let negate = Neg::from_code(r.u8()?);
+                    list.push(ReconVar {
+                        off,
+                        negate,
+                        name: r.string()?,
+                        unit: r.string()?,
+                        comment: r.string()?,
+                    });
+                }
+            }
+            let mut jac = |r: &mut Reader| -> core::result::Result<Option<ReconJac>, &'static str> {
+                Ok(match r.u8()? {
+                    0 => None,
+                    _ => Some(ReconJac { rows: r.u32()?, cols: r.u32()?, off: r.u32()? }),
+                })
+            };
+            let (jac_f, jac_h) = (jac(&mut r)?, jac(&mut r)?);
+            let [input_vars, setc_vars, setb_vars] = lists;
+            Some(ReconInfo {
+                input_vars,
+                setc_vars,
+                setb_vars,
+                jac_f,
+                jac_h,
+                n_related_boundary: r.u32()?,
+                model_file: r.string()?,
+                model_dir: r.string()?,
+                version: r.string()?,
+            })
+        }
+    };
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, params, attr_log,
-        removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, dae, clocks, lin, opt, inputs,
+        removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon,
     })
 }
 
@@ -1934,6 +2112,11 @@ mod tests {
                 n: 2,
                 colors: vec![vec![0], vec![1]],
                 rows_by_col: vec![vec![0, 1], vec![1]],
+                sym: Some(JacSym {
+                    seed_offs: vec![300, 308],
+                    result_offs: vec![316, u32::MAX],
+                    has_constant: true,
+                }),
             }),
             state_sets: vec![StateSetInfo {
                 n_candidates: 3,
@@ -1971,12 +2154,14 @@ mod tests {
                 eq_index: 1074,
                 names: vec!["pipe.medium.T".to_string(), "pipe.medium.p".to_string()],
             }],
+            n_lin_systems: 2,
             dae: Some(DaeInfo {
                 alg_offs: vec![32, 40],
                 sparsity: Some(JacAInfo {
                     n: 4,
                     colors: vec![vec![0, 2], vec![1, 3]],
                     rows_by_col: vec![vec![0], vec![0, 1], vec![2], vec![2, 3]],
+                    sym: None,
                 }),
             }),
             clocks: vec![BaseClockMeta {
@@ -2023,7 +2208,36 @@ mod tests {
                 jac_c: None,
                 jac_d: None,
             }),
-            inputs: vec![InputVar { off: 96, wty: WTy::F64, name: "u".to_string() }],
+            inputs: vec![InputVar { off: 96, start_off: 104, wty: WTy::F64, name: "u".to_string() }],
+            recon: Some(ReconInfo {
+                input_vars: vec![ReconVar {
+                    off: 16,
+                    negate: Neg::None,
+                    name: "x".to_string(),
+                    unit: "K".to_string(),
+                    comment: "measured".to_string(),
+                }],
+                setc_vars: vec![ReconVar {
+                    off: 24,
+                    negate: Neg::Arith,
+                    name: "c".to_string(),
+                    unit: String::new(),
+                    comment: String::new(),
+                }],
+                setb_vars: vec![ReconVar {
+                    off: 32,
+                    negate: Neg::Not,
+                    name: "b".to_string(),
+                    unit: "1".to_string(),
+                    comment: "unmeasured".to_string(),
+                }],
+                jac_f: Some(ReconJac { rows: 1, cols: 2, off: 200 }),
+                jac_h: None,
+                n_related_boundary: 1,
+                model_file: "MyModel.mo".to_string(),
+                model_dir: "/tmp".to_string(),
+                version: "v1.25.0".to_string(),
+            }),
         }
     }
 

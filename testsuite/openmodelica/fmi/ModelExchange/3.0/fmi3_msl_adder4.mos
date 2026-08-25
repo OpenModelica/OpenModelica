@@ -1,7 +1,7 @@
 // name: fmi3_msl_adder4
 // keywords: FMI 3.0 export MSL Digital enumeration FMPy
 // status: correct
-// teardown_command: rm -rf Adder4.fmu Adder4.fmutmp/ Adder4_ref* Adder4_fmpy.csv Adder4_diff.*.csv Adder4_info.json *.log
+// teardown_command: rm -rf Adder4.fmu Adder4.fmutmp/ Adder4_ref* Adder4_fmpy.csv Adder4_diff.*.csv Adder4_info.json *.log Adder4_FMU.libs Adder4_FMU.makefile Adder4_external_functions.json resources
 //
 // MSL 4.1.0 round-trip check (discrete/digital model with enumeration variables):
 // export Modelica.Electrical.Digital.Examples.Adder4 as an FMI 3.0 Model Exchange
@@ -15,7 +15,10 @@ simulate(Modelica.Electrical.Digital.Examples.Adder4, stopTime=5.0, fileNamePref
 
 buildModelFMU(Modelica.Electrical.Digital.Examples.Adder4, version="3.0", fmuType="me", fileNamePrefix="Adder4"); getErrorString();
 
-system("python3 ../../simulate_fmu_fmpy.py Adder4.fmu Adder4_fmpy.csv 5.0 Adder1.s Adder1.c_out Adder4.s Adder4.c_out"); getErrorString();
+// Which interpreter can import fmpy is a property of the machine, not of the
+// test, so rtest hands it over in FMPY_TOOL; python3 is the default. Kept as one
+// expression so the script prints nothing extra.
+system("\"" + (if getEnvironmentVar("FMPY_TOOL") == "" then "python3" else getEnvironmentVar("FMPY_TOOL")) + "\" ../../simulate_fmu_fmpy.py Adder4.fmu Adder4_fmpy.csv 5.0 Adder1.s Adder1.c_out Adder4.s Adder4.c_out"); getErrorString();
 diffSimulationResults("Adder4_fmpy.csv", "Adder4_ref_res.mat", "Adder4_diff", vars={"Adder1.s","Adder1.c_out","Adder4.s","Adder4.c_out"}); getErrorString();
 
 // Result:
@@ -30,7 +33,9 @@ diffSimulationResults("Adder4_fmpy.csv", "Adder4_ref_res.mat", "Adder4_diff", va
 // end SimulationResult;
 // ""
 // "Adder4.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // (true, {})

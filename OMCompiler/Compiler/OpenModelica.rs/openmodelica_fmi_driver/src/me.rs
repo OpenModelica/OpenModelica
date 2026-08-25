@@ -1,0 +1,488 @@
+//! The Model Exchange master: the FMU supplies the equations, the master
+//! integrates them.
+//!
+//! The integrators are `openmodelica_solvers`, the same ones a compiled
+//! OpenModelica model runs under, driven through [`openmodelica_solvers::Ode`]
+//! — so an FMU is stepped, error-controlled and root-searched exactly like a
+//! model, under the same `-s=…`/`-gb*` flags. Events come from three places:
+//! the solver locating a sign change in the event indicators, the FMU asking
+//! for Event Mode after a completed step, and the time events
+//! `fmi3UpdateDiscreteStates` announces.
+
+use crate::api::{Fmi3, Fmi3ModelExchange};
+use crate::common::{Inputs, event_iteration, initialize};
+use crate::record::Recorder;
+use crate::{Error, Options, Result, Solver};
+use openmodelica_fmi::ModelDescription;
+use openmodelica_solvers::dassl::{Dassl, DasslStep};
+use openmodelica_solvers::fixedstep::{FixedKind, FixedProgress, FixedStep};
+use openmodelica_solvers::gbode::{GbStep, Gbode};
+use openmodelica_solvers::Ode;
+
+pub struct Run {
+    pub recorder: Recorder,
+    pub terminated_at: Option<f64>,
+    /// The host asked for the run to stop; the samples up to here are kept.
+    pub cancelled: bool,
+    /// Integrator steps.
+    pub steps: u64,
+    /// Right-hand-side evaluations.
+    pub calls: u64,
+    /// Jacobians assembled.
+    pub jacobians: u64,
+    pub state_events: u64,
+    pub time_events: u64,
+    /// When the events happened, in order — what a plot marks and a test checks.
+    pub event_times: Vec<f64>,
+}
+
+/// The FMU as an ODE: set the time and the states, then read the derivatives or
+/// the event indicators back.
+struct FmuOde<'a> {
+    inst: &'a mut dyn Fmi3ModelExchange,
+    inputs: &'a mut Inputs,
+    opts: &'a Options,
+    nominals: Vec<f64>,
+    /// The ODE Jacobian's sparsity, out of `<ModelStructure>`: which states each
+    /// state derivative depends on, coloured so one evaluation differences a
+    /// whole group of columns.
+    colors: Vec<Vec<u32>>,
+    rows_by_col: Vec<Vec<u32>>,
+    /// The value references the Jacobian is asked for, when the FMU can answer
+    /// `fmi3GetDirectionalDerivative`: the state derivatives against the states.
+    derivative_vrs: Vec<u32>,
+    state_vrs: Vec<u32>,
+    directional: bool,
+    calls: u64,
+    /// The point the FMU is standing at, so the same one is not set twice: an
+    /// FMU treats every `fmi3SetContinuousStates` as a move and throws away what
+    /// it cached for the old point — including its Jacobian, which a colour-by-
+    /// colour assembly would then pay for again per colour.
+    committed: Option<(f64, Vec<f64>)>,
+    /// What the FMU actually said, behind the static message the solvers carry.
+    failure: Option<Error>,
+}
+
+impl FmuOde<'_> {
+    /// Put `(t, y)` into the FMU, with the inputs of that time. Setting the
+    /// point it already holds is skipped.
+    fn commit(&mut self, t: f64, y: &[f64]) -> Result<()> {
+        if self.committed.as_ref().is_some_and(|(ct, cy)| *ct == t && cy == y) {
+            return Ok(());
+        }
+        self.inst.set_time(t)?;
+        self.inst.set_continuous_states(y)?;
+        if self.inputs.is_time_varying() {
+            let inst: &mut dyn Fmi3 = self.inst;
+            self.inputs.apply(inst, self.opts, t)?;
+        }
+        self.committed = Some((t, y.to_vec()));
+        Ok(())
+    }
+
+    /// Anything that moves the FMU behind the master's back — an event, a mode
+    /// change — makes the remembered point wrong.
+    fn forget_point(&mut self) {
+        self.committed = None;
+    }
+
+    /// Keep the FMU's error and hand the solvers the one static message they
+    /// carry; [`Run`] surfaces the real one.
+    fn note(&mut self, e: Error) -> &'static str {
+        self.failure.get_or_insert(e);
+        "the FMU reported an error while being integrated"
+    }
+}
+
+impl Ode for FmuOde<'_> {
+    fn eval(&mut self, t: f64, y: &[f64], f: &mut [f64]) -> openmodelica_solvers::Result<()> {
+        self.calls += 1;
+        self.commit(t, y).map_err(|e| self.note(e))?;
+        self.inst.get_continuous_state_derivatives(f).map_err(|e| self.note(e))
+    }
+
+    fn eval_zc(&mut self, t: f64, y: &[f64], zc: &mut [f64]) -> openmodelica_solvers::Result<()> {
+        if zc.is_empty() {
+            return Ok(());
+        }
+        self.commit(t, y).map_err(|e| self.note(e))?;
+        self.inst.get_event_indicators(zc).map_err(|e| self.note(e))
+    }
+
+    fn nominals(&self) -> &[f64] {
+        &self.nominals
+    }
+
+    fn jac_colors(&self) -> &[Vec<u32>] {
+        &self.colors
+    }
+
+    fn jac_rows_by_col(&self) -> &[Vec<u32>] {
+        &self.rows_by_col
+    }
+
+    fn has_jacobian_vector(&self) -> bool {
+        self.directional
+    }
+
+    fn jacobian_vector(&mut self, t: f64, y: &[f64], seed: &[f64], out: &mut [f64]) -> bool {
+        if self.commit(t, y).is_err() {
+            return false;
+        }
+        let (unknowns, knowns) = (self.derivative_vrs.clone(), self.state_vrs.clone());
+        match self.inst.get_directional_derivative(&unknowns, &knowns, seed, out) {
+            Ok(()) => true,
+            Err(e) => {
+                // Fall back to differencing rather than failing the run: an FMU
+                // may advertise the call and still refuse this block.
+                self.failure.get_or_insert(e);
+                self.directional = false;
+                false
+            }
+        }
+    }
+
+    fn calls(&self) -> u64 {
+        self.calls
+    }
+}
+
+/// The ODE Jacobian's sparsity as `<ModelStructure>` gives it: for each state
+/// derivative, the `dependencies` that are themselves states. An FMU that lists
+/// no dependencies for an entry is saying "everything", which is a dense column
+/// — and an FMU with no `<ContinuousStateDerivative>` at all leaves the solvers
+/// to difference the matrix themselves.
+pub fn jacobian_sparsity(md: &ModelDescription, states: &[u32]) -> (Vec<Vec<u32>>, Vec<Vec<u32>>) {
+    let derivatives = &md.model_structure.continuous_state_derivatives;
+    if derivatives.len() != states.len() || states.is_empty() {
+        return (Vec::new(), Vec::new());
+    }
+    let column_of: std::collections::HashMap<u32, u32> =
+        states.iter().enumerate().map(|(i, vr)| (*vr, i as u32)).collect();
+    let mut rows_by_col: Vec<Vec<u32>> = vec![Vec::new(); states.len()];
+    for (row, unknown) in derivatives.iter().enumerate() {
+        let Some(dependencies) = unknown.dependencies.as_ref() else {
+            // Unstated dependencies mean all of them.
+            for rows in rows_by_col.iter_mut() {
+                rows.push(row as u32);
+            }
+            continue;
+        };
+        for vr in dependencies {
+            if let Some(&col) = column_of.get(vr) {
+                rows_by_col[col as usize].push(row as u32);
+            }
+        }
+    }
+    // Greedy colouring: two columns share a colour when no row is nonzero in
+    // both, so one perturbation differences them together.
+    let mut colors: Vec<Vec<u32>> = Vec::new();
+    let mut used: Vec<std::collections::HashSet<u32>> = Vec::new();
+    for (col, rows) in rows_by_col.iter().enumerate() {
+        let free = colors.iter().enumerate().position(|(c, _)| {
+            !rows.iter().any(|row| used[c].contains(row))
+        });
+        let c = match free {
+            Some(c) => c,
+            None => {
+                colors.push(Vec::new());
+                used.push(std::collections::HashSet::new());
+                colors.len() - 1
+            }
+        };
+        colors[c].push(col as u32);
+        used[c].extend(rows.iter().copied());
+    }
+    (colors, rows_by_col)
+}
+
+/// The solvers a Model Exchange run can use. `gbode` brings its own step-size
+/// control and root search; the fixed-step ones step the output grid and bisect
+/// afterwards.
+enum Integrator {
+    Dassl(Box<Dassl>),
+    Gbode(Box<Gbode>),
+    Fixed(FixedStep),
+}
+
+impl Integrator {
+    fn new(
+        solver: Solver,
+        nx: usize,
+        nz: usize,
+        tolerance: f64,
+        nominals: &[f64],
+    ) -> Result<Integrator> {
+        // With no continuous states there is nothing to integrate and nothing
+        // for gbode's Newton matrix to factor: every solver degenerates to
+        // stepping from event to event, which the fixed-step one already does.
+        let solver = if nx == 0 { Solver::Euler } else { solver };
+        Ok(match solver {
+            Solver::Dassl => Integrator::Dassl(Box::new(Dassl::new(nx, nz, tolerance, nominals))),
+            Solver::Gbode => {
+                let gb = Gbode::new(nx, tolerance, nz, 0)
+                    .map_err(|e| Error::Unsupported(format!("this solver configuration: {e}")))?;
+                Integrator::Gbode(Box::new(gb))
+            }
+            Solver::Euler => Integrator::Fixed(FixedStep::new(FixedKind::Euler, nx, nz)),
+            Solver::RungeKutta => {
+                Integrator::Fixed(FixedStep::new(FixedKind::RungeKutta, nx, nz))
+            }
+        })
+    }
+
+    fn set_experiment(&mut self, opts: &Options) {
+        if let Integrator::Gbode(gb) = self {
+            gb.set_experiment(opts.start_time, opts.stop_time, opts.step_size);
+        }
+    }
+
+    /// DASKR carries its own history, which an event invalidates.
+
+    fn set_nominals(&mut self, nominals: &[f64]) {
+        if let Integrator::Gbode(gb) = self {
+            gb.set_nominals(nominals);
+        }
+    }
+
+    /// Integrate toward `target`, stopping at `limit` (the next time event) or
+    /// at a state event.
+    fn step(
+        &mut self,
+        ode: &mut FmuOde,
+        target: f64,
+        limit: f64,
+        t: &mut f64,
+        y: &mut [f64],
+        yp: &mut [f64],
+    ) -> openmodelica_solvers::Result<Option<f64>> {
+        match self {
+            Integrator::Dassl(d) => match d.step(ode, target.min(limit), t, y)? {
+                DasslStep::Root(te) => Ok(Some(te)),
+                DasslStep::Reached | DasslStep::Stepped => Ok(None),
+            },
+            Integrator::Gbode(gb) => match gb.step(ode, target, limit, t, y)? {
+                GbStep::Root(te) => Ok(Some(te)),
+                GbStep::Reached | GbStep::Stepped => Ok(None),
+            },
+            Integrator::Fixed(fs) => match fs.step(ode, t, y, yp, target.min(limit))? {
+                FixedProgress::Root(te) => Ok(Some(te)),
+                FixedProgress::Reached => Ok(None),
+            },
+        }
+    }
+
+    /// The step history is invalid after an event changed the states.
+    fn restart(&mut self) {
+        match self {
+            Integrator::Dassl(d) => d.restart(),
+            Integrator::Gbode(gb) => gb.restart(),
+            Integrator::Fixed(_) => {}
+        }
+    }
+
+    /// Iteration matrices assembled, for the solvers that assemble one.
+    fn jacobians(&self) -> u64 {
+        match self {
+            Integrator::Dassl(d) => d.jacobians,
+            Integrator::Gbode(gb) => gb.stats().calls_jacobian,
+            Integrator::Fixed(_) => 0,
+        }
+    }
+
+    fn steps(&self) -> u64 {
+        match self {
+            Integrator::Dassl(d) => d.steps,
+            Integrator::Gbode(gb) => gb.stats().steps,
+            Integrator::Fixed(fs) => fs.steps,
+        }
+    }
+}
+
+/// Drive a Model Exchange FMU from `start_time` to `stop_time`.
+pub fn simulate(
+    inst: &mut dyn Fmi3ModelExchange,
+    md: &ModelDescription,
+    opts: &Options,
+) -> Result<Run> {
+    let mut inputs = Inputs::new(opts);
+    let mut rec = Recorder::new(md);
+    {
+        let common: &mut dyn Fmi3 = inst;
+        initialize(common, &mut inputs, opts)?;
+    }
+    // Exiting Initialization Mode leaves a Model Exchange FMU in Event Mode.
+    let mut info = {
+        let common: &mut dyn Fmi3 = inst;
+        event_iteration(common)?
+    };
+    if info.terminate {
+        return Err(Error::TerminatedAtInit);
+    }
+    inst.enter_continuous_time_mode()?;
+
+    // The FMU's own counts win over the model description's, since an FMU with
+    // structural parameters can have fewer states than the description lists.
+    let nx = inst
+        .get_number_of_continuous_states()
+        .unwrap_or(md.number_of_continuous_states() as usize);
+    let nz = inst
+        .get_number_of_event_indicators()
+        .unwrap_or(md.number_of_event_indicators as usize);
+
+    let mut x = vec![0.0; nx];
+    // Where the fixed-step solvers leave the derivatives of the step they took.
+    let mut xp = vec![0.0; nx];
+    inst.get_continuous_states(&mut x)?;
+    let mut nominals = vec![1.0; nx];
+    if inst.get_nominals_of_continuous_states(&mut nominals).is_err() {
+        nominals.fill(1.0);
+    }
+    {
+        let common: &mut dyn Fmi3 = inst;
+        rec.snapshot_parameters(common)?;
+        rec.sample(common, opts.start_time)?;
+    }
+
+    let tolerance = opts.tolerance.unwrap_or(1e-6);
+    let mut integrator = Integrator::new(opts.solver, nx, nz, tolerance, &nominals)?;
+    integrator.set_experiment(opts);
+    integrator.set_nominals(&nominals);
+
+    let needs_completed_step = md
+        .interface(openmodelica_fmi::InterfaceKind::ModelExchange)
+        .is_some_and(|i| i.needs_completed_integrator_step);
+
+    let states = md.continuous_states();
+    let (colors, rows_by_col) = jacobian_sparsity(md, &states);
+    // `<ContinuousStateDerivative valueReference=…>` lists the derivatives in
+    // the order the states are in, which is the order the Jacobian's rows are.
+    let derivative_vrs: Vec<u32> = md
+        .model_structure
+        .continuous_state_derivatives
+        .iter()
+        .map(|u| u.value_reference)
+        .collect();
+    let directional = opts.directional_derivatives
+        && md
+            .interface(openmodelica_fmi::InterfaceKind::ModelExchange)
+            .is_some_and(|i| i.provides_directional_derivatives)
+        && derivative_vrs.len() == states.len()
+        && !states.is_empty();
+    let mut ode = FmuOde {
+        inst,
+        inputs: &mut inputs,
+        opts,
+        nominals,
+        colors,
+        rows_by_col,
+        derivative_vrs,
+        state_vrs: states,
+        directional,
+        calls: 0,
+        committed: None,
+        failure: None,
+    };
+    let mut t = opts.start_time;
+    let mut next_event = info.next_event_time.unwrap_or(f64::INFINITY);
+    let (mut state_events, mut time_events) = (0u64, 0u64);
+    let mut event_times = Vec::new();
+    let mut cancelled = false;
+    let mut terminated_at = None;
+
+    'grid: for target in opts.output_times().skip(1) {
+        while t < target - grid_epsilon(opts) {
+            // A time event caps the step: the FMU must be asked at exactly that
+            // time, never stepped past it.
+            let limit = next_event.max(t);
+            let root = integrator
+                .step(&mut ode, target, limit, &mut t, &mut x, &mut xp)
+                .map_err(|e| ode.failure.take().unwrap_or(Error::Solver(e)))?;
+
+            let mut event_at = root;
+            // C's `completedIntegratorStep`: the FMU may want Event Mode for a
+            // reason the indicators do not show.
+            if needs_completed_step {
+                ode.commit(t, &x)?;
+                let done = ode.inst.completed_integrator_step(true)?;
+                if done.terminate {
+                    terminated_at = Some(t);
+                    break 'grid;
+                }
+                if done.enter_event_mode {
+                    event_at = Some(t);
+                }
+            }
+            if event_at.is_none() && next_event <= t + grid_epsilon(opts) {
+                event_at = Some(next_event);
+                time_events += 1;
+            } else if event_at.is_some() {
+                state_events += 1;
+            }
+
+            let Some(te) = event_at else { continue };
+            t = te;
+            event_times.push(te);
+            ode.commit(t, &x)?;
+            ode.forget_point();
+            {
+                let common: &mut dyn Fmi3 = ode.inst;
+                rec.sample(common, t)?;
+                common.enter_event_mode()?;
+                info = event_iteration(common)?;
+                rec.sample(common, t)?;
+            }
+            if info.states_changed && nx > 0 {
+                ode.inst.get_continuous_states(&mut x)?;
+            }
+            if info.nominals_changed && nx > 0 {
+                let mut n = vec![1.0; nx];
+                if ode.inst.get_nominals_of_continuous_states(&mut n).is_ok() {
+                    integrator.set_nominals(&n);
+                    ode.nominals = n;
+                }
+            }
+            next_event = info.next_event_time.unwrap_or(f64::INFINITY);
+            ode.inst.enter_continuous_time_mode()?;
+            ode.forget_point();
+            integrator.restart();
+            if info.terminate {
+                terminated_at = Some(t);
+                break 'grid;
+            }
+        }
+        // The grid point itself: the solver interpolated the states onto it.
+        ode.commit(target, &x)?;
+        t = target;
+        let common: &mut dyn Fmi3 = ode.inst;
+        rec.sample(common, t)?;
+        if let Some(report) = opts.progress {
+            report(t, &rec);
+        }
+        if opts.cancelled.is_some_and(|stop| stop()) {
+            cancelled = true;
+            break 'grid;
+        }
+    }
+
+    let calls = ode.calls;
+    let (steps, jacobians) = (integrator.steps(), integrator.jacobians());
+    let common: &mut dyn Fmi3 = ode.inst;
+    common.terminate()?;
+    Ok(Run {
+        recorder: rec,
+        terminated_at,
+        cancelled,
+        steps,
+        calls,
+        jacobians,
+        state_events,
+        time_events,
+        event_times,
+    })
+}
+
+/// Times this close to an output point count as having reached it.
+fn grid_epsilon(opts: &Options) -> f64 {
+    (opts.stop_time - opts.start_time).abs() * 1e-12
+}

@@ -4,6 +4,7 @@ TESTFILES = \
 FMI1MEfmpy.mos \
 FMI1MEcvodeFlag.mos \
 FMI1MEInputOutput.mos \
+fmi1_import_boolean.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -47,6 +48,13 @@ test:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
+
+baseline:
+	@echo
+	@echo Updating badelines...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(TEST) -b $(TESTFILES)
 
 # Cleans all files that are not listed as dependencies
 clean :

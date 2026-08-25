@@ -2,7 +2,7 @@
 // keywords: FMI 3.0 export buildDescription source
 // suite: fmuCSources
 // status: correct
-// teardown_command: rm -rf Mbd.fmu Mbd.fmutmp/ Mbd_bd.xml Mbd.log Mbd_info.json index.html
+// teardown_command: rm -rf Mbd.fmu Mbd.fmutmp/ Mbd_bd.xml Mbd.log Mbd_info.json index.html Mbd_FMU.libs Mbd_FMU.makefile Mbd_external_functions.json resources
 //
 // FMI 3.0 source FMUs ship sources/buildDescription.xml describing how to build
 // them (the source file list that FMI 2.0 kept in modelDescription <SourceFiles>).
@@ -17,9 +17,9 @@ buildModelFMU(Mbd, version="3.0", fmuType="me"); getErrorString();
 
 system("unzip -cqq Mbd.fmu sources/buildDescription.xml > Mbd_bd.xml"); getErrorString();
 // the structural lines (the long per-file SourceFile list is omitted)
-system("grep -E 'fmiBuildDescription fmiVersion|BuildConfiguration modelIdentifier|SourceFileSet language|PreprocessorDefinition|IncludeDirectory' Mbd_bd.xml | sed 's/^ *//'"); getErrorString();
+system("grep -E \"fmiBuildDescription fmiVersion|BuildConfiguration modelIdentifier|SourceFileSet language|PreprocessorDefinition|IncludeDirectory\" Mbd_bd.xml | sed \"s/^ *//\""); getErrorString();
 // the model's own translation unit must be listed
-system("grep -c '<SourceFile name=\"Mbd.c\"/>' Mbd_bd.xml"); getErrorString();
+system("grep -c \"<SourceFile name=.Mbd.c./>\" Mbd_bd.xml"); getErrorString();
 
 // Result:
 // true
@@ -28,6 +28,8 @@ system("grep -c '<SourceFile name=\"Mbd.c\"/>' Mbd_bd.xml"); getErrorString();
 // ""
 // "Mbd.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // 0
 // ""

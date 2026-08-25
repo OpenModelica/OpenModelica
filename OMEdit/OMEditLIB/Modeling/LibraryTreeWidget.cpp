@@ -55,6 +55,9 @@
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
 #include "Search/FindUsageWidget.h"
+#if defined(__EMSCRIPTEN__)
+#include "OMEditGUI/wasm/WasmLocalFiles.h"
+#endif
 
 #include <QClipboard>
 #include <QDockWidget>
@@ -859,6 +862,28 @@ void LibraryTreeItem::updateChildrenNameStructure()
     if (pChildLibraryTreeItem) {
       pChildLibraryTreeItem->setNameStructure(QString("%1.%2").arg(mNameStructure, pChildLibraryTreeItem->getName()));
       pChildLibraryTreeItem->updateChildrenNameStructure();
+    }
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::updateChildrenNameStructureAndSourceFileName
+ * Updates the children name structure and source file name recursively.
+ * \param newNameStructure - the new name structure of this class.
+ */
+void LibraryTreeItem::updateChildrenNameStructureAndSourceFileName(const QString &nameStructure)
+{
+  for (int i = 0; i < childrenSize(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = child(i);
+    if (pChildLibraryTreeItem) {
+      // rename the child to use the new class name
+      const QString childNameStructure = QString("%1.%2").arg(nameStructure, pChildLibraryTreeItem->getName());
+      pChildLibraryTreeItem->setNameStructure(childNameStructure);
+      // reset the source file name of the child and update the OMCProxy.
+      pChildLibraryTreeItem->setFileName(childNameStructure);
+      pChildLibraryTreeItem->mClassInformation.fileName = childNameStructure;
+      MainWindow::instance()->getOMCProxy()->setSourceFile(pChildLibraryTreeItem->getNameStructure(), childNameStructure);
+      pChildLibraryTreeItem->updateChildrenNameStructureAndSourceFileName(childNameStructure);
     }
   }
 }
@@ -4762,6 +4787,9 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
         pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
       }
       mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
+#if defined(__EMSCRIPTEN__)
+      WasmLocalFiles::download(fileName);
+#endif
       /* Save the traceabiliy information and send to Daemon. */
 #if !defined(__EMSCRIPTEN__)
       if(GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName()) && OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() ){
@@ -4860,6 +4888,11 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
         pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
       }
       mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
+#if defined(__EMSCRIPTEN__)
+      // One download per file; the folder structure itself stays in the omc
+      // filesystem for the session.
+      WasmLocalFiles::download(fileName);
+#endif
     } else {
       return false;
     }
@@ -4962,6 +4995,9 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, b
         pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
       }
       mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
+#if defined(__EMSCRIPTEN__)
+      WasmLocalFiles::download(fileName);
+#endif
     } else {
       return false;
     }

@@ -32,10 +32,9 @@
 //     `result = false` with NULL/empty outputs; the caller checks
 //     `true := b`. fmilib additionally logs its own diagnostic lines
 //     ("module = FMIXML, log level = ERROR: ...") through the import
-//     logger; those internal lines are not reproduced here, only the
-//     errors FMIImpl.c itself raises.
-//   * `inFMILogLevel` only configures the fmilib logger in C; with no
-//     fmilib here it is unused.
+//     logger; of those only the missing-DefaultExperiment-attribute
+//     warnings are reproduced here.
+//   * `inFMILogLevel` is fmilib's jm_callbacks.log_level.
 
 #![allow(non_snake_case)]
 
@@ -75,6 +74,30 @@ fn add_scripting_error(template: &str, tokens: &[&str]) {
     );
 }
 
+/// FMIImpl.c fills its static jm_callbacks on the first import only, so that
+/// call's loglevel sticks for the rest of the process.
+static JM_LOG_LEVEL: std::sync::OnceLock<i32> = std::sync::OnceLock::new();
+
+/// jm_log_level_warning.
+const JM_LOG_LEVEL_WARNING: i32 = 3;
+
+/// FMIImpl.c's `importlogger`. The tokens read message/level/module because
+/// c_add_message reverses them.
+fn jm_log_warning(module: &str, message: &str) {
+    if JM_LOG_LEVEL_WARNING > *JM_LOG_LEVEL.get().unwrap_or(&JM_LOG_LEVEL_WARNING) {
+        return;
+    }
+    let _ = Error::addMessage(
+        ErrorTypes::Message {
+            id: -1,
+            ty: ErrorTypes::MessageType::SCRIPTING,
+            severity: ErrorTypes::Severity::WARNING,
+            message: arcstr::literal!("module = %s, log level = %s: %s"),
+        },
+        metamodelica::list![ArcStr::from(message), arcstr::literal!("WARNING"), ArcStr::from(module)],
+    );
+}
+
 type InitializeFMIImportResult = (
     bool,                                   // result
     Option<i32>,                            // outFMIContext
@@ -105,11 +128,12 @@ fn failure() -> InitializeFMIImportResult {
 pub fn initializeFMIImport(
     inFileName: ArcStr,
     inWorkingDirectory: ArcStr,
-    _inFMILogLevel: i32,
+    inFMILogLevel: i32,
     inInputConnectors: bool,
     inOutputConnectors: bool,
     inIsModelDescriptionImport: bool,
 ) -> Result<InitializeFMIImportResult> {
+    let _ = JM_LOG_LEVEL.set(inFMILogLevel);
     // `fmi_import_get_fmi_version`: extract the FMU into the working
     // directory, then read the fmiVersion attribute. Every failure mode up
     // to and including "fmiVersion attribute is not 1.0/2.0" maps to the
@@ -402,26 +426,32 @@ fn build_variable(
 /// `<DefaultExperiment>` of either FMI version: startTime (default 0),
 /// stopTime (default 1.0), tolerance (default 1e-4) — fmilib's
 /// FMI{1,2}_DEFAULT_EXPERIMENT_TOLERANCE. Returns `None` on a malformed
-/// number (fmilib parse error).
-fn parse_default_experiment(root: &roxmltree::Node<'_, '_>) -> Option<FMI::ExperimentAnnotation> {
-    let mut start = 0.0;
-    let mut stop = 1.0;
-    let mut tolerance = 1e-4;
-    if let Some(de) = child_element(root, "DefaultExperiment") {
-        if let Some(v) = de.attribute("startTime") {
-            start = v.trim().parse().ok()?;
-        }
-        if let Some(v) = de.attribute("stopTime") {
-            stop = v.trim().parse().ok()?;
-        }
-        if let Some(v) = de.attribute("tolerance") {
-            tolerance = v.trim().parse().ok()?;
+/// number (fmilib parse error). `version` (1 or 2) only names the fmilib
+/// module the missing-attribute warnings come from.
+fn parse_default_experiment(root: &roxmltree::Node<'_, '_>, version: u32) -> Option<FMI::ExperimentAnnotation> {
+    let de = child_element(root, "DefaultExperiment");
+    // Each fmilib getter warns when its attribute was absent; FMIImpl.c reads
+    // them in this order.
+    let mut values = [0.0, 1.0, 1e-4];
+    for (value, (getter, attribute)) in values
+        .iter_mut()
+        .zip([("start", "startTime"), ("stop", "stopTime"), ("tolerance", "tolerance")])
+    {
+        match de.as_ref().and_then(|de| de.attribute(attribute)) {
+            Some(v) => *value = v.trim().parse().ok()?,
+            None => jm_log_warning(
+                &format!("FMI{version}XML"),
+                &format!(
+                    "fmi{version}_xml_get_default_experiment_{getter}: \
+                     returning default value, since no attribute was defined in modelDescription"
+                ),
+            ),
         }
     }
     Some(FMI::ExperimentAnnotation {
-        fmiExperimentStartTime: metamodelica::Real::from(start),
-        fmiExperimentStopTime: metamodelica::Real::from(stop),
-        fmiExperimentTolerance: metamodelica::Real::from(tolerance),
+        fmiExperimentStartTime: metamodelica::Real::from(values[0]),
+        fmiExperimentStopTime: metamodelica::Real::from(values[1]),
+        fmiExperimentTolerance: metamodelica::Real::from(values[2]),
     })
 }
 
@@ -519,7 +549,7 @@ fn parse_fmi2(
     };
 
     let typedefs = parse_type_definitions(root, "SimpleType", true)?;
-    let experiment = parse_default_experiment(root)?;
+    let experiment = parse_default_experiment(root, 2)?;
 
     // Model variables in document order (C uses sortOrder = 0).
     let mut variables: Vec<FMI::ModelVariables> = Vec::new();
@@ -603,7 +633,7 @@ fn parse_fmi1(
     };
 
     let typedefs = parse_type_definitions(root, "Type", false)?;
-    let experiment = parse_default_experiment(root)?;
+    let experiment = parse_default_experiment(root, 1)?;
 
     let mut variables: Vec<FMI::ModelVariables> = Vec::new();
     let mut placements = (60, 60);

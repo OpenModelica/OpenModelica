@@ -1,5 +1,6 @@
-//! A minimal `wasi_snapshot_preview1` implementation backed by this crate's
-//! in-memory store, so the backing store is swappable behind a standard surface.
+//! A minimal `wasi_snapshot_preview1` implementation over this crate's [`fs`]
+//! facade, so a guest sees the same files omc does: real ones natively, the
+//! in-memory store on the web.
 //!
 //! The ABI methods take a [`GuestMem`] (the guest's linear memory) and follow the
 //! preview1 pointer/struct layout — for a guest wasm module driven by an engine.
@@ -22,12 +23,12 @@ thread_local! {
 /// console on the web target.
 pub fn start_stdout_capture() {
     STDOUT_CAPTURE.with(|c| *c.borrow_mut() = Some(Vec::new()));
-    NATIVE_CAPTURE.with(|h| h.get().map(|(begin, _)| begin()));
+    NATIVE_CAPTURE.with(|h| h.get().map(|n| (n.begin)()));
 }
 
 /// End capture and return the accumulated bytes as a lossy-UTF-8 string.
 pub fn take_stdout_capture() -> String {
-    let native = NATIVE_CAPTURE.with(|h| h.get().map(|(_, end)| end())).unwrap_or_default();
+    let native = NATIVE_CAPTURE.with(|h| h.get().map(|n| (n.end)())).unwrap_or_default();
     STDOUT_CAPTURE
         .with(|c| c.borrow_mut().take())
         .map(|mut v| {
@@ -37,16 +38,26 @@ pub fn take_stdout_capture() -> String {
         .unwrap_or_default()
 }
 
+/// While the redirect is in place the process's fds *are* the capture, so
+/// [`write_std`] writes there too and the run's log stays one stream, as the C
+/// simulation executable's is. `write` is false with no redirect in place.
+#[derive(Clone, Copy)]
+pub struct NativeCapture {
+    pub begin: fn(),
+    pub write: fn(&[u8], bool) -> bool,
+    pub end: fn() -> Vec<u8>,
+}
+
 thread_local! {
-    static NATIVE_CAPTURE: std::cell::Cell<Option<(fn(), fn() -> Vec<u8>)>> = const { std::cell::Cell::new(None) };
+    static NATIVE_CAPTURE: std::cell::Cell<Option<NativeCapture>> = const { std::cell::Cell::new(None) };
 }
 
 /// Extend the capture over the *process's* stdout, which a `dlopen`ed external "C"
 /// library's `printf` reaches directly — past the WASI shim, past `ModelicaMessage`.
 /// C's simulation executable has a stdout of its own, so that output belongs in the
 /// run's log too.
-pub fn set_native_capture(begin: fn(), end: fn() -> Vec<u8>) {
-    NATIVE_CAPTURE.with(|h| h.set(Some((begin, end))));
+pub fn set_native_capture(n: NativeCapture) {
+    NATIVE_CAPTURE.with(|h| h.set(Some(n)));
 }
 
 /// Write to stdout (fd 1) through the same capture/host routing as a guest
@@ -56,8 +67,12 @@ pub fn stdout_write(bytes: &[u8]) {
     write_std(bytes, false);
 }
 
-/// Route a stdout/stderr write to the capture buffer if active, else to the host.
+/// Route a stdout/stderr write to the redirected process fds, else to the capture
+/// buffer if active, else to the host.
 fn write_std(bytes: &[u8], is_err: bool) {
+    if NATIVE_CAPTURE.with(|h| h.get()).is_some_and(|n| (n.write)(bytes, is_err)) {
+        return;
+    }
     let captured = STDOUT_CAPTURE.with(|c| match c.borrow_mut().as_mut() {
         Some(buf) => { buf.extend_from_slice(bytes); true }
         None => false,
@@ -91,6 +106,9 @@ pub const OFLAGS_TRUNC: i32 = 1 << 3;
 // read-open in `path_open`.
 pub const RIGHTS_FD_WRITE: u64 = 1 << 6;
 
+// fdflags (`__wasi_fdflags_t`): `fopen(…, "a")`'s O_APPEND.
+pub const FDFLAGS_APPEND: i32 = 1 << 0;
+
 // `fd_seek` whence.
 pub const WHENCE_SET: i32 = 0;
 pub const WHENCE_CUR: i32 = 1;
@@ -111,23 +129,26 @@ enum Fd {
     PreopenDir { name: String },
     /// A directory opened by name, enumerated by `fd_readdir` against `vfs_path`.
     Dir { vfs_path: String },
-    /// A regular file. Writable files buffer in `buf` and flush to the VFS on
-    /// close; read files are loaded from the VFS at `path_open`.
+    /// A regular file, held whole in `buf` and written back as it grows.
     File {
         vfs_path: String,
         buf: Vec<u8>,
         pos: usize,
         writable: bool,
         dirty: bool,
+        /// Every write goes to the end, whatever `pos` says (`O_APPEND`).
+        append: bool,
+        /// How much of `buf` is out already, so a sequential writer appends.
+        flushed: usize,
     },
 }
 
 /// Per-run WASI state: the fd table, the directory relative paths resolve
 /// against, the program arguments, and the exit code captured from `proc_exit`.
 pub struct WasiCtx {
-    /// Directory that `path_open` resolves relative names against — the VFS key
-    /// prefix. Empty means relative names map to bare VFS keys (matching how
-    /// omc's `File` runtime keys files today, with no cwd on wasm).
+    /// Directory that `path_open` resolves relative names against. Empty leaves
+    /// them as they are (matching how omc's `File` runtime keys files today, with
+    /// no cwd on wasm).
     cwd: String,
     next_fd: u32,
     fds: HashMap<u32, Fd>,
@@ -170,8 +191,9 @@ impl GuestMem for SliceMem<'_> {
 }
 
 impl WasiCtx {
-    /// A context whose preopen `"."` maps to `cwd` in the VFS (use `""` for bare
-    /// keys) and whose `argv` is `args` (typically just the program name).
+    /// A context whose preopen anchors the guest's paths at `cwd` (`""` for bare
+    /// keys) and whose `argv` is `args`. wasi-libc strips the preopen name `"."` to
+    /// the empty prefix, so what reaches the ABI has lost its leading `/`.
     pub fn new(cwd: impl Into<String>, args: Vec<String>) -> Self {
         let mut fds = HashMap::new();
         fds.insert(1, Fd::Stdout);
@@ -180,13 +202,27 @@ impl WasiCtx {
         WasiCtx { cwd: cwd.into(), next_fd: PREOPEN_FD + 1, fds, args, exit_code: None }
     }
 
-    /// Map a guest-supplied relative path onto its VFS key.
+    /// The file a guest-supplied path names; a relative one is taken against the
+    /// preopen.
     fn resolve(&self, name: &str) -> String {
         let name = name.strip_prefix("./").unwrap_or(name);
-        if self.cwd.is_empty() {
+        if self.cwd.is_empty() || name.starts_with('/') {
             name.to_string()
         } else {
-            format!("{}/{}", self.cwd, name)
+            format!("{}/{name}", self.cwd.trim_end_matches('/'))
+        }
+    }
+
+    /// Write what a writable fd gained since the last flush: nothing tears a side
+    /// module down, so a stream that is never closed must still reach the file.
+    fn flush_file(vfs_path: &str, buf: &[u8], flushed: &mut usize) {
+        let ok = if *flushed == 0 || *flushed > buf.len() {
+            crate::fs::write(vfs_path, buf).is_ok()
+        } else {
+            crate::fs::append(vfs_path, &buf[*flushed..]).is_ok()
+        };
+        if ok {
+            *flushed = buf.len();
         }
     }
 
@@ -226,14 +262,22 @@ impl WasiCtx {
         match self.fds.get_mut(&fd) {
             Some(Fd::Stdout) => write_std(&gathered, false),
             Some(Fd::Stderr) => write_std(&gathered, true),
-            Some(Fd::File { buf, pos, writable: true, dirty, .. }) => {
+            Some(Fd::File { vfs_path, buf, pos, writable: true, dirty, append, flushed }) => {
+                if *append {
+                    *pos = buf.len();
+                }
                 let end = *pos + gathered.len();
                 if buf.len() < end {
                     buf.resize(end, 0);
                 }
                 buf[*pos..end].copy_from_slice(&gathered);
+                // Overwriting what is already out there: the file has to go again whole.
+                if *pos < *flushed {
+                    *flushed = 0;
+                }
                 *pos = end;
                 *dirty = true;
+                Self::flush_file(vfs_path, buf, flushed);
             }
             Some(_) => return ERRNO_BADF,
             None => return ERRNO_BADF,
@@ -304,9 +348,9 @@ impl WasiCtx {
     }
 
     /// `path_open`: open `path` (relative to a preopen dir fd) and return a fresh
-    /// fd. A write-open (rights include `fd_write`, or `O_CREAT`/`O_TRUNC`)
-    /// starts an empty buffer that flushes to the VFS on close; a read-open loads
-    /// the file from the VFS (ENOENT if absent).
+    /// fd. A write-open (rights include `fd_write`, or `O_CREAT`/`O_TRUNC`) starts
+    /// from what is there unless `O_TRUNC`, as `fopen(…, "a")` expects; a read-open
+    /// loads the file (ENOENT if absent).
     #[allow(clippy::too_many_arguments)]
     pub fn path_open<M: GuestMem>(
         &mut self,
@@ -318,7 +362,7 @@ impl WasiCtx {
         oflags: i32,
         fs_rights_base: u64,
         _fs_rights_inheriting: u64,
-        _fdflags: i32,
+        fdflags: i32,
         opened_fd: u32,
     ) -> i32 {
         let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
@@ -336,11 +380,25 @@ impl WasiCtx {
         let writable = (fs_rights_base & RIGHTS_FD_WRITE) != 0
             || (oflags & (OFLAGS_CREAT | OFLAGS_TRUNC)) != 0;
         let file = if writable {
-            Fd::File { vfs_path, buf: Vec::new(), pos: 0, writable: true, dirty: true }
+            let buf = match oflags & OFLAGS_TRUNC {
+                0 => crate::fs::read(&vfs_path).unwrap_or_default(),
+                _ => Vec::new(),
+            };
+            let mut flushed = buf.len();
+            // C creates (or truncates) the file at `fopen`, not at the first write.
+            if flushed == 0 {
+                Self::flush_file(&vfs_path, &buf, &mut flushed);
+            }
+            Fd::File {
+                vfs_path, buf, pos: 0, writable: true, dirty: true,
+                append: fdflags & FDFLAGS_APPEND != 0, flushed,
+            }
         } else {
-            match crate::read(&vfs_path) {
-                Some(buf) => Fd::File { vfs_path, buf, pos: 0, writable: false, dirty: false },
-                None => return ERRNO_NOENT,
+            match crate::fs::read(&vfs_path) {
+                Ok(buf) => Fd::File {
+                    vfs_path, buf, pos: 0, writable: false, dirty: false, append: false, flushed: 0,
+                },
+                Err(_) => return ERRNO_NOENT,
             }
         };
         let fd = self.next_fd;
@@ -352,11 +410,11 @@ impl WasiCtx {
         ERRNO_SUCCESS
     }
 
-    /// `fd_close`: flush a dirty writable file to the VFS and drop the fd.
+    /// `fd_close`: write out what the fd still holds and drop it.
     pub fn fd_close(&mut self, fd: u32) -> i32 {
         match self.fds.remove(&fd) {
-            Some(Fd::File { vfs_path, buf, writable: true, dirty: true, .. }) => {
-                crate::write(&vfs_path, buf);
+            Some(Fd::File { vfs_path, buf, writable: true, dirty: true, mut flushed, .. }) => {
+                Self::flush_file(&vfs_path, &buf, &mut flushed);
                 ERRNO_SUCCESS
             }
             Some(_) => ERRNO_SUCCESS,
@@ -388,7 +446,7 @@ impl WasiCtx {
     /// `fd_filestat_get`: fill a 64-byte `filestat` for an open fd.
     pub fn fd_filestat_get<M: GuestMem>(&mut self, mem: &mut M, fd: u32, buf: u32) -> i32 {
         let (filetype, size, mtime) = match self.fds.get(&fd) {
-            Some(Fd::File { buf, vfs_path, .. }) => (FILETYPE_REGULAR_FILE, buf.len() as u64, crate::mtime(vfs_path).map(|d| d.as_nanos() as u64).unwrap_or(0)),
+            Some(Fd::File { buf, vfs_path, .. }) => (FILETYPE_REGULAR_FILE, buf.len() as u64, file_mtime(vfs_path)),
             Some(Fd::PreopenDir { .. } | Fd::Dir { .. }) => (FILETYPE_DIRECTORY, 0, 0),
             Some(Fd::Stdout | Fd::Stderr) => (FILETYPE_CHARACTER_DEVICE, 0, 0),
             None => return ERRNO_BADF,
@@ -400,9 +458,13 @@ impl WasiCtx {
     pub fn path_filestat_get<M: GuestMem>(&mut self, mem: &mut M, _dirfd: u32, _flags: u32, path: u32, path_len: u32, buf: u32) -> i32 {
         let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
         let vfs_path = self.resolve(&String::from_utf8_lossy(&bytes));
-        match crate::read(&vfs_path) {
-            Some(b) => Self::write_filestat(mem, buf, FILETYPE_REGULAR_FILE, b.len() as u64, crate::mtime(&vfs_path).map(|d| d.as_nanos() as u64).unwrap_or(0)),
-            None => ERRNO_NOENT,
+        let mtime = file_mtime(&vfs_path);
+        if crate::fs::is_dir(&vfs_path) {
+            return Self::write_filestat(mem, buf, FILETYPE_DIRECTORY, 0, mtime);
+        }
+        match crate::fs::len(&vfs_path) {
+            Ok(n) => Self::write_filestat(mem, buf, FILETYPE_REGULAR_FILE, n, mtime),
+            Err(_) => ERRNO_NOENT,
         }
     }
 
@@ -424,27 +486,24 @@ impl WasiCtx {
 
     // ── path mutations ───────────────────────────────────────────────────────
 
-    /// `path_create_directory`: store directories are implicit, so a no-op success.
     pub fn path_create_directory<M: GuestMem>(&mut self, mem: &mut M, _dirfd: u32, path: u32, path_len: u32) -> i32 {
-        if Self::rd_bytes(mem, path, path_len).is_none() {
-            return ERRNO_FAULT;
-        }
-        ERRNO_SUCCESS
+        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
+        let dir = self.resolve(&String::from_utf8_lossy(&bytes));
+        if crate::fs::create_dir_all(&dir).is_ok() { ERRNO_SUCCESS } else { ERRNO_NOENT }
     }
 
     /// `path_unlink_file`.
     pub fn path_unlink_file<M: GuestMem>(&mut self, mem: &mut M, _dirfd: u32, path: u32, path_len: u32) -> i32 {
         let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
         let vfs_path = self.resolve(&String::from_utf8_lossy(&bytes));
-        if crate::remove(&vfs_path) { ERRNO_SUCCESS } else { ERRNO_NOENT }
+        if crate::fs::remove_file(&vfs_path).is_ok() { ERRNO_SUCCESS } else { ERRNO_NOENT }
     }
 
-    /// `path_remove_directory`: drop every store entry under the directory.
+    /// `path_remove_directory`: the directory and everything under it.
     pub fn path_remove_directory<M: GuestMem>(&mut self, mem: &mut M, _dirfd: u32, path: u32, path_len: u32) -> i32 {
         let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
         let dir = self.resolve(&String::from_utf8_lossy(&bytes));
-        remove_subtree(&dir);
-        ERRNO_SUCCESS
+        if crate::fs::remove_dir_all(&dir).is_ok() { ERRNO_SUCCESS } else { ERRNO_NOENT }
     }
 
     /// `path_rename`: move a file or a whole subtree.
@@ -454,7 +513,7 @@ impl WasiCtx {
         let Some(nb) = Self::rd_bytes(mem, new_path, new_len) else { return ERRNO_FAULT };
         let from = self.resolve(&String::from_utf8_lossy(&ob));
         let to = self.resolve(&String::from_utf8_lossy(&nb));
-        rename_path(&from, &to)
+        if crate::fs::rename(&from, &to).is_ok() { ERRNO_SUCCESS } else { ERRNO_NOENT }
     }
 
     /// `fd_prestat_get`: report the single preopen dir; EBADF for everything else
@@ -573,7 +632,8 @@ impl WasiCtx {
             Some(Fd::Dir { vfs_path }) => vfs_path.clone(),
             _ => return ERRNO_BADF,
         };
-        let entries = readdir(&dir_key);
+        let mut entries = crate::fs::read_dir(&dir_key).unwrap_or_default();
+        entries.sort_by(|a, b| a.name.cmp(&b.name));
         const HDR: u32 = 24;
         let mut written = 0u32;
         let mut idx = cookie;
@@ -616,10 +676,12 @@ impl WasiCtx {
     /// preview1 `path_open` for a read-only open of the absolute key `path`.
     /// Returns the new fd, or `None` (ENOENT) if the file is absent.
     pub fn open_read(&mut self, path: &str) -> Option<u32> {
-        let buf = crate::read(path)?;
+        let buf = crate::fs::read(path).ok()?;
         let fd = self.next_fd;
         self.next_fd += 1;
-        self.fds.insert(fd, Fd::File { vfs_path: path.to_string(), buf, pos: 0, writable: false, dirty: false });
+        self.fds.insert(fd, Fd::File {
+            vfs_path: path.to_string(), buf, pos: 0, writable: false, dirty: false, append: false, flushed: 0,
+        });
         Some(fd)
     }
 
@@ -638,42 +700,13 @@ impl WasiCtx {
     }
 }
 
-/// Remove `dir` itself and every key beneath `dir/`.
-fn remove_subtree(dir: &str) {
-    let norm = crate::normalize(dir);
-    crate::remove(&norm);
-    let prefix = format!("{norm}/");
-    for key in crate::list() {
-        if key.starts_with(&prefix) {
-            crate::remove(&key);
-        }
-    }
-}
-
-/// Move a single file, or every key under a directory subtree.
-fn rename_path(from: &str, to: &str) -> i32 {
-    let from = crate::normalize(from);
-    let to = crate::normalize(to);
-    if let Some(bytes) = crate::read(&from) {
-        // Only a real store entry can move; `read` also resolves immutable builtins.
-        if crate::remove(&from) {
-            crate::write(&to, bytes);
-            return ERRNO_SUCCESS;
-        }
-    }
-    let from_prefix = format!("{from}/");
-    let moved: Vec<(String, Vec<u8>)> = crate::list()
-        .into_iter()
-        .filter_map(|k| k.strip_prefix(&from_prefix).map(|r| (r.to_string(), crate::read(&k).unwrap_or_default())))
-        .collect();
-    if moved.is_empty() {
-        return ERRNO_NOENT;
-    }
-    for (rest, bytes) in moved {
-        crate::remove(&format!("{from_prefix}{rest}"));
-        crate::write(&format!("{to}/{rest}"), bytes);
-    }
-    ERRNO_SUCCESS
+/// `filestat`'s `mtim`: nanoseconds since the epoch, 0 for anything without one.
+fn file_mtime(path: &str) -> u64 {
+    crate::fs::modified(path)
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_nanos() as u64)
+        .unwrap_or(0)
 }
 
 /// One directory entry from [`readdir`].
@@ -724,35 +757,59 @@ mod path_ops_tests {
 
     #[test]
     fn path_mutations_and_dir_fd() {
-        crate::write("/wasi_pathops/a.txt", b"AAA".to_vec());
-        crate::write("/wasi_pathops/b.txt", b"BBB".to_vec());
+        let root = if crate::fs::IN_MEMORY {
+            "/wasi_pathops".to_string()
+        } else {
+            format!("{}/om-wasi-pathops-{}", std::env::temp_dir().display(), std::process::id())
+        };
+        crate::fs::create_dir_all(&root).unwrap();
+        crate::fs::write(&format!("{root}/a.txt"), b"AAA").unwrap();
+        crate::fs::write(&format!("{root}/b.txt"), b"BBB").unwrap();
 
         let mut ctx = WasiCtx::new("", vec!["t".into()]);
-        let mut buf = vec![0u8; 4096];
+        let mut buf = vec![0u8; 8192];
         let mut mem = SliceMem(&mut buf);
 
-        let (op, ol) = put(mem.0, 0, "wasi_pathops/a.txt");
-        let (np, nl) = put(mem.0, 64, "wasi_pathops/c.txt");
+        let (op, ol) = put(mem.0, 0, &format!("{root}/a.txt"));
+        let (np, nl) = put(mem.0, 1024, &format!("{root}/c.txt"));
         assert_eq!(ctx.path_rename(&mut mem, 3, op, ol, 3, np, nl), ERRNO_SUCCESS);
-        assert_eq!(crate::read("/wasi_pathops/c.txt").as_deref(), Some(&b"AAA"[..]));
-        assert!(crate::read("/wasi_pathops/a.txt").is_none());
+        assert_eq!(crate::fs::read(&format!("{root}/c.txt")).unwrap(), b"AAA");
+        assert!(crate::fs::read(&format!("{root}/a.txt")).is_err());
 
-        let (p, l) = put(mem.0, 128, "wasi_pathops/b.txt");
+        let (p, l) = put(mem.0, 2048, &format!("{root}/b.txt"));
         assert_eq!(ctx.path_unlink_file(&mut mem, 3, p, l), ERRNO_SUCCESS);
         assert_eq!(ctx.path_unlink_file(&mut mem, 3, p, l), ERRNO_NOENT);
 
-        let (dp, dl) = put(mem.0, 256, "wasi_pathops");
-        assert_eq!(ctx.path_open(&mut mem, 3, 0, dp, dl, OFLAGS_DIRECTORY, 0, 0, 0, 300), ERRNO_SUCCESS);
-        let dfd = WasiCtx::rd_u32(&mem, 300).unwrap();
-        assert_eq!(ctx.fd_readdir(&mut mem, dfd, 512, 512, 0, 320), ERRNO_SUCCESS);
-        let used = WasiCtx::rd_u32(&mem, 320).unwrap() as usize;
-        assert!(mem.0[512..512 + used].windows(5).any(|w| w == b"c.txt"));
+        let (dp, dl) = put(mem.0, 3072, &root);
+        assert_eq!(ctx.path_open(&mut mem, 3, 0, dp, dl, OFLAGS_DIRECTORY, 0, 0, 0, 4000), ERRNO_SUCCESS);
+        let dfd = WasiCtx::rd_u32(&mem, 4000).unwrap();
+        assert_eq!(ctx.fd_readdir(&mut mem, dfd, 4096, 512, 0, 4004), ERRNO_SUCCESS);
+        let used = WasiCtx::rd_u32(&mem, 4004).unwrap() as usize;
+        assert!(mem.0[4096..4096 + used].windows(5).any(|w| w == b"c.txt"));
 
-        let (rp, rl) = put(mem.0, 1100, "wasi_pathops");
+        // A directory stats as one, and `fopen(…, "a")` keeps what is there.
+        assert_eq!(ctx.path_filestat_get(&mut mem, 3, 0, dp, dl, 5000), ERRNO_SUCCESS);
+        assert_eq!(mem.0[5000 + 16], FILETYPE_DIRECTORY);
+        let (ap, al) = put(mem.0, 6000, &format!("{root}/c.txt"));
+        assert_eq!(
+            ctx.path_open(&mut mem, 3, 0, ap, al, OFLAGS_CREAT, RIGHTS_FD_WRITE, 0, FDFLAGS_APPEND, 6100),
+            ERRNO_SUCCESS
+        );
+        let afd = WasiCtx::rd_u32(&mem, 6100).unwrap();
+        let (wp, wl) = put(mem.0, 6200, "BBB");
+        let _ = WasiCtx::wr_u32(&mut mem, 6300, wp);
+        let _ = WasiCtx::wr_u32(&mut mem, 6304, wl);
+        assert_eq!(ctx.fd_write(&mut mem, afd, 6300, 1, 6400), ERRNO_SUCCESS);
+        assert_eq!(ctx.fd_close(afd), ERRNO_SUCCESS);
+        assert_eq!(crate::fs::read(&format!("{root}/c.txt")).unwrap(), b"AAABBB");
+
+        let (rp, rl) = put(mem.0, 7000, &root);
         assert_eq!(ctx.path_remove_directory(&mut mem, 3, rp, rl), ERRNO_SUCCESS);
-        assert!(crate::read("/wasi_pathops/c.txt").is_none());
+        assert!(crate::fs::read(&format!("{root}/c.txt")).is_err());
 
-        let (cp, cl) = put(mem.0, 1200, "newdir");
+        let (cp, cl) = put(mem.0, 7200, &format!("{root}/newdir"));
         assert_eq!(ctx.path_create_directory(&mut mem, 3, cp, cl), ERRNO_SUCCESS);
+        assert!(crate::fs::is_dir(&format!("{root}/newdir")) || crate::fs::IN_MEMORY);
+        let _ = crate::fs::remove_dir_all(&root);
     }
 }

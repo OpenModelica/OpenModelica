@@ -182,6 +182,7 @@ public:
   bool isTopLevel() const;
   bool isSimulationAllowed();
   void updateChildrenNameStructure();
+  void updateChildrenNameStructureAndSourceFileName(const QString &nameStructure);
   QString getHTMLDescription() const;
 
   OMCInterface::getClassInformation_res mClassInformation;

@@ -25,15 +25,17 @@ val(x0, 1.0, "experiment_annotation.mat");
 // true
 // ""
 // "M.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // "info: *** FMU Simulation Info ***
 //      - model     : M (co-simulation)
 //      - fmiVersion: 2.0
 //      - startTime : 0.200000
 //      - stopTime  : 1.000000
-//      - tolerance : 0.000001
-//      - stepSize  : 0.010000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.01
 // info:    Result file: experiment_annotation.mat (bufferSize=10)
 // "
 // 1.0

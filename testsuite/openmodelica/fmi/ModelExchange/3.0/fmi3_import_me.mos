@@ -6,7 +6,7 @@
 // the wrapper. The result is cos(t), which is what der(x) = v, der(v) = -x with
 // x(0) = 1 and v(0) = 0 has to give. See OpenModelica/OpenModelica#16173.
 //
-// teardown_command: rm -rf Osc3.fmu Osc3_me_FMU.mo Osc3_me_FMU* Osc3.log Osc3_info.json Osc3.fmutmp/ binaries sources documentation modelDescription.xml
+// teardown_command: rm -rf Osc3.fmu Osc3_me_FMU* Osc3.log Osc3_info.json Osc3.fmutmp/ binaries sources documentation modelDescription.xml terminalsAndIcons Osc3_FMU.libs Osc3_FMU.makefile Osc3_external_functions.json resources
 
 setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
 
@@ -40,7 +40,9 @@ val(x, 6.283185307);
 // true
 // ""
 // "Osc3.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // "Osc3_me_FMU.mo"
 // "Warning: module = Attribute noNamespaceSchemaLocation='https://raw.githubusercontent.com/modelica/fmi-standard/main/schema/fmi3ModelDescription.xsd' is ignored. Using standard fmiModelDescription.xsd., log level = WARNING: FMI3XML
 // Warning: module = Attribute noNamespaceSchemaLocation='https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3TerminalsAndIcons.xsd' is ignored. Using standard fmiModelDescription.xsd., log level = WARNING: FMI3XML
@@ -52,16 +54,16 @@ val(x, 6.283185307);
 // true
 // ""
 // record SimulationResult
-// resultFile = "Osc3_me_FMU_res.mat",
-// simulationOptions = "startTime = 0.0, stopTime = 6.283185307, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Osc3_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-// messages = "module = FMI3XML, log level = WARNING: Attribute noNamespaceSchemaLocation='https://raw.githubusercontent.com/modelica/fmi-standard/main/schema/fmi3ModelDescription.xsd' is ignored. Using standard fmiModelDescription.xsd.
+//     resultFile = "Osc3_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 6.283185307, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Osc3_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "module = FMI3XML, log level = WARNING: Attribute noNamespaceSchemaLocation='https://raw.githubusercontent.com/modelica/fmi-standard/main/schema/fmi3ModelDescription.xsd' is ignored. Using standard fmiModelDescription.xsd.
 // module = FMI3XML, log level = WARNING: Attribute noNamespaceSchemaLocation='https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3TerminalsAndIcons.xsd' is ignored. Using standard fmiModelDescription.xsd.
 // module = FMI3XML, log level = ERROR: Unknown attribute 'matchingRule=plug' in XML
 // module = FMI3XML, log level = ERROR: Unknown attribute 'variableName=y' in XML
 // module = FMI3XML, log level = ERROR: Unknown attribute 'memberName=y' in XML
 // module = FMI3XML, log level = ERROR: Unknown attribute 'variableKind=signal' in XML
-// LOG_SUCCESS | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.

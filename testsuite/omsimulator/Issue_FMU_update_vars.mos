@@ -63,6 +63,8 @@ readFile("Issue_FMU_update_vars_systemCall.log");
 // ""
 // "Issue_FMU_update_vars.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // true
 // ""

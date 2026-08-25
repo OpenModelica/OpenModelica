@@ -2,7 +2,7 @@
 // keywords: FMI 2.0 export
 // suite: fmuCSources
 // status: correct
-// teardown_command: rm -rf fmi_attributes_15.fmu fmi_attributes_15.log fmi_attributes_15_tmp.xml fmi_attributes_15.fmutmp/
+// teardown_command: rm -rf fmi_attributes_15.fmu fmi_attributes_15.log fmi_attributes_15_tmp.xml fmi_attributes_15.fmutmp/ fmi_attributes_15_info.json
 
 setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental");
 getErrorString();
@@ -32,7 +32,9 @@ readFile("fmi_attributes_15_tmp.xml")
 // true
 // ""
 // "fmi_attributes_15.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>

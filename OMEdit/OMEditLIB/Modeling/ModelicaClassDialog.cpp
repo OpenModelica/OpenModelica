@@ -47,6 +47,9 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Commands.h"
 #include "Modeling/ItemDelegate.h"
+#if defined(__EMSCRIPTEN__)
+#include "OMEditGUI/wasm/WasmLocalFiles.h"
+#endif
 
 #include <QApplication>
 #include <QMessageBox>
@@ -1275,9 +1278,10 @@ void RenameClassDialog::renameClass()
 
   if (!MainWindow::instance()->getOMCProxy()->existClass(QString(StringHandler::removeLastWordAfterDot(mNameStructure)).append(".").append(newName)))
   {
-    if (MainWindow::instance()->getOMCProxy()->renameClass(mNameStructure, newName))
+    QList<QString> classes = MainWindow::instance()->getOMCProxy()->renameClass(mNameStructure, newName);
+    if (!classes.isEmpty())
     {
-      newNameStructure = StringHandler::removeFirstLastCurlBrackets(MainWindow::instance()->getOMCProxy()->getResult());
+      newNameStructure = classes.first();
       // Change the name in tree
       //mpParentMainWindow->mpLibrary->updateNodeText(newName, newNameStructure);
       accept();
@@ -1359,6 +1363,9 @@ void SaveTotalFileDialog::saveTotalModel()
       mpStripCommentsCheckBox->isChecked(),
       mpObfuscateOutputCheckBox->isChecked(),
       mpUseSimplifiedHeuristic->isChecked());
+#if defined(__EMSCRIPTEN__)
+    WasmLocalFiles::download(fileName);
+#endif
     accept();
   }
 }

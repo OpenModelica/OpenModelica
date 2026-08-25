@@ -7914,6 +7914,30 @@ algorithm
   end match;
 end isAtomic;
 
+public function isDeeperThan
+  "Whether the expression tree is deeper than inDepth levels."
+  input DAE.Exp inExp;
+  input Integer inDepth;
+  output Boolean outDeeper;
+algorithm
+  outDeeper := match inExp
+    case _ guard inDepth <= 0 then true;
+    case DAE.BINARY() then if isDeeperThan(inExp.exp1, inDepth - 1) then true
+                           else isDeeperThan(inExp.exp2, inDepth - 1);
+    case DAE.LBINARY() then if isDeeperThan(inExp.exp1, inDepth - 1) then true
+                            else isDeeperThan(inExp.exp2, inDepth - 1);
+    case DAE.RELATION() then if isDeeperThan(inExp.exp1, inDepth - 1) then true
+                             else isDeeperThan(inExp.exp2, inDepth - 1);
+    case DAE.IFEXP() then if isDeeperThan(inExp.expCond, inDepth - 1) then true
+                          elseif isDeeperThan(inExp.expThen, inDepth - 1) then true
+                          else isDeeperThan(inExp.expElse, inDepth - 1);
+    case DAE.UNARY() then isDeeperThan(inExp.exp, inDepth - 1);
+    case DAE.LUNARY() then isDeeperThan(inExp.exp, inDepth - 1);
+    case DAE.CAST() then isDeeperThan(inExp.exp, inDepth - 1);
+    else false;
+  end match;
+end isDeeperThan;
+
 public function isImpure "author: lochel
   Returns true if an expression contains an impure function call."
   input DAE.Exp inExp;

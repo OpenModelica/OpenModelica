@@ -38,13 +38,15 @@ unsafe extern "C" {
     fn rt_host_set_no_throw(v: i32);
     /// Initialization is over; the host splits its output capture there.
     fn rt_host_init_done();
+    /// C's `RHSFinalFlag`: the external "C" libraries are the host's, so is the flag.
+    fn rt_host_rhs_final(v: i32);
 }
 
 fn init_done_hook() {
     unsafe { rt_host_init_done() };
 }
 
-fn now_ms_hook() -> f64 {
+pub(crate) fn now_ms_hook() -> f64 {
     unsafe { rt_host_now_ms() }
 }
 fn cancel_hook() -> bool {
@@ -59,6 +61,9 @@ fn cancel_hook() -> bool {
 #[allow(dead_code)]
 pub const N_SLOTS: u32 = driver::MODEL_FNS.len() as u32;
 
+/// `present_mask` is a `u64` on both sides, so the list cannot outgrow it.
+const _: () = assert!(N_SLOTS <= 64);
+
 fn slot_of(name: &str) -> Option<u32> {
     driver::MODEL_FNS.iter().position(|&n| n == name).map(|i| i as u32)
 }
@@ -70,12 +75,12 @@ fn slot_of(name: &str) -> Option<u32> {
 /// `rt_solve_nls` already do).
 struct InWasmEngine {
     fn_base: u32,
-    present_mask: u32,
+    present_mask: u64,
 }
 
 impl InWasmEngine {
     fn present(&self, slot: u32) -> bool {
-        self.present_mask & (1 << slot) != 0
+        self.present_mask & (1u64 << slot) != 0
     }
 }
 
@@ -90,7 +95,7 @@ impl SimEngine for InWasmEngine {
         dst.copy_from_slice(buf);
         Ok(())
     }
-    fn call1(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+    fn call1_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         let slot = slot_of(name).ok_or("in-wasm engine: unknown model function")?;
         if !self.present(slot) {
             return Err("in-wasm engine: required model function not exported");
@@ -100,17 +105,17 @@ impl SimEngine for InWasmEngine {
         f(arg);
         Ok(())
     }
-    fn call1_if_present(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+    fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         let slot = match slot_of(name) {
             Some(s) => s,
             None => return Ok(()),
         };
         if self.present(slot) {
-            self.call1(name, arg)?;
+            self.call1_raw(name, arg)?;
         }
         Ok(())
     }
-    fn call2(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
+    fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
         let slot = slot_of(name).ok_or("in-wasm engine: unknown model function")?;
         if !self.present(slot) {
             return Err("in-wasm engine: required model function not exported");
@@ -169,8 +174,14 @@ impl SimEngine for InWasmEngine {
     fn error_stage_addr(&mut self) -> u32 {
         crate::nls::rt_error_stage_addr()
     }
+    fn no_throw_div_zero_addr(&mut self) -> u32 {
+        crate::nls::rt_no_throw_div_zero_addr()
+    }
     fn clean_nls_history(&mut self, time: f64) {
         crate::nls::rt_nls_clean_history(time);
+    }
+    fn set_rhs_final(&mut self, final_eval: bool) {
+        unsafe { rt_host_rhs_final(final_eval as i32) };
     }
 }
 
@@ -280,7 +291,7 @@ pub extern "C" fn rt_sim_set_overrides(ptr: u32, len: u32) -> i32 {
 /// `present_mask` bit `s` is set iff slot `s` holds a real funcref. Returns 0 on
 /// success, <0 on error.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, present_mask: u32) -> i32 {
+pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, present_mask: u64) -> i32 {
     // Any prior session is dropped (frees its buffers) before starting a new one.
     *session() = None;
     crate::reset_lin_solves();
@@ -295,7 +306,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     };
     // A session always has a host, which renders `read_experiment`'s notices from
     // the same flags; saying it again here would double every line.
-    driver::set_log_sink(|_| {});
+    driver::set_log_sink(|_, _, _| {});
     simflags::with_flags(|f| model.apply_flags(f));
     driver::set_log_sink(crate::omclog::sink);
 
@@ -308,6 +319,18 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     });
 
     driver::set_clock(now_ms_hook);
+    // This session runs its own start/advance/finish instead of `drive`, so the
+    // run's clocks start (and, in `finish`, stop) here.
+    use openmodelica_sim_meta::rtclock;
+    rtclock::reset(
+        openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::STATS)
+            || openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::STATS_V),
+    );
+    rtclock::tick(rtclock::TOTAL);
+    rtclock::tick(rtclock::PREINIT);
+    crate::sysstats::enable(openmodelica_sim_meta::omclog::active(
+        openmodelica_sim_meta::omclog::STATS_V,
+    ));
     driver::set_cancel_hook(cancel_hook);
     driver::set_init_done_hook(init_done_hook);
     driver::set_no_throw_hook(|v| unsafe { rt_host_set_no_throw(v as i32) });
@@ -347,10 +370,19 @@ pub extern "C" fn rt_sim_advance(budget_ms: f64) -> i32 {
     if s.finished {
         return 1;
     }
-    let adv = {
+    let mut adv = {
         let Session { engine, driver, model, .. } = &mut *s;
         driver.advance(engine, model, budget_ms)
     };
+    // C's `performSimulation` catch, here rather than in the host loop: only
+    // `advance` knows where the step boundary is.
+    while let Err(err) = adv {
+        let Session { engine, driver, model, .. } = &mut *s;
+        if !driver::is_model_throw(err) || !driver.retry_step(engine, model).unwrap_or(false) {
+            return -2;
+        }
+        adv = driver.advance(engine, model, budget_ms);
+    }
     match adv {
         Ok(Advance::Running) => 0,
         Ok(done @ (Advance::Done | Advance::Terminated)) => {
@@ -385,6 +417,9 @@ fn finish(s: &mut Session) {
         s.lin.extend_from_slice(f.content.as_bytes());
     }
     s.params = driver::finalize_run(&mut s.engine, &s.model, s.sim_data).unwrap_or_default();
+    use openmodelica_sim_meta::rtclock;
+    rtclock::accumulate(rtclock::TOTAL);
+    (s.stats.timers, s.stats.tcalls) = rtclock::snapshot();
     s.finished = true;
 }
 
@@ -444,6 +479,14 @@ pub extern "C" fn rt_sim_stat(which: u32) -> u64 {
         5 => s.stats.state_events,
         6 => s.stats.time_events,
         7 => crate::lin_solves(),
-        _ => 0,
+        // The `LOG_STATS` timers: seconds as `f64` bits, then the call counts.
+        n => {
+            use openmodelica_sim_meta::rtclock::{N, STAT_SLOT_BASE};
+            match (n - STAT_SLOT_BASE) as usize {
+                i if i < N => s.stats.timers[i].to_bits(),
+                i if i < 2 * N => s.stats.tcalls[i - N],
+                _ => 0,
+            }
+        }
     })
 }

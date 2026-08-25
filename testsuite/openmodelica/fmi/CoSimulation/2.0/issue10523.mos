@@ -15,5 +15,7 @@ getErrorString();
 // ""
 // "Modelica.Blocks.Sources.IntegerConstant.fmu"
 // "[Modelica 4.1.0+maint.om/Blocks/Sources.mo:2286:5-2286:57:writable] Warning: Parameter k has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // endResult

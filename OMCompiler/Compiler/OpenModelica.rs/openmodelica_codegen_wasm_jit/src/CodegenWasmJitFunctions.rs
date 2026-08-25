@@ -453,9 +453,15 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // the fallback warning needs and whether a `rt_ls_check_step` follows.
     // Returns 0 ok, 1 singular.
     ("rt_linsolve", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
-    // The same `A` re-solved with total pivoting: (a_ptr, b_ptr, n) -> 0 ok / 1
-    // inconsistent. C's fallback for a method-1 step `rt_ls_check_step` rejected.
-    ("rt_linsolve_totalpivot", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // The same `A` re-solved with total pivoting: (a_ptr, b_ptr, n, index, time) ->
+    // 0 ok / 1 inconsistent. C's fallback for a step `rt_ls_check_step` rejected.
+    ("rt_linsolve_totalpivot", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
+    // C's `check_linear_solution` + throw for an unsolved system: (index, time).
+    ("rt_ls_failed", &[WTy::I32, WTy::F64], &[]),
+    // `LOG_STATS_V`'s per-system bracket, C's `solve_linear_system`: the generated
+    // code assembles `A`/`b` itself, so it has to open the clock. (index, size, nnz).
+    ("rt_ls_begin", &[WTy::I32, WTy::I32, WTy::I32], &[]),
+    ("rt_ls_end", &[], &[]),
     // Method-1 step test: (res_ptr, b_ptr, n, index, time, dense) -> 1 when the
     // step must be redone, `b` then holding `-res`. See `rt_ls_check_step`.
     ("rt_ls_check_step", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
@@ -466,8 +472,8 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // Solve `A x = b` from dense column-major A via the sparse solver; see
     // `rt_solve_lin_dense_sparse`. (a_ptr, b_ptr, n) -> 0 ok / 1 singular.
     ("rt_solve_lin_dense_sparse", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
-    // (handle, colptr, rowidx, values, b, n, nnz) -> 0 ok / 1 singular; cached analysis.
-    ("rt_solve_lin_sparse_cached", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // (handle, colptr, rowidx, values, b, n, nnz, time) -> 0 ok / 1 singular; cached analysis.
+    ("rt_solve_lin_sparse_cached", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
     // Raw deallocation (frees a block from `rt_alloc`); used to release the
     // `SES_LINEAR` scratch (A/b/residual buffers) after each solve.
     ("rt_free", &[WTy::I32], &[]),
@@ -499,6 +505,26 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_div_sim", &[WTy::F64, WTy::F64, WTy::I32, WTy::F64, WTy::I32], &[WTy::F64]),
     // System `k`'s solver state (address, size), for `rt_nls_clean_history`.
     ("rt_nls_register", &[WTy::I32, WTy::I32, WTy::I32], &[]),
+    // `rt_nls_note_assert` plus C's log line for the absorbed assertion:
+    // `(msg, file, sline, scol, eline, ecol, isReadOnly, cond, initial, sim_data)`.
+    (
+        "rt_nls_assert_failed",
+        &[
+            WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32,
+            WTy::I32,
+        ],
+        &[],
+    ),
+    // `external "FORTRAN 77"` marshalling, used only by a shared-memory module
+    // (a wasm FMU), where there is no host trampoline to convert: a by-reference
+    // cell per scalar, and a column-major copy per multi-dimensional array.
+    // Appended last so no existing `rt_index` shifts.
+    ("rt_f77_cell_r", &[WTy::F64], &[WTy::I32]),
+    ("rt_f77_cell_i", &[WTy::I32], &[WTy::I32]),
+    ("rt_f77_cell_get_r", &[WTy::I32], &[WTy::F64]),
+    ("rt_f77_cell_get_i", &[WTy::I32], &[WTy::I32]),
+    ("rt_f77_arr_in", &[WTy::I32], &[WTy::I32]),
+    ("rt_f77_arr_out", &[WTy::I32, WTy::I32, WTy::I32], &[]),
 ];
 
 /// Model global holding the base index at which this module's per-system
@@ -1150,7 +1176,16 @@ pub(crate) fn sig_ty_quiet(ty: &DAE::Type) -> Result<SigTy> {
             closures::reference_sigty(ty)?
         }
         DAE::Type::T_SUBTYPE_BASIC { .. } => return Err("CodegenWasmJit: subtype-basic types not yet supported"),
-        _ => return Err("CodegenWasmJit: type not supported"),
+        // Name the variant: `Err` is `&'static str`, and a quiet probe never
+        // reaches `record_error`'s unparsed form.
+        DAE::Type::T_UNKNOWN { .. } => return Err("CodegenWasmJit: type not supported: T_UNKNOWN"),
+        DAE::Type::T_CLOCK { .. } => return Err("CodegenWasmJit: type not supported: Clock"),
+        DAE::Type::T_NORETCALL { .. } => return Err("CodegenWasmJit: type not supported: T_NORETCALL"),
+        DAE::Type::T_FUNCTION { .. } => return Err("CodegenWasmJit: type not supported: T_FUNCTION"),
+        DAE::Type::T_TUPLE { .. } => return Err("CodegenWasmJit: type not supported: T_TUPLE"),
+        DAE::Type::T_CODE { .. } => return Err("CodegenWasmJit: type not supported: T_CODE"),
+        DAE::Type::T_ANYTYPE { .. } => return Err("CodegenWasmJit: type not supported: T_ANYTYPE"),
+        _ => return Err("CodegenWasmJit: type not supported: MetaModelica type"),
     })
 }
 
@@ -2023,20 +2058,17 @@ impl<'a> FnCtx<'a> {
         Ok(())
     }
 
-    /// Emit `functionZeroCrossings`: for each crossing `k`, store its `g` value as
-    /// f64 at `zc_off + k*8`. A `Diff` crossing stores the continuous `lhs - rhs`;
-    /// a `Bool` crossing stores `expr ? 1 : -1`, matching the C target's
-    /// `gout[k] = (relation_) ? 1 : -1`. The driver's DASKR root callback reads
-    /// these; a sign change locates the event.
+    /// Emit `functionZeroCrossings`: store each crossing `k`'s g-value as f64 at
+    /// `gout + k*8`, `gout` being the second parameter. A `Bool` crossing stores
+    /// `expr ? 1 : -1`, as C's `gout[k] = (relation_) ? 1 : -1`.
     pub(crate) fn emit_zero_crossings(
         &mut self,
         crossings: &[crate::CodegenWasmJit::ZcInfo],
-        zc_off: u32,
+        gout_local: u32,
     ) -> Result<()> {
         use crate::CodegenWasmJit::ZcInfo;
-        let data = self.sim()?.data_local;
         for (k, zc) in crossings.iter().enumerate() {
-            self.emit(we::Instruction::LocalGet(data));
+            self.emit(we::Instruction::LocalGet(gout_local));
             match zc {
                 ZcInfo::Bool { expr } => {
                     // `select` picks `1.0` when the condition (top of stack) is
@@ -2057,7 +2089,7 @@ impl<'a> FnCtx<'a> {
                     self.emit(we::Instruction::Select);
                 }
             }
-            self.emit(we::Instruction::F64Store(mem_arg(zc_off + k as u32 * 8, 3)));
+            self.emit(we::Instruction::F64Store(mem_arg(k as u32 * 8, 3)));
         }
         Ok(())
     }
@@ -2495,13 +2527,20 @@ fn compile_external_function(
         // land on the stack in order, so they are stored back-to-front into the
         // declared outputs their `outputIndex` names.
         let sig = external_import_sig(f)?;
-        // No host trampoline there, so nowhere to do the Fortran conversions.
+        // A shared-memory module calls the real Fortran symbol directly, so the
+        // by-reference/column-major conversions the host trampoline would do
+        // (`call_external_in_wasm`) are emitted here instead.
         if sig.lang == ExtLang::Fortran77 && EXTERNALS_SHARED.with(|c| c.get()) {
-            openmodelica_wasm_jit::set_engine_error_detail(format!(
-                "  {}: external \"FORTRAN 77\" is not available in a shared-memory wasm FMU",
-                fn_path(),
-            ));
-            return Err("CodegenWasmJit: external \"FORTRAN 77\" in a shared-memory module");
+            emit_f77_external_call(&mut ctx, &sig, extArgs, extReturn, &fn_path)?;
+            release_heap_locals(&mut ctx)?;
+            push_outputs(&mut ctx);
+            ctx.emit(we::Instruction::End);
+            let FnCtx { extra_locals, instrs, .. } = ctx;
+            let mut func = we::Function::new(extra_locals.into_iter().map(|t| (1u32, t)));
+            for i in &instrs {
+                func.instruction(i);
+            }
+            return Ok(func);
         }
         let results = emit_general_external_call(&mut ctx, &sig.name, &input_args, &sig.wasm_params())?;
         // The declared output each wasm result feeds, in result order: the C
@@ -2574,6 +2613,189 @@ fn compile_external_function(
         func.instruction(i);
     }
     Ok(func)
+}
+
+/// Emit an `external "FORTRAN 77"` call in a *shared-memory* module, where the
+/// import is the real Fortran symbol and nothing marshals for us. Mirrors the
+/// host trampoline's Fortran path (`call_external_in_wasm` in
+/// `dylink_wasmtime.rs`), which is C's `extFunCallF77`:
+///
+/// * a scalar argument goes into an 8-byte cell and the cell's address is passed;
+///   an `_Out_` scalar's cell is read back after the call
+/// * a `String` passes its bytes, as `external "C"` does
+/// * an array of 2+ dimensions is copied column-major and copied back if it is an
+///   output; a vector passes its elements directly
+///
+/// Every scratch allocation is released afterwards, in one pass over the same
+/// argument list.
+fn emit_f77_external_call(
+    ctx: &mut FnCtx,
+    sig: &ExtCallSig,
+    extArgs: &Arc<List<Arc<SimCodeFunction::SimExtArg::SimExtArg>>>,
+    extReturn: &Arc<SimCodeFunction::SimExtArg::SimExtArg>,
+    fn_path: &dyn Fn() -> ArcStr,
+) -> Result<()> {
+    use SimCodeFunction::SimExtArg::SimExtArg as A;
+
+    /// What the call has to undo for one argument once the callee returns.
+    enum Cleanup {
+        /// A scalar cell: read it back into `out` (when it is an `_Out_`), free it.
+        Cell { ptr: u32, out: Option<(u32, SigTy)> },
+        /// An array: copy back if it is an output, then release any scratch.
+        Array { handle: u32, ptr: u32, is_out: bool },
+    }
+    let mut cleanups: Vec<Cleanup> = Vec::new();
+    let key = format!("ext.{}", sig.name);
+    let Some(info) = ctx.by_name.get(&key) else {
+        return Err("CodegenWasmJit: external import not declared");
+    };
+    let (index, n_results) = (info.index, info.sig.results.len());
+
+    // Build the argument list: one i32 pointer per `extArgs` entry, in order.
+    for a in &**extArgs {
+        let is_out = ext_arg_output_index(a) != 0;
+        let ty = match &**a {
+            A::SIMEXTARGSIZE { .. } => SigTy::Int,
+            A::SIMEXTARG { type_, .. } | A::SIMEXTARGEXP { type_, .. } => sig_ty(type_)?,
+            _ => return Err("CodegenWasmJit: unsupported external-call argument"),
+        };
+        // The expression this argument passes; an `_Out_` scalar has no value to
+        // read, only a cell to hand over.
+        let value: Option<Arc<DAE::Exp>> = match &**a {
+            A::SIMEXTARG { cref, type_, .. } => {
+                Some(Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() }))
+            }
+            A::SIMEXTARGEXP { exp, .. } => Some(exp.clone()),
+            A::SIMEXTARGSIZE { cref, type_, exp, .. } => {
+                let arr = Arc::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() });
+                Some(Arc::new(DAE::Exp::SIZE { exp: arr, sz: Some(exp.clone()) }))
+            }
+            _ => None,
+        };
+        match &ty {
+            SigTy::Array { .. } => {
+                // The array handle, then its Fortran-visible address. Both are kept:
+                // the copy-back needs the handle and the scratch pointer together.
+                let Some(v) = value else {
+                    return Err("CodegenWasmJit: an array external argument has no value");
+                };
+                let w = compile_exp(ctx, &v)?;
+                coerce(ctx, w, WTy::I32);
+                let handle = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(handle));
+                ctx.emit(we::Instruction::LocalGet(handle));
+                ctx.emit(we::Instruction::Call(rt_index("rt_f77_arr_in")?));
+                let ptr = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(ptr));
+                ctx.emit(we::Instruction::LocalGet(ptr));
+                cleanups.push(Cleanup::Array { handle, ptr, is_out });
+            }
+            SigTy::Str => {
+                // As `external "C"`: the byte address of the string data.
+                let Some(v) = value else {
+                    return Err("CodegenWasmJit: a String external argument has no value");
+                };
+                let w = compile_exp(ctx, &v)?;
+                coerce(ctx, w, WTy::I32);
+                ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?));
+            }
+            SigTy::Int | SigTy::Bool | SigTy::Real => {
+                // An `_Out_` cell starts zeroed; an input cell starts at its value.
+                let cell_fn = if matches!(ty, SigTy::Real) { "rt_f77_cell_r" } else { "rt_f77_cell_i" };
+                match (&value, is_out) {
+                    (Some(v), _) if !is_out => {
+                        let w = compile_exp(ctx, v)?;
+                        coerce(ctx, w, ty.wty());
+                    }
+                    _ if matches!(ty, SigTy::Real) => ctx.emit(we::Instruction::F64Const(0.0.into())),
+                    _ => ctx.emit(we::Instruction::I32Const(0)),
+                }
+                ctx.emit(we::Instruction::Call(rt_index(cell_fn)?));
+                let ptr = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(ptr));
+                ctx.emit(we::Instruction::LocalGet(ptr));
+                // Where the written value lands, for an `_Out_`.
+                let out = if is_out {
+                    let target = ext_arg_output_index(a) - 1;
+                    let Some(slot) = ctx.outputs.get(target).cloned() else {
+                        openmodelica_wasm_jit::set_engine_error_detail(format!(
+                            "  {}, external `{}`: an argument writes output {} the function does not declare",
+                            fn_path(),
+                            sig.name,
+                            target + 1,
+                        ));
+                        return Err("CodegenWasmJit: external output index out of range");
+                    };
+                    Some(slot)
+                } else {
+                    None
+                };
+                cleanups.push(Cleanup::Cell { ptr, out });
+            }
+            SigTy::Ptr => {
+                let Some(v) = value else {
+                    return Err("CodegenWasmJit: an external-object argument has no value");
+                };
+                let w = compile_exp(ctx, &v)?;
+                coerce(ctx, w, WTy::I32);
+            }
+            other => {
+                openmodelica_wasm_jit::set_engine_error_detail(format!(
+                    "  {}, external `{}`: {other:?} cannot be passed to FORTRAN 77",
+                    fn_path(),
+                    sig.name,
+                ));
+                return Err("CodegenWasmJit: unsupported FORTRAN 77 argument type");
+            }
+        }
+    }
+
+    ctx.emit(we::Instruction::Call(index));
+
+    // A by-value function result (e.g. `DLANGE`) is the only thing on the stack.
+    if n_results == 1 {
+        let A::SIMEXTARG { outputIndex, .. } = &**extReturn else {
+            return Err("CodegenWasmJit: a FORTRAN 77 result with no declared output");
+        };
+        let target = (*outputIndex).max(1) as usize - 1;
+        let Some((out_idx, out_sty)) = ctx.outputs.get(target).cloned() else {
+            return Err("CodegenWasmJit: external return index out of range");
+        };
+        let ret = sig.ret.clone().unwrap_or(SigTy::Real);
+        coerce(ctx, ret.wty(), out_sty.wty());
+        ctx.emit(we::Instruction::LocalSet(out_idx));
+    } else if n_results != 0 {
+        return Err("CodegenWasmJit: a FORTRAN 77 import returns more than one value");
+    }
+
+    // Read back the `_Out_` cells and release every scratch allocation.
+    for c in &cleanups {
+        match c {
+            Cleanup::Cell { ptr, out } => {
+                if let Some((out_idx, out_sty)) = out {
+                    ctx.emit(we::Instruction::LocalGet(*ptr));
+                    let getter = if matches!(out_sty, SigTy::Real) {
+                        "rt_f77_cell_get_r"
+                    } else {
+                        "rt_f77_cell_get_i"
+                    };
+                    ctx.emit(we::Instruction::Call(rt_index(getter)?));
+                    let read = if matches!(out_sty, SigTy::Real) { WTy::F64 } else { WTy::I32 };
+                    coerce(ctx, read, out_sty.wty());
+                    ctx.emit(we::Instruction::LocalSet(*out_idx));
+                }
+                ctx.emit(we::Instruction::LocalGet(*ptr));
+                ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+            }
+            Cleanup::Array { handle, ptr, is_out } => {
+                ctx.emit(we::Instruction::LocalGet(*handle));
+                ctx.emit(we::Instruction::LocalGet(*ptr));
+                ctx.emit(we::Instruction::I32Const(i32::from(*is_out)));
+                ctx.emit(we::Instruction::Call(rt_index("rt_f77_arr_out")?));
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Emit a call to a known math/string `extName` over already-lowered arguments,
@@ -2652,6 +2874,13 @@ thread_local! {
     /// memory so no host trampoline marshals. The interactive wasmer path leaves it
     /// off (two memories, host-marshalled).
     static EXTERNALS_SHARED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Whether externals are being lowered for a shared-memory module, which decides
+/// the wasm signature a `FORTRAN 77` import is declared with (see
+/// [`ExtCallSig::wasm_sig_f77_shared`]).
+pub(crate) fn externals_shared() -> bool {
+    EXTERNALS_SHARED.with(|c| c.get())
 }
 
 /// Run `f` with [`EXTERNALS_SHARED`] set, restoring it after.
@@ -3201,6 +3430,31 @@ fn compile_tuple_assign(ctx: &mut FnCtx, lhs: &Arc<List<Arc<DAE::Exp>>>, call: &
         store_fresh_into_tuple_target(ctx, lhs_exp, &results[i], temps[i])?;
     }
     Ok(())
+}
+
+/// Leave only result `want` of a call on the stack (first result deepest),
+/// releasing the discarded ones.
+fn keep_call_result(ctx: &mut FnCtx, results: &[SigTy], want: usize) -> Result<WTy> {
+    if results.len() == 1 {
+        return Ok(results[0].wty());
+    }
+    let mut temps = vec![0u32; results.len()];
+    for i in (0..results.len()).rev() {
+        let vt = ctx.alloc_temp(results[i].wty());
+        ctx.emit(we::Instruction::LocalSet(vt));
+        temps[i] = vt;
+    }
+    for (i, sty) in results.iter().enumerate() {
+        if i == want {
+            continue;
+        }
+        if let Some(release_fn) = sty.release_fn() {
+            ctx.emit(we::Instruction::LocalGet(temps[i]));
+            ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
+        }
+    }
+    ctx.emit(we::Instruction::LocalGet(temps[want]));
+    Ok(results[want].wty())
 }
 
 /// Store one freshly-owned tuple result into its target expression.
@@ -4082,22 +4336,42 @@ fn emit_assert(
         ctx.emit(we::Instruction::End);
         return Ok(());
     }
-    emit_nls_recoverable_return(ctx)?;
+    // C evaluates the message (`preExpMsg`) once, ahead of either arm.
     let mw = compile_exp(ctx, msg)?; // owned message String handle
     if mw != WTy::I32 {
         return Err("CodegenWasmJit: assert message is not a String");
     }
-    emit_str_literal(ctx, file.as_bytes())?; // file String handle
-    ctx.emit(we::Instruction::I32Const(info.lineNumberStart));
-    ctx.emit(we::Instruction::I32Const(info.columnNumberStart));
-    ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
-    ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
-    ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
-    if in_function {
-        ctx.emit(we::Instruction::I32Const(0));
-    } else {
-        emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition, for the report
-    }
+    let msg_h = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(msg_h));
+    // Both arms take these; `initial` and `sim_data` follow.
+    let mut report_args = |ctx: &mut FnCtx| -> Result<()> {
+        ctx.emit(we::Instruction::LocalGet(msg_h));
+        emit_str_literal(ctx, file.as_bytes())?; // file String handle
+        ctx.emit(we::Instruction::I32Const(info.lineNumberStart));
+        ctx.emit(we::Instruction::I32Const(info.columnNumberStart));
+        ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
+        ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
+        ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
+        if in_function {
+            ctx.emit(we::Instruction::I32Const(0));
+        } else {
+            emit_str_literal(ctx, dumped_exp(cond)?.as_bytes())?; // dumped condition, for the report
+        }
+        Ok(())
+    };
+    // A residual's own assert is C's `ERROR_NONLINEARSOLVER`: logged where it fires,
+    // then unwound into the solver.
+    ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
+    ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    report_args(ctx)?;
+    emit_initial_flag(ctx);
+    emit_sim_data_or_zero(ctx);
+    ctx.emit(we::Instruction::Call(rt_index("rt_nls_assert_failed")?));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(we::Instruction::Return);
+    ctx.emit(we::Instruction::End);
+    report_args(ctx)?;
     emit_initial_flag(ctx);
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     // Trap unless the driver took it (suppressed during the event search).
@@ -4106,6 +4380,14 @@ fn emit_assert(
     ctx.emit(we::Instruction::End);
     ctx.emit(we::Instruction::End);
     Ok(())
+}
+
+/// The running `SimData` pointer, or 0 outside a simulation.
+fn emit_sim_data_or_zero(ctx: &mut FnCtx) {
+    match ctx.sim.as_ref().map(|s| s.data_local) {
+        Some(data) => ctx.emit(we::Instruction::LocalGet(data)),
+        None => ctx.emit(we::Instruction::I32Const(0)),
+    }
 }
 
 /// A model error inside a nonlinear-solver residual is recoverable in C
@@ -6649,7 +6931,9 @@ pub(crate) mod shared_lits;
 
 #[path = "CodegenWasmJitFunctions/generic_calls.rs"]
 mod generic_calls;
-pub(crate) use generic_calls::{emit_entwined_assign, emit_generic_assign, emit_resizable_assign};
+pub(crate) use generic_calls::{
+    emit_entwined_assign, emit_generic_assign, emit_index_list_loop, emit_resizable_assign,
+};
 
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
@@ -6658,7 +6942,7 @@ pub(crate) use sim_systems::{
     backup_known_outputs, restore_known_outputs,
     compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
     compile_linear_system_symbolic, emit_linz_jac_body, emit_nls_jac_body, emit_nls_jac_csc_body,
-    emit_nls_load_body, emit_nls_residual_body, emit_solve_nls_call, lin_jac_coloring,
+    emit_ls_bracket, emit_nls_load_body, emit_nls_residual_body, emit_solve_nls_call, lin_jac_coloring,
     lin_use_sparse, nls_use_sparse,
 };
 
@@ -6840,17 +7124,11 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         }
         E::CALL { path, expLst, attr } => {
             let results = compile_call(ctx, path, expLst, attr)?;
-            match results.len() {
-                1 => Ok(results[0].wty()),
-                0 => return Err("CodegenWasmJit: call to used in expression position returns no value"),
-                // Only `spatialDistribution` gets here: used as a scalar it is its
-                // first output, as any multi-output function call is.
-                2 if matches!(&**path, Absyn::Path::IDENT { name } if &**name == "spatialDistribution") => {
-                    ctx.emit(we::Instruction::Drop);
-                    Ok(results[0].wty())
-                }
-                _ => return Err("CodegenWasmJit: call to returns multiple values; not usable in expression position"),
+            if results.is_empty() {
+                return Err("CodegenWasmJit: call to used in expression position returns no value");
             }
+            // As a value a call is its first output (`daeExpCall`).
+            keep_call_result(ctx, &results, 0)
         }
         // Array constructor `{e1, e2, ...}` or matrix `{{...}, {...}}`.
         E::ARRAY { ty, .. } | E::MATRIX { ty, .. } => {
@@ -6884,8 +7162,7 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             compile_reduction(ctx, reductionInfo, expr, iterators)
         }
         // `f(...)[ix]` — pick one value out of a multi-output call's result
-        // tuple. Compile the call (leaving all results on the stack, first
-        // deepest), keep the `ix`-th (1-based) and release the rest.
+        // tuple.
         E::TSUB { exp, ix, .. } => {
             let DAE::Exp::CALL { path, expLst, attr } = &**exp else {
                 return Err("CodegenWasmJit: tuple subscript of a non-call expression");
@@ -6894,23 +7171,7 @@ fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             let want = (*ix as usize).checked_sub(1)
                 .filter(|&i| i < results.len())
                 .ok_or("CodegenWasmJit: tuple subscript index out of range")?;
-            let mut temps = vec![0u32; results.len()];
-            for i in (0..results.len()).rev() {
-                let vt = ctx.alloc_temp(results[i].wty());
-                ctx.emit(we::Instruction::LocalSet(vt));
-                temps[i] = vt;
-            }
-            for (i, sty) in results.iter().enumerate() {
-                if i == want {
-                    continue;
-                }
-                if let Some(release_fn) = sty.release_fn() {
-                    ctx.emit(we::Instruction::LocalGet(temps[i]));
-                    ctx.emit(we::Instruction::Call(rt_index(release_fn)?));
-                }
-            }
-            ctx.emit(we::Instruction::LocalGet(temps[want]));
-            Ok(results[want].wty())
+            keep_call_result(ctx, &results, want)
         }
         // MetaModelica boxing around a call through a function reference; our
         // closures pass values unboxed, so both are the identity.
@@ -6994,12 +7255,14 @@ fn exp_wty_hint(ctx: &FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         // The CREF carries its (possibly field) type directly — handles a plain
         // local and a `r.field` reference alike.
         E::CREF { ty, .. } => sig_ty(ty)?.wty(),
-        E::BINARY { operator, .. } => operator_wty(operator)?,
-        E::UNARY { operator, .. } => operator_wty(operator)?,
+        // Through `exp_sigty` for its operand fallback: taking the operator's
+        // own type made the hint fail on `T_UNKNOWN` operators that
+        // `compile_binary` compiles fine.
+        E::BINARY { .. } | E::UNARY { .. } => exp_sigty(exp)?.wty(),
         E::IFEXP { expThen, .. } => exp_wty_hint(ctx, expThen)?,
         E::CALL { attr, .. } => match identity_builtin_arg(exp) {
-            Some(inner) if sig_ty_quiet(&attr.ty).is_err() => exp_wty_hint(ctx, &inner)?,
-            _ => sig_ty(&attr.ty)?.wty(),
+            Some(inner) if sig_ty_quiet(&call_value_ty(&attr.ty)).is_err() => exp_wty_hint(ctx, &inner)?,
+            _ => sig_ty(&call_value_ty(&attr.ty))?.wty(),
         },
         E::SHARED_LITERAL { exp, .. } => exp_wty_hint(ctx, exp)?,
         // Array/record handles and `size(a, d)` are `i32`; an array element's /
@@ -7013,10 +7276,6 @@ fn exp_wty_hint(ctx: &FnCtx, exp: &DAE::Exp) -> Result<WTy> {
         E::UNBOX { ty, .. } => sig_ty(ty)?.wty(),
         _ => WTy::F64,
     })
-}
-
-fn operator_wty(op: &DAE::Operator) -> Result<WTy> {
-    Ok(operator_sigty(op)?.wty())
 }
 
 /// The integer value of a `Real` literal exponent, or `None` if it is not an
@@ -7040,9 +7299,9 @@ fn exp_is_half(e: &DAE::Exp) -> bool {
     matches!(e, DAE::Exp::RCONST { real } if real.into_inner() == 0.5)
 }
 
-/// The `SigTy` an arithmetic operator works on / produces. Unlike
-/// [`operator_wty`] this distinguishes Integer/Boolean and, crucially, String
-/// (so `+` on Strings can be lowered to `rt_concat` rather than `i32.add`).
+/// The `SigTy` an arithmetic operator works on / produces. Unlike a bare
+/// `WTy` this distinguishes Integer/Boolean and, crucially, String (so `+` on
+/// Strings can be lowered to `rt_concat` rather than `i32.add`).
 fn operator_sigty(op: &DAE::Operator) -> Result<SigTy> {
     use DAE::Operator as O;
     let ty = match op {
@@ -7106,6 +7365,16 @@ fn identity_builtin_arg(exp: &DAE::Exp) -> Option<Arc<DAE::Exp>> {
     }
 }
 
+/// The type of a call *as a value*: its first output (`daeExpCall`).
+fn call_value_ty(ty: &Arc<DAE::Type>) -> Arc<DAE::Type> {
+    match &**ty {
+        DAE::Type::T_TUPLE { types, .. } => {
+            (&**types).into_iter().next().cloned().unwrap_or_else(|| ty.clone())
+        }
+        _ => ty.clone(),
+    }
+}
+
 /// The `SigTy` of an expression, from the DAE type annotations it carries (the
 /// component reference's `ty`, a call's result `attr.ty`, a literal's kind, …).
 /// Used where the *Modelica* type matters beyond the wasm representation — e.g.
@@ -7119,7 +7388,7 @@ fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
         E::RCONST { .. } => SigTy::Real,
         E::SCONST { .. } => SigTy::Str,
         E::CREF { ty, .. } => sig_ty_quiet(ty)?,
-        E::CALL { attr, .. } => match sig_ty_quiet(&attr.ty) {
+        E::CALL { attr, .. } => match sig_ty_quiet(&call_value_ty(&attr.ty)) {
             Ok(s) => s,
             Err(e) => match identity_builtin_arg(exp) {
                 Some(inner) => exp_sigty(&inner)?,
@@ -7192,7 +7461,12 @@ fn compile_unary(ctx: &mut FnCtx, op: &DAE::Operator, exp: &DAE::Exp) -> Result<
     let DAE::Operator::UMINUS { ty } = op else {
         return Err("CodegenWasmJit: unsupported unary operator");
     };
-    let wty = sig_ty_quiet(ty)?.wty();
+    // C's `daeExpUnary` lets the operand's type decide; fall back the same way
+    // `compile_binary` does when the frontend left the operator `T_UNKNOWN`.
+    let wty = match sig_ty_quiet(ty) {
+        Ok(s) => s.wty(),
+        Err(_) => exp_sigty(exp)?.wty(),
+    };
     let w = compile_exp(ctx, exp)?;
     coerce(ctx, w, wty);
     match wty {
@@ -7437,9 +7711,9 @@ fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
 
 fn compile_relation(
     ctx: &mut FnCtx,
-    e1: &DAE::Exp,
+    e1: &Arc<DAE::Exp>,
     op: &DAE::Operator,
-    e2: &DAE::Exp,
+    e2: &Arc<DAE::Exp>,
     index: i32,
     asub: &Option<(Arc<DAE::Exp>, i32, i32)>,
 ) -> Result<WTy> {
@@ -7491,9 +7765,9 @@ fn compile_relation(
 /// (`0 <= index < n_relations`).
 fn compile_relation_indexed(
     ctx: &mut FnCtx,
-    e1: &DAE::Exp,
+    e1: &Arc<DAE::Exp>,
     op: &DAE::Operator,
-    e2: &DAE::Exp,
+    e2: &Arc<DAE::Exp>,
     index: i32,
     asub: &Option<(Arc<DAE::Exp>, i32, i32)>,
 ) -> Result<WTy> {
@@ -7578,16 +7852,19 @@ fn compile_relation_indexed(
 /// `tolZC` is read from `SimData` (`zctol_off`).
 fn compile_relation_hyst(
     ctx: &mut FnCtx,
-    e1: &DAE::Exp,
+    e1: &Arc<DAE::Exp>,
     op: &DAE::Operator,
-    e2: &DAE::Exp,
+    e2: &Arc<DAE::Exp>,
     slot: u32,
     dir_off: u32,
 ) -> Result<()> {
     use we::Instruction as I;
     let data = ctx.sim()?.data_local;
     let zctol_off = ctx.sim()?.zctol_off;
-    let nom = nominal_const(e1).max(nominal_const(e2));
+
+    let nom = ctx.alloc_temp(WTy::F64);
+    emit_relation_nominal(ctx, e1, e2)?;
+    ctx.emit(I::LocalSet(nom));
 
     let a = ctx.alloc_temp(WTy::F64);
     let wa = compile_exp(ctx, e1)?;
@@ -7605,7 +7882,7 @@ fn compile_relation_hyst(
     ctx.emit(I::LocalGet(b));
     ctx.emit(I::F64Abs);
     ctx.emit(I::F64Max);
-    ctx.emit(I::F64Const(nom.into()));
+    ctx.emit(I::LocalGet(nom));
     ctx.emit(I::F64Add);
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::F64Load(mem_arg(zctol_off, 3)));
@@ -7653,13 +7930,37 @@ fn emit_hyst_cmp(ctx: &mut FnCtx, op: &DAE::Operator, diff: u32, eps: u32, dir: 
     Ok(())
 }
 
-/// A relation operand's nominal magnitude for the hysteresis band: the literal's
-/// magnitude for a constant, else the default nominal `1.0`.
-fn nominal_const(e: &DAE::Exp) -> f64 {
+/// Leave `max(|nominal(e1)|, |nominal(e2)|)` — the scale term of the hysteresis
+/// band — on the stack as an f64, from the same `getExpNominal` derivation C's
+/// `daeExpNominalTmp` uses.
+fn emit_relation_nominal(ctx: &mut FnCtx, e1: &Arc<DAE::Exp>, e2: &Arc<DAE::Exp>) -> Result<()> {
+    let n1 = nominal_exp(e1);
+    let n2 = nominal_exp(e2);
+    match (nominal_const(&n1), nominal_const(&n2)) {
+        (Some(c1), Some(c2)) => ctx.emit(we::Instruction::F64Const(c1.max(c2).into())),
+        _ => {
+            let w1 = compile_exp(ctx, &n1)?;
+            coerce(ctx, w1, WTy::F64);
+            ctx.emit(we::Instruction::F64Abs);
+            let w2 = compile_exp(ctx, &n2)?;
+            coerce(ctx, w2, WTy::F64);
+            ctx.emit(we::Instruction::F64Abs);
+            ctx.emit(we::Instruction::F64Max);
+        }
+    }
+    Ok(())
+}
+
+fn nominal_exp(e: &Arc<DAE::Exp>) -> Arc<DAE::Exp> {
+    openmodelica_backend::SimCodeUtil::getExpNominal(Arc::clone(e))
+        .unwrap_or_else(|_| Arc::new(DAE::Exp::RCONST { real: 1.0.into() }))
+}
+
+fn nominal_const(e: &DAE::Exp) -> Option<f64> {
     match e {
-        DAE::Exp::RCONST { real } => real.into_inner().abs(),
-        DAE::Exp::ICONST { integer } => (*integer as f64).abs(),
-        _ => 1.0,
+        DAE::Exp::RCONST { real } => Some(real.into_inner().abs()),
+        DAE::Exp::ICONST { integer } => Some((*integer as f64).abs()),
+        _ => None,
     }
 }
 
@@ -9987,8 +10288,14 @@ fn release_temp_array(ctx: &mut FnCtx, t: u32) -> Result<()> {
 /// (the whole dimension vector, an `Integer[ndims]`). `a`'s owned handle is
 /// released after.
 fn compile_size(ctx: &mut FnCtx, exp: &DAE::Exp, sz: Option<&DAE::Exp>) -> Result<()> {
-    let SigTy::Array { rank, .. } = exp_sigty(exp)? else {
-        return Err("CodegenWasmJit: size() of a non-array expression");
+    // Only the whole-vector form needs the rank statically — as well, since the
+    // frontend leaves a dimension expression's operand `T_UNKNOWN`.
+    let rank = match sz {
+        Some(_) => 0,
+        None => match exp_sigty(exp)? {
+            SigTy::Array { rank, .. } => rank,
+            _ => return Err("CodegenWasmJit: size() of a non-array expression"),
+        },
     };
     compile_exp(ctx, exp)?; // owned array handle
     let arr_t = ctx.alloc_temp(WTy::I32);
@@ -10451,23 +10758,39 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
     if !ext_imports.is_empty() {
         let mut notes: Vec<String> = Vec::new();
         let resolved = crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, &mut notes)?;
-        let libs = resolved.wasm;
-        for lib in &libs {
+        let wasm_libs = resolved.wasm;
+        for lib in &wasm_libs {
             sig.push_str(&format!("lib\t{}\n", lib.name));
         }
-        // What the wasm modules do not define is called through libffi.
-        for lib in &resolved.native {
+        // C source: an `Include`, or a `Library` naming a `.c` file.
+        let sources: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.externalFunctionIncludes)
+            .map(|s| s.to_string())
+            .chain(resolved.sources)
+            .collect();
+        let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes).map(|s| s.to_string()).collect();
+        // A host build compiles them the way the C target does and calls them
+        // through libffi, as `build_sim_model` does: the in-wasm `Modelica*`
+        // callbacks are host imports, which cannot take C varargs, so a
+        // `ModelicaFormatMessage` there would lose its arguments. The browser has
+        // no host library to call, so there the wasm unit is all.
+        #[cfg(target_arch = "wasm32")]
+        {
+            let missing = crate::CodegenWasmJit::missing_ext_symbols(&ext_imports, &wasm_libs);
+            if let Some(l) = crate::CodegenWasmJit::compile_include_library(&base, &sources, &dirs, &fn_code.makefileParams.cflags, &missing, &mut notes)? {
+                let path = format!("{base}_includes.wasm");
+                openmodelica_wasi::fs::write(&path, &l.bytes)
+                    .map_err(|_| "CodegenWasmJitFunctions: cannot stage the compiled include library")?;
+                sig.push_str(&format!("lib\t{path}\n"));
+            }
+        }
+        // The model's own code first: it shadows a same-named symbol in a `Library`
+        // shared object, as the C target's own link order does.
+        #[cfg(not(target_arch = "wasm32"))]
+        for lib in native_fallbacks(&base, fn_code, &resolved.archives, &sources, &dirs, &ext_imports, &wasm_libs, &mut notes) {
             sig.push_str(&format!("nlib\t{lib}\n"));
         }
-        // An implementation given as C source in an `Include`.
-        let includes: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.externalFunctionIncludes).map(|s| s.to_string()).collect();
-        let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes).map(|s| s.to_string()).collect();
-        let missing = crate::CodegenWasmJit::missing_ext_symbols(&ext_imports, &libs);
-        if let Some(l) = crate::CodegenWasmJit::compile_include_library(&base, &includes, &dirs, &missing, &mut notes)? {
-            let path = format!("{base}_includes.wasm");
-            openmodelica_wasi::fs::write(&path, &l.bytes)
-                .map_err(|_| "CodegenWasmJitFunctions: cannot stage the compiled include library")?;
-            sig.push_str(&format!("lib\t{path}\n"));
+        for lib in &resolved.native {
+            sig.push_str(&format!("nlib\t{lib}\n"));
         }
         for e in &ext_imports {
             sig.push_str(&format!("ext\t{}\n", write_ext_sig(e)));
@@ -10481,6 +10804,56 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
     openmodelica_wasi::fs::write(&format!("{base}.wasm"), &bytes).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm")?;
     openmodelica_wasi::fs::write(&format!("{base}.wasm.sig"), sig.as_bytes()).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm.sig")?;
     Ok(())
+}
+
+/// Host libraries holding the `external "C"` implementations no module in
+/// `wasm_libs` defines: the `Library` archives linked into a loadable one, and the
+/// C sources compiled. Built in the compile phase, as the simulation's are.
+#[cfg(not(target_arch = "wasm32"))]
+fn native_fallbacks(
+    base: &str,
+    fn_code: &SimCodeFunction::FunctionCode,
+    archives: &[String],
+    sources: &[String],
+    dirs: &[String],
+    ext_imports: &[ExtCallSig],
+    wasm_libs: &[openmodelica_wasm_jit::model::ExtLibrary],
+    notes: &mut Vec<String>,
+) -> Vec<String> {
+    let missing = crate::CodegenWasmJit::missing_ext_symbols(ext_imports, wasm_libs);
+    if missing.is_empty() {
+        return Vec::new();
+    }
+    let mp = &fn_code.makefileParams;
+    let mut out = Vec::new();
+    if !sources.is_empty() {
+        let inc = openmodelica_wasm_jit::model::ExtIncludes {
+            sources: sources.to_vec(),
+            include_dirs: dirs.to_vec(),
+            ccompiler: mp.ccompiler.to_string(),
+            cflags: mp.cflags.to_string(),
+            dllext: mp.dllext.to_string(),
+            prefix: base.to_string(),
+        };
+        match inc.compile(&missing) {
+            Ok(path) => out.push(path),
+            Err(e) => notes.push(e),
+        }
+    }
+    if !archives.is_empty() {
+        let arch = openmodelica_wasm_jit::model::ExtArchives {
+            archives: archives.to_vec(),
+            symbols: ext_imports.iter().map(|s| s.name.clone()).collect(),
+            ccompiler: mp.ccompiler.to_string(),
+            dllext: mp.dllext.to_string(),
+            prefix: base.to_string(),
+        };
+        match arch.link() {
+            Ok(path) => out.push(path),
+            Err(e) => notes.push(e),
+        }
+    }
+    out
 }
 
 /// `CodegenWasmJitFunctions.loadAndExecute`: instantiate `<fileName>.wasm` and

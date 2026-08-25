@@ -42,7 +42,7 @@ unsafe extern "C" {
     fn functionODE(sim_data: u32);
     fn functionAlgebraics(sim_data: u32);
     fn functionStateSetJacobians(sim_data: u32);
-    fn functionZeroCrossings(sim_data: u32);
+    fn functionZeroCrossings(sim_data: u32, gout: u32);
     fn functionZeroCrossingsEquations(sim_data: u32);
     fn functionUpdateRelations(sim_data: u32);
     fn functionCheckAsserts(sim_data: u32);
@@ -53,6 +53,8 @@ unsafe extern "C" {
     fn functionUpdateBoundParameters(sim_data: u32);
     fn functionUpdateBoundVariableAttributes(sim_data: u32);
     fn functionRemovedInitialEquations(sim_data: u32);
+    fn functionJacA_constantEqns(sim_data: u32);
+    fn functionJacA_column(sim_data: u32);
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
     fn linearJacA(sim_data: u32);
@@ -96,7 +98,7 @@ impl SimEngine for StandaloneEngine {
         dst.copy_from_slice(buf);
         Ok(())
     }
-    fn call1(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+    fn call1_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         unsafe {
             match name {
                 "functionParameters" => functionParameters(arg),
@@ -106,7 +108,6 @@ impl SimEngine for StandaloneEngine {
                 "functionODE" => functionODE(arg),
                 "functionAlgebraics" => functionAlgebraics(arg),
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
-                "functionZeroCrossings" => functionZeroCrossings(arg),
                 "functionZeroCrossingsEquations" => functionZeroCrossingsEquations(arg),
                 "functionUpdateRelations" => functionUpdateRelations(arg),
                 "functionCheckAsserts" => functionCheckAsserts(arg),
@@ -117,6 +118,8 @@ impl SimEngine for StandaloneEngine {
                 "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
                 "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
                 "functionRemovedInitialEquations" => functionRemovedInitialEquations(arg),
+                "functionJacA_constantEqns" => functionJacA_constantEqns(arg),
+                "functionJacA_column" => functionJacA_column(arg),
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
                 "linearJacA" => linearJacA(arg),
@@ -129,15 +132,19 @@ impl SimEngine for StandaloneEngine {
         }
         Ok(())
     }
-    fn call1_if_present(&mut self, name: &str, arg: u32) -> driver::Result<()> {
+    fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         // Every entry point is always exported (empty stub if unused), so a plain
         // call is a no-op when the feature is absent.
-        self.call1(name, arg)
+        self.call1_raw(name, arg)
     }
-    // Importing `evaluateDAEResiduals` (or the two synchronous dispatchers) would
-    // leave every model without that feature with an unresolved `model.*` import,
-    // so the standalone export supports neither.
-    fn call2(&mut self, name: &str, _a: u32, _b: u32) -> driver::Result<()> {
+    fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
+        if name == driver::MODEL_FN_ZC {
+            unsafe { functionZeroCrossings(a, b) };
+            return Ok(());
+        }
+        // Importing `evaluateDAEResiduals` (or the two synchronous dispatchers) would
+        // leave every model without that feature with an unresolved `model.*` import,
+        // so the standalone export supports neither.
         Err(match name {
             driver::MODEL_FN_DAE => {
                 "wasm-jit standalone: --daeMode models are not supported by the standalone export"
@@ -160,6 +167,9 @@ impl SimEngine for StandaloneEngine {
     }
     fn error_stage_addr(&mut self) -> u32 {
         crate::nls::rt_error_stage_addr()
+    }
+    fn no_throw_div_zero_addr(&mut self) -> u32 {
+        crate::nls::rt_no_throw_div_zero_addr()
     }
     fn clean_nls_history(&mut self, time: f64) {
         crate::nls::rt_nls_clean_history(time);

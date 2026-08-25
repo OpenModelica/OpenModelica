@@ -1,23 +1,12 @@
-// Link the system LAPACK (and its BLAS backend) so the FFI declarations in
-// `src/Lapack.rs` resolve. The reference `liblapack.so` provides the
-// `d*_` Fortran-ABI routines; `libblas` satisfies its transitive symbols.
+// The LAPACK the FFI declarations in `src/Lapack.rs` resolve against is
+// `openmodelica_lapack`, an ordinary Rust dependency, so nothing is linked here
+// for it any more — see that file's `extern crate`.
 fn main() {
-    // The wasm target has no native LAPACK/BLAS to link and no C toolchain to
-    // compile the shim; both the FFI (`src/Lapack.rs`) and the C error shim
-    // (`dynload`) are `cfg`'d out for wasm, so this build script is a no-op there.
+    // The wasm target has no C toolchain to compile the shim below with, and the
+    // `dynload` that uses it is `cfg`'d out there, so this build script is a
+    // no-op.
     if std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("wasm32") {
         return;
-    }
-
-    // The nalgebra LAPACK fallback (Lapack_nalgebra.rs) replaces the system-LAPACK
-    // FFI on Windows (no MSVC-ABI LAPACK) and under the `lapack-nalgebra` feature,
-    // so there is nothing to link in those configurations. The C error shim below
-    // (used by dynload) is still built.
-    let nalgebra_lapack = std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows")
-        || std::env::var("CARGO_FEATURE_LAPACK_NALGEBRA").is_ok();
-    if !nalgebra_lapack {
-        println!("cargo:rustc-link-lib=dylib=lapack");
-        println!("cargo:rustc-link-lib=dylib=blas");
     }
 
     // Runtime error interception shim for evaluated external C functions

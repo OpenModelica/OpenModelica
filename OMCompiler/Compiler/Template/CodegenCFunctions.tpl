@@ -5920,6 +5920,16 @@ template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
   tmp
 end daeExpCrefIndexSpec;
 
+template daeExpOperand(Exp exp, Text expText, Type ty, Text &preExp, Text &varDecls)
+ "Parenthesizes an operand, or spills it to a temporary when deeply nested."
+::=
+  if Expression.isDeeperThan(exp, 64) then
+    let tmp = tempDecl(expTypeModelica(ty), &varDecls)
+    let &preExp += '<%tmp%> = <%expText%>;<%\n%>'
+    tmp
+  else '(<%expText%>)'
+end daeExpOperand;
+
 template daeExpBinary(Exp exp, Context context, Text &preExp,
                       Text &varDecls, Text &auxFunction)
  "Generates code for a binary expression."
@@ -5934,12 +5944,15 @@ case BINARY(__) then
     let tmpStr = tempDecl("modelica_metatype", &varDecls)
     let &preExp += '<%tmpStr%> = stringAppend(<%e1%>,<%e2%>);<%\n%>'
     tmpStr
-  case ADD(__) then '<%e1%> + <%e2%>'
-  case SUB(__) then
+  case ADD(ty = ty) then
+    if isAtomic(exp2)
+      then '<%e1%> + <%e2%>'
+      else '<%e1%> + <%daeExpOperand(exp2, e2, ty, &preExp, &varDecls)%>'
+  case SUB(ty = ty) then
     if isAtomic(exp2)
       then '<%e1%> - <%e2%>'
-      else '<%e1%> - (<%e2%>)'
-  case MUL(__) then '(<%e1%>) * (<%e2%>)'
+      else '<%e1%> - <%daeExpOperand(exp2, e2, ty, &preExp, &varDecls)%>'
+  case MUL(ty = ty) then '<%daeExpOperand(exp1, e1, ty, &preExp, &varDecls)%> * <%daeExpOperand(exp2, e2, ty, &preExp, &varDecls)%>'
   case DIV(ty = ty) then
     (match context
       case FUNCTION_CONTEXT(__) then

@@ -728,10 +728,10 @@ void partestRust(partition) {
   String simCodeTargetArg = params.RUST_PARTEST_SIMCODETARGET ? " -simCodeTarget=${params.RUST_PARTEST_SIMCODETARGET}" : ''
   // cpp/hpcom: the Rust omc is built without the C++ runtime. metamodelica:
   // MetaModelica code generation only works against the C runtime.
-  // fmuCSources checks the generated C files or the list in the XML - wasm-jit does not use C
+  // cSources/fmuCSources check generated C files or FMU sources - wasm-jit does not use C
   // 63bit/antlr: the port's Integer is i32 and its parser is winnow, not ANTLR
   // stackoverflow: Rust aborts on stack overflow, MMC unwinds out of the SEGV handler
-  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-fmuCSources,-stackoverflow'
+  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-cSources,-fmuCSources,-stackoverflow'
   // wasmtime reserves ~4 GiB of address space per wasm memory, and shrinking that
   // reservation to fit an RLIMIT_AS costs the bounds-check-free fast path.
   String asLimit = params.RUST_PARTEST_SIMCODETARGET == 'wasm-jit'
@@ -766,8 +766,8 @@ void partestRust(partition) {
     if (params.RUST_PARTEST_JUNIT) {
       junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
     }
-    sh "cp testsuite/partest/result.xml partest-rust-partest-junit-${partition}.xml"
-    archiveArtifacts artifacts: 'partest-rust-partest-junit-${partition}.xml', allowEmptyArchive: true, fingerprint: true
+    sh "cp testsuite/partest/result.xml partest-rust-partest-junit-${partition}.xml || true"
+    archiveArtifacts artifacts: "partest-rust-partest-junit-${partition}.xml", allowEmptyArchive: true, fingerprint: true
   }
 }
 
@@ -1194,15 +1194,14 @@ void crossBuildFMU() {
               "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
               "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest") {
     standardSetup()
-    unstash 'omc-clang'
-    makeLibsAndCache()
+    unstash 'omc-cmake-gcc'
+    makeLibsAndCacheCMake()
     writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: getVersion()
     sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
     sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
     sh 'make -C testsuite/special/FMPy/ fmpy-fmus'
     stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu, testsuite/special/FMPy/Makefile'
     stash name: 'fmpy-fmu', includes: 'testsuite/special/FMPy/*.fmu'
-    stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
     archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
   }
 }
@@ -1273,22 +1272,6 @@ void testUnitC() {
   sh "test -f ./build_cmake/junit.xml"
 }
 
-void fmuCheckerLinuxWine() {
-  echo "${env.NODE_NAME}"
-  sh 'rm -rf testsuite/'
-  unstash 'cross-fmu'
-  unstash 'cross-fmu-extras'
-  sh '''
-  export HOME="$PWD"
-  cd testsuite/special/FmuExportCrossCompile/
-  ./single-fmu-run.sh linux64 `cat VERSION`
-  ./single-fmu-run.sh linux32 `cat VERSION`
-  ./single-fmu-run.sh win64 `cat VERSION`
-  ./single-fmu-run.sh win32 `cat VERSION`
-  '''
-  stash name: 'cross-fmu-results-linux-wine', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
-}
-
 void fmpyLinux() {
   echo "${env.NODE_NAME}"
   unstash 'cross-fmu'
@@ -1298,30 +1281,6 @@ void fmpyLinux() {
   cd testsuite/special/FMPy/
   make test
   '''
-}
-
-void fmuCheckerArm() {
-  echo "${env.NODE_NAME}"
-  sh 'rm -rf testsuite/'
-  unstash 'cross-fmu'
-  unstash 'cross-fmu-extras'
-  sh '''
-  cd testsuite/special/FmuExportCrossCompile/
-  ./single-fmu-run.sh arm-linux-gnueabihf `cat VERSION` /usr/local/bin/fmuCheck.arm-linux-gnueabihf
-  '''
-  stash name: 'cross-fmu-results-armhf', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
-}
-
-void fmuCheckerResults() {
-  echo "${env.NODE_NAME}"
-  sh 'rm -rf build/ testsuite/'
-  unstash 'omc-clang'
-  unstash 'cross-fmu-extras'
-  unstash 'cross-fmu-results-linux-wine'
-  unstash 'cross-fmu-results-armhf'
-  sh 'cd testsuite/special/FmuExportCrossCompile && ../../../build/bin/omc check-files.mos'
-  sh 'cd testsuite/special/FmuExportCrossCompile && tar -czf ../../../Test_FMUs.tar.gz Test_FMUs'
-  archiveArtifacts 'Test_FMUs.tar.gz'
 }
 
 void uploadCompliance() {

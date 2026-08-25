@@ -2,7 +2,7 @@
 // keywords: FMI 3.0 export array non-scalarized NewBackend
 // suite: fmuCSources
 // status: correct
-// teardown_command: rm -rf fmi3_array_nonscalarized.fmu fmi3_array_nonscalarized.fmutmp/ fmi3_array_nonscalarized.dims fmi3_array_nonscalarized.xml fmi3_array_nonscalarized_tmp.xml fmi3_array_nonscalarized.log fmi3_array_nonscalarized_info.json index.html
+// teardown_command: rm -rf fmi3_array_nonscalarized.fmu fmi3_array_nonscalarized.fmutmp/ fmi3_array_nonscalarized.dims fmi3_array_nonscalarized.xml fmi3_array_nonscalarized_tmp.xml fmi3_array_nonscalarized.log fmi3_array_nonscalarized_info.json index.html fmi3_array_nonscalarized_FMU.libs fmi3_array_nonscalarized_FMU.makefile fmi3_array_nonscalarized_external_functions.json resources
 //
 // #15926, FMI 3.0, new backend, non-scalarized arrays (--simCodeScalarize=false),
 // C runtime. The array is exported as one native FMI 3.0 Float64 with a
@@ -40,7 +40,9 @@ readFile("fmi3_array_nonscalarized.xml"); getErrorString();
 // true
 // ""
 // "fmi3_array_nonscalarized.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // "2
@@ -50,15 +52,15 @@ readFile("fmi3_array_nonscalarized.xml"); getErrorString();
 // ""
 // 0
 // ""
-// " <ModelVariables>
-// <Float64 name=\"time\" valueReference=\"9\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
-// <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0 2.0 3.0\"><Dimension start=\"3\"/></Float64>
-// <Float64 name=\"der(x)\" valueReference=\"3\"  derivative=\"0\"><Dimension start=\"3\"/></Float64>
-// <Float64 name=\"y\" valueReference=\"6\" causality=\"output\" >
-// <Alias name=\"_D_FUN_1\"/>
-// </Float64>
-// <Float64 name=\"a\" valueReference=\"7\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
-// </ModelVariables>
+// "  <ModelVariables>
+//     <Float64 name=\"time\" valueReference=\"9\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//     <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0 2.0 3.0\"><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"der(x)\" valueReference=\"3\"  derivative=\"0\"><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"y\" valueReference=\"6\" causality=\"output\" >
+//         <Alias name=\"_D_FUN_1\"/>
+//       </Float64>
+//     <Float64 name=\"a\" valueReference=\"7\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
+//   </ModelVariables>
 // "
 // ""
 // endResult

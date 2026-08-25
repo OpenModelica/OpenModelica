@@ -80,6 +80,7 @@ add_library(omc::simrt::cpp::core::dataexchange ALIAS OMCppDataExchange)
 target_sources(OMCppDataExchange PRIVATE ${OMC_SIMRT_CPP_CORE_DATAEXCHANGE_SOURCES})
 
 target_link_libraries(OMCppDataExchange PUBLIC omc::simrt::cpp::config)
+target_link_libraries(OMCppDataExchange PUBLIC omc::simrt::cpp::core::utils::extension)
 
 install(TARGETS OMCppDataExchange)
 
@@ -125,6 +126,7 @@ add_library(omc::simrt::cpp::core::math ALIAS OMCppMath)
 target_sources(OMCppMath PRIVATE ${OMC_SIMRT_CPP_CORE_MATH_SOURCES})
 
 target_link_libraries(OMCppMath PUBLIC omc::simrt::cpp::config)
+target_link_libraries(OMCppMath PUBLIC omc::simrt::cpp::core::utils::extension)
 
 install(TARGETS OMCppMath)
 
@@ -164,6 +166,7 @@ target_sources(OMCppSolver PRIVATE ${OMC_SIMRT_CPP_CORE_SOLVER_SOURCES})
 
 target_link_libraries(OMCppSolver PUBLIC omc::simrt::cpp::config)
 target_link_libraries(OMCppSolver PUBLIC omc::simrt::cpp::core::math)
+target_link_libraries(OMCppSolver PUBLIC omc::simrt::cpp::core::utils::extension)
 
 install(TARGETS OMCppSolver)
 

@@ -275,6 +275,12 @@ self.onmessage = async (e) => {
       let entries;
       try { entries = wasi_readdir(msg.path) || []; } catch (e) { entries = []; }
       self.postMessage({ kind: "vfsListResult", id: msg.id, entries });
+    } else if (msg.cmd === "vfsPut") {
+      // The page writes into this worker's store, so omc and the GUI share one
+      // filesystem and loadFile/setSourceFile find what the GUI wrote.
+      let ok = true;
+      try { wasi_write_file(msg.path, msg.bytes); } catch (e) { ok = false; }
+      self.postMessage({ kind: "vfsPutResult", id: msg.id, ok });
     } else if (msg.cmd === "vfsStat") {
       // WASI path_filestat_get's size (-1 if absent), for the file engine's size().
       let size;

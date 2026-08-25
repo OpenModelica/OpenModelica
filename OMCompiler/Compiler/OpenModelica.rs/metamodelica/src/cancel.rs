@@ -12,6 +12,7 @@
 //! consistent (the caller must roll back partial state).
 
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
+use std::sync::Mutex;
 
 // ── Phases (control block index 2; see HANDOFF-coi-consolidation.md) ──────────
 pub const PHASE_IDLE: i32 = 0;
@@ -37,6 +38,7 @@ pub fn clear_cancel() {
     CANCEL.store(false, Ordering::Relaxed);
     PROGRESS_PERMILLE.store(PROGRESS_INDETERMINATE, Ordering::Relaxed);
     PROGRESS_PHASE.store(PHASE_IDLE, Ordering::Relaxed);
+    clear_progress_message();
 }
 
 // wasm: the blocked worker can't get a cancel message, so a cross-origin-isolated
@@ -127,6 +129,16 @@ pub fn set_progress_sink(f: fn(i32, i32)) {
 static PROGRESS_PERMILLE: AtomicI32 = AtomicI32::new(PROGRESS_INDETERMINATE);
 static PROGRESS_PHASE: AtomicI32 = AtomicI32::new(PHASE_IDLE);
 
+// Free-form label for the step in progress, shown by a host instead of the
+// generic phase label ("Compiling model…" says nothing about which of five FMU
+// platforms is building). A String, so a Mutex rather than an atomic; it is
+// written once per step and read once per pump, so contention is irrelevant.
+static PROGRESS_MESSAGE: Mutex<Option<String>> = Mutex::new(None);
+
+fn clear_progress_message() {
+    *PROGRESS_MESSAGE.lock().unwrap_or_else(|e| e.into_inner()) = None;
+}
+
 /// Report progress of the current op: `permille` in 0..=1000 (or
 /// [`PROGRESS_INDETERMINATE`]) and one of the `PHASE_*` constants. wasm also
 /// forwards to the host sink; [`progress_permille`]/[`progress_phase`] read it back.
@@ -134,6 +146,9 @@ static PROGRESS_PHASE: AtomicI32 = AtomicI32::new(PHASE_IDLE);
 pub fn report_progress(permille: i32, phase: i32) {
     PROGRESS_PERMILLE.store(permille, Ordering::Relaxed);
     PROGRESS_PHASE.store(phase, Ordering::Relaxed);
+    // The label belongs to the step that set it; letting it outlive that step
+    // would mislabel whatever comes next.
+    clear_progress_message();
     #[cfg(target_arch = "wasm32")]
     if let Some(f) = PROGRESS_SINK.with(|c| c.get()) {
         f(permille, phase);
@@ -148,6 +163,22 @@ pub fn progress_permille() -> i32 {
 /// Last reported phase (a `PHASE_*` constant).
 pub fn progress_phase() -> i32 {
     PROGRESS_PHASE.load(Ordering::Relaxed)
+}
+
+/// Label the step in progress, for a host that shows it instead of the phase
+/// label. Cleared by the next [`report_progress`], so report it after that one.
+pub fn report_progress_message(message: &str) {
+    let mut slot = PROGRESS_MESSAGE.lock().unwrap_or_else(|e| e.into_inner());
+    *slot = if message.is_empty() { None } else { Some(message.to_owned()) };
+}
+
+/// Last reported step label, empty if none.
+pub fn progress_message() -> String {
+    PROGRESS_MESSAGE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone()
+        .unwrap_or_default()
 }
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
@@ -175,5 +206,15 @@ mod tests {
     fn progress_is_noop_native() {
         // Native has no sink; must not panic.
         report_progress(500, PHASE_PARSE);
+    }
+
+    #[test]
+    fn progress_message_does_not_outlive_its_step() {
+        report_progress(500, PHASE_BACKEND);
+        report_progress_message("Building FMU for x86_64-w64-mingw32 (2/5)");
+        assert_eq!(progress_message(), "Building FMU for x86_64-w64-mingw32 (2/5)");
+        // The next step's report drops the previous step's label.
+        report_progress(600, PHASE_BACKEND);
+        assert_eq!(progress_message(), "");
     }
 }

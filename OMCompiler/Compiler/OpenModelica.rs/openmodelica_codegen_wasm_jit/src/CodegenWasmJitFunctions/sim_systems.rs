@@ -37,8 +37,9 @@ fn emit_residual_eval(
     Ok(())
 }
 
-/// A nonlinear system residual: a scalar `SES_RESIDUAL`, or a `SES_FOR_RESIDUAL`
-/// (a run `r[res_index + shift]` from iterating `exp` over integer ranges).
+/// A nonlinear system residual: a scalar `SES_RESIDUAL`, a `SES_FOR_RESIDUAL`
+/// (a run `r[res_index + shift]` from iterating `exp` over integer ranges), or a
+/// `SES_GENERIC_RESIDUAL` (the same over a list of flat indices).
 pub(crate) enum NlsResidual {
     Scalar { exp: Arc<DAE::Exp>, res_index: i32 },
     For {
@@ -46,6 +47,23 @@ pub(crate) enum NlsResidual {
         exp: Arc<DAE::Exp>,
         res_index: i32,
     },
+    Generic {
+        iterators: Vec<BackendDAE::SimIterator>,
+        scal_indices: Vec<i32>,
+        exp: Arc<DAE::Exp>,
+        res_index: i32,
+    },
+}
+
+impl NlsResidual {
+    /// Rows of `r` written; `None` for a for-residual (run-time ranges).
+    pub(crate) fn rows(&self) -> Option<usize> {
+        match self {
+            NlsResidual::Scalar { .. } => Some(1),
+            NlsResidual::Generic { scal_indices, .. } => Some(scal_indices.len()),
+            NlsResidual::For { .. } => None,
+        }
+    }
 }
 
 /// What closes a nonlinear system: residual expressions, or — for a lone
@@ -80,8 +98,8 @@ pub(crate) fn emit_nls_residual_body(
         }
     };
     lower_inner(ctx)?;
-    // All-scalar systems keep sequential `r[i]` addressing; a for-residual forces
-    // `res_index`-based addressing throughout (C's `res[res_index + shift]`).
+    // All-scalar systems keep sequential `r[i]` addressing; a for- or generic
+    // residual forces `res_index`-based addressing throughout.
     let all_scalar = residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }));
     for (i, res) in residuals.iter().enumerate() {
         match res {
@@ -95,9 +113,38 @@ pub(crate) fn emit_nls_residual_body(
             NlsResidual::For { iterators, exp, res_index } => {
                 emit_for_residual(ctx, iterators, exp, *res_index, &[])?;
             }
+            NlsResidual::Generic { iterators, scal_indices, exp, res_index } => {
+                emit_generic_residual(ctx, iterators, scal_indices, exp, *res_index)?;
+            }
         }
     }
     Ok(())
+}
+
+/// Emit a `SES_GENERIC_RESIDUAL`: `r[res_index + i] = exp` for the `i`-th flat
+/// index of `scal_indices`, with the iterators decoded from it.
+fn emit_generic_residual(
+    ctx: &mut FnCtx,
+    iterators: &[BackendDAE::SimIterator],
+    scal_indices: &[i32],
+    exp: &Arc<DAE::Exp>,
+    res_index: i32,
+) -> Result<()> {
+    use we::Instruction as I;
+    emit_index_list_loop(ctx, iterators, scal_indices, &mut |ctx, k| {
+        // addr = r + (res_index + k) * 8
+        ctx.emit(I::LocalGet(2)); // r
+        ctx.emit(I::I32Const(res_index));
+        ctx.emit(I::LocalGet(k));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::I32Const(8));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::I32Add);
+        let w = compile_exp(ctx, exp)?;
+        coerce(ctx, w, WTy::F64);
+        ctx.emit(I::F64Store(mem_arg(0, 3)));
+        Ok(())
+    })
 }
 
 /// C's `OLD_<i>` backup of the outputs an inverse algorithm must not change.
@@ -616,17 +663,10 @@ pub(crate) fn compile_linear_system(
     // Resolve each unknown to its (real) SimData slot offset.
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in iter_vars {
-        let key = sim_cref_key(cr)?;
-        let slot = ctx
-            .sim()?
-            .vars
-            .get(&key)
-            .copied()
-            .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
-        if slot.wty != WTy::F64 {
-            return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
-        }
-        slots.push(slot.off);
+        let sim = ctx.sim()?;
+        let off = crate::CodegenWasmJit::iteration_var_slot(&sim.vars, &sim.start_slots, cr)?
+            .ok_or("CodegenWasmJit: linear-system unknown has no slot")?;
+        slots.push(off);
     }
     let data = ctx.sim()?.data_local;
 
@@ -742,29 +782,33 @@ pub(crate) fn compile_linear_system(
 
 /// The `(index, time)` a solver's warnings need.
 fn emit_linsolve_context(ctx: &mut FnCtx, index: i32) -> Result<()> {
+    ctx.emit(we::Instruction::I32Const(index));
+    emit_sim_time(ctx)
+}
+
+/// Push `SimData`'s `time` (offset 0).
+fn emit_sim_time(ctx: &mut FnCtx) -> Result<()> {
     use we::Instruction as I;
     let data = ctx.sim()?.data_local;
-    ctx.emit(I::I32Const(index));
     ctx.emit(I::LocalGet(data));
-    ctx.emit(I::F64Load(mem_arg(0, 3))); // `time` — `SimData` offset 0
+    ctx.emit(I::F64Load(mem_arg(0, 3)));
     Ok(())
 }
 
-/// Trap (runtime error) when the solver returned nonzero (singular) — consumes the
-/// i32 result on the stack.
-fn emit_singular_check(ctx: &mut FnCtx) -> Result<()> {
-    ctx.emit(we::Instruction::If(we::BlockType::Empty));
-    emit_runtime_error(ctx, "wasm-jit: linear system is singular (no unique solution)")?;
-    ctx.emit(we::Instruction::End);
-    Ok(())
-}
-
-/// C's `check_linear_solution` for a solver with no fallback left — consumes the
-/// i32 result on the stack.
-fn emit_lin_unsolved(ctx: &mut FnCtx, index: i32) -> Result<()> {
-    ctx.emit(we::Instruction::If(we::BlockType::Empty));
-    emit_runtime_error(ctx, &format!("Solving linear system {index} failed. For more information use -lv LOG_LS."))?;
-    ctx.emit(we::Instruction::End);
+/// C's `check_linear_solution` plus the `throwStreamPrintWithEquationIndexes` its
+/// generated equation function runs into — consumes the solver's i32 result on the
+/// stack. `rt_ls_failed` returns only inside a nonlinear-solver trial.
+fn emit_lin_unsolved(ctx: &mut FnCtx, index: i32, base: u32) -> Result<()> {
+    use we::Instruction as I;
+    ctx.emit(I::If(we::BlockType::Empty));
+    emit_linsolve_context(ctx, index)?;
+    ctx.emit(I::Call(rt_index("rt_ls_failed")?));
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::Call(rt_index("rt_free")?));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(I::Return);
+    ctx.emit(I::End);
     Ok(())
 }
 
@@ -904,15 +948,16 @@ fn emit_lin_step(
             ctx.emit(I::I32Const(b_off as i32));
             ctx.emit(I::I32Add);
             ctx.emit(I::I32Const(n as i32));
+            emit_linsolve_context(ctx, index)?;
             ctx.emit(I::Call(rt_index("rt_linsolve_totalpivot")?));
-            emit_singular_check(ctx)?;
+            emit_lin_unsolved(ctx, index, base)?;
             ctx.emit(I::I32Const(1));
             ctx.emit(I::LocalSet(retry));
             ctx.emit(I::Br(0));
             ctx.emit(I::End); // loop
             ctx.emit(I::End); // block
         }
-        None => emit_lin_unsolved(ctx, index)?,
+        None => emit_lin_unsolved(ctx, index, base)?,
     }
 
     ctx.emit(I::LocalGet(base));
@@ -947,7 +992,7 @@ fn emit_lin_solve_scatter(
         ctx.emit(I::I32Const(m1.is_some() as i32)); // a step check follows
     }
     ctx.emit(I::Call(rt_index(solver)?));
-    emit_singular_check(ctx)?;
+    emit_lin_unsolved(ctx, index, base)?;
     match &m1 {
         Some(m1) => emit_lin_step(ctx, base, b_off, n, slots, use_sparse, index, m1, lower_inner),
         None => emit_scatter_recover_free(ctx, base, b_off, n, slots, lower_inner),
@@ -1464,8 +1509,9 @@ pub(crate) fn compile_linear_system_analytic_csc(
     ctx.emit(I::I32Add);
     ctx.emit(I::I32Const(n as i32));
     ctx.emit(I::I32Const(nnz as i32));
+    emit_sim_time(ctx)?;
     ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
-    emit_singular_check(ctx)?;
+    emit_lin_unsolved(ctx, handle, base)?;
     let m1 = Method1 { res_off, res_exps };
     emit_lin_step(ctx, base, b_off, n, &slots, true, handle, &m1, lower_inner)
 }
@@ -1604,6 +1650,7 @@ pub(crate) fn compile_linear_system_symbolic(
         ctx.emit(I::I32Add);
         ctx.emit(I::I32Const(n as i32));
         ctx.emit(I::I32Const(nnz as i32));
+        emit_sim_time(ctx)?;
         ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
     } else {
         // Dense layout: A (n*n column-major) | b (n).
@@ -1639,9 +1686,7 @@ pub(crate) fn compile_linear_system_symbolic(
         ctx.emit(I::Call(rt_index("rt_linsolve")?));
     }
 
-    ctx.emit(I::If(we::BlockType::Empty)); // nonzero => singular
-    emit_runtime_error(ctx, "wasm-jit: linear system is singular (no unique solution)")?;
-    ctx.emit(I::End);
+    emit_lin_unsolved(ctx, index, base)?;
 
     // Scatter the solution into the unknown slots.
     for j in 0..n {
@@ -1673,6 +1718,21 @@ fn emit_b_exps(
         coerce(ctx, w, WTy::F64);
         ctx.emit(we::Instruction::F64Store(mem_arg(b_off + (i as u32) * 8, 3)));
     }
+    Ok(())
+}
+
+/// `rt_ls_begin` / `rt_ls_end` around a lowered linear system, C's
+/// `solve_linear_system` bracket for the `LOG_STATS_V` per-system statistics.
+pub(crate) fn emit_ls_bracket(ctx: &mut FnCtx, index: i32, n: i32, nnz: i32, begin: bool) -> Result<()> {
+    use we::Instruction as I;
+    if !begin {
+        ctx.emit(I::Call(rt_index("rt_ls_end")?));
+        return Ok(());
+    }
+    ctx.emit(I::I32Const(index));
+    ctx.emit(I::I32Const(n));
+    ctx.emit(I::I32Const(nnz));
+    ctx.emit(I::Call(rt_index("rt_ls_begin")?));
     Ok(())
 }
 

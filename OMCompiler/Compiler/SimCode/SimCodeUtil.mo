@@ -16674,7 +16674,8 @@ end getCmakeCrossPlatformSuffixes;
 public function getCmakeLinkLibrariesCode
   "Generate CMake code to find and link all input libraries."
   input list<String> libs;
-  output String cmakecode = "";
+  output String needModelicaExternalC = "OFF";
+  output String cmakeCode = "";
 protected
   list<String> locations;
   list<String> libraries;
@@ -16688,19 +16689,44 @@ algorithm
   locations := listAppend({Settings.getInstallationDirectoryPath() + "/bin"}, locations);   // pthread located in OpenModelica/bin/ on Windows
   locations := List.map(locations, addDockerVol);
   // Use target_link_directories when CMake 3.13 is available and skip the find_library part
-  cmakecode := cmakecode + "set(EXTERNAL_LIBDIRECTORIES " + stringDelimitList(locations, "\n                            ") + ")\n";
+  cmakeCode := cmakeCode + "set(EXTERNAL_LIBDIRECTORIES " + stringDelimitList(locations, "\n                            ") + ")\n";
+  /* The directories above were resolved for the platform omc is running on. When
+   * cross compiling add the Resources/Library sub directories of the target platform.
+   */
+  cmakeCode := cmakeCode + "om_add_target_library_directories(EXTERNAL_LIBDIRECTORIES)\n";
   /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12640
    * in windows cmake does not find .dll suffixes using find_library(), the default is ".lib" & ".a" we need to explicitly
    * specify to look for ".dll" suffix
   */
-  cmakecode := cmakecode + getCmakeCrossPlatformSuffixes() + "\n";
+  cmakeCode := cmakeCode + getCmakeCrossPlatformSuffixes() + "\n";
   for lib in libraries loop
-    cmakecode := cmakecode + "find_library(" + lib + "\n" +
-                 "             NAMES " + lib + "\n" +
-                 "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH)\n" +
-                 "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
-                 "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
-                 "list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n";
+    // Special handling for ModelicaExternalC, we always copy the sources into the FMU
+    if List.contains({"ModelicaStandardTables", "ModelicaIO", "ModelicaMatIO"}, lib, stringEqual) then
+      needModelicaExternalC := "ON";
+    // zlib is referred to from MSL Tables, but by default not used by ModelicaMatIO
+    elseif lib == "zlib" then
+      cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
+                  "             NAMES " + lib + "\n" +
+                  "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
+                  "if(NOT " + lib + ")\n" +
+                  "  message(WARNING \"Could not find library zlib\")" + "\n" +
+                  "  message(STATUS \"zlib is referred by ModelicaMatIO, but not used by default. Try compiling without linking.\")" + "\n" +
+                  "else()\n" +
+                  "  message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
+                  "  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
+                  "  list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n" +
+                  "endif()\n";
+    else
+      cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
+                  "             NAMES " + lib + "\n" +
+                  "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)\n" +
+                  "if(NOT " + lib + ")\n" +
+                  "  message(FATAL_ERROR \"Could not find library " + lib + "\")\n" +
+                  "endif()\n" +
+                  "message(STATUS \"Linking ${" + lib + "}\")\n" +
+                  "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})\n" +
+                  "list(APPEND RUNTIME_DEPENDS ${" + lib + "})\n";
+    end if;
   end for;
 end getCmakeLinkLibrariesCode;
 
@@ -16712,7 +16738,9 @@ public function getCmakeSundialsLinkCode
 algorithm
   if cvodeFmiFlagIsSet(fmiSimulationFlags) then
     needCvode := "ON";
-    cvodeDirectory := "\"" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\"";
+    // ${DOCKER_VOL_DIR} so the path also resolves inside the container when cross compiling,
+    // see getCmakeLinkLibrariesCode. It is empty for a normal build.
+    cvodeDirectory := "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc\"";
   end if;
 end getCmakeSundialsLinkCode;
 
@@ -16751,15 +16779,22 @@ algorithm
   end match;
 end cvodeFmiFlagIsSet;
 
+public function stripIncludeFlag
+  "Directory of a makefileParams include entry, which is of the form \"-I<directory>\",
+   quotes included. Strips exactly the first 3 characters and the trailing quote, e.g.
+   \"-IC:/FmuWithStaticLibEndsWithI\" to C:/FmuWithStaticLibEndsWithI."
+  input String include;
+  output String directory = substring(include, 4, stringLength(include)-1);
+end stripIncludeFlag;
+
 public function make2CMakeInclude
   "Convert makefile include directories to CMake include directories"
   input list<String> includes;
-  output String cmakecode = "";
+  output String cmakeCode = "";
 algorithm
-  //strip exactly the first 3 characters (e.g) "-IC:/FmuWithStaticLibEndsWithL" to C:/FmuWithStaticLibEndsWithL
   for include in includes loop
-    cmakecode := cmakecode + "\n                                               " +
-                 "\"" + substring(include, 4, stringLength(include)-1) + "\"";
+    cmakeCode := cmakeCode + "\n                                               " +
+                 "\"${DOCKER_VOL_DIR}" + stripIncludeFlag(include) + "\"";
   end for;
 end make2CMakeInclude;
 

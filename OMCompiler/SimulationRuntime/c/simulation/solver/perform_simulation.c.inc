@@ -370,6 +370,9 @@ static void saveIntegratorStats(SOLVER_INFO* solverInfo)
   if (!(omc_flag[FLAG_NO_RESTART] && (solverInfo->solverMethod==S_DASSL || solverInfo->solverMethod==S_GBODE)) && solverInfo->didEventStep)
   {
     addSolverStats(&(solverInfo->solverStats), &(solverInfo->solverStatsTmp));
+    /* euler, rungekutta and the sym solvers accumulate into solverStatsTmp
+     * instead of overwriting it, so keeping it would count it twice. */
+    resetSolverStats(&(solverInfo->solverStatsTmp));
   }
 }
 

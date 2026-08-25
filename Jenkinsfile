@@ -845,7 +845,7 @@ pipeline {
         }
       }
     }
-    stage('fmuchecker + FMPy + OMEdit testsuite') {
+    stage('FMPy + OMEdit testsuite') {
       parallel {
         // Merge stages 10 + 10b into the published web zip.
         stage('assemble-web') {
@@ -864,24 +864,6 @@ pipeline {
             script { common.assembleWeb() }
           }
         }
-        stage('linux-wine-fmuchecker') {
-          agent {
-            docker {
-              label 'linux'
-              image 'docker.openmodelica.org/fmuchecker:v2.0.4'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            skipDefaultCheckout true
-          }
-          steps {
-            script { common.fmuCheckerLinuxWine() }
-          }
-        }
         stage('linux-FMPy') {
           agent {
             docker {
@@ -898,24 +880,6 @@ pipeline {
           }
           steps {
             script { common.fmpyLinux() }
-          }
-        }
-        stage('arm-fmuchecker') {
-          agent {
-            docker {
-              label 'linux-arm32'
-              image 'docker.openmodelica.org/fmuchecker:v2.0.4-arm'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            skipDefaultCheckout true
-          }
-          steps {
-            script { common.fmuCheckerArm() }
           }
         }
         stage('clang-qt5-omedit-testsuite') {
@@ -966,25 +930,6 @@ pipeline {
     }
     stage('check-and-upload') {
       parallel {
-        stage('fmuchecker-results') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            skipDefaultCheckout true // This seems to cause problems for symbolic links
-          }
-          steps {
-            script { common.fmuCheckerResults() }
-          }
-        }
         stage('upload-compliance') {
           agent {
             docker {

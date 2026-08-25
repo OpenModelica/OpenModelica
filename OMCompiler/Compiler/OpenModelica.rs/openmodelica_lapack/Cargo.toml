@@ -1,0 +1,38 @@
+# The LAPACK every OpenModelica target uses: omc's own `Modelica.Math.Matrices.*`
+# evaluation (`openmodelica_util::Lapack`, in place of a system liblapack), the
+# wasm-jit runtime's dense solve, and `liblapack.wasm` for `external "FORTRAN 77"`
+# inside a wasm FMU.
+#
+# Every routine is a port of the reference LAPACK kernel: the packed factors and
+# the `INFO` convention are load-bearing (MSL reads both), which no
+# decomposition-shaped crate API can express. See `src/lib.rs`.
+[package]
+name = "openmodelica_lapack"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+# `extern "C"` entry points with LAPACK's Fortran ABI (`dgesv_(&n, …)`), for the
+# `liblapack.wasm` side module a generated module's `external "FORTRAN 77"` calls
+# bind to. Off for the rlib consumers, which call the Rust API directly.
+fortran-abi = []
+# `tests/vs_reference.rs`, which needs a system `liblapack.so`. Must not be
+# combined with `fortran-abi`: both define the `d*_` symbols.
+reference-lapack = []
+
+[dependencies]
+libm = "0.2"
+
+[lib]
+# `cdylib` for the `liblapack.wasm` side module, `rlib` for openmodelica_util.
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+# Speed over size: these are the routines a model's LAPACK calls land in, and the
+# module is only linked into an FMU that actually uses them. `strip` because the
+# side module carries no debugger.
+opt-level = 3
+lto = true
+strip = true
+
+[workspace]

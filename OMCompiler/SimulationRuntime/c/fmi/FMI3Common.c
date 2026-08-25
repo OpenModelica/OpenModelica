@@ -144,10 +144,10 @@ void fmi3SetInteger_OMC(void* in_fmi3, int numberOfValueReferences, double* inte
 /**
  * @brief Wrapper for fmi3GetBoolean.
  *
- * Modelica booleans are signed char and FMI 3.0 ones are fmi3_boolean_t, so the values
- * are read into a buffer of the FMI type and copied over.
+ * Modelica booleans are modelica_boolean, i.e. int, and FMI 3.0 ones are fmi3_boolean_t,
+ * i.e. bool, so the values are read into a buffer of the FMI type and copied over.
  */
-void fmi3GetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, signed char* booleanValues)
+void fmi3GetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, int* booleanValues)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3;
   fmi3_value_reference_t* valuesReferences_int = real_to_fmi3_value_reference(numberOfValueReferences, booleanValuesReferences);
@@ -156,7 +156,7 @@ void fmi3GetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* bool
                                                  fmiBooleans, numberOfValueReferences);
   int i;
   for (i = 0; i < numberOfValueReferences; i++) {
-    booleanValues[i] = (signed char)fmiBooleans[i];
+    booleanValues[i] = fmiBooleans[i] ? 1 : 0;
   }
   free(fmiBooleans);
   free(valuesReferences_int);
@@ -168,7 +168,7 @@ void fmi3GetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* bool
 /**
  * @brief Wrapper for fmi3SetBoolean.
  */
-void fmi3SetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* booleanValuesReferences, signed char* booleanValues)
+void fmi3SetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues)
 {
   FMI3ModelExchange* FMI3ME = (FMI3ModelExchange*)in_fmi3;
   if (FMI3ME->FMISolvingMode == fmi3_instantiated_mode || FMI3ME->FMISolvingMode == fmi3_initialization_mode || FMI3ME->FMISolvingMode == fmi3_event_mode || FMI3ME->FMISolvingMode == fmi3_continuousTime_mode) {
@@ -177,7 +177,7 @@ void fmi3SetBoolean_OMC(void* in_fmi3, int numberOfValueReferences, double* bool
     fmi3_status_t status;
     int i;
     for (i = 0; i < numberOfValueReferences; i++) {
-      fmiBooleans[i] = (fmi3_boolean_t)booleanValues[i];
+      fmiBooleans[i] = booleanValues[i] ? fmi3_true : fmi3_false;
     }
     status = fmi3_import_set_boolean(FMI3ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences,
                                      fmiBooleans, numberOfValueReferences);

@@ -36,7 +36,9 @@ readFile("fmi2_arrays_initial_unknowns.xml"); getErrorString();
 // true
 // ""
 // "fmi2_arrays_initial_unknowns.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // 0

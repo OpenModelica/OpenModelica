@@ -85,7 +85,7 @@ pub use openmodelica_util::System::{omc_set_loadmodel_callback, omc_set_plot_cal
 // OMEdit uses to read a model instance's boxed JSON value directly in-process,
 // avoiding JSON string (de)serialisation. Same `pub use` rationale as above —
 // keep the `#[no_mangle]` symbols in `libOpenModelicaCompiler.so`.
-pub use openmodelica_backend_main::ModelInstanceReference::*;
+pub use openmodelica_util::ModelInstanceReference::*;
 
 /// Report this build's revision as the compiler version (`getVersion()`,
 /// `omc --version`); called by every entry point that starts a session.

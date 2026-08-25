@@ -2,7 +2,7 @@
 // keywords: FMI 3.0 export array nominal scalarized
 // suite: fmuCSources
 // status: correct
-// teardown_command: rm -rf fmi3_array_attributes.fmu fmi3_array_attributes.fmutmp/ fmi3_array_attributes.dims fmi3_array_attributes.log fmi3_array_attributes_info.json index.html
+// teardown_command: rm -rf fmi3_array_attributes.fmu fmi3_array_attributes.fmutmp/ fmi3_array_attributes.dims fmi3_array_attributes.log fmi3_array_attributes_info.json index.html fmi3_array_attributes_FMU.libs fmi3_array_attributes_FMU.makefile fmi3_array_attributes_external_functions.json resources
 //
 // #15926, FMI 3.0, old backend, scalarized (default), C runtime. A scalarized
 // array element must not be dimensioned in the exported FMU init.
@@ -29,7 +29,9 @@ readFile("fmi3_array_attributes.dims"); getErrorString();
 // true
 // ""
 // "fmi3_array_attributes.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // ""

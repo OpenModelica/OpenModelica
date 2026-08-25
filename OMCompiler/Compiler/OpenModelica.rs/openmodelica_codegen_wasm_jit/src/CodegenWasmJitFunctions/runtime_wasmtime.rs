@@ -138,11 +138,11 @@ fn define_external_imports(
         return Err("CodegenWasmJit: this omc was built without the PIC wasi-libc, so it cannot \
                     load an external \"C\" library");
     }
-    libs.push(dl::Library { name: "libc.so".to_string(), bytes: libc.to_vec() });
+    libs.push(dl::Library::builtin("libc.so", libc));
     for path in &sig.libs {
         let bytes = openmodelica_wasi::fs::read(path)
             .map_err(|_| "CodegenWasmJit: cannot read an external \"C\" library")?;
-        libs.push(dl::Library { name: path.clone(), bytes });
+        libs.push(dl::Library::model(path, bytes));
     }
     let table = rt_inst
         .get_table(&mut *store, "__indirect_function_table")
@@ -195,7 +195,7 @@ impl NativeExternals {
     }
 
     fn resolve(&self, name: &str) -> Option<usize> {
-        openmodelica_util::dynload::external_symbol_in(&self.handles, name)
+        openmodelica_wasm_jit::model::external_symbol_or_wrapper(&self.handles, name)
     }
 }
 
@@ -286,7 +286,7 @@ pub(super) fn load_and_execute(
     // module name "rt", plus the `env` math builtins.
     let cache = jit_cache();
     let module = get_or_compile_module(cache, &bytes)?;
-    let mut store = wasmtime::Store::new(&cache.engine, WasiCtx::new(".", Vec::new()));
+    let mut store = wasmtime::Store::new(&cache.engine, WasiCtx::new("/", Vec::new()));
     let rt_inst = wt(cache.env_linker.instantiate(&mut store, &cache.runtime_module))?;
     let mut linker = cache.env_linker.clone();
     wt(linker.instance(&mut store, "rt", rt_inst))?;
@@ -349,7 +349,9 @@ pub(super) fn load_and_execute(
     // Clear any stale pending assertion before the call (defensive — each call
     // consumes its own).
     openmodelica_wasm_jit::host::clear_pending_assert();
+    openmodelica_wasm_jit::host::flush_stdio();
     let call_res = func.call(&mut store, &params, &mut results);
+    openmodelica_wasm_jit::host::flush_stdio();
     if call_res.is_err() {
         // A failed `assert` records its message + source info via the `rt_assert`
         // host import, then traps. Route it to the error buffer (matching the C
@@ -714,7 +716,7 @@ mod tests {
     fn runtime_instance() -> (Store, wasmtime::Instance) {
         let engine = wasmtime::Engine::default();
         let module = wasmtime::Module::new(&engine, RUNTIME_WASM).unwrap();
-        let mut store = wasmtime::Store::new(&engine, WasiCtx::new(".", Vec::new()));
+        let mut store = wasmtime::Store::new(&engine, WasiCtx::new("/", Vec::new()));
         let mut linker = wasmtime::Linker::new(&engine);
         openmodelica_wasm_jit::host::add_host_builtins(&mut linker).unwrap();
         let inst = linker.instantiate(&mut store, &module).unwrap();

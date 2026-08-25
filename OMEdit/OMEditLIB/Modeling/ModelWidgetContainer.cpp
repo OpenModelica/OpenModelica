@@ -50,7 +50,6 @@
 #include "Commands.h"
 #include "Options/NotificationsDialog.h"
 #include "ModelicaClassDialog.h"
-#include "Git/GitCommands.h"
 #include "OMS/OMSProxy.h"
 #include "OMS/ModelDialog.h"
 #include "OMS/SystemSimulationInformationDialog.h"
@@ -6465,6 +6464,22 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   if (!pLibraryTreeItemForLoadString->isFilePathValid()) {
     fileName = className;
   }
+
+  QString name = StringHandler::getLastWordAfterDot(className);
+  bool deleteClass = true;
+  if (mpLibraryTreeItem->getRestriction() == StringHandler::Package
+      && mpLibraryTreeItem->isSaveFolderStructure()
+      && className.compare(mpLibraryTreeItem->getNameStructure()) != 0) {
+    QList<QString> classes = pOMCProxy->renameClass(mpLibraryTreeItem->getNameStructure(), name);
+    if (classes.isEmpty()) {
+      qDebug() << "Failed to rename the class.";
+      return false;
+    }
+    deleteClass = false;
+    fileName = classes.first();
+    mpLibraryTreeItem->updateChildrenNameStructureAndSourceFileName(fileName);
+  }
+
   // only use OMCProxy::loadString merge when LibraryTreeItem::SaveFolderStructure i.e., package.mo
   if (!pOMCProxy->loadString(stringToLoad, fileName, Helper::utf8, pLibraryTreeItemForLoadString->isSaveFolderStructure())) {
     return false;
@@ -6496,9 +6511,8 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     const QString nameStructure = mpLibraryTreeItem->getNameStructure();
     LibraryTreeItem *pParentLibraryTreeItem = mpLibraryTreeItem->parent();
     LibraryTreeItem::SaveContentsType saveContentsType =  mpLibraryTreeItem->getSaveContentsType();
-    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem, !mpLibraryTreeItem->isInPackageOneFile());
+    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem, !mpLibraryTreeItem->isInPackageOneFile() && deleteClass);
     MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(nameStructure, false);
-    QString name = StringHandler::getLastWordAfterDot(className);
     LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, pParentLibraryTreeItem, false, false, true, row);
     setWindowTitle(pNewLibraryTreeItem->getName() + (pNewLibraryTreeItem->isSaved() ? "" : "*"));
     setModelClassPathLabel(pNewLibraryTreeItem->getNameStructure());

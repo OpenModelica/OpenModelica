@@ -48,9 +48,13 @@ readFile("Enumeration3_systemCall.log");
 // true
 // ""
 // "Enum1.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // "Int1.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // true
 // ""
 // 0
