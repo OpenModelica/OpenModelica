@@ -8,7 +8,7 @@
 OpenModelica.Scripting.setCFlags("-g -lzmq " + getCFlags());
 getErrorString();
 
-susanGenFilesDir := getEnvironmentVar("OMC_GENERATED_MO_DIR");
+susanGenFilesDir := getEnvironmentVar("OMCOMPILERGENERATEDSOURCES");
 
 files := {
   "Types.mo",

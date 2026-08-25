@@ -1,14 +1,20 @@
-OMC := $(shell test -e ../../../build/install_cmake/bin/omc && echo ../../../build/install_cmake/bin/omc \
-               || echo ../../../build_cmake/install_cmake/bin/omc )
-OMC := $(shell realpath $(OMC))
+OMC ?= $(firstword $(wildcard ../../../build/install_cmake/bin/omc \
+                              ../../../build_cmake/install_cmake/bin/omc \
+                              ../../../build/bin/omc))
+OMC := $(realpath $(OMC))
 
-OMC_GENERATED_MO_DIR := $(shell test -e ../../../build_cmake/OMCompiler/Compiler/generated-mo/Template/AbsynDumpTpl.mo && echo ../../../build_cmake/OMCompiler/Compiler/generated-mo \
-                                || echo ../../../build/OMCompiler/Compiler/generated-mo)
-OMC_GENERATED_MO_DIR := $(shell realpath $(OMC_GENERATED_MO_DIR))
+# ?= already means "only if the caller did not set it", so this must not mention
+# OMCOMPILERGENERATEDSOURCES on the right-hand side: ?= defines a recursively
+# expanded variable, and referencing itself there is a self-reference error.
+OMCOMPILERGENERATEDSOURCES ?= $(firstword $(wildcard ../../../build_cmake/OMCompiler/Compiler/generated-mo \
+                                                     ../../../build/OMCompiler/Compiler/generated-mo))
+OMCOMPILERGENERATEDSOURCES := $(realpath $(OMCOMPILERGENERATEDSOURCES))
+
+.PHONY: test parser clean
 
 test:
 	@echo Running MatlabTranslator
-	@OMC_GENERATED_MO_DIR=$(OMC_GENERATED_MO_DIR) $(OMC) SCRIPT.mos
+	@OMCOMPILERGENERATEDSOURCES=$(OMCOMPILERGENERATEDSOURCES) $(OMC) SCRIPT.mos
 
 parser:
 	@echo Genereating lexer and parser components
