@@ -37,8 +37,6 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include <limits>
-
 #include "Modeling/ModelicaClassDialog.h"
 #include "MainWindow.h"
 #include "Options/OptionsDialog.h"
@@ -887,7 +885,11 @@ DuplicateClassDialog::FileType DuplicateClassDialog::selectFileType(LibraryTreeI
     // set signal mapping
     signalMapper.setMapping(pDirectoriesForAllButton, 2);
     signalMapper.setMapping(pKeepStructureButton, 3);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    connect(&signalMapper, &QSignalMapper::mappedInt, pSelectFileTypeDialog, &QDialog::done);
+#else
     connect(&signalMapper, SIGNAL(mapped(int)), pSelectFileTypeDialog, SLOT(done(int)));
+#endif
     // layout the buttons
     QDialogButtonBox *pButtonBox = new QDialogButtonBox;
     pButtonBox->addButton(pKeepStructureButton, QDialogButtonBox::ActionRole);

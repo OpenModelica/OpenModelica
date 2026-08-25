@@ -5,6 +5,7 @@
 /.project
 /.settings
 /.vscode/
+/.qtcreator/
 /autom4te.cache/
 /build/
 /build_cmake*/
