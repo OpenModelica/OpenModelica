@@ -40,6 +40,7 @@ pub(crate) enum Ls {
     TotalPivot,
     Klu,
     Umfpack,
+    Lis,
 }
 
 /// `-lss`, for a sparse (torn) linear system.
@@ -48,9 +49,11 @@ pub(crate) enum Lss {
     Klu,
     Umfpack,
     Rsparse,
+    Lis,
 }
 
-/// The backend a sparse solve runs on, once a selector has been matched to it.
+/// The backend a *direct* sparse solve runs on, once a selector has been matched
+/// to it. Iterative Lis needs an initial guess, so `-lss lis` is served earlier.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Sparse {
     Klu,
@@ -255,12 +258,14 @@ pub(crate) fn ls() -> Ls {
         3 => Ls::TotalPivot,
         4 if cfg!(sundials) => Ls::Klu,
         5 if cfg!(sundials) => Ls::Umfpack,
+        6 if cfg!(sundials) => Ls::Lis,
         _ => Ls::Lapack, // 0 unset, 1 default, 2 lapack — C's dense default
     }
 }
 
 pub(crate) fn lss() -> Lss {
     match LSS.load(Ordering::Relaxed) {
+        5 if cfg!(sundials) => Lss::Lis,
         _ if !cfg!(sundials) => Lss::Rsparse,
         3 => Lss::Rsparse,
         4 => Lss::Umfpack,

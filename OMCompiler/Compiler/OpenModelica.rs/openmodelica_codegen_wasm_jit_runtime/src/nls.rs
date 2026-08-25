@@ -293,8 +293,11 @@ pub(crate) fn throw_stream(s: &str) {
     rt_nls_note_assert();
 }
 
-/// The same flag raised by a driver rather than a solve: C's `runOptimizer` holds
-/// it over the whole optimization.
+/// C's `noThrowDivZero`, which is *sticky*: `solve_linear_system` and
+/// `solve_nonlinear_system` both raise it, but only the end of a nonlinear solve
+/// (and `initializeModel`) lowers it again — so a model whose algebraic systems
+/// are all linear tolerates every division by zero after its first solve.
+/// `runOptimizer` holds it over the whole optimization, hence the exported address.
 static NO_THROW_DIV_ZERO: AtomicU32 = AtomicU32::new(0);
 
 #[unsafe(no_mangle)]
@@ -302,8 +305,10 @@ pub extern "C" fn rt_no_throw_div_zero_addr() -> u32 {
     (&NO_THROW_DIV_ZERO) as *const AtomicU32 as u32
 }
 
-/// C's `noThrowDivZero`, which `solve_nonlinear_system` holds over a solve: a
-/// division by zero at a trial point is the solver's to walk away from.
+pub(crate) fn set_no_throw_div_zero(on: bool) {
+    NO_THROW_DIV_ZERO.store(on as u32, Ordering::Relaxed);
+}
+
 fn no_throw_div_zero() -> bool {
     NLS_DEPTH.load(Ordering::Relaxed) > 0 || NO_THROW_DIV_ZERO.load(Ordering::Relaxed) != 0
 }
@@ -3184,6 +3189,7 @@ pub extern "C" fn rt_solve_nls(
     let n = n as usize - usize::from(lambda_unknown);
     // C's `solve_nonlinear_system` opens the system's clock before anything else.
     crate::sysstats::begin(eq_index as i32, true, n as u32, nnz);
+    set_no_throw_div_zero(true);
     let sys0 = sys_counts();
     // Relation mode (C's hysteresis): Newton always holds relations (mode 0) so it
     // is smooth; mode 2 (init) is fresh throughout; mode 1 (event) re-solves with
@@ -3755,6 +3761,9 @@ pub extern "C" fn rt_solve_nls(
     }
     NLS_ASSERT_SEEN.store(saved_assert_seen, Ordering::Relaxed);
     NLS_THROW_SEEN.store(saved_throw_seen, Ordering::Relaxed);
+
+    // C lowers `noThrowDivZero` here and nowhere else during a run.
+    set_no_throw_div_zero(false);
 
     let now = sys_counts();
     crate::sysstats::end([now[0] - sys0[0], now[1] - sys0[1], now[2] - sys0[2]]);

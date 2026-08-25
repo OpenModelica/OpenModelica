@@ -210,6 +210,7 @@ openmodelica_codegen_wasm_jit_runtime/build-runtime.sh
 openmodelica_codegen_wasm_jit_runtime/build.rs
 openmodelica_codegen_wasm_jit_runtime/src/delay.rs
 openmodelica_codegen_wasm_jit_runtime/src/lib.rs
+openmodelica_codegen_wasm_jit_runtime/src/lis.rs
 openmodelica_codegen_wasm_jit_runtime/src/nls.rs
 openmodelica_codegen_wasm_jit_runtime/src/nls_c_trace.rs
 openmodelica_codegen_wasm_jit_runtime/src/omclog.rs

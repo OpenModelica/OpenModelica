@@ -449,10 +449,10 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // String (Booleans are coerced to 0/1 i32). Borrows the format handle.
     ("rt_string_format_int", &[WTy::I32, WTy::I32], &[WTy::I32]),
     // Dense linear solve `A x = b` in place (A column-major `n*n` f64 at a_ptr,
-    // b `n` f64 at b_ptr; solution overwrites b), then the equation index and time
-    // the fallback warning needs and whether a `rt_ls_check_step` follows.
-    // Returns 0 ok, 1 singular.
-    ("rt_linsolve", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
+    // b `n` f64 at b_ptr; solution overwrites b), C's `aux_x` at x_ptr for the
+    // iterative `-ls lis`, then the equation index and time the fallback warning
+    // needs and whether a `rt_ls_check_step` follows. Returns 0 ok, 1 singular.
+    ("rt_linsolve", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
     // The same `A` re-solved with total pivoting: (a_ptr, b_ptr, n, index, time) ->
     // 0 ok / 1 inconsistent. C's fallback for a step `rt_ls_check_step` rejected.
     ("rt_linsolve_totalpivot", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
@@ -470,10 +470,11 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // runtime's KLU path (AMD-ordered sparse LU); see `rt_solve_lin_sparse`.
     ("rt_solve_lin_sparse", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     // Solve `A x = b` from dense column-major A via the sparse solver; see
-    // `rt_solve_lin_dense_sparse`. (a_ptr, b_ptr, n) -> 0 ok / 1 singular.
-    ("rt_solve_lin_dense_sparse", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
-    // (handle, colptr, rowidx, values, b, n, nnz, time) -> 0 ok / 1 singular; cached analysis.
-    ("rt_solve_lin_sparse_cached", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
+    // `rt_solve_lin_dense_sparse`. (a_ptr, b_ptr, x_ptr, n, index, time) -> 0 ok /
+    // 1 singular.
+    ("rt_solve_lin_dense_sparse", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
+    // (handle, colptr, rowidx, values, b, x, n, nnz, time) -> 0 ok / 1 singular; cached analysis.
+    ("rt_solve_lin_sparse_cached", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
     // Raw deallocation (frees a block from `rt_alloc`); used to release the
     // `SES_LINEAR` scratch (A/b/residual buffers) after each solve.
     ("rt_free", &[WTy::I32], &[]),

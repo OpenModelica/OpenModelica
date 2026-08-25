@@ -296,6 +296,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     *session() = None;
     crate::reset_lin_solves();
     crate::reset_ls_failures();
+    crate::nls::set_no_throw_div_zero(false); // C's `initializeModel`
     crate::reset_stats();
     crate::sundials::reset_caches();
 

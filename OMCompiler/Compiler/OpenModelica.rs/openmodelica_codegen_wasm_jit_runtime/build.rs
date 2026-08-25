@@ -30,6 +30,7 @@ const LIBS: &[&str] = &[
     "colamd",
     "btf",
     "suitesparseconfig",
+    "lis", // self-contained, so its position is free
 ];
 
 fn main() {
