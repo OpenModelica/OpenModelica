@@ -326,6 +326,30 @@ MOO (`OM_OMC_ENABLE_MOO`).
 `OM_OMC_ENABLE_MOO` allows you to enable/disable support for dynamic optimization
 support with MOO. Enabling this requires having a working Fortran compiler.
 
+`OM_OMC_USE_CORBA` allows you to enable/disable the CORBA interface of the `omc` server
+loop (`omc --interactive=corba` / `omc -d=interactiveCorba`). The GUI clients talk to
+`omc` over ZeroMQ, so CORBA is only needed for legacy clients (OMOptim, older
+OMPython/OMShell setups). It is `OFF` by default.
+
+Enabling it requires an [omniORB](https://omniorb.sourceforge.io/) installation, both the
+development files and the `omniidl` IDL compiler:
+
+| Platform | Packages |
+|----------|----------|
+| Debian/Ubuntu | `libomniorb4-dev omniidl` |
+| Fedora/RHEL | `omniORB-devel` (includes `omniidl`) |
+| Arch Linux | `omniorb` (AUR) |
+| macOS (Homebrew) | `omniorb` |
+| Windows MinGW | comes with OMDev, nothing to install |
+
+```sh
+cmake -S . -B build_cmake -DOM_OMC_USE_CORBA=ON
+```
+
+If omniORB is not installed in a default location, point CMake at it with
+`-DOmniORB_ROOT=/path/to/omniORB` (or set the `OMNIORB_HOME` environment variable). This
+is the equivalent of the `autotools` build's `--with-omniORB=DIR`.
+
 ### 4.1.3. OpenModelica/OMEdit Options
 
 `OM_OMEDIT_ENABLE_TESTS` Enable testing and build the OMEdit Testsuite.
@@ -345,7 +369,6 @@ There are also some additional options that are kept as a migration step to main
 similarity with the `autotools` build system.
 
 ```cmake
-OM_OMC_USE_CORBA=OFF
 OM_OMC_USE_LAPACK=ON
 ```
 

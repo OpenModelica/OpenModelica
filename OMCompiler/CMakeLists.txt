@@ -52,6 +52,11 @@ omc_option(OM_OMC_ENABLE_PARMODELICA "Enable, build, and install the ParModelica
 # skips its host-only prerequisites (a JDK and ANTLR for the parser, libintl).
 omc_option(OM_OMC_ENABLE_COMPILER "Build the omc compiler itself, not just the simulation runtime." ON)
 
+# CORBA (omniORB) support for the omc server loop (-d=interactiveCorba /
+# --interactive=corba). The GUI clients talk to omc over ZeroMQ nowadays, so this
+# is only needed for legacy clients (OMOptim, older OMPython/OMShell setups) and
+# is off by default. Enabling it needs omniORB: on MinGW it comes with OMDev,
+# elsewhere it has to be installed (see cmake/modules/FindOmniORB.cmake).
 omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
