@@ -4953,7 +4953,18 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
      case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
        if stringEq(sub, "") then 'jacobian->seedVars[<%index%>]<%crefCCommentWithVariability(v)%>'
        else '(&(jacobian->seedVars[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
-     case SIMVAR(index=-2) then crefOld(cr, ix)
+     case SIMVAR(index=-2) then
+       // Subscripted seed cref not in jac_map (e.g. a cross-Jacobian seed
+       // reference, or a whole-array seed accessed with a dynamic subscript).
+       // Retry with the subscripts stripped: if the base cref resolves to a
+       // SEED_VAR, use ITS index (not the original -2) so the subscript
+       // (still carried separately in &sub) addresses the right seed array.
+       // Otherwise fall through to crefOld for actual values / loop iterators.
+       match simVarFromHT(crefStripSubs(cr), jacHT)
+       case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
+         if stringEq(sub, "") then 'jacobian->seedVars[<%v.index%>]<%crefCCommentWithVariability(v)%>'
+         else '(&(jacobian->seedVars[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+       else crefOld(cr, ix)
 end jacCrefs;
 
 template jacSparsityIndex(ComponentRef cr, Context context)
