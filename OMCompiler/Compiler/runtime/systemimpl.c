@@ -2510,9 +2510,9 @@ const char* SystemImpl__iconv__ascii(const char * str)
 static int isUtf8Encoding(const char *str)
 {
 #if defined(_MSC_VER)
-  return _stricmp(str, "UTF-8") || _stricmp(str, "UTF8");
+  return 0 == _stricmp(str, "UTF-8") || 0 == _stricmp(str, "UTF8");
 #else
-  return strcasecmp(str, "UTF-8") || strcasecmp(str, "UTF8");
+  return 0 == strcasecmp(str, "UTF-8") || 0 == strcasecmp(str, "UTF8");
 #endif
 }
 
