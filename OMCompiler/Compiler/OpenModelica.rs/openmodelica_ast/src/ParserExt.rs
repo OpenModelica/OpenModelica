@@ -193,12 +193,6 @@ pub fn parse(
         metamodelica::cancel::PROGRESS_INDETERMINATE,
         metamodelica::cancel::PHASE_PARSE,
     );
-    // The Rust parser operates on UTF-8 `&str` directly.  Anything else
-    // would need transcoding via the `encoding_rs` crate; bail explicitly
-    // rather than silently misinterpreting the bytes.
-    if !encoding.is_empty() && !encoding.eq_ignore_ascii_case("UTF-8") && !encoding.eq_ignore_ascii_case("UTF8") {
-        return Err("ParserExt::parse: only UTF-8 input is supported, got encoding {:?}");
-    }
     let (src, orig_bytes) = read_source_file(filename.as_str())
         .map_err(|_| "ParserExt::parse: cannot read {filename}")?;
     let grammar = select_grammar(acceptedGram, languageStandardInt);
@@ -207,8 +201,12 @@ pub fn parse(
     // cannot write to are flagged read-only in their SOURCEINFO, so the
     // interactive API refuses to modify them.
     let readonly = !regular_file_writable(filename.as_str());
+    // Outside string literals the grammar allows nothing but ASCII, so only
+    // the literals are transcoded from `encoding`.
     parser::set_non_utf8_source_bytes(orig_bytes);
+    parser::set_source_encoding(encoding.as_str());
     let result = run_parse(&src, filename.as_str(), infoFilename.as_str(), grammar, readonly, file_timestamp(filename.as_str()));
+    parser::set_source_encoding("");
     parser::set_non_utf8_source_bytes(None);
     result
 }

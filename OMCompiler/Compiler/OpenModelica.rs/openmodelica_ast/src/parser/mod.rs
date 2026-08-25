@@ -162,8 +162,11 @@ thread_local! {
     /// sanitized for the lexer (each invalid byte replaced by `'?'`, preserving
     /// byte offsets). `None` for valid-UTF-8 or string-literal input. The lexer
     /// consults this in `lex_string` to reproduce the C `STRING` rule's
-    /// per-literal UTF-8 check (`SystemImpl__iconv__ascii` + warning).
+    /// per-literal conversion (`SystemImpl__iconv` + warning).
     static SOURCE_ORIG_BYTES: RefCell<Option<std::sync::Arc<[u8]>>> = const { RefCell::new(None) };
+    /// `ModelicaParser_encoding` and the label to name in the warning.
+    static SOURCE_ENCODING: RefCell<(SourceEncoding, ArcStr)> =
+        const { RefCell::new((SourceEncoding::Utf8, literal!("UTF-8"))) };
 }
 
 /// Install (or clear) the original bytes of a non-UTF-8 source for the duration
@@ -173,21 +176,86 @@ pub fn set_non_utf8_source_bytes(bytes: Option<std::sync::Arc<[u8]>>) {
     SOURCE_ORIG_BYTES.with(|b| *b.borrow_mut() = bytes);
 }
 
-/// If the source was non-UTF-8 and the original bytes of `[start, end)` (a
-/// string literal's content span, in byte offsets that line up with the
-/// sanitized source) are not valid UTF-8, return that span ASCII-fied — every
-/// byte with the high bit set replaced by `'?'`, the rest kept — exactly like
-/// the C `SystemImpl__iconv__ascii`. Returns `None` when the span was valid (so
-/// the lexer keeps the string verbatim and emits no warning).
-fn ascii_fy_string_span_if_invalid(start: usize, end: usize) -> Option<String> {
-    SOURCE_ORIG_BYTES.with(|b| {
-        let b = b.borrow();
-        let bytes = b.as_deref()?;
-        let span = bytes.get(start..end)?;
-        if std::str::from_utf8(span).is_ok() {
-            return None;
+enum SourceEncoding {
+    Utf8,
+    /// `encoding_rs` only reaches ISO-8859-1 as an alias of windows-1252,
+    /// while `iconv` decodes it as byte == code point.
+    Latin1,
+    Charset(&'static encoding_rs::Encoding),
+    /// No charset matches the label; `iconv_open` fails in C.
+    Unknown,
+}
+
+pub fn set_source_encoding(label: &str) {
+    let normalized: String =
+        label.chars().filter(|c| *c != '-' && *c != '_').flat_map(char::to_lowercase).collect();
+    let enc = match normalized.as_str() {
+        "" | "utf8" => SourceEncoding::Utf8,
+        "iso88591" | "latin1" | "l1" | "cp819" | "ibm819" => SourceEncoding::Latin1,
+        _ => match encoding_rs::Encoding::for_label(label.as_bytes()) {
+            Some(enc) if enc == encoding_rs::UTF_8 => SourceEncoding::Utf8,
+            Some(enc) => SourceEncoding::Charset(enc),
+            None => SourceEncoding::Unknown,
+        },
+    };
+    let label = if label.is_empty() { literal!("UTF-8") } else { ArcStr::from(label) };
+    SOURCE_ENCODING.with(|e| *e.borrow_mut() = (enc, label));
+}
+
+/// `iconv` rejects the bytes windows-125x and windows-874 leave unassigned,
+/// where the WHATWG index yields the C1 control of the same value instead.
+/// Only the ISO-8859 tables map that range for real.
+fn has_unassigned_c1(enc: &'static encoding_rs::Encoding, decoded: &str) -> bool {
+    enc.is_single_byte()
+        && !enc.name().starts_with("ISO-8859")
+        && decoded.chars().any(|c| ('\u{80}'..='\u{9f}').contains(&c))
+}
+
+fn source_encoding_label() -> ArcStr {
+    SOURCE_ENCODING.with(|e| e.borrow().1.clone())
+}
+
+enum StringLiteral {
+    Verbatim,
+    Converted(String),
+    /// 7-bit ASCII, high bytes replaced by `'?'`; the lexer pairs it with a
+    /// warning.
+    AsciiFallback(String),
+}
+
+/// The `STRING` rule of `Parser/BaseModelica_Lexer.g`. `[start, end)` indexes
+/// the original file bytes, which are only kept when sanitizing changed them,
+/// so the lexed `raw` stands in for the span otherwise.
+fn convert_string_literal(raw: &str, start: usize, end: usize) -> StringLiteral {
+    if raw.is_empty() {
+        return StringLiteral::Verbatim;
+    }
+    let orig = SOURCE_ORIG_BYTES
+        .with(|b| b.borrow().as_deref().and_then(|b| b.get(start..end)).map(<[u8]>::to_vec));
+    let bytes = orig.as_deref().unwrap_or(raw.as_bytes());
+    let ascii_fallback =
+        || StringLiteral::AsciiFallback(bytes.iter().map(|&c| if c & 0x80 != 0 { '?' } else { c as char }).collect());
+
+    SOURCE_ENCODING.with(|e| match e.borrow().0 {
+        SourceEncoding::Utf8 => {
+            if std::str::from_utf8(bytes).is_ok() {
+                StringLiteral::Verbatim
+            } else {
+                ascii_fallback()
+            }
         }
-        Some(span.iter().map(|&c| if c & 0x80 != 0 { '?' } else { c as char }).collect())
+        SourceEncoding::Latin1 => {
+            StringLiteral::Converted(bytes.iter().copied().map(char::from).collect())
+        }
+        SourceEncoding::Charset(enc) => {
+            let (decoded, had_errors) = enc.decode_without_bom_handling(bytes);
+            if had_errors || has_unassigned_c1(enc, &decoded) {
+                ascii_fallback()
+            } else {
+                StringLiteral::Converted(decoded.into_owned())
+            }
+        }
+        SourceEncoding::Unknown => ascii_fallback(),
     })
 }
 

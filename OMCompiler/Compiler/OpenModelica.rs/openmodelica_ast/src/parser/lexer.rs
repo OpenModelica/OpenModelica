@@ -732,22 +732,21 @@ impl<'s> Lexer<'s> {
                 Some(c) => raw.push(c),
             }
         }
-        // Reproduce the C `STRING` rule (BaseModelica_Lexer.g): if the literal's
-        // original bytes are not valid UTF-8, fall back to 7-bit ASCII (high
-        // bytes → '?') and warn. The closing `"` is one byte, so the content
-        // span ends at `self.pos - 1`.
+        // The closing `"` is one byte, so the content span ends here.
         let content_end = self.pos - 1;
-        if let Some(ascii) = super::ascii_fy_string_span_if_invalid(content_start, content_end) {
-            self.warn_non_utf8(&ascii, start_line, start_col);
-            return Ok(TokenKind::Str(ascii.into()));
+        match super::convert_string_literal(&raw, content_start, content_end) {
+            super::StringLiteral::Verbatim => Ok(TokenKind::Str(raw.into())),
+            super::StringLiteral::Converted(s) => Ok(TokenKind::Str(s.into())),
+            super::StringLiteral::AsciiFallback(ascii) => {
+                self.warn_non_utf8(&ascii, start_line, start_col);
+                Ok(TokenKind::Str(ascii.into()))
+            }
         }
-        Ok(TokenKind::Str(raw.into()))
     }
 
-    /// Emit the C `STRING`-rule warning for a string literal that was not valid
-    /// UTF-8. Mirrors the message, truncation (72 chars + "...") and span
-    /// (`[start_col, start_col + len]`) of `BaseModelica_Lexer.g`. `ascii` is
-    /// the already-ASCII-fied content (without the surrounding quotes).
+    /// The C `STRING`-rule warning, with the message, truncation (72 chars +
+    /// "...") and span (`[start_col, start_col + len]`) of
+    /// `BaseModelica_Lexer.g`. `ascii` is the ASCII-fied content, unquoted.
     fn warn_non_utf8(&self, ascii: &str, start_line: u32, start_col: u32) {
         // Every byte is ASCII here, so byte length == display column count.
         let full_len = ascii.len();
@@ -761,8 +760,9 @@ impl<'s> Lexer<'s> {
         if full_len > 75 {
             display.push_str("...");
         }
+        let encoding = super::source_encoding_label();
         let message = format!(
-            "The file was not encoded in UTF-8:\n  \"{display}\".\n  \
+            "The file was not encoded in {encoding}:\n  \"{display}\".\n  \
              Defaulting to 7-bit ASCII with unknown characters replaced by '?'.\n  \
              To change encoding when loading a file: loadFile(encoding=\"ISO-XXXX-YY\").\n  \
              To change it in a package: add a file package.encoding at the top-level.\n  \
