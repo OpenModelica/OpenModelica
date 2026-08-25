@@ -895,80 +895,104 @@ void freeModelDataVars(MODEL_DATA* modelData)
   for(i=0; i < modelData->nVariablesRealArray; i++) {
     freeVarInfo(&modelData->realVarsData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->realVarsData);
 
   for(i=0; i < modelData->nVariablesIntegerArray; i++) {
     freeVarInfo(&modelData->integerVarsData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->integerVarsData);
 
   for(i=0; i < modelData->nVariablesBooleanArray; i++) {
     freeVarInfo(&modelData->booleanVarsData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->booleanVarsData);
 
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   for(i=0; i < modelData->nVariablesStringArray; i++) {
     freeVarInfo(&modelData->stringVarsData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->stringVarsData);
 #endif
 
   // Parameters
   for(i=0; i < modelData->nParametersRealArray; i++) {
     freeVarInfo(&modelData->realParameterData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->realParameterData);
 
   for(i=0; i < modelData->nParametersIntegerArray; i++) {
     freeVarInfo(&modelData->integerParameterData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->integerParameterData);
 
   for(i=0; i < modelData->nParametersBooleanArray; i++) {
     freeVarInfo(&modelData->booleanParameterData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->booleanParameterData);
 
   for(i=0; i < modelData->nParametersStringArray; i++) {
     freeVarInfo(&modelData->stringParameterData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->stringParameterData);
 
   // Sensitivity
   for(i=0; i < modelData->nSensitivityVars; i++) {
     freeVarInfo(&modelData->realSensitivityData[i].info);
   }
-  omc_alloc_interface.free_uncollectable(modelData->realSensitivityData);
 
   // Alias Variables
   if (modelData->realAlias != NULL) {
     for(i=0; i < modelData->nAliasRealArray; i++) {
       freeVarInfo(&modelData->realAlias[i].info);
     }
-    omc_alloc_interface.free_uncollectable(modelData->realAlias);
   }
 
   if (modelData->integerAlias != NULL) {
     for(i=0; i < modelData->nAliasIntegerArray; i++) {
       freeVarInfo(&modelData->integerAlias[i].info);
     }
-    omc_alloc_interface.free_uncollectable(modelData->integerAlias);
   }
 
   if (modelData->booleanAlias != NULL) {
     for(i=0; i < modelData->nAliasBooleanArray; i++) {
       freeVarInfo(&modelData->booleanAlias[i].info);
     }
-    omc_alloc_interface.free_uncollectable(modelData->booleanAlias);
   }
 
   if (modelData->stringAlias != NULL) {
     for(i=0; i < modelData->nAliasStringArray; i++) {
       freeVarInfo(&modelData->stringAlias[i].info);
     }
-    omc_alloc_interface.free_uncollectable(modelData->stringAlias);
   }
+
+  freeModelDataVarArrays(modelData);
+}
+
+/**
+ * @brief Free the var data arrays allocated by `allocModelDataVars`.
+ *
+ * Leaves the VAR_INFO strings alone. Use this instead of `freeModelDataVars`
+ * when the strings were not allocated by `read_var_info`, e.g. for FMUs, where
+ * `read_input_fmu` points them at string literals in the generated code.
+ *
+ * @param modelData   Pointer to model data.
+ */
+void freeModelDataVarArrays(MODEL_DATA* modelData)
+{
+  // Variables
+  omc_alloc_interface.free_uncollectable(modelData->realVarsData);
+  omc_alloc_interface.free_uncollectable(modelData->integerVarsData);
+  omc_alloc_interface.free_uncollectable(modelData->booleanVarsData);
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
+  omc_alloc_interface.free_uncollectable(modelData->stringVarsData);
+#endif
+
+  // Parameters
+  omc_alloc_interface.free_uncollectable(modelData->realParameterData);
+  omc_alloc_interface.free_uncollectable(modelData->integerParameterData);
+  omc_alloc_interface.free_uncollectable(modelData->booleanParameterData);
+  omc_alloc_interface.free_uncollectable(modelData->stringParameterData);
+
+  // Sensitivity
+  omc_alloc_interface.free_uncollectable(modelData->realSensitivityData);
+
+  // Alias Variables (not allocated for FMUs, see `allocModelDataVars`)
+  omc_alloc_interface.free_uncollectable(modelData->realAlias);
+  omc_alloc_interface.free_uncollectable(modelData->integerAlias);
+  omc_alloc_interface.free_uncollectable(modelData->booleanAlias);
+  omc_alloc_interface.free_uncollectable(modelData->stringAlias);
 }
 
 /**
@@ -1286,7 +1310,6 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 void deInitializeDataStruc(DATA *data)
 {
   size_t i = 0;
-  int needToFree = !data->callback->read_input_fmu;
 
   /* prepare RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++)
@@ -1301,7 +1324,11 @@ void deInitializeDataStruc(DATA *data)
   omc_alloc_interface.free_uncollectable(data->localData);
   freeRingBuffer(data->simulationData);
 
-  if (needToFree) {
+  if (data->callback->read_input_fmu) {
+    /* FMU: `read_input_fmu` points the VAR_INFO strings at literals in the generated code,
+     * but the arrays were still allocated by `allocModelDataVars` in `fmi2Instantiate`. */
+    freeModelDataVarArrays(data->modelData);
+  } else {
     freeModelDataVars(data->modelData);
   }
 

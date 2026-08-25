@@ -1038,6 +1038,7 @@ fmi2Status fmi2Terminate(fmi2Component c)
 fmi2Status fmi2Reset(fmi2Component c)
 {
   ModelInstance* comp = (ModelInstance *)c;
+  modelica_boolean modelDataVarsFreed = FALSE;
   if (invalidState(comp, "fmi2Reset", model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Reset")
@@ -1068,12 +1069,20 @@ fmi2Status fmi2Reset(fmi2Component c)
 #endif
     /* free data struct */
     deInitializeDataStruc(comp->fmuData);
+    modelDataVarsFreed = TRUE;
   }
 
   /* Initialize modelData */
   omc_useStream[OMC_LOG_STDOUT] = 1;
   omc_useStream[OMC_LOG_ASSERT] = 1;
   fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
+  if (modelDataVarsFreed) {
+    /* deInitializeDataStruc freed the var data arrays; re-allocate them before they are
+     * initialized and filled again, mirroring fmi2Instantiate. */
+    allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
+    scalarAllocArrayAttributes(comp->fmuData->modelData);
+    calculateAllScalarLength(comp->fmuData->modelData);
+  }
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   initializeDataStruc(comp->fmuData, comp->threadData);
 
