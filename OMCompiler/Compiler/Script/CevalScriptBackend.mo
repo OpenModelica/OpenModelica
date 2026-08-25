@@ -4409,6 +4409,7 @@ protected
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   String FMUType = inFMUType;
+  Boolean isWasmFMU = isWasmFMUExport(FMUVersion, platforms);
 algorithm
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
@@ -4449,12 +4450,25 @@ algorithm
     defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
     simSettings := convertSimulationOptionsToSimCode(defaultSimOpt);
   end if;
+  // The wasm FMU export uses the wasm-jit code generator, as buildModelFMU does;
+  // the flag change is reverted by translateModelFMU's saveFlags wrapper.
+  if isWasmFMU then
+    FlagsUtil.setConfigString(Flags.SIMCODE_TARGET, "wasm-jit");
+    FlagsUtil.setConfigString(Flags.FMU_NATIVE_PLATFORMS, stringDelimitList(List.select(platforms, isNotWasmPlatform), ","));
+  end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
 
   try
-    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName),
+    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName, isWasmFMU),
                                             cache, inEnv, className, filenameprefix, true, false, true, SOME(simSettings));
+    // A wasm translation wrote no FMU: it lowered the model kernel and kept it,
+    // so force its JIT compile (and resolve its external "C") here, as
+    // buildModel's compile phase does. The model is then ready to simulate and
+    // the buildModelFMU that follows only links and renders.
+    if success and isWasmFMU then
+      CodegenWasmJit.finishCompile(filenameprefix);
+    end if;
     outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
     success :=false;
@@ -4650,7 +4664,9 @@ protected function fmuMethodToSimulationFlag
    Only a method the FMU can integrate with: C's `FMI2CS_initializeSolverData`
    takes `euler`/`cvode` and rejects the rest at instantiation (so a model's own
    `dassl` default must not become `s:dassl`); a wasm FMU serves the whole
-   wasm-jit driver set. An unaccepted method is left out — the FMU keeps euler."
+   wasm-jit driver set. An unaccepted method is left out, and the FMU falls back
+   to what it defaults to without one: euler for C, the model's own method (else
+   DASKR) for wasm."
   input String method;
   input Boolean isWasmFMU;
 protected
@@ -4775,7 +4791,7 @@ protected
   String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
   String fmuTargetName;
   SimCode.SimulationSettings simSettings;
-  list<String> libs;
+  list<String> libs = {} "the reuse path translates nothing, so nothing reports libraries";
   Boolean isWindows;
   Boolean needs3rdPartyLibs;
   Integer platformIndex, platformCount;
@@ -4786,6 +4802,8 @@ protected
   Boolean wasmRequested = listMember("wasm", platforms);
   Boolean wasmTarget = Config.simCodeTarget() == "wasm-jit" or Config.simCodeTarget() == "wasm";
   Boolean isWasmFMU = isWasmFMUExport(FMUVersion, platforms);
+  Option<SimCode.SimCode> keptSimCode;
+  SimCode.SimCode keptTranslation;
   // Reached through the target, the caller still wants an FMU the ordinary
   // tooling can load, so it gets this machine's platform too.
   list<String> nativePlatforms = if wasmRequested then List.select(platforms, isNotWasmPlatform) else {"native"};
@@ -4841,9 +4859,22 @@ algorithm
   end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
+  // A translateModelFMU of this model, this FMI version and this kind of
+  // interface, off the program still loaded and under the flags still set, has
+  // already done the translation: render the metadata and link the adapter onto
+  // the kernel it left rather than translating again. The flags are read after
+  // the munging above so both phases fingerprint the same state.
+  keptSimCode := if isWasmFMU then SimCodeMain.fmuTranslationFor(FMUVersion, FMUType, className, SOME(simSettings)) else NONE();
   try
-    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName),
-                                            cache, inEnv, className, filenameprefix, true, false, true, SOME(simSettings));
+    if isSome(keptSimCode) then
+      SOME(keptTranslation) := keptSimCode;
+      Error.addCompilerNotification("Exporting the translation translateModelFMU already made; the model is not translated again.");
+      SimCodeMain.emitWasmFMU(keptTranslation, FMUVersion, FMUType, SymbolTable.getAbsyn());
+      success := true;
+    else
+      (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName, false),
+                                              cache, inEnv, className, filenameprefix, true, false, true, SOME(simSettings));
+    end if;
     true := success;
     outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
@@ -4865,9 +4896,11 @@ algorithm
 
   // wasm FMU: CodegenWasmJit.emitMeFmu already wrote the self-contained
   // <name>.fmu (component linked in Rust, ZIP assembled in Rust) — nothing to
-  // build or zip. Just confirm it exists.
+  // build or zip. Just confirm it exists. With --fmuDirectory it is an unzipped
+  // directory of that name instead.
   if isWasmFMU then
-    if not System.regularFileExists(fmuTargetName + ".fmu") then
+    if not (System.regularFileExists(fmuTargetName + ".fmu")
+            or (Flags.getConfigBool(Flags.FMU_DIRECTORY) and System.directoryExists(fmuTargetName + ".fmu"))) then
       Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"wasm FMU export produced no " + fmuTargetName + ".fmu"});
       outValue := Values.STRING("");
       return;

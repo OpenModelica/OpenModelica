@@ -42,6 +42,15 @@ thread_local! {
     pub static optionSimCode: RefCell<Option<openmodelica_simcode_types::SimCode::SimCode>> =
         const { RefCell::new(None) };
 
+    // Index 34 — fmi3VariableAliasCache
+    //
+    // Value reference -> the FMI 3.0 <Alias> members nested under the variable
+    // with that value reference. Live only while one modelDescription.xml is
+    // being written; source: SimCodeUtil.cacheFMI3VariableAliases.
+    pub static fmi3VariableAliasCache: RefCell<
+        Option<metamodelica::Array<Arc<metamodelica::List<openmodelica_simcode_types::SimCodeVar::SimVar>>>>,
+    > = const { RefCell::new(None) };
+
     // Index 26 — interactiveCache
     //
     // Declared in `openmodelica_backend_main/src/Globals.rs`: its value type

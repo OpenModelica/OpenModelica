@@ -147,7 +147,9 @@ openmodelica_codegen_fmu_omsi/Cargo.toml
 openmodelica_codegen_graphml/Cargo.toml
 openmodelica_codegen_wasm_jit/Cargo.toml
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/artifact.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/datarecon.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/dylink_fmi.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/linearize.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/native_fmu.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/optimization.rs
@@ -240,7 +242,10 @@ openmodelica_fmi/src/platform.rs
 openmodelica_fmi/tests/model_description.rs
 openmodelica_fmi3_wasm/Cargo.lock
 openmodelica_fmi3_wasm/Cargo.toml
+openmodelica_fmi3_wasm/src/capi.rs
 openmodelica_fmi3_wasm/src/lib.rs
+openmodelica_fmi3_wasm/src/sim_run.rs
+openmodelica_fmi3_wasm/wit/deps/om-sim/simulation.wit
 openmodelica_fmi3_wasm/wit/fmi3-callbacks.wit
 openmodelica_fmi3_wasm/wit/fmi3-co-simulation.wit
 openmodelica_fmi3_wasm/wit/fmi3-common.wit
@@ -253,6 +258,7 @@ openmodelica_fmi_driver/examples/fmuprobe.rs
 openmodelica_fmi_driver/examples/fmusim.rs
 openmodelica_fmi_driver/src/api.rs
 openmodelica_fmi_driver/src/common.rs
+openmodelica_fmi_driver/src/component.rs
 openmodelica_fmi_driver/src/cs.rs
 openmodelica_fmi_driver/src/expr.rs
 openmodelica_fmi_driver/src/ffi.rs

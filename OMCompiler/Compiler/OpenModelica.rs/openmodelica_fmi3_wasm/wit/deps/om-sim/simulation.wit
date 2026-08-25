@@ -1,0 +1,26 @@
+package om:sim@0.1.0;
+
+// An OpenModelica extension, not part of fmi-ls-wasm: the same component that
+// serves the FMI 3.0 interfaces also carries the model's own simulation
+// runtime, so one artifact can be run as a plain simulation, as Model Exchange
+// and as Co-Simulation without being translated three times.
+interface simulation {
+  record run-result {
+    /// The result file (`.mat` / `.plt`); empty for `-noemit` and
+    /// `outputFormat="empty"`.
+    file: list<u8>,
+    /// `-l`'s linearized model: the file name and its content.
+    linear-file: option<tuple<string, string>>,
+    /// Output rows written.
+    rows: u32,
+    /// The integration method the run actually used.
+    solver: string,
+  }
+
+  /// Run the whole simulation in-wasm, with the driver a wasm-jit simulation
+  /// uses. `args` is the runtime flag list a simulation executable would be
+  /// given (`-s=dassl`, `-lv=LOG_STATS`, …), without the program name; the log
+  /// goes to stdout, as an FMU's does. The result file is returned rather than
+  /// written, so the caller decides where it lands.
+  run: func(args: list<string>) -> result<run-result, string>;
+}

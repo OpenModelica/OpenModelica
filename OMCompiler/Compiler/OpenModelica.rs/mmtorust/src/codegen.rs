@@ -12230,7 +12230,9 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         // lives in openmodelica_simcode_types, but the root accessor stays in
         // openmodelica_backend (which depends on simcode_types): the types crate
         // is datatype-only and must not own mutable global state.
-        "symbolTable" | "rewriteRulesIndex" | "optionSimCode" => {
+        // fmi3VariableAliasCache holds SimCodeVar.SimVar lists; same reasoning as
+        // optionSimCode — the types crate must not own mutable global state.
+        "symbolTable" | "rewriteRulesIndex" | "optionSimCode" | "fmi3VariableAliasCache" => {
             Some("openmodelica_backend")
         }
         // openmodelica_backend_main — the interactive cache holds a tuple
@@ -12239,7 +12241,9 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         // root cannot be declared in openmodelica_backend (which does not, and
         // must not, depend on backend_main); its only accessor is also in
         // backend_main, so place the thread_local there.
-        "interactiveCache" => Some("openmodelica_backend_main"),
+        // fmuTranslation holds a SimCodeMain.FmuTranslation, a uniontype defined
+        // in SimCode/SimCodeMain.mo, which is in this crate.
+        "interactiveCache" | "fmuTranslation" => Some("openmodelica_backend_main"),
         _ => None,
     };
     let pkg_top = grc.pkg.split('.').next().unwrap_or(&grc.pkg);

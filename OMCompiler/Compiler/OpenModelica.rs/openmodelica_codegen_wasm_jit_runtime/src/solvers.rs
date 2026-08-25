@@ -213,7 +213,6 @@ pub(crate) fn nls_use_sparse(size: usize, nnz: usize) -> bool {
         || size > NLSS_MIN_SIZE.load(Ordering::Relaxed) as usize
 }
 
-#[cfg(any(feature = "session", feature = "standalone"))]
 pub(crate) fn apply_flags(f: &openmodelica_sim_meta::simflags::SimFlags) {
     let (nls, nls_ls, ls, lss) = f.solver_codes();
     rt_set_solvers(nls, nls_ls, ls, lss);

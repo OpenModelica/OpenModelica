@@ -57,6 +57,26 @@ mod sundials;
 #[cfg(sundials)]
 mod lis;
 
+pub use sysstats::enable as enable_sys_stats;
+
+/// Install a run's solver selectors, Newton tuning and homotopy settings from
+/// parsed simulation flags. The `rt_set_*` exports are how a *host* driver says
+/// this; a caller that drives the model from inside the module (the FMI3
+/// adapter's simulation interface) has the parsed flags instead.
+pub fn apply_sim_flags(f: &openmodelica_sim_meta::simflags::SimFlags) {
+    solvers::apply_flags(f);
+}
+
+/// What this runtime build can serve, for `simflags::check`.
+pub fn sim_capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
+    sundials::capabilities()
+}
+
+/// The iteration-variable names `-lv=LOG_NLS` prints, which only the metadata has.
+pub fn set_nls_var_names(set: alloc::vec::Vec<(u32, alloc::vec::Vec<String>)>) {
+    nls::set_var_names(set);
+}
+
 use alloc::format;
 use alloc::string::String;
 use core::alloc::{GlobalAlloc, Layout};

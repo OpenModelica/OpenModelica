@@ -77,6 +77,16 @@ constant Integer packageIndexCacheIndex = 29;
 constant Integer sharedLibraryCacheIndex = 30;
 constant Integer backendInterface = 31;
 constant Integer backendCevalInterface = 32;
+// The FMI index -> value reference map an FMI 3.0 <ModelStructure> is written
+// through (SimCodeUtil.cacheFMI3ValueReferences); live only while one is.
+constant Integer fmi3ValueReferenceCache = 33;
+// The value reference -> nested <Alias> members map an FMI 3.0 <ModelVariables>
+// is written through (SimCodeUtil.cacheFMI3VariableAliases); same lifetime.
+constant Integer fmi3VariableAliasCache = 34;
+// The FMU-grade translation translateModelFMU kept, which the buildModelFMU that
+// follows exports instead of translating the model again:
+// SOME((simCode, FMUVersion, FMUType)). Lives until the next translation.
+constant Integer fmuTranslation = 35;
 
 // indexes in System.tick
 // ----------------------
@@ -113,6 +123,9 @@ algorithm
   setGlobalRoot(instNFNodeCacheIndex, {});
   setGlobalRoot(instNFLookupCacheIndex, {});
   setGlobalRoot(sharedLibraryCacheIndex, {});
+  setGlobalRoot(fmi3ValueReferenceCache, NONE());
+  setGlobalRoot(fmi3VariableAliasCache, NONE());
+  setGlobalRoot(fmuTranslation, NONE());
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

@@ -32,6 +32,14 @@ thread_local! {
         crate::Interactive::GraphicEnvCache,
     )>>>> = const { RefCell::new(None) };
 
+    // Index 35 — fmuTranslation
+    //
+    // The FMU-grade translation translateModelFMU kept, which the buildModelFMU
+    // that follows exports instead of translating the model again. Its type is
+    // SimCodeMain.FmuTranslation, defined in this crate.
+    pub static fmuTranslation: RefCell<Option<crate::SimCodeMain::FmuTranslation>> =
+        const { RefCell::new(None) };
+
     // Index 10 — instNFInstCacheIndex
     //
     // NF instantiation cache (instance path → SCode elements, name, InstNode).

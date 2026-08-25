@@ -11,7 +11,6 @@ pub extern "C" fn rt_sundials_available() -> i32 {
 }
 
 /// What this build can serve, for `simflags::check`.
-#[cfg(any(feature = "session", feature = "standalone"))]
 pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
     openmodelica_sim_meta::simflags::Capabilities {
         klu: cfg!(sundials),

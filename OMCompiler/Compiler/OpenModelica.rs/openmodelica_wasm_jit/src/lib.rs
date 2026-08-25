@@ -17,6 +17,12 @@ pub static FMI3_ME_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fm
 /// substitutes for one — cheaper than a fourth adapter blob in every omc.
 pub static FMI3_MECS_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_adapter.wasm"));
 
+/// The me_cs adapter as a plain dylink library exporting the FMI 3.0 C API
+/// (`om_fmi3*`), for the artifact form a host links itself: being fixed, it is
+/// compiled once into the on-disk AOT cache instead of into every component.
+pub static FMI3_MECS_CAPI_ADAPTER: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_mecs_capi_adapter.wasm"));
+
 /// The me_cs world with CVODE/IDA in the embedded driver, for an FMU exported with
 /// `method="cvode"`/`"ida"`; the calls are imports
 /// `openmodelica_wasi_libc::SUNDIALS_DYLINK` resolves.

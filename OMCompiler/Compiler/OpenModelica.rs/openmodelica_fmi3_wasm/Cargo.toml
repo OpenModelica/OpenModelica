@@ -28,6 +28,10 @@ crate-type = ["cdylib"]
 wit-bindgen = { version = "0.43", default-features = false, features = ["macros"] }
 openmodelica_codegen_wasm_jit_runtime = { path = "../openmodelica_codegen_wasm_jit_runtime", default-features = false }
 openmodelica_sim_meta = { path = "../openmodelica_sim_meta", default-features = false }
+# The result-file serializers, for the `om:sim/simulation` export: the same
+# writers the standalone export and the host use, so the three cannot drift.
+openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
+openmodelica_plt_writer = { path = "../openmodelica_plt_writer" }
 
 [profile.release]
 opt-level = "s"
@@ -46,6 +50,11 @@ strip = true
 default = ["me"]
 me = []
 cs = []
+# Export the FMI 3.0 C API from the core module (src/capi.rs) beside the
+# component's WIT exports, for a host that links this module as a dylink library
+# instead of composing it into a per-model component — and can then compile it
+# once and keep the `.cwasm`, as it already does for the simulation runtime.
+capi = []
 # CVODE/IDA for the embedded driver, as imports the SUNDIALS side module resolves. A
 # second `cs`/`me_cs` blob is built with it, so an FMU that does not ask for those
 # solvers links neither the calls nor the module.

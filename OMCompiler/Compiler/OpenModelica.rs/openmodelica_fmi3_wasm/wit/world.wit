@@ -81,6 +81,9 @@ world model-exchange-and-co-simulation-fmu {
   export common;
   export model-exchange;
   export co-simulation;
+
+  /// The model's own simulation runtime (OpenModelica extension).
+  export om:sim/simulation@0.1.0;
 }
 
 // ── Scheduled Execution FMU ───────────────────────────────────────────────────

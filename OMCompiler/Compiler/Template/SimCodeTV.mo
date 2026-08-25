@@ -1465,6 +1465,24 @@ package SimCodeUtil
     output String outValueReference;
   end getFMI3ValueReferenceFromFMIIndex;
 
+  function cacheFMI3ValueReferences
+    input SimCode.SimCode simCode;
+    output String dummy;
+  end cacheFMI3ValueReferences;
+
+  function clearFMI3ValueReferences
+    output String dummy;
+  end clearFMI3ValueReferences;
+
+  function cacheFMI3VariableAliases
+    input SimCode.SimCode simCode;
+    output String dummy;
+  end cacheFMI3VariableAliases;
+
+  function clearFMI3VariableAliases
+    output String dummy;
+  end clearFMI3VariableAliases;
+
   function numScalarElems
     input list<SimCodeVar.SimVar> vars;
     output Integer n;
@@ -1503,7 +1521,7 @@ package SimCodeUtil
 
   function getFMI3VariableAliases
     input SimCode.SimCode simCode;
-    input DAE.ComponentRef canonical;
+    input SimCodeVar.SimVar canonical;
     output list<SimCodeVar.SimVar> aliases;
   end getFMI3VariableAliases;
 

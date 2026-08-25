@@ -14877,6 +14877,60 @@ algorithm
   outValueReference := String(offset + localRef);
 end getFMI3ValueReference;
 
+protected function fmi3ModelVariableLists
+  "The variable lists in the order the FMI indices were handed out."
+  input SimCodeVar.SimVars vars;
+  output list<list<SimCodeVar.SimVar>> allLists;
+algorithm
+  allLists := {vars.stateVars, vars.derivativeVars, vars.algVars, vars.discreteAlgVars,
+               vars.intAlgVars, vars.boolAlgVars, vars.stringAlgVars,
+               vars.inputVars, vars.outputVars,
+               vars.paramVars, vars.intParamVars, vars.boolParamVars, vars.stringParamVars,
+               vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars};
+end fmi3ModelVariableLists;
+
+public function cacheFMI3ValueReferences
+  "Build the FMI index -> value reference table the <ModelStructure> emitter reads,
+   and keep it for as long as one is being written (see clearFMI3ValueReferences).
+
+   Without it every unknown and every one of its dependencies searches all
+   seventeen variable lists for its index, which on a model with thousands of
+   variables is most of what exporting an FMI 3.0 FMU costs: FullRobot spent 15 of
+   its 33 export seconds in that search."
+  input SimCode.SimCode simCode;
+  // Susan calls this for its effect; the empty string is what it interpolates.
+  output String dummy = "";
+protected
+  list<list<SimCodeVar.SimVar>> allLists = fmi3ModelVariableLists(simCode.modelInfo.vars);
+  array<String> table;
+  Integer n = 0, i;
+algorithm
+  for lst in allLists loop
+    for v in lst loop
+      n := intMax(n, getVariableFMIIndex(v));
+    end for;
+  end for;
+  // Index 0 is no variable's, so an unmapped entry keeps its own number as the
+  // uncached lookup did.
+  table := arrayCreate(n, "");
+  for lst in allLists loop
+    for v in lst loop
+      i := getVariableFMIIndex(v);
+      if i > 0 and i <= n and stringEmpty(arrayGet(table, i)) then
+        arrayUpdate(table, i, getFMI3ValueReference(v, simCode));
+      end if;
+    end for;
+  end for;
+  setGlobalRoot(Global.fmi3ValueReferenceCache, SOME(table));
+end cacheFMI3ValueReferences;
+
+public function clearFMI3ValueReferences
+  "Drop what cacheFMI3ValueReferences built, so the next model builds its own."
+  output String dummy = "";
+algorithm
+  setGlobalRoot(Global.fmi3ValueReferenceCache, NONE());
+end clearFMI3ValueReferences;
+
 public function getFMI3ValueReferenceFromFMIIndex
   "Maps an FMI variable index (the 1-based position in the ModelVariables list as
    stored in the FmiModelStructure unknowns/dependencies) to the globally unique
@@ -14890,17 +14944,20 @@ public function getFMI3ValueReferenceFromFMIIndex
   input Integer inFMIIndex;
   output String outValueReference;
 protected
-  SimCode.ModelInfo modelInfo = inSimCode.modelInfo;
-  SimCodeVar.SimVars vars = modelInfo.vars;
-  list<list<SimCodeVar.SimVar>> allLists;
+  SimCodeVar.SimVars vars = inSimCode.modelInfo.vars;
+  Option<array<String>> cache;
+  array<String> table;
   Option<SimCodeVar.SimVar> found = NONE();
 algorithm
-  allLists := {vars.stateVars, vars.derivativeVars, vars.algVars, vars.discreteAlgVars,
-               vars.intAlgVars, vars.boolAlgVars, vars.stringAlgVars,
-               vars.inputVars, vars.outputVars,
-               vars.paramVars, vars.intParamVars, vars.boolParamVars, vars.stringParamVars,
-               vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars};
-  for lst in allLists loop
+  cache := getGlobalRoot(Global.fmi3ValueReferenceCache);
+  if isSome(cache) then
+    SOME(table) := cache;
+    if inFMIIndex > 0 and inFMIIndex <= arrayLength(table) and not stringEmpty(arrayGet(table, inFMIIndex)) then
+      outValueReference := arrayGet(table, inFMIIndex);
+      return;
+    end if;
+  end if;
+  for lst in fmi3ModelVariableLists(vars) loop
     for v in lst loop
       if intEq(getVariableFMIIndex(v), inFMIIndex) then
         found := SOME(v);
@@ -15732,28 +15789,119 @@ algorithm
   end match;
 end isFMI3NestableAlias;
 
-public function getFMI3VariableAliases
-  "Return the SimVars that are FMI 3.0 <Alias> members of the variable `canonical`:
-   the nestable (see isFMI3NestableAlias) positive aliases whose alias target is
-   `canonical`. FMI 3.0 represents these as <Alias> child elements sharing the
-   canonical variable's valueReference, rather than as separate variables."
+protected function fmi3AliasTargetValueReference
+  "The value reference the nestable alias `v` shares with its target, i.e. the
+   value reference of the canonical variable it is an <Alias> of. `None` when the
+   target is not a variable this FMU exports."
+  input SimCodeVar.SimVar v;
   input SimCode.SimCode simCode;
-  input DAE.ComponentRef canonical;
+  output Option<Integer> vr;
+algorithm
+  vr := match v.aliasvar
+    local
+      DAE.ComponentRef cr;
+      Integer local_;
+    case SimCodeVar.ALIAS(varName = cr)
+      then match AvlTreeCRToInt.getOpt(simCode.valueReferences, cr)
+        case SOME(local_) then SOME(getFMI3TypeOffset(v.type_, simCode.modelInfo) + local_);
+        else NONE();
+      end match;
+    else NONE();
+  end match;
+end fmi3AliasTargetValueReference;
+
+public function cacheFMI3VariableAliases
+  "Build the value reference -> <Alias> members table getFMI3VariableAliases reads,
+   and keep it for as long as one modelDescription.xml is being written (see
+   clearFMI3VariableAliases).
+
+   Without it every variable emitted searches every alias the model has for the
+   ones nested under it, which is quadratic and is what rendering an FMI 3.0
+   modelDescription.xml costs: 14 of FullRobot's 24 export seconds."
+  input SimCode.SimCode simCode;
+  // Susan calls this for its effect; the empty string is what it interpolates.
+  output String dummy = "";
+protected
+  SimCodeVar.SimVars vars = simCode.modelInfo.vars;
+  list<list<SimCodeVar.SimVar>> aliasLists =
+    {vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars};
+  array<list<SimCodeVar.SimVar>> table;
+  Integer n = 0, vr;
+algorithm
+  // Two passes: the table is indexed by value reference, whose range is only
+  // known once every alias has been resolved.
+  for lst in aliasLists loop
+    for v in lst loop
+      if isFMI3NestableAlias(v) then
+        n := match fmi3AliasTargetValueReference(v, simCode) case SOME(vr) then intMax(n, vr + 1); else n; end match;
+      end if;
+    end for;
+  end for;
+  table := arrayCreate(n, {});
+  for lst in aliasLists loop
+    for v in lst loop
+      if isFMI3NestableAlias(v) then
+        _ := match fmi3AliasTargetValueReference(v, simCode)
+          case SOME(vr)
+            algorithm arrayUpdate(table, vr + 1, v :: arrayGet(table, vr + 1)); then ();
+          else ();
+        end match;
+      end if;
+    end for;
+  end for;
+  for i in 1:n loop
+    arrayUpdate(table, i, listReverse(arrayGet(table, i)));
+  end for;
+  setGlobalRoot(Global.fmi3VariableAliasCache, SOME(table));
+end cacheFMI3VariableAliases;
+
+public function clearFMI3VariableAliases
+  "Drop what cacheFMI3VariableAliases built, so the next model builds its own."
+  output String dummy = "";
+algorithm
+  setGlobalRoot(Global.fmi3VariableAliasCache, NONE());
+end clearFMI3VariableAliases;
+
+public function getFMI3VariableAliases
+  "Return the SimVars that are FMI 3.0 <Alias> members of `canonical`: the nestable
+   (see isFMI3NestableAlias) positive aliases whose alias target is `canonical`.
+   FMI 3.0 represents these as <Alias> child elements sharing the canonical
+   variable's valueReference, rather than as separate variables."
+  input SimCode.SimCode simCode;
+  input SimCodeVar.SimVar canonical;
   output list<SimCodeVar.SimVar> aliases = {};
 protected
   SimCodeVar.SimVars vars = simCode.modelInfo.vars;
-  list<SimCodeVar.SimVar> all;
+  Option<array<list<SimCodeVar.SimVar>>> cached;
+  array<list<SimCodeVar.SimVar>> table;
+  Integer vr;
 algorithm
-  all := List.flatten({vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars});
-  for v in all loop
-    if isFMI3NestableAlias(v) then
-      _ := match v.aliasvar
-        local DAE.ComponentRef cr;
-        case SimCodeVar.ALIAS(varName = cr) guard ComponentReferenceBasics.crefEqualNoStringCompare(cr, canonical)
-          algorithm aliases := v :: aliases; then ();
-        else ();
-      end match;
+  cached := getGlobalRoot(Global.fmi3VariableAliasCache);
+  if isSome(cached) then
+    SOME(table) := cached;
+    vr := getFMI3TypeOffset(canonical.type_, simCode.modelInfo)
+          + (match AvlTreeCRToInt.getOpt(simCode.valueReferences, canonical.name)
+             local Integer local_;
+             case SOME(local_) then local_;
+             else -1;
+             end match);
+    if vr >= 0 and vr < arrayLength(table) then
+      aliases := arrayGet(table, vr + 1);
     end if;
+    return;
+  end if;
+  for lst in {vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars} loop
+    for v in lst loop
+      if isFMI3NestableAlias(v) then
+        _ := match v.aliasvar
+          local DAE.ComponentRef cr;
+          case SimCodeVar.ALIAS(varName = cr)
+            guard ComponentReferenceBasics.crefEqualNoStringCompare(cr, canonical.name)
+            algorithm aliases := v :: aliases; then ();
+          else ();
+        end match;
+      end if;
+    end for;
   end for;
   aliases := listReverse(aliases);
 end getFMI3VariableAliases;

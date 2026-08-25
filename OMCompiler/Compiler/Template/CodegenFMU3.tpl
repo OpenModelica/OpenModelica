@@ -107,12 +107,27 @@ case SIMCODE(__) then
     </LogCategories>
     >> %>
     <%DefaultExperiment3(simulationSettingsOpt)%>
-    <%fmiModelVariables3(simCode, FMUType)%>
-    <%modelStructure3(simCode, modelStructure)%>
+    <%fmiModelVariablesAndStructure3(simCode, FMUType, modelStructure)%>
     <%fmiOpenModelicaAnnotations(simCode)%>
   </fmiModelDescription>
   >>
 end fmiModelDescription;
+
+template fmiModelVariablesAndStructure3(SimCode simCode, String FMUType, Option<FmiModelStructure> modelStructure)
+ "<ModelVariables> and <ModelStructure>, with the two tables they are looked up
+  through built for the length of them: each variable asks which aliases nest
+  under it, and each structure entry asks which value reference its index is, and
+  both answers are a search of every variable the model has without a table."
+::=
+  let _ = SimCodeUtil.cacheFMI3VariableAliases(simCode)
+  let variables = fmiModelVariables3(simCode, FMUType)
+  let structure = modelStructure3(simCode, modelStructure)
+  let _ = SimCodeUtil.clearFMI3VariableAliases()
+  <<
+  <%variables%>
+  <%structure%>
+  >>
+end fmiModelVariablesAndStructure3;
 
 template fmiOpenModelicaAnnotations(SimCode simCode)
  "OpenModelica vendor annotations (<Figures> and <Visualization>) under one Tool
@@ -578,7 +593,7 @@ template AliasElements3(SimVar simVar, SimCode simCode)
 ::=
 match simVar
 case SIMVAR(__) then
-  match SimCodeUtil.getFMI3VariableAliases(simCode, name)
+  match SimCodeUtil.getFMI3VariableAliases(simCode, simVar)
   case {} then ''
   case aliases then (aliases |> a => AliasElement3(a) ;separator="\n")
 end AliasElements3;
@@ -723,12 +738,20 @@ template modelStructure3(SimCode simCode, Option<FmiModelStructure> fmiModelStru
 ::=
 match fmiModelStructure
 case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
+  // Every entry below looks its index up; without the table each lookup searches
+  // every variable the model has.
+  let _ = SimCodeUtil.cacheFMI3ValueReferences(simCode)
+  let outputs = ModelStructureOutputs3(simCode, fmistruct.fmiOutputs)
+  let derivatives = ModelStructureDerivatives3(simCode, fmistruct.fmiDerivatives)
+  let initials = ModelStructureInitialUnknowns3(simCode, fmistruct.fmiInitialUnknowns)
+  let indicators = EventIndicators3(simCode)
+  let _ = SimCodeUtil.clearFMI3ValueReferences()
   <<
   <ModelStructure>
-    <%ModelStructureOutputs3(simCode, fmistruct.fmiOutputs)%>
-    <%ModelStructureDerivatives3(simCode, fmistruct.fmiDerivatives)%>
-    <%ModelStructureInitialUnknowns3(simCode, fmistruct.fmiInitialUnknowns)%>
-    <%EventIndicators3(simCode)%>
+    <%outputs%>
+    <%derivatives%>
+    <%initials%>
+    <%indicators%>
   </ModelStructure>
   >>
 else
