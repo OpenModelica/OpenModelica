@@ -8,7 +8,6 @@
 - [2 Compile OpenModelica](#2-compile-openmodelica)
   - [2.1 CMake build](#21-cmake-build)
   - [2.2 Make build](#22-make-build)
-  - [2.3 CORBA support](#23-corba-support)
 - [3 Test Suite](#3-test-suite)
 - [4 General Notes](#4-general-notes)
 
@@ -85,14 +84,12 @@ First you need to install the dependencies:
 - [cmake](http://www.cmake.org)
 - hwloc (optional; queries the number of hardware CPU cores instead of logical
   CPU cores)
-- Java JRE (JDK is option; compiles the Java CORBA interface)
 - Lapack/BLAS
 - libhdf5 (optional part of the [MSL](https://github.com/modelica/Modelica)
   tables library supported by few other Modelica tools, so it does not do much)
 - libexpat (it's actually included in the FMIL sources which are included... but
   we do not compile those and it's better to use the OS-provided dynamically
   linked version)
-- omniORB or mico (optional; CORBA is used by OMOptim, OMShell, and OMPython)
 - libcurl (libcurl4-gnutls-dev)
 - ncurses, readline (optional, used by OMShell-terminal)
 - OpenSceneGraph (optional, used by OMEdit)
@@ -151,26 +148,6 @@ autoreconf --install # Or autoconf if you have autoconf <=2.69
 ./configure --prefix=/usr/local --disable-modelica3d
 make
 sudo make install
-```
-
-### 2.3 CORBA support
-
-If you plan to use mico corba with OMC you need to:
-
-- set the `PATH` to `path/to/mico/bin` (for the idl compiler and mico-cpp)
-- set the `LD_LIBRARY_PATH` to `path/to/installed/mico/lib` (for mico libs)
-- set the `PATH` (for executables: idl, mico-cpp and mico-config):
-
-  ```bash
-  export PATH=${PATH}:/path/to/installed/mico/bin
-  ```
-
-```bash
-autoreconf --install # Or autoconf if you have autoconf <=2.69
-# One of the following configure lines
-./configure --with-omniORB=/path/to/omniORB (if you want omc to use omniORB corba)
-./configure --with-CORBA=/path/to/mico (if you want omc to use mico corba)
-./configure --without-CORBA            (if you want omc to use sockets)
 ```
 
 ## 3 Test suite
