@@ -141,6 +141,11 @@ const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     // path. CodegenWasmJit is a placeholder for the future simulation target.
     "CodegenWasmJitFunctions",
     "CodegenWasmJit",
+    // All bodies are `external "C"` into `runtime/OMGraphics.cpp` (the Qt-free
+    // renderer for Modelica Icon annotations: SVG, PNG and the FMI 3.0
+    // <GraphicalRepresentation>); reimplemented in pure Rust in
+    // `openmodelica_omgraphics/src/OMGraphics.rs`.
+    "OMGraphics",
 ];
 
 /// How to propagate a Result error from a fallible sub-expression.
@@ -2058,18 +2063,13 @@ fn generate_lib_file(hier: &InstanceHierarchy<'_>, this_dir: &str, default_dir: 
         writeln!(out, "pub mod capi;").unwrap();
     }
     // Hand-written in-memory model-instance reference store + JSON walker
-    // (`openmodelica_backend_main/src/ModelInstanceReference.rs`), the Rust port
+    // (`openmodelica_util/src/ModelInstanceReference.rs`), the Rust port
     // of `runtime/ModelInstanceReference_omc.c` (issue #15219). `NFApi` calls
     // its `store`/`release` via `external_c_calls::external_c_impl_path`; OMEdit
     // calls its `ModelInstanceReference_get` + `omc_json_*` C ABI in-process. No
     // MetaModelica source of its own. Declared when present in this crate.
     if std::path::Path::new(&format!("{this_dir}/ModelInstanceReference.rs")).exists() {
         writeln!(out, "pub mod ModelInstanceReference;").unwrap();
-    }
-    // Hand-written `OMGraphics_*` external bodies, reached from generated
-    // `CevalScriptBackend.rs` via `external_c_calls::external_c_impl_path`.
-    if std::path::Path::new(&format!("{this_dir}/OMGraphicsExt.rs")).exists() {
-        writeln!(out, "pub mod OMGraphicsExt;").unwrap();
     }
     // (The typed OMEdit interface ABI lives in its own hand-maintained crate,
     // `openmodelica_scripting_qt`, written by `emit_scripting_api_qt`; it is not

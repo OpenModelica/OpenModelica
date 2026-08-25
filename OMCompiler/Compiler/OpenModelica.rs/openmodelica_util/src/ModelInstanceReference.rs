@@ -31,7 +31,7 @@ use std::ptr;
 use std::sync::Arc;
 
 use metamodelica::List;
-use openmodelica_util::JSON::JSON;
+use crate::JSON::JSON;
 
 /// Number of live references, matching `MODEL_INSTANCE_REFERENCE_MAX` in the C
 /// runtime. OMEdit fetches and releases each handle promptly, so a small fixed
@@ -66,6 +66,16 @@ pub fn store(json: Arc<JSON>) -> i32 {
         }
         0 /* no free slot */
     })
+}
+
+/// The stored value, or `None` for an invalid handle. Used by `OMGraphics`,
+/// which takes a handle just like the C runtime's entry points do.
+pub fn get(handle: i32) -> Option<Arc<JSON>> {
+    let i = handle - 1;
+    if i < 0 || i as usize >= MAX {
+        return None;
+    }
+    TABLE.with_borrow(|tbl| tbl[i as usize].clone())
 }
 
 /// Release a handle previously returned by [`store`]. Returns `true` on success,

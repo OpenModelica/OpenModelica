@@ -19,3 +19,5 @@ openmodelica_sim_meta/src/gbode/step.rs
 openmodelica_sim_meta/src/gbode/tableau.rs
 openmodelica_sim_meta/src/gbode/tableau_data.rs
 wasm/fmi-simulator/master.js
+openmodelica_backend_main/src/OMGraphicsExt.rs
+openmodelica_backend_main/src/ModelInstanceReference.rs

@@ -482,6 +482,7 @@ openmodelica_frontend_inst/src/lib.rs
 openmodelica_frontend_types/src/lib.rs
 openmodelica_nbackend/src/lib.rs
 openmodelica_nf_frontend/src/lib.rs
+openmodelica_omgraphics/src/lib.rs
 openmodelica_program_util/src/lib.rs
 openmodelica_script_util/src/lib.rs
 openmodelica_simcode_types/src/lib.rs

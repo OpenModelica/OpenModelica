@@ -663,6 +663,8 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("ModelInstanceReference_store", Infallible);
         m.insert("ModelInstanceReference_release", Infallible);
 
+        // OMGraphics.mo. The Rust port is a HANDWRITTEN_TOP_PACKAGE, so only
+        // the fallibility is read from here, not an impl path.
         m.insert("OMGraphics_graphicalRepresentationXMLFromHandle", Infallible);
         m.insert("OMGraphics_iconSVGFromHandle", Infallible);
         m.insert("OMGraphics_placedConnectorCount", Infallible);
@@ -787,20 +789,9 @@ pub fn external_c_impl_path(c_name: &str) -> Option<&'static str> {
         "DynLoad_executeFunction" => Some("crate::DynLoadExt::executeFunction"),
         // In-memory model-instance reference store (runtime/
         // ModelInstanceReference_omc.c, issue #15219). Hand-written in
-        // `openmodelica_backend_main/src/ModelInstanceReference.rs`; only
-        // `NFApi` (same crate) declares these externals, so `crate::` resolves.
-        "ModelInstanceReference_store" => Some("crate::ModelInstanceReference::store"),
-        "ModelInstanceReference_release" => Some("crate::ModelInstanceReference::release"),
-        // FMI 3.0 graphical representation (runtime/OMGraphics.cpp), hand-written
-        // in `openmodelica_backend_main/src/OMGraphicsExt.rs`. Only
-        // `CevalScriptBackend` (same crate) declares these externals.
-        "OMGraphics_iconSVGFromHandle" => Some("crate::OMGraphicsExt::iconSVGFromHandle"),
-        "OMGraphics_graphicalRepresentationXMLFromHandle" => Some("crate::OMGraphicsExt::graphicalRepresentationXMLFromHandle"),
-        "OMGraphics_placedConnectorCount" => Some("crate::OMGraphicsExt::placedConnectorCount"),
-        "OMGraphics_placedConnectorInfo" => Some("crate::OMGraphicsExt::placedConnectorInfo"),
-        "OMGraphics_placedConnectorIconSVG" => Some("crate::OMGraphicsExt::placedConnectorIconSVG"),
-        "OMGraphics_writeIconPNGFromHandle" => Some("crate::OMGraphicsExt::writeIconPNGFromHandle"),
-        "OMGraphics_writePlacedConnectorIconPNG" => Some("crate::OMGraphicsExt::writePlacedConnectorIconPNG"),
+        // `openmodelica_util/src/ModelInstanceReference.rs`.
+        "ModelInstanceReference_store" => Some("openmodelica_util::ModelInstanceReference::store"),
+        "ModelInstanceReference_release" => Some("openmodelica_util::ModelInstanceReference::release"),
         _ => None,
     }
 }

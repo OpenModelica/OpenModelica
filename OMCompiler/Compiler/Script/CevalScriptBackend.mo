@@ -120,6 +120,7 @@ import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
 import Obfuscate;
+import OMGraphics;
 import PackageManagement;
 import Parser;
 import Print;
@@ -4483,7 +4484,7 @@ protected function generateFMI3GraphicalRepresentation
   input String fmutmp;
   input String modelIdentifier;
 protected
-  Integer handle, nConn, i, pngOk;
+  Integer handle, nConn, i;
   String svg, grepr, modelName, taiDir, taiFile, content;
   String info, cname, ibase, sx1, sy1, sx2, sy2, csvg, tgr;
   list<String> parts;
@@ -4503,17 +4504,16 @@ algorithm
       taiDir := fmutmp + "/terminalsAndIcons/";
       taiFile := taiDir + "terminalsAndIcons.xml";
 
-      svg := OMGraphics_iconSVGFromHandle(handle, modelName);
-      grepr := OMGraphics_graphicalRepresentationXMLFromHandle(handle, 0.5);
-      nConn := OMGraphics_placedConnectorCount(handle);
+      svg := OMGraphics.iconSVGFromHandle(handle, modelName);
+      grepr := OMGraphics.graphicalRepresentationXMLFromHandle(handle, 0.5);
+      nConn := OMGraphics.placedConnectorCount(handle);
 
       // model icon -> terminalsAndIcons/icon.png (mandatory) + icon.svg (optional
       // companion). The fixed name "icon" is the FMI 3.0 convention for the FMU
       // icon "without terminals".
       if svg <> "" then
         Util.createDirectoryTree(taiDir);
-        pngOk := OMGraphics_writeIconPNGFromHandle(handle, modelName, taiDir + "icon.png");
-        if pngOk == 1 then
+        if OMGraphics.writeIconPNGFromHandle(handle, modelName, taiDir + "icon.png") then
           System.writeFile(taiDir + "icon.svg", svg);
         else
           // icon.png is mandatory for the <Icon> in <GraphicalRepresentation>;
@@ -4538,7 +4538,7 @@ algorithm
         // direction) is produced by SimCode from the flat model; here we only add
         // the graphics, matched to the existing <Terminal> by the connector name.
         for i in 0:nConn-1 loop
-          info := OMGraphics_placedConnectorInfo(handle, i);
+          info := OMGraphics.placedConnectorInfo(handle, i);
           parts := System.strtok(info, "\t"); // name, iconBaseName, x1, y1, x2, y2
           if listLength(parts) == 6 then
             cname := listGet(parts, 1);
@@ -4553,9 +4553,8 @@ algorithm
               // (mandatory) + <ibase>.svg (optional). iconBaseName is mandatory on
               // TerminalGraphicalRepresentation, so only emit the element when the
               // PNG was actually written (a dangling iconBaseName is invalid).
-              pngOk := OMGraphics_writePlacedConnectorIconPNG(handle, i, taiDir + ibase + ".png");
-              if pngOk == 1 then
-                csvg := OMGraphics_placedConnectorIconSVG(handle, i);
+              if OMGraphics.writePlacedConnectorIconPNG(handle, i, taiDir + ibase + ".png") then
+                csvg := OMGraphics.placedConnectorIconSVG(handle, i);
                 if csvg <> "" then
                   System.writeFile(taiDir + ibase + ".svg", csvg);
                 end if;
@@ -4642,71 +4641,6 @@ algorithm
     end if;
   end if;
 end insertBeforeTerminalClose;
-
-protected function OMGraphics_iconSVGFromHandle
-  "Render the model Icon (issue #15219 model-instance reference handle) to an SVG
-   document via the OMGraphics runtime library. Empty string if there is no icon."
-  input Integer handle;
-  input String modelName;
-  output String svg;
-  external "C" svg = OMGraphics_iconSVGFromHandle(handle, modelName) annotation(Library = "omcruntime");
-end OMGraphics_iconSVGFromHandle;
-
-protected function OMGraphics_graphicalRepresentationXMLFromHandle
-  "Build the FMI 3.0 <GraphicalRepresentation> element for the model Icon (issue
-   #15219 model-instance reference handle). Empty string if there is no icon."
-  input Integer handle;
-  input Real scaleToMm;
-  output String xml;
-  external "C" xml = OMGraphics_graphicalRepresentationXMLFromHandle(handle, scaleToMm) annotation(Library = "omcruntime");
-end OMGraphics_graphicalRepresentationXMLFromHandle;
-
-protected function OMGraphics_placedConnectorCount
-  "Number of top-level connector components that have a graphical placement (the
-   graphical ports of the model)."
-  input Integer handle;
-  output Integer n;
-  external "C" n = OMGraphics_placedConnectorCount(handle) annotation(Library = "omcruntime");
-end OMGraphics_placedConnectorCount;
-
-protected function OMGraphics_placedConnectorInfo
-  "Tab-separated graphical info for placed connector `index`:
-   name, iconBaseName, x1, y1, x2, y2 (placement bounding box in icon coordinates)."
-  input Integer handle;
-  input Integer index;
-  output String info;
-  external "C" info = OMGraphics_placedConnectorInfo(handle, index) annotation(Library = "omcruntime");
-end OMGraphics_placedConnectorInfo;
-
-protected function OMGraphics_placedConnectorIconSVG
-  "Render the connector-type icon (the port symbol) of placed connector `index`
-   to SVG. Empty string if it has no icon."
-  input Integer handle;
-  input Integer index;
-  output String svg;
-  external "C" svg = OMGraphics_placedConnectorIconSVG(handle, index) annotation(Library = "omcruntime");
-end OMGraphics_placedConnectorIconSVG;
-
-protected function OMGraphics_writeIconPNGFromHandle
-  "Rasterise the model Icon to a PNG and write it to `path` (FMI 3.0 requires a
-   PNG icon file). Returns 1 on success, 0 otherwise. PNG bytes are binary, so
-   the C side writes the file rather than returning it as a String."
-  input Integer handle;
-  input String modelName;
-  input String path;
-  output Integer ok;
-  external "C" ok = OMGraphics_writeIconPNGFromHandle(handle, modelName, path) annotation(Library = "omcruntime");
-end OMGraphics_writeIconPNGFromHandle;
-
-protected function OMGraphics_writePlacedConnectorIconPNG
-  "Rasterise placed connector `index`'s port icon to a PNG and write it to
-   `path`. Returns 1 on success, 0 otherwise."
-  input Integer handle;
-  input Integer index;
-  input String path;
-  output Integer ok;
-  external "C" ok = OMGraphics_writePlacedConnectorIconPNG(handle, index, path) annotation(Library = "omcruntime");
-end OMGraphics_writePlacedConnectorIconPNG;
 
 protected function fmuMethodToSimulationFlag
   "`buildModelFMU(method=...)` names the integrator a Co-Simulation FMU embeds,
