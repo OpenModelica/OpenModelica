@@ -866,8 +866,11 @@ int getInitialGuess(NONLINEAR_SYSTEM_DATA *nonlinsys, double time)
   /* if list is empty use current start values */
   if (listLen(nonlinsys->oldValueList->valueList)==0)
   {
-    /* use old value if no values are stored in the list */
+    /* use old value if no values are stored in the list; the extrapolation too,
+       which `solveHomotopy` starts a non-discrete call from and which is a zeroed
+       allocation until then */
     memcpy(nonlinsys->nlsx, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
+    memcpy(nonlinsys->nlsxExtrapolation, nonlinsys->nlsxOld, nonlinsys->size*(sizeof(double)));
   }
   else
   {

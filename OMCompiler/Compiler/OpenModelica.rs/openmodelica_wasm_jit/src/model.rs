@@ -186,14 +186,22 @@ pub struct ExtIncludes {
     pub prefix: String,
 }
 
+/// A built `Include` unit: the library to load, and why its wrappers did not
+/// compile — which is what explains a symbol still missing from it.
+#[derive(Clone)]
+pub struct Built {
+    pub path: String,
+    pub note: Option<String>,
+}
+
 impl ExtIncludes {
     /// Build the sources into a host shared library and return its path. Per-process
     /// temp directory: it stays mapped as long as the model can be resimulated.
     /// Built once, so the run reuses what the compile phase built.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn compile(&self, missing: &[ExtCallSig]) -> std::result::Result<String, String> {
+    pub fn compile(&self, missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
         use std::sync::{LazyLock, Mutex};
-        static COMPILED: LazyLock<Mutex<HashMap<String, std::result::Result<String, String>>>> =
+        static COMPILED: LazyLock<Mutex<HashMap<String, std::result::Result<Built, String>>>> =
             LazyLock::new(|| Mutex::new(HashMap::new()));
         let key = format!(
             "{}\n{}\n{}\n{}\n{}",
@@ -215,11 +223,14 @@ impl ExtIncludes {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn compile_uncached(&self, missing: &[ExtCallSig]) -> std::result::Result<String, String> {
+    fn compile_uncached(&self, missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
         let wrappers = ext_wrappers(missing);
         match self.compile_tu(&wrappers) {
-            Err(e) if !wrappers.is_empty() => self.compile_tu("").map_err(|_| e),
-            r => r,
+            // Keep why they did not compile: it explains a symbol still missing.
+            Err(e) if !wrappers.is_empty() => {
+                self.compile_tu("").map(|path| Built { path, note: Some(e.clone()) }).map_err(|_| e)
+            }
+            r => r.map(|path| Built { path, note: None }),
         }
     }
 
@@ -266,7 +277,7 @@ impl ExtIncludes {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn compile(&self, _missing: &[ExtCallSig]) -> std::result::Result<String, String> {
+    pub fn compile(&self, _missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
         Err("the implementation comes from an `Include` annotation with C source, which has to be \
              compiled — the browser omc has no compiler. Provide it as a `Library` built with \
              `clang --target=wasm32-wasip1 -fPIC -shared`"

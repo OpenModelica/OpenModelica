@@ -2546,8 +2546,11 @@ pub extern "C" fn rt_stats_start(on: u32) {
 /// singular matrix, mirroring C's `LS_DEFAULT`; `-ls=klu`/`-ls=umfpack` use
 /// SuiteSparse instead and `-ls=lis` the real Lis. `method1`: a
 /// [`rt_ls_check_step`] follows, and is what decides whether the system is solved.
+/// `casual`: this is dynamic tearing's casual set, whose fallback is the strict
+/// tearing set rather than total pivoting (C's `strictTearingFunctionCall`).
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_index: i32, time: f64, method1: i32) -> i32 {
+#[allow(clippy::too_many_arguments)]
+pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_index: i32, time: f64, method1: i32, casual: i32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     sysstats::mark_assembly_done();
     let n = n as usize;
@@ -2557,7 +2560,7 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
         solvers::Ls::Klu => ls_start_log(eq_index, n, time, "Klu"),
         solvers::Ls::Umfpack => ls_start_log(eq_index, n, time, "UMFPACK"),
         solvers::Ls::Lis => ls_start_log(eq_index, n, time, "Lis"),
-        solvers::Ls::Lapack => ls_start_log(eq_index, n, time, "Lapack"),
+        solvers::Ls::Default | solvers::Ls::Lapack => ls_start_log(eq_index, n, time, "Lapack"),
     }
     #[cfg(sundials)]
     if matches!(solvers::ls(), solvers::Ls::Lis) {
@@ -2607,6 +2610,13 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
                         p = k + 2
                     ),
                 );
+                // Only C's `LS_DEFAULT` has a fallback: `-ls=lapack` leaves the
+                // system unsolved, which is what `tearingStrictness` relies on to
+                // report a torn system that divided by a zero parameter. A casual
+                // tearing set has the strict set instead.
+                if casual != 0 || matches!(solvers::ls(), solvers::Ls::Lapack) {
+                    return 1;
+                }
                 ls_report_fallback(eq_index, time, count);
                 ls_failure_entry(eq_index).fell_back = true;
             }
@@ -2687,11 +2697,14 @@ pub extern "C" fn rt_ls_failed(eq_index: i32, time: f64) {
 /// C's method-1 step test (`solveLapack`, `solveKlu`, …): the step `dx` only counts
 /// if the residual `res` re-evaluated at `x + dx` is small — an ill-conditioned
 /// matrix passes the factorization and still leaves the equations unsatisfied.
-/// Returns 1 when the solve must be redone, with `-res` in `b` to step on from
-/// where the unknowns now are. Only the `-ls` (`dense`) solvers have that retry;
-/// a sparse system's rejected step leaves it unsolved, as in C.
+/// Returns 0 when the step stands, 1 when the solve must be redone with total
+/// pivoting (`-res` left in `b` to step on from where the unknowns now are), and 2
+/// when the system is unsolved with no retry to make. Only C's `LS_DEFAULT` has
+/// that fallback: `-ls=lapack`, the sparse solvers and `-ls=klu`/`umfpack`/`lis`
+/// all leave a rejected step unsolved.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64, dense: i32) -> i32 {
+#[allow(clippy::too_many_arguments)]
+pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64, dense: i32, casual: i32) -> i32 {
     // `-ls=totalpivot` has no check, and a fallback solve's step already is one.
     if dense != 0 && matches!(solvers::ls(), solvers::Ls::TotalPivot) {
         return 0;
@@ -2716,14 +2729,15 @@ pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i
             openmodelica_sim_meta::driver::format_g(norm, 15)
         ),
     );
-    if dense != 0 {
+    if casual == 0 && dense != 0 && matches!(solvers::ls(), solvers::Ls::Default) {
         ls_report_fallback(eq_index, time, count);
         let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
         for (bi, &ri) in b.iter_mut().zip(res) {
             *bi = -ri;
         }
+        return 1;
     }
-    1
+    2
 }
 
 /// C's per-system `linsys->failed` / `numberOfFailures`: the first failure after

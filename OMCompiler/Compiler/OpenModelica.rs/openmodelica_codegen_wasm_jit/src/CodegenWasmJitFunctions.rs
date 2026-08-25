@@ -451,8 +451,9 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // Dense linear solve `A x = b` in place (A column-major `n*n` f64 at a_ptr,
     // b `n` f64 at b_ptr; solution overwrites b), C's `aux_x` at x_ptr for the
     // iterative `-ls lis`, then the equation index and time the fallback warning
-    // needs and whether a `rt_ls_check_step` follows. Returns 0 ok, 1 singular.
-    ("rt_linsolve", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
+    // needs, whether a `rt_ls_check_step` follows, and whether this is a casual
+    // tearing set (which has no fallback). Returns 0 ok, 1 singular.
+    ("rt_linsolve", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32], &[WTy::I32]),
     // The same `A` re-solved with total pivoting: (a_ptr, b_ptr, n, index, time) ->
     // 0 ok / 1 inconsistent. C's fallback for a step `rt_ls_check_step` rejected.
     ("rt_linsolve_totalpivot", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
@@ -462,9 +463,10 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // code assembles `A`/`b` itself, so it has to open the clock. (index, size, nnz).
     ("rt_ls_begin", &[WTy::I32, WTy::I32, WTy::I32], &[]),
     ("rt_ls_end", &[], &[]),
-    // Method-1 step test: (res_ptr, b_ptr, n, index, time, dense) -> 1 when the
-    // step must be redone, `b` then holding `-res`. See `rt_ls_check_step`.
-    ("rt_ls_check_step", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
+    // Method-1 step test: (res_ptr, b_ptr, n, index, time, dense, casual) -> 1 when
+    // the step must be redone with total pivoting (`b` then holding `-res`), 2 when
+    // the system is unsolved. See `rt_ls_check_step`.
+    ("rt_ls_check_step", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32], &[WTy::I32]),
     // Sparse linear solve `A x = b` in place, A in CSC: (colptr n+1 i32, rowidx
     // nnz i32, values nnz f64, b_ptr n f64, n, nnz) -> 0 ok / 1 singular. The C
     // runtime's KLU path (AMD-ordered sparse LU); see `rt_solve_lin_sparse`.
@@ -480,9 +482,17 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_free", &[WTy::I32], &[]),
     // Nonlinear solve for one `SES_NONLINEAR` system: (sim_data, residual-table
     // index, load-table index, n unknowns, nls_fail flag address) -> 0 ok / 1
-    // recoverable failure. The Newton driver lives in the runtime; the model
-    // supplies `residual`/`load` funcs reached by `call_indirect` (see `nls.rs`).
-    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // recoverable failure (2 = dynamic tearing's strict set solved it instead). The
+    // Newton driver lives in the runtime; the model supplies `residual`/`load` funcs
+    // reached by `call_indirect` (see `nls.rs`).
+    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // Dynamic tearing: the `LOG_DT` / `LOG_DT_CONS` lines C's `checkConstraints`,
+    // `equationLinear` and `equation*AlternativeTearing` print. `rt_dt_local_violated`
+    // also latches the failure, standing in for `residualFuncConstraints`'s return.
+    ("rt_dt_cons_violated", &[WTy::I32, WTy::I32], &[]),
+    ("rt_dt_local_violated", &[WTy::I32], &[]),
+    ("rt_dt_solving", &[WTy::I32, WTy::I32, WTy::F64, WTy::I32], &[]),
+    ("rt_dt_fallback", &[WTy::I32], &[]),
     // `delay(...)` / `delayZeroCrossing(...)` ring buffers (runtime `delay.rs`).
     ("rt_delay_init", &[WTy::I32, WTy::F64], &[]),
     ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
@@ -741,7 +751,9 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<BuiltModule> 
         bodies.push(compile_function(f, &by_name, &mut literals)?);
     }
     let lits = shared_lits::take();
-    let lit_init = (!lits.is_empty())
+    let lit_init = lits
+        .iter()
+        .any(|s| s.is_some())
         .then(|| shared_lits::build_init_fn(&lits, lit_base_global(false), &by_name, &mut literals))
         .transpose()?;
     // Closure thunks, then the `start` that builds the literals and appends the
@@ -803,8 +815,9 @@ fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<BuiltModule> 
     module.section(&types);
     module.section(&imports);
     module.section(&functions);
-    if start_idx.is_some() {
-        // The closure-thunk table base, then one global per shared literal.
+    // Flag slots need the globals even with no `start` to fill them.
+    if start_idx.is_some() || !lits.is_empty() {
+        // The closure-thunk table base, then one global per pool slot.
         let mut globals = we::GlobalSection::new();
         for _ in 0..lit_base_global(false) as usize + lits.len() {
             globals.global(
@@ -1347,6 +1360,14 @@ pub(crate) struct FnCtx<'a> {
     /// resolver that maps model component references not bound as wasm locals to
     /// slots in the shared `SimData` block. `None` for ordinary function bodies.
     pub(crate) sim: Option<SimCtx>,
+    /// Dynamic tearing: set while lowering the *casual* tearing set's residual, where
+    /// a violated `localCon` constraint ends the evaluation (C's
+    /// `residualFuncConstraints` returning 1 — see `createLocalConstraints`).
+    dt_local_cons: bool,
+    /// Dynamic tearing: while lowering the casual tearing set itself, the
+    /// [`ctrl_depth`](Self::ctrl_depth) of the block a failed solve branches out of,
+    /// to hand the component to the strict set instead of reporting it unsolved.
+    dt_fallback: Option<u32>,
 }
 
 /// Resolver for model variables when lowering simulation equations. Component
@@ -1475,8 +1496,8 @@ pub(crate) enum ClockUpdate {
 }
 
 /// One nonlinear system's `rt_solve_nls` wiring: `k` is the job ordinal (its
-/// `residual`/`load` functions occupy shared-table slots `nls_base + 2k` and
-/// `nls_base + 2k + 1`), `n` is the number of iteration unknowns, `hist_off` is
+/// `residual`/`load` functions occupy shared-table slots `nls_base + 4k` and
+/// `nls_base + 4k + 1`), `n` is the number of iteration unknowns, `hist_off` is
 /// this system's byte offset into the extrapolation-history block (allocated at
 /// `NLS_HIST_GLOBAL` by the module's `start`).
 #[derive(Clone, Copy)]
@@ -1489,7 +1510,7 @@ pub(crate) struct NlsJob {
     /// Byte offset of this system's `n` nominal values into the nominal block
     /// (`NLS_NOMINAL_GLOBAL`), read by `rt_solve_nls` for x-scaling.
     pub(crate) nominal_off: u32,
-    /// The system has a symbolic Jacobian: shared-table slot `3k+2` holds an
+    /// The system has a symbolic Jacobian: shared-table slot `4k+2` holds an
     /// `nls_jac` callback and `rt_solve_nls` uses `hybrj`.
     pub(crate) has_jac: bool,
     /// C's `NONLINEAR_SYSTEM_DATA::mixedSystem`: the residual branches on discretes.
@@ -1505,6 +1526,10 @@ pub(crate) struct NlsJob {
     pub(crate) sparse_default: bool,
     /// C's `NONLINEAR_SYSTEM_DATA::homotopySupport`.
     pub(crate) homotopy_support: bool,
+    /// Dynamic tearing: this is the *casual* tearing set, so shared-table slot
+    /// `4k+3` holds the strict set's `solve(sim_data) -> solved` function — C's
+    /// `strictTearingFunctionCall`, which `solveNLS` falls back to.
+    pub(crate) casual: bool,
 }
 
 /// Per-system solver state for `n` unknowns: a count (padded to 8), C's
@@ -1685,6 +1710,14 @@ impl<'a> FnCtx<'a> {
         }
         self.instrs.push(i);
     }
+    fn ctrl_depth(&self) -> u32 {
+        self.ctrl_depth
+    }
+
+    pub(crate) fn emit_drop(&mut self) {
+        self.emit(we::Instruction::Drop);
+    }
+
     /// Emit an unconditional branch to the structured-control frame that was open
     /// at `target_level` (a recorded `ctrl_depth`). `br 0` is the innermost frame.
     fn branch_to(&mut self, target_level: u32) {
@@ -1746,7 +1779,33 @@ impl<'a> FnCtx<'a> {
             elem_ptr_tmp: None,
             src_loc: None,
             sim: Some(sim),
+            dt_local_cons: false,
+            dt_fallback: None,
         }
+    }
+
+    /// Dynamic tearing: whether a violated local constraint must end the evaluation
+    /// (the casual set's residual), and the block a failed casual solve escapes to.
+    pub(crate) fn set_dt_local_cons(&mut self, on: bool) {
+        self.dt_local_cons = on;
+    }
+
+    pub(crate) fn dt_local_cons(&self) -> bool {
+        self.dt_local_cons
+    }
+
+    pub(crate) fn set_dt_fallback(&mut self, level: Option<u32>) {
+        self.dt_fallback = level;
+    }
+
+    pub(crate) fn dt_fallback(&self) -> Option<u32> {
+        self.dt_fallback
+    }
+
+    /// Whether the system being lowered is a casual tearing set (C's
+    /// `strictTearingFunctionCall != NULL`).
+    pub(crate) fn dt_casual(&self) -> bool {
+        self.dt_fallback.is_some()
     }
 
     /// Open `if (stage & mask)` around the next equation, `stage` being the DAE-mode
@@ -2391,7 +2450,7 @@ fn compile_function_body(
         intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None };
     // In declaration order, like C's `varInit` loop: a declaration's dimensions
     // may read an earlier one (`Integer n = size(x,1); Real delta[n-1]`), so
     // allocation and binding must interleave. `variableDeclarations` already
@@ -2458,7 +2517,7 @@ fn compile_external_function(
         intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None };
     // In the order the C body emits them: `extFunCallF77` appends the `biVars` to
     // the *outputAlloc* buffer, ahead of the outputs (`output Real x[max(nrow,
     // ncol)] = cat(…nrow…)` reads them); `extFunCallC` appends them behind.
@@ -4322,7 +4381,9 @@ fn emit_terminate(ctx: &mut FnCtx, message: &DAE::Exp, source: &DAE::ElementSour
 /// unreachable }`, the host formatting the three as `omc_assert` does. A warning-level
 /// assert (`AssertionLevel.warning`, `level` enum index 1 — the min/max attribute
 /// checks) calls `rt_assert_warning` and continues instead, as C's
-/// `omc_assert_warning`. Shared by `STMT_ASSERT` and the `when`-body `ASSERT`.
+/// `omc_assert_warning`, and latches a per-site flag so it reports once — C's
+/// `if(!warningTriggered)` around the whole test. Shared by `STMT_ASSERT` and the
+/// `when`-body `ASSERT`.
 fn emit_assert(
     ctx: &mut FnCtx,
     cond: &Arc<DAE::Exp>,
@@ -4333,13 +4394,19 @@ fn emit_assert(
     let is_warning = matches!(level, DAE::Exp::ENUM_LITERAL { index: 1, .. });
     // C's `FUNCTION_CONTEXT` arm reports the message alone, with no dumped condition.
     let in_function = ctx.sim().is_err();
+    let warn_flag = is_warning.then(shared_lits::new_flag);
+    if let Some(g) = warn_flag {
+        ctx.emit(we::Instruction::GlobalGet(g));
+        ctx.emit(we::Instruction::I32Eqz);
+        ctx.emit(we::Instruction::If(we::BlockType::Empty));
+    }
     let c = compile_exp(ctx, cond)?;
     coerce(ctx, c, WTy::I32);
     ctx.emit(we::Instruction::I32Eqz);
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
     let info = &source.info;
     let file = openmodelica_util::Testsuite::friendly(info.fileName.clone())?;
-    if is_warning {
+    if let Some(g) = warn_flag {
         // The dumped condition (C's `assert_cond`), then the message, then the
         // source position — all consumed by `rt_assert_warning`; execution
         // continues afterwards (no trap).
@@ -4357,7 +4424,10 @@ fn emit_assert(
         ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
         emit_initial_flag(ctx);
         ctx.emit(we::Instruction::Call(env_extra_index("rt_assert_warning")?));
-        ctx.emit(we::Instruction::End);
+        ctx.emit(we::Instruction::I32Const(1));
+        ctx.emit(we::Instruction::GlobalSet(g));
+        ctx.emit(we::Instruction::End); // if (!cond)
+        ctx.emit(we::Instruction::End); // if (!warningTriggered)
         return Ok(());
     }
     // C evaluates the message (`preExpMsg`) once, ahead of either arm.
@@ -4455,7 +4525,7 @@ fn emit_initial_flag(ctx: &mut FnCtx) {
 }
 
 /// The dumped source form of `e`, for embedding in an assertion message.
-fn dumped_exp(e: &Arc<DAE::Exp>) -> Result<String> {
+pub(crate) fn dumped_exp(e: &Arc<DAE::Exp>) -> Result<String> {
     Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), e.clone(), arcstr::literal!("\""))?)?.to_string())
 }
 
@@ -7091,6 +7161,7 @@ pub(crate) use sim_systems::{
     compile_linear_system_symbolic, emit_linz_jac_body, emit_nls_jac_body, emit_nls_jac_csc_body,
     emit_ls_bracket, emit_nls_load_body, emit_nls_residual_body, emit_solve_nls_call, lin_jac_coloring,
     lin_use_sparse, nls_use_sparse,
+    emit_dt_solving, emit_dt_local_constraint, emit_dynamic_tearing, emit_nls_strict_body,
 };
 
 fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
@@ -10985,7 +11056,10 @@ fn native_fallbacks(
             prefix: base.to_string(),
         };
         match inc.compile(&missing) {
-            Ok(path) => out.push(path),
+            Ok(b) => {
+                notes.extend(b.note);
+                out.push(b.path);
+            }
             Err(e) => notes.push(e),
         }
     }

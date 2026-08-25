@@ -7815,7 +7815,7 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
         <%at.crefs |> name hasindex i0 =>
           let &sub = buffer ""
           let START = cref(name, &sub)
-          'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%START%>;'
+          'data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%START%>;'
         ;separator="\n"%>
         retValue = solve_nonlinear_system(data, threadData, <%at.indexNonLinearSystem%>);
         /* The casual tearing set found a solution */

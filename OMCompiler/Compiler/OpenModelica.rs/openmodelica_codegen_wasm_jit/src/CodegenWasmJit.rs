@@ -592,9 +592,13 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
         // Chattering abort (`-abortSlowSimulation`): the driver's output carries the
         // chattering + aborting lines.
         Err(e) if *e == sim_driver::CHATTER_ABORT_ERR => format!("{init_seg}{sim_output}"),
-        // A failed assertion has already logged C's `LOG_ASSERT` block, and a failed
-        // initialization its `LOG_INIT` reason; anything else needs spelling out.
-        Err(e) if *e == sim_driver::ASSERT_ERR || *e == sim_driver::INIT_FAILED_ERR => {
+        // A failed assertion, initialization or integrator has logged its own
+        // reason (`LOG_ASSERT` / `LOG_INIT` / `model terminate`).
+        Err(e)
+            if *e == sim_driver::ASSERT_ERR
+                || *e == sim_driver::INIT_FAILED_ERR
+                || *e == sim_driver::SOLVER_FAILED_ERR =>
+        {
             format!("{init_seg}{sim_output}")
         }
         Err(e) => format!(
@@ -1803,12 +1807,9 @@ pub(crate) fn compile_include_library(
         return Ok(None);
     }
     let wrappers = openmodelica_wasm_jit::model::ext_wrappers(missing);
-    let n = notes.len();
     match compile_include_tu(prefix, includes, include_dirs, cflags, &wrappers, notes)? {
-        None if !wrappers.is_empty() => {
-            notes.truncate(n);
-            compile_include_tu(prefix, includes, include_dirs, cflags, "", notes)
-        }
+        // Keep why they did not compile: it explains a symbol still missing.
+        None if !wrappers.is_empty() => compile_include_tu(prefix, includes, include_dirs, cflags, "", notes),
         r => Ok(r),
     }
 }
@@ -4805,6 +4806,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         &nls_nominal_map,
         &mut attr_targets,
     );
+    // Dynamic tearing: casual set index -> strict set index.
+    let nls_strict_of = nls_strict_map(&nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>());
     // The integrator's per-unknown atol and the Jacobian's FD step floor: the states,
     // then in DAE mode the algebraic unknowns (C's `getAlgebraicDAEVarNominals`).
     let mut nominal_defaults: Vec<(u32, f64)> = Vec::new();
@@ -4909,7 +4912,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         types.ty().function([we::ValType::I32, we::ValType::I32, we::ValType::I32], []);
         let load_type = types.len();
         types.ty().function([we::ValType::I32, we::ValType::I32], []);
-        Some((residual_type, load_type))
+        // Dynamic tearing's strict-set callback: (i32) -> i32.
+        let strict_type = types.len();
+        types.ty().function([we::ValType::I32], [we::ValType::I32]);
+        Some((residual_type, load_type, strict_type))
     };
     // `evaluateDAEResiduals(SimData*, stage)`: (i32,i32) -> (), for a DAE-mode model.
     let dae_fn_type = (!dae_eqs.is_empty()).then(|| {
@@ -5240,12 +5246,19 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // references validate. Only when the model has nonlinear systems. ---
     let nls_wiring = if nls_types.is_some() {
         let mut callback_indices: Vec<u32> = Vec::new(); // for the declared segment
-        // (residual, load, Option<jac>) per system; the shared table gets 3 slots
-        // per system (`3k`, `3k+1`, `3k+2`), the jac slot left null when absent.
-        let mut fn_indices: Vec<(u32, u32, Option<u32>)> = Vec::new();
+        // (residual, load, Option<jac>, Option<strict>) per system; the shared table
+        // gets 4 slots per system (`4k`..`4k+3`), unused ones left null.
+        let mut fn_indices: Vec<(u32, u32, Option<u32>, Option<u32>)> = Vec::new();
         for sys in &nls_systems {
-            let (res_fn, load_fn, jac_fn) =
-                build_nls_fns(sys, &var_map, &eq_index, &by_name, &mut literals, nls_jac_infos.get(&sys.index))?;
+            // The job the casual set's fourth callback solves.
+            let strict = nls_strict_of
+                .get(&sys.index)
+                .and_then(|i| var_map.nls_jobs.get(i))
+                .copied();
+            let (res_fn, load_fn, jac_fn, strict_fn) = build_nls_fns(
+                sys, &var_map, &eq_index, &by_name, &mut literals,
+                nls_jac_infos.get(&sys.index), strict,
+            )?;
             let res_idx = import_base + bodies.len() as u32;
             bodies.push(res_fn);
             let load_idx = import_base + bodies.len() as u32;
@@ -5258,7 +5271,13 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
                 callback_indices.push(idx);
                 idx
             });
-            fn_indices.push((res_idx, load_idx, jac_idx));
+            let strict_idx = strict_fn.map(|f| {
+                let idx = import_base + bodies.len() as u32;
+                bodies.push(f);
+                callback_indices.push(idx);
+                idx
+            });
+            fn_indices.push((res_idx, load_idx, jac_idx, strict_idx));
         }
         Some((fn_indices, callback_indices))
     } else {
@@ -5526,7 +5545,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // destructors, nls callbacks, initSample, zc, statesetJac, lambda0, …, then
     // the closure thunks and `start` below).
     functions.function(eqfn_type); // callExternalObjectDestructors
-    if let Some((residual_type, load_type)) = nls_types {
+    if let Some((residual_type, load_type, strict_type)) = nls_types {
         for sys in &nls_systems {
             functions.function(residual_type);
             functions.function(load_type);
@@ -5535,6 +5554,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
             // matching the conditional body push in `nls_wiring`.
             if nls_jac_infos.contains_key(&sys.index) {
                 functions.function(residual_type);
+            }
+            if nls_strict_of.contains_key(&sys.index) {
+                functions.function(strict_type);
             }
         }
     }
@@ -5583,7 +5605,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // --- Shared literals, closure thunks and the module `start`. Both come after
     // every other body — their indices are only known here. ---
     let lits = crate::CodegenWasmJitFunctions::shared_lits::take();
-    let lit_init = (!lits.is_empty())
+    let lit_init = lits
+        .iter()
+        .any(|s| s.is_some())
         .then(|| {
             crate::CodegenWasmJitFunctions::shared_lits::build_init_fn(
                 &lits, lit_global, &by_name, &mut literals,
@@ -5817,7 +5841,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // Global + Start + Element sections (in the canonical order) carry the
     // shared-table wiring (NLS callbacks and/or closure thunks) and the
     // shared-literal objects.
-    if start_wiring.is_some() {
+    // Flag slots need the globals even with no `start` to fill them.
+    if start_wiring.is_some() || !lits.is_empty() {
         let mut globals = we::GlobalSection::new();
         // NLS_BASE_GLOBAL (shared-table base), NLS_HIST_GLOBAL (history block base),
         // NLS_NOMINAL_GLOBAL (nominal block base), NLS_PAT_GLOBAL (sparse-pattern
@@ -6426,7 +6451,8 @@ fn flatten_eqs_ll(
 }
 
 /// Visit `e` and every equation nested inside it, along the paths
-/// [`lower_equation`] descends — not `alternativeTearing`, which is never lowered.
+/// [`lower_equation`] descends — the casual tearing set of a dynamically torn
+/// system included.
 fn visit_nested_eqs(e: &Arc<SimCode::SimEqSystem>, f: &mut dyn FnMut(&Arc<SimCode::SimEqSystem>)) {
     use SimCode::SimEqSystem as E;
     fn visit_list(
@@ -6452,13 +6478,19 @@ fn visit_nested_eqs(e: &Arc<SimCode::SimEqSystem>, f: &mut dyn FnMut(&Arc<SimCod
         }
         E::SES_WHEN { elseWhen: Some(w), .. } => visit_nested_eqs(w, f),
         E::SES_FOR_EQUATION { body, .. } => visit_list(body, f),
-        E::SES_LINEAR { lSystem, .. } => {
-            visit_list(&lSystem.residual, f);
-            for (_, _, inner) in lst(&lSystem.simJac) {
-                visit_nested_eqs(inner, f);
+        E::SES_LINEAR { lSystem, alternativeTearing, .. } => {
+            for s in std::iter::once(lSystem).chain(alternativeTearing.iter()) {
+                visit_list(&s.residual, f);
+                for (_, _, inner) in lst(&s.simJac) {
+                    visit_nested_eqs(inner, f);
+                }
             }
         }
-        E::SES_NONLINEAR { nlSystem, .. } => visit_list(&nlSystem.eqs, f),
+        E::SES_NONLINEAR { nlSystem, alternativeTearing, .. } => {
+            for s in std::iter::once(nlSystem).chain(alternativeTearing.iter()) {
+                visit_list(&s.eqs, f);
+            }
+        }
         _ => {}
     }
 }
@@ -7276,6 +7308,19 @@ pub(crate) fn lower_equation(
             let lhs = DAE::Exp::CREF { componentRef: cref.clone(), ty: t_real() };
             ctx.sim_assign(&lhs, exp)
         }
+        // Dynamic tearing: C's `createLocalConstraints` checks the `localCon`
+        // constraints *before* the assignment, and only in the casual set's residual.
+        E::SES_SIMPLE_ASSIGN_CONSTRAINTS { cref, exp, cons, .. } => {
+            if ctx.dt_local_cons() {
+                for (c, local) in dt_constraints(cons) {
+                    if local {
+                        crate::CodegenWasmJitFunctions::emit_dt_local_constraint(ctx, &c)?;
+                    }
+                }
+            }
+            let lhs = DAE::Exp::CREF { componentRef: cref.clone(), ty: t_real() };
+            ctx.sim_assign(&lhs, exp)
+        }
         // A whole-array assignment `lhs := exp` (lhs is already a cref expression,
         // exp an array-valued expression). For a model array variable this routes
         // through the whole-array scatter in `compile_sim_cref_assign`.
@@ -7290,7 +7335,13 @@ pub(crate) fn lower_equation(
         E::SES_ENTWINED_ASSIGN { call_order, single_calls, .. } => {
             emit_entwined_assign(ctx, call_order, single_calls, eq_index)
         }
-        E::SES_LINEAR { lSystem, .. } => lower_linear_system(ctx, lSystem, eq_index),
+        E::SES_LINEAR { lSystem, alternativeTearing: Some(at), .. } => {
+            lower_dynamic_tearing(ctx, eq_index, DtSystem::Linear(lSystem, at))
+        }
+        E::SES_NONLINEAR { nlSystem, alternativeTearing: Some(at), .. } => {
+            lower_dynamic_tearing(ctx, eq_index, DtSystem::Nonlinear(nlSystem, at))
+        }
+        E::SES_LINEAR { lSystem, .. } => lower_linear_system(ctx, lSystem, eq_index, -1),
         E::SES_NONLINEAR { nlSystem, .. } => lower_nonlinear_system(ctx, nlSystem, eq_index),
         E::SES_ALGORITHM { statements, .. } => ctx.sim_stmts(statements),
         // Inside a nonlinear system the residual function backs the known outputs
@@ -7338,6 +7389,76 @@ pub(crate) fn lower_equation(
     }
 }
 
+/// Dynamic tearing (`--dynamicTearing`): the two tearing sets of one torn strong
+/// component. `Linear`/`Nonlinear` carry `(strict, casual)`, C's `lSystem`/`nlSystem`
+/// and its `alternativeTearing`.
+enum DtSystem<'a> {
+    Linear(&'a Arc<SimCode::LinearSystem>, &'a Arc<SimCode::LinearSystem>),
+    Nonlinear(&'a Arc<SimCode::NonlinearSystem>, &'a Arc<SimCode::NonlinearSystem>),
+}
+
+/// Every `CONSTRAINT_DT` of an equation's constraint list, as `(condition, local)`.
+pub(crate) fn dt_constraints(cons: &Arc<List<Arc<DAE::Constraint>>>) -> Vec<(Arc<DAE::Exp>, bool)> {
+    lst(cons)
+        .filter_map(|c| match &**c {
+            DAE::Constraint::CONSTRAINT_DT { constraint, localCon } => {
+                Some((constraint.clone(), *localCon))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// Every constraint a casual tearing set's inner equations carry, in C's order
+/// (`createGlobalConstraints` over `at.eqs` / `at.residual`).
+fn dt_system_constraints(sys: &DtSystem) -> Vec<(Arc<DAE::Exp>, bool)> {
+    use SimCode::SimEqSystem as E;
+    let inner: Vec<Arc<SimCode::SimEqSystem>> = match sys {
+        DtSystem::Linear(_, at) => lst(&at.residual).cloned().collect(),
+        DtSystem::Nonlinear(_, at) => lst(&at.eqs).cloned().collect(),
+    };
+    let mut out = Vec::new();
+    for e in &inner {
+        if let E::SES_SIMPLE_ASSIGN_CONSTRAINTS { cons, .. } = &**e {
+            out.extend(dt_constraints(cons));
+        }
+    }
+    out
+}
+
+/// Lower a dynamically torn strong component, C's `equation*AlternativeTearing`:
+/// announce the casual set, check its constraints, solve it; a violated constraint
+/// (or, for a linear system, a failed solve) falls through to the strict set. A
+/// *nonlinear* casual set's failed solve is handled inside `rt_solve_nls`, where
+/// C's `solveNLS` calls `strictTearingFunctionCall`.
+fn lower_dynamic_tearing(
+    ctx: &mut FnCtx,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    sys: DtSystem,
+) -> Result<()> {
+    let linear = matches!(sys, DtSystem::Linear(..));
+    let (strict_index, casual_index) = match &sys {
+        DtSystem::Linear(ls, at) => (ls.index, at.index),
+        DtSystem::Nonlinear(nls, at) => (nls.index, at.index),
+    };
+    let cons = dt_system_constraints(&sys);
+    let mut lower_casual = |c: &mut FnCtx| -> Result<()> {
+        match &sys {
+            DtSystem::Linear(_, at) => lower_linear_system(c, at, eq_index, strict_index),
+            DtSystem::Nonlinear(_, at) => lower_nonlinear_system(c, at, eq_index),
+        }
+    };
+    let mut lower_strict = |c: &mut FnCtx| -> Result<()> {
+        match &sys {
+            DtSystem::Linear(ls, _) => lower_linear_system(c, ls, eq_index, -1),
+            DtSystem::Nonlinear(nls, _) => lower_nonlinear_system(c, nls, eq_index),
+        }
+    };
+    crate::CodegenWasmJitFunctions::emit_dynamic_tearing(
+        ctx, casual_index, strict_index, linear, &cons, &mut lower_casual, &mut lower_strict,
+    )
+}
+
 /// Lower a `SES_LINEAR` system. Matching the C runtime, `A` is assembled
 /// symbolically from `simJac` (`(row, col, SES_RESIDUAL(exp))`, 0-based,
 /// column-major) and `b` from `beqs` — `setLinearMatrixA`/`setLinearVectorb` —
@@ -7348,16 +7469,33 @@ pub(crate) fn lower_equation(
 ///
 /// The residual-probing path ([`compile_linear_system`]) is the fallback for the
 /// rare system without a usable `simJac`.
+///
+/// `dt_strict`: the strict set's equation index when `lsystem` is a casual tearing
+/// set (whose `LOG_DT` line the caller has already printed, ahead of the constraint
+/// check), or -1 for a system solved on its own.
 fn lower_linear_system(
     ctx: &mut FnCtx,
     lsystem: &SimCode::LinearSystem,
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    dt_strict: i32,
 ) -> Result<()> {
+    // C's `equationLinear` line; the casual variant is printed at the call site.
+    if dt_strict < 0 {
+        crate::CodegenWasmJitFunctions::emit_dt_solving(ctx, lsystem.index, -1, true)?;
+    }
+    // Only the casual set itself hands a failed solve to the strict set; a system
+    // nested in its inner equations reports its own, as C's own function does.
+    let saved = ctx.dt_fallback();
+    if dt_strict < 0 {
+        ctx.set_dt_fallback(None);
+    }
     // C measures `solve_linear_system` from before the `A`/`b` assembly, which here
     // is emitted code rather than a runtime call, so the bracket spans the system.
     let n = lst(&lsystem.vars).count() as i32;
     crate::CodegenWasmJitFunctions::emit_ls_bracket(ctx, lsystem.index, n, lin_system_nnz(lsystem) as i32, true)?;
-    lower_linear_system_body(ctx, lsystem, eq_index)?;
+    let r = lower_linear_system_body(ctx, lsystem, eq_index);
+    ctx.set_dt_fallback(saved);
+    r?;
     crate::CodegenWasmJitFunctions::emit_ls_bracket(ctx, lsystem.index, n, 0, false)
 }
 
@@ -7658,7 +7796,11 @@ fn lower_nonlinear_system(
         .nls_jobs
         .get(&nlsystem.index)
         .ok_or_else(|| "CodegenWasmJit: SES_NONLINEAR was not registered for rt_solve_nls")?;
-    emit_solve_nls_call(ctx, job)
+    emit_solve_nls_call(ctx, job)?;
+    // The 0/1/2 return is dropped here — a failure surfaces through the `nls_fail`
+    // flag, and only the strict-set function ([`emit_nls_strict_body`]) reads it.
+    ctx.emit_drop();
+    Ok(())
 }
 
 /// Partition a nonlinear system's equations into the inner (torn) constraint
@@ -7716,6 +7858,20 @@ fn nls_parts(
     Ok((inner, NlsResiduals::Explicit(residuals), iter_vars))
 }
 
+/// Dynamic tearing: each casual tearing set's equation index -> its strict set's.
+fn nls_strict_map(eq_lists: &[&[Arc<SimCode::SimEqSystem>]]) -> HashMap<i32, i32> {
+    use SimCode::SimEqSystem as E;
+    let mut out = HashMap::new();
+    for list in eq_lists {
+        for e in *list {
+            if let E::SES_NONLINEAR { nlSystem, alternativeTearing: Some(at), .. } = &**e {
+                out.insert(at.index, nlSystem.index);
+            }
+        }
+    }
+    out
+}
+
 /// The `__HOM_LAMBDA` unknown `generateHomotopyComponents` appends under an
 /// adaptive approach. C maps the cref to `simulationInfo->lambda`.
 fn is_homotopy_lambda(cr: Option<&Arc<DAE::ComponentRef>>) -> bool {
@@ -7753,7 +7909,16 @@ fn collect_nls_jobs(
     let mut bounds: Vec<f64> = Vec::new();
     for list in eq_lists {
         for e in *list {
-            if let E::SES_NONLINEAR { nlSystem, .. } = &**e {
+            // A dynamically torn component registers both sets: the strict one (whose
+            // function the casual set falls back to) and the casual one.
+            let both: Vec<(&Arc<SimCode::NonlinearSystem>, bool)> = match &**e {
+                E::SES_NONLINEAR { nlSystem, alternativeTearing: Some(at), .. } => {
+                    vec![(nlSystem, false), (at, true)]
+                }
+                E::SES_NONLINEAR { nlSystem, .. } => vec![(nlSystem, false)],
+                _ => Vec::new(),
+            };
+            for (nlSystem, casual) in both {
                 if jobs.contains_key(&nlSystem.index) {
                     continue;
                 }
@@ -7796,7 +7961,7 @@ fn collect_nls_jobs(
                     patterns.extend_from_slice(&p.colptr);
                     patterns.extend_from_slice(&p.rowidx);
                 }
-                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, eq_index: nlSystem.index as u32, hist_off, nominal_off, has_jac, mixed, nnz, pat_off, sparse_default, homotopy_support: nlSystem.homotopySupport });
+                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, eq_index: nlSystem.index as u32, hist_off, nominal_off, has_jac, mixed, nnz, pat_off, sparse_default, homotopy_support: nlSystem.homotopySupport, casual });
                 if nnz != 0 {
                     pat_off += 4 * (n + 1 + nnz);
                 }
@@ -8196,11 +8361,14 @@ fn nls_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
     let mut total = 0u32;
     let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
         for e in &eqs_with_nested(&eqs) {
-            if let E::SES_NONLINEAR { nlSystem, .. } = &**e {
-                if seen.insert(nlSystem.index) && nls_jac_usable(nlSystem) {
-                    // seeds + all column variables (results + intermediates) get slots.
-                    let jm = nlSystem.jacobianMatrix.as_ref().unwrap();
-                    total += count(&jm.seedVars) as u32 + jac_column_vars(jm).len() as u32;
+            if let E::SES_NONLINEAR { nlSystem, alternativeTearing, .. } = &**e {
+                // A dynamically torn component has two sets, each with its own Jacobian.
+                for sys in std::iter::once(nlSystem).chain(alternativeTearing.iter()) {
+                    if seen.insert(sys.index) && nls_jac_usable(sys) {
+                        // seeds + all column variables (results + intermediates) get slots.
+                        let jm = sys.jacobianMatrix.as_ref().unwrap();
+                        total += count(&jm.seedVars) as u32 + jac_column_vars(jm).len() as u32;
+                    }
                 }
             }
         }
@@ -8579,9 +8747,12 @@ fn lin_jac_systems(sim_code: &SimCode::SimCode) -> Vec<Arc<SimCode::LinearSystem
     let mut out: Vec<Arc<SimCode::LinearSystem>> = Vec::new();
     let mut scan = |eqs: Vec<Arc<SimCode::SimEqSystem>>| {
         for e in &eqs_with_nested(&eqs) {
-            if let E::SES_LINEAR { lSystem, .. } = &**e {
-                if lSystem.tornSystem && seen.insert(lSystem.index) && lin_jac_usable(lSystem, lin_n_res(lSystem)) {
-                    out.push(lSystem.clone());
+            if let E::SES_LINEAR { lSystem, alternativeTearing, .. } = &**e {
+                // A dynamically torn component has two sets, each with its own Jacobian.
+                for sys in std::iter::once(lSystem).chain(alternativeTearing.iter()) {
+                    if sys.tornSystem && seen.insert(sys.index) && lin_jac_usable(sys, lin_n_res(sys)) {
+                        out.push(sys.clone());
+                    }
                 }
             }
         }
@@ -8751,6 +8922,12 @@ fn lin_jac_csc_pattern(lsystem: &SimCode::LinearSystem, n: usize) -> Option<(Vec
 /// Build the `residual(sim_data, x, r)` and `load(sim_data, x)` callback
 /// functions for one nonlinear system (the model-specific half of
 /// `rt_solve_nls`, reached by `call_indirect` over the shared table).
+///
+/// `strict` is the strict tearing set's job when `nlsystem` is a casual one: a
+/// fourth callback, `solve(sim_data) -> solved`, is then emitted for
+/// `rt_solve_nls` to fall back to (C's `strictTearingFunctionCall`), and the
+/// residual carries the casual set's local constraint checks.
+#[allow(clippy::too_many_arguments)]
 fn build_nls_fns(
     nlsystem: &SimCode::NonlinearSystem,
     var_map: &SimVarMap,
@@ -8758,7 +8935,8 @@ fn build_nls_fns(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
     jac_info: Option<&NlsJacInfo>,
-) -> Result<(we::Function, we::Function, Option<we::Function>)> {
+    strict: Option<NlsJob>,
+) -> Result<(we::Function, we::Function, Option<we::Function>, Option<we::Function>)> {
     let (inner, residuals, iter_vars) = nls_parts(nlsystem)?;
     // Resolve each unknown to its (real) SimData slot offset.
     let mut slots: Vec<u32> = Vec::with_capacity(iter_vars.len());
@@ -8784,6 +8962,9 @@ fn build_nls_fns(
     // residual(sim_data, x, r): 3 params.
     let residual = {
         let mut ctx = FnCtx::new_sim_params(mk_sim(), by_name, literals, 3);
+        // C's `residualFuncConstraints` for a casual set: each inner equation's
+        // `localCon` constraints are checked before it runs.
+        ctx.set_dt_local_cons(strict.is_some());
         let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
             for eq in &inner {
                 lower_equation(c, eq, eq_index)?;
@@ -8846,19 +9027,27 @@ fn build_nls_fns(
         }
         _ => None,
     };
-    Ok((residual, load, jac))
+    // solve(sim_data) -> solved: the strict tearing set, C's `eqFunction_<ls.index>`.
+    let strict_fn = strict
+        .map(|job| -> Result<we::Function> {
+            let mut ctx = FnCtx::new_sim_params(mk_sim(), by_name, literals, 1);
+            crate::CodegenWasmJitFunctions::emit_nls_strict_body(&mut ctx, job)?;
+            Ok(finish(ctx))
+        })
+        .transpose()?;
+    Ok((residual, load, jac, strict_fn))
 }
 
 /// The nonlinear-solver part of the module `start`: grow the shared
-/// `rt.__indirect_function_table` by `3 * n` slots, record the base (the old
+/// `rt.__indirect_function_table` by `4 * n` slots, record the base (the old
 /// size) in the `nls_base` global, then write each system's `residual`/`load`
-/// function references into `base + 3k` / `base + 3k + 1`
-/// (`fn_indices[k] = (residual, load, jac)`). `rt_solve_nls` reads these indices
-/// back via the global (see `emit_solve_nls_call`). Also `rt_alloc`s the
+/// function references into `base + 4k` / `base + 4k + 1`
+/// (`fn_indices[k] = (residual, load, jac, strict)`). `rt_solve_nls` reads these
+/// indices back via the global (see `emit_solve_nls_call`). Also `rt_alloc`s the
 /// extrapolation-history block (`hist_bytes`) into `NLS_HIST_GLOBAL`.
 fn emit_nls_start(
     f: &mut we::Function,
-    fn_indices: &[(u32, u32, Option<u32>)],
+    fn_indices: &[(u32, u32, Option<u32>, Option<u32>)],
     hist_bytes: u32,
     sizes: &[u32],
     nominals: &[f64],
@@ -8919,11 +9108,12 @@ fn emit_nls_start(
             f.instruction(&I::I32Store(crate::CodegenWasmJitFunctions::mem_arg((i * 4) as u32, 2)));
         }
     }
-    // base = table.grow(null, 3n) — returns the old size (the growable table's max
-    // is unbounded, so this cannot fail here). Three slots per system:
-    // `3k`=residual, `3k+1`=load, `3k+2`=jac (left null when there is no Jacobian).
+    // base = table.grow(null, 4n) — returns the old size (the growable table's max
+    // is unbounded, so this cannot fail here). Four slots per system:
+    // `4k`=residual, `4k+1`=load, `4k+2`=jac, `4k+3`=the strict tearing set's solve
+    // (the last two left null where the system has neither).
     f.instruction(&I::RefNull(we::HeapType::FUNC));
-    f.instruction(&I::I32Const((3 * fn_indices.len()) as i32));
+    f.instruction(&I::I32Const((4 * fn_indices.len()) as i32));
     f.instruction(&I::TableGrow(0));
     f.instruction(&I::GlobalSet(NLS_BASE_GLOBAL));
     fn set_slot(f: &mut we::Function, off: i32, idx: u32) {
@@ -8934,12 +9124,15 @@ fn emit_nls_start(
         f.instruction(&I::RefFunc(idx));
         f.instruction(&I::TableSet(0));
     }
-    for (k, (res_idx, load_idx, jac_idx)) in fn_indices.iter().enumerate() {
-        let base_off = (3 * k) as i32;
+    for (k, (res_idx, load_idx, jac_idx, strict_idx)) in fn_indices.iter().enumerate() {
+        let base_off = (4 * k) as i32;
         set_slot(f, base_off, *res_idx);
         set_slot(f, base_off + 1, *load_idx);
         if let Some(jac_idx) = jac_idx {
             set_slot(f, base_off + 2, *jac_idx);
+        }
+        if let Some(strict_idx) = strict_idx {
+            set_slot(f, base_off + 3, *strict_idx);
         }
     }
 }
