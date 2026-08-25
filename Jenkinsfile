@@ -741,7 +741,10 @@ pipeline {
           steps {
             script {
               // No runtest.db cache necessary; the tests run in serial and do not load libraries!
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04', '') {
+              // 26.04 rather than the usual 22.04: ParModelica needs PoCL to compile the
+              // OpenCL kernels, and only 26.04's PoCL 6.0 is built against an LLVM new
+              // enough (19+) to recognise recent CPUs.
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04', '') {
                 common.partestParmod()
               }
             }
