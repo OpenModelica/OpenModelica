@@ -226,7 +226,16 @@ void ocl_get_device(){
 
 
 
-    clGetDeviceIDs(cpPlatform[plat_id - 1], CL_DEVICE_TYPE_ALL, 1, &ocl_device, NULL);
+    // A platform can be installed but expose no devices, e.g. the Intel ICD on a
+    // machine with no Intel GPU. Report that instead of the fp64 error below,
+    // which would name an empty device.
+    if (clGetDeviceIDs(cpPlatform[plat_id - 1], CL_DEVICE_TYPE_ALL, 1, &ocl_device, NULL) != CL_SUCCESS)
+    {
+        printf("- OpenCL platform %d has no devices.\n", plat_id);
+        printf("- Use setDefaultOpenCLDevice(0) to select a usable device automatically.\n");
+        fflush(stdout);
+        exit(1);
+    }
 
     if (!ocl_device_has_fp64(ocl_device))
     {

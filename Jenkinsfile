@@ -729,7 +729,7 @@ pipeline {
 
         stage('18 testsuite-clang-parmod') {
           agent {
-            label 'linux-intel-x64'   // TODO: We didn't get OpenCL to work on AMD CPU on Ubuntu Jammy, so Intel it is
+            label 'linux'
           }
           when {
             beforeAgent true
