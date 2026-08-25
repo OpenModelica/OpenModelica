@@ -92,6 +92,7 @@ impl Gbode {
             || self.last_step_size <= 0.0
             || self.extrapolation_base_time == f64::INFINITY
             || self.event_happened
+            || self.did_fast_step
         {
             return false;
         }
@@ -151,6 +152,7 @@ impl Gbode {
         // C reuses `kRight` of the previous step as `f(t_n, y_n)` when the method
         // collocates the right end point and the last step is still valid.
         let sr_valid = self.time != self.start_time
+            && !self.did_fast_step
             && !self.event_happened
             && self.extrapolation_base_time != f64::INFINITY;
         let f_left: Option<Vec<f64>> = (self.tableau.k_right && sr_valid)

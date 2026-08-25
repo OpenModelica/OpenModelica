@@ -11,7 +11,11 @@ edition = "2024"
 
 [features]
 default = ["std"]
-std = ["daskr/std"]
+std = ["daskr/std", "sparse"]
+# rsparse LU for the big gbode Newton matrices (KLU's stand-in, as in the
+# wasm-jit runtime's linear systems). Needs std, so the FMI3 no_std build
+# falls back to the dense LINPACK factorization.
+sparse = ["dep:rsparse"]
 # Compile the CVODE/IDA bindings without linking an archive: the symbols stay
 # undefined and become wasm imports the FMI3 adapter resolves at FMU-link time.
 sundials_extern = []
@@ -21,3 +25,5 @@ sundials_extern = []
 daskr = { path = "../daskr", default-features = false }
 # no_std `sqrt`/`pow`/`log` for the solver math; unused under `std`.
 libm = "0.2"
+# Sparse LU with AMD ordering (CSparse port), for `sparse` above.
+rsparse = { version = "1.2", optional = true }

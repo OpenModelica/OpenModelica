@@ -123,6 +123,26 @@ fn lookup<T: Copy>(flag: &str, value: &str, table: &[(&str, T)]) -> Result<T, St
     Err(format!("unrecognized value `{value}` for -{flag} (accepted: {accepted})"))
 }
 
+/// What the birate mode's inner (fast-states) integrator reads out of the
+/// `-gbf*` flags, C's `FLAG_MR*` getters in `gbode_conf.c`.
+pub struct GbfConf {
+    pub method: GbMethod,
+    pub nls_method: NlsMethod,
+    pub ctrl_method: CtrlMethod,
+    pub interpolation: Interpolation,
+    pub err_method: ErrMethod,
+}
+
+impl GbfConf {
+    pub fn method_name(&self) -> &'static str {
+        name_of(METHOD_NAMES, self.method)
+    }
+
+    pub fn nls_method_name(&self) -> &'static str {
+        name_of(NLS_NAMES, self.nls_method)
+    }
+}
+
 /// Everything the single-rate integrator reads out of the `-gb*` flags. C's
 /// per-flag defaults are applied here (esdirk4, internal NLS, pid_h312 control,
 /// dense_output_errctrl interpolation).
@@ -203,6 +223,70 @@ impl GbConf {
             ratio,
             evnt_reinit: crate::simflags::with_flags(|f| f.gb_toggle("gbctrl_evnt_reinit")),
         })
+    }
+
+    /// C's `getGB_method(FLAG_MR)` etc.: the fast (inner) integrator's options,
+    /// each falling back to the single-rate one. A fully implicit single-rate
+    /// method defaults the generic-NLS inner integrator to esdirk4, constant step
+    /// size control falls back to the I controller, and the `*_errctrl`
+    /// interpolations are not available for the fast states.
+    pub fn fast_conf(&self, sr_is_implicit: impl Fn(super::tableau::GbMethod) -> bool) -> Result<GbfConf, String> {
+        let get = |name: &str| crate::simflags::with_flags(|f| f.gb_flag(name));
+        let nls_method = match get("gbfnls") {
+            Some(v) => lookup("gbfnls", &v, NLS_NAMES)?,
+            None => self.nls_method,
+        };
+        let method = match get("gbfm") {
+            Some(v) => {
+                let m = lookup("gbfm", &v, METHOD_NAMES)?;
+                crate::omclog::info(
+                    crate::omclog::SOLVER,
+                    false,
+                    &format!("Chosen gbode method: {}", name_of(METHOD_NAMES, m)),
+                );
+                m
+            }
+            None if nls_method == NlsMethod::Internal => self.method,
+            None if sr_is_implicit(self.method) => super::tableau_data::GbMethod::RK_ESDIRK4,
+            None => self.method,
+        };
+        let ctrl_method = match get("gbfctrl") {
+            Some(v) => lookup("gbfctrl", &v, CTRL_NAMES)?,
+            None => self.ctrl_method,
+        };
+        let ctrl_method = if ctrl_method == CtrlMethod::Const {
+            crate::omclog::warning(
+                crate::omclog::STDOUT,
+                false,
+                "Constant step size not supported for inner integration. Using IController.",
+            );
+            CtrlMethod::I
+        } else {
+            ctrl_method
+        };
+        let interpolation = match get("gbfint") {
+            Some(v) => lookup("gbfint", &v, INTERPOL_NAMES)?,
+            None => self.interpolation,
+        };
+        let interpolation = match interpolation {
+            Interpolation::HermiteErrCtrl | Interpolation::DenseOutputErrCtrl => {
+                crate::omclog::warning(
+                    crate::omclog::SOLVER,
+                    false,
+                    &format!(
+                        "Chosen gbode interpolation method {} not supported for fast state integration",
+                        name_of(INTERPOL_NAMES, interpolation)
+                    ),
+                );
+                Interpolation::DenseOutput
+            }
+            other => other,
+        };
+        let err_method = match get("gbferr") {
+            Some(v) => lookup("gbferr", &v, ERR_NAMES)?,
+            None => ErrMethod::Default,
+        };
+        Ok(GbfConf { method, nls_method, ctrl_method, interpolation, err_method })
     }
 
     /// The names C echoes back for the chosen options.

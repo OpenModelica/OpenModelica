@@ -373,9 +373,12 @@ openmodelica_solvers/src/gbode/ctrl.rs
 openmodelica_solvers/src/gbode/err.rs
 openmodelica_solvers/src/gbode/events.rs
 openmodelica_solvers/src/gbode/interp.rs
+openmodelica_solvers/src/gbode/linsol.rs
 openmodelica_solvers/src/gbode/math.rs
 openmodelica_solvers/src/gbode/mod.rs
+openmodelica_solvers/src/gbode/multirate.rs
 openmodelica_solvers/src/gbode/nls.rs
+openmodelica_solvers/src/gbode/nls_generic.rs
 openmodelica_solvers/src/gbode/step.rs
 openmodelica_solvers/src/gbode/tableau.rs
 openmodelica_solvers/src/gbode/tableau_data.rs

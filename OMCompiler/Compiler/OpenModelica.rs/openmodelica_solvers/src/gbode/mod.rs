@@ -9,15 +9,18 @@
 //! loop drives it, so [`crate::driver`]'s event handling takes over from there
 //! unchanged.
 //!
-//! Not ported yet, and rejected with a message rather than silently substituted:
-//! the birate (`-gbratio`) mode and the `-gbnls=newton`/`kinsol` solvers. The
-//! FIRK T-transformation is a performance difference only, see [`nls`].
+//! The birate (`-gbratio`) mode lives in [`multirate`], the generic
+//! (`-gbnls=newton`/`kinsol`) solvers in [`nls_generic`], and the FIRK
+//! T-transformation decoupling in [`nls`].
 
 mod conf;
 mod ctrl;
 mod interp;
+mod linsol;
 mod math;
+mod multirate;
 mod nls;
+mod nls_generic;
 mod tableau;
 mod tableau_data;
 
@@ -31,6 +34,7 @@ use conf::{Interpolation, NlsMethod};
 pub use crate::Ode;
 pub(crate) use nls::Solved;
 use nls::GbNls;
+use nls_generic::GbNlsGeneric;
 use tableau::{Estimator, GmType, Tableau};
 
 pub(crate) use crate::MINIMAL_STEP_SIZE;
@@ -69,6 +73,7 @@ pub struct Gbode {
     conf: GbConf,
     tableau: Tableau,
     nls: Option<GbNls>,
+    gnls: Option<GbNlsGeneric>,
     /// The estimator the two-step one falls back to without a valid history.
     two_step_fallback: Option<Estimator>,
     n_states: usize,
@@ -145,24 +150,33 @@ pub struct Gbode {
     is_first_step: bool,
     did_event_step: bool,
     event_happened: bool,
+    /// The birate mode (`-gbratio` in (0,1)) and its fast-states integrator.
+    multi_rate: bool,
+    percentage: f64,
+    n_fast: usize,
+    n_slow: usize,
+    fast_states_idx: Vec<usize>,
+    slow_states_idx: Vec<usize>,
+    sorted_states_idx: Vec<usize>,
+    err_slow: f64,
+    err_fast: f64,
+    did_fast_step: bool,
+    gbf: Option<alloc::boxed::Box<multirate::GbodeF>>,
     stats: GbStats,
 }
 
 impl Gbode {
     /// C's `gbode_allocateData`: read the flags, build the tableau, size the work
-    /// arrays. `jac_colors` is the ODE Jacobian's color count (0 without a pattern).
+    /// arrays. `jac_colors` is the ODE Jacobian's color count (0 without a pattern);
+    /// `sym_jac_available` whether the model answers [`Ode::jacobian_vector`].
     pub fn new(
         n_states: usize,
         tolerance: f64,
         n_zc: usize,
         jac_colors: usize,
+        sym_jac_available: bool,
     ) -> core::result::Result<Self, String> {
         let conf = GbConf::from_flags()?;
-        if conf.ratio > 0.0 && conf.ratio < 1.0 {
-            return Err(String::from(
-                "-gbratio: the birate gbode mode is not implemented in the wasm-jit runtime",
-            ));
-        }
         let tol = if tolerance > 0.0 { tolerance } else { 1e-6 };
         // C's `gbode_allocateData` logging, in its order (`getGB_method` first, then
         // `initButcherTableau` and `analyseButcherTableau`).
@@ -197,24 +211,61 @@ impl Gbode {
             false,
             &format!("Chosen gbode step size control: {}", conf.ctrl_method_name()),
         );
-        if !is_explicit && conf.nls_method != NlsMethod::Internal {
-            return Err(format!(
-                "-gbnls={}: only the internal gbode nonlinear solver is implemented in the \
-                 wasm-jit runtime",
-                match conf.nls_method {
-                    NlsMethod::Newton => "newton",
-                    NlsMethod::Kinsol => "kinsol",
-                    NlsMethod::KinsolB => "experimental-kinsol",
-                    NlsMethod::Internal => "internal",
-                }
-            ));
-        }
         let internal_nls = !is_explicit && conf.nls_method == NlsMethod::Internal;
         let two_step_fallback = tableau::finalize_error(&mut t, internal_nls).map_err(String::from)?;
-        let nls = (!is_explicit).then(|| GbNls::new(&t, n_states, tol, jac_colors));
+        // C's `setJacobianMethod` against what the model carries, then gbode's own
+        // downgrades: colored evaluation is the only kind it implements. The
+        // warning is emitted below, where C prints it.
+        let (sym_jac, jac_warning) = if is_explicit {
+            (false, None)
+        } else {
+            use crate::simflags::JacobianMethod as M;
+            let requested = crate::simflags::with_flags(|f| f.jacobian);
+            let sym_avail = sym_jac_available && requested != Some(M::ColoredSymJacAdj);
+            let method = if sym_avail {
+                requested.unwrap_or(M::ColoredSymJac)
+            } else if jac_colors > 0 {
+                match requested {
+                    Some(M::ColoredSymJac) | Some(M::BicoloredSymJac) => M::ColoredNumJac,
+                    Some(M::SymJac) => M::NumJac,
+                    None => M::ColoredNumJac,
+                    Some(m) => m,
+                }
+            } else {
+                M::InternalNumJac
+            };
+            match method {
+                M::SymJac => (
+                    true,
+                    Some(
+                        "Symbolic Jacobians without coloring are currently not supported by \
+                         GBODE. Colored symbolical Jacobian will be used.",
+                    ),
+                ),
+                M::NumJac | M::ColoredNumJac | M::InternalNumJac => (
+                    false,
+                    Some(
+                        "Numerical Jacobians without coloring are currently not supported by \
+                         GBODE. Colored numerical Jacobian will be used.",
+                    ),
+                ),
+                _ => (sym_avail, None),
+            }
+        };
+        let nls = internal_nls.then(|| GbNls::new(&t, n_states, tol, jac_colors, sym_jac));
+        let gnls =
+            (!is_explicit && !internal_nls).then(|| GbNlsGeneric::new(&t, n_states, sym_jac));
+        let multi_rate = conf.ratio > 0.0 && conf.ratio < 1.0;
+        // With the birate mode and no explicit `-gbint`, C defaults to dense output.
+        let base_interpolation =
+            if multi_rate && crate::simflags::with_flags(|f| f.gb_flag("gbint")).is_none() {
+                Interpolation::DenseOutput
+            } else {
+                conf.interpolation
+            };
         // C's `gbode_allocateData` demotes dense output to Hermite when the method
         // has no formula for it.
-        let interpolation = match (conf.interpolation, t.with_dense_output) {
+        let interpolation = match (base_interpolation, t.with_dense_output) {
             (Interpolation::DenseOutput, false) => Interpolation::Hermite,
             (Interpolation::DenseOutputErrCtrl, false) => Interpolation::HermiteErrCtrl,
             (other, _) => other,
@@ -248,15 +299,8 @@ impl Gbode {
                 if no_restart { "NO" } else { "YES" }
             ),
         );
-        // C warns here that it is falling back to the colored numerical Jacobian,
-        // which is the only kind the wasm-jit backend emits a pattern for.
-        if !is_explicit {
-            omclog::warning(
-                omclog::STDOUT,
-                false,
-                "Numerical Jacobians without coloring are currently not supported by GBODE. \
-                 Colored numerical Jacobian will be used.",
-            );
+        if let Some(msg) = jac_warning {
+            omclog::warning(omclog::STDOUT, false, msg);
         }
         omclog::info(
             omclog::SOLVER,
@@ -276,6 +320,28 @@ impl Gbode {
         );
         let mut conf = conf;
         conf.interpolation = interpolation;
+        let percentage = conf.ratio;
+        let gbf = if multi_rate {
+            let gbf = multirate::GbodeF::new(&conf, n_states, tol, sym_jac)?;
+            // C: the outer step's last stage is not reused with a fast integration
+            // in between.
+            t.k_right = false;
+            let i = (libm::round(n_states as f64 * conf.ratio).max(1.0) as usize)
+                .min(n_states.saturating_sub(1));
+            omclog::info(
+                omclog::SOLVER,
+                false,
+                &format!(
+                    "Number of states {} ({} slow states, {} fast states)",
+                    n_states,
+                    n_states - i,
+                    i
+                ),
+            );
+            Some(alloc::boxed::Box::new(gbf))
+        } else {
+            None
+        };
         let n_stages = t.n_stages;
         let ring = 4usize;
         let current_error_order = t.error_order;
@@ -283,6 +349,7 @@ impl Gbode {
             conf,
             tableau: t,
             nls,
+            gnls,
             two_step_fallback,
             n_states,
             tol,
@@ -342,6 +409,17 @@ impl Gbode {
             is_first_step: true,
             did_event_step: false,
             event_happened: false,
+            multi_rate,
+            percentage,
+            n_fast: 0,
+            n_slow: n_states,
+            fast_states_idx: (0..n_states).collect(),
+            slow_states_idx: (0..n_states).collect(),
+            sorted_states_idx: (0..n_states).collect(),
+            err_slow: 0.0,
+            err_fast: 0.0,
+            did_fast_step: false,
+            gbf,
             stats: GbStats::default(),
         })
     }
@@ -365,6 +443,9 @@ impl Gbode {
         if let Some(nls) = self.nls.as_ref() {
             s.calls_jacobian = nls.n_jac_evals;
         }
+        if let Some(gnls) = self.gnls.as_ref() {
+            s.calls_jacobian = gnls.n_jac_evals;
+        }
         s
     }
 
@@ -373,6 +454,12 @@ impl Gbode {
         self.did_event_step = true;
         if let Some(nls) = self.nls.as_mut() {
             nls.invalidate();
+        }
+        if let Some(gbf) = self.gbf.as_mut() {
+            gbf.did_event_step = true;
+            if let Some(nls) = gbf.nls.as_mut() {
+                nls.invalidate();
+            }
         }
     }
 
@@ -494,8 +581,9 @@ impl Gbode {
     }
 
     /// C's `error_interpolation_gb`: how far the cheap interpolant is from the
-    /// Hermite one at the interval midpoint, as a tolerance-scaled error.
-    fn error_interpolation(&mut self, tol: f64) -> f64 {
+    /// Hermite one at the interval midpoint, as a tolerance-scaled error — over
+    /// `idx` when given (the slow states, in the birate mode).
+    fn error_interpolation(&mut self, tol: f64, idx: Option<&[usize]>) -> f64 {
         let n = self.n_states;
         let mid = (self.time_left + self.time_right) / 2.0;
         let (y1, y2) = (&mut self.y1, &mut self.y2);
@@ -513,7 +601,7 @@ impl Gbode {
                 &self.k_right,
                 mid,
                 y1,
-                None,
+                idx,
                 n,
                 &self.tableau,
                 &mut self.b_dt,
@@ -528,7 +616,7 @@ impl Gbode {
                 &self.y_right,
                 mid,
                 y1,
-                None,
+                idx,
                 n,
             );
         }
@@ -541,11 +629,19 @@ impl Gbode {
             &self.k_right,
             mid,
             y2,
-            None,
+            idx,
             n,
         );
         let mut errint: f64 = 0.0;
-        for i in 0..n {
+        let all: Vec<usize>;
+        let ix: &[usize] = match idx {
+            Some(ix) => ix,
+            None => {
+                all = (0..n).collect();
+                &all
+            }
+        };
+        for &i in ix {
             let errtol = tol * abs(self.y_left[i]).max(abs(self.y_right[i])) + tol;
             self.errest[i] = abs(self.y2[i] - self.y1[i]) / errtol;
             errint = errint.max(self.errest[i]);

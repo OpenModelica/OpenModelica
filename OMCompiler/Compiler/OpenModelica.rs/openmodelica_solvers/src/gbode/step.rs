@@ -31,7 +31,7 @@ impl Gbode {
             if self.tableau.a_at(stage, stage) == 0.0 {
                 self.x[stage * n..(stage + 1) * n].copy_from_slice(&self.res_const);
                 let mut f = vec![0.0; n];
-                if self.tableau.k_left && stage == 0 {
+                if self.tableau.k_left && stage == 0 && !self.did_fast_step {
                     f.copy_from_slice(&self.k_left);
                 } else {
                     ode.eval(stage_time, &self.res_const, &mut f)?;
@@ -41,41 +41,87 @@ impl Gbode {
             }
             let mut guess = vec![0.0; n];
             self.stage_guess(stage, stage_time, &mut guess);
+            let svp_linear = self.tableau.svp.as_ref().is_some_and(|svp| {
+                svp.types[stage] == SvpType::LinearCombination
+            });
+            if self.multi_rate && self.n_fast > 0 && !svp_linear {
+                for fi in 0..self.n_fast {
+                    let i = self.fast_states_idx[fi];
+                    guess[i] = self.y_old[i];
+                }
+            }
             let (time, step_size, event_happened) = (self.time, self.step_size, self.event_happened);
             let res_const = self.res_const.clone();
             let y_old = self.y_old.clone();
             let nominals = self.nominals.clone();
-            let nls = self.nls.as_mut().expect("implicit stage without an NLS");
-            let solved = nls.solve_dirk(
-                ode,
-                &self.tableau,
-                stage,
-                time,
-                step_size,
-                &y_old,
-                &res_const,
-                &mut guess,
-                event_happened,
-                &nominals,
-            )?;
-            if solved != super::Solved::Ok {
-                omclog::info(
-                    omclog::SOLVER,
-                    false,
-                    &format!(
-                        "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage {} at time t={}",
-                        stage + 1,
-                        omclog::g(stage_time, 0, 6)
-                    ),
-                );
-                return Ok(false);
-            }
-            self.x[stage * n..(stage + 1) * n].copy_from_slice(&guess);
-            // Reconstruct k from the solution instead of calling functionODE again
-            // (C does the same for every implicit stage of the internal solver).
-            let ifac = 1.0 / (self.step_size * self.tableau.a_at(stage, stage));
-            for i in 0..n {
-                self.k[stage * n + i] = ifac * (guess[i] - self.res_const[i]);
+            if let Some(nls) = self.nls.as_mut() {
+                let solved = nls.solve_dirk(
+                    ode,
+                    &self.tableau,
+                    stage,
+                    time,
+                    step_size,
+                    &y_old,
+                    &res_const,
+                    &mut guess,
+                    event_happened,
+                    &nominals,
+                )?;
+                if solved != super::Solved::Ok {
+                    omclog::info(
+                        omclog::SOLVER,
+                        false,
+                        &format!(
+                            "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage {} at time t={}",
+                            stage + 1,
+                            omclog::g(stage_time, 0, 6)
+                        ),
+                    );
+                    return Ok(false);
+                }
+                self.x[stage * n..(stage + 1) * n].copy_from_slice(&guess);
+                // Reconstruct k from the solution instead of calling functionODE again
+                // (C does the same for every implicit stage of the internal solver).
+                let ifac = 1.0 / (self.step_size * self.tableau.a_at(stage, stage));
+                for i in 0..n {
+                    self.k[stage * n + i] = ifac * (guess[i] - self.res_const[i]);
+                }
+            } else {
+                // C's generic path: Newton starts from `yOld` and falls back to the
+                // predicted stage value, and `k` is `f` at the accepted iterate.
+                let fac = step_size * self.tableau.a_at(stage, stage);
+                let mut resid = super::nls_generic::StageResidual {
+                    stage_time,
+                    fac,
+                    c_scale: 1.0,
+                    res_const: &res_const,
+                };
+                let mut x = vec![0.0; n];
+                let gnls = self.gnls.as_mut().expect("implicit stage without an NLS");
+                let solved = gnls.solve(
+                    ode,
+                    &mut resid,
+                    stage_time,
+                    &[&y_old, &guess],
+                    &nominals,
+                    &mut x,
+                )?;
+                if solved != super::Solved::Ok {
+                    omclog::info(
+                        omclog::SOLVER,
+                        false,
+                        &format!(
+                            "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage {} at time t={}",
+                            stage + 1,
+                            omclog::g(stage_time, 0, 6)
+                        ),
+                    );
+                    return Ok(false);
+                }
+                self.x[stage * n..(stage + 1) * n].copy_from_slice(&x);
+                let mut f = vec![0.0; n];
+                ode.eval(stage_time, &x, &mut f)?;
+                self.k[stage * n..(stage + 1) * n].copy_from_slice(&f);
             }
         }
         // y = yOld + h*sum(b[stage]*k[stage])
@@ -90,12 +136,14 @@ impl Gbode {
     }
 
     /// The initial guess for the implicit stage `stage`, in C's priority order:
-    /// a stage-value predictor, then dense output off the last step, then Hermite
-    /// between the two previous stages, then the ring-buffer extrapolation.
+    /// a stage-value predictor, then dense output off the last step (internal
+    /// solver only, as in C), then Hermite between the two previous stages, then
+    /// the ring-buffer extrapolation.
     fn stage_guess(&mut self, stage: usize, stage_time: f64, guess: &mut [f64]) {
         let n = self.n_states;
         let dense_output_valid = self.time != self.start_time
             && !self.event_happened
+            && self.nls.is_some()
             && self.extrapolation_base_time != f64::INFINITY;
         let svp_type = self.tableau.svp.as_ref().map(|s| s.types[stage]);
         match svp_type {
@@ -175,6 +223,7 @@ impl Gbode {
         let dense_output_valid = self.time != self.start_time
             && !self.event_happened
             && self.tableau.with_dense_output
+            && self.nls.is_some()
             && self.extrapolation_base_time != f64::INFINITY;
         for stage in 0..n_stages {
             let stage_time = self.time + self.tableau.c[stage] * self.step_size;
@@ -197,25 +246,58 @@ impl Gbode {
                 // when there is no valid dense output to extrapolate from.
                 z[stage * n..(stage + 1) * n].copy_from_slice(&self.y_old);
             }
+            // Zero-order hold for the fast states (C's `full_implicit_RK` with
+            // multirate): extrapolation off slow data is a poor start for them.
+            if self.multi_rate && self.n_fast > 0 {
+                for fi in 0..self.n_fast {
+                    let i = self.fast_states_idx[fi];
+                    z[stage * n + i] = self.y_old[i];
+                }
+            }
         }
         let (time, step_size, event_happened) = (self.time, self.step_size, self.event_happened);
         let y_old = self.y_old.clone();
         let k_left = self.k_left.clone();
         let nominals = self.nominals.clone();
         let mut k = core::mem::take(&mut self.k);
-        let nls = self.nls.as_mut().expect("implicit method without an NLS");
-        let solved = nls.solve_firk(
-            ode,
-            &self.tableau,
-            time,
-            step_size,
-            &y_old,
-            &k_left,
-            &mut z,
-            &mut k,
-            event_happened,
-            &nominals,
-        );
+        let solved = if let Some(nls) = self.nls.as_mut() {
+            nls.solve_firk(
+                ode,
+                &self.tableau,
+                time,
+                step_size,
+                &y_old,
+                &k_left,
+                &mut z,
+                &mut k,
+                event_happened,
+                &nominals,
+            )
+        } else {
+            // C's generic path: the primary start is the ring-buffer extrapolation
+            // per stage (`nlsxExtrapolation`), the retry `yOld` everywhere.
+            let mut z0 = vec![0.0; n * n_stages];
+            for stage in 0..n_stages {
+                let stage_time = time + self.tableau.c[stage] * step_size;
+                let mut v = vec![0.0; n];
+                self.extrapolate(&mut v, stage_time);
+                z0[stage * n..(stage + 1) * n].copy_from_slice(&v);
+            }
+            let mut z1 = vec![0.0; n * n_stages];
+            for stage in 0..n_stages {
+                z1[stage * n..(stage + 1) * n].copy_from_slice(&y_old);
+            }
+            let mut resid = super::nls_generic::IrkResidual {
+                t: &self.tableau,
+                time,
+                step_size,
+                y_old: &y_old,
+                k_left: &k_left,
+                k: &mut k,
+            };
+            let gnls = self.gnls.as_mut().expect("implicit method without an NLS");
+            gnls.solve(ode, &mut resid, time, &[&z0, &z1], &nominals, &mut z)
+        };
         self.k = k;
         if solved? != super::Solved::Ok {
             omclog::info(
@@ -270,18 +352,30 @@ impl Gbode {
         let res_const = self.res_const.clone();
         let y_old = self.y_old.clone();
         let nominals = self.nominals.clone();
-        let nls = self.nls.as_mut().expect("multi-step method without an NLS");
-        let solved = nls.solve_multistep(
-            ode,
-            &self.tableau,
-            time + step_size,
-            step_size,
-            &y_old,
-            &res_const,
-            &mut guess,
-            event_happened,
-            &nominals,
-        )?;
+        let solved = if let Some(nls) = self.nls.as_mut() {
+            nls.solve_multistep(
+                ode,
+                &self.tableau,
+                time + step_size,
+                step_size,
+                &y_old,
+                &res_const,
+                &mut guess,
+                event_happened,
+                &nominals,
+            )?
+        } else {
+            // C's generic path: every start vector is the predictor.
+            let start = guess.clone();
+            let mut resid = super::nls_generic::StageResidual {
+                stage_time: time + step_size,
+                fac: step_size * self.tableau.b[last],
+                c_scale: self.tableau.c[last],
+                res_const: &res_const,
+            };
+            let gnls = self.gnls.as_mut().expect("multi-step method without an NLS");
+            gnls.solve(ode, &mut resid, time + step_size, &[&start], &nominals, &mut guess)?
+        };
         if solved != super::Solved::Ok {
             omclog::info(
                 omclog::SOLVER,
@@ -397,6 +491,10 @@ impl Gbode {
     /// Interpolate the last accepted step onto `t`, C's `gb_interpolation` with the
     /// solver's configured method.
     pub(super) fn interpolate_step(&mut self, t: f64, out: &mut [f64]) {
+        self.interpolate_step_idx(t, out, None);
+    }
+
+    pub(super) fn interpolate_step_idx(&mut self, t: f64, out: &mut [f64], idx: Option<&[usize]>) {
         let n = self.n_states;
         let (y_left, k_left) = (self.y_left.clone(), self.k_left.clone());
         let (y_right, k_right) = (self.y_right.clone(), self.k_right.clone());
@@ -410,7 +508,7 @@ impl Gbode {
             &k_right,
             t,
             out,
-            None,
+            idx,
             n,
             &self.tableau,
             &mut self.b_dt,
@@ -460,11 +558,54 @@ impl Gbode {
             }
             self.is_first_step = false;
             self.did_event_step = false;
+            if let Some(gbf) = self.gbf.as_mut() {
+                gbf.did_event_step = true;
+            }
         }
         if const_step {
             self.step_size = self.desired_step_size;
         }
         let mut retries = 0u32;
+
+        // C's continuation block: an output point interrupted the inner (fast)
+        // integration mid-interval, so finish it before stepping on.
+        if self.multi_rate {
+            let resume = {
+                let gbf = self.gbf.as_ref().expect("multirate without gbf");
+                self.n_fast > 0 && gbf.time < self.time_right && !gbf.did_event_step
+            };
+            if resume {
+                match self.gbodef_main(ode, target)? {
+                    super::multirate::InnerStep::Event(te) => {
+                        *t = te;
+                        y[..n].copy_from_slice(&self.y_old);
+                        self.stats.calls_ode += ode.calls() - calls_before;
+                        return Ok(GbStep::Root(te));
+                    }
+                    super::multirate::InnerStep::Done => {}
+                }
+                let synced = {
+                    let gbf = self.gbf.as_ref().expect("multirate without gbf");
+                    abs(self.time_right - gbf.time_right) < GB_MINIMAL_STEP_SIZE
+                };
+                if synced {
+                    self.time = self.time_right;
+                    let (gy, gyr, gkr, gerr) = {
+                        let gbf = self.gbf.as_ref().expect("multirate without gbf");
+                        (gbf.y.clone(), gbf.y_right.clone(), gbf.k_right.clone(), gbf.err.clone())
+                    };
+                    self.y.copy_from_slice(&gy);
+                    self.y_old.copy_from_slice(&gy);
+                    self.y_right.copy_from_slice(&gyr);
+                    self.k_right.copy_from_slice(&gkr);
+                    self.err.copy_from_slice(&gerr);
+                    // The rest of the ring was already rotated for this step.
+                    self.tv[0] = self.time_right;
+                    self.yv[..n].copy_from_slice(&self.y_right);
+                    self.kv[..n].copy_from_slice(&self.k_right);
+                }
+            }
+        }
 
         while self.time < target {
             self.step_size = self.step_size.min(limit - self.time);
@@ -526,6 +667,27 @@ impl Gbode {
                 }
                 err = sqrt(err / n as f64);
 
+                if self.multi_rate {
+                    // The error threshold splits the states into slow and fast.
+                    err = self.error_threshold();
+                    self.n_fast = 0;
+                    self.n_slow = 0;
+                    self.err_slow = 0.0;
+                    self.err_fast = 0.0;
+                    self.err_int = 0.0;
+                    for i in 0..n {
+                        if self.err[i] >= 1.0 {
+                            self.fast_states_idx[self.n_fast] = i;
+                            self.n_fast += 1;
+                            self.err_fast = self.err_fast.max(self.err[i]);
+                        } else {
+                            self.slow_states_idx[self.n_slow] = i;
+                            self.n_slow += 1;
+                            self.err_slow = self.err_slow.max(self.err[i]);
+                        }
+                    }
+                }
+
                 if err > 1.0 && !const_step {
                     omclog::info(
                         omclog::SOLVER,
@@ -556,7 +718,9 @@ impl Gbode {
                 }
 
                 if int_with_err_ctrl {
-                    self.err_int = self.error_interpolation(tol);
+                    let idx = (self.multi_rate && self.n_fast > 0)
+                        .then(|| self.slow_states_idx[..self.n_slow].to_vec());
+                    self.err_int = self.error_interpolation(tol, idx.as_deref());
                     if self.err_int > 1.0 {
                         retries += 1;
                         self.stats.err_test_failures += 1;
@@ -587,6 +751,7 @@ impl Gbode {
                 self.extrapolation_base_time = self.time;
                 self.extrapolation_step_size = self.step_size;
                 self.event_happened = false;
+                self.did_fast_step = false;
                 self.k_last.copy_from_slice(&self.k);
                 self.y_last.copy_from_slice(&self.y_old);
                 for i in (1..self.ring_buffer_size).rev() {
@@ -606,12 +771,43 @@ impl Gbode {
                     self.step_size = self.max_step_size;
                 }
                 self.opt_step_size = self.step_size;
+                if self.multi_rate && self.n_fast > 0 {
+                    match self.gbodef_main(ode, target)? {
+                        super::multirate::InnerStep::Event(te) => {
+                            *t = te;
+                            y[..n].copy_from_slice(&self.y_old);
+                            self.stats.calls_ode += ode.calls() - calls_before;
+                            return Ok(GbStep::Root(te));
+                        }
+                        super::multirate::InnerStep::Done => {}
+                    }
+                    let synced = {
+                        let gbf = self.gbf.as_ref().expect("multirate without gbf");
+                        abs(self.time_right - gbf.time_right) < GB_MINIMAL_STEP_SIZE
+                    };
+                    if synced {
+                        let (gy, gyr, gerr) = {
+                            let gbf = self.gbf.as_ref().expect("multirate without gbf");
+                            (gbf.y.clone(), gbf.y_right.clone(), gbf.err.clone())
+                        };
+                        self.y.copy_from_slice(&gy);
+                        self.y_right.copy_from_slice(&gyr);
+                        self.err.copy_from_slice(&gerr);
+                        let mut f = vec![0.0; n];
+                        let yr = self.y_right.clone();
+                        ode.eval(self.time_right, &yr, &mut f)?;
+                        self.k_right.copy_from_slice(&f);
+                    }
+                }
                 break;
             }
 
             self.stats.steps += 1;
 
-            if let Some(event_time) = self.check_for_events(ode)? {
+            let check_events = !self.multi_rate
+                || self.gbf.as_ref().expect("multirate without gbf").time < self.time;
+            if check_events
+                && let Some(event_time) = self.check_for_events(ode)? {
                 self.time = event_time;
                 self.event_happened = true;
                 let mut y_ev = vec![0.0; n];
@@ -679,15 +875,38 @@ impl Gbode {
 
         // C names the method in the statistics block, on the run's last output step.
         if !no_grid && abs(target - stop_time) < GB_MINIMAL_STEP_SIZE {
-            omclog::info(
-                omclog::STATS,
-                false,
-                &format!("gbode (single-rate integration): {}", self.conf.method_name()),
-            );
+            if self.multi_rate {
+                let fast = self.gbf.as_ref().expect("multirate without gbf").conf.method_name();
+                omclog::info(
+                    omclog::STATS,
+                    false,
+                    &format!(
+                        "gbode (birate integration): slow: {} / fast: {}",
+                        self.conf.method_name(),
+                        fast
+                    ),
+                );
+            } else {
+                omclog::info(
+                    omclog::STATS,
+                    false,
+                    &format!("gbode (single-rate integration): {}", self.conf.method_name()),
+                );
+            }
         }
         let out_time = target.min(stop_time);
         let mut out = vec![0.0; n];
-        self.interpolate_step(out_time, &mut out);
+        if self.multi_rate
+            && self.gbf.as_ref().expect("multirate without gbf").time >= out_time
+        {
+            // Slow states from the outer interval, fast states from the inner one.
+            let slow = self.slow_states_idx[..self.n_slow].to_vec();
+            self.interpolate_step_idx(out_time, &mut out, Some(&slow));
+            let fast = self.fast_states_idx[..self.n_fast].to_vec();
+            self.interpolate_gbf_idx(out_time, &mut out, Some(&fast));
+        } else {
+            self.interpolate_step(out_time, &mut out);
+        }
         *t = out_time;
         y[..n].copy_from_slice(&out);
         self.stats.calls_ode += ode.calls() - calls_before;
@@ -697,7 +916,7 @@ impl Gbode {
 
 const GBODE_CONST_STEP_FAILED: &str = "CodegenWasmJit: gbode is running with a fixed step size and \
                                        the step calculation failed";
-const GBODE_MIN_STEP_ERROR: &str =
+pub(super) const GBODE_MIN_STEP_ERROR: &str =
     "CodegenWasmJit: gbode reached the minimum step size, but the error is still too large";
 const GBODE_MIN_INTERP_ERROR: &str = "CodegenWasmJit: gbode reached the minimum step size, but the \
                                       interpolation error is still too large";
@@ -740,7 +959,7 @@ mod tests {
     #[test]
     fn pending_event_is_reported_when_the_grid_reaches_it() {
         let dt = 2e-3;
-        let mut gb = Gbode::new(2, 1e-6, 1, 0).expect("allocate");
+        let mut gb = Gbode::new(2, 1e-6, 1, 0, false).expect("allocate");
         gb.set_experiment(0.0, 1.0, dt);
         gb.set_nominals(&[1.0, 1.0]);
         let mut e = Ball { calls: 0, nominals: [1.0, 1.0] };

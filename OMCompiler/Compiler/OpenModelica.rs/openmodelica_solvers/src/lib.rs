@@ -63,6 +63,12 @@ pub trait Ode {
         1.0
     }
 
+    /// State `max` attributes, for the finite-difference step's sign choice.
+    /// Empty ⇒ unbounded.
+    fn maxs(&self) -> &[f64] {
+        &[]
+    }
+
     /// Colouring of the ODE Jacobian: each entry lists the columns that may be
     /// perturbed together. Empty ⇒ dense, column by column.
     fn jac_colors(&self) -> &[alloc::vec::Vec<u32>] {

@@ -94,6 +94,20 @@ fn compute_gamma(err_now: f64, err_prev: f64, h_now: f64, h_prev: f64, eta: f64)
 
 /// C's `GenericController`: the step size factor for the next step.
 pub(super) fn generic_controller(err: &[f64], step: &[f64], err_order: i32, conf: &GbConf) -> f64 {
+    generic_controller_with(err, step, err_order, conf.ctrl_method, conf.ctrl_filter, conf.fhr)
+}
+
+/// [`generic_controller`] with the pieces spelled out — the inner (birate)
+/// integrator has its own controller method but shares C's global
+/// `use_filter`/`use_fhr`.
+pub(super) fn generic_controller_with(
+    err: &[f64],
+    step: &[f64],
+    err_order: i32,
+    m: CtrlMethod,
+    ctrl_filter: f64,
+    fhr: bool,
+) -> f64 {
     const FAC: f64 = 0.9;
     const FACMAX: f64 = 2.5;
     const FACMIN: f64 = 0.2;
@@ -103,7 +117,6 @@ pub(super) fn generic_controller(err: &[f64], step: &[f64], err_order: i32, conf
     if err_n < DBL_EPSILON {
         return FACMAX;
     }
-    let m = conf.ctrl_method;
     let mut h_fac = match m {
         CtrlMethod::Const => 1.0,
         CtrlMethod::I => pow(1. / err_n, 1. / k),
@@ -118,12 +131,12 @@ pub(super) fn generic_controller(err: &[f64], step: &[f64], err_order: i32, conf
             predictive_pid(err, step, err_order, m)
         }
     };
-    if conf.fhr && h_n1 > DBL_EPSILON {
+    if fhr && h_n1 > DBL_EPSILON {
         let gamma = compute_gamma(err_n, err_n1, h_n, h_n1, 0.1);
         h_fac *= pow(h_n / h_n1, gamma);
     }
-    if conf.ctrl_filter > 0.0 {
-        h_fac = conf.ctrl_filter * h_fac + (1.0 - conf.ctrl_filter);
+    if ctrl_filter > 0.0 {
+        h_fac = ctrl_filter * h_fac + (1.0 - ctrl_filter);
     }
     h_fac *= FAC;
     if (0.99 < h_fac) && (h_fac < 1.2) {
