@@ -12,66 +12,61 @@ pub fn stringHash(str: ArcStr) -> i32 {
     hasher.finish() as i32
 }
 
-/// Reduces a 64-bit djb2 accumulator to the non-negative `Integer` (i32) the
-/// MetaModelica builtins return. The C runtime (`meta_modelica_builtin.c`)
-/// computes djb2 in a 64-bit word and returns `labs()` of it; mirror that by
-/// taking the magnitude and keeping the low 31 bits, so the result is always
-/// `>= 0`. A non-negative hash matters wherever it reaches a textual context —
-/// e.g. `Util.hashFileNamePrefix` embeds `intString(hash)` in generated file
-/// and directory names, and a leading '-' from a negative value breaks the
-/// shell commands (`rm -rf -56.fmutmp`) the generated makefiles run on them.
+/// `meta_modelica_builtin.c`'s `djb2_hash_continue`: a fixed-width recurrence.
 #[inline]
-fn djb2_to_integer(hash: i64) -> i32 {
-    (hash.unsigned_abs() & i32::MAX as u64) as i32
+fn djb2(bytes: &[u8], mut hash: u32) -> u32 {
+    for &byte in bytes {
+        hash = hash.wrapping_mul(33).wrapping_add(byte as u32);
+    }
+    hash
+}
+
+/// `MMC_HASH_MASK`. Keeps the hash non-negative, which matters where it reaches
+/// a textual context: `Util.hashFileNamePrefix` puts `intString(hash)` in
+/// generated directory names that the makefiles `rm -rf`.
+const HASH_MASK: u32 = 0x7fff_ffff;
+
+/// `djb2_hash_wide`: kept for `stringHashDjb2Mod`, whose remainder is baked
+/// into generated string-switch `case` labels.
+#[inline]
+fn djb2_wide(bytes: &[u8]) -> u64 {
+    let mut hash: u64 = 5381;
+    for &byte in bytes {
+        hash = hash.wrapping_mul(33).wrapping_add(byte as u64);
+    }
+    hash
 }
 
 /// Returns a DJB2 hash of the string.
 /// DJB2 algorithm: hash = hash * 33 + byte
-///
-/// Accumulated in i64 to match the C runtime's 64-bit `unsigned long` recurrence
-/// (the i32 port previously wrapped at 32 bits, diverging from C and collapsing
-/// long strings), then returned as a non-negative i32 — see [`djb2_to_integer`].
 pub fn stringHashDjb2(str: ArcStr) -> i32 {
-    let mut hash: i64 = 5381;
-    for &byte in str.as_bytes() {
-        hash = hash.wrapping_mul(33).wrapping_add(byte as i64);
-    }
-    djb2_to_integer(hash)
+    (djb2(str.as_bytes(), 5381) & HASH_MASK) as i32
 }
 
-/// Continues computing a DJB2 hash by adding another string to it. The incoming
-/// `hash` is the (already non-negative) result of a previous step; accumulation
-/// proceeds in i64 and the result is reduced back to a non-negative i32.
+/// Continues computing a DJB2 hash by adding another string to it.
 pub fn stringHashDjb2Continue(str: ArcStr, hash: i32) -> i32 {
-    let mut h = hash as i64;
-    for &byte in str.as_bytes() {
-        h = h.wrapping_mul(33).wrapping_add(byte as i64);
-    }
-    djb2_to_integer(h)
+    (djb2(str.as_bytes(), hash as u32) & HASH_MASK) as i32
 }
 
-/// Computes a DJB2 hash and applies modulo without intermediate overflow issues.
-/// Mirrors the C runtime: the 64-bit hash is reduced modulo `mod_val` using
-/// unsigned arithmetic, so the result lies in `[0, mod_val)`.
+/// Computes a DJB2 hash and applies modulo, giving a result in `[0, mod_val)`.
 pub fn stringHashDjb2Mod(str: ArcStr, mod_val: i32) -> i32 {
     if mod_val == 0 {
         return 0;
     }
-    let mut hash: i64 = 5381;
-    for &byte in str.as_bytes() {
-        hash = hash.wrapping_mul(33).wrapping_add(byte as i64);
-    }
-    ((hash as u64) % (mod_val as u32 as u64)) as i32
+    (djb2_wide(str.as_bytes()) % (mod_val as u32 as u64)) as i32
 }
 
 /// Returns an SDBM hash of the string.
 /// SDBM algorithm: hash = byte + (hash << 6) + (hash << 16) - hash
 pub fn stringHashSdbm(str: ArcStr) -> i32 {
-    let mut hash: i32 = 0;
+    let mut hash: u32 = 0;
     for &byte in str.as_bytes() {
-        hash = byte as i32 + (hash << 6) + (hash << 16) - hash;
+        hash = (byte as u32)
+            .wrapping_add(hash << 6)
+            .wrapping_add(hash << 16)
+            .wrapping_sub(hash);
     }
-    hash
+    (hash & HASH_MASK) as i32
 }
 
 #[cfg(test)]
@@ -94,16 +89,18 @@ mod tests {
 
         #[test]
         fn test_string_hash_djb2_continue() {
-            // Starting from the hash of "ab" and adding "c" gives the same as
-            // hashing "abc" from scratch. The strings are kept short so every
-            // intermediate value fits a non-negative i32: the `Continue` API
-            // passes the running hash as an `Integer` (i32), so the chain
-            // identity only holds while no intermediate has been reduced (it
-            // matches the C runtime, whose `labs()`/64-bit width has the same
-            // boundary limitation).
+            // Short strings only: the identity holds while no intermediate has
+            // lost its top bit to HASH_MASK, as in the C runtime.
             let h1 = stringHashDjb2(literal!("ab"));
             let combined = stringHashDjb2Continue(literal!("c"), h1);
             assert_eq!(combined, stringHashDjb2(literal!("abc")));
+        }
+
+        #[test]
+        fn test_string_hash_fixed_width() {
+            // A string long enough to overflow the 32-bit accumulator.
+            assert_eq!(stringHashDjb2(literal!("$SEED_ODE_JAC_ADJ.$DER.b")), 1541592153);
+            assert_eq!(stringHashDjb2Mod(literal!("$RES_SIM_1"), 13), 4);
         }
 
         #[test]

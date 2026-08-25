@@ -54,7 +54,7 @@ pub type Ident = ArcStr;
 ///     see 3.4.4.2 Array constructor with iterators from Specification
 ///   * the guard is a MetaModelica extension; it's a Boolean expression that
 ///     filters out items in the range.
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct ForIterator {
     pub name: ArcStr,
     pub guardExp: Option<Arc<Exp>>,
@@ -96,7 +96,7 @@ pub type ForIterators = Arc<metamodelica::List<Arc<ForIterator>>>;
 ///   level in the source file, combined with a within statement that
 ///   indicates the hieractical position of the program.
 /// PROGRAM, the top level construct
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Program {
     /// List of classes
     pub classes: Arc<metamodelica::List<Arc<Class>>>,
@@ -124,7 +124,7 @@ pub type PROGRAM = Program;
 
 
 /// Within Clauses
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Within {
     /// the within clause
     WITHIN {
@@ -154,7 +154,7 @@ pub type Info = SourceInfo;
 /// A class definition consists of a name, a flag to indicate
 ///  if this class is declared as partial, the declared class restriction,
 ///  and the body of the declaration.
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Class {
     pub name: Ident,
     /// true if partial
@@ -220,7 +220,7 @@ pub type CLASS = Class;
 /// For a derived type, the  type contains the name of the derived class
 /// and an optional array dimension and a list of modifications.
 ///
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum ClassDef {
     PARTS {
         /// class A<B,C> ... has type variables B,C
@@ -333,7 +333,7 @@ pub use self::ClassDef::{PARTS,DERIVED,ENUMERATION,OVERLOAD,CLASS_EXTENDS,PDER};
 pub type ArrayDim = Arc<metamodelica::List<Arc<Subscript>>>;
 
 /// ModExtension: new MetaModelica type specification!
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum TypeSpec {
     TPATH {
         path: Arc<Path>,
@@ -374,7 +374,7 @@ pub use self::TypeSpec::{TPATH,TCOMPLEX};
 
 /// The definition of an enumeration is either a list of literals
 ///     or a colon, \':\', which defines a supertype of all enumerations
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum EnumDef {
     ENUMLITERALS {
         enumLiterals: Arc<metamodelica::List<Arc<EnumLiteral>>>,
@@ -406,7 +406,7 @@ pub use self::EnumDef::{ENUMLITERALS,ENUM_COLON};
 
 /// EnumLiteral, which is a name in an enumeration and an optional
 ///   Comment.
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct EnumLiteral {
     pub literal: Ident,
     pub comment: Option<Arc<Comment>>,
@@ -427,7 +427,7 @@ pub type ENUMLITERAL = EnumLiteral;
 ///  clauses, collectively called elements.  There are also equation
 ///  sections and algorithm sections. The EXTERNAL part is used only by functions
 ///  which can be declared as external C or FORTRAN functions.
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum ClassPart {
     PUBLIC {
         contents: Arc<metamodelica::List<Arc<ElementItem>>>,
@@ -506,7 +506,7 @@ impl Default for ClassPart {
 pub use self::ClassPart::{PUBLIC,PROTECTED,CONSTRAINTS,EQUATIONS,INITIALEQUATIONS,ALGORITHMS,INITIALALGORITHMS,EXTERNAL};
 
 /// An element item is either an element or an annotation
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum ElementItem {
     ELEMENTITEM {
         element: Arc<Element>,
@@ -540,7 +540,7 @@ pub use self::ElementItem::{ELEMENTITEM,LEXER_COMMENT};
 
 /// Elements
 ///  The basic element type in Modelica
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Element {
     ELEMENT {
         finalPrefix: bool,
@@ -607,7 +607,7 @@ impl Default for Element {
 pub use self::Element::{ELEMENT,DEFINEUNIT,TEXT};
 
 /// Constraining type, must be extends
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct ConstrainClass {
     /// must be extends
     pub elementSpec: Arc<ElementSpec>,
@@ -643,7 +643,7 @@ pub type CONSTRAINCLASS = ConstrainClass;
 ///    As an example, if the element `extends TwoPin;\' appears
 ///    in the source, it is represented in the AST as
 ///    `EXTENDS(IDENT(\"TwoPin\"),{})\'.
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum ElementSpec {
     CLASSDEF {
         /// replaceable
@@ -716,7 +716,7 @@ pub use self::ElementSpec::{CLASSDEF,EXTENDS,IMPORT,COMPONENTS};
 
 /// One of the keyword inner and outer CAN be given to reference an
 ///   inner or outer element. Thus there are three disjoint possibilities.
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum InnerOuter {
     /// an inner prefix
     INNER,
@@ -743,7 +743,7 @@ impl Default for InnerOuter {
 pub use self::InnerOuter::{INNER,OUTER,INNER_OUTER,NOT_INNER_OUTER};
 
 /// Import statements, different kinds
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Import {
     NAMED_IMPORT {
         /// name
@@ -797,7 +797,7 @@ impl Default for Import {
 }
 pub use self::Import::{NAMED_IMPORT,QUAL_IMPORT,UNQUAL_IMPORT,GROUP_IMPORT};
 
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum GroupImport {
     GROUP_IMPORT_NAME {
         name: ArcStr,
@@ -836,7 +836,7 @@ pub use self::GroupImport::{GROUP_IMPORT_NAME,GROUP_IMPORT_RENAME};
 pub type ComponentCondition = Arc<Exp>;
 
 /// Collection of component and an optional comment
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct ComponentItem {
     /// component
     pub component: Component,
@@ -868,7 +868,7 @@ pub type COMPONENTITEM = ComponentItem;
 
 
 /// Some kind of Modelica entity (object or variable)
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Component {
     /// name
     pub name: Ident,
@@ -902,7 +902,7 @@ pub type COMPONENT = Component;
 /// Several component declarations can be grouped together in one
 ///  `ElementSpec\' by writing them on the same line in the source.
 ///  This type contains the information specific to one component.
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum EquationItem {
     EQUATIONITEM {
         /// equation
@@ -942,7 +942,7 @@ impl Default for EquationItem {
 pub use self::EquationItem::{EQUATIONITEM,EQUATIONITEMCOMMENT};
 
 /// Info specific for an algorithm item.
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum AlgorithmItem {
     ALGORITHMITEM {
         /// algorithm
@@ -984,7 +984,7 @@ pub use self::AlgorithmItem::{ALGORITHMITEM,ALGORITHMITEMCOMMENT};
 
 /// Information on one (kind) of equation, different constructors for different
 ///     kinds of equations
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Equation {
     EQ_IF {
         /// Conditional expression
@@ -1101,7 +1101,7 @@ pub use self::Equation::{EQ_IF,EQ_EQUALS,EQ_PDE,EQ_CONNECT,EQ_FOR,EQ_WHEN_E,EQ_N
 ///  algorithm section.  It does not describe a whole algorithm.  The
 ///  reason this type is named like this is that the name of the
 ///  grammar rule for algorithm statements is `algorithm\'.
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Algorithm {
     ALG_ASSIGN {
         /// assignComponent
@@ -1244,7 +1244,7 @@ pub static emptyMod: std::sync::LazyLock<Arc<Modification>> = std::sync::LazyLoc
 ///  are two forms of modifications: redeclarations and component
 ///  modifications.
 ///  - Modifications
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Modification {
     pub elementArgLst: Arc<metamodelica::List<Arc<ElementArg>>>,
     pub eqMod: Arc<EqMod>,
@@ -1269,7 +1269,7 @@ impl Default for Modification {
 pub type CLASSMOD = Modification;
 
 
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum EqMod {
     NOMOD,
     EQMOD {
@@ -1302,7 +1302,7 @@ impl Default for EqMod {
 pub use self::EqMod::{NOMOD,EQMOD};
 
 /// Wrapper for things that modify elements, modifications and redeclarations
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum ElementArg {
     MODIFICATION {
         /// final prefix
@@ -1384,7 +1384,7 @@ impl Default for ElementArg {
 pub use self::ElementArg::{MODIFICATION,REDECLARATION,ELEMENTARGCOMMENT,INHERITANCEBREAK};
 
 /// The keywords redeclare and replacable can be given in three different kombinations, each one by themself or the both combined.
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum RedeclareKeywords {
     REDECLARE,
     REPLACEABLE,
@@ -1406,7 +1406,7 @@ pub use self::RedeclareKeywords::{REDECLARE,REPLACEABLE,REDECLARE_REPLACEABLE};
 
 /// The each keyword can be present in both MODIFICATION\'s and REDECLARATION\'s.
 ///  - Each attribute
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Each {
     EACH,
     NON_EACH,
@@ -1425,7 +1425,7 @@ impl Default for Each {
 pub use self::Each::{EACH,NON_EACH};
 
 /// Element attributes
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct ElementAttributes {
     /// flow
     pub flowPrefix: bool,
@@ -1473,7 +1473,7 @@ pub type ATTR = ElementAttributes;
 
 
 /// Is field
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum IsField {
     /// variable is not a field
     NONFIELD,
@@ -1494,7 +1494,7 @@ impl Default for IsField {
 pub use self::IsField::{NONFIELD,FIELD};
 
 /// Parallelism
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Parallelism {
     /// Global variables for CUDA and OpenCL
     PARGLOBAL,
@@ -1517,7 +1517,7 @@ impl Default for Parallelism {
 }
 pub use self::Parallelism::{PARGLOBAL,PARLOCAL,NON_PARALLEL};
 
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub(crate) enum FlowStream {
     FLOW,
     STREAM,
@@ -1535,7 +1535,7 @@ impl metamodelica::gc::MMTrace for FlowStream {
 pub(crate) use self::FlowStream::{FLOW,STREAM,NOT_FLOW_STREAM};
 
 /// Variability
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Variability {
     VAR,
     DISCRETE,
@@ -1558,7 +1558,7 @@ impl Default for Variability {
 pub use self::Variability::{VAR,DISCRETE,PARAM,CONST};
 
 /// Direction
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Direction {
     /// direction is input
     INPUT,
@@ -1586,7 +1586,7 @@ pub use self::Direction::{INPUT,OUTPUT,BIDIR,INPUT_OUTPUT};
 
 /// The Exp uniontype is the container of a Modelica expression.
 ///  - Expressions
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Exp {
     INTEGER {
         value: i32,
@@ -1888,7 +1888,7 @@ impl Default for Exp {
 pub use self::Exp::{INTEGER,REAL,CREF,STRING,BOOL,BINARY,UNARY,LBINARY,LUNARY,RELATION,IFEXP,CALL,PARTEVALFUNCTION,ARRAY,MATRIX,RANGE,TUPLE,END,CODE,AS,CONS,MATCHEXP,LIST,DOT,EXPRESSIONCOMMENT,SUBSCRIPTED_EXP,BREAK};
 
 /// case in match or matchcontinue
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Case {
     CASE {
         /// patterns to be matched
@@ -1966,7 +1966,7 @@ impl Default for Case {
 }
 pub use self::Case::{CASE,ELSE};
 
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum MatchType {
     MATCH,
     MATCHCONTINUE,
@@ -1985,7 +1985,7 @@ impl Default for MatchType {
 pub use self::MatchType::{MATCH,MATCHCONTINUE};
 
 /// The Code uniontype is used for Meta-programming. It originates from the $Code quoting mechanism. See paper in Modelica2003 conference
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum CodeNode {
     /// Cannot be parsed; used by Static for API calls
     C_TYPENAME {
@@ -2069,7 +2069,7 @@ pub use self::CodeNode::{C_TYPENAME,C_VARIABLENAME,C_CONSTRAINTSECTION,C_EQUATIO
 
 /// The FunctionArgs uniontype consists of a list of positional arguments
 ///  followed by a list of named arguments (Modelica v2.0)
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum FunctionArgs {
     FUNCTIONARGS {
         /// args
@@ -2113,7 +2113,7 @@ pub use self::FunctionArgs::{FUNCTIONARGS,FOR_ITER_FARG};
 
 pub static emptyFunctionArgs: std::sync::LazyLock<Arc<FunctionArgs>> = std::sync::LazyLock::new(|| { Arc::new(FunctionArgs::FUNCTIONARGS { args: metamodelica::nil(), argNames: metamodelica::nil() }) });
 
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum ReductionIterType {
     /// Reductions are by default calculated as all combinations of the iterators
     COMBINE,
@@ -2132,7 +2132,7 @@ pub use self::ReductionIterType::{COMBINE,THREAD};
 
 /// The NamedArg uniontype consist of an Identifier for the argument and an expression
 ///  giving the value of the argument
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct NamedArg {
     /// argName
     pub argName: Ident,
@@ -2160,7 +2160,7 @@ pub type NAMEDARG = NamedArg;
 
 
 /// Expression operators
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Operator {
     /// addition
     ADD,
@@ -2250,7 +2250,7 @@ pub use self::Operator::{ADD,SUB,MUL,DIV,POW,UPLUS,UMINUS,ADD_EW,SUB_EW,MUL_EW,D
 ///  when it is used in a component reference it means a slice of the
 ///  whole dimension.
 ///  - Subscripts
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Subscript {
     /// unknown array dimension
     NOSUB,
@@ -2287,7 +2287,7 @@ pub use self::Subscript::{NOSUB,SUBSCRIPT};
 ///  a component.  It is represented as a list of
 ///  identifier--subscript pairs.
 ///  - Component references and paths
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum ComponentRef {
     CREF_FULLYQUALIFIED {
         componentRef: Arc<ComponentRef>,
@@ -2352,7 +2352,7 @@ pub use self::ComponentRef::{CREF_FULLYQUALIFIED,CREF_QUAL,CREF_IDENT,WILD,ALLWI
 /// The type `Path\', on the other hand,
 ///  is used to store references to class names, or names inside
 ///  class definitions.
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Path {
     QUALIFIED {
         /// name
@@ -2408,7 +2408,7 @@ pub use self::Path::{QUALIFIED,IDENT,FULLYQUALIFIED};
 ///  predefined types are created in the Builtin module and are
 ///  assigned special restrictions.
 ///
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Restriction {
     R_CLASS,
     R_OPTIMIZATION,
@@ -2492,7 +2492,7 @@ impl Default for Restriction {
 pub use self::Restriction::{R_CLASS,R_OPTIMIZATION,R_MODEL,R_RECORD,R_BLOCK,R_CONNECTOR,R_EXP_CONNECTOR,R_TYPE,R_PACKAGE,R_FUNCTION,R_OPERATOR,R_OPERATOR_RECORD,R_ENUMERATION,R_PREDEFINED_INTEGER,R_PREDEFINED_REAL,R_PREDEFINED_STRING,R_PREDEFINED_BOOLEAN,R_PREDEFINED_ENUMERATION,R_PREDEFINED_CLOCK,R_UNIONTYPE,R_METARECORD,R_UNKNOWN};
 
 /// function purity
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum FunctionPurity {
     PURE,
     IMPURE,
@@ -2512,7 +2512,7 @@ impl Default for FunctionPurity {
 }
 pub use self::FunctionPurity::{PURE,IMPURE,NO_PURITY};
 
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum FunctionRestriction {
     /// a normal function
     FR_NORMAL_FUNCTION {
@@ -2543,7 +2543,7 @@ pub use self::FunctionRestriction::{FR_NORMAL_FUNCTION,FR_OPERATOR_FUNCTION,FR_P
 
 /// An Annotation is a class_modification.
 ///  - Annotation
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Annotation {
     /// elementArgs
     pub elementArgs: Arc<metamodelica::List<Arc<ElementArg>>>,
@@ -2567,7 +2567,7 @@ pub type ANNOTATION = Annotation;
 
 
 /// Comment
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Comment {
     /// annotation
     pub annotation_: Option<Arc<Annotation>>,
@@ -2595,7 +2595,7 @@ pub type COMMENT = Comment;
 
 
 /// Declaration of an external function call - ExternalDecl
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct ExternalDecl {
     /// The name of the external function
     pub funcName: Option<ArcStr>,
@@ -2633,7 +2633,7 @@ impl Default for ExternalDecl {
 pub type EXTERNALDECL = ExternalDecl;
 
 
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Ref {
     RCR {
         cr: Arc<ComponentRef>,
@@ -2666,7 +2666,7 @@ impl metamodelica::gc::MMTrace for Ref {
 pub use self::Ref::{RCR,RTS,RIM};
 
 /// Controls output of error-messages
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Msg {
     /// Give error message
     MSG {

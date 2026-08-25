@@ -871,13 +871,13 @@ impl GenCtx {
         // stay as builtin derives (they need no short-circuit and `Eq` is a
         // marker requiring the `PartialEq` that `MetaCmp` provides).
         if self.types_directly_containing_dyn_fn.contains(qname) {
-            "#[derive(Clone, metamodelica::ReferenceEq)]"
+            "#[derive(Clone, metamodelica::MMCtor, metamodelica::ReferenceEq)]"
         } else if self.types_containing_mutable.contains(qname)
             || self.types_containing_array.contains(qname)
         {
-            "#[derive(Clone, Debug, Eq, metamodelica::MetaCmp, metamodelica::ReferenceEq)]"
+            "#[derive(Clone, Debug, Eq, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]"
         } else {
-            "#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]"
+            "#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]"
         }
     }
 

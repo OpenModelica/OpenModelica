@@ -34,6 +34,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #define GEN_META_MODELICA_BUILTIN_BOXPTR
 #include "meta_modelica_builtin_boxptr.h"
@@ -115,23 +116,37 @@ modelica_real nobox_stringReal(threadData_t *threadData,metamodelica_string s)
  * http://www.cse.yorku.ca/~oz/hash.html
  * hash functions which could be useful to replace System__hash:
  */
+/* A hash returned as a modelica_integer decides UnorderedSet/UnorderedMap
+ * bucket order, so it is accumulated fixed-width and reduced to 31 bits. */
+#define MMC_HASH_MASK 0x7fffffff
+
 /*** djb2 hash ***/
-static inline unsigned long djb2_hash_continue(const unsigned char *str, unsigned long hash)
+static inline uint32_t djb2_hash_continue(const unsigned char *str, uint32_t hash)
 {
   int c;
   while (0 != (c = *str++)) hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
   return hash;
 }
 
-static inline unsigned long djb2_hash(const unsigned char *str)
+static inline uint32_t djb2_hash(const unsigned char *str)
 {
   return djb2_hash_continue(str, 5381);
 }
 
-/*** sdbm hash ***/
-static inline unsigned long sdbm_hash(const unsigned char* str)
+/* CodegenCFunctions bakes stringHashDjb2Mod's remainder into the generated
+ * string-switch `case` labels, so its recurrence must not change. */
+static inline unsigned long djb2_hash_wide(const unsigned char *str)
 {
-  unsigned long hash = 0;
+  unsigned long hash = 5381;
+  int c;
+  while (0 != (c = *str++)) hash = ((hash << 5) + hash) + c;
+  return hash;
+}
+
+/*** sdbm hash ***/
+static inline uint32_t sdbm_hash(const unsigned char* str)
+{
+  uint32_t hash = 0;
   int c;
   while (0 != (c = *str++)) hash = c + (hash << 6) + (hash << 16) - hash;
   return hash;
@@ -150,20 +165,14 @@ modelica_integer stringHash(metamodelica_string_const s)
 modelica_integer stringHashDjb2(metamodelica_string_const s)
 {
   const char* str = MMC_STRINGDATA(s);
-  long res = djb2_hash((const unsigned char*)str);
-  res = labs(res);
-  /* fprintf(stderr, "stringHashDjb2 %s-> %ld %ld %ld\n", str, res, mmc_mk_icon(res), mmc_unbox_integer(mmc_mk_icon(res))); */
-  return res;
+  return djb2_hash((const unsigned char*)str) & MMC_HASH_MASK;
 }
 
 /* adrpo: see the comment above about djb2 hash */
 modelica_integer stringHashDjb2Continue(metamodelica_string_const s, modelica_integer hash)
 {
   const char* str = MMC_STRINGDATA(s);
-  long res = djb2_hash_continue((const unsigned char*)str, (unsigned long)hash);
-  res = labs(res);
-  /* fprintf(stderr, "stringHashDjb2 %s-> %ld %ld %ld\n", str, res, mmc_mk_icon(res), mmc_unbox_integer(mmc_mk_icon(res))); */
-  return res;
+  return djb2_hash_continue((const unsigned char*)str, (uint32_t)hash) & MMC_HASH_MASK;
 }
 
 /* adrpo: see the comment above about djb2 hash */
@@ -174,9 +183,7 @@ modelica_integer stringHashDjb2Mod(metamodelica_string_const s, modelica_integer
   if (mod == 0) {
     MMC_THROW();
   }
-  res = djb2_hash((const unsigned char*)str) % (unsigned int) mod;
-  res = labs(res);
-  /* fprintf(stderr, "stringHashDjb2Mod %s %ld-> %ld %ld %ld\n", str, mod, res, mmc_mk_icon(res), mmc_unbox_integer(mmc_mk_icon(res))); */
+  res = djb2_hash_wide((const unsigned char*)str) % (unsigned int) mod;
   return res;
 }
 
@@ -193,8 +200,7 @@ modelica_metatype boxptr_stringHashDjb2Mod(threadData_t *threadData,modelica_met
 modelica_integer stringHashSdbm(metamodelica_string_const s)
 {
   const char* str = MMC_STRINGDATA(s);
-  long res = sdbm_hash((const unsigned char*)str);
-  return res;
+  return sdbm_hash((const unsigned char*)str) & MMC_HASH_MASK;
 }
 
 modelica_metatype boxptr_substring(threadData_t *threadData, metamodelica_string_const str, modelica_metatype boxstart, modelica_metatype boxstop)

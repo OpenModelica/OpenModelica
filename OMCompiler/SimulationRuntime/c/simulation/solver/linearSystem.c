@@ -102,6 +102,13 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         linsys[i].jacobianIndex = -1;
         throwStreamPrint(threadData, "Failed to initialize the jacobian for torn linear system %d.", (int)linsys[i].equationIndex);
       }
+      /* evalJacobian() fills sizeRows*sizeCols entries, the solvers hand it a
+       * size x (size+1) buffer. A wider Jacobian would run over it. */
+      if(jacobian->sizeRows != size || jacobian->sizeCols != size)
+      {
+        linsys[i].jacobianIndex = -1;
+        throwStreamPrint(threadData, "Jacobian of torn linear system %d is %ux%u, but the system has size %d.", (int)linsys[i].equationIndex, jacobian->sizeRows, jacobian->sizeCols, size);
+      }
       nnz = jacobian->sparsePattern->nnz;
       linsys[i].nnz = nnz;
 
