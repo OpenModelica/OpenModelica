@@ -2511,11 +2511,63 @@ pub fn alarm(seconds: i32) -> i32 {
     0
 }
 
-pub fn covertTextFileToCLiteral(_textFile: ArcStr, _outFile: ArcStr, _target: ArcStr) -> bool {
-    // Reads a text file and writes a C-source file containing the text
-    // as a string literal. The C runtime handles escaping platform-by-
-    // platform; defer until a Susan template needs it.
-    todo!("System.covertTextFileToCLiteral: text-to-C-literal converter not yet ported")
+pub fn covertTextFileToCLiteral(textFile: ArcStr, outFile: ArcStr, target: ArcStr) -> bool {
+    let Ok(bytes) = openmodelica_wasi::fs::read(textFile.as_str()) else {
+        return false;
+    };
+    let mut out: Vec<u8> = Vec::with_capacity(2 * bytes.len() + 2);
+    if target.as_str() == "msvc" {
+        // MSVC caps a string literal at 64k; emit a char array instead,
+        // broken every BUFSIZ input bytes like C does.
+        out.extend_from_slice(b"{\n");
+        for chunk in bytes.chunks(8192) {
+            for &b in chunk {
+                out.push(b'\'');
+                match b {
+                    b'\n' => out.extend_from_slice(b"\\n"),
+                    b'\r' => out.extend_from_slice(b"\\r"),
+                    b'\\' => out.extend_from_slice(b"\\\\"),
+                    b'"' => out.extend_from_slice(b"\\\""),
+                    b'\'' => out.extend_from_slice(b"\\'"),
+                    b => out.push(b),
+                }
+                out.extend_from_slice(b"',");
+            }
+            out.push(b'\n');
+        }
+        // C's do/while emits it once even for an empty file.
+        if bytes.is_empty() {
+            out.push(b'\n');
+        }
+        out.extend_from_slice(b"'\\0'\n}");
+    } else {
+        out.push(b'"');
+        for &b in &bytes {
+            match b {
+                b'\n' => out.extend_from_slice(b"\\n"),
+                b'\r' => out.extend_from_slice(b"\\r"),
+                b'\\' => out.extend_from_slice(b"\\\\"),
+                b'"' => out.extend_from_slice(b"\\\""),
+                b => out.push(b),
+            }
+        }
+        out.push(b'"');
+    }
+    if let Err(e) = openmodelica_wasi::fs::write(outFile.as_str(), &out) {
+        let _ = crate::Error::addMessage(
+            openmodelica_error::ErrorTypes::Message {
+                id: 85,
+                ty: openmodelica_error::ErrorTypes::MessageType::SCRIPTING,
+                severity: openmodelica_error::ErrorTypes::Severity::ERROR,
+                message: literal!(
+                    "SystemImpl__covertTextFileToCLiteral failed: %s. Maybe the total file name is too long."
+                ),
+            },
+            metamodelica::list![ArcStr::from(e.to_string())],
+        );
+        return false;
+    }
+    true
 }
 
 pub fn dladdr<T: Clone + 'static>(_symbol: T) -> (ArcStr, ArcStr, ArcStr) {
