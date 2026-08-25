@@ -13738,7 +13738,10 @@ algorithm
 
       // Save value
       if stringEqual(tmpName, "s") then
-        if not stringEqual(tmpValue, "euler") and not stringEqual(tmpValue, "cvode") then
+        // euler/cvode is what C's FMI2CS_initializeSolverData accepts; another
+        // target links its own driver and validates against its own solver set.
+        if Config.simCodeTarget() == "C"
+           and not stringEqual(tmpValue, "euler") and not stringEqual(tmpValue, "cvode") then
           if printWarning then
             msg := "Unknown value \"" + tmpValue + "\" for flag \"s\".";
             Error.addCompilerWarning(msg);

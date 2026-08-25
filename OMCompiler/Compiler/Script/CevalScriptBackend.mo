@@ -1270,8 +1270,7 @@ algorithm
     case ("buildModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::Values.BOOL(_)::Values.STRING(str3)::_)
       algorithm
         simSettings := fmuSimulationSettings(className, filenameprefix, str3);
-        fmuMethodToSimulationFlag(str3);
-        (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars), SOME(simSettings));
+        (outCache, ret_val) := buildModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars), SOME(simSettings), str3);
       then
         ret_val;
 
@@ -4648,14 +4647,17 @@ protected function fmuMethodToSimulationFlag
    `--fmiFlags` writes. So fold an explicit method in there, unless the caller
    already said `s:`.
 
-   Only `euler` and `cvode`: those are the values an FMU's `s` flag accepts, and a
-   model's own `dassl` default must not become an `s:dassl` the FMU rejects at
-   instantiation. `buildModelFMU` restores the flag store afterwards."
+   Only a method the FMU can integrate with: C's `FMI2CS_initializeSolverData`
+   takes `euler`/`cvode` and rejects the rest at instantiation (so a model's own
+   `dassl` default must not become `s:dassl`); a wasm FMU serves the whole
+   wasm-jit driver set. An unaccepted method is left out — the FMU keeps euler."
   input String method;
+  input Boolean isWasmFMU;
 protected
   list<String> fmiFlags;
+  list<String> accepted = if isWasmFMU then CodegenWasmJit.fmuCsSolvers() else {"euler", "cvode"};
 algorithm
-  if method == "<default>" or not (method == "euler" or method == "cvode") then
+  if method == "<default>" or not listMember(method, accepted) then
     return;
   end if;
   fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
@@ -4722,10 +4724,12 @@ protected function buildModelFMU
   input Boolean addDummy "if true, add a dummy state";
   input list<String> platforms = {"static"};
   input Option<SimCode.SimulationSettings> inSimSettings = NONE();
+  input String method = "<default>" "`buildModelFMU(method=)`, folded into --fmiFlags where the FMU accepts it";
   output FCore.Cache cache;
   output Values.Value outValue;
 protected
   Flags.Flag flags;
+  list<String> fmiFlags;
 algorithm
   if isProtectedContentAccess(className) then
     // if AST contains encrypted class show nothing
@@ -4733,12 +4737,19 @@ algorithm
     outValue := Values.STRING("");
   else
     flags := loadCommandLineOptionsFromModel(className);
+    // `method=` reaches the FMU only through --fmiFlags, a global: restore it by
+    // hand so one export does not pick the solver for the next. `saveFlags` will
+    // not — without __OpenModelica_commandLineOptions `flags` aliases the store.
+    fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
+    fmuMethodToSimulationFlag(method, isWasmFMUExport(FMUVersion, platforms));
 
     try
       (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
       // reset to the original flags
+      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
     else
+      FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, fmiFlags);
       FlagsUtil.saveFlags(flags);
       fail();
     end try;
@@ -4774,7 +4785,7 @@ protected
   // is the C export's business even under the wasm simCodeTarget.
   Boolean wasmRequested = listMember("wasm", platforms);
   Boolean wasmTarget = Config.simCodeTarget() == "wasm-jit" or Config.simCodeTarget() == "wasm";
-  Boolean isWasmFMU = (wasmRequested or wasmTarget) and FMUVersion <> "1.0";
+  Boolean isWasmFMU = isWasmFMUExport(FMUVersion, platforms);
   // Reached through the target, the caller still wants an FMU the ordinary
   // tooling can load, so it gets this machine's platform too.
   list<String> nativePlatforms = if wasmRequested then List.select(platforms, isNotWasmPlatform) else {"native"};
@@ -4963,6 +4974,17 @@ algorithm
     end if;
   end if;
 end callBuildModelFMU;
+
+protected function isWasmFMUExport
+  "Whether `buildModelFMU` takes the wasm (fmi-ls-wasm) route: the `wasm` platform
+   was asked for, or the simCodeTarget is already a wasm one. FMI 1.0 never does."
+  input String FMUVersion;
+  input list<String> platforms;
+  output Boolean isWasm;
+algorithm
+  isWasm := (listMember("wasm", platforms) or Config.simCodeTarget() == "wasm-jit"
+             or Config.simCodeTarget() == "wasm") and FMUVersion <> "1.0";
+end isWasmFMUExport;
 
 protected function isNotWasmPlatform
   "\"static\"/\"dynamic\" are the C target's own platform names, meaningless once

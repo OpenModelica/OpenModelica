@@ -295,6 +295,17 @@ renderTol();
 
 function setStatus(text, cls='') { statusEl.textContent = text; statusEl.className = 'status ' + cls; }
 function num(v, d) { const n = parseFloat(v); return isFinite(n) ? n : d; }
+const dur = (ms) => ms >= 10000 ? (ms / 1000).toFixed(1) + ' s' : Math.round(ms) + ' ms';
+
+// What the page is doing, so `fail` can name it and say how long it took.
+let opStart = null, opLabel = 'Failed';
+function beginOp(label) { opLabel = label; return (opStart = performance.now()); }
+
+function showEmpty(text, isErr = false) {
+  chartsEmpty.textContent = text;
+  chartsEmpty.className = 'charts-empty' + (isErr ? ' err' : '');
+  chartsEmpty.style.display = '';
+}
 
 // --- logging ---------------------------------------------------------------
 const DEBUG = true;
@@ -525,7 +536,7 @@ async function run(kind) {                       // 'full' | 'resim'
     return;
   }
   running = true; runningKind = kind; setRunUI(true);
-  const tRun = performance.now();
+  const tRun = beginOp(kind === 'resim' ? 'Re-simulation failed' : 'Simulation failed');
   let runMs = 0;
   log('run', kind, 'mode', mode);
   setStatus(kind === 'resim' ? 'Re-simulating…' : 'Compiling & simulating…', 'busy');
@@ -628,12 +639,13 @@ function showBuilding() {
   icGrid.replaceChildren(); icValues.clear(); icBaseline.clear();
   icEmpty.style.display = ''; icEmpty.textContent = 'Simulating…';
   charts.clear(chartsEmpty);
-  chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulating…';
+  showEmpty('Simulating…');
   docBody.className = 'doc-body empty'; docBody.textContent = '…';
   if (animView) animView.hide();
 }
 
 async function selectExample(ex) {
+  beginOp('Loading the example failed');
   currentExample = ex;
   builtModel = null; builtWorker = null; lastText = null; preloaded = null; freshModel = true;
   showBuilding();
@@ -692,10 +704,15 @@ async function loadConfig() {
   }
 }
 
+// The status bar is one truncated line, so it keeps the verdict and the charts
+// box — the only panel big enough — carries the diagnostic itself.
 function fail(msg) {
   log('FAIL', msg);
-  setStatus(msg, 'err'); modelFigures = null;
-  charts.clear(chartsEmpty); chartsEmpty.style.display = ''; chartsEmpty.textContent = 'Simulation failed — see the status bar.';
+  const took = opStart === null ? '' : ' after ' + dur(performance.now() - opStart);
+  setStatus(`${opLabel}${took} — see the message below.`, 'err');
+  modelFigures = null;
+  charts.clear(chartsEmpty);
+  showEmpty(('' + msg).trim() || 'Failed without a message.', true);
 }
 
 // --- editable initial conditions -------------------------------------------
@@ -782,8 +799,7 @@ function renderCharts() {
   const useFigs = haveFigs && viewMode !== 'all';
   toggleBtn.textContent = useFigs ? 'All variables' : 'Figures';
   if (useFigs) renderFigures(); else renderAllVariables();
-  if (!charts.list.length) { chartsEl.appendChild(chartsEmpty); chartsEmpty.style.display = '';
-    chartsEmpty.textContent = 'No variables to plot.'; }
+  if (!charts.list.length) { chartsEl.appendChild(chartsEmpty); showEmpty('No variables to plot.'); }
 }
 
 function renderAllVariables() {
@@ -935,6 +951,7 @@ async function exportFmu({ fmuType, method, platforms }) {
   const text = srcEl.value;
   if (touchesModelica(text)) return fail('Refusing to modify the Modelica library — rename the class or remove any "within Modelica" clause.');
   exporting = true;
+  beginOp('FMU export failed');
   exportBtn.textContent = 'Cancel';         // the button cancels the running export
   setStatus('Exporting FMU…', 'busy');
   try {

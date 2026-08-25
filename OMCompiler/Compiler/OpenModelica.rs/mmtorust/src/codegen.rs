@@ -1233,21 +1233,45 @@ impl GenCtx {
         feature_for_crate(crate_name)
     }
 
+    /// The message a disabled target crate's stub reports. Names the callee:
+    /// which call wanted the target is not visible in the user's sources.
+    fn gate_message(&self, feature: &str, callee: &str) -> String {
+        let callee = callee.split("::").collect::<Vec<_>>().join(".");
+        format!(
+            "{callee} needs the '{feature}' code generation target, which this \
+             OpenModelica build was compiled without"
+        )
+    }
+
+    /// `sourceInfo!` for the .mo this crate was generated from, falling back to
+    /// the Rust call site when none is known (should not happen for generated code).
+    fn source_info(&self) -> String {
+        if self.source_file.is_empty() {
+            "metamodelica::sourceInfo!()".to_owned()
+        } else {
+            format!("metamodelica::sourceInfo!({:?})", self.source_file)
+        }
+    }
+
+    /// Record the reason, then bail. A `return Err(..)` alone is a plain
+    /// `fail()`, which the caller's `try` swallows into an empty `getErrorString`.
+    fn gate_report(&self, what: &str) -> String {
+        format!(
+            "{{ let _ = ::openmodelica_util::Error::addInternalError(\
+               ::arcstr::literal!({what:?}), {}); return Err({what:?}) }}",
+            self.source_info()
+        )
+    }
+
     /// Wrap a value-producing expression that depends on a gated target crate
     /// so that, when the crate's feature is disabled, evaluating it bails (in a
     /// fallible function) or panics (in an infallible one) instead of referring
     /// to the absent crate. The `#[cfg]`-on-block form below is stable on
     /// edition 2024 and yields the surviving branch's value; `#![allow(warnings)]`
     /// at each generated file's head silences the dead-branch lints.
-    fn gate_value(&self, feature: &str, expr: &str) -> String {
-        let what = format!(
-            "this OpenModelica build was compiled without the '{feature}' code generation target"
-        );
-        let off = if self.current_fn_fallible {
-            format!("return Err({what:?})")
-        } else {
-            format!("panic!({what:?})")
-        };
+    fn gate_value(&self, feature: &str, expr: &str, callee: &str) -> String {
+        let what = self.gate_message(feature, callee);
+        let off = if self.current_fn_fallible { self.gate_report(&what) } else { format!("panic!({what:?})") };
         format!(
             "{{ #[cfg(feature = {feature:?})] {{ {expr} }} #[cfg(not(feature = {feature:?}))] {{ {off} }} }}"
         )
@@ -1262,15 +1286,10 @@ impl GenCtx {
     /// construction (a `!`-typed block) would leave the binding's type
     /// unknowable (E0282). The stub closure bails/panics when *called* instead,
     /// which is the same observable behaviour at the point the target would run.
-    fn gate_fn_value(&self, feature: &str, on_expr: &str, input_tys: &[String], out_ty: &str) -> String {
-        let what = format!(
-            "this OpenModelica build was compiled without the '{feature}' code generation target"
-        );
-        let body = if self.current_fn_fallible {
-            format!("return Err({what:?})")
-        } else {
-            format!("panic!({what:?})")
-        };
+    fn gate_fn_value(&self, feature: &str, on_expr: &str, input_tys: &[String], out_ty: &str, callee: &str) -> String {
+        // A closure returning `Result`, so it bails regardless of the enclosing
+        // function's fallibility.
+        let body = self.gate_report(&self.gate_message(feature, callee));
         let params = (0..input_tys.len())
             .map(|i| format!("_a{i}"))
             .collect::<Vec<_>>()
@@ -8586,8 +8605,10 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             // to their qualified runtime path before fnptr! wrapping.
             let var_str = remap_shadowed_builtin_path(&var_str, resolved_fn_qname.as_deref());
             // Captured before the `match` below consumes `var_str`: the feature
-            // gating a reference to a gated target crate's function used as a value.
+            // gating a reference to a gated target crate's function used as a
+            // value, plus the path the stub names in its diagnostic.
             let gated_value_feat = ctx.gated_feature_for_path(&var_str);
+            let gated_value_path = if gated_value_feat.is_some() { var_str.clone() } else { String::new() };
             // Clone-elision inputs (see the `copy`/`node_last_use` arms below).
             // `base` is the enclosing binding this reference reads.
             let base = var_base_name(name, segments);
@@ -8960,9 +8981,9 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                         }
                         // Non-function value of a gated crate (none exist today):
                         // fall back to the diverging form rather than guess a type.
-                        _ => return ctx.gate_value(feat, &emitted),
+                        _ => return ctx.gate_value(feat, &emitted, &gated_value_path),
                     };
-                    ctx.gate_fn_value(feat, &emitted, &input_tys, &out_ty)
+                    ctx.gate_fn_value(feat, &emitted, &input_tys, &out_ty, &gated_value_path)
                 }
                 _ => emitted,
             }
@@ -9601,7 +9622,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             // callee path; its head is the target package. Const calls never
             // reference a target crate, so they pass through unwrapped.
             match ctx.gated_feature_for_path(&func_str) {
-                Some(feat) if !is_const => ctx.gate_value(feat, &result),
+                Some(feat) if !is_const => ctx.gate_value(feat, &result, &func_str),
                 _ => result,
             }
         }
@@ -10251,7 +10272,7 @@ fn emit_parteval<'a>(
     // same-typed stub-closure form (see [`GenCtx::gate_fn_value`]); a diverging
     // block would make the capture's type unknowable (E0282).
     match ctx.gated_feature_for_path(&func_str) {
-        Some(feat) => ctx.gate_fn_value(feat, &cast, &param_ty_strs, &out_ty_str),
+        Some(feat) => ctx.gate_fn_value(feat, &cast, &param_ty_strs, &out_ty_str, &func_str),
         None => cast,
     }
 }
@@ -11132,13 +11153,7 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             // (Error.addInternalError zeroes the position, keeping the file).
             // TODO: carry Absyn.ALGORITHMITEM info through typedexp so the real
             // .mo line can be emitted here.
-            if ctx.source_file.is_empty() {
-                // No source file known (shouldn't happen for generated code);
-                // fall back to the Rust call-site.
-                Ok("metamodelica::sourceInfo!()".to_owned())
-            } else {
-                Ok(format!("metamodelica::sourceInfo!({:?})", ctx.source_file))
-            }
+            Ok(ctx.source_info())
         }
         "list" => {
             if args.is_empty() {

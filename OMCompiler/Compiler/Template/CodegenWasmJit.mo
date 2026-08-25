@@ -160,5 +160,15 @@ algorithm
   status := 0;
 end runSimulationWasmtime;
 
+function fmuCsSolvers
+  " The `method=` values a Co-Simulation wasm FMU can integrate with: the solvers
+    the driver linked into the component carries. `buildModelFMU` folds an accepted
+    method into the FMU's `resources/<prefix>_flags.json`, the only channel the
+    component reads its solver from. Empty without the Rust export. Implemented in Rust. "
+  output list<String> methods;
+algorithm
+  methods := {};
+end fmuCsSolvers;
+
 annotation(__OpenModelica_Interface="codegen_wasm_jit");
 end CodegenWasmJit;
