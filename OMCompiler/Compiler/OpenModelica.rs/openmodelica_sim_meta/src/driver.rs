@@ -14,7 +14,6 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
-use core::cell::RefCell;
 
 use crate::omclog;
 use crate::rtclock;
@@ -1426,6 +1425,44 @@ pub fn is_model_throw(err: &str) -> bool {
 /// C's `initialization()` returning nonzero: the reason is already logged.
 pub const INIT_FAILED_ERR: &str = "initialization failed";
 
+/// C's `retValIntegrator != 0`: the reason is logged, and [`drive`] still owes C's
+/// `performSimulation` tail.
+pub const SOLVER_FAILED_ERR: &str = "integrator failed";
+
+/// Where the integrator gave up (C's `solverInfo->currentTime`), for the tail
+/// [`drive`] runs; the driver can only return a `&'static str`.
+mod solver_fail_store {
+    #[cfg(feature = "std")]
+    mod imp {
+        use core::cell::Cell;
+        std::thread_local! {
+            static AT: Cell<f64> = const { Cell::new(f64::NAN) };
+        }
+        pub fn set(t: f64) {
+            AT.with(|a| a.set(t));
+        }
+        pub fn take() -> Option<f64> {
+            let t = AT.with(|a| a.replace(f64::NAN));
+            t.is_finite().then_some(t)
+        }
+    }
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use core::cell::UnsafeCell;
+        struct Store(UnsafeCell<f64>);
+        unsafe impl Sync for Store {}
+        static AT: Store = Store(UnsafeCell::new(f64::NAN));
+        pub fn set(t: f64) {
+            unsafe { *AT.0.get() = t };
+        }
+        pub fn take() -> Option<f64> {
+            let t = unsafe { core::mem::replace(&mut *AT.0.get(), f64::NAN) };
+            t.is_finite().then_some(t)
+        }
+    }
+    pub use imp::{set, take};
+}
+
 /// `-abortSlowSimulation` flag + the driver's chattering log lines, set on the host
 /// before a run (the driver can only return a `&'static str`).
 mod chatter_store {
@@ -1528,56 +1565,6 @@ pub fn failed_nls_system() -> Option<u32> {
     init_report::failed_system()
 }
 
-/// The per-site keys already reported, so a warning-level violation warns only
-/// once (C's static `warningTriggered`). Cleared at run start.
-mod assert_warn_store {
-    #[cfg(feature = "std")]
-    mod imp {
-        use alloc::string::String;
-        use alloc::vec::Vec;
-        use core::cell::RefCell;
-        std::thread_local! {
-            static SEEN: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
-        }
-        pub fn reset() {
-            SEEN.with(|s| s.borrow_mut().clear());
-        }
-        pub fn first_time(key: String) -> bool {
-            SEEN.with(|s| {
-                let mut s = s.borrow_mut();
-                if s.iter().any(|k| *k == key) {
-                    return false;
-                }
-                s.push(key);
-                true
-            })
-        }
-    }
-    #[cfg(not(feature = "std"))]
-    mod imp {
-        use alloc::string::String;
-        use alloc::vec::Vec;
-        use core::cell::UnsafeCell;
-        struct Store(UnsafeCell<Vec<String>>);
-        unsafe impl Sync for Store {}
-        static SEEN: Store = Store(UnsafeCell::new(Vec::new()));
-        pub fn reset() {
-            unsafe { (*SEEN.0.get()).clear() };
-        }
-        pub fn first_time(key: String) -> bool {
-            unsafe {
-                let seen = &mut *SEEN.0.get();
-                if seen.iter().any(|k| *k == key) {
-                    return false;
-                }
-                seen.push(key);
-                true
-            }
-        }
-    }
-    pub use imp::{first_time, reset};
-}
-
 /// Reported-once latch for the fired `terminate(...)`.
 mod term_report {
     #[cfg(feature = "std")]
@@ -1658,7 +1645,7 @@ fn format_g15(v: f64) -> String {
 
 /// Evaluate `functionCheckAsserts` (C's `checkForAsserts`) at the current point and
 /// format any `AssertionLevel.warning` violation it recorded into a `LOG_ASSERT`
-/// block, once per site. Called by the drivers after each accepted solver step.
+/// block. Called by the drivers after each accepted solver step.
 ///
 /// `level`: C reports a violation met while the integrator updates the system
 /// (`simulationUpdate`, which sets `noThrowAsserts`) as `info`, one met anywhere
@@ -1669,9 +1656,9 @@ fn check_asserts(e: &mut dyn SimEngine, sim_data: u32, _layout: &SimLayout, leve
     Ok(())
 }
 
-/// Log the violations recorded since the last call. A warning goes once per site;
-/// a suppressed error goes every time (as in C) and arms the re-throw, which the
-/// `true` return reports.
+/// Log the violations recorded since the last call, every one: the generated code
+/// latches a warning-level site itself (C's static `warningTriggered`). A suppressed
+/// error also arms the re-throw, which the `true` return reports.
 fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType) -> Result<bool> {
     let pending = e.take_pending_warnings();
     if pending.is_empty() {
@@ -1699,15 +1686,10 @@ fn drain_asserts(e: &mut dyn SimEngine, sim_data: u32, level: omclog::LogType) -
             omclog::info(omclog::ASSERT, false, &line);
             rethrow_store::arm(info);
             armed = true;
+        } else if level == omclog::WARNING {
+            omclog::warning(omclog::ASSERT, false, &line);
         } else {
-            let key = format!("{}:{sl}:{sc}-{el}:{ec}|{cond}", info.file);
-            if assert_warn_store::first_time(key) {
-                if level == omclog::WARNING {
-                    omclog::warning(omclog::ASSERT, false, &line);
-                } else {
-                    omclog::info(omclog::ASSERT, false, &line);
-                }
-            }
+            omclog::info(omclog::ASSERT, false, &line);
         }
     }
     Ok(armed)
@@ -1976,7 +1958,6 @@ fn run_initialization_impl(
 ) -> Result<()> {
     omclog::info(omclog::INIT, false, "### START INITIALIZATION ###");
     init_report::reset();
-    assert_warn_store::reset();
     // Initialization throws on a failed assert (C clears `noThrowAsserts` here).
     let _ = rethrow_store::take();
     set_no_throw(false);
@@ -3622,8 +3603,6 @@ fn event_update_inner(
         iterate_discrete(e, sim_data, layout)?;
         store_relations(e, sim_data, layout)?;
         check_nls(e, sim_data, layout)?;
-        // A reinit changes the state the derivatives are computed from.
-        eval_ode(e, sim_data, layout)?;
     }
 
     let mut states_changed = false;
@@ -3632,6 +3611,11 @@ fn event_update_inner(
             states_changed = true;
             break;
         }
+    }
+    // C's `needToIterate` after a `reinit`: the derivatives came from the state the
+    // event replaced. Without one the last event-iteration pass left them consistent.
+    if states_changed && !time_event {
+        eval_ode(e, sim_data, layout)?;
     }
 
     e.clean_nls_history(time);
@@ -4040,7 +4024,25 @@ pub fn drive(
                 // C's `performSimulation` catch.
                 Err(err) => match is_model_throw(err) && driver.retry_step(e, model)? {
                     true => continue,
-                    false => return Err(enrich_trap(e, err)),
+                    false => {
+                        // C reaches `simulationUpdate` even on a failed step: one
+                        // more evaluation where the integrator stopped, then the line.
+                        if let Some(t) = solver_fail_store::take() {
+                            let mut last = Vec::new();
+                            open_assert_window();
+                            let updated = emit_row(e, &mut last, sim_data, layout, t, stop);
+                            let _ = close_assert_window(e, sim_data).and(updated);
+                            omclog::info(
+                                omclog::STDOUT,
+                                false,
+                                &format!(
+                                    "model terminate | Integrator failed. | Simulation terminated at time {}",
+                                    format_g(t, 6)
+                                ),
+                            );
+                        }
+                        return Err(enrich_trap(e, err));
+                    }
                 },
             };
             match advanced {
@@ -4954,7 +4956,8 @@ fn report_dassl_failure(idid: i32, t: f64) -> &'static str {
         omclog::warning(omclog::STDOUT, false, msg);
     }
     omclog::warning(omclog::STDOUT, false, &format!("can't continue. time = {t:.6}"));
-    "CodegenWasmJit: DASSL (daskr) failed"
+    solver_fail_store::set(t);
+    SOLVER_FAILED_ERR
 }
 
 fn log_dassl_stats(idid: i32, t: f64, rwork: &[f64], iwork: &[i32]) {
@@ -5087,9 +5090,9 @@ impl DaskrCounters {
 
 impl DasslDriver {
     fn new(e: &mut (dyn SimEngine + 'static), model: &SimModel, sim_data: u32) -> Result<Self> {
-        // Silence DASKR's own diagnostic printing (it would go to stdout and corrupt
-        // the omc result record); failures are surfaced here via IDID instead.
-        daskr::auxiliary::xsetf(0);
+        // DASKR reports its own failures on stdout, as C's executable does — into
+        // the run's captured output, not omc's console.
+        daskr::auxiliary::xsetf(1);
         e.set_rhs_final(false); // C's `dassl_initial`
         let layout = &model.layout;
         // Init (with homotopy fallback). No state events on this path, so relations
@@ -5148,8 +5151,12 @@ impl DasslDriver {
         if n_states > 0 {
             info[1] = 1; // INFO(2)=1: per-state (vector) rtol/atol
         }
-        if no_equidistant_grid() && n_states > 0 {
-            info[2] = 1; // INFO(3)=1: return after every internal step
+        // C's `dassl_initial` sets INFO(3)=1 for every run, not just for
+        // `-noEquidistantTimeGrid`: DASKR then returns after each internal step, so its
+        // per-call quota of 500 steps (IDID=-1, reported on stdout by `xerrwd`) cannot
+        // be spent on a stiff interval.
+        if n_states > 0 {
+            info[2] = 1;
         }
         let mut rwork = vec![0.0f64; lrw];
         let mut iwork = vec![0i32; liw];
@@ -5163,7 +5170,7 @@ impl DasslDriver {
             y,
             yp,
             // dense direct method, per-state nominal-scaled tolerances,
-            // interpolating output, no IC calc; INFO(5) set above when the
+            // per-step returns, no IC calc; INFO(5) set above when the
             // analytic Jacobian is available.
             info,
             rtol,
@@ -5336,7 +5343,8 @@ impl Driver for DasslDriver {
             did_step = true;
             self.retry.open(e, self.rows.len());
             // IDID=-1: DASKR hit its per-call work quota before TOUT — resume with
-            // INFO(1)=1 (a stiff interval hits this repeatedly), up to a cap.
+            // INFO(1)=1, up to a cap. INFO(3)=1 keeps a call to one step, so this is
+            // C's guard rather than a path a stiff interval takes.
             // `pending_tout`/`work_retries` persist an interval unfinished at a yield.
             let mut tout = self.pending_tout.unwrap_or(if no_grid || self.row == n_steps {
                 stop
@@ -5388,12 +5396,22 @@ impl Driver for DasslDriver {
                 continue;
             }
             if self.idid < 0 {
+                // See `SolverCore::solve`: the tail evaluates where DASKR stopped.
+                for i in 0..n_states {
+                    write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
+                }
                 return Err(report_dassl_failure(self.idid, self.t));
             }
-            // IDID=1 (INFO(3)=1): one internal step, TOUT still ahead.
+            // IDID=1: one internal step with TOUT still ahead. C's `dassl_step` loops
+            // on that until the interval is covered, and breaks out per step only for
+            // `-noEquidistantTimeGrid`, where a step is an output point of its own.
             if self.idid == 1 {
                 self.pending_tout = Some(tout);
                 self.work_retries = 0;
+                if !no_equidistant_grid() {
+                    self.retry.close(e)?;
+                    continue;
+                }
                 if self.step_emit.take(self.t) {
                     for i in 0..n_states {
                         write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
@@ -5552,7 +5570,8 @@ struct DaskrState {
 /// What one call into the integrator did.
 enum Progress {
     Reached,
-    /// INFO(3)=1 only: one internal step taken, the target not yet reached.
+    /// One internal step taken, the target not yet reached. DASKR returns that for
+    /// every step (INFO(3)=1); `-noEquidistantTimeGrid` makes it an output point.
     Stepped,
     Root,
     /// The per-call work quota ran out before the target; call again to continue.
@@ -5574,8 +5593,9 @@ impl DaskrState {
         if n_states > 0 {
             info[1] = 1; // INFO(2)=1: per-state (vector) rtol/atol
         }
-        if no_equidistant_grid() {
-            info[2] = 1; // INFO(3)=1: return after every internal step
+        // C's `dassl_initial`: INFO(3)=1 unconditionally, see `DasslDriver::new`.
+        if n_states > 0 {
+            info[2] = 1;
         }
         let mut rwork = vec![0.0f64; lrw];
         let mut iwork = vec![0i32; liw];
@@ -5627,7 +5647,8 @@ impl DaskrState {
         if logging && self.idid != -1 {
             log_dassl_stats(self.idid, *t, &self.rwork, &self.iwork);
         }
-        // IDID=-1: the work quota expended before TOUT — resume with INFO(1)=1.
+        // IDID=-1: the work quota expended before TOUT — resume with INFO(1)=1, as
+        // C does. INFO(3)=1 ends a call after one step, so the quota is out of reach.
         if self.idid == -1 && self.ev_retries < 10_000 {
             self.info[0] = 1;
             self.ev_retries += 1;
@@ -6613,9 +6634,9 @@ impl SolverCore {
 
     /// Integrate from `t` toward `target` with whichever integrator this core has,
     /// leaving `t`/`y` where it stopped. Both may stop early at a zero-crossing
-    /// root, and both may return having spent a per-call work quota without
-    /// reaching `target` — that is retried here, so the caller sees only the four
-    /// outcomes.
+    /// root, and both may return short of `target` — one internal step done, or a
+    /// per-call work quota spent — which is continued here, so the caller sees only
+    /// the four outcomes.
     fn solve_toward(
         &mut self,
         target: f64,
@@ -6680,7 +6701,17 @@ impl SolverCore {
             }
             match again {
                 Progress::WorkQuota => continue,
-                Progress::Failed(err) => return Err(err),
+                // An internal step below the target: only `-noEquidistantTimeGrid`
+                // makes it an output point, so otherwise integrate on, as C's
+                // `dassl_step` loop does while IDID == 1.
+                Progress::Stepped if !no_equidistant_grid() => continue,
+                // C integrates the model's own state array, so the point the solver
+                // gave up at is what `drive`'s tail evaluates.
+                Progress::Failed(err) => {
+                    let e = unsafe { &mut *ctx.engine };
+                    self.write_states(e)?;
+                    return Err(err);
+                }
                 Progress::Reached => return Ok(Solved::Reached),
                 Progress::Stepped => return Ok(Solved::Stepped),
                 Progress::Root => return Ok(Solved::Root),
@@ -6817,8 +6848,9 @@ impl SolverCore {
         if terminated(e, sim_data, layout)? {
             return Ok(true);
         }
+        // No `functionODE`: `event_update` left the derivative slots consistent, and
+        // C restarts DASKR on the `YPRIME` in its ring buffer.
         self.read_states(e)?;
-        self.refresh_yp(e)?;
         self.restart()?;
         self.dae_restart(e, ctx)?;
         Ok(false)
@@ -6996,10 +7028,9 @@ impl SolverCore {
                     if terminated(e, sim_data, layout)? {
                         return Ok(Step::Terminated);
                     }
-                    // Re-read states (a reinit may have jumped one), recompute the
-                    // consistent derivative, and restart DASKR at troot (INFO(1)=0).
+                    // Re-read states (a reinit may have jumped one) and restart DASKR
+                    // at troot (INFO(1)=0); see `handle_zc_flips` for the `functionODE`.
                     self.read_states(e)?;
-                    self.refresh_yp(e)?;
                     self.restart()?;
                     self.dae_restart(e, ctx)?;
                     if tout - troot < GRID_SKIP_EPS {
@@ -7410,7 +7441,7 @@ impl EventsDriver {
         method: &str,
         gbode: Option<alloc::boxed::Box<crate::gbode::Gbode>>,
     ) -> Result<Self> {
-        daskr::auxiliary::xsetf(0);
+        daskr::auxiliary::xsetf(1); // see `DasslDriver::new`
         let layout = &model.layout;
         // Init (with homotopy fallback). Relation mode 2 and `initSample` are handled
         // inside run_initialization; seed the hysteresis direction from the relations.

@@ -20,8 +20,9 @@ use wasm_encoder as we;
 use super::{FnCtx, FnInfo, WTy, compile_exp, exp_sigty, rt_index};
 
 struct LitPool {
-    /// Interned literals in global order: entry `i` lives in `base_global + i`.
-    exps: Vec<Arc<DAE::Exp>>,
+    /// Global slots in order: entry `i` lives in `base_global + i`. `None` is a
+    /// mutable flag `start` leaves at 0, not a literal.
+    slots: Vec<Option<Arc<DAE::Exp>>>,
     /// Ordered, not hashed: `MetaCmp` gives every `Exp` `Ord` (with an `Arc::ptr_eq`
     /// fast path), while `Hash` is only derived for the ones holding no array.
     by_exp: BTreeMap<Arc<DAE::Exp>, u32>,
@@ -30,7 +31,7 @@ struct LitPool {
 
 thread_local! {
     static POOL: RefCell<LitPool> =
-        RefCell::new(LitPool { exps: Vec::new(), by_exp: BTreeMap::new(), base_global: 0 });
+        RefCell::new(LitPool { slots: Vec::new(), by_exp: BTreeMap::new(), base_global: 0 });
     /// Off while the pool's own initializers are lowered, so a literal is built
     /// from its constant expression instead of reading its own global.
     static HOISTING: Cell<bool> = const { Cell::new(true) };
@@ -39,14 +40,25 @@ thread_local! {
 /// Start collecting for a new module: the first global the literals occupy.
 pub(crate) fn begin(base_global: u32) {
     POOL.with(|p| {
-        *p.borrow_mut() = LitPool { exps: Vec::new(), by_exp: BTreeMap::new(), base_global };
+        *p.borrow_mut() = LitPool { slots: Vec::new(), by_exp: BTreeMap::new(), base_global };
     });
     HOISTING.with(|h| h.set(true));
 }
 
-/// The interned literals, in global order, once every body is lowered.
-pub(crate) fn take() -> Vec<Arc<DAE::Exp>> {
-    POOL.with(|p| core::mem::take(&mut p.borrow_mut().exps))
+/// The global slots, in order, once every body is lowered.
+pub(crate) fn take() -> Vec<Option<Arc<DAE::Exp>>> {
+    POOL.with(|p| core::mem::take(&mut p.borrow_mut().slots))
+}
+
+/// A fresh mutable i32 global for one code site to latch — C's function-static
+/// `warningTriggered`. Zero on instantiation, so a re-run starts over.
+pub(crate) fn new_flag() -> u32 {
+    POOL.with(|p| {
+        let mut p = p.borrow_mut();
+        let g = p.base_global + p.slots.len() as u32;
+        p.slots.push(None);
+        g
+    })
 }
 
 /// Whether a use of `e` reads the module-wide object rather than building a
@@ -70,7 +82,7 @@ pub(crate) fn compile(ctx: &mut FnCtx, e: &DAE::Exp) -> Result<Option<WTy>> {
 
 /// The body the module's `start` calls: build every literal into its global.
 pub(crate) fn build_init_fn(
-    exps: &[Arc<DAE::Exp>],
+    slots: &[Option<Arc<DAE::Exp>>],
     base_global: u32,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut super::Literals,
@@ -90,8 +102,11 @@ pub(crate) fn build_init_fn(
         elem_ptr_tmp: None,
         src_loc: None,
         sim: None,
+        dt_local_cons: false,
+        dt_fallback: None,
     };
-    for (i, e) in exps.iter().enumerate() {
+    for (i, e) in slots.iter().enumerate() {
+        let Some(e) = e else { continue };
         if compile_exp(&mut ctx, e)? != WTy::I32 {
             return Err("CodegenWasmJit: shared literal is not a heap value");
         }
@@ -120,8 +135,8 @@ fn intern(e: &DAE::Exp) -> u32 {
         if let Some(&g) = p.by_exp.get(&key) {
             return g;
         }
-        let g = p.base_global + p.exps.len() as u32;
-        p.exps.push(key.clone());
+        let g = p.base_global + p.slots.len() as u32;
+        p.slots.push(Some(key.clone()));
         p.by_exp.insert(key, g);
         g
     })

@@ -800,9 +800,25 @@ fn emit_sim_time(ctx: &mut FnCtx) -> Result<()> {
 /// C's `check_linear_solution` plus the `throwStreamPrintWithEquationIndexes` its
 /// generated equation function runs into — consumes the solver's i32 result on the
 /// stack. `rt_ls_failed` returns only inside a nonlinear-solver trial.
+///
+/// Under dynamic tearing this is the *casual* set, whose failure is not an error:
+/// C's `solve_linear_system` calls `strictTearingFunctionCall` instead, which here
+/// is the strict set lowered after the block `dt_fallback` names.
 fn emit_lin_unsolved(ctx: &mut FnCtx, index: i32, base: u32) -> Result<()> {
     use we::Instruction as I;
     ctx.emit(I::If(we::BlockType::Empty));
+    if let Some(level) = ctx.dt_fallback() {
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::Call(rt_index("rt_free")?));
+        // The system's statistics bracket has to close on this path too: the run
+        // carries on into the strict set, which opens its own.
+        ctx.emit(I::Call(rt_index("rt_ls_end")?));
+        ctx.emit(I::I32Const(0));
+        ctx.emit(I::Call(rt_index("rt_dt_fallback")?));
+        ctx.branch_to(level);
+        ctx.emit(I::End);
+        return Ok(());
+    }
     emit_linsolve_context(ctx, index)?;
     ctx.emit(I::Call(rt_index("rt_ls_failed")?));
     ctx.emit(I::LocalGet(base));
@@ -957,11 +973,20 @@ fn emit_lin_step(
     ctx.emit(I::I32Const(n as i32));
     emit_linsolve_context(ctx, index)?;
     ctx.emit(I::I32Const(!use_sparse as i32)); // `dense`: a rejected step can retry
+    ctx.emit(I::I32Const(ctx.dt_casual() as i32));
     ctx.emit(I::Call(rt_index("rt_ls_check_step")?));
     match retry {
         Some(retry) => {
+            let verdict = ctx.alloc_temp(WTy::I32);
+            ctx.emit(I::LocalSet(verdict));
+            ctx.emit(I::LocalGet(verdict));
             ctx.emit(I::I32Eqz);
             ctx.emit(I::BrIf(1));
+            // 2 = no fallback for this solver: the system is unsolved.
+            ctx.emit(I::LocalGet(verdict));
+            ctx.emit(I::I32Const(2));
+            ctx.emit(I::I32Eq);
+            emit_lin_unsolved(ctx, index, base)?;
             ctx.emit(I::LocalGet(base)); // a_ptr, untouched by the solve
             ctx.emit(I::LocalGet(base));
             ctx.emit(I::I32Const(b_off as i32));
@@ -1013,6 +1038,7 @@ fn emit_lin_solve_scatter(
     let solver = if use_sparse { "rt_solve_lin_dense_sparse" } else { "rt_linsolve" };
     if !use_sparse {
         ctx.emit(I::I32Const(m1.is_some() as i32)); // a step check follows
+        ctx.emit(I::I32Const(ctx.dt_casual() as i32));
     }
     ctx.emit(I::Call(rt_index(solver)?));
     emit_lin_unsolved(ctx, index, base)?;
@@ -1722,6 +1748,7 @@ pub(crate) fn compile_linear_system_symbolic(
         ctx.emit(I::I32Const(n as i32));
         emit_linsolve_context(ctx, index)?;
         ctx.emit(I::I32Const(0)); // method 0: the solution is the unknowns
+        ctx.emit(I::I32Const(ctx.dt_casual() as i32));
         ctx.emit(I::Call(rt_index("rt_linsolve")?));
     }
 
@@ -1779,10 +1806,10 @@ pub(crate) fn emit_ls_bracket(ctx: &mut FnCtx, index: i32, n: i32, nnz: i32, beg
 /// `SES_NONLINEAR` system. The Newton driver (forward-difference Jacobian +
 /// `rt_linsolve` + damped line search) lives in the runtime (`nls.rs`); this
 /// passes the `SimData` pointer, the system's `residual`/`load` shared-table
-/// indices (`nls_base + 2k` / `+ 2k + 1`), the unknown count, and the address of
-/// the recoverable-failure flag. The 0/1 return is dropped — a failure surfaces
-/// through the `nls_fail` flag (the DASSL residual turns it into `IRES = -1`;
-/// init / Euler / output callers report it as a hard error).
+/// indices (`nls_base + 4k` / `+ 4k + 1`), the unknown count, and the address of
+/// the recoverable-failure flag. The 0/1/2 return is left on the stack; a failure
+/// surfaces through the `nls_fail` flag instead (the DASSL residual turns it into
+/// `IRES = -1`; init / Euler / output callers report it as a hard error).
 pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     use we::Instruction as I;
     let data = ctx.sim()?.data_local;
@@ -1791,10 +1818,10 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     let lambda_off = ctx.sim()?.lambda_off;
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));
-    ctx.emit(I::I32Const((3 * job.k) as i32));
+    ctx.emit(I::I32Const((4 * job.k) as i32));
     ctx.emit(I::I32Add); // residual table index
     ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));
-    ctx.emit(I::I32Const((3 * job.k + 1) as i32));
+    ctx.emit(I::I32Const((4 * job.k + 1) as i32));
     ctx.emit(I::I32Add); // load table index
     ctx.emit(I::I32Const(job.n as i32));
     ctx.emit(I::LocalGet(data));
@@ -1822,7 +1849,7 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     // analytic-Jacobian table index, or `u32::MAX` when the system has none.
     if job.has_jac {
         ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));
-        ctx.emit(I::I32Const((3 * job.k + 2) as i32));
+        ctx.emit(I::I32Const((4 * job.k + 2) as i32));
         ctx.emit(I::I32Add);
     } else {
         ctx.emit(I::I32Const(-1)); // u32::MAX sentinel
@@ -1855,8 +1882,26 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::I32Const(lambda_off as i32));
     ctx.emit(I::I32Add);
+    // Dynamic tearing: the strict set's `solve(sim_data) -> solved` function, which
+    // `rt_solve_nls` calls where C's `solveNLS` calls `strictTearingFunctionCall`.
+    if job.casual {
+        ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));
+        ctx.emit(I::I32Const((4 * job.k + 3) as i32));
+        ctx.emit(I::I32Add);
+    } else {
+        ctx.emit(I::I32Const(-1)); // u32::MAX sentinel
+    }
     ctx.emit(I::Call(rt_index("rt_solve_nls")?));
-    ctx.emit(I::Drop);
+    Ok(())
+}
+
+/// [`emit_solve_nls_call`] as the whole body of the strict set's
+/// `solve(sim_data) -> solved` function: 1 when the system solved, 0 otherwise.
+/// C's `eqFunction_<ls.index>`, whose return `solveNLS` reads.
+pub(crate) fn emit_nls_strict_body(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
+    use we::Instruction as I;
+    emit_solve_nls_call(ctx, job)?;
+    ctx.emit(I::I32Eqz);
     Ok(())
 }
 
@@ -2015,6 +2060,95 @@ fn jac_count_loop(
     ctx.emit(I::LocalSet(loc));
     ctx.emit(I::Br(0));
     ctx.emit(I::End);
+    ctx.emit(I::End);
+    Ok(())
+}
+
+/// C's `equationLinear`/`equationNonlinear` `LOG_DT` entry line. `strict` is the
+/// strict set's equation index when `index` names a casual tearing set, else -1.
+pub(crate) fn emit_dt_solving(ctx: &mut FnCtx, index: i32, strict: i32, linear: bool) -> Result<()> {
+    use we::Instruction as I;
+    let data = ctx.sim()?.data_local;
+    ctx.emit(I::I32Const(index));
+    ctx.emit(I::I32Const(strict));
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::F64Load(mem_arg(0, 3))); // time
+    ctx.emit(I::I32Const(linear as i32));
+    ctx.emit(I::Call(rt_index("rt_dt_solving")?));
+    Ok(())
+}
+
+/// C's `createLocalConstraints`, emitted inside the casual set's residual: a
+/// violated local constraint reports itself and ends the evaluation, which is what
+/// `residualFuncConstraints` returning 1 does. Nothing more is written into `r`, so
+/// the solver reads the previous evaluation's values — as C does on that return.
+pub(crate) fn emit_dt_local_constraint(ctx: &mut FnCtx, cond: &Arc<DAE::Exp>) -> Result<()> {
+    use we::Instruction as I;
+    let w = compile_exp(ctx, cond)?;
+    coerce(ctx, w, WTy::I32);
+    ctx.emit(I::I32Eqz);
+    ctx.emit(I::If(we::BlockType::Empty));
+    emit_shared_str(ctx, &dumped_exp(cond)?);
+    ctx.emit(I::Call(rt_index("rt_dt_local_violated")?));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(I::Return);
+    ctx.emit(I::End);
+    Ok(())
+}
+
+/// Lower a dynamically torn strong component, C's `equation*AlternativeTearing`.
+/// `checkConstraints<at.index>` runs first (every constraint, local and global);
+/// the first violated one reports itself, announces the fallback and skips to the
+/// strict set. A linear casual set's failed solve gets there the same way, through
+/// the `dt_fallback` level [`emit_lin_unsolved`] branches on.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn emit_dynamic_tearing(
+    ctx: &mut FnCtx,
+    casual_index: i32,
+    strict_index: i32,
+    linear: bool,
+    cons: &[(Arc<DAE::Exp>, bool)],
+    lower_casual: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+    lower_strict: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    // Cleared once the casual set has solved the component, so the strict set below
+    // runs exactly where C's generated code calls `strictTearingFunctionCall`.
+    let need_strict = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::LocalSet(need_strict));
+    emit_dt_solving(ctx, casual_index, strict_index, linear)?;
+    ctx.emit(I::Block(we::BlockType::Empty));
+    let level = ctx.ctrl_depth();
+    for (cond, local) in cons {
+        let w = compile_exp(ctx, cond)?;
+        coerce(ctx, w, WTy::I32);
+        ctx.emit(I::I32Eqz);
+        ctx.emit(I::If(we::BlockType::Empty));
+        emit_shared_str(ctx, &dumped_exp(cond)?);
+        ctx.emit(I::I32Const(*local as i32));
+        ctx.emit(I::Call(rt_index("rt_dt_cons_violated")?));
+        ctx.emit(I::I32Const(1));
+        ctx.emit(I::Call(rt_index("rt_dt_fallback")?));
+        ctx.branch_to(level);
+        ctx.emit(I::End);
+    }
+    // A linear casual set's failed solve escapes here; a nonlinear one's is handled
+    // inside `rt_solve_nls`, which calls the strict set's own function.
+    let saved = ctx.dt_fallback();
+    if linear {
+        ctx.set_dt_fallback(Some(level));
+    }
+    let r = lower_casual(ctx);
+    ctx.set_dt_fallback(saved);
+    r?;
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(need_strict));
+    ctx.emit(I::End);
+    ctx.emit(I::LocalGet(need_strict));
+    ctx.emit(I::If(we::BlockType::Empty));
+    lower_strict(ctx)?;
     ctx.emit(I::End);
     Ok(())
 }

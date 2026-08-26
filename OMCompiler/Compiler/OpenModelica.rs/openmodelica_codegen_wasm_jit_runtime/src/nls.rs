@@ -110,6 +110,96 @@ static NLS_THROW_SEEN: AtomicU32 = AtomicU32::new(0);
 /// The residual a rejected trial reports; [`newton_c`] damps its step on it.
 const ASSERT_RESIDUAL: f64 = 1e60;
 
+
+/// Dynamic tearing: a violated `CONSTRAINT_DT` inside the casual set's residual,
+/// which C's `f_con` reports by returning 1 — the emitted residual is a `void`
+/// callback, so this flag stands in for that return. [`rt_solve_nls`] clears it
+/// before each evaluation and the sites C checks the return at read it back.
+static DT_VIOLATED: AtomicU32 = AtomicU32::new(0);
+
+/// Whether the last residual evaluation violated a local constraint of a casual
+/// tearing set.
+pub(crate) fn dt_violated() -> bool {
+    DT_VIOLATED.load(Ordering::Relaxed) != 0
+}
+
+fn dt_clear() {
+    DT_VIOLATED.store(0, Ordering::Relaxed);
+}
+
+/// C's `createGlobalConstraints`, run before the casual set is solved: report the
+/// constraint and let the caller fall back to the strict set. `msg` is the dumped
+/// constraint expression, borrowed from the module's literal pool.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_dt_cons_violated(msg: u32, local: u32) {
+    crate::omclog::debug_string(
+        crate::omclog::DT_CONS,
+        &alloc::format!(
+            "The following {} constraint is violated:\n{}",
+            if local != 0 { "local" } else { "global" },
+            core::str::from_utf8(unsafe { crate::str_bytes(msg) }).unwrap_or("")
+        ),
+    );
+}
+
+/// C's `createLocalConstraints`, run inside the casual set's residual: report the
+/// constraint and fail this evaluation ([`DT_VIOLATED`] is `f_con`'s return 1).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_dt_local_violated(msg: u32) {
+    rt_dt_cons_violated(msg, 1);
+    crate::omclog::debug_string(
+        crate::omclog::DT,
+        "Local constraints of the casual tearing set are violated! Let's fail...",
+    );
+    DT_VIOLATED.store(1, Ordering::Relaxed);
+}
+
+/// C's `equationLinear`/`equationNonlinear` entry line, and the casual-set variant
+/// of it. `strict` is the strict set's equation index for a casual system, or -1
+/// for a system solved on its own (which is every system without dynamic tearing).
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_dt_solving(index: i32, strict: i32, time: f64, linear: u32) {
+    if !crate::omclog::active(crate::omclog::DT) {
+        return;
+    }
+    let kind = if linear != 0 { "linear" } else { "nonlinear" };
+    let what = if strict < 0 {
+        alloc::string::String::from("(STRICT TEARING SET if tearing enabled)")
+    } else {
+        alloc::format!("(CASUAL TEARING SET, strict: {strict})")
+    };
+    crate::omclog::info(
+        crate::omclog::DT,
+        false,
+        &alloc::format!(
+            "Solving {kind} system {index} {what} at time = {}",
+            crate::omclog::e(time, 18, 10)
+        ),
+    );
+}
+
+/// C's `strictTearingFunctionCall`: hand the component to the strict tearing set
+/// after the casual one failed. `strict_idx` is a `__indirect_function_table` index.
+fn dt_strict_fallback(strict_idx: u32, sim_data: u32) -> bool {
+    rt_dt_fallback(0);
+    let strict: extern "C" fn(u32) -> i32 = unsafe { core::mem::transmute(strict_idx as usize) };
+    strict(sim_data) != 0
+}
+
+/// C's two `LOG_DT` lines that announce the strict set taking over: `cons` tells
+/// the constraint check from the failed solve apart.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_dt_fallback(cons: u32) {
+    crate::omclog::debug_string(
+        crate::omclog::DT,
+        if cons != 0 {
+            "Constraints of the casual tearing set are violated! Now the strict tearing set is used."
+        } else {
+            "Solving the casual tearing set failed! Now the strict tearing set is used."
+        },
+    );
+}
+
 /// Whether the last residual evaluation hit a recoverable model assert.
 pub(crate) fn assert_hit() -> bool {
     NLS_EVAL_HIT.load(Ordering::Relaxed) != 0
@@ -538,7 +628,7 @@ pub(crate) fn total_pivot_solve(a: &[f64], b: &mut [f64], n: usize) -> bool {
 /// the freest coordinate to 1 and returning its index in `pos`. With `pos >= 0`
 /// that coordinate is fixed (its column treated as the RHS). Writes the length
 /// `n+1` solution into `x`. Returns `0` on success, `-1` if under-determined.
-fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32) -> i32 {
+fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32, casual: bool) -> i32 {
     let m = n + 1;
     let mut n_pivot = n;
     let mut rank = n;
@@ -588,6 +678,14 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32) 
     }
     if det.is_nan() {
         return -1;
+    }
+    // C notes a casual tearing set whose Jacobian is on the way to singular, but
+    // steps on it anyway: `newtonAlgorithm` only gives up on `-1`.
+    if casual && libm::fabs(det) < 1e-9 {
+        crate::omclog::debug_string(
+            crate::omclog::DT,
+            "The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...",
+        );
     }
     for i in (0..n).rev() {
         if i >= rank {
@@ -869,7 +967,7 @@ fn homotopy_algorithm(
             hom.jac(&y0, &hvec, &mut hjac);
             scale_matrix_rows_aug(n, &mut hjac);
             tangent_pos = -1;
-            if total_pivot_augmented(n, &mut tangent, &mut hjac, &mut tangent_pos) == -1 {
+            if total_pivot_augmented(n, &mut tangent, &mut hjac, &mut tangent_pos, false) == -1 {
                 return Err(HomFail::Singular);
             }
             for i in 0..m {
@@ -939,7 +1037,7 @@ fn homotopy_algorithm(
                 hjac[i + pc * n] = hvec[i];
             }
             scale_matrix_rows_aug(n, &mut hjac);
-            if total_pivot_augmented(n, &mut dy1, &mut hjac, &mut pos) == -1 {
+            if total_pivot_augmented(n, &mut dy1, &mut hjac, &mut pos, false) == -1 {
                 corrector_ok = false;
                 break;
             }
@@ -2246,6 +2344,7 @@ fn newton_c(
     jaceval: &mut dyn FnMut(&[f64], &mut [f64]),
     has_jac: bool,
     trace: Option<&HomotopyTrace>,
+    casual: bool,
 ) -> (bool, bool) {
     const ALPHA: f64 = 1.0e-1;
     const LAMBDA_MIN_C: f64 = 1.0e-4;
@@ -2336,6 +2435,12 @@ fn newton_c(
         }
         arm_attempt();
         eval(x, &mut fvec);
+        // C's `giveUp` in `solveHomotopy`'s entry phase: no varied retry, since the
+        // residual the casual set just reported is not a residual at all.
+        if dt_violated() {
+            x0.copy_from_slice(x);
+            return (false, false);
+        }
         if !attempt_aborted() {
             // A start point already at tolerance is the solution; C forms no Jacobian.
             // ~40% of calls, nearly all of them an exact time hit whose residual is 0.
@@ -2348,7 +2453,7 @@ fn newton_c(
             }
             if form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval) {
                 row_scaling(n, &jac, res_scaling);
-                regular = total_pivot_step(n, &jac, &fvec, &xscaling, &mut step);
+                regular = total_pivot_step(n, &jac, &fvec, &xscaling, &mut step, casual);
                 if regular {
                     if trace.is_some() {
                         crate::omclog::debug_string(crate::omclog::NLS_V, "regular initial point!!!");
@@ -2412,6 +2517,11 @@ fn newton_c(
                 x1[i] = x[i] + lambda1 * step[i];
             }
             eval(&x1, &mut fvec);
+            // C's `f_con` failing here ends the whole Newton, not just this step.
+            if dt_violated() {
+                lambda1 = LAMBDA_MIN_C - 1.0;
+                break;
+            }
             if !assert_hit() {
                 break;
             }
@@ -2457,6 +2567,9 @@ fn newton_c(
                 x1[i] = x[i] + lambda2 * step[i];
             }
             eval(&x1, &mut fvec);
+            if dt_violated() {
+                return (false, false);
+            }
             let error_f2_sqrd = nsq(&fvec);
             if trace.is_some() {
                 crate::omclog::debug_double(crate::omclog::NLS_V, "Need to damp, error_f2 = ", libm::sqrt(error_f2_sqrd));
@@ -2491,6 +2604,9 @@ fn newton_c(
                     x1[i] = x[i] + lam * step[i];
                 }
                 eval(&x1, &mut fvec);
+                if dt_violated() {
+                    return (false, false);
+                }
                 if trace.is_some() {
                     crate::omclog::debug_double(crate::omclog::NLS_V, "Need to damp, error_f1 = ", libm::sqrt(nsq(&fvec)));
                 }
@@ -2632,14 +2748,14 @@ fn newton_c(
 /// `solveSystemWithTotalPivotSearch` rather than the LAPACK solve its iterations
 /// use: a rank-deficient-but-consistent start point is regular there. Step comes
 /// back unscaled.
-fn total_pivot_step(n: usize, jac: &[f64], fvec: &[f64], xscaling: &[f64], step: &mut [f64]) -> bool {
+fn total_pivot_step(n: usize, jac: &[f64], fvec: &[f64], xscaling: &[f64], step: &mut [f64], casual: bool) -> bool {
     let mut aug = vec![0.0f64; n * (n + 1)];
     aug[..n * n].copy_from_slice(jac);
     aug[n * n..].copy_from_slice(fvec);
     scale_matrix_rows_aug(n, &mut aug);
     let mut sol = vec![0.0f64; n + 1];
     let mut pos = n as i32;
-    if total_pivot_augmented(n, &mut sol, &mut aug, &mut pos) != 0 {
+    if total_pivot_augmented(n, &mut sol, &mut aug, &mut pos, casual) != 0 {
         return false;
     }
     for i in 0..n {
@@ -3188,7 +3304,11 @@ pub extern "C" fn rt_solve_nls(
     hom_support: u32,
     hom_method: u32,
     lambda_addr: u32,
+    strict_idx: u32,
 ) -> i32 {
+    // C's `nonlinsys->strictTearingFunctionCall`, whose presence is also what marks
+    // the system as dynamic tearing's casual set.
+    let casual = strict_idx != u32::MAX;
     // Under an adaptive approach a homotopy-carrying system has one unknown more
     // than residuals: `__HOM_LAMBDA`, the lambda slot (C's `size` vs `size-1`).
     // `n` below is the residual count; the homotopy solver drives the extra one.
@@ -3198,6 +3318,11 @@ pub extern "C" fn rt_solve_nls(
     let n = n as usize - usize::from(lambda_unknown);
     // C's `solve_nonlinear_system` opens the system's clock before anything else.
     crate::sysstats::begin(eq_index as i32, true, n as u32, nnz);
+    // C's `equationNonlinear` line. The casual set's own is printed at the call
+    // site, ahead of the constraint check that may keep us out of here.
+    if !casual {
+        rt_dt_solving(eq_index as i32, -1, time, 0);
+    }
     set_no_throw_div_zero(true);
     let sys0 = sys_counts();
     // Relation mode (C's hysteresis): Newton always holds relations (mode 0) so it
@@ -3266,6 +3391,7 @@ pub extern "C" fn rt_solve_nls(
         }
         // Asserts are recoverable while the residual runs (C's ERROR_NONLINEARSOLVER).
         let saved = enter_eval();
+        dt_clear();
         residual(sim_data, x_ptr, r_ptr);
         if leave_eval(saved) {
             // A model assert failed at this trial (e.g. length < s_small): reject the
@@ -3351,9 +3477,9 @@ pub extern "C" fn rt_solve_nls(
     let mut guess = warm.clone();
     let mut nlsx_old = warm.clone();
     // C's "if last solving is too long ago use just old values": past five output
-    // intervals neither is consulted and the current variable values stand in. C also
-    // always consults them for a casual tearing set, which this target does not emit.
-    if libm::fabs(time - unsafe { load_f64(last_solved_addr) }) < 5.0 * step_size() {
+    // intervals neither is consulted and the current variable values stand in — a
+    // casual tearing set always consults them.
+    if casual || libm::fabs(time - unsafe { load_f64(last_solved_addr) }) < 5.0 * step_size() {
         let hpick = history_pick(&hist, time);
         if hpick.exact {
             stat_inc(STAT_NLS_GUESS_HIT);
@@ -3447,6 +3573,9 @@ pub extern "C" fn rt_solve_nls(
     if attempt == -2 {
         log_local_adaptive_start(sys_num);
     }
+    // The strict set solved the component in place of this casual one, so the
+    // unknowns already hold the answer: nothing to settle, no failure to report.
+    let mut strict_used = false;
     let mut converged = if attempt == i32::MIN { false } else { 'attempts: loop {
         if attempt == -2 {
             // C sets `lambda = 0` before the lambda0-system pre-solve.
@@ -3474,10 +3603,15 @@ pub extern "C" fn rt_solve_nls(
                     pat_addr, nnz as usize, jac_csc, lss_handle, &mut eval,
                 )
             } else if pick == Nls::Newton {
-                solve_newton_c(
+                let ok = solve_newton_c(
                     n, &mut x, &warm, &nominal, &mut res_scaling, discrete_call, &mut eval, &mut jaceval,
                     has_jac,
-                )
+                );
+                // C's `NLS_NEWTON` case in `solveNLS` also falls back to the strict set.
+                if casual && !ok {
+                    strict_used = dt_strict_fallback(strict_idx, sim_data);
+                }
+                ok
             } else if pick == Nls::Homotopy {
                 // Both start directions, as C's runHomotopy.
                 let mut ok = false;
@@ -3514,7 +3648,7 @@ pub extern "C" fn rt_solve_nls(
                 if homotopy_solver {
                     (converged, settled) = newton_c(
                         n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
-                        has_jac, trace,
+                        has_jac, trace, casual,
                     );
                     if !converged {
                         stat_inc(STAT_NLS_NEWTON_FAIL);
@@ -3522,6 +3656,12 @@ pub extern "C" fn rt_solve_nls(
                     }
                 }
                 settled &= converged;
+                // Dynamic tearing: C's `solveHomotopy` gives a casual tearing set one
+                // `newtonAlgorithm` try and breaks out, then `solveNLS` hands the
+                // component to the strict set. Only if *that* fails does minpack run.
+                if casual && homotopy_solver && !converged {
+                    strict_used = dt_strict_fallback(strict_idx, sim_data);
+                }
                 // C's `discreteCall` is set for an initial system too; only an event call
                 // has relations to hold, so only there does the continuity flag move.
                 let mut set_cont = |c: bool| {
@@ -3530,7 +3670,7 @@ pub extern "C" fn rt_solve_nls(
                     }
                 };
                 // C's `solveHomotopy` on `newtonAlgorithm`'s `info == -1`.
-                if !converged {
+                if !converged && !strict_used {
                     stat_inc(STAT_NLS_RETRY);
                     converged = hybrd_c(
                         n, &mut x, &nlsx, &warm, &nominal, &bounds, &t, &mut eval, &mut set_cont,
@@ -3542,45 +3682,49 @@ pub extern "C" fn rt_solve_nls(
                 }
                 // The rungs below are not `solveHomotopy`'s; they catch what C gives up on.
                 // `nls_accept` takes only a point at tolerance, so none can report a non-root.
-                if !converged {
-                    stat_inc(STAT_NLS_RETRY);
-                    x.copy_from_slice(&warm);
-                    converged = newton_solve(n, &mut x, &mut eval);
-                }
-                // An initial system gets a second `newtonAlgorithm`, from `x0`.
-                if !converged && saved_rel_fresh == 2 {
-                    x.copy_from_slice(&guess);
-                    converged = newton_c(
-                        n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
-                        has_jac, None,
-                    )
-                    .0;
-                }
-                if !converged {
-                    stat_inc(STAT_NLS_RETRY);
-                    converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
-                }
-                if !converged {
-                    x.copy_from_slice(&guess);
-                    converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
-                }
-                if !converged {
-                    x.copy_from_slice(&guess);
-                    converged = lm_solve(n, &mut x, &mut eval);
-                }
-                if !converged {
-                    x.copy_from_slice(&warm);
-                    converged = lm_solve(n, &mut x, &mut eval);
-                }
-                // C's mixed-solver homotopy fallback: track H(x,λ)=F(x)−(1−λ)·F(x0) from λ=0 to 1.
-                if !converged && saved_rel_fresh == 2 {
-                    // Forward then reversed start direction, as C's runHomotopy.
-                    for &dir in &[1.0f64, -1.0f64] {
-                        let mut hx = guess.clone();
-                        if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
-                            x.copy_from_slice(&hx);
-                            converged = true;
-                            break;
+                // A casual set stops where C's `solveNLS` does: grinding on past minpack
+                // would find points its constraints exist to reject.
+                if !casual && !strict_used {
+                    if !converged {
+                        stat_inc(STAT_NLS_RETRY);
+                        x.copy_from_slice(&warm);
+                        converged = newton_solve(n, &mut x, &mut eval);
+                    }
+                    // An initial system gets a second `newtonAlgorithm`, from `x0`.
+                    if !converged && saved_rel_fresh == 2 {
+                        x.copy_from_slice(&guess);
+                        converged = newton_c(
+                            n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
+                            has_jac, None, casual,
+                        )
+                        .0;
+                    }
+                    if !converged {
+                        stat_inc(STAT_NLS_RETRY);
+                        converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
+                    }
+                    if !converged {
+                        x.copy_from_slice(&guess);
+                        converged = hybrd_scaled(n, &mut x, &mut fvec, &nominal, maxfev, &mut eval);
+                    }
+                    if !converged {
+                        x.copy_from_slice(&guess);
+                        converged = lm_solve(n, &mut x, &mut eval);
+                    }
+                    if !converged {
+                        x.copy_from_slice(&warm);
+                        converged = lm_solve(n, &mut x, &mut eval);
+                    }
+                    // C's mixed-solver homotopy fallback: track H(x,λ)=F(x)−(1−λ)·F(x0) from λ=0 to 1.
+                    if !converged && saved_rel_fresh == 2 {
+                        // Forward then reversed start direction, as C's runHomotopy.
+                        for &dir in &[1.0f64, -1.0f64] {
+                            let mut hx = guess.clone();
+                            if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
+                                x.copy_from_slice(&hx);
+                                converged = true;
+                                break;
+                            }
                         }
                     }
                     // C's `solveNLS` `NLS_MIXED` tail: `solveHomotopy` having failed, the
@@ -3618,6 +3762,9 @@ pub extern "C" fn rt_solve_nls(
             settled = false;
             x.copy_from_slice(&start_point);
         };
+        if strict_used {
+            break 'attempts false;
+        }
         // C's step loop stops at the first lambda that does not converge, and the plain
         // attempt falls through to the sweep.
         if attempt == -2 {
@@ -3682,7 +3829,7 @@ pub extern "C" fn rt_solve_nls(
         nlsx_old.copy_from_slice(&x);
     } };
     // C's `solveWithInitHomotopy`: run along the model's own homotopy path.
-    if adaptive_homotopy && !converged && (hom_method == HOM_GLOBAL_ADAPTIVE || lambda0_ok) {
+    if adaptive_homotopy && !converged && !strict_used && (hom_method == HOM_GLOBAL_ADAPTIVE || lambda0_ok) {
         crate::omclog::info(
             crate::omclog::INIT_HOMOTOPY,
             false,
@@ -3726,7 +3873,7 @@ pub extern "C" fn rt_solve_nls(
     }
     // Leave the slots + torn variables at the solution. C leaves them wherever its
     // last trial step put them, so this has no counterpart in its feval count.
-    if converged && !settled {
+    if converged && !settled && !strict_used {
         let uncounted = n_feval.get();
         eval(&x, &mut scratch);
         n_feval.set(uncounted);
@@ -3741,7 +3888,12 @@ pub extern "C" fn rt_solve_nls(
         unsafe { store_f64(scale_addr + (i * 8) as u32, res_scaling[i]) };
     }
 
-    let ret = if converged {
+    let ret = if strict_used {
+        // C's `solveNLS` reports the component solved and `getIterationVars` re-reads
+        // the unknowns the strict set wrote, so there is nothing here to store or
+        // restore: 2 tells the call site the values already stand.
+        2
+    } else if converged {
         // `updateInitialGuessDB`: record the solution, unless this evaluation is a
         // Jacobian assembly — those are at perturbed states.
         if context_stores_guess() {
@@ -3783,7 +3935,7 @@ pub extern "C" fn rt_solve_nls(
         c[0] += crate::rt_stat(STAT_NLS_ITER) - iter0;
         c[1] += n_feval.get();
         c[2] += JAC_EVALS.load(Ordering::Relaxed) - jac0;
-        log_nls_leave(eq_index, converged, &x);
+        log_nls_leave(eq_index, converged || strict_used, &x);
     }
 
     if saved_rel_fresh != 2 {

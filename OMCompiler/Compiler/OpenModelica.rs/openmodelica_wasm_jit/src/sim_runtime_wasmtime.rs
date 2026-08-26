@@ -446,14 +446,15 @@ impl NativeExternals {
     /// Build the `Include` sources with `missing` reachable, and load the result.
     /// Searched first: it is the model's own source.
     fn load_includes(&mut self, inc: &model::ExtIncludes, missing: &[crate::sig::ExtCallSig]) -> bool {
-        let path = match inc.compile(missing) {
-            Ok(p) => p,
+        let built = match inc.compile(missing) {
+            Ok(b) => b,
             Err(e) => {
                 self.errors.push(e);
                 return false;
             }
         };
-        let (handles, errors) = openmodelica_util::dynload::load_external_libraries(&[path]);
+        self.errors.extend(built.note);
+        let (handles, errors) = openmodelica_util::dynload::load_external_libraries(&[built.path]);
         let loaded = !handles.is_empty();
         self.handles.splice(0..0, handles);
         self.errors.extend(errors);

@@ -2244,7 +2244,7 @@ protected
   Option<BackendDAE.TearingSet> casualTearingSet;
   list<BackendDAE.Equation> eqn_lst;
   list<BackendDAE.Var> var_lst;
-  Boolean linear,b,noDynamicStateSelection,dynamicTearing,forceDegree1,hasStartCycle;
+  Boolean linear,b,noDynamicStateSelection,dynamicTearing,dtTarget,forceDegree1,hasStartCycle;
   DAE.ComponentRef cref;
   list<DAE.ComponentRef> startBaseCrefs, valueCrefs, cyclicBaseCrefs;
   BackendDAE.AdjacencyMatrixTEnhanced meTFull;
@@ -2266,14 +2266,17 @@ algorithm
   // (a $START.x->x cycle).
   forceDegree1 := BackendDAEUtil.isInitializationDAE(ishared);
 
-  // check if dynamic tearing is enabled for linear/nonlinear system
-  dynamicTearing := match (Config.dynamicTearing(),linear,noDynamicStateSelection,DAEtypeStr,Flags.getConfigBool(Flags.DYNAMIC_TEARING_FOR_INITIALIZATION),Config.simCodeTarget())
-    case ("true",_,true,"simulation",_,"C") then true;
-    case ("true",_,true,"initialization",true,"C") then true;
-    case ("linear",true,true,"simulation",_,"C") then true;
-    case ("linear",true,true,"initialization",true,"C") then true;
-    case ("nonlinear",false,true,"simulation",_,"C") then true;
-    case ("nonlinear",false,true,"initialization",true,"C") then true;
+  // check if dynamic tearing is enabled for linear/nonlinear system.
+  // Only the targets whose runtime can switch tearing sets ("wasm" is the same
+  // code generator as "wasm-jit", emitting a standalone module).
+  dtTarget := listMember(Config.simCodeTarget(), {"C", "wasm-jit", "wasm"});
+  dynamicTearing := match (Config.dynamicTearing(),linear,noDynamicStateSelection,DAEtypeStr,Flags.getConfigBool(Flags.DYNAMIC_TEARING_FOR_INITIALIZATION),dtTarget)
+    case ("true",_,true,"simulation",_,true) then true;
+    case ("true",_,true,"initialization",true,true) then true;
+    case ("linear",true,true,"simulation",_,true) then true;
+    case ("linear",true,true,"initialization",true,true) then true;
+    case ("nonlinear",false,true,"simulation",_,true) then true;
+    case ("nonlinear",false,true,"initialization",true,true) then true;
     else false;
   end match;
 

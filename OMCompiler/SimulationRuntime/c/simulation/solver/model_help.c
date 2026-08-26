@@ -518,6 +518,31 @@ void overwriteOldSimulationData(DATA *data)
   }
 }
 
+/*! \fn continueSimulationData
+ *
+ *  Makes the current slot of the ring buffer continue from the previous step.
+ *
+ *  `rotateRingBuffer` moves `localData[0]` onto the slot that held the values of
+ *  `SIZERINGBUFFER` steps ago, and the equations only overwrite what they compute,
+ *  so a variable read before the equation that computes it - a dynamic-tearing
+ *  constraint check, a nonlinear system's old value - would see that stale slot.
+ *
+ *  Call directly after `rotateRingBuffer` + `lookupRingBuffer`.
+ *
+ *  \param [ref] [data]
+ */
+void continueSimulationData(DATA *data)
+{
+  if(ringBufferLength(data->simulationData) < 2)
+    return;
+
+  data->localData[0]->timeValue = data->localData[1]->timeValue;
+  memcpy(data->localData[0]->realVars, data->localData[1]->realVars, sizeof(modelica_real)*data->modelData->nVariablesReal);
+  memcpy(data->localData[0]->integerVars, data->localData[1]->integerVars, sizeof(modelica_integer)*data->modelData->nVariablesInteger);
+  memcpy(data->localData[0]->booleanVars, data->localData[1]->booleanVars, sizeof(modelica_boolean)*data->modelData->nVariablesBoolean);
+  memcpy(data->localData[0]->stringVars, data->localData[1]->stringVars, sizeof(modelica_string)*data->modelData->nVariablesString);
+}
+
 /*! \fn copyRingBufferSimulationData
  *
  *  Copy RingBuffer simulation data from DATA to a new ring buffer.

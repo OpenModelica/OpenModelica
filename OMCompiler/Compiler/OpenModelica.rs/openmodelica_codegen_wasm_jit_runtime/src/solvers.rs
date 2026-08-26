@@ -36,6 +36,9 @@ pub(crate) enum NlsLs {
 /// `-ls`, for a dense-stored linear system.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Ls {
+    /// C's `LS_DEFAULT`: LAPACK, with the total-pivot search as its fallback.
+    Default,
+    /// C's `LS_LAPACK`, which has no fallback — a singular matrix fails the system.
     Lapack,
     TotalPivot,
     Klu,
@@ -254,11 +257,12 @@ pub(crate) fn nls_ls() -> NlsLs {
 
 pub(crate) fn ls() -> Ls {
     match LS.load(Ordering::Relaxed) {
+        2 => Ls::Lapack,
         3 => Ls::TotalPivot,
         4 if cfg!(sundials) => Ls::Klu,
         5 if cfg!(sundials) => Ls::Umfpack,
         6 if cfg!(sundials) => Ls::Lis,
-        _ => Ls::Lapack, // 0 unset, 1 default, 2 lapack — C's dense default
+        _ => Ls::Default, // 0 unset, 1 default — C's dense default
     }
 }
 
@@ -282,7 +286,7 @@ mod tests {
     fn unset_codes_give_c_defaults() {
         rt_set_solvers(0, 0, 0, 0);
         assert!(nls() == Nls::Default);
-        assert!(ls() == Ls::Lapack);
+        assert!(ls() == Ls::Default);
         // KLU is the sparse default only where the archives are linked.
         assert!(lss() == if cfg!(sundials) { Lss::Klu } else { Lss::Rsparse });
     }
