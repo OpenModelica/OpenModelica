@@ -669,9 +669,10 @@ pub const RT_STAT_HOMOTOPY_STEPS: usize = 24;
 /// Read a runtime String heap value (`[refcount:u32][len:u32][utf8]`, handle at
 /// its base; `0` is null) into a Rust `String`.
 fn read_rt_string(e: &dyn SimEngine, handle: i32) -> Result<String> {
-    if handle <= 0 {
+    if handle == 0 {
         return Ok(String::new());
     }
+    // An address past 2 GiB is a negative `i32`; wasm pointers are unsigned.
     let base = handle as u32;
     let len = read_i32(e, base + 4)?.max(0) as usize;
     let mut buf = vec![0u8; len];
