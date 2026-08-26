@@ -752,7 +752,7 @@ unsafe fn call_external(
                     slots.push(Slot::I(v.unwrap_i32() as i64));
                 }
                 SigTy::Str => {
-                    let off = v.unwrap_i32() as usize;
+                    let off = v.unwrap_i32() as u32 as usize;
                     let len = u32::from_le_bytes(mem[off + 4..off + 8].try_into().unwrap()) as usize;
                     let cs = std::ffi::CString::new(&mem[off + 8..off + 8 + len])
                         .map_err(|_| "external \"C\" : string argument has an interior NUL")?;
@@ -767,7 +767,7 @@ unsafe fn call_external(
                 // callee reads it in place; the memory can't grow during the call.
                 // A rank-2-or-higher Fortran array goes as a column-major copy.
                 SigTy::Array { elem, .. } => {
-                    let off = v.unwrap_i32() as usize;
+                    let off = v.unwrap_i32() as u32 as usize;
                     let (dims, data_off) = crate::host::array_abi::dims_and_data(mem, off)
                         .ok_or("external \"C\" : malformed array argument")?;
                     let base = off + data_off;
@@ -816,7 +816,7 @@ unsafe fn call_external(
                 // By pointer, as C's `_copy_to_external` builds it.
                 SigTy::Record { fields, .. } => {
                     let mut cell = Cell::new(c_record_layout(fields).size as usize);
-                    record_to_native(mem, fields, v.unwrap_i32() as usize, cell.bytes_mut(), &mut cstrings)?;
+                    record_to_native(mem, fields, v.unwrap_i32() as u32 as usize, cell.bytes_mut(), &mut cstrings)?;
                     slots.push(Slot::P(cell.ptr()));
                     in_cells.push(cell);
                 }

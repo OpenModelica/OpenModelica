@@ -1092,7 +1092,7 @@ fn call_external_in_wasm(
             SigTy::Int | SigTy::Bool | SigTy::Ptr => call_args.push(Val::I32(v.unwrap_i32())),
             SigTy::Str => {
                 // `char*`: the same bytes, NUL-terminated.
-                let off = v.unwrap_i32() as usize;
+                let off = v.unwrap_i32() as u32 as usize;
                 let data = memory.data(&*caller);
                 let len = u32::from_le_bytes(
                     data.get(off + 4..off + 8).ok_or_else(|| "external \"C\": malformed String argument".to_string())?.try_into().unwrap(),
@@ -1105,7 +1105,7 @@ fn call_external_in_wasm(
                 call_args.push(Val::I32(cell as i32));
             }
             SigTy::Array { elem, .. } => {
-                let off = v.unwrap_i32() as usize;
+                let off = v.unwrap_i32() as u32 as usize;
                 let (dims, data_off) = crate::host::array_abi::dims_and_data(memory.data(&*caller), off)
                     .ok_or_else(|| "external \"C\": malformed array argument".to_string())?;
                 let base = (off + data_off) as u32;
