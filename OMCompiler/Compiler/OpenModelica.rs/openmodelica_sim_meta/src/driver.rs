@@ -2616,12 +2616,17 @@ fn eval_ode(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<
     e.call1("functionODE", sim_data)
 }
 
-/// One pass of C's `functionDAE`: the discrete update.
+/// One pass of C's `functionDAE`, which evaluates `allEquations` once. With
+/// `when`-equations `functionAlgebraics` *is* that list, so `functionODE` first
+/// would solve the algebraic loops a second time against the previous pass's
+/// discrete state -- a switch configuration C never solves for.
 fn eval_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::DISCRETE);
     }
-    e.call1("functionODE", sim_data)?;
+    if !layout.has_when {
+        e.call1("functionODE", sim_data)?;
+    }
     e.call1("functionAlgebraics", sim_data)
 }
 
