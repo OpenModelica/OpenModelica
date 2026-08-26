@@ -14,7 +14,7 @@ end M;"); getErrorString();
 buildModelFMU(M, version="2.0", fmuType="me_cs", platforms={"static"}); getErrorString();
 
 // this should be later replaced by a Python script, but for now we just use the system command to run the FMU
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 M.fmu --result-file=experiment_annotation.mat --stripRoot", "M_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator M.fmu --resultFile=experiment_annotation.mat --stripRoot", "M_systemCall.log");
 readFile("M_systemCall.log");
 
 val(x, 1.0, "experiment_annotation.mat");

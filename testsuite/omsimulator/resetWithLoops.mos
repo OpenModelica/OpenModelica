@@ -39,7 +39,7 @@ instantiated_model.delete()
 print(f\"Success\")
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 resetWithLoops.py", "resetWithLoops_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator resetWithLoops.py", "resetWithLoops_systemCall.log");
 readFile("resetWithLoops_systemCall.log");
 
 // Result:

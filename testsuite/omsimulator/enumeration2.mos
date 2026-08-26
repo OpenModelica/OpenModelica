@@ -39,7 +39,7 @@ instantiated_model.terminate()
 instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 Enumeration2.py", "Enumeration2_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator Enumeration2.py", "Enumeration2_systemCall.log");
 readFile("Enumeration2_systemCall.log");
 
 // Result:

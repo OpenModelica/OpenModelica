@@ -15,7 +15,7 @@ simulate(Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks, stopTi
 buildModelFMU(Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks, version="2.0", fmuType="me", fileNamePrefix="Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks"); getErrorString();
 
 // Simulate FMU with OMSimulator
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks.fmu --stop-time=4 --tolerance=1e-8 --result-file=Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks-oms_res.csv --stripRoot --skipCSVHeader", "testSynchronousFMU_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks.fmu --stopTime=4 --tolerance=1e-8 --resultFile=Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks-oms_res.csv --stripRoot --skipCSVHeader", "testSynchronousFMU_systemCall.log"); getErrorString();
 //readFile("testSynchronousFMU_systemCall.log"); getErrorString();
 
 // Compare results

@@ -40,7 +40,7 @@ instantiated_model.terminate()
 instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 fmiblackbox.py", "fmiblackbox_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator fmiblackbox.py", "fmiblackbox_systemCall.log");
 readFile("fmiblackbox_systemCall.log");
 
 // Result:

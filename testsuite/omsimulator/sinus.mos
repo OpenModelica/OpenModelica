@@ -17,7 +17,7 @@ loadString("
 
 buildModelFMU(sinus, version="2.0", fmuType="cs", platforms={"static"}); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 sinus.fmu --stop-time=4.0 --result-file=sinus_res.mat", "sinus_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator sinus.fmu --stopTime=4.0 --resultFile=sinus_res.mat", "sinus_systemCall.log");
 readFile("sinus_systemCall.log");
 
 
