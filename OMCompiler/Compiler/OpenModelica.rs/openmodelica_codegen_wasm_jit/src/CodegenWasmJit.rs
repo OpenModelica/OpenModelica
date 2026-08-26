@@ -1927,6 +1927,14 @@ fn wasm_builtins(sysroot: &std::path::Path) -> Option<std::path::PathBuf> {
     .find(|p| p.exists())
 }
 
+/// Whether the `Include` sources must become a wasm library even with nothing
+/// missing from the `ext` imports: ModelicaExternalC calls C's overridable
+/// `usertab` hook from inside the wasm, so no `ext` import names it and only the
+/// sources say whether the model overrides the erroring default.
+pub(crate) fn include_overrides_builtin(sources: &[String]) -> bool {
+    sources.iter().any(|s| s.contains("usertab"))
+}
+
 /// The `external "C"` functions neither `libs` nor the libraries every run loads
 /// (libc, ModelicaExternalC) export — what an `Include` still has to provide.
 pub(crate) fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> Vec<ExtCallSig> {
@@ -4672,30 +4680,30 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
             });
         }
         if !sources.is_empty() {
-            match ext_host {
-                // Built on demand, for a symbol the loaded libraries turn out not
-                // to define.
-                ExtHost::Native => {
-                    ext_includes = Some(ExtIncludes {
-                        sources,
-                        include_dirs: dirs,
-                        ccompiler: mp.ccompiler.to_string(),
-                        cflags: mp.cflags.to_string(),
-                        dllext: mp.dllext.to_string(),
-                        prefix,
-                    })
-                }
-                // A wasm artifact carries every implementation, so the same
-                // decision has to be made here, off the libraries' exports.
-                ExtHost::Wasm => {
-                    let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
-                    // `usertab` is no `external "C"`, so never among `missing`.
-                    if !missing.is_empty() || sources.iter().any(|s| s.contains("usertab")) {
-                        if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &mp.cflags, &missing, &mut ext_lib_notes)? {
-                            ext_libs.wasm.push(l);
-                        }
+            // A hook ModelicaExternalC calls from inside the wasm is named by no
+            // `ext` import and the native fallback cannot reach it, so it takes a
+            // wasm library on either host. A wasm artifact carries every
+            // implementation, so there the same decision is made off the exports.
+            let hook = ext_builtin && include_overrides_builtin(&sources);
+            if hook || ext_host == ExtHost::Wasm {
+                let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
+                if hook || !missing.is_empty() {
+                    if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &mp.cflags, &missing, &mut ext_lib_notes)? {
+                        ext_libs.wasm.push(l);
                     }
                 }
+            }
+            // Built on demand, for a symbol the loaded libraries turn out not to
+            // define.
+            if ext_host == ExtHost::Native {
+                ext_includes = Some(ExtIncludes {
+                    sources,
+                    include_dirs: dirs,
+                    ccompiler: mp.ccompiler.to_string(),
+                    cflags: mp.cflags.to_string(),
+                    dllext: mp.dllext.to_string(),
+                    prefix,
+                });
             }
         }
     }
