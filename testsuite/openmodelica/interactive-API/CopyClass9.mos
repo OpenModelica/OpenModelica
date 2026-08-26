@@ -1,0 +1,50 @@
+// name:     CopyClass9
+// keywords:
+// status:   correct
+//
+
+loadString("
+  package P
+    package sub1
+      package sub2 end sub2;
+
+      model B
+        P.sub2.A a;
+      end B;
+    end sub1;
+
+    package sub2
+      model A
+        Real x;
+      end A;
+    end sub2;
+  end P;
+");
+
+copyClass(P.sub1.B, "B_dup", P.sub1);
+list(P);
+
+// Result:
+// true
+// true
+// "package P
+//   package sub1
+//     package sub2
+//     end sub2;
+//
+//     model B
+//       P.sub2.A a;
+//     end B;
+//
+//     model B_dup
+//       .P.sub2.A a;
+//     end B_dup;
+//   end sub1;
+//
+//   package sub2
+//     model A
+//       Real x;
+//     end A;
+//   end sub2;
+// end P;"
+// endResult

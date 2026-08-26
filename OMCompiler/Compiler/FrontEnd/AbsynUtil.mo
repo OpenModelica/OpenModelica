@@ -1544,7 +1544,7 @@ public function pathStripSamePrefix
   input Absyn.Path inPath2;
   output Option<Absyn.Path> outPath;
 protected
-  Absyn.Path path1 = inPath1, path2 = inPath2;
+  Absyn.Path path1 = makeNotFullyQualified(inPath1), path2 = makeNotFullyQualified(inPath2);
 algorithm
   while pathFirstIdent(path1) == pathFirstIdent(path2) loop
     if pathIsIdent(path1) then

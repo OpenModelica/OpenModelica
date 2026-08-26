@@ -36,6 +36,8 @@ CopyClass5.mos \
 CopyClass6.mos \
 CopyClass7.mos \
 CopyClass8.mos \
+CopyClass9.mos \
+CopyClass10.mos \
 CopyClassInvalid1.mos \
 CopyClassRedeclare1.mos \
 daeModeHomotopy.mos \
