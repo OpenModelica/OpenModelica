@@ -25,7 +25,7 @@ end setstartTime;
 
 buildModelFMU(setstartTime, version="2.0", fmuType="me_cs", platforms={"static"}); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 setstartTime.fmu --start-time=2.5 --stop-time=5 --result-file=start_time_res.mat --mode=me --stripRoot", "setstartTime_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator setstartTime.fmu --startTime=2.5 --stopTime=5 --resultFile=start_time_res.mat --mode=me --stripRoot", "setstartTime_systemCall.log");
 readFile("setstartTime_systemCall.log");
 
 val(t, 2.5, "start_time_res.mat");

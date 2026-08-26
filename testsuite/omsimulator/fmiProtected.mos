@@ -44,7 +44,7 @@ instantiated_model.terminate()
 instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 fmiprotected.py", "fmiprotected_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator fmiprotected.py", "fmiprotected_systemCall.log");
 readFile("fmiprotected_systemCall.log");
 
 // Result:

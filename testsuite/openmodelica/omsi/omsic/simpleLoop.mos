@@ -31,7 +31,7 @@ setCommandLineOptions("--simCodeTarget=omsic"); getErrorString();
 buildModelFMU(simpleLoop); getErrorString();
 
 // Simulate with OMSimulator
-system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu --intervals=500 --tolerance=1e-6 --resultFile=\"simpleLoop_OMS_res.mat\" --suppressPath=true --tempDir=\"simpleLoop-tmp\"", "simpleLoop_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu --intervals=500 --tolerance=1e-6 --resultFile=\"simpleLoop_OMS_res.mat\" --stripRoot --suppressPath --tempDir=\"simpleLoop-tmp\"", "simpleLoop_systemCall.log"); getErrorString();
 readFile("simpleLoop_systemCall.log");
 
 // Compare results
@@ -59,14 +59,15 @@ compareSimulationResults("simpleLoop_OMS_res.mat",
 // ""
 // 0
 // ""
-// "info:    *** FMU Simulation Info ***
-//           - model:     simpleLoop (model exchange)
-//           - startTime: 0.000000
-//           - stopTime:  1.000000
-//           - tolerance: 0.000001
-//           - stepSize:  0.002000
+// "info: *** FMU Simulation Info ***
+//      - model     : simpleLoop (model exchange)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 1.000000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.002
 // info:    maximum step size for 'simpleLoop.root': 0.002000
-// info:    Result file: simpleLoop_OMS_res.mat (bufferSize=1)
+// info:    Result file: simpleLoop_OMS_res.mat (bufferSize=10)
 // info:    Final Statistics for 'simpleLoop.root':
 //          NumSteps = 502 NumRhsEvals  = 505 NumLinSolvSetups = 27
 //          NumNonlinSolvIters = 504 NumNonlinSolvConvFails = 0 NumErrTestFails = 0

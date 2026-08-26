@@ -20,7 +20,7 @@ simulate(Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample, stopTi
 buildModelFMU(Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample, version="2.0", fmuType="me", fileNamePrefix="Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample"); getErrorString();
 
 // Simulate FMU with OMSimulator
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample.fmu --stop-time=0.25 --tolerance=1e-8 --result-file=Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample-oms_res.csv --stripRoot", "testSynchronousFMU_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample.fmu --stopTime=0.25 --tolerance=1e-8 --resultFile=Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample-oms_res.csv --stripRoot", "testSynchronousFMU_systemCall.log"); getErrorString();
 //readFile("testSynchronousFMU_systemCall.log"); getErrorString();
 
 // Compare results

@@ -34,7 +34,7 @@ loadString("
 
 buildModelFMU(WhenTestA, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 WhenTestA.fmu --result-file=WhenTestA_res.mat --stripRoot", "WhenTestA_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator WhenTestA.fmu --resultFile=WhenTestA_res.mat --stripRoot", "WhenTestA_systemCall.log");
 readFile("WhenTestA_systemCall.log");
 
 val(der(s), 1.0, "WhenTestA_res.mat");
@@ -42,7 +42,7 @@ val(stop, 1.0, "WhenTestA_res.mat");
 
 buildModelFMU(WhenTestB, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 WhenTestB.fmu --result-file=WhenTestB_res.mat --stripRoot", "WhenTestB_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator WhenTestB.fmu --resultFile=WhenTestB_res.mat --stripRoot", "WhenTestB_systemCall.log");
 readFile("WhenTestB_systemCall.log");
 
 val(der(s), 1.0, "WhenTestB_res.mat");

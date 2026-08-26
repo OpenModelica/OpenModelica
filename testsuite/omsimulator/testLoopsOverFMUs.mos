@@ -102,7 +102,7 @@ instantiated_model.terminate()
 instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 loopsOverFMUs.py", "testLoopsOverFMUs_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator loopsOverFMUs.py", "testLoopsOverFMUs_systemCall.log"); getErrorString();
 readFile("testLoopsOverFMUs_systemCall.log");
 
 // Possible solutions:

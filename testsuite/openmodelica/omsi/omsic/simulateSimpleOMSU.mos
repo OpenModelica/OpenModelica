@@ -16,7 +16,7 @@ setCommandLineOptions("--simCodeTarget=omsic"); getErrorString();
 buildModelFMU(helloWorldOMSU); getErrorString();
 
 // Simulate with OMSimulator
-system(getInstallationDirectoryPath() + "/bin/OMSimulator helloWorldOMSU.fmu --intervals=500 --resultFile=\"helloWorldOMSU_res.mat\" --suppressPath=true --tempDir=\"helloWorldOMSU-tmp\"", "helloWorldOMSU_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator helloWorldOMSU.fmu --intervals=500 --resultFile=\"helloWorldOMSU_res.mat\" --stripRoot --suppressPath --tempDir=\"helloWorldOMSU-tmp\"", "helloWorldOMSU_systemCall.log"); getErrorString();
 readFile("helloWorldOMSU_systemCall.log");
 
 val(x, {0.0,1.0}, "helloWorldOMSU_res.mat");
@@ -34,14 +34,15 @@ val(der(x), {0.0,1.0}, "helloWorldOMSU_res.mat");
 // "
 // 0
 // ""
-// "info:    *** FMU Simulation Info ***
-//           - model:     helloWorldOMSU (model exchange)
-//           - startTime: 0.000000
-//           - stopTime:  1.000000
-//           - tolerance: 0.000001
-//           - stepSize:  0.002000
+// "info: *** FMU Simulation Info ***
+//      - model     : helloWorldOMSU (model exchange)
+//      - fmiVersion: 2.0
+//      - startTime : 0.000000
+//      - stopTime  : 1.000000
+//      - tolerance : 1e-06
+//      - stepSize  : 0.002
 // info:    maximum step size for 'helloWorldOMSU.root': 0.002000
-// info:    Result file: helloWorldOMSU_res.mat (bufferSize=1)
+// info:    Result file: helloWorldOMSU_res.mat (bufferSize=10)
 // info:    Final Statistics for 'helloWorldOMSU.root':
 //          NumSteps = 504 NumRhsEvals  = 509 NumLinSolvSetups = 29
 //          NumNonlinSolvIters = 508 NumNonlinSolvConvFails = 0 NumErrTestFails = 1

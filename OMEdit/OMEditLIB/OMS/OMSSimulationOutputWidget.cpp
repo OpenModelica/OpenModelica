@@ -320,7 +320,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     processEnvironment.insert("PATH",  OMHOME + "/bin;" + OMHOME + "/lib;" + processEnvironment.value("PATH"));
     mpSimulationProcess->setProcessEnvironment(processEnvironment);
 #else
-    process = QString("%1/bin/OMSimulatorPython3").arg(Helper::OpenModelicaHome);
+    process = QString("%1/bin/OMSimulator").arg(Helper::OpenModelicaHome);
 #endif
     // run the simulation executable to create the result file
     writeSimulationOutput(QString("%1 %2\n").arg(process).arg(args.join(" ")), StringHandler::OMEditInfo);

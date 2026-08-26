@@ -47,7 +47,7 @@ instantiated_model.terminate()
 instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 outputState.py", "outputState_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator outputState.py", "outputState_systemCall.log");
 readFile("outputState_systemCall.log");
 
 // Result:

@@ -48,7 +48,7 @@ instantiated_model.terminate()
 instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 DualMassOscillator_me.py", "DualMassOscillator_me_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator DualMassOscillator_me.py", "DualMassOscillator_me_systemCall.log");
 readFile("DualMassOscillator_me_systemCall.log");
 
 

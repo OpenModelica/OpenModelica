@@ -270,7 +270,7 @@ void OMSProxy::startGuiServer()
   processEnvironment.insert("PATH",  OMHOME + "/bin;" + OMHOME + "/lib;" + processEnvironment.value("PATH"));
   mpGuiProcess->setProcessEnvironment(processEnvironment);
 #else
-  process = QString("%1/bin/OMSimulatorPython3").arg(Helper::OpenModelicaHome);
+  process = QString("%1/bin/OMSimulator").arg(Helper::OpenModelicaHome);
 #endif
   mpGuiProcess->start(process, args);
 }

@@ -55,7 +55,7 @@ instantiated_model.terminate()
 instantiated_model.delete()
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulatorPython3 Issue_FMU_update_vars.py", "Issue_FMU_update_vars_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator Issue_FMU_update_vars.py", "Issue_FMU_update_vars_systemCall.log");
 readFile("Issue_FMU_update_vars_systemCall.log");
 
 // Result:
