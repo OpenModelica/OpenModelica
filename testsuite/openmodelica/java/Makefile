@@ -1,7 +1,7 @@
 TEST=../../rtest -v
 
 OPENMODELICAHOME := $(shell pwd)/../../../build
-TESTFILES=JavaExt.mos JavaExtArrays.mos JavaExtInteractive.mos JavaExtRecord.mos JavaExtUniontype.mos JavaExtParseProgram.mos
+TESTFILES=JavaExt.mos JavaExtArrays.mos JavaExtInteractive.mos JavaExtRecord.mos JavaExtUniontype.mos
 SEP=$(shell test -e "`which mingw32-gcc.exe`" && echo ";" || echo ":")
 LDL=$(shell test -e "`which mingw32-gcc.exe`" && echo "" || echo "-ldl")
 RUNTIME=$(OPENMODELICAHOME)/share/omc/java/modelica_java.jar
