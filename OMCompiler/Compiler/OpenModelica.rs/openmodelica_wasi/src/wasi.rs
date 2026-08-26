@@ -90,6 +90,7 @@ pub const ERRNO_SUCCESS: i32 = 0;
 pub const ERRNO_BADF: i32 = 8;
 pub const ERRNO_FAULT: i32 = 21;
 pub const ERRNO_INVAL: i32 = 28;
+pub const ERRNO_EXIST: i32 = 20;
 pub const ERRNO_NOENT: i32 = 44;
 
 // filetype (`__wasi_filetype_t`).
@@ -205,11 +206,26 @@ impl WasiCtx {
     /// The file a guest-supplied path names; a relative one is taken against the
     /// preopen.
     fn resolve(&self, name: &str) -> String {
+        self.resolve_at(PREOPEN_FD, name)
+    }
+
+    /// [`Self::resolve`] for a `path_*` call, whose path is relative to `dirfd`.
+    /// libc's `*at` family passes an open directory there -- `readdir` stats each
+    /// entry through the directory's own fd -- so anything but the preopen has to
+    /// contribute its path.
+    fn resolve_at(&self, dirfd: u32, name: &str) -> String {
         let name = name.strip_prefix("./").unwrap_or(name);
-        if self.cwd.is_empty() || name.starts_with('/') {
+        if name.starts_with('/') {
+            return name.to_string();
+        }
+        let base = match self.fds.get(&dirfd) {
+            Some(Fd::Dir { vfs_path }) => vfs_path.as_str(),
+            _ => self.cwd.as_str(),
+        };
+        if base.is_empty() {
             name.to_string()
         } else {
-            format!("{}/{name}", self.cwd.trim_end_matches('/'))
+            format!("{}/{name}", base.trim_end_matches('/'))
         }
     }
 
@@ -355,7 +371,7 @@ impl WasiCtx {
     pub fn path_open<M: GuestMem>(
         &mut self,
         mem: &mut M,
-        _dirfd: u32,
+        dirfd: u32,
         _dirflags: u32,
         path: u32,
         path_len: u32,
@@ -367,7 +383,7 @@ impl WasiCtx {
     ) -> i32 {
         let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
         let name = String::from_utf8_lossy(&bytes).into_owned();
-        let vfs_path = self.resolve(&name);
+        let vfs_path = self.resolve_at(dirfd, &name);
 
         // Directory open (libc `opendir`); store directories are implicit.
         if oflags & OFLAGS_DIRECTORY != 0 {
@@ -455,9 +471,9 @@ impl WasiCtx {
     }
 
     /// `path_filestat_get`: stat a file by name relative to a preopen dir.
-    pub fn path_filestat_get<M: GuestMem>(&mut self, mem: &mut M, _dirfd: u32, _flags: u32, path: u32, path_len: u32, buf: u32) -> i32 {
+    pub fn path_filestat_get<M: GuestMem>(&mut self, mem: &mut M, dirfd: u32, _flags: u32, path: u32, path_len: u32, buf: u32) -> i32 {
         let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
-        let vfs_path = self.resolve(&String::from_utf8_lossy(&bytes));
+        let vfs_path = self.resolve_at(dirfd, &String::from_utf8_lossy(&bytes));
         let mtime = file_mtime(&vfs_path);
         if crate::fs::is_dir(&vfs_path) {
             return Self::write_filestat(mem, buf, FILETYPE_DIRECTORY, 0, mtime);
@@ -486,33 +502,37 @@ impl WasiCtx {
 
     // ── path mutations ───────────────────────────────────────────────────────
 
-    pub fn path_create_directory<M: GuestMem>(&mut self, mem: &mut M, _dirfd: u32, path: u32, path_len: u32) -> i32 {
+    pub fn path_create_directory<M: GuestMem>(&mut self, mem: &mut M, dirfd: u32, path: u32, path_len: u32) -> i32 {
         let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
-        let dir = self.resolve(&String::from_utf8_lossy(&bytes));
+        let dir = self.resolve_at(dirfd, &String::from_utf8_lossy(&bytes));
+        // `mkdtemp` picks its name by the difference between EEXIST and a real error.
+        if crate::fs::is_dir(&dir) || crate::fs::is_file(&dir) {
+            return ERRNO_EXIST;
+        }
         if crate::fs::create_dir_all(&dir).is_ok() { ERRNO_SUCCESS } else { ERRNO_NOENT }
     }
 
     /// `path_unlink_file`.
-    pub fn path_unlink_file<M: GuestMem>(&mut self, mem: &mut M, _dirfd: u32, path: u32, path_len: u32) -> i32 {
+    pub fn path_unlink_file<M: GuestMem>(&mut self, mem: &mut M, dirfd: u32, path: u32, path_len: u32) -> i32 {
         let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
-        let vfs_path = self.resolve(&String::from_utf8_lossy(&bytes));
+        let vfs_path = self.resolve_at(dirfd, &String::from_utf8_lossy(&bytes));
         if crate::fs::remove_file(&vfs_path).is_ok() { ERRNO_SUCCESS } else { ERRNO_NOENT }
     }
 
     /// `path_remove_directory`: the directory and everything under it.
-    pub fn path_remove_directory<M: GuestMem>(&mut self, mem: &mut M, _dirfd: u32, path: u32, path_len: u32) -> i32 {
+    pub fn path_remove_directory<M: GuestMem>(&mut self, mem: &mut M, dirfd: u32, path: u32, path_len: u32) -> i32 {
         let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
-        let dir = self.resolve(&String::from_utf8_lossy(&bytes));
+        let dir = self.resolve_at(dirfd, &String::from_utf8_lossy(&bytes));
         if crate::fs::remove_dir_all(&dir).is_ok() { ERRNO_SUCCESS } else { ERRNO_NOENT }
     }
 
     /// `path_rename`: move a file or a whole subtree.
     #[allow(clippy::too_many_arguments)]
-    pub fn path_rename<M: GuestMem>(&mut self, mem: &mut M, _old_fd: u32, old_path: u32, old_len: u32, _new_fd: u32, new_path: u32, new_len: u32) -> i32 {
+    pub fn path_rename<M: GuestMem>(&mut self, mem: &mut M, old_fd: u32, old_path: u32, old_len: u32, new_fd: u32, new_path: u32, new_len: u32) -> i32 {
         let Some(ob) = Self::rd_bytes(mem, old_path, old_len) else { return ERRNO_FAULT };
         let Some(nb) = Self::rd_bytes(mem, new_path, new_len) else { return ERRNO_FAULT };
-        let from = self.resolve(&String::from_utf8_lossy(&ob));
-        let to = self.resolve(&String::from_utf8_lossy(&nb));
+        let from = self.resolve_at(old_fd, &String::from_utf8_lossy(&ob));
+        let to = self.resolve_at(new_fd, &String::from_utf8_lossy(&nb));
         if crate::fs::rename(&from, &to).is_ok() { ERRNO_SUCCESS } else { ERRNO_NOENT }
     }
 
