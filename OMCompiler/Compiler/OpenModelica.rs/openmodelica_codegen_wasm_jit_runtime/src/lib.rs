@@ -652,7 +652,7 @@ pub extern "C" fn rt_array_elem_ptr(obj: u32, index: i32) -> u32 {
     stat_inc(STAT_ELEM_PTR);
     let total = rt_array_total(obj) as i32;
     if index < 1 || index > total {
-        return rt_elem_ptr_oob();
+        return rt_elem_ptr_oob(obj, index);
     }
     let kind = unsafe { load_u32(obj + ARR_KIND_OFF) };
     arr_data(obj) + (index as u32 - 1) * elem_stride(kind)
@@ -667,10 +667,22 @@ pub extern "C" fn rt_array_data(obj: u32) -> u32 {
 }
 
 /// The out-of-range arm of [`rt_array_elem_ptr`], also used by the inlined
-/// address computation the codegen emits.
+/// address computation the codegen emits. C's `calc_base_index_dims_subs` names
+/// the subscript and its bounds; the inlined check has only the linear index, so
+/// it names that and the shape rather than trapping mute.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_elem_ptr_oob() -> u32 {
-    nls::model_error();
+pub extern "C" fn rt_elem_ptr_oob(obj: u32, index: i32) -> u32 {
+    let ndims = unsafe { load_u32(obj + ARR_NDIMS_OFF) };
+    let mut dims = alloc::string::String::new();
+    for k in 0..ndims {
+        if k != 0 {
+            dims.push(',');
+        }
+        dims.push_str(&alloc::format!("{}", unsafe { load_u32(obj + ARR_DIMS_OFF + k * 4) }));
+    }
+    nls::throw_stream(&alloc::format!(
+        "Index {index} out of bounds for array of size [{dims}]"
+    ));
     &raw const ELEM_DISCARD as usize as u32
 }
 
