@@ -39,33 +39,11 @@ use openmodelica_sim_meta::{decode, omclog, FmiVr, Layout, Neg, WTy, REAL_OFF, T
 // library's exports, and the model's `rt_*` + memory against this adapter's.
 #[link(wasm_import_module = "env")]
 unsafe extern "C" {
-    fn functionParameters(sim_data: u32);
-    fn functionInitStartValues(sim_data: u32);
-    fn functionInitialEquations(sim_data: u32);
-    fn functionInitialEquations_lambda0(sim_data: u32);
-    fn functionODE(sim_data: u32);
-    fn functionAlgebraics(sim_data: u32);
-    fn functionOutputs(sim_data: u32);
-    fn functionStateSetJacobians(sim_data: u32);
+    // The two-argument entry points, not yet guarded: a failed `assert()` in one of
+    // these still traps.
     fn functionZeroCrossings(sim_data: u32, gout: u32);
-    fn functionZeroCrossingsEquations(sim_data: u32);
-    fn functionUpdateRelations(sim_data: u32);
-    fn functionCheckAsserts(sim_data: u32);
-    fn functionStoreDelayed(sim_data: u32);
-    fn functionInitDelay(sim_data: u32);
-    fn functionStoreSpatialDistribution(sim_data: u32);
-    fn functionInitSpatialDistribution(sim_data: u32);
-    fn functionUpdateBoundParameters(sim_data: u32);
-    fn functionUpdateBoundVariableAttributes(sim_data: u32);
-    fn functionRemovedInitialEquations(sim_data: u32);
-    fn functionJacA_constantEqns(sim_data: u32);
-    fn functionJacA_column(sim_data: u32);
-    fn initSample(sim_data: u32);
-    fn functionInitSynchronous(sim_data: u32);
     fn functionUpdateSynchronous(sim_data: u32, base_idx: u32);
     fn functionEquationsSynchronous(sim_data: u32, idx: u32);
-    fn callExternalObjectDestructors(sim_data: u32);
-    fn symbolicInlineSystem(sim_data: u32);
     fn om_meta_ptr() -> u32;
     fn om_meta_len() -> u32;
 }
@@ -77,10 +55,68 @@ unsafe extern "C" {
 #[link(wasm_import_module = "env")]
 unsafe extern "C" {
     fn simulate(sim_data: u32, start: f64, stop: f64, n_steps: u32) -> u32;
-    fn linearJacA(sim_data: u32);
-    fn linearJacB(sim_data: u32);
-    fn linearJacC(sim_data: u32);
-    fn linearJacD(sim_data: u32);
+    #[link_name = "linearJacA$guard"]
+    fn linearJacA_guard(sim_data: u32) -> u32;
+    #[link_name = "linearJacB$guard"]
+    fn linearJacB_guard(sim_data: u32) -> u32;
+    #[link_name = "linearJacC$guard"]
+    fn linearJacC_guard(sim_data: u32) -> u32;
+    #[link_name = "linearJacD$guard"]
+    fn linearJacD_guard(sim_data: u32) -> u32;
+}
+
+// Each entry point again, wrapped by the emitter in a `try_table` for the model-error
+// tag: 1 means a failed `assert()` unwound out of it.
+#[link(wasm_import_module = "env")]
+unsafe extern "C" {
+    #[link_name = "functionParameters$guard"]
+    fn functionParameters_guard(sim_data: u32) -> u32;
+    #[link_name = "functionInitStartValues$guard"]
+    fn functionInitStartValues_guard(sim_data: u32) -> u32;
+    #[link_name = "functionInitialEquations$guard"]
+    fn functionInitialEquations_guard(sim_data: u32) -> u32;
+    #[link_name = "functionInitialEquations_lambda0$guard"]
+    fn functionInitialEquations_lambda0_guard(sim_data: u32) -> u32;
+    #[link_name = "functionODE$guard"]
+    fn functionODE_guard(sim_data: u32) -> u32;
+    #[link_name = "functionAlgebraics$guard"]
+    fn functionAlgebraics_guard(sim_data: u32) -> u32;
+    #[link_name = "functionOutputs$guard"]
+    fn functionOutputs_guard(sim_data: u32) -> u32;
+    #[link_name = "functionStateSetJacobians$guard"]
+    fn functionStateSetJacobians_guard(sim_data: u32) -> u32;
+    #[link_name = "functionZeroCrossingsEquations$guard"]
+    fn functionZeroCrossingsEquations_guard(sim_data: u32) -> u32;
+    #[link_name = "functionUpdateRelations$guard"]
+    fn functionUpdateRelations_guard(sim_data: u32) -> u32;
+    #[link_name = "functionCheckAsserts$guard"]
+    fn functionCheckAsserts_guard(sim_data: u32) -> u32;
+    #[link_name = "functionStoreDelayed$guard"]
+    fn functionStoreDelayed_guard(sim_data: u32) -> u32;
+    #[link_name = "functionInitDelay$guard"]
+    fn functionInitDelay_guard(sim_data: u32) -> u32;
+    #[link_name = "functionStoreSpatialDistribution$guard"]
+    fn functionStoreSpatialDistribution_guard(sim_data: u32) -> u32;
+    #[link_name = "functionInitSpatialDistribution$guard"]
+    fn functionInitSpatialDistribution_guard(sim_data: u32) -> u32;
+    #[link_name = "functionUpdateBoundParameters$guard"]
+    fn functionUpdateBoundParameters_guard(sim_data: u32) -> u32;
+    #[link_name = "functionUpdateBoundVariableAttributes$guard"]
+    fn functionUpdateBoundVariableAttributes_guard(sim_data: u32) -> u32;
+    #[link_name = "functionRemovedInitialEquations$guard"]
+    fn functionRemovedInitialEquations_guard(sim_data: u32) -> u32;
+    #[link_name = "functionJacA_constantEqns$guard"]
+    fn functionJacA_constantEqns_guard(sim_data: u32) -> u32;
+    #[link_name = "functionJacA_column$guard"]
+    fn functionJacA_column_guard(sim_data: u32) -> u32;
+    #[link_name = "initSample$guard"]
+    fn initSample_guard(sim_data: u32) -> u32;
+    #[link_name = "functionInitSynchronous$guard"]
+    fn functionInitSynchronous_guard(sim_data: u32) -> u32;
+    #[link_name = "callExternalObjectDestructors$guard"]
+    fn callExternalObjectDestructors_guard(sim_data: u32) -> u32;
+    #[link_name = "symbolicInlineSystem$guard"]
+    fn symbolicInlineSystem_guard(sim_data: u32) -> u32;
 }
 
 // ── Messages ─────────────────────────────────────────────────────────────────
@@ -215,7 +251,14 @@ fn init_logging(name: String, logging_on: bool) {
     l.name = name;
     l.cats = if logging_on { !0 } else { 0 };
     driver::set_log_sink(log_sink);
+    driver::set_terminate_reporter(terminate_fmi);
     omclog::set_mask(omclog::FMU_STREAMS);
+}
+
+/// C's `omc_terminate_fmi`, which `fmi2Instantiate` installs: stderr, not the
+/// driver's `LOG_STDOUT` notice. The importer reports the terminate itself.
+fn terminate_fmi(pos: &str, msg: &str) {
+    stdio::stderr(alloc::format!("{pos}Modelica Terminate: {msg}!\n").as_bytes());
 }
 
 /// The runtime `String` behind a handle, empty for the null handle.
@@ -240,23 +283,40 @@ fn assert_message(msg: i32, file: i32, sline: i32) -> String {
     alloc::format!("{file}:{sline}: {msg}")
 }
 
-/// The runtime leaves `rt_assert` to the host on this target. C's FMU logs and then
-/// throws; the throw is a trap here, aborting the FMI call, which the master
-/// surfaces as a fatal status.
+/// C's FMU logs the violation then `longjmp`s out of the FMI call, which returns
+/// `fmi3Error` with the instance usable — so answer that the code must unwind.
+/// `cond` picks which C implementation is mirrored: `fmi2Instantiate` swaps in
+/// `omc_assert_fmi` only for the `FUNCTION_CONTEXT` pointer, while an equation
+/// `assert()` stays on `omc_assert_simulation_withEquationIndexes`'s `LOG_ASSERT`.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_assert(
     msg: i32,
     file: i32,
     sline: i32,
-    _scol: i32,
-    _eline: i32,
-    _ecol: i32,
-    _read_only: i32,
-    _cond: i32,
-    _initial: i32,
+    scol: i32,
+    eline: i32,
+    ecol: i32,
+    read_only: i32,
+    cond: i32,
+    initial: i32,
+    sim_data: i32,
 ) -> i32 {
+    if cond != 0 {
+        let info = driver::AssertInfo {
+            msg: rt_string(msg),
+            file: rt_string(file),
+            read_only: read_only != 0,
+            line_start: sline,
+            col_start: scol,
+            line_end: eline,
+            col_end: ecol,
+        };
+        let time = driver::read_f64(&Engine, sim_data as u32 + TIME_OFF).unwrap_or(0.0);
+        driver::log_assert_block(&info, &rt_string(cond), time, initial != 0);
+        return 1;
+    }
     fmi_log(Status::Error, CAT_ERROR, &assert_message(msg, file, sline));
-    core::arch::wasm32::unreachable()
+    1
 }
 
 /// Warning-level assertion: non-fatal, so continue (C's `omc_assert_fmi_warning`).
@@ -310,46 +370,56 @@ impl SimEngine for Engine {
         dst.copy_from_slice(buf);
         Ok(())
     }
+    fn set_string(&mut self, addr: u32, bytes: &[u8]) -> driver::Result<()> {
+        openmodelica_codegen_wasm_jit_runtime::set_string_slot(addr, bytes);
+        Ok(())
+    }
     fn call1_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
-        unsafe {
+        let threw = unsafe {
             match name {
-                "functionParameters" => functionParameters(arg),
-                "functionInitStartValues" => functionInitStartValues(arg),
-                "functionInitialEquations" => functionInitialEquations(arg),
-                "functionInitialEquations_lambda0" => functionInitialEquations_lambda0(arg),
-                "functionODE" => functionODE(arg),
-                "functionAlgebraics" => functionAlgebraics(arg),
-                "functionOutputs" => functionOutputs(arg),
-                "functionStateSetJacobians" => functionStateSetJacobians(arg),
-                "functionZeroCrossingsEquations" => functionZeroCrossingsEquations(arg),
-                "functionUpdateRelations" => functionUpdateRelations(arg),
-                "functionCheckAsserts" => functionCheckAsserts(arg),
-                "functionStoreDelayed" => functionStoreDelayed(arg),
-                "functionInitDelay" => functionInitDelay(arg),
-                "functionStoreSpatialDistribution" => functionStoreSpatialDistribution(arg),
-                "functionInitSpatialDistribution" => functionInitSpatialDistribution(arg),
-                "functionUpdateBoundParameters" => functionUpdateBoundParameters(arg),
-                "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes(arg),
-                "functionRemovedInitialEquations" => functionRemovedInitialEquations(arg),
-                "functionJacA_constantEqns" => functionJacA_constantEqns(arg),
-                "functionJacA_column" => functionJacA_column(arg),
-                "initSample" => initSample(arg),
-                "functionInitSynchronous" => functionInitSynchronous(arg),
-                "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
-                "symbolicInlineSystem" => symbolicInlineSystem(arg),
+                "functionParameters" => functionParameters_guard(arg),
+                "functionInitStartValues" => functionInitStartValues_guard(arg),
+                "functionInitialEquations" => functionInitialEquations_guard(arg),
+                "functionInitialEquations_lambda0" => functionInitialEquations_lambda0_guard(arg),
+                "functionODE" => functionODE_guard(arg),
+                "functionAlgebraics" => functionAlgebraics_guard(arg),
+                "functionOutputs" => functionOutputs_guard(arg),
+                "functionStateSetJacobians" => functionStateSetJacobians_guard(arg),
+                "functionZeroCrossingsEquations" => functionZeroCrossingsEquations_guard(arg),
+                "functionUpdateRelations" => functionUpdateRelations_guard(arg),
+                "functionCheckAsserts" => functionCheckAsserts_guard(arg),
+                "functionStoreDelayed" => functionStoreDelayed_guard(arg),
+                "functionInitDelay" => functionInitDelay_guard(arg),
+                "functionStoreSpatialDistribution" => functionStoreSpatialDistribution_guard(arg),
+                "functionInitSpatialDistribution" => functionInitSpatialDistribution_guard(arg),
+                "functionUpdateBoundParameters" => functionUpdateBoundParameters_guard(arg),
+                "functionUpdateBoundVariableAttributes" => functionUpdateBoundVariableAttributes_guard(arg),
+                "functionRemovedInitialEquations" => functionRemovedInitialEquations_guard(arg),
+                "functionJacA_constantEqns" => functionJacA_constantEqns_guard(arg),
+                "functionJacA_column" => functionJacA_column_guard(arg),
+                "initSample" => initSample_guard(arg),
+                "functionInitSynchronous" => functionInitSynchronous_guard(arg),
+                "callExternalObjectDestructors" => callExternalObjectDestructors_guard(arg),
+                "symbolicInlineSystem" => symbolicInlineSystem_guard(arg),
                 #[cfg(all(feature = "me", feature = "cs"))]
-                "linearJacA" => linearJacA(arg),
+                "linearJacA" => linearJacA_guard(arg),
                 #[cfg(all(feature = "me", feature = "cs"))]
-                "linearJacB" => linearJacB(arg),
+                "linearJacB" => linearJacB_guard(arg),
                 #[cfg(all(feature = "me", feature = "cs"))]
-                "linearJacC" => linearJacC(arg),
+                "linearJacC" => linearJacC_guard(arg),
                 #[cfg(all(feature = "me", feature = "cs"))]
-                "linearJacD" => linearJacD(arg),
+                "linearJacD" => linearJacD_guard(arg),
                 _ => return Err(UNKNOWN_MODEL_FN),
             }
+        };
+        // The assertion was logged where it fired; the caller turns this into the
+        // status the FMI call answers with, leaving the instance usable.
+        if threw != 0 {
+            return Err(driver::ASSERT_ERR);
         }
         Ok(())
     }
+
     fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
         unsafe {
             match name {
@@ -504,10 +574,10 @@ impl MeState {
     }
 
     /// `functionOutputs`, not `functionAlgebraics`: a getter runs no discrete update.
-    fn eval(&self) {
+    fn eval(&self) -> driver::Result<()> {
         let mut e = Engine;
-        let _ = e.call1("functionODE", self.sim_data);
-        let _ = e.call1("functionOutputs", self.sim_data);
+        e.call1("functionODE", self.sim_data)?;
+        e.call1("functionOutputs", self.sim_data)
     }
 
     /// The state a value reference reads, when it is one of the continuous
@@ -560,7 +630,7 @@ impl MeState {
         if self.mode == Mode::Init {
             self.run_init()?;
         } else {
-            self.eval();
+            self.eval()?;
         }
         self.need_update = false;
         Ok(())
@@ -569,7 +639,7 @@ impl MeState {
     /// C's `initialization()`, repeatable: the overrides stay, so the importer can
     /// keep setting and get a fresh solve each time.
     fn run_init(&mut self) -> driver::Result<()> {
-        set_param_overrides(self.init_overrides.clone(), self.init_start_overrides.clone());
+        set_param_overrides(self.init_overrides.clone(), self.init_start_overrides.clone(), Vec::new());
         let mut e = Engine;
         let start_time = self.read_f64(TIME_OFF);
         // No `-csvInput` on the FMI path: the importer drives the inputs.
@@ -1325,7 +1395,7 @@ impl GuestModelExchangeInstance for Instance {
         let mut st = self.st.borrow_mut();
         let mut e = Engine;
         if st.need_update {
-            let _ = e.call1("functionODE", st.sim_data);
+            e.call1("functionODE", st.sim_data).map_err(|_| Status::Error)?;
             st.need_update = false;
         }
         if st.layout.n_zc == 0 {
@@ -1361,7 +1431,7 @@ impl GuestModelExchangeInstance for Instance {
     ) -> Result<CompletedStepResult, Status> {
         let mut st = self.st.borrow_mut();
         // C's `internal_CompletedIntegratorStep`; it leaves `_need_update` set.
-        st.eval();
+        st.eval().map_err(|_| Status::Error)?;
         st.need_update = true;
         Ok(CompletedStepResult {
             enter_event_mode: false,

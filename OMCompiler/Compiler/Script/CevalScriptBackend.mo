@@ -4478,7 +4478,7 @@ algorithm
   FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
 end callTranslateModelFMU;
 
-protected function generateFMI3GraphicalRepresentation
+public function generateFMI3GraphicalRepresentation
   "FMI 3.0 graphical user annotations (issue #15686 task 9). Using the in-memory
    model instance (issue #15219) for the *graphical* side only, this renders the
    model Icon to terminalsAndIcons/icon.png (+ icon.svg), adds an FMI 3.0

@@ -95,6 +95,10 @@ impl SimEngine for InWasmEngine {
         dst.copy_from_slice(buf);
         Ok(())
     }
+    fn set_string(&mut self, addr: u32, bytes: &[u8]) -> driver::Result<()> {
+        crate::set_string_slot(addr, bytes);
+        Ok(())
+    }
     fn call1_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
         let slot = slot_of(name).ok_or("in-wasm engine: unknown model function")?;
         if !self.present(slot) {
@@ -275,9 +279,21 @@ pub extern "C" fn rt_sim_set_overrides(ptr: u32, len: u32) -> i32 {
         }
         Some(openmodelica_sim_meta::driver::StartImports { file, time, values })
     };
+    let strings = |p: &mut usize| -> Option<Vec<(u32, alloc::string::String)>> {
+        let n = u32_at(p)? as usize;
+        let mut out = Vec::with_capacity(n);
+        for _ in 0..n {
+            let off = u32_at(p)?;
+            let len = u32_at(p)? as usize;
+            let s = alloc::string::String::from_utf8_lossy(bytes.get(*p..*p + len)?).into_owned();
+            *p += len;
+            out.push((off, s));
+        }
+        Some(out)
+    };
     match (group(&mut p), group(&mut p)) {
         (Some(params), Some(starts)) => {
-            openmodelica_sim_meta::driver::set_param_overrides(params, starts);
+            openmodelica_sim_meta::driver::set_param_overrides(params, starts, strings(&mut p).unwrap_or_default());
             openmodelica_sim_meta::driver::set_start_imports(imports(&mut p));
             0
         }

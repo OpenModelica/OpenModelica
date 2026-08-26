@@ -1903,6 +1903,18 @@ pub extern "C" fn rt_str_new(len: u32) -> u32 {
     obj
 }
 
+/// Assign a fresh String holding `bytes` to the handle slot at `addr`, releasing what
+/// was there — the generated code's own String assignment.
+pub fn set_string_slot(addr: u32, bytes: &[u8]) {
+    let old = unsafe { load_u32(addr) };
+    let obj = rt_str_new(bytes.len() as u32);
+    unsafe {
+        core::ptr::copy_nonoverlapping(bytes.as_ptr(), rt_str_data(obj) as *mut u8, bytes.len());
+        store_u32(addr, obj);
+    }
+    rt_release(old);
+}
+
 /// Byte length of a string.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_str_len(obj: u32) -> u32 {

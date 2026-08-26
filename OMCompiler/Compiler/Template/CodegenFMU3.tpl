@@ -381,22 +381,18 @@ case SIMCODE(__) then
 end ModelExchange3;
 
 template CoSimulation3(SimCode simCode, list<String> sourceFiles)
- "Generates the CoSimulation element for FMI 3.0. The capabilities are the
-  runtime's, so they depend on the code-generation target: the wasm-jit adapter
-  integrates itself and has no output derivatives, but supports Event Mode
-  (stops at events and reports them when the importer negotiates eventModeUsed)."
+ "Generates the CoSimulation element for FMI 3.0."
 ::=
 match simCode
 case SIMCODE(__) then
   let modelIdentifier = modelNamePrefix(simCode)
-  let isWasm = if stringEq(Config.simCodeTarget(), "wasm-jit") then "true" else "false"
   <<
   <CoSimulation
     modelIdentifier="<%Util.escapeModelicaStringToXmlString(modelIdentifier)%>"
     needsExecutionTool="false"
     canHandleVariableCommunicationStepSize="true"
     canBeInstantiatedOnlyOncePerProcess="false"
-    maxOutputDerivativeOrder="<%if stringEq(isWasm, "true") then "0" else "1"%>"
+    maxOutputDerivativeOrder="1"
     providesIntermediateUpdate="false"
     mightReturnEarlyFromDoStep="true"
     canReturnEarlyAfterIntermediateUpdate="false"

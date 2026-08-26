@@ -128,7 +128,8 @@ function emitMeFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
-  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: terminalsAndIcons, documentation";
+  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: documentation";
+  input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
 algorithm
   Error.addInternalError("CodegenWasmJit.emitMeFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
@@ -143,7 +144,8 @@ function emitCsFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
-  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: terminalsAndIcons, documentation";
+  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: documentation";
+  input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
 algorithm
   Error.addInternalError("CodegenWasmJit.emitCsFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
@@ -158,7 +160,8 @@ function emitMeCsFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
-  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: terminalsAndIcons, documentation";
+  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: documentation";
+  input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
 algorithm
   Error.addInternalError("CodegenWasmJit.emitMeCsFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());

@@ -471,6 +471,9 @@ pub struct EditableParam {
     pub is_start: bool,
     /// A Boolean quantity: reads an `-override` value C's `read_value_bool` way.
     pub is_bool: bool,
+    /// A String quantity: `off` holds a runtime-String handle, so an `-override`
+    /// value is assigned as bytes rather than read as a number.
+    pub is_string: bool,
     /// Enumeration literal names (1-based index → name), empty for non-enum.
     pub enum_names: Vec<String>,
 }
@@ -551,7 +554,7 @@ pub fn inwasm_driver_enabled() -> bool {
 /// `rt_sim_set_overrides`.
 #[cfg(feature = "jit")]
 pub fn encode_overrides() -> Vec<u8> {
-    let (params, starts) = crate::sim_driver::param_overrides();
+    let (params, starts, strings) = crate::sim_driver::param_overrides();
     let mut b = Vec::new();
     for group in [&params, &starts] {
         b.extend_from_slice(&(group.len() as u32).to_le_bytes());
@@ -560,6 +563,12 @@ pub fn encode_overrides() -> Vec<u8> {
             b.extend_from_slice(&(if matches!(wty, WTy::F64) { 0u32 } else { 1u32 }).to_le_bytes());
             b.extend_from_slice(&val.to_le_bytes());
         }
+    }
+    b.extend_from_slice(&(strings.len() as u32).to_le_bytes());
+    for (off, val) in &strings {
+        b.extend_from_slice(&off.to_le_bytes());
+        b.extend_from_slice(&(val.len() as u32).to_le_bytes());
+        b.extend_from_slice(val.as_bytes());
     }
     if let Some(i) = crate::sim_driver::start_imports() {
         b.extend_from_slice(&(i.values.len() as u32).to_le_bytes());

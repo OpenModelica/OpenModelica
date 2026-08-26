@@ -631,15 +631,23 @@ pub unsafe extern "C" fn fmi2CompletedIntegratorStep(
     if enter_event_mode.is_null() || terminate_simulation.is_null() {
         return ERROR;
     }
-    let (mut enter, mut terminate) = (false, false);
-    let status = unsafe { crate::fmi3CompletedIntegratorStep(c, b(no_set_fmu_state_prior), &mut enter, &mut terminate) };
-    if status == OK {
-        unsafe {
-            *enter_event_mode = fmi2_bool(enter);
-            *terminate_simulation = fmi2_bool(terminate);
+    let Some(inst) = inst_mut(c) else { return ERROR };
+    let Some((store, g, h)) = inst.me() else { return ERROR };
+    match g.call_completed_integrator_step(&mut *store, h, b(no_set_fmu_state_prior)) {
+        Ok(Ok(r)) => {
+            unsafe {
+                *enter_event_mode = fmi2_bool(r.enter_event_mode);
+                *terminate_simulation = fmi2_bool(r.terminate_simulation);
+            }
+            OK
+        }
+        // The assertion unwound inside the FMU (or, failing that, trapped): C's
+        // wrapper reports it the same way from its `longjmp` catch.
+        Ok(Err(_)) | Err(_) => {
+            store.data_mut().log_fmi2_call(ERROR, "fmi2CompletedIntegratorStep: terminated by an assertion.");
+            ERROR
         }
     }
-    status
 }
 
 // ── Co-Simulation ───────────────────────────────────────────────────────────

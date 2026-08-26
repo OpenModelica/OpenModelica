@@ -260,12 +260,14 @@ fn builtin_index(name: &str) -> Option<u32> {
 /// `rt_*` indices are unaffected), just before the generated functions. The host
 /// closures live in `runtime::add_host_builtins`.
 ///
-/// `rt_assert(msg, file, sline, scol, eline, ecol, isReadOnly, cond, initial) -> shouldTrap`
+/// `rt_assert(msg, file, sline, scol, eline, ecol, isReadOnly, cond, initial, sim_data) -> shouldTrap`
 /// records the failed assertion and answers whether the generated code must trap:
 /// it need not while the driver has asserts suppressed (C's `noThrowAsserts`).
 /// `cond` is the dumped condition, or 0 for a model/runtime error, which is never
 /// suppressed; it comes last so callers that already pushed the message append.
-/// `initial` is C's `initial()` at the assert site, for the message header.
+/// `initial` is C's `initial()` at the assert site, for the message header, and
+/// `sim_data` is C's `data` (0 outside a simulation), which an FMU heads the logged
+/// block with the time from.
 ///
 /// `rt_assert_warning(cond, msg, file, sline, scol, eline, ecol, isReadOnly, initial)`
 /// records a *non-fatal* (AssertionLevel.warning) violation — the string handles
@@ -292,7 +294,7 @@ fn builtin_index(name: &str) -> Option<u32> {
 pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
     (
         "rt_assert",
-        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
         &[WTy::I32],
     ),
     (
@@ -2967,6 +2969,25 @@ pub(crate) fn set_ext_error_catch(tag: Option<u32>) {
     EXT_ERROR_CATCH.with(|c| c.set(tag));
 }
 
+thread_local! {
+    /// The tag a failed `assert()` throws, while lowering a host-free module. Unset
+    /// where a trap is the end of the run anyway, so C's `unreachable` is enough.
+    static ASSERT_THROW_TAG: std::cell::Cell<Option<u32>> = const { std::cell::Cell::new(None) };
+}
+
+pub(crate) fn set_assert_throw_tag(tag: Option<u32>) {
+    ASSERT_THROW_TAG.with(|c| c.set(tag));
+}
+
+/// End the computation the failed `assert()` was part of: a host-free module unwinds
+/// to its `<entry>$guard`, anything else traps.
+fn emit_assert_unwind(ctx: &mut FnCtx) {
+    match ASSERT_THROW_TAG.with(|c| c.get()) {
+        Some(tag) => ctx.emit(we::Instruction::Throw(tag)),
+        None => ctx.emit(we::Instruction::Unreachable),
+    }
+}
+
 fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Exp>], arg_types: &[SigTy]) -> Result<Vec<SigTy>> {
     let key = format!("ext.{ext_name}");
     let (index, params, results) = match ctx.by_name.get(&key) {
@@ -4467,10 +4488,11 @@ fn emit_assert(
     ctx.emit(we::Instruction::End);
     report_args(ctx)?;
     emit_initial_flag(ctx);
+    emit_sim_data_or_zero(ctx);
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
-    // Trap unless the driver took it (suppressed during the event search).
+    // Unwind unless the driver took it (suppressed during the event search).
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
-    ctx.emit(we::Instruction::Unreachable);
+    emit_assert_unwind(ctx);
     ctx.emit(we::Instruction::End);
     ctx.emit(we::Instruction::End);
     Ok(())
@@ -4507,9 +4529,10 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
     }
     ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
     emit_initial_flag(ctx);
+    emit_sim_data_or_zero(ctx);
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     ctx.emit(we::Instruction::Drop);
-    ctx.emit(we::Instruction::Unreachable);
+    emit_assert_unwind(ctx);
     Ok(())
 }
 
@@ -9352,9 +9375,10 @@ fn emit_runtime_error(ctx: &mut FnCtx, msg: &str) -> Result<()> {
     }
     ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
     emit_initial_flag(ctx);
+    emit_sim_data_or_zero(ctx);
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     ctx.emit(we::Instruction::Drop);
-    ctx.emit(we::Instruction::Unreachable);
+    emit_assert_unwind(ctx);
     Ok(())
 }
 
