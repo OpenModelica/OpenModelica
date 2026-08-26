@@ -6134,6 +6134,42 @@ fn sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Arc<Lis
     }
 }
 
+/// [`sim_array_base_subs`] over a flattened group: `module[$i].x[2:3]` selects from
+/// `module.x`. `None` unless an outer component is subscripted.
+fn flat_sim_array_base_subs(cr: &DAE::ComponentRef) -> Result<Option<(String, Arc<List<Arc<DAE::Subscript>>>)>> {
+    use DAE::ComponentRef as C;
+    let mut base = String::new();
+    let mut subs: Vec<Arc<DAE::Subscript>> = Vec::new();
+    let mut qualified_subs = false;
+    let mut node = cr;
+    loop {
+        let (ident, subscriptLst, next) = match node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
+            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+                qualified_subs |= !subscriptLst.is_empty();
+                (ident, subscriptLst, Some(componentRef))
+            }
+            _ => return Ok(None),
+        };
+        base.push_str(ident);
+        subs.extend((&**subscriptLst).into_iter().cloned());
+        match next {
+            Some(n) => {
+                base.push('.');
+                node = n;
+            }
+            None => {
+                return Ok(qualified_subs.then(|| (base, Arc::new(subs.into_iter().collect()))));
+            }
+        }
+    }
+}
+
+fn subs_select_array(subs: &Arc<List<Arc<DAE::Subscript>>>, group: &ArrayGroup) -> bool {
+    let rank = group.dims.len() as u32;
+    (&**subs).into_iter().count() as u32 <= rank && !is_scalar_index(subs, rank)
+}
+
 /// Push the byte address of element `group[leading, 1, …]` and return
 /// `(trailing_element_count, element_stride)`; the block spans
 /// `trailing_count * stride` contiguous bytes from there.
@@ -6476,9 +6512,10 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
     }
     // Any other slice (a column `[:,1]`, a strided range): gather the whole array
     // and let the runtime slice handle it.
-    if let Some((base, subs)) = sim_array_base_subs(cref)? {
+    for selection in [sim_array_base_subs(cref)?, flat_sim_array_base_subs(cref)?].into_iter().flatten() {
+        let (base, subs) = selection;
         if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
-            if !is_scalar_index(&subs, group.dims.len() as u32) {
+            if subs_select_array(&subs, &group) {
                 emit_sim_array_gather(ctx, &group)?;
                 let wty = slice_loaded(ctx, &subs)?;
                 return Ok(Some(wty));
@@ -6630,9 +6667,10 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
     }
     // Any other selection (`base[lo:hi] := v`, a column, a partial index): apply it
     // to a gathered copy of the whole array and scatter that back.
-    if let Some((base, subs)) = sim_array_base_subs(cref)? {
+    for selection in [sim_array_base_subs(cref)?, flat_sim_array_base_subs(cref)?].into_iter().flatten() {
+        let (base, subs) = selection;
         if let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() {
-            if !is_scalar_index(&subs, group.dims.len() as u32) {
+            if subs_select_array(&subs, &group) {
                 let arr = ctx.alloc_temp(WTy::I32);
                 emit_sim_array_gather(ctx, &group)?;
                 ctx.emit(we::Instruction::LocalSet(arr));

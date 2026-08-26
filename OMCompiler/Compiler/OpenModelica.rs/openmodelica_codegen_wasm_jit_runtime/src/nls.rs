@@ -1100,11 +1100,70 @@ fn homotopy_algorithm(
 
 /// C's `!initHomotopy` runs: the Newton homotopy over `F`, from the regular start
 /// point the perturbation search below finds. `x` = guess in / λ=1 root out.
+/// C's `wrapper_fvec_homotopy_fixpoint`: `H(y) = λ·F(x) + (1−λ)·(x − x0)`.
+struct FixpointHom<'a, 'b> {
+    n: usize,
+    x0: alloc::vec::Vec<f64>,
+    fx: alloc::vec::Vec<f64>,
+    xscaling: &'a [f64],
+    eval: &'a mut (dyn FnMut(&[f64], &mut [f64]) + 'b),
+}
+
+impl Homotopy for FixpointHom<'_, '_> {
+    fn h(&mut self, y: &[f64], hvec: &mut [f64]) {
+        (self.eval)(&y[..self.n], &mut self.fx);
+        let lam = y[self.n];
+        for i in 0..self.n {
+            hvec[i] = lam * self.fx[i] + (1.0 - lam) * (y[i] - self.x0[i]);
+        }
+    }
+    fn jac(&mut self, y: &[f64], _hbase: &[f64], out: &mut [f64]) {
+        let n = self.n;
+        let xs: alloc::vec::Vec<f64> = self.xscaling.to_vec();
+        let mut fbase = vec![0.0f64; n];
+        (self.eval)(&y[..n], &mut fbase);
+        let mut plain = PlainF { n, eval: self.eval };
+        fd_homotopy_jacobian(&mut plain, n, n, y, &fbase, &xs, None, out);
+        let lam = y[n];
+        for j in 0..n {
+            for i in 0..n {
+                out[i + j * n] *= lam;
+            }
+            // Unscaled, as C adds it.
+            out[j + j * n] += 1.0 - lam;
+        }
+        for i in 0..n {
+            out[i + n * n] = fbase[i] - (y[i] - self.x0[i]);
+        }
+    }
+}
+
+struct PlainF<'a, 'b> {
+    n: usize,
+    eval: &'a mut (dyn FnMut(&[f64], &mut [f64]) + 'b),
+}
+
+impl Homotopy for PlainF<'_, '_> {
+    fn h(&mut self, y: &[f64], hvec: &mut [f64]) {
+        (self.eval)(&y[..self.n], hvec);
+    }
+    fn jac(&mut self, _y: &[f64], _hbase: &[f64], _out: &mut [f64]) {
+        unreachable!("PlainF only evaluates")
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum HomVariant {
+    Newton,
+    Fixpoint,
+}
+
 fn homotopy_solve(
     n: usize,
     x: &mut [f64],
     nominal: &[f64],
     start_dir: f64,
+    variant: HomVariant,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     let m = n + 1;
@@ -1141,8 +1200,16 @@ fn homotopy_solve(
 
     let mut y = vec![0.0f64; m];
     y[..n].copy_from_slice(&x0v);
-    let mut hom = NewtonHom { n, fx0, fx: vec![0.0f64; n], xscaling: &xscaling, eval };
-    let ok = homotopy_algorithm(n, &mut y, &xscaling, start_dir, crate::omclog::NLS_HOMOTOPY, &mut hom).is_ok();
+    let ok = match variant {
+        HomVariant::Newton => {
+            let mut hom = NewtonHom { n, fx0, fx: vec![0.0f64; n], xscaling: &xscaling, eval };
+            homotopy_algorithm(n, &mut y, &xscaling, start_dir, crate::omclog::NLS_HOMOTOPY, &mut hom).is_ok()
+        }
+        HomVariant::Fixpoint => {
+            let mut hom = FixpointHom { n, x0: x0v.clone(), fx: vec![0.0f64; n], xscaling: &xscaling, eval };
+            homotopy_algorithm(n, &mut y, &xscaling, start_dir, crate::omclog::NLS_HOMOTOPY, &mut hom).is_ok()
+        }
+    };
     if ok {
         x[..n].copy_from_slice(&y[..n]);
     }
@@ -2243,6 +2310,8 @@ struct HomotopyTrace {
     discrete: bool,
     /// C's `simulationInfo->initial`, which its warnings name instead of a time.
     initial: bool,
+    /// Print the opening block; false for the later Newton runs.
+    header: bool,
 }
 
 /// C's `solveHomotopy` header block, which opens the `LOG_NLS_V` block
@@ -2365,7 +2434,7 @@ fn newton_c(
         }
     }
 
-    if let Some(t) = trace {
+    if let Some(t) = trace.filter(|t| t.header) {
         log_homotopy_enter(t, n, x, nominal, &xscaling);
     }
 
@@ -3617,7 +3686,7 @@ pub extern "C" fn rt_solve_nls(
                 let mut ok = false;
                 for &dir in &[1.0f64, -1.0] {
                     let mut hx = guess.clone();
-                    if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
+                    if homotopy_solve(n, &mut hx, &nominal, dir, HomVariant::Newton, &mut eval) {
                         x.copy_from_slice(&hx);
                         ok = true;
                         break;
@@ -3642,26 +3711,9 @@ pub extern "C" fn rt_solve_nls(
                 // C's `discreteCall` covers the initial system too, so it is not
                 // `discrete_call` (which is only about holding relations).
                 let t =
-                    HomotopyTrace { eq_index, time, discrete: saved_rel_fresh != 0, initial: saved_rel_fresh == 2 };
+                    HomotopyTrace { eq_index, time, discrete: saved_rel_fresh != 0, initial: saved_rel_fresh == 2, header: true };
                 // C wraps `newtonAlgorithm`'s reporting in `OMC_ACTIVE_STREAM(LOG_NLS_V)`.
                 let trace = crate::omclog::active(crate::omclog::NLS_V).then_some(&t);
-                if homotopy_solver {
-                    (converged, settled) = newton_c(
-                        n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
-                        has_jac, trace, casual,
-                    );
-                    if !converged {
-                        stat_inc(STAT_NLS_NEWTON_FAIL);
-                        x.copy_from_slice(&start);
-                    }
-                }
-                settled &= converged;
-                // Dynamic tearing: C's `solveHomotopy` gives a casual tearing set one
-                // `newtonAlgorithm` try and breaks out, then `solveNLS` hands the
-                // component to the strict set. Only if *that* fails does minpack run.
-                if casual && homotopy_solver && !converged {
-                    strict_used = dt_strict_fallback(strict_idx, sim_data);
-                }
                 // C's `discreteCall` is set for an initial system too; only an event call
                 // has relations to hold, so only there does the continuity flag move.
                 let mut set_cont = |c: bool| {
@@ -3669,27 +3721,83 @@ pub extern "C" fn rt_solve_nls(
                         unsafe { store_u32(rel_fresh_addr, u32::from(!c)) };
                     }
                 };
-                // C's `solveHomotopy` on `newtonAlgorithm`'s `info == -1`.
-                if !converged && !strict_used {
+                if homotopy_solver {
+                    // C's `solveHomotopy` loop.
+                    let mut skip_newton = false;
+                    let mut run_homotopy = 0;
+                    let t_again = HomotopyTrace { header: false, ..t };
+                    let mut newton_trace = trace;
+                    loop {
+                        if !skip_newton {
+                            (converged, settled) = newton_c(
+                                n, &mut x, &nominal, &bounds, &mut res_scaling, &mut nlsx, &mut eval, &mut jaceval,
+                                has_jac, newton_trace, casual,
+                            );
+                            newton_trace = trace.map(|_| &t_again);
+                            if !converged {
+                                stat_inc(STAT_NLS_NEWTON_FAIL);
+                                x.copy_from_slice(&start);
+                            }
+                            settled &= converged;
+                            // A casual tearing set gets one Newton try before the strict set.
+                            if casual && !converged {
+                                strict_used = dt_strict_fallback(strict_idx, sim_data);
+                                break;
+                            }
+                            if !converged {
+                                stat_inc(STAT_NLS_RETRY);
+                                converged = hybrd_c(
+                                    n, &mut x, &nlsx, &warm, &nominal, &bounds, &t, &mut eval, &mut set_cont,
+                                );
+                                if !converged {
+                                    best.copy_from_slice(&x);
+                                }
+                            }
+                        }
+                        if converged || run_homotopy >= 3 {
+                            break;
+                        }
+                        run_homotopy += 1;
+                        let (variant, dir) = match run_homotopy {
+                            1 => (HomVariant::Newton, 1.0),
+                            2 => (HomVariant::Newton, -1.0),
+                            _ => (HomVariant::Fixpoint, 1.0),
+                        };
+                        let mut hx = start.clone();
+                        skip_newton = !homotopy_solve(n, &mut hx, &nominal, dir, variant, &mut eval);
+                        if skip_newton {
+                            if run_homotopy >= 3 {
+                                break;
+                            }
+                        } else {
+                            x.copy_from_slice(&hx);
+                        }
+                    }
+                }
+                if !homotopy_solver && !converged {
                     stat_inc(STAT_NLS_RETRY);
                     converged = hybrd_c(
                         n, &mut x, &nlsx, &warm, &nominal, &bounds, &t, &mut eval, &mut set_cont,
                     );
                     if !converged {
-                        // C's "take the best approximation" at the end of `solveHybrd`.
                         best.copy_from_slice(&x);
                     }
                 }
-                // The rungs below are not `solveHomotopy`'s; they catch what C gives up on.
+                // C's `solveNLS` `NLS_MIXED` tail: `solveHybrd` once more.
+                if !converged && homotopy_solver && !strict_used {
+                    stat_inc(STAT_NLS_RETRY);
+                    converged = hybrd_c(
+                        n, &mut x, &best, &warm, &nominal, &bounds, &t, &mut eval, &mut set_cont,
+                    );
+                }
+                // Not C's; these catch what C gives up on.
                 // `nls_accept` takes only a point at tolerance, so none can report a non-root.
                 // A casual set stops where C's `solveNLS` does: grinding on past minpack
                 // would find points its constraints exist to reject.
-                if !casual && !strict_used {
-                    if !converged {
-                        stat_inc(STAT_NLS_RETRY);
-                        x.copy_from_slice(&warm);
-                        converged = newton_solve(n, &mut x, &mut eval);
-                    }
+                if !casual && !strict_used && !converged {
+                    stat_inc(STAT_NLS_RETRY);
+                    x.copy_from_slice(&warm);
+                    converged = newton_solve(n, &mut x, &mut eval);
                     // An initial system gets a second `newtonAlgorithm`, from `x0`.
                     if !converged && saved_rel_fresh == 2 {
                         x.copy_from_slice(&guess);
@@ -3714,27 +3822,6 @@ pub extern "C" fn rt_solve_nls(
                     if !converged {
                         x.copy_from_slice(&warm);
                         converged = lm_solve(n, &mut x, &mut eval);
-                    }
-                    // C's mixed-solver homotopy fallback: track H(x,λ)=F(x)−(1−λ)·F(x0) from λ=0 to 1.
-                    if !converged && saved_rel_fresh == 2 {
-                        // Forward then reversed start direction, as C's runHomotopy.
-                        for &dir in &[1.0f64, -1.0f64] {
-                            let mut hx = guess.clone();
-                            if homotopy_solve(n, &mut hx, &nominal, dir, &mut eval) {
-                                x.copy_from_slice(&hx);
-                                converged = true;
-                                break;
-                            }
-                        }
-                    }
-                    // C's `solveNLS` `NLS_MIXED` tail: `solveHomotopy` having failed, the
-                    // whole of `solveHybrd` runs once more from the approximation it left,
-                    // every rung counted from zero again.
-                    if !converged && homotopy_solver {
-                        stat_inc(STAT_NLS_RETRY);
-                        converged = hybrd_c(
-                            n, &mut x, &best, &warm, &nominal, &bounds, &t, &mut eval, &mut set_cont,
-                        );
                     }
                 }
                 if homotopy_solver {
@@ -4102,7 +4189,7 @@ mod tests {
             r[n - 1] = libm::pow(k, k) - libm::pow(xs[n - 1], k) * xs[0];
         };
         let mut cont = |_: bool| {};
-        let t = HomotopyTrace { eq_index: 0, time: 0.0, discrete: true, initial: true };
+        let t = HomotopyTrace { eq_index: 0, time: 0.0, discrete: true, initial: true, header: true };
         assert!(hybrd_c(n, &mut x, &x_start, &warm, &nominal, &bounds, &t, &mut eval, &mut cont));
         for i in 0..n {
             assert!((x[i] - (i + 1) as f64).abs() < 1e-6, "x={x:?}");
