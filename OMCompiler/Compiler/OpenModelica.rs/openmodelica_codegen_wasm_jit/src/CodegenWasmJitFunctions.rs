@@ -528,16 +528,18 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
         ],
         &[],
     ),
-    // `external "FORTRAN 77"` marshalling, used only by a shared-memory module
-    // (a wasm FMU), where there is no host trampoline to convert: a by-reference
-    // cell per scalar, and a column-major copy per multi-dimensional array.
-    // Appended last so no existing `rt_index` shifts.
+    // `external` marshalling in a shared-memory module (a wasm FMU), where there
+    // is no host trampoline to convert: a by-reference cell per `_Out_` (or
+    // Fortran) scalar, and a column-major copy per multi-dimensional Fortran
+    // array. Appended last so no existing `rt_index` shifts.
     ("rt_f77_cell_r", &[WTy::F64], &[WTy::I32]),
     ("rt_f77_cell_i", &[WTy::I32], &[WTy::I32]),
     ("rt_f77_cell_get_r", &[WTy::I32], &[WTy::F64]),
     ("rt_f77_cell_get_i", &[WTy::I32], &[WTy::I32]),
     ("rt_f77_arr_in", &[WTy::I32], &[WTy::I32]),
     ("rt_f77_arr_out", &[WTy::I32, WTy::I32, WTy::I32], &[]),
+    // A `char*` a shared-memory `external "C"` returned or wrote, as a `String`.
+    ("rt_str_from_cstr", &[WTy::I32], &[WTy::I32]),
 ];
 
 /// Model global holding the base index at which this module's per-system
@@ -2593,11 +2595,11 @@ fn compile_external_function(
         // land on the stack in order, so they are stored back-to-front into the
         // declared outputs their `outputIndex` names.
         let sig = external_import_sig(f)?;
-        // A shared-memory module calls the real Fortran symbol directly, so the
-        // by-reference/column-major conversions the host trampoline would do
+        // A shared-memory module calls the real symbol directly, so the pointer
+        // and by-reference conversions the host trampoline would do
         // (`call_external_in_wasm`) are emitted here instead.
-        if sig.lang == ExtLang::Fortran77 && EXTERNALS_SHARED.with(|c| c.get()) {
-            emit_f77_external_call(&mut ctx, &sig, extArgs, extReturn, &fn_path)?;
+        if EXTERNALS_SHARED.with(|c| c.get()) {
+            emit_shared_external_call(&mut ctx, &sig, extArgs, extReturn, &fn_path)?;
             release_heap_locals(&mut ctx)?;
             push_outputs(&mut ctx);
             ctx.emit(we::Instruction::End);
@@ -2608,7 +2610,7 @@ fn compile_external_function(
             }
             return Ok(func);
         }
-        let results = emit_general_external_call(&mut ctx, &sig.name, &input_args, &sig.wasm_params())?;
+        let results = emit_general_external_call(&mut ctx, &sig.name, &input_args)?;
         // The declared output each wasm result feeds, in result order: the C
         // return value first, then each scalar/String `_Out_` arg.
         // `(declared output, the field of it this value assigns)`.
@@ -2681,20 +2683,22 @@ fn compile_external_function(
     Ok(func)
 }
 
-/// Emit an `external "FORTRAN 77"` call in a *shared-memory* module, where the
-/// import is the real Fortran symbol and nothing marshals for us. Mirrors the
-/// host trampoline's Fortran path (`call_external_in_wasm` in
-/// `dylink_wasmtime.rs`), which is C's `extFunCallF77`:
+/// Emit an external call in a *shared-memory* module, where the import is the
+/// real symbol and nothing marshals for us. Mirrors the host trampoline
+/// (`call_external_in_wasm` in `dylink_wasmtime.rs`), which is C's `extFunCallC`
+/// / `extFunCallF77`:
 ///
-/// * a scalar argument goes into an 8-byte cell and the cell's address is passed;
-///   an `_Out_` scalar's cell is read back after the call
-/// * a `String` passes its bytes, as `external "C"` does
-/// * an array of 2+ dimensions is copied column-major and copied back if it is an
-///   output; a vector passes its elements directly
+/// * a `String` passes its bytes, an array its elements; a C array is the
+///   row-major elements themselves, a Fortran array of 2+ dimensions a
+///   column-major copy, copied back if it is an output
+/// * an `_Out_` scalar (every Fortran scalar) goes into an 8-byte cell whose
+///   address is passed and which is read back after the call; an `_Out_` String
+///   cell holds the `char*` the callee wrote
+/// * a returned `char*` becomes a `String`
 ///
 /// Every scratch allocation is released afterwards, in one pass over the same
-/// argument list.
-fn emit_f77_external_call(
+/// argument list — including on the path a recovered `ModelicaError` takes.
+fn emit_shared_external_call(
     ctx: &mut FnCtx,
     sig: &ExtCallSig,
     extArgs: &Arc<List<Arc<SimCodeFunction::SimExtArg::SimExtArg>>>,
@@ -2703,21 +2707,56 @@ fn emit_f77_external_call(
 ) -> Result<()> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
 
+    /// Where a value the callee wrote lands: a declared output, or a field of one.
+    struct Target {
+        out_idx: u32,
+        out_sty: SigTy,
+        field: Option<String>,
+    }
     /// What the call has to undo for one argument once the callee returns.
     enum Cleanup {
-        /// A scalar cell: read it back into `out` (when it is an `_Out_`), free it.
-        Cell { ptr: u32, out: Option<(u32, SigTy)> },
-        /// An array: copy back if it is an output, then release any scratch.
-        Array { handle: u32, ptr: u32, is_out: bool },
+        /// A scalar/String cell: read it back into `out` (when it is an `_Out_`), free it.
+        Cell { ptr: u32, ty: SigTy, out: Option<Target> },
+        /// A Fortran array: copy back if it is an output, then release any scratch.
+        F77Array { handle: u32, ptr: u32, is_out: bool },
     }
+    let fortran = sig.lang == ExtLang::Fortran77;
+    let native = is_native_external(&sig.name);
     let mut cleanups: Vec<Cleanup> = Vec::new();
     let key = format!("ext.{}", sig.name);
     let Some(info) = ctx.by_name.get(&key) else {
         return Err("CodegenWasmJit: external import not declared");
     };
-    let (index, n_results) = (info.index, info.sig.results.len());
+    let (index, results) = (info.index, info.sig.results.clone());
+    let output_target = |ctx: &FnCtx, output_index: usize, cref: Option<&DAE::ComponentRef>| -> Result<Target> {
+        let Some((out_idx, out_sty)) = ctx.outputs.get(output_index.max(1) - 1).cloned() else {
+            openmodelica_wasm_jit::set_engine_error_detail(format!(
+                "  {}, external `{}`: an argument writes output {} the function does not declare",
+                fn_path(),
+                sig.name,
+                output_index,
+            ));
+            return Err("CodegenWasmJit: external output index out of range");
+        };
+        Ok(Target { out_idx, out_sty, field: cref.and_then(cref_field) })
+    };
 
-    // Build the argument list: one i32 pointer per `extArgs` entry, in order.
+    let catch = EXT_ERROR_CATCH.with(|c| c.get());
+    let mut temps: Vec<u32> = Vec::new();
+    let mut saved_stack = 0;
+    if let Some(tag) = catch {
+        temps = results.iter().map(|r| ctx.alloc_temp(r.wty())).collect();
+        saved_stack = ctx.alloc_temp(WTy::I32);
+        ctx.emit(we::Instruction::Call(env_extra_index("rt_ext_stack_save")?));
+        ctx.emit(we::Instruction::LocalSet(saved_stack));
+        ctx.emit(we::Instruction::Block(we::BlockType::Empty)); // done
+        ctx.emit(we::Instruction::Block(we::BlockType::Result(we::ValType::EXNREF))); // handler
+        ctx.emit(we::Instruction::TryTable(
+            we::BlockType::Empty,
+            vec![we::Catch::OneRef { tag, label: 0 }].into(),
+        ));
+    }
+
     for a in &**extArgs {
         let is_out = ext_arg_output_index(a) != 0;
         let ty = match &**a {
@@ -2738,15 +2777,28 @@ fn emit_f77_external_call(
             }
             _ => None,
         };
+        let cref: Option<&DAE::ComponentRef> = match &**a {
+            A::SIMEXTARG { cref, .. } => Some(cref),
+            _ => None,
+        };
+        let push_value = |ctx: &mut FnCtx, what: &str, wty: WTy| -> Result<()> {
+            let Some(v) = &value else {
+                openmodelica_wasm_jit::set_engine_error_detail(format!(
+                    "  {}, external `{}`: {what} argument has no value",
+                    fn_path(),
+                    sig.name,
+                ));
+                return Err("CodegenWasmJit: external argument has no value");
+            };
+            let w = compile_exp(ctx, v)?;
+            coerce(ctx, w, wty);
+            Ok(())
+        };
         match &ty {
-            SigTy::Array { .. } => {
+            SigTy::Array { .. } if fortran => {
                 // The array handle, then its Fortran-visible address. Both are kept:
                 // the copy-back needs the handle and the scratch pointer together.
-                let Some(v) = value else {
-                    return Err("CodegenWasmJit: an array external argument has no value");
-                };
-                let w = compile_exp(ctx, &v)?;
-                coerce(ctx, w, WTy::I32);
+                push_value(ctx, "an array", WTy::I32)?;
                 let handle = ctx.alloc_temp(WTy::I32);
                 ctx.emit(we::Instruction::LocalSet(handle));
                 ctx.emit(we::Instruction::LocalGet(handle));
@@ -2754,22 +2806,29 @@ fn emit_f77_external_call(
                 let ptr = ctx.alloc_temp(WTy::I32);
                 ctx.emit(we::Instruction::LocalSet(ptr));
                 ctx.emit(we::Instruction::LocalGet(ptr));
-                cleanups.push(Cleanup::Array { handle, ptr, is_out });
+                cleanups.push(Cleanup::F77Array { handle, ptr, is_out });
             }
-            SigTy::Str => {
-                // As `external "C"`: the byte address of the string data.
-                let Some(v) = value else {
-                    return Err("CodegenWasmJit: a String external argument has no value");
-                };
-                let w = compile_exp(ctx, &v)?;
-                coerce(ctx, w, WTy::I32);
-                ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?));
+            SigTy::Array { .. } => {
+                // C reads and writes the row-major elements in place.
+                push_value(ctx, "an array", WTy::I32)?;
+                if !native {
+                    ctx.emit(we::Instruction::Call(rt_index("rt_array_data")?));
+                }
             }
-            SigTy::Int | SigTy::Bool | SigTy::Real => {
-                // An `_Out_` cell starts zeroed; an input cell starts at its value.
+            SigTy::Str if !is_out => {
+                push_value(ctx, "a String", WTy::I32)?;
+                if !native {
+                    ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?));
+                }
+            }
+            SigTy::Int | SigTy::Bool | SigTy::Real if !is_out && !fortran => {
+                push_value(ctx, "a scalar", ty.wty())?;
+            }
+            SigTy::Int | SigTy::Bool | SigTy::Real | SigTy::Str => {
+                // An `_Out_` cell starts zeroed; a Fortran input cell at its value.
                 let cell_fn = if matches!(ty, SigTy::Real) { "rt_f77_cell_r" } else { "rt_f77_cell_i" };
                 match (&value, is_out) {
-                    (Some(v), _) if !is_out => {
+                    (Some(v), false) => {
                         let w = compile_exp(ctx, v)?;
                         coerce(ctx, w, ty.wty());
                     }
@@ -2780,80 +2839,115 @@ fn emit_f77_external_call(
                 let ptr = ctx.alloc_temp(WTy::I32);
                 ctx.emit(we::Instruction::LocalSet(ptr));
                 ctx.emit(we::Instruction::LocalGet(ptr));
-                // Where the written value lands, for an `_Out_`.
-                let out = if is_out {
-                    let target = ext_arg_output_index(a) - 1;
-                    let Some(slot) = ctx.outputs.get(target).cloned() else {
-                        openmodelica_wasm_jit::set_engine_error_detail(format!(
-                            "  {}, external `{}`: an argument writes output {} the function does not declare",
-                            fn_path(),
-                            sig.name,
-                            target + 1,
-                        ));
-                        return Err("CodegenWasmJit: external output index out of range");
-                    };
-                    Some(slot)
-                } else {
-                    None
-                };
-                cleanups.push(Cleanup::Cell { ptr, out });
+                let out = if is_out { Some(output_target(ctx, ext_arg_output_index(a), cref)?) } else { None };
+                cleanups.push(Cleanup::Cell { ptr, ty: ty.clone(), out });
             }
-            SigTy::Ptr => {
-                let Some(v) = value else {
-                    return Err("CodegenWasmJit: an external-object argument has no value");
-                };
-                let w = compile_exp(ctx, &v)?;
-                coerce(ctx, w, WTy::I32);
-            }
+            SigTy::Ptr => push_value(ctx, "an external-object", WTy::I32)?,
+            // A record still crosses as the runtime object, not C's `<record>_external`.
+            SigTy::Record { .. } if !is_out && !fortran => push_value(ctx, "a record", WTy::I32)?,
             other => {
                 openmodelica_wasm_jit::set_engine_error_detail(format!(
-                    "  {}, external `{}`: {other:?} cannot be passed to FORTRAN 77",
+                    "  {}, external `{}`: {other:?} cannot be passed to a shared-memory {}",
                     fn_path(),
                     sig.name,
+                    if fortran { "FORTRAN 77 function" } else { "external \"C\" function" },
                 ));
-                return Err("CodegenWasmJit: unsupported FORTRAN 77 argument type");
+                return Err("CodegenWasmJit: unsupported shared-memory external argument type");
             }
         }
     }
 
     ctx.emit(we::Instruction::Call(index));
 
-    // A by-value function result (e.g. `DLANGE`) is the only thing on the stack.
-    if n_results == 1 {
-        let A::SIMEXTARG { outputIndex, .. } = &**extReturn else {
-            return Err("CodegenWasmJit: a FORTRAN 77 result with no declared output");
+    if catch.is_some() {
+        // Out of the `try_table` region: the results travel through locals so every
+        // block here is empty-typed but the one the caught `exnref` lands in.
+        for t in temps.iter().rev() {
+            ctx.emit(we::Instruction::LocalSet(*t));
+        }
+        ctx.emit(we::Instruction::End); // try_table
+        ctx.emit(we::Instruction::Br(1)); // done
+        ctx.emit(we::Instruction::End); // handler: the exception is on the stack
+        ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
+        ctx.emit(we::Instruction::If(we::BlockType::Empty));
+        ctx.emit(we::Instruction::LocalGet(saved_stack));
+        ctx.emit(we::Instruction::Call(env_extra_index("rt_ext_stack_restore")?));
+        ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
+        for c in &cleanups {
+            match c {
+                Cleanup::Cell { ptr, .. } => {
+                    ctx.emit(we::Instruction::LocalGet(*ptr));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+                }
+                Cleanup::F77Array { handle, ptr, .. } => {
+                    ctx.emit(we::Instruction::LocalGet(*handle));
+                    ctx.emit(we::Instruction::LocalGet(*ptr));
+                    ctx.emit(we::Instruction::I32Const(0));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_f77_arr_out")?));
+                }
+            }
+        }
+        release_heap_locals(ctx)?;
+        push_outputs(ctx);
+        ctx.emit(we::Instruction::Return);
+        ctx.emit(we::Instruction::End); // if
+        // Not inside a residual: a `ModelicaError` ends the run, as in C.
+        ctx.emit(we::Instruction::ThrowRef);
+        ctx.emit(we::Instruction::End); // done
+        for t in &temps {
+            ctx.emit(we::Instruction::LocalGet(*t));
+        }
+    }
+
+    // Store one value the callee produced (on the stack, of type `ty`) into `target`.
+    let store = |ctx: &mut FnCtx, ty: &SigTy, target: &Target| -> Result<()> {
+        if matches!(ty, SigTy::Str) {
+            ctx.emit(we::Instruction::Call(rt_index("rt_str_from_cstr")?));
+        }
+        if let Some(field) = &target.field {
+            let SigTy::Record { fields, .. } = &target.out_sty else {
+                openmodelica_wasm_jit::set_engine_error_detail(format!(
+                    "  {}, external `{}`: `{field}` is a field of an output that is not a record",
+                    fn_path(),
+                    sig.name,
+                ));
+                return Err("CodegenWasmJit: external output field on a non-record");
+            };
+            let vt = ctx.alloc_temp(ty.wty());
+            ctx.emit(we::Instruction::LocalSet(vt));
+            return store_fresh_into_field(ctx, target.out_idx, fields, field, vt);
+        }
+        coerce(ctx, ty.wty(), target.out_sty.wty());
+        ctx.emit(we::Instruction::LocalSet(target.out_idx));
+        Ok(())
+    };
+
+    // The C return value is the only thing on the stack.
+    if results.len() == 1 {
+        let A::SIMEXTARG { outputIndex, cref, .. } = &**extReturn else {
+            return Err("CodegenWasmJit: an external return value with no declared output");
         };
-        let target = (*outputIndex).max(1) as usize - 1;
-        let Some((out_idx, out_sty)) = ctx.outputs.get(target).cloned() else {
-            return Err("CodegenWasmJit: external return index out of range");
-        };
+        let target = output_target(ctx, *outputIndex as usize, Some(cref))?;
         let ret = sig.ret.clone().unwrap_or(SigTy::Real);
-        coerce(ctx, ret.wty(), out_sty.wty());
-        ctx.emit(we::Instruction::LocalSet(out_idx));
-    } else if n_results != 0 {
-        return Err("CodegenWasmJit: a FORTRAN 77 import returns more than one value");
+        store(ctx, &ret, &target)?;
+    } else if !results.is_empty() {
+        return Err("CodegenWasmJit: a shared-memory import returns more than one value");
     }
 
     // Read back the `_Out_` cells and release every scratch allocation.
     for c in &cleanups {
         match c {
-            Cleanup::Cell { ptr, out } => {
-                if let Some((out_idx, out_sty)) = out {
+            Cleanup::Cell { ptr, ty, out } => {
+                if let Some(target) = out {
                     ctx.emit(we::Instruction::LocalGet(*ptr));
-                    let getter = if matches!(out_sty, SigTy::Real) {
-                        "rt_f77_cell_get_r"
-                    } else {
-                        "rt_f77_cell_get_i"
-                    };
+                    let getter = if matches!(ty, SigTy::Real) { "rt_f77_cell_get_r" } else { "rt_f77_cell_get_i" };
                     ctx.emit(we::Instruction::Call(rt_index(getter)?));
-                    let read = if matches!(out_sty, SigTy::Real) { WTy::F64 } else { WTy::I32 };
-                    coerce(ctx, read, out_sty.wty());
-                    ctx.emit(we::Instruction::LocalSet(*out_idx));
+                    store(ctx, ty, target)?;
                 }
                 ctx.emit(we::Instruction::LocalGet(*ptr));
                 ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
             }
-            Cleanup::Array { handle, ptr, is_out } => {
+            Cleanup::F77Array { handle, ptr, is_out } => {
                 ctx.emit(we::Instruction::LocalGet(*handle));
                 ctx.emit(we::Instruction::LocalGet(*ptr));
                 ctx.emit(we::Instruction::I32Const(i32::from(*is_out)));
@@ -2934,17 +3028,15 @@ fn emit_known_external_call(
 /// results (one per external output: the C return value first, then each `_Out_`
 /// pointer's value) are left on the stack in order; their `SigTy`s are returned.
 thread_local! {
-    /// When set, `external "C"` calls pass real shared-memory pointers for String/
-    /// array args (`rt_str_data`/`rt_array_data`) instead of runtime handles —
-    /// for a host-free wasm FMU, where model + runtime + ModelicaExternalC share one
-    /// memory so no host trampoline marshals. The interactive wasmer path leaves it
-    /// off (two memories, host-marshalled).
+    /// When set, `external` calls take the real C/Fortran argument list instead
+    /// of the host-trampoline shape ([`emit_shared_external_call`]): a wasm FMU,
+    /// where model, runtime and ModelicaExternalC share one memory.
     static EXTERNALS_SHARED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
 /// Whether externals are being lowered for a shared-memory module, which decides
-/// the wasm signature a `FORTRAN 77` import is declared with (see
-/// [`ExtCallSig::wasm_sig_f77_shared`]).
+/// the wasm signature an import is declared with (see
+/// [`ExtCallSig::wasm_sig_c_shared`] and [`ExtCallSig::wasm_sig_f77_shared`]).
 pub(crate) fn externals_shared() -> bool {
     EXTERNALS_SHARED.with(|c| c.get())
 }
@@ -2955,6 +3047,20 @@ pub(crate) fn with_shared_externals<T>(f: impl FnOnce() -> T) -> T {
     let r = f();
     EXTERNALS_SHARED.with(|c| c.set(prev));
     r
+}
+
+thread_local! {
+    /// The shared-memory externals a host serves (`om:ext/native`); their stub
+    /// marshals from runtime handles, so a String or array passes as the handle.
+    static NATIVE_EXTERNALS: std::cell::RefCell<HashSet<String>> = std::cell::RefCell::new(HashSet::new());
+}
+
+pub(crate) fn set_native_externals(names: impl IntoIterator<Item = String>) {
+    NATIVE_EXTERNALS.with(|c| *c.borrow_mut() = names.into_iter().collect());
+}
+
+fn is_native_external(name: &str) -> bool {
+    NATIVE_EXTERNALS.with(|c| c.borrow().contains(name))
 }
 
 thread_local! {
@@ -2988,7 +3094,7 @@ fn emit_assert_unwind(ctx: &mut FnCtx) {
     }
 }
 
-fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Exp>], arg_types: &[SigTy]) -> Result<Vec<SigTy>> {
+fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::Exp>]) -> Result<Vec<SigTy>> {
     let key = format!("ext.{ext_name}");
     let (index, params, results) = match ctx.by_name.get(&key) {
         Some(info) => (info.index, info.sig.params.clone(), info.sig.results.clone()),
@@ -3013,20 +3119,9 @@ fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[Arc<DAE::
         ));
     }
 
-    let shared = EXTERNALS_SHARED.with(|c| c.get());
-    for ((a, p), sty) in args.iter().zip(params.iter()).zip(arg_types.iter()) {
+    for (a, p) in args.iter().zip(params.iter()) {
         let w = compile_exp(ctx, a)?;
         coerce(ctx, w, p.wty());
-        // Shared-memory FMU: pass a real pointer, not the runtime handle (both i32).
-        if shared {
-            match sty {
-                SigTy::Str => ctx.emit(we::Instruction::Call(rt_index("rt_str_data")?)),
-                SigTy::Array { .. } => {
-                    ctx.emit(we::Instruction::Call(rt_index("rt_array_data")?));
-                }
-                _ => {}
-            }
-        }
     }
     ctx.emit(we::Instruction::Call(index));
     if catch.is_some() {

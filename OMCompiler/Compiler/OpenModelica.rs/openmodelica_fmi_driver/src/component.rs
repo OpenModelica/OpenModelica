@@ -73,6 +73,9 @@ pub struct Host {
     stdout: wasmtime_wasi::p2::pipe::MemoryOutputPipe,
     wasi: wasmtime_wasi::WasiCtx,
     table: wasmtime::component::ResourceTable,
+    /// The FMU's resources, where its host-served externals' table is.
+    resources: Option<std::path::PathBuf>,
+    natives: Option<std::result::Result<openmodelica_ext_native::Natives, String>>,
 }
 
 impl wasmtime_wasi::WasiView for Host {
@@ -90,6 +93,57 @@ impl bindings::fmi::fmi3::callbacks::Host for Host {
     fn clock_update(&mut self) {}
     fn lock_preemption(&mut self) {}
     fn unlock_preemption(&mut self) {}
+}
+
+impl bindings::om::ext::native::Host for Host {
+    fn call(
+        &mut self,
+        index: u32,
+        args: Vec<bindings::om::ext::native::Value>,
+    ) -> std::result::Result<Vec<bindings::om::ext::native::Value>, String> {
+        use bindings::om::ext::native::Value as W;
+        use openmodelica_ext_native::marshal::Value as V;
+        if self.natives.is_none() {
+            self.natives = Some(open_natives(self.resources.as_deref()));
+        }
+        let natives = self.natives.as_mut().unwrap().as_mut().map_err(|e| e.clone())?;
+        let args: Vec<V> = args
+            .into_iter()
+            .map(|v| match v {
+                W::Int(i) => V::Int(i),
+                W::Real(r) => V::Real(r),
+                W::Str(s) => V::Str(s),
+                W::Bytes(b) => V::Bytes(b),
+                W::Handle(h) => V::Handle(h),
+            })
+            .collect();
+        Ok(natives
+            .call(index, &args)?
+            .into_iter()
+            .map(|v| match v {
+                V::Int(i) => W::Int(i),
+                V::Real(r) => W::Real(r),
+                V::Str(s) => W::Str(s),
+                V::Bytes(b) => W::Bytes(b),
+                V::Handle(h) => W::Handle(h),
+            })
+            .collect())
+    }
+}
+
+/// The artifact's platform libraries, from its `binaries/<platform>/`.
+fn open_natives(resources: Option<&Path>) -> std::result::Result<openmodelica_ext_native::Natives, String> {
+    let Some(res) = resources else {
+        return Err("the artifact has host-served `external \"C\"` functions but no resources directory".to_string());
+    };
+    let text = std::fs::read_to_string(res.join(openmodelica_ext_native::TABLE_FILE))
+        .map_err(|e| format!("cannot read {}: {e}", openmodelica_ext_native::TABLE_FILE))?;
+    let table = openmodelica_ext_native::marshal::parse(&text)?;
+    let binaries = res
+        .parent()
+        .and_then(openmodelica_ext_native::binaries_dir)
+        .ok_or_else(|| "the artifact has no binaries/ directory for this platform".to_string())?;
+    openmodelica_ext_native::Natives::open(&table, &binaries)
 }
 
 impl bindings::fmi::fmi3::intermediate_update_callbacks::Host for Host {
@@ -196,6 +250,8 @@ impl WasmArtifact {
                 stdout,
                 wasi: builder.build(),
                 table: wasmtime::component::ResourceTable::new(),
+                resources: self.resources.lock().unwrap_or_else(|e| e.into_inner()).clone(),
+                natives: None,
             },
         ))
     }

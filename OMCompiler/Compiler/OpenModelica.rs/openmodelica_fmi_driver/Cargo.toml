@@ -18,7 +18,7 @@ ffi = ["dep:libloading"]
 # Drive an fmi-ls-wasm component in this process: wasmtime instantiates it and
 # the masters reach the FMU through its exports. What lets omc simulate the
 # artifact it exported without a loader library in between.
-component = ["dep:wasmtime", "dep:wasmtime-wasi"]
+component = ["dep:wasmtime", "dep:wasmtime-wasi", "dep:openmodelica_ext_native"]
 
 [dependencies]
 openmodelica_fmi = { path = "../openmodelica_fmi" }
@@ -34,3 +34,4 @@ libloading = { version = "0.8", optional = true }
 wasmtime = { workspace = true, optional = true, features = ["component-model", "gc", "gc-null", "gc-drc"] }
 # An FMU whose model has `external "C"` reaches libc, and libc imports WASI.
 wasmtime-wasi = { version = "45", default-features = false, optional = true, features = ["p2"] }
+openmodelica_ext_native = { path = "../openmodelica_ext_native", optional = true }

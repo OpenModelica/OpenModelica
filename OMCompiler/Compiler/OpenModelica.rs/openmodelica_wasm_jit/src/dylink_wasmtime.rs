@@ -656,6 +656,92 @@ mod tests {
         assert_eq!(f.call(&mut store, 5.0).unwrap(), 15.0);
     }
 
+    fn functype(engine: &wasmtime::Engine, sig: &crate::sig::FnSig) -> wasmtime::FuncType {
+        let val = |t: &crate::sig::SigTy| match t.wty() {
+            crate::sig::WTy::I32 => wasmtime::ValType::I32,
+            crate::sig::WTy::F64 => wasmtime::ValType::F64,
+        };
+        wasmtime::FuncType::new(engine, sig.params.iter().map(val), sig.results.iter().map(val))
+    }
+
+    fn same_type(a: &wasmtime::FuncType, b: &wasmtime::FuncType) -> bool {
+        a.params().len() == b.params().len()
+            && a.results().len() == b.results().len()
+            && a.params().zip(b.params()).all(|(x, y)| x.matches(&y))
+            && a.results().zip(b.results()).all(|(x, y)| x.matches(&y))
+    }
+
+    /// A shared-memory kernel imports a library's function under the C prototype
+    /// (`wasm_sig_c_shared`), the only shape that links against its export;
+    /// `ModelicaRandom_xorshift64star(const int*, int*, double*)` is the case.
+    #[test]
+    fn shared_c_import_links_against_the_c_prototype() {
+        use crate::sig::{ExtCallSig, ExtLang, SigTy};
+        let Some(bytes) = build_library(
+            "outptr",
+            "void xorshift(const int *in, int *out, double *y) { out[0] = in[0] + 1; out[1] = in[1]; *y = 0.5; }\n\
+             const char *greet(const char *s, int n) { return n > 0 ? s : \"\"; }",
+        ) else {
+            return;
+        };
+        let Some(libs) = with_libc("outptr.wasm", bytes) else { return };
+        let (mut store, engine, rt_inst) = runtime();
+        let memory = rt_inst.get_memory(&mut store, "memory").unwrap();
+        let table = rt_inst.get_table(&mut store, "__indirect_function_table").unwrap();
+        let alloc = rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc").unwrap();
+        let loaded = load(&mut store, &engine, memory, table, &alloc, &libs, &HashMap::new()).unwrap();
+
+        let ints = SigTy::Array { elem: std::sync::Arc::new(SigTy::Int), rank: 1 };
+        let xorshift = ExtCallSig {
+            name: "xorshift".into(),
+            lang: ExtLang::C,
+            args: vec![(ints.clone(), false), (ints, true), (SigTy::Real, true)],
+            ret: None,
+        };
+        let export = loaded.func("xorshift").unwrap().ty(&store);
+        assert!(same_type(&export, &functype(&engine, &xorshift.wasm_sig_c_shared())));
+        assert!(!same_type(&export, &functype(&engine, &xorshift.wasm_sig())), "the host shape must not link");
+
+        let greet = ExtCallSig {
+            name: "greet".into(),
+            lang: ExtLang::C,
+            args: vec![(SigTy::Str, false), (SigTy::Int, false)],
+            ret: Some(SigTy::Str),
+        };
+        let export = loaded.func("greet").unwrap().ty(&store);
+        assert!(same_type(&export, &functype(&engine, &greet.wasm_sig_c_shared())));
+
+        // The `_Out_` cell and the `char*` result, as the generated code passes them.
+        let cell_r = rt_inst.get_typed_func::<f64, u32>(&mut store, "rt_f77_cell_r").unwrap();
+        let cell_get_r = rt_inst.get_typed_func::<u32, f64>(&mut store, "rt_f77_cell_get_r").unwrap();
+        let ints_in = alloc.call(&mut store, 8).unwrap();
+        let ints_out = alloc.call(&mut store, 8).unwrap();
+        memory.write(&mut store, ints_in as usize, &[7, 0, 0, 0, 9, 0, 0, 0]).unwrap();
+        let y = cell_r.call(&mut store, 0.0).unwrap();
+        let f = loaded.func("xorshift").unwrap().clone().typed::<(i32, i32, i32), ()>(&store).unwrap();
+        f.call(&mut store, (ints_in as i32, ints_out as i32, y as i32)).unwrap();
+        let mut out = [0u8; 8];
+        memory.read(&store, ints_out as usize, &mut out).unwrap();
+        assert_eq!(out, [8, 0, 0, 0, 9, 0, 0, 0]);
+        assert_eq!(cell_get_r.call(&mut store, y).unwrap(), 0.5);
+
+        let from_cstr = rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_str_from_cstr").unwrap();
+        let str_len = rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_str_len").unwrap();
+        let str_data = rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_str_data").unwrap();
+        let cstr = alloc.call(&mut store, 6).unwrap();
+        memory.write(&mut store, cstr as usize, b"hello\0").unwrap();
+        let g = loaded.func("greet").unwrap().clone().typed::<(i32, i32), i32>(&store).unwrap();
+        let ret = g.call(&mut store, (cstr as i32, 1)).unwrap() as u32;
+        let s = from_cstr.call(&mut store, ret).unwrap();
+        assert_eq!(str_len.call(&mut store, s).unwrap(), 5);
+        let mut bytes = [0u8; 5];
+        let data = str_data.call(&mut store, s).unwrap() as usize;
+        memory.read(&store, data, &mut bytes).unwrap();
+        assert_eq!(&bytes, b"hello");
+        let empty = from_cstr.call(&mut store, 0).unwrap();
+        assert_eq!(str_len.call(&mut store, empty).unwrap(), 0);
+    }
+
     /// The mistake to expect, reported as such rather than as unresolved imports.
     #[test]
     fn an_object_file_is_rejected_with_a_useful_message() {
@@ -873,7 +959,7 @@ impl NlsHooks {
 /// reject the trial, outside one to end the run (so only then is the message
 /// worth reporting). With no tag registered (the `-d=gen` function JIT, whose
 /// module has no solver to recover into) it stays a trap.
-fn raise_model_error(
+pub fn raise_model_error(
     nls: &Option<NlsHooks>,
     caller: &mut wasmtime::Caller<'_, WasiCtx>,
     ptr: i32,

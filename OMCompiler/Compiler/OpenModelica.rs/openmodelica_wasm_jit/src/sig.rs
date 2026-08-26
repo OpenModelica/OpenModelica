@@ -212,6 +212,20 @@ impl ExtCallSig {
             results: self.ret.iter().cloned().collect(),
         }
     }
+    /// The signature of a C import in a *shared-memory* module: the C prototype
+    /// itself, which is what a library beside the model exports. An `_Out_`
+    /// scalar or String is a pointer to a cell the generated code allocates and
+    /// reads back; only the C return value comes back as a result.
+    pub fn wasm_sig_c_shared(&self) -> FnSig {
+        FnSig {
+            params: self
+                .args
+                .iter()
+                .map(|(t, is_out)| if Self::as_result(t, *is_out) { SigTy::Ptr } else { t.clone() })
+                .collect(),
+            results: self.ret.iter().cloned().collect(),
+        }
+    }
 }
 
 // ─────────────────────────── record objects ───────────────────────────
@@ -289,3 +303,36 @@ pub fn c_record_layout(fields: &[(ArcStr, SigTy)], ptr: u32) -> CRecordLayout {
     CRecordLayout { size: align_up(off, align), align, offsets }
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `ModelicaRandom_xorshift64star(const int*, int*, double*)`: a shared-memory
+    /// kernel must import the C prototype, not the host-trampoline shape.
+    #[test]
+    fn shared_c_import_is_the_c_prototype() {
+        let ints = SigTy::Array { elem: Arc::new(SigTy::Int), rank: 1 };
+        let sig = ExtCallSig {
+            name: "ModelicaRandom_xorshift64star".into(),
+            lang: ExtLang::C,
+            args: vec![(ints.clone(), false), (ints.clone(), true), (SigTy::Real, true)],
+            ret: None,
+        };
+        let host = sig.wasm_sig();
+        assert_eq!(host.params, vec![ints.clone(), ints.clone()]);
+        assert_eq!(host.results, vec![SigTy::Real]);
+        let shared = sig.wasm_sig_c_shared();
+        assert_eq!(shared.params, vec![ints.clone(), ints, SigTy::Ptr]);
+        assert!(shared.results.is_empty());
+
+        let ret = ExtCallSig {
+            name: "ModelicaStrings_substring".into(),
+            lang: ExtLang::C,
+            args: vec![(SigTy::Str, false), (SigTy::Int, false), (SigTy::Int, false)],
+            ret: Some(SigTy::Str),
+        };
+        assert_eq!(ret.wasm_sig_c_shared().params, vec![SigTy::Str, SigTy::Int, SigTy::Int]);
+        assert_eq!(ret.wasm_sig_c_shared().results, vec![SigTy::Str]);
+    }
+}

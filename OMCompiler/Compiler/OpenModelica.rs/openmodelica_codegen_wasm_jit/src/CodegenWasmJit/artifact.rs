@@ -138,14 +138,29 @@ pub fn locate(prefix: &str) -> Option<PathBuf> {
     (path.extension().is_some_and(|e| e == "fmu") && path.exists()).then(|| path.to_path_buf())
 }
 
-/// Where the result goes: `-r=` outright, else what `simulate` derived — with the
-/// artifact's own extension taken out of it, since the caller built the name from
-/// `resimulateExecutable` (`M.fmu_res.mat`).
+/// The model this session translated for the export at `path`, when the run asks
+/// for the artifact's own simulation: the ordinary simulation path runs it, with
+/// the solvers and the `external "C"` ladder the runtime inside the artifact lacks.
+pub fn translated(path: &Path, simflags: &str) -> Option<String> {
+    if !matches!(select_face(simflags), Ok((Face::Simulation, _))) {
+        return None;
+    }
+    let prefix = path.file_stem()?.to_str()?.to_string();
+    super::sim_models().lock().unwrap_or_else(|e| e.into_inner()).contains_key(&prefix).then_some(prefix)
+}
+
+/// The result name `simulate` derived from `resimulateExecutable` (`M.fmu_res.mat`),
+/// with the artifact's own extension taken out of it.
+pub fn plain_result_name(derived: &str) -> String {
+    derived.replace(".fmu_res.", "_res.")
+}
+
+/// Where the result goes: `-r=` outright, else what `simulate` derived.
 fn result_path(flags: &openmodelica_sim_meta::simflags::SimFlags, derived: &str) -> String {
     if let Some(r) = &flags.result_file {
         return r.clone();
     }
-    let cleaned = derived.replace(".fmu_res.", "_res.");
+    let cleaned = plain_result_name(derived);
     match &flags.output_path {
         Some(dir) => format!("{dir}/{}", Path::new(&cleaned).file_name().unwrap_or_default().to_string_lossy()),
         None => cleaned,
@@ -241,7 +256,18 @@ fn platform() -> Option<&'static str> {
 fn load(path: &Path) -> std::result::Result<Loaded, String> {
     let t = Instant::now();
     if let Some(artifact) = recall(path) {
-        let dir = if path.is_dir() { path.to_path_buf() } else { unpacked_dir(path) };
+        // Compiled before it was packed; its files are read from the unpacked copy.
+        let dir = if path.is_dir() {
+            path.to_path_buf()
+        } else {
+            let dir = unpacked_dir(path);
+            unpack(path, &dir)?;
+            let resources = dir.join("resources");
+            if resources.is_dir() {
+                artifact.use_resources(&resources);
+            }
+            dir
+        };
         return Ok(Loaded {
             dir,
             form: Form::Component(artifact),
@@ -268,7 +294,8 @@ fn load(path: &Path) -> std::result::Result<Loaded, String> {
             for p in paths {
                 let name = p.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
                 if let Ok(bytes) = std::fs::read(&p) {
-                    ext.push(ArtifactLib { name, bytes });
+                    let fixed = name != super::NATIVE_STUB;
+                    ext.push(ArtifactLib { name, bytes, fixed });
                 }
             }
         }
@@ -288,7 +315,11 @@ fn load(path: &Path) -> std::result::Result<Loaded, String> {
     // through: the component sees this directory as its own root.
     let resources = dir.join("resources");
     let resources = resources.is_dir().then_some(resources);
-    let cwasm = platform().map(|p| dir.join(format!("resources/{p}.cwasm"))).filter(|p| p.is_file());
+    // Beside the platform's loader; `resources/<platform>.cwasm` in older exports.
+    let cwasm = openmodelica_ext_native::binaries_dir(&dir)
+        .and_then(|d| std::fs::read_dir(d).ok())
+        .and_then(|rd| rd.flatten().map(|e| e.path()).find(|p| p.extension().is_some_and(|e| e == "cwasm")))
+        .or_else(|| platform().map(|p| dir.join(format!("resources/{p}.cwasm"))).filter(|p| p.is_file()));
     // A `.cwasm` is tied to one wasmtime build and one engine configuration; if
     // this omc is not the one that wrote it, compiling the component still works.
     if let Some(cwasm) = &cwasm {

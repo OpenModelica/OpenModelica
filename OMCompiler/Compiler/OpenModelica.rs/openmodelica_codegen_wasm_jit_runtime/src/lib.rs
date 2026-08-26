@@ -1949,6 +1949,21 @@ unsafe fn str_bytes<'a>(obj: u32) -> &'a [u8] {
     unsafe { core::slice::from_raw_parts((obj + STR_DATA_OFF) as *const u8, len) }
 }
 
+/// A `String` object holding the NUL-terminated bytes at `p` — what a shared-memory
+/// `external "C"` returns or writes through a `const char**`. A null pointer is "".
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_str_from_cstr(p: u32) -> u32 {
+    if p == 0 {
+        return rt_str_new(0);
+    }
+    let bytes = unsafe { core::ffi::CStr::from_ptr(p as *const core::ffi::c_char) }.to_bytes();
+    let obj = rt_str_new(bytes.len() as u32);
+    unsafe {
+        core::ptr::copy_nonoverlapping(bytes.as_ptr(), rt_str_data(obj) as *mut u8, bytes.len());
+    }
+    obj
+}
+
 /// Allocate a `String` object holding `s` and return its pointer.
 fn new_str_from(s: &str) -> u32 {
     let bytes = s.as_bytes();

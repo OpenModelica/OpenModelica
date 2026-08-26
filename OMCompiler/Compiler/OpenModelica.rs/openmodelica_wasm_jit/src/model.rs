@@ -26,6 +26,10 @@ pub struct SimModel {
     /// The model's own `external "C"` libraries, loaded into the simulation's
     /// memory, where they define the `ext_imports` the runtime cannot resolve.
     pub ext_libs: Vec<ExtLibrary>,
+    /// In a shared-memory kernel: the `ext_imports` no wasm library defines, which
+    /// the host serves from a platform library (`om:ext/native`) through a stub
+    /// module the export links in.
+    pub ext_native: Vec<ExtCallSig>,
     /// The model reaches an `external "C"` its own libraries leave open that the
     /// built-in ModelicaExternalC side module defines. The JIT host loads that
     /// module too, so those bind wasm->wasm rather than through the path below.
