@@ -566,15 +566,22 @@ fn init_success_line() -> String {
 const RUN_CHECKPOINT: ArcStr = arcstr::literal!("wasm-jit simulation run");
 
 pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcStr) -> i32 {
-    // `resimulateExecutable` may name an exported wasm artifact instead of a model
-    // this session translated; then the run happens inside it (or through its FMI
-    // interfaces) rather than in the JIT engine.
+    let (mut prefix, mut result_file) = (fileNamePrefix.to_string(), resultFile.to_string());
+    // `resimulateExecutable` may name a wasm artifact: its own simulation is the
+    // model this session exported, run the ordinary way, while an FMI face or an
+    // artifact from elsewhere runs inside it.
     #[cfg(all(feature = "artifact", not(target_arch = "wasm32")))]
     if let Some(path) = artifact::locate(&fileNamePrefix) {
-        return run_artifact(&path, &fileNamePrefix, &resultFile, &simflags);
+        match artifact::translated(&path, &simflags) {
+            Some(p) => {
+                prefix = p;
+                result_file = artifact::plain_result_name(&resultFile);
+            }
+            None => return run_artifact(&path, &fileNamePrefix, &resultFile, &simflags),
+        }
     }
     openmodelica_error::ErrorExt::setCheckpoint(RUN_CHECKPOINT);
-    let (res, init_output, sim_output, post_output) = run_simulation_inner(&fileNamePrefix, &resultFile, &simflags);
+    let (res, init_output, sim_output, post_output) = run_simulation_inner(&prefix, &result_file, &simflags);
     openmodelica_error::ErrorExt::rollBack(RUN_CHECKPOINT);
     // `simulate` reads `<prefix>.log` after a run; the model's captured stdout
     // (`print`, LOG_STATS, ...) is folded in so it shows in the log rather than the
@@ -2147,9 +2154,14 @@ fn uleb(v: u32, out: &mut Vec<u8>) {
 /// shared-everything library. MEM_INFO is all-zero because the model has no
 /// static data (its only data segment is passive) and no own table.
 fn add_dylink0(module: &[u8]) -> Vec<u8> {
+    add_dylink0_sized(module, 0, 0)
+}
+
+/// `mem_size` bytes of `__memory_base`-relative data, `mem_align` its log2 alignment.
+fn add_dylink0_sized(module: &[u8], mem_size: u32, mem_align: u32) -> Vec<u8> {
     let mut meminfo = Vec::new();
-    for _ in 0..4 {
-        uleb(0, &mut meminfo); // mem_size, mem_align, table_size, table_align
+    for v in [mem_size, mem_align, 0, 0] {
+        uleb(v, &mut meminfo); // mem_size, mem_align, table_size, table_align
     }
     let mut sub = Vec::new();
     sub.push(1u8); // WASM_DYLINK_MEM_INFO
@@ -2282,6 +2294,161 @@ fn wasm_exports(bytes: &[u8]) -> impl Iterator<Item = &str> {
     .flat_map(|exports| exports.into_iter().flatten().map(|e| e.name))
 }
 
+/// `resources/native_externals.txt`: the platform libraries to load and the
+/// functions to serve from them, in the form `openmodelica_ext_native_marshal`
+/// parses. `libs` are file names under `binaries/<platform>/`.
+fn native_externals_table(sigs: &[ExtCallSig], libs: &[String]) -> String {
+    use openmodelica_wasm_jit::sig::ExtLang;
+    let mut out = String::new();
+    for l in libs {
+        out.push_str(&format!("lib {l}\n"));
+    }
+    for sig in sigs {
+        let mut code = String::new();
+        let mut line = format!("fn {} {}", sig.name, if sig.lang == ExtLang::Fortran77 { "F" } else { "C" });
+        match &sig.ret {
+            Some(t) => {
+                code.clear();
+                t.write_code(&mut code);
+                line.push_str(&format!(" {code}"));
+            }
+            None => line.push_str(" -"),
+        }
+        for (t, out) in &sig.args {
+            code.clear();
+            t.write_code(&mut code);
+            line.push_str(&format!(" {}{code}", if *out { "*" } else { "" }));
+        }
+        out.push_str(&line);
+        out.push('\n');
+    }
+    out
+}
+
+/// The dylink stub module defining the host-served externals: each stores its
+/// parameters in a frame of 8-byte slots, calls the adapter's
+/// `om_ext_native_call(index, frame, table, table_len)` and loads the return value
+/// from the slot after them. The table text rides in the module's data.
+fn native_ext_stub(sigs: &[ExtCallSig], table: &str) -> Result<Vec<u8>> {
+    let table_bytes = table.as_bytes();
+    let frame_off = (table_bytes.len() as u32 + 7) & !7;
+    let mut frame_slots = 1u32;
+    let mut types = we::TypeSection::new();
+    let val = |t: &openmodelica_wasm_jit::sig::SigTy| match t.wty() {
+        openmodelica_wasm_jit::sig::WTy::I32 => we::ValType::I32,
+        openmodelica_wasm_jit::sig::WTy::F64 => we::ValType::F64,
+    };
+    types.ty().function([we::ValType::I32; 4], []);
+    let mut fn_sigs = Vec::with_capacity(sigs.len());
+    for sig in sigs {
+        let fs = sig.wasm_sig_c_shared();
+        types.ty().function(fs.params.iter().map(val), fs.results.iter().map(val));
+        frame_slots = frame_slots.max(fs.params.len() as u32 + 1);
+        fn_sigs.push(fs);
+    }
+    let mut imports = we::ImportSection::new();
+    imports.import("env", "memory", we::MemoryType { minimum: 0, maximum: None, memory64: false, shared: false, page_size_log2: None });
+    imports.import("env", "__memory_base", we::GlobalType { val_type: we::ValType::I32, mutable: false, shared: false });
+    imports.import("env", "om_ext_native_call", we::EntityType::Function(0));
+    let mut functions = we::FunctionSection::new();
+    let mut exports = we::ExportSection::new();
+    let mut code = we::CodeSection::new();
+    for (i, (sig, fs)) in sigs.iter().zip(&fn_sigs).enumerate() {
+        functions.function(i as u32 + 1);
+        exports.export(&sig.name, we::ExportKind::Func, i as u32 + 1);
+        let mut f = we::Function::new(Vec::<(u32, we::ValType)>::new());
+        for (p, t) in fs.params.iter().enumerate() {
+            let mem = we::MemArg { offset: (frame_off + 8 * p as u32) as u64, align: 3, memory_index: 0 };
+            f.instruction(&we::Instruction::GlobalGet(0));
+            f.instruction(&we::Instruction::LocalGet(p as u32));
+            f.instruction(&match t.wty() {
+                openmodelica_wasm_jit::sig::WTy::F64 => we::Instruction::F64Store(mem),
+                openmodelica_wasm_jit::sig::WTy::I32 => we::Instruction::I32Store(mem),
+            });
+        }
+        f.instruction(&we::Instruction::I32Const(i as i32));
+        f.instruction(&we::Instruction::GlobalGet(0));
+        f.instruction(&we::Instruction::I32Const(frame_off as i32));
+        f.instruction(&we::Instruction::I32Add);
+        f.instruction(&we::Instruction::GlobalGet(0));
+        f.instruction(&we::Instruction::I32Const(table_bytes.len() as i32));
+        f.instruction(&we::Instruction::Call(0));
+        if let Some(r) = fs.results.first() {
+            let mem = we::MemArg { offset: (frame_off + 8 * fs.params.len() as u32) as u64, align: 3, memory_index: 0 };
+            f.instruction(&we::Instruction::GlobalGet(0));
+            f.instruction(&match r.wty() {
+                openmodelica_wasm_jit::sig::WTy::F64 => we::Instruction::F64Load(mem),
+                openmodelica_wasm_jit::sig::WTy::I32 => we::Instruction::I32Load(mem),
+            });
+        }
+        f.instruction(&we::Instruction::End);
+        code.function(&f);
+    }
+    let mut data = we::DataSection::new();
+    data.active(0, &we::ConstExpr::global_get(0), table_bytes.iter().copied());
+    let mut m = we::Module::new();
+    m.section(&types).section(&imports).section(&functions).section(&exports).section(&code).section(&data);
+    Ok(add_dylink0_sized(&m.finish(), frame_off + 8 * frame_slots, 3))
+}
+
+/// What an export with host-served externals adds: the stub linked in, and the
+/// table and platform libraries written as resources.
+struct NativeExternals {
+    table: String,
+    stub: Vec<u8>,
+    /// (file name under `binaries/<platform>/`, contents)
+    libs: Vec<(String, Vec<u8>)>,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn native_externals(model: &SimModel, kind: &str) -> Result<Option<NativeExternals>> {
+    if model.ext_native.is_empty() {
+        return Ok(None);
+    }
+    let names: Vec<&str> = model.ext_native.iter().map(|s| s.name.as_str()).collect();
+    if kind == "ME" {
+        record_error(format!(
+            "CodegenWasmJit: `external \"C\"` {} has no wasm implementation; only an me_cs wasm FMU \
+             can serve it from a platform library (fmuType=\"me_cs\").",
+            names.join(", ")
+        ));
+        return Err("CodegenWasmJit: host-served externals need an me_cs FMU");
+    }
+    let files = sim_runtime::native_external_library_files(model).map_err(|e| {
+        record_error(format!(
+            "CodegenWasmJit: `external \"C\"` {} has no wasm implementation and no platform library \
+             this omc can ship either:\n{e}",
+            names.join(", ")
+        ));
+        "CodegenWasmJit: unresolved host-served externals"
+    })?;
+    let mut libs = Vec::new();
+    for path in &files {
+        let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let bytes = std::fs::read(path).map_err(|e| {
+            record_error(format!("CodegenWasmJit: cannot read `{path}`: {e}"));
+            "CodegenWasmJit: cannot read a platform library"
+        })?;
+        libs.push((name, bytes));
+    }
+    let table = native_externals_table(&model.ext_native, &libs.iter().map(|(n, _)| n.clone()).collect::<Vec<_>>());
+    let stub = native_ext_stub(&model.ext_native, &table)?;
+    Ok(Some(NativeExternals { table, stub, libs }))
+}
+
+#[cfg(target_arch = "wasm32")]
+fn native_externals(model: &SimModel, _kind: &str) -> Result<Option<NativeExternals>> {
+    if let Some(sig) = model.ext_native.first() {
+        record_error(format!(
+            "CodegenWasmJit: `external \"C\"` `{}` has no wasm implementation, and the browser omc has \
+             no platform library to serve it from.",
+            sig.name
+        ));
+        return Err("CodegenWasmJit: unresolved external \"C\"");
+    }
+    Ok(None)
+}
+
 /// Link the adapter + model into an fmi-ls-wasm component (pure Rust, so it runs in
 /// the browser omc too). When the model uses `external "C"`, ModelicaExternalC +
 /// PIC `libc.so` are added as shared-everything libraries. The reactor adapter
@@ -2292,6 +2459,7 @@ fn link_fmu_component(
     adapter: &[u8],
     sundials: bool,
     ext_libs: &[ExtLibrary],
+    native_stub: Option<&[u8]>,
 ) -> Result<Vec<u8>> {
     if adapter.is_empty() {
         // The plain adapter is always built; the SUNDIALS one only where the
@@ -2328,6 +2496,9 @@ fn link_fmu_component(
                 ext_libs.iter().map(|lib| drop_redundant_initialize(&lib.bytes)).collect();
             for (lib, bytes) in ext_libs.iter().zip(&ext_bytes) {
                 l = l.library(&lib.name, bytes, false).map_err(link_err)?;
+            }
+            if let Some(stub) = native_stub {
+                l = l.library("native_stub", stub, false).map_err(link_err)?;
             }
             l = l.library("modelicaexternalc", EXTERNAL_C_DYLINK, false).map_err(link_err)?;
         }
@@ -2673,6 +2844,10 @@ fn fmi_version() -> String {
 /// which fmi-ls-wasm defines as a *component*: this is a dylink library, and only
 /// a host that links it against the adapter can run it.
 pub(crate) const DYLINK_DIR: &str = "binaries/wasm32-om-dylink";
+/// The stub module for host-served externals, among the linked form's libraries.
+pub(crate) const NATIVE_STUB: &str = "native_stub";
+/// The host-served externals' table (`openmodelica_ext_native_marshal::parse`).
+pub(crate) const NATIVE_TABLE: &str = "resources/native_externals.txt";
 
 /// What the host has to load beside the model kernel, decided here because this
 /// is where the model's `external "C"` libraries were resolved. A tiny JSON, read
@@ -2781,10 +2956,19 @@ fn add_native_platforms(
     model_id: &str,
     version: &str,
     linked: bool,
+    natives: Option<&NativeExternals>,
     #[cfg(all(feature = "artifact", not(target_arch = "wasm32")))]
     host: Option<&std::sync::Arc<openmodelica_fmi_driver::component::WasmArtifact>>,
     #[cfg(not(all(feature = "artifact", not(target_arch = "wasm32"))))] host: Option<&()>,
 ) -> Result<()> {
+    // The host-served externals' libraries, beside the platform's binary as FMI
+    // has it; only this machine's exist.
+    if let (Some(n), Some(host_platform)) = (natives, native_fmu::host_platform()) {
+        let dir = native_fmu::fmi_dir(host_platform, version);
+        for (name, bytes) in &n.libs {
+            entries.push((format!("binaries/{dir}/{name}"), bytes.clone()));
+        }
+    }
     if linked {
         // Nothing to precompile: see `compile_for_host`.
         return Ok(());
@@ -2815,8 +2999,7 @@ fn add_native_platforms(
             format!("binaries/{dir}/{}", native_fmu::loader_file_name(platform, model_id)),
             loader,
         ));
-        // The FMI 3.0 tuple in both versions: it is what the loader looks for.
-        entries.push((format!("resources/{}.cwasm", platform.fmi), cwasm));
+        entries.push((format!("binaries/{dir}/{model_id}.cwasm"), cwasm));
     }
     Ok(())
 }
@@ -2985,6 +3168,26 @@ pub fn translateFmu(sim_code: SimCode::SimCode, fmu_type: ArcStr, simulation_fla
     outcome
 }
 
+/// Keep the model translated the way `simulate` runs it, for `artifact::translated`.
+/// Without `external "C"` the kernel is that model; with it the two lowerings
+/// differ. Its compile is joined here so it counts as the build.
+fn keep_translated_model(sim_code: &SimCode::SimCode, kernel: &Arc<SimModel>) -> Result<()> {
+    let prefix = sim_code.fileNamePrefix.to_string();
+    let kept = sim_models().lock().unwrap_or_else(|e| e.into_inner()).get(&prefix).cloned();
+    let model = match kept {
+        Some(m) => m,
+        None if first_external_import(&kernel.wasm).is_none() => kernel.clone(),
+        None => Arc::new(build_sim_model(sim_code, true, ExtHost::SIM)?),
+    };
+    if model.prepared.lock().unwrap_or_else(|e| e.into_inner()).is_none()
+        && let Ok(compiled) = sim_runtime::take_compiled_model(&model)
+    {
+        *model.prepared.lock().unwrap_or_else(|e| e.into_inner()) = Some(compiled);
+    }
+    sim_models().lock().unwrap_or_else(|e| e.into_inner()).insert(prefix, model);
+    Ok(())
+}
+
 /// `emit_fmu`'s `kind` for a `buildModelFMU(fmuType=)`.
 fn fmu_kind(fmu_type: &str) -> &'static str {
     match fmu_type {
@@ -3019,6 +3222,12 @@ fn emit_fmu(
     let outcome = (|| -> Result<()> {
         let model = fmu_kernel(&sim_code, kind)?;
         export_phase("FMU model kernel");
+        let natives = native_externals(&model, kind)?;
+        let bare = fmu_directory();
+        if bare {
+            keep_translated_model(&sim_code, &model)?;
+            export_phase("FMU translated model");
+        }
         let cs = kind != "ME";
         let sundials = cs && fmu_needs_sundials(&model.method);
         // An unzipped export is for an OpenModelica importer: it holds the model
@@ -3027,7 +3236,6 @@ fn emit_fmu(
         // `~/.openmodelica/cache`. A component would carry that megabyte itself
         // and be compiled with it, which is nearly all of what exporting a small
         // model used to cost. `OMC_WASM_LINKED_ARTIFACT=0` asks for one anyway.
-        let bare = fmu_directory();
         let linked = bare && std::env::var("OMC_WASM_LINKED_ARTIFACT").as_deref() != Ok("0");
         let component = if linked {
             // The model kernel exactly as the ordinary simulation path runs it —
@@ -3037,7 +3245,13 @@ fn emit_fmu(
             // because only the adapter is shared between models.
             model.wasm.clone()
         } else {
-            link_fmu_component(&model.wasm, if sundials { adapter.1 } else { adapter.0 }, sundials, &model.ext_libs)?
+            link_fmu_component(
+                &model.wasm,
+                if sundials { adapter.1 } else { adapter.0 },
+                sundials,
+                &model.ext_libs,
+                natives.as_ref().map(|n| &n.stub[..]),
+            )?
         };
         export_phase("FMU component link");
         // The modelIdentifier modelDescription.xml declares, not the class name:
@@ -3063,7 +3277,7 @@ fn emit_fmu(
         // This machine's artifact, compiled once: the runs that follow in this
         // session get the live component and never read a `.cwasm` back.
         let host = compile_for_host(&component, &fmu_path, linked);
-        add_native_platforms(&mut entries, &component, &model_id, &version, linked, host.as_ref())?;
+        add_native_platforms(&mut entries, &component, &model_id, &version, linked, natives.as_ref(), host.as_ref())?;
         export_phase("FMU precompile");
         if version == "2.0" {
             if requested_native_platforms().is_empty() {
@@ -3087,8 +3301,14 @@ fn emit_fmu(
             for (i, lib) in model.ext_libs.iter().enumerate() {
                 entries.push((format!("resources/ext/{i:02}.wasm"), lib.bytes.clone()));
             }
+            if let Some(n) = &natives {
+                entries.push((format!("resources/ext/{NATIVE_STUB}.wasm"), n.stub.clone()));
+            }
         } else {
             entries.push((format!("binaries/wasm32-wasip2/{model_id}.wasm"), component));
+        }
+        if let Some(n) = &natives {
+            entries.push((NATIVE_TABLE.to_string(), n.table.clone().into_bytes()));
         }
         // What `Modelica.Utilities.Files.loadResource` named; C's `SimCodeMain`
         // copies the same set.
@@ -4475,16 +4695,17 @@ impl ExtHost {
     const SIM: ExtHost = if cfg!(target_arch = "wasm32") { ExtHost::Wasm } else { ExtHost::Native };
 }
 
-/// The wasm signature an `ext.*` import is declared with. A `FORTRAN 77` external
-/// in a shared-memory module binds directly to the real symbol, so it takes the
-/// Fortran argument list (everything by reference) rather than the
-/// host-trampoline shape.
+/// The wasm signature an `ext.*` import is declared with. In a shared-memory module
+/// the import binds directly to the real symbol, so it takes the C or Fortran
+/// argument list rather than the host-trampoline shape.
 fn ext_import_sig(sig: &ExtCallSig) -> openmodelica_wasm_jit::sig::FnSig {
     use openmodelica_wasm_jit::sig::ExtLang;
-    if sig.lang == ExtLang::Fortran77 && crate::CodegenWasmJitFunctions::externals_shared() {
-        sig.wasm_sig_f77_shared()
-    } else {
-        sig.wasm_sig()
+    if !crate::CodegenWasmJitFunctions::externals_shared() {
+        return sig.wasm_sig();
+    }
+    match sig.lang {
+        ExtLang::Fortran77 => sig.wasm_sig_f77_shared(),
+        ExtLang::C => sig.wasm_sig_c_shared(),
     }
 }
 
@@ -4738,6 +4959,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let mut ext_includes = None;
     let mut ext_archives = None;
     let mut ext_builtin = false;
+    let mut ext_native: Vec<ExtCallSig> = Vec::new();
     if !ext_imports.is_empty() {
         ext_libs = resolve_ext_libraries(&sim_code.makefileParams, &mut ext_lib_notes)?;
         ext_builtin = builtin_wasm_needed(&ext_imports, &ext_libs.wasm);
@@ -4750,15 +4972,6 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
             .collect();
         let dirs: Vec<String> = lst(&mp.includes).map(|s| s.to_string()).collect();
         let prefix = sim_code.fileNamePrefix.to_string();
-        if !ext_libs.archives.is_empty() && ext_host == ExtHost::Native {
-            ext_archives = Some(ExtArchives {
-                archives: std::mem::take(&mut ext_libs.archives),
-                symbols: ext_imports.iter().map(|s| s.name.clone()).collect(),
-                ccompiler: mp.ccompiler.to_string(),
-                dllext: mp.dllext.to_string(),
-                prefix: prefix.clone(),
-            });
-        }
         if !sources.is_empty() {
             // A hook ModelicaExternalC calls from inside the wasm is named by no
             // `ext` import and the native fallback cannot reach it, so it takes a
@@ -4773,18 +4986,32 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
                     }
                 }
             }
-            // Built on demand, for a symbol the loaded libraries turn out not to
-            // define.
-            if ext_host == ExtHost::Native {
-                ext_includes = Some(ExtIncludes {
-                    sources,
-                    include_dirs: dirs,
-                    ccompiler: mp.ccompiler.to_string(),
-                    cflags: mp.cflags.to_string(),
-                    dllext: mp.dllext.to_string(),
-                    prefix,
-                });
-            }
+        }
+        // What no wasm library defines, a shared-memory kernel hands to the host.
+        if ext_host == ExtHost::Wasm && crate::CodegenWasmJitFunctions::externals_shared() {
+            ext_native = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
+        }
+        crate::CodegenWasmJitFunctions::set_native_externals(ext_native.iter().map(|s| s.name.clone()));
+        let want_native = ext_host == ExtHost::Native || !ext_native.is_empty();
+        if !ext_libs.archives.is_empty() && want_native {
+            ext_archives = Some(ExtArchives {
+                archives: std::mem::take(&mut ext_libs.archives),
+                symbols: ext_imports.iter().map(|s| s.name.clone()).collect(),
+                ccompiler: mp.ccompiler.to_string(),
+                dllext: mp.dllext.to_string(),
+                prefix: prefix.clone(),
+            });
+        }
+        // Built on demand, for a symbol the loaded libraries turn out not to define.
+        if !sources.is_empty() && want_native {
+            ext_includes = Some(ExtIncludes {
+                sources,
+                include_dirs: dirs,
+                ccompiler: mp.ccompiler.to_string(),
+                cflags: mp.cflags.to_string(),
+                dllext: mp.dllext.to_string(),
+                prefix,
+            });
         }
     }
 
@@ -5639,6 +5866,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // --- Function section (type index per body, in body order). ---
     crate::CodegenWasmJitFunctions::set_ext_error_catch(None);
     crate::CodegenWasmJitFunctions::set_assert_throw_tag(None);
+    crate::CodegenWasmJitFunctions::set_native_externals([]);
 
     let mut functions = we::FunctionSection::new();
     for ti in &model_fn_type {
@@ -6067,6 +6295,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         layout,
         result_vars,
         ext_libs: ext_libs.wasm,
+        ext_native,
         ext_builtin,
         ext_native_libs: ext_libs.native,
         ext_archives,
@@ -10364,7 +10593,7 @@ mod link_tests {
                 continue; // omc built without the wasm32 toolchain or without sundials
             }
             assert!(
-                link_fmu_component(&build_stub_model(), adapter, sundials, &[]).is_ok(),
+                link_fmu_component(&build_stub_model(), adapter, sundials, &[], None).is_ok(),
                 "{label} adapter does not link into a component: {}",
                 openmodelica_util::Error::printMessagesStr(false)
             );

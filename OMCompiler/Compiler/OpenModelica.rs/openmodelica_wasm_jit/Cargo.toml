@@ -40,6 +40,7 @@ libc.workspace = true
 # our arena-backed ModelicaAllocateString.
 libffi.workspace = true
 openmodelica_modelica_utilities.workspace = true
+openmodelica_ext_native = { path = "../openmodelica_ext_native" }
 # Native sparse direct solver (CSparse port, AMD ordering) for the host-side
 # linear-system solve the interactive runtime delegates via `rt_host_lin_solve`.
 # Same crate/version as the in-wasm runtime, so the two paths match numerically.

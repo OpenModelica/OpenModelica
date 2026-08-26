@@ -84,6 +84,16 @@ world model-exchange-and-co-simulation-fmu {
 
   /// The model's own simulation runtime (OpenModelica extension).
   export om:sim/simulation@0.1.0;
+
+  /// `external "C"` functions served from a platform library (OpenModelica
+  /// extension); see `deps/om-ext/native.wit`.
+  import om:ext/native@0.1.0;
+}
+
+// What a host adds to serve the OpenModelica extension imports of the world
+// above beside the FMI ones it already serves.
+world openmodelica-extension-host {
+  import om:ext/native@0.1.0;
 }
 
 // ── Scheduled Execution FMU ───────────────────────────────────────────────────

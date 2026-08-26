@@ -565,10 +565,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_ext_native_marshal"
+version = "0.1.0"
+
+[[package]]
 name = "openmodelica_fmi3_wasm"
 version = "0.1.0"
 dependencies = [
  "openmodelica_codegen_wasm_jit_runtime",
+ "openmodelica_ext_native_marshal",
  "openmodelica_mat_writer",
  "openmodelica_plt_writer",
  "openmodelica_sim_meta",
@@ -611,6 +616,7 @@ version = "0.1.0"
 dependencies = [
  "daskr",
  "libm",
+ "rsparse",
 ]
 
 [[package]]
@@ -708,6 +714,12 @@ name = "reborrow"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "03251193000f4bd3b042892be858ee50e8b3719f2b08e5833ac4353724632430"
+
+[[package]]
+name = "rsparse"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d65dc8db760bdc8c94f4163c5d09be710f76fc92a4a1f698c441925db83c09e"
 
 [[package]]
 name = "same-file"

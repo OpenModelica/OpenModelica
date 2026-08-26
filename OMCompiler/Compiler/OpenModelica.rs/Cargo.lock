@@ -7035,6 +7035,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_ext_native"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "libffi",
+ "openmodelica_ext_native_marshal",
+]
+
+[[package]]
+name = "openmodelica_ext_native_marshal"
+version = "0.1.0"
+
+[[package]]
 name = "openmodelica_fmi"
 version = "0.1.0"
 dependencies = [
@@ -7050,6 +7063,7 @@ name = "openmodelica_fmi_driver"
 version = "0.1.0"
 dependencies = [
  "libloading 0.8.9",
+ "openmodelica_ext_native",
  "openmodelica_fmi",
  "openmodelica_mat_writer",
  "openmodelica_solvers",
@@ -7423,6 +7437,7 @@ dependencies = [
  "libffi",
  "metamodelica",
  "openmodelica_error",
+ "openmodelica_ext_native",
  "openmodelica_modelica_utilities",
  "openmodelica_sim_meta",
  "openmodelica_util",

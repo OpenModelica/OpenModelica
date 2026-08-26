@@ -834,6 +834,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
 
 [[package]]
+name = "libffi"
+version = "5.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a8d526bc07aa02e6826944ec446ecd8d228bd97b1cbd21e5bc5e3407a09a585"
+dependencies = [
+ "libc",
+ "libffi-sys",
+]
+
+[[package]]
+name = "libffi-sys"
+version = "4.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54d39d034f5ea2662814789448722078d01cc9431a2a09ff15e55f0df7120bae"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "libm"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -917,9 +936,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
+name = "openmodelica_ext_native"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "libffi",
+ "openmodelica_ext_native_marshal",
+]
+
+[[package]]
+name = "openmodelica_ext_native_marshal"
+version = "0.1.0"
+
+[[package]]
 name = "openmodelica_fmi_ls_wasm_to_native"
 version = "0.1.0"
 dependencies = [
+ "openmodelica_ext_native",
  "wasmtime",
  "wasmtime-wasi",
 ]

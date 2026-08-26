@@ -689,9 +689,9 @@ wit_bindgen::generate!({
     world: "model-exchange-and-co-simulation-fmu",
     path: "wit",
     std_feature,
-    // The OpenModelica simulation interface is ours; the FMI ones come from the
-    // world's own package.
-    with: { "om:sim/simulation@0.1.0": generate },
+    // The OpenModelica interfaces are ours; the FMI ones come from the world's
+    // own package.
+    with: { "om:sim/simulation@0.1.0": generate, "om:ext/native@0.1.0": generate },
 });
 
 use exports::fmi::fmi3::common::Guest as CommonGuest;
@@ -1550,6 +1550,10 @@ impl CsGuest for Fmu {
 /// the me_cs build (the world that declares `om:sim/simulation`).
 #[cfg(all(feature = "me", feature = "cs"))]
 mod sim_run;
+// The host serves it in the C-API (linked) build, where the WIT import has no
+// canonical-ABI lowering to reach it through.
+#[cfg(all(feature = "me", feature = "cs", not(feature = "capi")))]
+mod native_ext;
 
 /// The same adapter reached as a core module rather than a component, so a host
 /// can compile it once and keep the artifact.

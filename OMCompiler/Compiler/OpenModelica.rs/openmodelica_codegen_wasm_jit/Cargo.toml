@@ -71,7 +71,7 @@ fmu-native = ["dep:wasmtime"]
 # Simulate an exported wasm artifact (`resimulateExecutable="M.fmu"`): the FMI
 # masters and the wasmtime component backend, so an artifact runs here without a
 # loader library. Native-only, and implies `fmu-native`'s wasmtime.
-artifact = ["fmu-native", "dep:openmodelica_fmi", "dep:openmodelica_fmi_driver"]
+artifact = ["fmu-native", "dep:openmodelica_fmi", "dep:openmodelica_fmi_driver", "dep:openmodelica_ext_native"]
 # SUNDIALS/KLU sparse solver for the wasm-jit runtimes (FMI/web).
 # CMake sets this via --features when RUST_OMC_ENABLE_SUNDIALS is ON; the
 # runtime's build.rs then links the precompiled wasm32-wasip1 archives.
@@ -83,6 +83,7 @@ sundials = []
 # Reading an exported FMU and driving its component with the FMI masters.
 openmodelica_fmi = { path = "../openmodelica_fmi", optional = true }
 openmodelica_fmi_driver = { path = "../openmodelica_fmi_driver", optional = true, features = ["component"] }
+openmodelica_ext_native = { path = "../openmodelica_ext_native", optional = true }
 wasmtime = { workspace = true, optional = true, features = [
   "cranelift", "all-arch", "component-model", "anyhow", "gc", "gc-null", "gc-drc",
 ] }

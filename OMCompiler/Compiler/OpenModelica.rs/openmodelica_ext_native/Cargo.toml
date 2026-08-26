@@ -1,0 +1,20 @@
+[package]
+name = "openmodelica_ext_native"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = []
+# Export `ModelicaError`, `ModelicaAllocateString` and friends for the libraries
+# to resolve against. Only for a host that has no other definition of them —
+# the FMU loader, not omc.
+utilities = []
+
+[dependencies]
+openmodelica_ext_native_marshal = { path = "../openmodelica_ext_native_marshal" }
+
+# Loading and calling is Unix-only for now; elsewhere every call reports that.
+[target.'cfg(unix)'.dependencies]
+libffi = "5"
+libc = "0.2"
+

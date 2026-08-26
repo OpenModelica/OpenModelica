@@ -232,6 +232,11 @@ openmodelica_error/Cargo.toml
 openmodelica_error/src/ErrorExt.rs
 openmodelica_error/src/ErrorTypes.rs
 openmodelica_error/src/lib.rs
+openmodelica_ext_native/Cargo.toml
+openmodelica_ext_native/src/lib.rs
+openmodelica_ext_native/src/utilities.rs
+openmodelica_ext_native_marshal/Cargo.toml
+openmodelica_ext_native_marshal/src/lib.rs
 openmodelica_fmi/Cargo.toml
 openmodelica_fmi/examples/fmuinfo.rs
 openmodelica_fmi/src/description.rs
@@ -247,7 +252,9 @@ openmodelica_fmi3_wasm/Cargo.lock
 openmodelica_fmi3_wasm/Cargo.toml
 openmodelica_fmi3_wasm/src/capi.rs
 openmodelica_fmi3_wasm/src/lib.rs
+openmodelica_fmi3_wasm/src/native_ext.rs
 openmodelica_fmi3_wasm/src/sim_run.rs
+openmodelica_fmi3_wasm/wit/deps/om-ext/native.wit
 openmodelica_fmi3_wasm/wit/deps/om-sim/simulation.wit
 openmodelica_fmi3_wasm/wit/fmi3-callbacks.wit
 openmodelica_fmi3_wasm/wit/fmi3-co-simulation.wit

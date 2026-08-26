@@ -390,9 +390,24 @@ pub fn prepare_native_externals(model: &SimModel, sigs: &[crate::sig::ExtCallSig
 #[derive(Default)]
 struct NativeExternals {
     handles: Vec<usize>,
+    /// The files behind `handles`, in load order.
+    paths: Vec<String>,
     loaded: bool,
     built_includes: bool,
     errors: Vec<String>,
+}
+
+/// The platform libraries that together define the model's host-served externals
+/// (`ext_native`), for an export to ship: the `Library` shared objects, the
+/// archives linked into one, the `Include` sources compiled into one.
+pub fn native_external_library_files(model: &SimModel) -> std::result::Result<Vec<String>, String> {
+    let mut native = NativeExternals::default();
+    for sig in &model.ext_native {
+        if native.resolve(&sig.name, model).is_none() {
+            return Err(unresolved_external_detail(&sig.name, model, &native.errors));
+        }
+    }
+    Ok(native.paths)
 }
 
 impl NativeExternals {
@@ -402,12 +417,18 @@ impl NativeExternals {
         }
         self.loaded = true;
         let (handles, errors) = openmodelica_util::dynload::load_external_libraries(&model.ext_native_libs);
+        if errors.is_empty() {
+            self.paths.extend(model.ext_native_libs.iter().cloned());
+        }
         self.handles = handles;
         self.errors = errors;
         if let Some(archives) = &model.ext_archives {
             match archives.link() {
                 Ok(path) => {
-                    let (h, errors) = openmodelica_util::dynload::load_external_libraries(&[path]);
+                    let (h, errors) = openmodelica_util::dynload::load_external_libraries(std::slice::from_ref(&path));
+                    if errors.is_empty() {
+                        self.paths.push(path);
+                    }
                     self.handles.extend(h);
                     self.errors.extend(errors);
                 }
@@ -454,8 +475,11 @@ impl NativeExternals {
             }
         };
         self.errors.extend(built.note);
-        let (handles, errors) = openmodelica_util::dynload::load_external_libraries(&[built.path]);
+        let (handles, errors) = openmodelica_util::dynload::load_external_libraries(std::slice::from_ref(&built.path));
         let loaded = !handles.is_empty();
+        if loaded {
+            self.paths.insert(0, built.path);
+        }
         self.handles.splice(0..0, handles);
         self.errors.extend(errors);
         loaded
@@ -1838,6 +1862,131 @@ pub struct DylinkFmu {
 pub struct ArtifactLib {
     pub name: String,
     pub bytes: Vec<u8>,
+    /// The same bytes in every artifact, so worth the on-disk `.cwasm` cache; a
+    /// per-model stub is not.
+    pub fixed: bool,
+}
+
+/// The stub module of an artifact's host-served externals (`om:ext/native`).
+pub const NATIVE_STUB: &str = "native_stub";
+
+/// The linked form's `om_ext_native_call`: the stub's frame is marshalled here on
+/// the host, out of the shared memory, and the platform libraries the artifact
+/// ships are called through libffi. A failure is a `ModelicaError` to the model.
+fn native_ext_host_import(
+    store: &mut Store,
+    engine: &wasmtime::Engine,
+    memory: wasmtime::Memory,
+    rt: &crate::dylink_engine::ExtRt,
+    resources: &str,
+) -> wasmtime::Func {
+    use openmodelica_ext_native::marshal::{self, Guest};
+    use openmodelica_ext_native::Natives;
+    use std::sync::{Arc, Mutex};
+
+    struct HostGuest<'a, 'b> {
+        caller: &'a mut wasmtime::Caller<'b, WasiCtx>,
+        memory: wasmtime::Memory,
+        alloc: wasmtime::TypedFunc<u32, u32>,
+        free: wasmtime::TypedFunc<u32, ()>,
+    }
+    impl HostGuest<'_, '_> {
+        fn word(&self, at: u32) -> u32 {
+            let m = self.memory.data(&*self.caller);
+            m.get(at as usize..at as usize + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap())).unwrap_or(0)
+        }
+    }
+    impl Guest for HostGuest<'_, '_> {
+        fn load_i32(&self, addr: u32) -> i32 {
+            self.word(addr) as i32
+        }
+        fn load_f64(&self, addr: u32) -> f64 {
+            let m = self.memory.data(&*self.caller);
+            m.get(addr as usize..addr as usize + 8).map(|b| f64::from_le_bytes(b.try_into().unwrap())).unwrap_or(0.0)
+        }
+        fn store_i32(&mut self, addr: u32, v: i32) {
+            let _ = self.memory.write(&mut *self.caller, addr as usize, &v.to_le_bytes());
+        }
+        fn store_f64(&mut self, addr: u32, v: f64) {
+            let _ = self.memory.write(&mut *self.caller, addr as usize, &v.to_le_bytes());
+        }
+        fn read(&self, addr: u32, len: u32) -> Vec<u8> {
+            self.memory.data(&*self.caller).get(addr as usize..(addr + len) as usize).map(<[u8]>::to_vec).unwrap_or_default()
+        }
+        fn write(&mut self, addr: u32, bytes: &[u8]) {
+            let _ = self.memory.write(&mut *self.caller, addr as usize, bytes);
+        }
+        fn str_len(&self, handle: u32) -> u32 {
+            self.word(handle + 4)
+        }
+        fn str_data(&self, handle: u32) -> u32 {
+            handle + 8
+        }
+        fn array_total(&self, handle: u32) -> u32 {
+            self.word(handle + 12)
+        }
+        fn array_data(&self, handle: u32) -> u32 {
+            let ndims = self.word(handle + 8);
+            handle + ((16 + ndims * 4 + 7) & !7)
+        }
+        fn alloc(&mut self, len: u32) -> u32 {
+            self.alloc.call(&mut *self.caller, len.max(1)).unwrap_or(0)
+        }
+        fn free(&mut self, addr: u32) {
+            let _ = self.free.call(&mut *self.caller, addr);
+        }
+    }
+
+    struct State {
+        natives: Option<std::result::Result<Natives, String>>,
+        table: Option<(u32, marshal::Table)>,
+        scratch: Vec<u32>,
+    }
+    let state = Arc::new(Mutex::new(State { natives: None, table: None, scratch: Vec::new() }));
+    let resources = std::path::PathBuf::from(resources);
+    let rt = rt.clone();
+    let ty = wasmtime::FuncType::new(engine, std::iter::repeat_n(wasmtime::ValType::I32, 4), []);
+    wasmtime::Func::new(store, ty, move |mut caller, args, _rets| {
+        let [index, frame, table, table_len] = [args[0].unwrap_i32() as u32, args[1].unwrap_i32() as u32, args[2].unwrap_i32() as u32, args[3].unwrap_i32() as u32];
+        let mut st = state.lock().unwrap_or_else(|e| e.into_inner());
+        let mut guest = HostGuest { caller: &mut caller, memory, alloc: rt.alloc.clone(), free: rt.free.clone() };
+        for p in std::mem::take(&mut st.scratch) {
+            guest.free(p);
+        }
+        let outcome = (|| -> std::result::Result<(), String> {
+            if st.table.as_ref().is_none_or(|(at, _)| *at != table) {
+                let text = guest.read(table, table_len);
+                st.table = Some((table, marshal::parse(std::str::from_utf8(&text).unwrap_or(""))?));
+            }
+            if st.natives.is_none() {
+                // omc's `ModelicaError` interception: the unwind `Natives::call` catches.
+                openmodelica_util::dynload::load_external_libraries(&[]);
+                openmodelica_ext_native::error::set_message_source(openmodelica_error::ErrorExt::take_last_runtime_error);
+                let table = &st.table.as_ref().unwrap().1;
+                let dir = resources
+                    .parent()
+                    .and_then(openmodelica_ext_native::binaries_dir)
+                    .ok_or("the artifact has no binaries/ directory for this platform")?;
+                st.natives = Some(Natives::open(table, &dir));
+            }
+            let State { natives, table: parsed, scratch } = &mut *st;
+            let natives = natives.as_mut().unwrap().as_mut().map_err(|e| e.clone())?;
+            let sig = parsed.as_ref().and_then(|(_, t)| t.fns.get(index as usize)).ok_or("native externals: no such function")?;
+            let args = marshal::gather(sig, frame, &guest)?;
+            let results = natives.call(index, &args)?;
+            marshal::scatter(sig, frame, &results, &mut guest, scratch)
+        })();
+        match outcome {
+            Ok(()) => Ok(()),
+            Err(msg) => {
+                let p = guest.alloc(msg.len() as u32 + 1);
+                guest.write(p, msg.as_bytes());
+                guest.write(p + msg.len() as u32, &[0]);
+                drop(st);
+                crate::dylink_engine::raise_model_error(&rt.nls, &mut caller, p as i32)
+            }
+        }
+    })
 }
 
 impl DylinkFmu {
@@ -1906,9 +2055,7 @@ impl DylinkFmu {
             ext_libs.push(Library::builtin("libc.so", libc));
         }
         for l in ext {
-            // Fixed: the artifact holds the same bytes every run, so they are worth
-            // the on-disk `.cwasm` rather than a compile per instantiation.
-            ext_libs.push(Library { name: l.name.clone(), bytes: l.bytes.clone(), fixed: true });
+            ext_libs.push(Library { name: l.name.clone(), bytes: l.bytes.clone(), fixed: l.fixed });
         }
         if external_c {
             ext_libs.push(Library::builtin("modelicaexternalc", openmodelica_wasi_libc::EXTERNAL_C_DYLINK));
@@ -1921,7 +2068,13 @@ impl DylinkFmu {
         }
         let model_module = wts(wasmtime::Module::new(engine, model))?;
         if !ext_libs.is_empty() {
-            let utilities = crate::dylink_engine::modelica_utilities_imports(&mut store, &ext_rt);
+            let mut utilities = crate::dylink_engine::modelica_utilities_imports(&mut store, &ext_rt);
+            if ext.iter().any(|l| l.name == NATIVE_STUB) {
+                utilities.insert(
+                    "om_ext_native_call".to_string(),
+                    native_ext_host_import(&mut store, engine, memory, &ext_rt, resources),
+                );
+            }
             let libs = crate::dylink_engine::load(
                 &mut store,
                 engine,
