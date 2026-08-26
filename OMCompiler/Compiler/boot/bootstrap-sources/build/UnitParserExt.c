@@ -1,8 +1,3 @@
-#ifdef OMC_BASE_FILE
-#define OMC_FILE OMC_BASE_FILE
-#else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/UnitParserExt.c"
-#endif
 #include "omc_simulation_settings.h"
 #include "UnitParserExt.h"
 #include "util/modelica.h"
@@ -30,7 +25,7 @@ return;
 void omc_UnitParserExt_addDerivedWeight(threadData_t *threadData, modelica_string _name, modelica_string _exp, modelica_real _weight)
 {
 double _weight_ext;
-_weight_ext = (double)_weight;
+_weight_ext = (double) _weight;
 UnitParserExtImpl__addDerivedWeight(MMC_STRINGDATA(_name), MMC_STRINGDATA(_exp), _weight_ext);
 return;
 }
@@ -49,7 +44,7 @@ return;
 void omc_UnitParserExt_registerWeight(threadData_t *threadData, modelica_string _name, modelica_real _weight)
 {
 double _weight_ext;
-_weight_ext = (double)_weight;
+_weight_ext = (double) _weight;
 UnitParserExtImpl__registerWeight(MMC_STRINGDATA(_name), _weight_ext);
 return;
 }
@@ -126,13 +121,13 @@ double _scaleFactor_ext;
 double _offset_ext;
 const char* _res_ext;
 modelica_string _res = NULL;
-_noms_ext = (modelica_metatype)_noms;
-_denoms_ext = (modelica_metatype)_denoms;
-_tpnoms_ext = (modelica_metatype)_tpnoms;
-_tpdenoms_ext = (modelica_metatype)_tpdenoms;
-_tpstrs_ext = (modelica_metatype)_tpstrs;
-_scaleFactor_ext = (double)_scaleFactor;
-_offset_ext = (double)_offset;
+_noms_ext = (modelica_metatype) _noms;
+_denoms_ext = (modelica_metatype) _denoms;
+_tpnoms_ext = (modelica_metatype) _tpnoms;
+_tpdenoms_ext = (modelica_metatype) _tpdenoms;
+_tpstrs_ext = (modelica_metatype) _tpstrs;
+_scaleFactor_ext = (double) _scaleFactor;
+_offset_ext = (double) _offset;
 _res_ext = UnitParserExt_unit2str(_noms_ext, _denoms_ext, _tpnoms_ext, _tpdenoms_ext, _tpstrs_ext, _scaleFactor_ext, _offset_ext);
 _res = (modelica_string)mmc_mk_scon(_res_ext);
 return _res;

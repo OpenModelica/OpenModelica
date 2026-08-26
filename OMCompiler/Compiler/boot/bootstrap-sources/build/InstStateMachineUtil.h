@@ -8,19 +8,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-DLLExport
+DLLDirection
 modelica_metatype omc_InstStateMachineUtil_wrapSMCompsInFlatSMs(threadData_t *threadData, modelica_metatype _inIH, modelica_metatype _inDae1, modelica_metatype _inDae2, modelica_integer _smNodeToFlatSMGroup, modelica_metatype _smInitialCrefs, modelica_metatype *out_outDae2);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_InstStateMachineUtil_wrapSMCompsInFlatSMs(threadData_t *threadData, modelica_metatype _inIH, modelica_metatype _inDae1, modelica_metatype _inDae2, modelica_metatype _smNodeToFlatSMGroup, modelica_metatype _smInitialCrefs, modelica_metatype *out_outDae2);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_InstStateMachineUtil_wrapSMCompsInFlatSMs,2,0) {(void*) boxptr_InstStateMachineUtil_wrapSMCompsInFlatSMs,0}};
 #define boxvar_InstStateMachineUtil_wrapSMCompsInFlatSMs MMC_REFSTRUCTLIT(boxvar_lit_InstStateMachineUtil_wrapSMCompsInFlatSMs)
-DLLExport
+DLLDirection
 modelica_integer omc_InstStateMachineUtil_createSMNodeToFlatSMGroupTable(threadData_t *threadData, modelica_metatype _inDae);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_InstStateMachineUtil_createSMNodeToFlatSMGroupTable(threadData_t *threadData, modelica_metatype _inDae);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_InstStateMachineUtil_createSMNodeToFlatSMGroupTable,2,0) {(void*) boxptr_InstStateMachineUtil_createSMNodeToFlatSMGroupTable,0}};
 #define boxvar_InstStateMachineUtil_createSMNodeToFlatSMGroupTable MMC_REFSTRUCTLIT(boxvar_lit_InstStateMachineUtil_createSMNodeToFlatSMGroupTable)
-DLLExport
+DLLDirection
 modelica_metatype omc_InstStateMachineUtil_getSMStatesInContext(threadData_t *threadData, modelica_metatype _eqns, modelica_metatype _inPrefix, modelica_metatype *out_initialStates);
 #define boxptr_InstStateMachineUtil_getSMStatesInContext omc_InstStateMachineUtil_getSMStatesInContext
 static const MMC_DEFSTRUCTLIT(boxvar_lit_InstStateMachineUtil_getSMStatesInContext,2,0) {(void*) boxptr_InstStateMachineUtil_getSMStatesInContext,0}};

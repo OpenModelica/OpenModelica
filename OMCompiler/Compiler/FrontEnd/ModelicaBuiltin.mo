@@ -1044,7 +1044,7 @@ record CheckSettingsResult
   String MODELICAUSERCFLAGS, WORKING_DIRECTORY;
   Boolean CREATE_FILE_WORKS, REMOVE_FILE_WORKS;
   String OS, SYSTEM_INFO, SENDDATALIBS, C_COMPILER, C_COMPILER_VERSION;
-  Boolean C_COMPILER_RESPONDING, HAVE_CORBA;
+  Boolean C_COMPILER_RESPONDING;
   String CONFIGURE_CMDLINE;
 annotation(preferredView="text");
 end CheckSettingsResult;
@@ -2172,24 +2172,6 @@ function getLanguageStandard "Returns the current Modelica Language Standard in 
 external "builtin";
 annotation(preferredView="text");
 end getLanguageStandard;
-
-function getAstAsCorbaString
-  "Returns the AST in CORBA format."
-  input String fileName = "<interactive>";
-  output String result "returns the string if fileName is interactive; else it returns ok or error depending on if writing the file succeeded";
-external "builtin";
-annotation(Documentation(info="<html>
-<p>Prints the whole AST on the CORBA format for records, e.g.:
-<pre>
-  record Absyn.PROGRAM
-    classes = ...,
-    within_ = ...,
-  end Absyn.PROGRAM;
-</pre>
-</p>
-</html>"),
-  preferredView="text");
-end getAstAsCorbaString;
 
 function cd
   "Changes the working directory."

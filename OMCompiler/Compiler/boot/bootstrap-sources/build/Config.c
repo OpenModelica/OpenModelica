@@ -1,11 +1,6 @@
-#ifdef OMC_BASE_FILE
-#define OMC_FILE OMC_BASE_FILE
-#else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Config.c"
-#endif
 #include "omc_simulation_settings.h"
 #include "Config.h"
-#define _OMC_LIT0_data "flatModelica"
+#define _OMC_LIT0_data "baseModelica"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT0,12,_OMC_LIT0_data);
 #define _OMC_LIT0 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT0)
 #define _OMC_LIT1_data "f"
@@ -15,208 +10,215 @@ static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT2,1,1) {_OMC_LIT1}};
 #define _OMC_LIT2 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT2)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT3,1,4) {&Flags_FlagVisibility_EXTERNAL__desc,}};
 #define _OMC_LIT3 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT3)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT4,2,4) {&Flags_FlagData_BOOL__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(0))}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT4,2,4) {&Flags_FlagData_BOOL__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(0 /* false */))}};
 #define _OMC_LIT4 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT4)
-#define _OMC_LIT5_data "Outputs experimental flat Modelica."
+#define _OMC_LIT5_data "Outputs experimental Base Modelica."
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT5,35,_OMC_LIT5_data);
 #define _OMC_LIT5 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT5)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT6,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT5}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT6,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(133)),_OMC_LIT0,_OMC_LIT2,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT5}};
 #define _OMC_LIT6 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT6)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT7,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(141)),_OMC_LIT0,_OMC_LIT2,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT6}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT7,1,8) {&ErrorTypes_MessageType_SCRIPTING__desc,}};
 #define _OMC_LIT7 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT7)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT8,1,8) {&ErrorTypes_MessageType_SCRIPTING__desc,}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT8,1,5) {&ErrorTypes_Severity_WARNING__desc,}};
 #define _OMC_LIT8 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT8)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT9,1,5) {&ErrorTypes_Severity_WARNING__desc,}};
-#define _OMC_LIT9 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT9)
-#define _OMC_LIT10_data "Flag %s ignored: %s."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT10,20,_OMC_LIT10_data);
-#define _OMC_LIT10 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT10)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT11,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT10}};
-#define _OMC_LIT11 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT11)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT12,5,3) {&ErrorTypes_Message_MESSAGE__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(364)),_OMC_LIT8,_OMC_LIT9,_OMC_LIT11}};
-#define _OMC_LIT12 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT12)
-#define _OMC_LIT13_data "-f"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT13,2,_OMC_LIT13_data);
-#define _OMC_LIT13 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT13)
-#define _OMC_LIT14_data "flat modelica requires flag -d=newInst to be set"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT14,48,_OMC_LIT14_data);
-#define _OMC_LIT14 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT14)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT15,2,1) {_OMC_LIT14,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT15 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT15)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT16,2,1) {_OMC_LIT13,_OMC_LIT15}};
-#define _OMC_LIT16 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT16)
-#define _OMC_LIT17_data "newInst"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT17,7,_OMC_LIT17_data);
-#define _OMC_LIT17 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT17)
-#define _OMC_LIT18_data "Enables experimental new instantiation phase."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT18,45,_OMC_LIT18_data);
+#define _OMC_LIT9_data "Flag %s ignored: %s."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT9,20,_OMC_LIT9_data);
+#define _OMC_LIT9 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT9)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT10,5,3) {&ErrorTypes_Message_MESSAGE__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(364)),_OMC_LIT7,_OMC_LIT8,_OMC_LIT9}};
+#define _OMC_LIT10 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT10)
+#define _OMC_LIT11_data "-f"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT11,2,_OMC_LIT11_data);
+#define _OMC_LIT11 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT11)
+#define _OMC_LIT12_data "flat modelica requires flag -d=newInst to be set"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT12,48,_OMC_LIT12_data);
+#define _OMC_LIT12 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT12)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT13,2,1) {_OMC_LIT12,MMC_REFSTRUCTLIT(mmc_nil)}};
+#define _OMC_LIT13 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT13)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT14,2,1) {_OMC_LIT11,_OMC_LIT13}};
+#define _OMC_LIT14 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT14)
+#define _OMC_LIT15_data "newInst"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT15,7,_OMC_LIT15_data);
+#define _OMC_LIT15 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT15)
+#define _OMC_LIT16_data "Enables new instantiation phase."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT16,32,_OMC_LIT16_data);
+#define _OMC_LIT16 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT16)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT17,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(65)),_OMC_LIT15,MMC_IMMEDIATE(MMC_TAGFIXNUM(1 /* true */)),_OMC_LIT16}};
+#define _OMC_LIT17 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT17)
+#define _OMC_LIT18_data "replaceHomotopy"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT18,15,_OMC_LIT18_data);
 #define _OMC_LIT18 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT18)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT19,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT18}};
-#define _OMC_LIT19 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT19)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT20,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(67)),_OMC_LIT17,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT19}};
+#define _OMC_LIT19_data "none"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT19,4,_OMC_LIT19_data);
+#define _OMC_LIT19 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT19)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT20,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT19}};
 #define _OMC_LIT20 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT20)
-#define _OMC_LIT21_data "homotopyApproach"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT21,16,_OMC_LIT21_data);
+#define _OMC_LIT21_data "Default, do not replace homotopy."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT21,33,_OMC_LIT21_data);
 #define _OMC_LIT21 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT21)
-#define _OMC_LIT22_data "equidistantGlobal"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT22,17,_OMC_LIT22_data);
-#define _OMC_LIT22 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT22)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT23,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT22}};
-#define _OMC_LIT23 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT23)
-#define _OMC_LIT24_data "equidistantLocal"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT24,16,_OMC_LIT24_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT22,2,0) {_OMC_LIT19,_OMC_LIT21}};
+#define _OMC_LIT22 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT22)
+#define _OMC_LIT23_data "actual"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT23,6,_OMC_LIT23_data);
+#define _OMC_LIT23 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT23)
+#define _OMC_LIT24_data "Replace homotopy(actual, simplified) with actual."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT24,49,_OMC_LIT24_data);
 #define _OMC_LIT24 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT24)
-#define _OMC_LIT25_data "Local homotopy approach with equidistant lambda steps. The homotopy parameter only effects the local strongly connected component."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT25,130,_OMC_LIT25_data);
-#define _OMC_LIT25 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT25)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT26,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT25}};
-#define _OMC_LIT26 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT26)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT27,2,0) {_OMC_LIT24,_OMC_LIT26}};
-#define _OMC_LIT27 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT27)
-#define _OMC_LIT28_data "adaptiveLocal"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT28,13,_OMC_LIT28_data);
-#define _OMC_LIT28 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT28)
-#define _OMC_LIT29_data "Local homotopy approach with adaptive lambda steps. The homotopy parameter only effects the local strongly connected component."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT29,127,_OMC_LIT29_data);
-#define _OMC_LIT29 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT29)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT30,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT29}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT25,2,0) {_OMC_LIT23,_OMC_LIT24}};
+#define _OMC_LIT25 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT25)
+#define _OMC_LIT26_data "simplified"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT26,10,_OMC_LIT26_data);
+#define _OMC_LIT26 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT26)
+#define _OMC_LIT27_data "Replace homotopy(actual, simplified) with simplified."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT27,53,_OMC_LIT27_data);
+#define _OMC_LIT27 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT27)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT28,2,0) {_OMC_LIT26,_OMC_LIT27}};
+#define _OMC_LIT28 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT28)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT29,2,1) {_OMC_LIT28,MMC_REFSTRUCTLIT(mmc_nil)}};
+#define _OMC_LIT29 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT29)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT30,2,1) {_OMC_LIT25,_OMC_LIT29}};
 #define _OMC_LIT30 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT30)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT31,2,0) {_OMC_LIT28,_OMC_LIT30}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT31,2,1) {_OMC_LIT22,_OMC_LIT30}};
 #define _OMC_LIT31 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT31)
-#define _OMC_LIT32_data "Default, global homotopy approach with equidistant lambda steps. The homotopy parameter effects the entire initialization system."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT32,129,_OMC_LIT32_data);
-#define _OMC_LIT32 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT32)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT33,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT32}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT32,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT31}};
+#define _OMC_LIT32 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT32)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT33,1,1) {_OMC_LIT32}};
 #define _OMC_LIT33 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT33)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT34,2,0) {_OMC_LIT22,_OMC_LIT33}};
-#define _OMC_LIT34 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT34)
-#define _OMC_LIT35_data "adaptiveGlobal"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT35,14,_OMC_LIT35_data);
-#define _OMC_LIT35 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT35)
-#define _OMC_LIT36_data "Global homotopy approach with adaptive lambda steps. The homotopy parameter effects the entire initialization system."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT36,117,_OMC_LIT36_data);
+#define _OMC_LIT34_data "Replaces homotopy(actual, simplified) with the actual expression or the simplified expression. Good for debugging models which use homotopy. The default is to not replace homotopy."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT34,180,_OMC_LIT34_data);
+#define _OMC_LIT34 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT34)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT35,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(48)),_OMC_LIT18,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT20,_OMC_LIT33,_OMC_LIT34}};
+#define _OMC_LIT35 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT35)
+#define _OMC_LIT36_data "homotopyApproach"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT36,16,_OMC_LIT36_data);
 #define _OMC_LIT36 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT36)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT37,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT36}};
-#define _OMC_LIT37 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT37)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT38,2,0) {_OMC_LIT35,_OMC_LIT37}};
+#define _OMC_LIT37_data "equidistantGlobal"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT37,17,_OMC_LIT37_data);
+#define _OMC_LIT37 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT37)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT38,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT37}};
 #define _OMC_LIT38 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT38)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT39,2,1) {_OMC_LIT38,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT39 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT39)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT40,2,1) {_OMC_LIT34,_OMC_LIT39}};
-#define _OMC_LIT40 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT40)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT41,2,1) {_OMC_LIT31,_OMC_LIT40}};
+#define _OMC_LIT39_data "equidistantLocal"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT39,16,_OMC_LIT39_data);
+#define _OMC_LIT39 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT39)
+#define _OMC_LIT40_data "Local homotopy approach with equidistant lambda steps. The homotopy parameter only effects the local strongly connected component."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT40,130,_OMC_LIT40_data);
+#define _OMC_LIT40 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT40)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT41,2,0) {_OMC_LIT39,_OMC_LIT40}};
 #define _OMC_LIT41 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT41)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT42,2,1) {_OMC_LIT27,_OMC_LIT41}};
-#define _OMC_LIT42 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT42)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT43,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT42}};
-#define _OMC_LIT43 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT43)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT44,1,1) {_OMC_LIT43}};
+#define _OMC_LIT42_data "adaptiveLocal"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT42,13,_OMC_LIT42_data);
+#define _OMC_LIT42 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT42)
+#define _OMC_LIT43_data "Local homotopy approach with adaptive lambda steps. The homotopy parameter only effects the local strongly connected component."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT43,127,_OMC_LIT43_data);
+#define _OMC_LIT43 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT43)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT44,2,0) {_OMC_LIT42,_OMC_LIT43}};
 #define _OMC_LIT44 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT44)
-#define _OMC_LIT45_data "Sets the homotopy approach."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT45,27,_OMC_LIT45_data);
+#define _OMC_LIT45_data "Default, global homotopy approach with equidistant lambda steps. The homotopy parameter effects the entire initialization system."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT45,129,_OMC_LIT45_data);
 #define _OMC_LIT45 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT45)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT46,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT45}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT46,2,0) {_OMC_LIT37,_OMC_LIT45}};
 #define _OMC_LIT46 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT46)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT47,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(116)),_OMC_LIT21,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT23,_OMC_LIT44,_OMC_LIT46}};
-#define _OMC_LIT47 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT47)
-#define _OMC_LIT48_data "ignoreCommandLineOptionsAnnotation"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT48,34,_OMC_LIT48_data);
+#define _OMC_LIT47_data "adaptiveGlobal"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT47,14,_OMC_LIT47_data);
+#define _OMC_LIT47 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT47)
+#define _OMC_LIT48_data "Global homotopy approach with adaptive lambda steps. The homotopy parameter effects the entire initialization system."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT48,117,_OMC_LIT48_data);
 #define _OMC_LIT48 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT48)
-#define _OMC_LIT49_data "Ignores the command line options specified as annotation in the class."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT49,70,_OMC_LIT49_data);
-#define _OMC_LIT49 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT49)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT50,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT49}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT49,2,0) {_OMC_LIT47,_OMC_LIT48}};
+#define _OMC_LIT49 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT49)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT50,2,1) {_OMC_LIT49,MMC_REFSTRUCTLIT(mmc_nil)}};
 #define _OMC_LIT50 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT50)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT51,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(99)),_OMC_LIT48,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT50}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT51,2,1) {_OMC_LIT46,_OMC_LIT50}};
 #define _OMC_LIT51 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT51)
-#define _OMC_LIT52_data "dynamicTearing"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT52,14,_OMC_LIT52_data);
-#define _OMC_LIT52 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT52)
-#define _OMC_LIT53_data "false"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT53,5,_OMC_LIT53_data);
-#define _OMC_LIT53 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT53)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT54,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT53}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT52,2,1) {_OMC_LIT44,_OMC_LIT51}};
+#define _OMC_LIT52 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT52)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT53,2,1) {_OMC_LIT41,_OMC_LIT52}};
+#define _OMC_LIT53 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT53)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT54,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT53}};
 #define _OMC_LIT54 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT54)
-#define _OMC_LIT55_data "No dynamic tearing."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT55,19,_OMC_LIT55_data);
-#define _OMC_LIT55 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT55)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT56,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT55}};
-#define _OMC_LIT56 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT56)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT57,2,0) {_OMC_LIT53,_OMC_LIT56}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT55,1,1) {_OMC_LIT54}};
+#define _OMC_LIT55 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT55)
+#define _OMC_LIT56_data "Sets the homotopy approach."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT56,27,_OMC_LIT56_data);
+#define _OMC_LIT56 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT56)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT57,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(106)),_OMC_LIT36,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT38,_OMC_LIT55,_OMC_LIT56}};
 #define _OMC_LIT57 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT57)
-#define _OMC_LIT58_data "true"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT58,4,_OMC_LIT58_data);
+#define _OMC_LIT58_data "ignoreCommandLineOptionsAnnotation"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT58,34,_OMC_LIT58_data);
 #define _OMC_LIT58 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT58)
-#define _OMC_LIT59_data "Dynamic tearing for linear and nonlinear systems."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT59,49,_OMC_LIT59_data);
+#define _OMC_LIT59_data "Ignores the command line options specified as annotation in the class."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT59,70,_OMC_LIT59_data);
 #define _OMC_LIT59 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT59)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT60,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT59}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT60,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(89)),_OMC_LIT58,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT59}};
 #define _OMC_LIT60 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT60)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT61,2,0) {_OMC_LIT58,_OMC_LIT60}};
-#define _OMC_LIT61 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT61)
-#define _OMC_LIT62_data "linear"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT62,6,_OMC_LIT62_data);
+#define _OMC_LIT61_data "dynamicTearing"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT61,14,_OMC_LIT61_data);
+#define _OMC_LIT61 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT61)
+#define _OMC_LIT62_data "false"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT62,5,_OMC_LIT62_data);
 #define _OMC_LIT62 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT62)
-#define _OMC_LIT63_data "Dynamic tearing only for linear systems."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT63,40,_OMC_LIT63_data);
-#define _OMC_LIT63 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT63)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT64,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT63}};
-#define _OMC_LIT64 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT64)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT63,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT62}};
+#define _OMC_LIT63 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT63)
+#define _OMC_LIT64_data "No dynamic tearing."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT64,19,_OMC_LIT64_data);
+#define _OMC_LIT64 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT64)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT65,2,0) {_OMC_LIT62,_OMC_LIT64}};
 #define _OMC_LIT65 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT65)
-#define _OMC_LIT66_data "nonlinear"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT66,9,_OMC_LIT66_data);
+#define _OMC_LIT66_data "true"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT66,4,_OMC_LIT66_data);
 #define _OMC_LIT66 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT66)
-#define _OMC_LIT67_data "Dynamic tearing only for nonlinear systems."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT67,43,_OMC_LIT67_data);
+#define _OMC_LIT67_data "Dynamic tearing for linear and nonlinear systems."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT67,49,_OMC_LIT67_data);
 #define _OMC_LIT67 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT67)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT68,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT67}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT68,2,0) {_OMC_LIT66,_OMC_LIT67}};
 #define _OMC_LIT68 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT68)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT69,2,0) {_OMC_LIT66,_OMC_LIT68}};
-#define _OMC_LIT69 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT69)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT70,2,1) {_OMC_LIT69,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT70 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT70)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT71,2,1) {_OMC_LIT65,_OMC_LIT70}};
+#define _OMC_LIT69_data "linear"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT69,6,_OMC_LIT69_data);
+#define _OMC_LIT69 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT69)
+#define _OMC_LIT70_data "Dynamic tearing only for linear systems."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT70,40,_OMC_LIT70_data);
+#define _OMC_LIT70 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT70)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT71,2,0) {_OMC_LIT69,_OMC_LIT70}};
 #define _OMC_LIT71 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT71)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT72,2,1) {_OMC_LIT61,_OMC_LIT71}};
-#define _OMC_LIT72 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT72)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT73,2,1) {_OMC_LIT57,_OMC_LIT72}};
-#define _OMC_LIT73 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT73)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT74,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT73}};
+#define _OMC_LIT72_data "nonlinear"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT72,9,_OMC_LIT72_data);
+#define _OMC_LIT72 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT72)
+#define _OMC_LIT73_data "Dynamic tearing only for nonlinear systems."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT73,43,_OMC_LIT73_data);
+#define _OMC_LIT73 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT73)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT74,2,0) {_OMC_LIT72,_OMC_LIT73}};
 #define _OMC_LIT74 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT74)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT75,1,1) {_OMC_LIT74}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT75,2,1) {_OMC_LIT74,MMC_REFSTRUCTLIT(mmc_nil)}};
 #define _OMC_LIT75 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT75)
-#define _OMC_LIT76_data "Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT76,110,_OMC_LIT76_data);
-#define _OMC_LIT76 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT76)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT77,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT76}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT76,2,1) {_OMC_LIT71,_OMC_LIT75}};
+#define _OMC_LIT76 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT76)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT77,2,1) {_OMC_LIT68,_OMC_LIT76}};
 #define _OMC_LIT77 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT77)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT78,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(67)),_OMC_LIT52,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT54,_OMC_LIT75,_OMC_LIT77}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT78,2,1) {_OMC_LIT65,_OMC_LIT77}};
 #define _OMC_LIT78 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT78)
-#define _OMC_LIT79_data "profiling"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT79,9,_OMC_LIT79_data);
-#define _OMC_LIT79 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT79)
-#define _OMC_LIT80_data "none"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT80,4,_OMC_LIT80_data);
-#define _OMC_LIT80 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT80)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT81,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT80}};
-#define _OMC_LIT81 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT81)
-#define _OMC_LIT82_data "Generate code without profiling"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT82,31,_OMC_LIT82_data);
-#define _OMC_LIT82 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT82)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT83,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT82}};
-#define _OMC_LIT83 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT83)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT84,2,0) {_OMC_LIT80,_OMC_LIT83}};
-#define _OMC_LIT84 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT84)
-#define _OMC_LIT85_data "blocks"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT85,6,_OMC_LIT85_data);
-#define _OMC_LIT85 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT85)
-#define _OMC_LIT86_data "Generate code for profiling function calls as well as linear and non-linear systems of equations"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT86,96,_OMC_LIT86_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT79,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT78}};
+#define _OMC_LIT79 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT79)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT80,1,1) {_OMC_LIT79}};
+#define _OMC_LIT80 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT80)
+#define _OMC_LIT81_data "Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT81,110,_OMC_LIT81_data);
+#define _OMC_LIT81 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT81)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT82,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(58)),_OMC_LIT61,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT63,_OMC_LIT80,_OMC_LIT81}};
+#define _OMC_LIT82 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT82)
+#define _OMC_LIT83_data "profiling"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT83,9,_OMC_LIT83_data);
+#define _OMC_LIT83 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT83)
+#define _OMC_LIT84_data "Generate code without profiling"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT84,31,_OMC_LIT84_data);
+#define _OMC_LIT84 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT84)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT85,2,0) {_OMC_LIT19,_OMC_LIT84}};
+#define _OMC_LIT85 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT85)
+#define _OMC_LIT86_data "blocks"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT86,6,_OMC_LIT86_data);
 #define _OMC_LIT86 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT86)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT87,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT86}};
-#define _OMC_LIT87 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT87)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT88,2,0) {_OMC_LIT85,_OMC_LIT87}};
+#define _OMC_LIT87_data "Generate code for profiling function calls as well as linear and non-linear systems of equations"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT87,96,_OMC_LIT87_data);
+#define _OMC_LIT87 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT87)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT88,2,0) {_OMC_LIT86,_OMC_LIT87}};
 #define _OMC_LIT88 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT88)
 #define _OMC_LIT89_data "blocks+html"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT89,11,_OMC_LIT89_data);
@@ -224,382 +226,380 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT89,11,_OMC_LIT89_data);
 #define _OMC_LIT90_data "Like blocks, but also run xsltproc and gnuplot to generate an html report"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT90,73,_OMC_LIT90_data);
 #define _OMC_LIT90 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT90)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT91,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT90}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT91,2,0) {_OMC_LIT89,_OMC_LIT90}};
 #define _OMC_LIT91 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT91)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT92,2,0) {_OMC_LIT89,_OMC_LIT91}};
-#define _OMC_LIT92 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT92)
-#define _OMC_LIT93_data "all"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT93,3,_OMC_LIT93_data);
+#define _OMC_LIT92_data "all"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT92,3,_OMC_LIT92_data);
+#define _OMC_LIT92 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT92)
+#define _OMC_LIT93_data "Generate code for profiling of all functions and equations"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT93,58,_OMC_LIT93_data);
 #define _OMC_LIT93 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT93)
-#define _OMC_LIT94_data "Generate code for profiling of all functions and equations"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT94,58,_OMC_LIT94_data);
-#define _OMC_LIT94 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT94)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT95,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT94}};
-#define _OMC_LIT95 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT95)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT96,2,0) {_OMC_LIT93,_OMC_LIT95}};
-#define _OMC_LIT96 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT96)
-#define _OMC_LIT97_data "all_perf"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT97,8,_OMC_LIT97_data);
-#define _OMC_LIT97 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT97)
-#define _OMC_LIT98_data "Generate code for profiling of all functions and equations with additional performance data using the papi-interface (cpp-runtime)"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT98,130,_OMC_LIT98_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT94,2,0) {_OMC_LIT92,_OMC_LIT93}};
+#define _OMC_LIT94 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT94)
+#define _OMC_LIT95_data "all_perf"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT95,8,_OMC_LIT95_data);
+#define _OMC_LIT95 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT95)
+#define _OMC_LIT96_data "Generate code for profiling of all functions and equations with additional performance data using the papi-interface (cpp-runtime)"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT96,130,_OMC_LIT96_data);
+#define _OMC_LIT96 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT96)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT97,2,0) {_OMC_LIT95,_OMC_LIT96}};
+#define _OMC_LIT97 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT97)
+#define _OMC_LIT98_data "all_stat"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT98,8,_OMC_LIT98_data);
 #define _OMC_LIT98 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT98)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT99,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT98}};
-#define _OMC_LIT99 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT99)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT100,2,0) {_OMC_LIT97,_OMC_LIT99}};
+#define _OMC_LIT99_data "Generate code for profiling of all functions and equations with additional statistics (cpp-runtime)"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT99,99,_OMC_LIT99_data);
+#define _OMC_LIT99 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT99)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT100,2,0) {_OMC_LIT98,_OMC_LIT99}};
 #define _OMC_LIT100 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT100)
-#define _OMC_LIT101_data "all_stat"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT101,8,_OMC_LIT101_data);
-#define _OMC_LIT101 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT101)
-#define _OMC_LIT102_data "Generate code for profiling of all functions and equations with additional statistics (cpp-runtime)"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT102,99,_OMC_LIT102_data);
-#define _OMC_LIT102 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT102)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT103,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT102}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT101,2,1) {_OMC_LIT100,MMC_REFSTRUCTLIT(mmc_nil)}};
+#define _OMC_LIT101 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT101)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT102,2,1) {_OMC_LIT97,_OMC_LIT101}};
+#define _OMC_LIT102 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT102)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT103,2,1) {_OMC_LIT94,_OMC_LIT102}};
 #define _OMC_LIT103 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT103)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT104,2,0) {_OMC_LIT101,_OMC_LIT103}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT104,2,1) {_OMC_LIT91,_OMC_LIT103}};
 #define _OMC_LIT104 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT104)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT105,2,1) {_OMC_LIT104,MMC_REFSTRUCTLIT(mmc_nil)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT105,2,1) {_OMC_LIT88,_OMC_LIT104}};
 #define _OMC_LIT105 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT105)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT106,2,1) {_OMC_LIT100,_OMC_LIT105}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT106,2,1) {_OMC_LIT85,_OMC_LIT105}};
 #define _OMC_LIT106 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT106)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT107,2,1) {_OMC_LIT96,_OMC_LIT106}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT107,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT106}};
 #define _OMC_LIT107 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT107)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT108,2,1) {_OMC_LIT92,_OMC_LIT107}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT108,1,1) {_OMC_LIT107}};
 #define _OMC_LIT108 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT108)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT109,2,1) {_OMC_LIT88,_OMC_LIT108}};
-#define _OMC_LIT109 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT109)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT110,2,1) {_OMC_LIT84,_OMC_LIT109}};
+#define _OMC_LIT109_data "Sets the profiling level to use. Profiled equations and functions record execution time and count for each time step taken by the integrator."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT109,141,_OMC_LIT109_data);
+#define _OMC_LIT109 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT109)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT110,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(52)),_OMC_LIT83,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT20,_OMC_LIT108,_OMC_LIT109}};
 #define _OMC_LIT110 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT110)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT111,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT110}};
-#define _OMC_LIT111 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT111)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT112,1,1) {_OMC_LIT111}};
-#define _OMC_LIT112 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT112)
-#define _OMC_LIT113_data "Sets the profiling level to use. Profiled equations and functions record execution time and count for each time step taken by the integrator."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT113,141,_OMC_LIT113_data);
-#define _OMC_LIT113 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT113)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT114,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT113}};
-#define _OMC_LIT114 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT114)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT115,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(58)),_OMC_LIT79,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT81,_OMC_LIT112,_OMC_LIT114}};
-#define _OMC_LIT115 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT115)
-#define _OMC_LIT116_data "intEnumConversion"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT116,17,_OMC_LIT116_data);
-#define _OMC_LIT116 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT116)
-#define _OMC_LIT117_data "Allow Integer to enumeration conversion."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT117,40,_OMC_LIT117_data);
+#define _OMC_LIT111_data "intEnumConversion"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT111,17,_OMC_LIT111_data);
+#define _OMC_LIT111 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT111)
+#define _OMC_LIT112_data "Allow Integer to enumeration conversion."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT112,40,_OMC_LIT112_data);
+#define _OMC_LIT112 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT112)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT113,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(51)),_OMC_LIT111,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT112}};
+#define _OMC_LIT113 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT113)
+#define _OMC_LIT114_data "scalarizeBindings"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT114,17,_OMC_LIT114_data);
+#define _OMC_LIT114 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT114)
+#define _OMC_LIT115_data "Always scalarizes bindings if set."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT115,34,_OMC_LIT115_data);
+#define _OMC_LIT115 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT115)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT116,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(44)),_OMC_LIT114,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT115}};
+#define _OMC_LIT116 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT116)
+#define _OMC_LIT117_data "scalarizeMinMax"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT117,15,_OMC_LIT117_data);
 #define _OMC_LIT117 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT117)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT118,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT117}};
-#define _OMC_LIT118 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT118)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT119,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(57)),_OMC_LIT116,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT118}};
+#define _OMC_LIT118_data "Scalarizes the builtin min/max reduction operators if true."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT118,59,_OMC_LIT118_data);
+#define _OMC_LIT118 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT118)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT119,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(42)),_OMC_LIT117,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT118}};
 #define _OMC_LIT119 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT119)
-#define _OMC_LIT120_data "scalarizeBindings"
+#define _OMC_LIT120_data "showErrorMessages"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT120,17,_OMC_LIT120_data);
 #define _OMC_LIT120 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT120)
-#define _OMC_LIT121_data "Always scalarizes bindings if set."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT121,34,_OMC_LIT121_data);
+#define _OMC_LIT121_data "Show error messages immediately when they happen."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT121,49,_OMC_LIT121_data);
 #define _OMC_LIT121 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT121)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT122,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT121}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT122,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),_OMC_LIT120,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT121}};
 #define _OMC_LIT122 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT122)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT123,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(49)),_OMC_LIT120,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT122}};
-#define _OMC_LIT123 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT123)
-#define _OMC_LIT124_data "scalarizeMinMax"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT124,15,_OMC_LIT124_data);
+#define _OMC_LIT123_data "1"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT123,1,_OMC_LIT123_data);
+#define _OMC_LIT123 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT123)
+#define _OMC_LIT124_data "2"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT124,1,_OMC_LIT124_data);
 #define _OMC_LIT124 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT124)
-#define _OMC_LIT125_data "Scalarizes the builtin min/max reduction operators if true."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT125,59,_OMC_LIT125_data);
+#define _OMC_LIT125_data "3"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT125,1,_OMC_LIT125_data);
 #define _OMC_LIT125 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT125)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT126,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT125}};
-#define _OMC_LIT126 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT126)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT127,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(47)),_OMC_LIT124,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT126}};
-#define _OMC_LIT127 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT127)
-#define _OMC_LIT128_data "showErrorMessages"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT128,17,_OMC_LIT128_data);
+#define _OMC_LIT126_data "0"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT126,1,_OMC_LIT126_data);
+#define _OMC_LIT126 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT126)
+#define _OMC_LIT127_data "4"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT127,1,_OMC_LIT127_data);
+#define _OMC_LIT127 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT127)
+#define _OMC_LIT128_data "."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT128,1,_OMC_LIT128_data);
 #define _OMC_LIT128 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT128)
-#define _OMC_LIT129_data "Show error messages immediately when they happen."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT129,49,_OMC_LIT129_data);
+#define _OMC_LIT129_data " "
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT129,1,_OMC_LIT129_data);
 #define _OMC_LIT129 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT129)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT130,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT129}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT130,1,6) {&ErrorTypes_Severity_NOTIFICATION__desc,}};
 #define _OMC_LIT130 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT130)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT131,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),_OMC_LIT128,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT130}};
-#define _OMC_LIT131 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT131)
-#define _OMC_LIT132_data "1"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT132,1,_OMC_LIT132_data);
-#define _OMC_LIT132 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT132)
-#define _OMC_LIT133_data "2"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT133,1,_OMC_LIT133_data);
+#define _OMC_LIT131_data "Modelica language version set to %s due to loading of MSL %s."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT131,61,_OMC_LIT131_data);
+#define _OMC_LIT131 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT131)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT132,5,3) {&ErrorTypes_Message_MESSAGE__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(208)),_OMC_LIT7,_OMC_LIT130,_OMC_LIT131}};
+#define _OMC_LIT132 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT132)
+#define _OMC_LIT133_data "1.x"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT133,3,_OMC_LIT133_data);
 #define _OMC_LIT133 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT133)
-#define _OMC_LIT134_data "3"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT134,1,_OMC_LIT134_data);
+#define _OMC_LIT134_data "2.x"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT134,3,_OMC_LIT134_data);
 #define _OMC_LIT134 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT134)
-#define _OMC_LIT135_data "0"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT135,1,_OMC_LIT135_data);
+#define _OMC_LIT135_data "3.0"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT135,3,_OMC_LIT135_data);
 #define _OMC_LIT135 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT135)
-#define _OMC_LIT136_data "."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT136,1,_OMC_LIT136_data);
+#define _OMC_LIT136_data "3.1"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT136,3,_OMC_LIT136_data);
 #define _OMC_LIT136 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT136)
-#define _OMC_LIT137_data " "
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT137,1,_OMC_LIT137_data);
+#define _OMC_LIT137_data "3.2"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT137,3,_OMC_LIT137_data);
 #define _OMC_LIT137 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT137)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT138,1,6) {&ErrorTypes_Severity_NOTIFICATION__desc,}};
-#define _OMC_LIT138 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT138)
-#define _OMC_LIT139_data "Modelica language version set to %s due to loading of MSL %s."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT139,61,_OMC_LIT139_data);
+#define _OMC_LIT138_data "3.3"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT138,3,_OMC_LIT138_data);
+#define _OMC_LIT138 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT138)
+#define _OMC_LIT139_data "3.4"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT139,3,_OMC_LIT139_data);
 #define _OMC_LIT139 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT139)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT140,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT139}};
-#define _OMC_LIT140 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT140)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT141,5,3) {&ErrorTypes_Message_MESSAGE__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(208)),_OMC_LIT8,_OMC_LIT138,_OMC_LIT140}};
-#define _OMC_LIT141 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT141)
-#define _OMC_LIT142_data "1.x"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT142,3,_OMC_LIT142_data);
+#define _OMC_LIT140_data "3.5"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT140,3,_OMC_LIT140_data);
+#define _OMC_LIT140 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT140)
+#define _OMC_LIT141_data "3.6"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT141,3,_OMC_LIT141_data);
+#define _OMC_LIT141 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT141)
+#define _OMC_LIT142_data "experimental"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT142,12,_OMC_LIT142_data);
 #define _OMC_LIT142 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT142)
-#define _OMC_LIT143_data "2.x"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT143,3,_OMC_LIT143_data);
-#define _OMC_LIT143 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT143)
-#define _OMC_LIT144_data "3.0"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT144,3,_OMC_LIT144_data);
-#define _OMC_LIT144 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT144)
-#define _OMC_LIT145_data "3.1"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT145,3,_OMC_LIT145_data);
-#define _OMC_LIT145 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT145)
-#define _OMC_LIT146_data "3.2"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT146,3,_OMC_LIT146_data);
-#define _OMC_LIT146 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT146)
-#define _OMC_LIT147_data "3.3"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT147,3,_OMC_LIT147_data);
-#define _OMC_LIT147 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT147)
-#define _OMC_LIT148_data "3.4"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT148,3,_OMC_LIT148_data);
-#define _OMC_LIT148 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT148)
-#define _OMC_LIT149_data "3.5"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT149,3,_OMC_LIT149_data);
-#define _OMC_LIT149 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT149)
-#define _OMC_LIT150_data "experimental"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT150,12,_OMC_LIT150_data);
-#define _OMC_LIT150 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT150)
-static _index_t _OMC_LIT151_dims[1] = {10};
-static const modelica_string _OMC_LIT151_data[] = {_OMC_LIT142, _OMC_LIT143, _OMC_LIT144, _OMC_LIT145, _OMC_LIT146, _OMC_LIT147, _OMC_LIT148, _OMC_LIT148, _OMC_LIT149, _OMC_LIT150};
-static string_array const _OMC_LIT151 = {
-1, _OMC_LIT151_dims, (void*) _OMC_LIT151_data, (modelica_boolean) 0
-};
-static _index_t _OMC_LIT152_dims[1] = {10};
-static const modelica_integer _OMC_LIT152_data[] = {10, 20, 30, 31, 32, 33, 34, 1000, 1035, 9999};
-static integer_array const _OMC_LIT152 = {
-1, _OMC_LIT152_dims, (void*) _OMC_LIT152_data, (modelica_boolean) 0
-};
-#define _OMC_LIT153_data "std"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT153,3,_OMC_LIT153_data);
-#define _OMC_LIT153 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT153)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT154,2,0) {_OMC_LIT142,MMC_IMMEDIATE(MMC_TAGFIXNUM(10))}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT143,2,1) {_OMC_LIT142,MMC_REFSTRUCTLIT(mmc_nil)}};
+#define _OMC_LIT143 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT143)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT144,2,1) {_OMC_LIT141,_OMC_LIT143}};
+#define _OMC_LIT144 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT144)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT145,2,1) {_OMC_LIT141,_OMC_LIT144}};
+#define _OMC_LIT145 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT145)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT146,2,1) {_OMC_LIT140,_OMC_LIT145}};
+#define _OMC_LIT146 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT146)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT147,2,1) {_OMC_LIT139,_OMC_LIT146}};
+#define _OMC_LIT147 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT147)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT148,2,1) {_OMC_LIT138,_OMC_LIT147}};
+#define _OMC_LIT148 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT148)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT149,2,1) {_OMC_LIT137,_OMC_LIT148}};
+#define _OMC_LIT149 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT149)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT150,2,1) {_OMC_LIT136,_OMC_LIT149}};
+#define _OMC_LIT150 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT150)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT151,2,1) {_OMC_LIT135,_OMC_LIT150}};
+#define _OMC_LIT151 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT151)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT152,2,1) {_OMC_LIT134,_OMC_LIT151}};
+#define _OMC_LIT152 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT152)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT153,2,1) {_OMC_LIT133,_OMC_LIT152}};
+#define _OMC_LIT153 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT153)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT154,11,MMC_ARRAY_TAG) {_OMC_LIT133,_OMC_LIT134,_OMC_LIT135,_OMC_LIT136,_OMC_LIT137,_OMC_LIT138,_OMC_LIT139,_OMC_LIT140,_OMC_LIT141,_OMC_LIT141,_OMC_LIT142}};
 #define _OMC_LIT154 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT154)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT155,2,0) {_OMC_LIT143,MMC_IMMEDIATE(MMC_TAGFIXNUM(20))}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT155,2,1) {MMC_IMMEDIATE(MMC_TAGFIXNUM(9999)),MMC_REFSTRUCTLIT(mmc_nil)}};
 #define _OMC_LIT155 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT155)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT156,2,0) {_OMC_LIT144,MMC_IMMEDIATE(MMC_TAGFIXNUM(30))}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT156,2,1) {MMC_IMMEDIATE(MMC_TAGFIXNUM(1000)),_OMC_LIT155}};
 #define _OMC_LIT156 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT156)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT157,2,0) {_OMC_LIT145,MMC_IMMEDIATE(MMC_TAGFIXNUM(31))}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT157,2,1) {MMC_IMMEDIATE(MMC_TAGFIXNUM(36)),_OMC_LIT156}};
 #define _OMC_LIT157 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT157)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT158,2,0) {_OMC_LIT146,MMC_IMMEDIATE(MMC_TAGFIXNUM(32))}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT158,2,1) {MMC_IMMEDIATE(MMC_TAGFIXNUM(35)),_OMC_LIT157}};
 #define _OMC_LIT158 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT158)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT159,2,0) {_OMC_LIT147,MMC_IMMEDIATE(MMC_TAGFIXNUM(33))}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT159,2,1) {MMC_IMMEDIATE(MMC_TAGFIXNUM(34)),_OMC_LIT158}};
 #define _OMC_LIT159 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT159)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT160,2,0) {_OMC_LIT148,MMC_IMMEDIATE(MMC_TAGFIXNUM(34))}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT160,2,1) {MMC_IMMEDIATE(MMC_TAGFIXNUM(33)),_OMC_LIT159}};
 #define _OMC_LIT160 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT160)
-#define _OMC_LIT161_data "latest"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT161,6,_OMC_LIT161_data);
-#define _OMC_LIT161 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT161)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT162,2,0) {_OMC_LIT161,MMC_IMMEDIATE(MMC_TAGFIXNUM(1000))}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT161,2,1) {MMC_IMMEDIATE(MMC_TAGFIXNUM(32)),_OMC_LIT160}};
+#define _OMC_LIT161 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT161)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT162,2,1) {MMC_IMMEDIATE(MMC_TAGFIXNUM(31)),_OMC_LIT161}};
 #define _OMC_LIT162 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT162)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT163,2,0) {_OMC_LIT149,MMC_IMMEDIATE(MMC_TAGFIXNUM(1035))}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT163,2,1) {MMC_IMMEDIATE(MMC_TAGFIXNUM(30)),_OMC_LIT162}};
 #define _OMC_LIT163 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT163)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT164,2,0) {_OMC_LIT150,MMC_IMMEDIATE(MMC_TAGFIXNUM(9999))}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT164,2,1) {MMC_IMMEDIATE(MMC_TAGFIXNUM(20)),_OMC_LIT163}};
 #define _OMC_LIT164 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT164)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT165,2,1) {_OMC_LIT164,MMC_REFSTRUCTLIT(mmc_nil)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT165,2,1) {MMC_IMMEDIATE(MMC_TAGFIXNUM(10)),_OMC_LIT164}};
 #define _OMC_LIT165 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT165)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT166,2,1) {_OMC_LIT163,_OMC_LIT165}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT166,11,MMC_ARRAY_TAG) {MMC_IMMEDIATE(MMC_TAGFIXNUM(10)),MMC_IMMEDIATE(MMC_TAGFIXNUM(20)),MMC_IMMEDIATE(MMC_TAGFIXNUM(30)),MMC_IMMEDIATE(MMC_TAGFIXNUM(31)),MMC_IMMEDIATE(MMC_TAGFIXNUM(32)),MMC_IMMEDIATE(MMC_TAGFIXNUM(33)),MMC_IMMEDIATE(MMC_TAGFIXNUM(34)),MMC_IMMEDIATE(MMC_TAGFIXNUM(35)),MMC_IMMEDIATE(MMC_TAGFIXNUM(36)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1000)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9999))}};
 #define _OMC_LIT166 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT166)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT167,2,1) {_OMC_LIT162,_OMC_LIT166}};
-#define _OMC_LIT167 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT167)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT168,2,1) {_OMC_LIT160,_OMC_LIT167}};
+#define _OMC_LIT167_data "std"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT167,3,_OMC_LIT167_data);
+#define _OMC_LIT167 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT167)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT168,2,0) {_OMC_LIT133,MMC_IMMEDIATE(MMC_TAGFIXNUM(10))}};
 #define _OMC_LIT168 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT168)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT169,2,1) {_OMC_LIT159,_OMC_LIT168}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT169,2,0) {_OMC_LIT134,MMC_IMMEDIATE(MMC_TAGFIXNUM(20))}};
 #define _OMC_LIT169 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT169)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT170,2,1) {_OMC_LIT158,_OMC_LIT169}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT170,2,0) {_OMC_LIT135,MMC_IMMEDIATE(MMC_TAGFIXNUM(30))}};
 #define _OMC_LIT170 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT170)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT171,2,1) {_OMC_LIT157,_OMC_LIT170}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT171,2,0) {_OMC_LIT136,MMC_IMMEDIATE(MMC_TAGFIXNUM(31))}};
 #define _OMC_LIT171 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT171)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT172,2,1) {_OMC_LIT156,_OMC_LIT171}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT172,2,0) {_OMC_LIT137,MMC_IMMEDIATE(MMC_TAGFIXNUM(32))}};
 #define _OMC_LIT172 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT172)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT173,2,1) {_OMC_LIT155,_OMC_LIT172}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT173,2,0) {_OMC_LIT138,MMC_IMMEDIATE(MMC_TAGFIXNUM(33))}};
 #define _OMC_LIT173 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT173)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT174,2,1) {_OMC_LIT154,_OMC_LIT173}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT174,2,0) {_OMC_LIT139,MMC_IMMEDIATE(MMC_TAGFIXNUM(34))}};
 #define _OMC_LIT174 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT174)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT175,3,10) {&Flags_FlagData_ENUM__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(1000)),_OMC_LIT174}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT175,2,0) {_OMC_LIT140,MMC_IMMEDIATE(MMC_TAGFIXNUM(35))}};
 #define _OMC_LIT175 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT175)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT176,2,1) {_OMC_LIT150,MMC_REFSTRUCTLIT(mmc_nil)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT176,2,0) {_OMC_LIT141,MMC_IMMEDIATE(MMC_TAGFIXNUM(36))}};
 #define _OMC_LIT176 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT176)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT177,2,1) {_OMC_LIT149,_OMC_LIT176}};
-#define _OMC_LIT177 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT177)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT178,2,1) {_OMC_LIT161,_OMC_LIT177}};
+#define _OMC_LIT177_data "latest"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT177,6,_OMC_LIT177_data);
+#define _OMC_LIT177 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT177)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT178,2,0) {_OMC_LIT177,MMC_IMMEDIATE(MMC_TAGFIXNUM(1000))}};
 #define _OMC_LIT178 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT178)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT179,2,1) {_OMC_LIT148,_OMC_LIT178}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT179,2,0) {_OMC_LIT142,MMC_IMMEDIATE(MMC_TAGFIXNUM(9999))}};
 #define _OMC_LIT179 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT179)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT180,2,1) {_OMC_LIT147,_OMC_LIT179}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT180,2,1) {_OMC_LIT179,MMC_REFSTRUCTLIT(mmc_nil)}};
 #define _OMC_LIT180 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT180)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT181,2,1) {_OMC_LIT146,_OMC_LIT180}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT181,2,1) {_OMC_LIT178,_OMC_LIT180}};
 #define _OMC_LIT181 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT181)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT182,2,1) {_OMC_LIT145,_OMC_LIT181}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT182,2,1) {_OMC_LIT176,_OMC_LIT181}};
 #define _OMC_LIT182 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT182)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT183,2,1) {_OMC_LIT143,_OMC_LIT182}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT183,2,1) {_OMC_LIT175,_OMC_LIT182}};
 #define _OMC_LIT183 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT183)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT184,2,1) {_OMC_LIT142,_OMC_LIT183}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT184,2,1) {_OMC_LIT174,_OMC_LIT183}};
 #define _OMC_LIT184 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT184)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT185,2,3) {&Flags_ValidOptions_STRING__OPTION__desc,_OMC_LIT184}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT185,2,1) {_OMC_LIT173,_OMC_LIT184}};
 #define _OMC_LIT185 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT185)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT186,1,1) {_OMC_LIT185}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT186,2,1) {_OMC_LIT172,_OMC_LIT185}};
 #define _OMC_LIT186 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT186)
-#define _OMC_LIT187_data "Sets the language standard that should be used."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT187,47,_OMC_LIT187_data);
-#define _OMC_LIT187 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT187)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT188,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT187}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT187,2,1) {_OMC_LIT171,_OMC_LIT186}};
+#define _OMC_LIT187 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT187)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT188,2,1) {_OMC_LIT170,_OMC_LIT187}};
 #define _OMC_LIT188 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT188)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT189,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(8)),_OMC_LIT153,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT175,_OMC_LIT186,_OMC_LIT188}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT189,2,1) {_OMC_LIT169,_OMC_LIT188}};
 #define _OMC_LIT189 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT189)
-#define _OMC_LIT190_data "simCodeTarget"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT190,13,_OMC_LIT190_data);
-#define _OMC_LIT190 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT190)
-#define _OMC_LIT191_data "C"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT191,1,_OMC_LIT191_data);
-#define _OMC_LIT191 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT191)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT192,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT191}};
-#define _OMC_LIT192 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT192)
-#define _OMC_LIT193_data "None"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT193,4,_OMC_LIT193_data);
-#define _OMC_LIT193 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT193)
-#define _OMC_LIT194_data "Cpp"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT194,3,_OMC_LIT194_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT190,2,1) {_OMC_LIT168,_OMC_LIT189}};
+#define _OMC_LIT190 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT190)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT191,3,10) {&Flags_FlagData_ENUM__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(1000)),_OMC_LIT190}};
+#define _OMC_LIT191 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT191)
+#define _OMC_LIT192_data "Sets the language standard that should be used."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT192,47,_OMC_LIT192_data);
+#define _OMC_LIT192 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT192)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT193,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(8)),_OMC_LIT167,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT191,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT192}};
+#define _OMC_LIT193 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT193)
+#define _OMC_LIT194_data "simCodeTarget"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT194,13,_OMC_LIT194_data);
 #define _OMC_LIT194 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT194)
-#define _OMC_LIT195_data "omsicpp"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT195,7,_OMC_LIT195_data);
+#define _OMC_LIT195_data "C"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT195,1,_OMC_LIT195_data);
 #define _OMC_LIT195 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT195)
-#define _OMC_LIT196_data "ExperimentalEmbeddedC"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT196,21,_OMC_LIT196_data);
-#define _OMC_LIT196 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT196)
-#define _OMC_LIT197_data "JavaScript"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT197,10,_OMC_LIT197_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT196,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT195}};
+#define _OMC_LIT196 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT196)
+#define _OMC_LIT197_data "None"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT197,4,_OMC_LIT197_data);
 #define _OMC_LIT197 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT197)
-#define _OMC_LIT198_data "omsic"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT198,5,_OMC_LIT198_data);
+#define _OMC_LIT198_data "Cpp"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT198,3,_OMC_LIT198_data);
 #define _OMC_LIT198 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT198)
-#define _OMC_LIT199_data "XML"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT199,3,_OMC_LIT199_data);
+#define _OMC_LIT199_data "omsicpp"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT199,7,_OMC_LIT199_data);
 #define _OMC_LIT199 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT199)
-#define _OMC_LIT200_data "MidC"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT200,4,_OMC_LIT200_data);
+#define _OMC_LIT200_data "ExperimentalEmbeddedC"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT200,21,_OMC_LIT200_data);
 #define _OMC_LIT200 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT200)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT201,2,1) {_OMC_LIT200,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT201 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT201)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT202,2,1) {_OMC_LIT199,_OMC_LIT201}};
-#define _OMC_LIT202 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT202)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT203,2,1) {_OMC_LIT198,_OMC_LIT202}};
-#define _OMC_LIT203 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT203)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT204,2,1) {_OMC_LIT197,_OMC_LIT203}};
-#define _OMC_LIT204 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT204)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT205,2,1) {_OMC_LIT196,_OMC_LIT204}};
-#define _OMC_LIT205 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT205)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT206,2,1) {_OMC_LIT195,_OMC_LIT205}};
-#define _OMC_LIT206 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT206)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT207,2,1) {_OMC_LIT194,_OMC_LIT206}};
+#define _OMC_LIT201_data "JavaScript"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT201,10,_OMC_LIT201_data);
+#define _OMC_LIT201 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT201)
+#define _OMC_LIT202_data "omsic"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT202,5,_OMC_LIT202_data);
+#define _OMC_LIT202 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT202)
+#define _OMC_LIT203_data "XML"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT203,3,_OMC_LIT203_data);
+#define _OMC_LIT203 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT203)
+#define _OMC_LIT204_data "MidC"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT204,4,_OMC_LIT204_data);
+#define _OMC_LIT204 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT204)
+#define _OMC_LIT205_data "wasm-jit"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT205,8,_OMC_LIT205_data);
+#define _OMC_LIT205 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT205)
+#define _OMC_LIT206_data "wasm"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT206,4,_OMC_LIT206_data);
+#define _OMC_LIT206 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT206)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT207,2,1) {_OMC_LIT206,MMC_REFSTRUCTLIT(mmc_nil)}};
 #define _OMC_LIT207 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT207)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT208,2,1) {_OMC_LIT191,_OMC_LIT207}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT208,2,1) {_OMC_LIT205,_OMC_LIT207}};
 #define _OMC_LIT208 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT208)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT209,2,1) {_OMC_LIT193,_OMC_LIT208}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT209,2,1) {_OMC_LIT204,_OMC_LIT208}};
 #define _OMC_LIT209 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT209)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT210,2,3) {&Flags_ValidOptions_STRING__OPTION__desc,_OMC_LIT209}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT210,2,1) {_OMC_LIT203,_OMC_LIT209}};
 #define _OMC_LIT210 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT210)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT211,1,1) {_OMC_LIT210}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT211,2,1) {_OMC_LIT202,_OMC_LIT210}};
 #define _OMC_LIT211 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT211)
-#define _OMC_LIT212_data "Sets the target language for the code generation."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT212,49,_OMC_LIT212_data);
-#define _OMC_LIT212 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT212)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT213,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT212}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT212,2,1) {_OMC_LIT201,_OMC_LIT211}};
+#define _OMC_LIT212 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT212)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT213,2,1) {_OMC_LIT200,_OMC_LIT212}};
 #define _OMC_LIT213 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT213)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT214,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(17)),_OMC_LIT190,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT192,_OMC_LIT211,_OMC_LIT213}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT214,2,1) {_OMC_LIT199,_OMC_LIT213}};
 #define _OMC_LIT214 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT214)
-#define _OMC_LIT215_data "tearingHeuristic"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT215,16,_OMC_LIT215_data);
-#define _OMC_LIT215 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT215)
-#define _OMC_LIT216_data "MC3"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT216,3,_OMC_LIT216_data);
-#define _OMC_LIT216 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT216)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT217,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT216}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT215,2,1) {_OMC_LIT198,_OMC_LIT214}};
+#define _OMC_LIT215 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT215)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT216,2,1) {_OMC_LIT195,_OMC_LIT215}};
+#define _OMC_LIT216 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT216)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT217,2,1) {_OMC_LIT197,_OMC_LIT216}};
 #define _OMC_LIT217 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT217)
-#define _OMC_LIT218_data "MC1"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT218,3,_OMC_LIT218_data);
-#define _OMC_LIT218 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT218)
-#define _OMC_LIT219_data "Original cellier with consideration of impossible assignments and discrete Vars."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT219,80,_OMC_LIT219_data);
-#define _OMC_LIT219 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT219)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT220,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT219}};
-#define _OMC_LIT220 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT220)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT221,2,0) {_OMC_LIT218,_OMC_LIT220}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT218,2,3) {&Flags_ValidOptions_STRING__OPTION__desc,_OMC_LIT217}};
+#define _OMC_LIT218 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT218)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT219,1,1) {_OMC_LIT218}};
+#define _OMC_LIT219 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT219)
+#define _OMC_LIT220_data "Sets the target language for the code generation."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT220,49,_OMC_LIT220_data);
+#define _OMC_LIT220 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT220)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT221,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(17)),_OMC_LIT194,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT196,_OMC_LIT219,_OMC_LIT220}};
 #define _OMC_LIT221 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT221)
-#define _OMC_LIT222_data "MC2"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT222,3,_OMC_LIT222_data);
+#define _OMC_LIT222_data "tearingHeuristic"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT222,16,_OMC_LIT222_data);
 #define _OMC_LIT222 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT222)
-#define _OMC_LIT223_data "Modified cellier, drop first step."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT223,34,_OMC_LIT223_data);
+#define _OMC_LIT223_data "MC3"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT223,3,_OMC_LIT223_data);
 #define _OMC_LIT223 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT223)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT224,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT223}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT224,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT223}};
 #define _OMC_LIT224 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT224)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT225,2,0) {_OMC_LIT222,_OMC_LIT224}};
-#define _OMC_LIT225 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT225)
-#define _OMC_LIT226_data "MC11"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT226,4,_OMC_LIT226_data);
+#define _OMC_LIT225_data "MC1"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT225,3,_OMC_LIT225_data);
+#define _OMC_LIT225 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT225)
+#define _OMC_LIT226_data "Original cellier with consideration of impossible assignments and discrete Vars."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT226,80,_OMC_LIT226_data);
 #define _OMC_LIT226 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT226)
-#define _OMC_LIT227_data "Modified MC1, new last step 'count impossible assignments'."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT227,59,_OMC_LIT227_data);
-#define _OMC_LIT227 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT227)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT228,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT227}};
-#define _OMC_LIT228 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT228)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT229,2,0) {_OMC_LIT226,_OMC_LIT228}};
-#define _OMC_LIT229 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT229)
-#define _OMC_LIT230_data "MC21"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT230,4,_OMC_LIT230_data);
-#define _OMC_LIT230 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT230)
-#define _OMC_LIT231_data "Modified MC2, new last step 'count impossible assignments'."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT231,59,_OMC_LIT231_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT227,2,0) {_OMC_LIT225,_OMC_LIT226}};
+#define _OMC_LIT227 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT227)
+#define _OMC_LIT228_data "MC2"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT228,3,_OMC_LIT228_data);
+#define _OMC_LIT228 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT228)
+#define _OMC_LIT229_data "Modified cellier, drop first step."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT229,34,_OMC_LIT229_data);
+#define _OMC_LIT229 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT229)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT230,2,0) {_OMC_LIT228,_OMC_LIT229}};
+#define _OMC_LIT230 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT230)
+#define _OMC_LIT231_data "MC11"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT231,4,_OMC_LIT231_data);
 #define _OMC_LIT231 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT231)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT232,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT231}};
-#define _OMC_LIT232 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT232)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT233,2,0) {_OMC_LIT230,_OMC_LIT232}};
+#define _OMC_LIT232_data "Modified MC1, new last step 'count impossible assignments'."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT232,59,_OMC_LIT232_data);
+#define _OMC_LIT232 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT232)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT233,2,0) {_OMC_LIT231,_OMC_LIT232}};
 #define _OMC_LIT233 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT233)
-#define _OMC_LIT234_data "MC12"
+#define _OMC_LIT234_data "MC21"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT234,4,_OMC_LIT234_data);
 #define _OMC_LIT234 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT234)
-#define _OMC_LIT235_data "Modified MC1, step 'count impossible assignments' before last step."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT235,67,_OMC_LIT235_data);
+#define _OMC_LIT235_data "Modified MC2, new last step 'count impossible assignments'."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT235,59,_OMC_LIT235_data);
 #define _OMC_LIT235 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT235)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT236,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT235}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT236,2,0) {_OMC_LIT234,_OMC_LIT235}};
 #define _OMC_LIT236 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT236)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT237,2,0) {_OMC_LIT234,_OMC_LIT236}};
-#define _OMC_LIT237 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT237)
-#define _OMC_LIT238_data "MC22"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT238,4,_OMC_LIT238_data);
+#define _OMC_LIT237_data "MC12"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT237,4,_OMC_LIT237_data);
+#define _OMC_LIT237 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT237)
+#define _OMC_LIT238_data "Modified MC1, step 'count impossible assignments' before last step."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT238,67,_OMC_LIT238_data);
 #define _OMC_LIT238 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT238)
-#define _OMC_LIT239_data "Modified MC2, step 'count impossible assignments' before last step."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT239,67,_OMC_LIT239_data);
-#define _OMC_LIT239 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT239)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT240,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT239}};
-#define _OMC_LIT240 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT240)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT241,2,0) {_OMC_LIT238,_OMC_LIT240}};
-#define _OMC_LIT241 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT241)
-#define _OMC_LIT242_data "MC13"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT242,4,_OMC_LIT242_data);
-#define _OMC_LIT242 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT242)
-#define _OMC_LIT243_data "Modified MC1, build sum of impossible assignment and causalizable equations, choose var with biggest sum."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT243,105,_OMC_LIT243_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT239,2,0) {_OMC_LIT237,_OMC_LIT238}};
+#define _OMC_LIT239 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT239)
+#define _OMC_LIT240_data "MC22"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT240,4,_OMC_LIT240_data);
+#define _OMC_LIT240 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT240)
+#define _OMC_LIT241_data "Modified MC2, step 'count impossible assignments' before last step."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT241,67,_OMC_LIT241_data);
+#define _OMC_LIT241 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT241)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT242,2,0) {_OMC_LIT240,_OMC_LIT241}};
+#define _OMC_LIT242 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT242)
+#define _OMC_LIT243_data "MC13"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT243,4,_OMC_LIT243_data);
 #define _OMC_LIT243 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT243)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT244,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT243}};
-#define _OMC_LIT244 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT244)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT245,2,0) {_OMC_LIT242,_OMC_LIT244}};
+#define _OMC_LIT244_data "Modified MC1, build sum of impossible assignment and causalizable equations, choose var with biggest sum."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT244,105,_OMC_LIT244_data);
+#define _OMC_LIT244 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT244)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT245,2,0) {_OMC_LIT243,_OMC_LIT244}};
 #define _OMC_LIT245 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT245)
 #define _OMC_LIT246_data "MC23"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT246,4,_OMC_LIT246_data);
@@ -607,1793 +607,1545 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT246,4,_OMC_LIT246_data);
 #define _OMC_LIT247_data "Modified MC2, build sum of impossible assignment and causalizable equations, choose var with biggest sum."
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT247,105,_OMC_LIT247_data);
 #define _OMC_LIT247 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT247)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT248,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT247}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT248,2,0) {_OMC_LIT246,_OMC_LIT247}};
 #define _OMC_LIT248 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT248)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT249,2,0) {_OMC_LIT246,_OMC_LIT248}};
-#define _OMC_LIT249 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT249)
-#define _OMC_LIT250_data "MC231"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT250,5,_OMC_LIT250_data);
+#define _OMC_LIT249_data "MC231"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT249,5,_OMC_LIT249_data);
+#define _OMC_LIT249 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT249)
+#define _OMC_LIT250_data "Modified MC23, Two rounds, choose better potentials-set."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT250,56,_OMC_LIT250_data);
 #define _OMC_LIT250 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT250)
-#define _OMC_LIT251_data "Modified MC23, Two rounds, choose better potentials-set."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT251,56,_OMC_LIT251_data);
-#define _OMC_LIT251 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT251)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT252,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT251}};
-#define _OMC_LIT252 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT252)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT253,2,0) {_OMC_LIT250,_OMC_LIT252}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT251,2,0) {_OMC_LIT249,_OMC_LIT250}};
+#define _OMC_LIT251 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT251)
+#define _OMC_LIT252_data "Modified cellier, build sum of impossible assignment and causalizable equations for all vars, choose var with biggest sum."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT252,122,_OMC_LIT252_data);
+#define _OMC_LIT252 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT252)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT253,2,0) {_OMC_LIT223,_OMC_LIT252}};
 #define _OMC_LIT253 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT253)
-#define _OMC_LIT254_data "Modified cellier, build sum of impossible assignment and causalizable equations for all vars, choose var with biggest sum."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT254,122,_OMC_LIT254_data);
+#define _OMC_LIT254_data "MC4"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT254,3,_OMC_LIT254_data);
 #define _OMC_LIT254 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT254)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT255,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT254}};
-#define _OMC_LIT255 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT255)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT256,2,0) {_OMC_LIT216,_OMC_LIT255}};
+#define _OMC_LIT255_data "Modified cellier, use all heuristics, choose var that occurs most in potential sets"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT255,83,_OMC_LIT255_data);
+#define _OMC_LIT255 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT255)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT256,2,0) {_OMC_LIT254,_OMC_LIT255}};
 #define _OMC_LIT256 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT256)
-#define _OMC_LIT257_data "MC4"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT257,3,_OMC_LIT257_data);
-#define _OMC_LIT257 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT257)
-#define _OMC_LIT258_data "Modified cellier, use all heuristics, choose var that occurs most in potential sets"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT258,83,_OMC_LIT258_data);
-#define _OMC_LIT258 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT258)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT259,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT258}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT257,2,1) {_OMC_LIT256,MMC_REFSTRUCTLIT(mmc_nil)}};
+#define _OMC_LIT257 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT257)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT258,2,1) {_OMC_LIT253,_OMC_LIT257}};
+#define _OMC_LIT258 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT258)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT259,2,1) {_OMC_LIT251,_OMC_LIT258}};
 #define _OMC_LIT259 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT259)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT260,2,0) {_OMC_LIT257,_OMC_LIT259}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT260,2,1) {_OMC_LIT248,_OMC_LIT259}};
 #define _OMC_LIT260 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT260)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT261,2,1) {_OMC_LIT260,MMC_REFSTRUCTLIT(mmc_nil)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT261,2,1) {_OMC_LIT245,_OMC_LIT260}};
 #define _OMC_LIT261 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT261)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT262,2,1) {_OMC_LIT256,_OMC_LIT261}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT262,2,1) {_OMC_LIT242,_OMC_LIT261}};
 #define _OMC_LIT262 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT262)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT263,2,1) {_OMC_LIT253,_OMC_LIT262}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT263,2,1) {_OMC_LIT239,_OMC_LIT262}};
 #define _OMC_LIT263 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT263)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT264,2,1) {_OMC_LIT249,_OMC_LIT263}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT264,2,1) {_OMC_LIT236,_OMC_LIT263}};
 #define _OMC_LIT264 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT264)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT265,2,1) {_OMC_LIT245,_OMC_LIT264}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT265,2,1) {_OMC_LIT233,_OMC_LIT264}};
 #define _OMC_LIT265 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT265)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT266,2,1) {_OMC_LIT241,_OMC_LIT265}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT266,2,1) {_OMC_LIT230,_OMC_LIT265}};
 #define _OMC_LIT266 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT266)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT267,2,1) {_OMC_LIT237,_OMC_LIT266}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT267,2,1) {_OMC_LIT227,_OMC_LIT266}};
 #define _OMC_LIT267 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT267)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT268,2,1) {_OMC_LIT233,_OMC_LIT267}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT268,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT267}};
 #define _OMC_LIT268 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT268)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT269,2,1) {_OMC_LIT229,_OMC_LIT268}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT269,1,1) {_OMC_LIT268}};
 #define _OMC_LIT269 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT269)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT270,2,1) {_OMC_LIT225,_OMC_LIT269}};
-#define _OMC_LIT270 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT270)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT271,2,1) {_OMC_LIT221,_OMC_LIT270}};
+#define _OMC_LIT270_data "Sets the tearing heuristic to use for Cellier-tearing."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT270,54,_OMC_LIT270_data);
+#define _OMC_LIT270 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT270)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT271,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(41)),_OMC_LIT222,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT224,_OMC_LIT269,_OMC_LIT270}};
 #define _OMC_LIT271 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT271)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT272,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT271}};
-#define _OMC_LIT272 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT272)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT273,1,1) {_OMC_LIT272}};
-#define _OMC_LIT273 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT273)
-#define _OMC_LIT274_data "Sets the tearing heuristic to use for Cellier-tearing."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT274,54,_OMC_LIT274_data);
-#define _OMC_LIT274 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT274)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT275,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT274}};
-#define _OMC_LIT275 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT275)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT276,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(45)),_OMC_LIT215,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT217,_OMC_LIT273,_OMC_LIT275}};
-#define _OMC_LIT276 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT276)
-#define _OMC_LIT277_data "tearingMethod"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT277,13,_OMC_LIT277_data);
-#define _OMC_LIT277 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT277)
-#define _OMC_LIT278_data "cellier"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT278,7,_OMC_LIT278_data);
+#define _OMC_LIT272_data "tearingMethod"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT272,13,_OMC_LIT272_data);
+#define _OMC_LIT272 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT272)
+#define _OMC_LIT273_data "cellier"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT273,7,_OMC_LIT273_data);
+#define _OMC_LIT273 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT273)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT274,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT273}};
+#define _OMC_LIT274 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT274)
+#define _OMC_LIT275_data "noTearing"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT275,9,_OMC_LIT275_data);
+#define _OMC_LIT275 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT275)
+#define _OMC_LIT276_data "Deprecated, use minimalTearing."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT276,31,_OMC_LIT276_data);
+#define _OMC_LIT276 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT276)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT277,2,0) {_OMC_LIT275,_OMC_LIT276}};
+#define _OMC_LIT277 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT277)
+#define _OMC_LIT278_data "minimalTearing"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT278,14,_OMC_LIT278_data);
 #define _OMC_LIT278 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT278)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT279,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT278}};
-#define _OMC_LIT279 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT279)
-#define _OMC_LIT280_data "noTearing"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT280,9,_OMC_LIT280_data);
-#define _OMC_LIT280 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT280)
-#define _OMC_LIT281_data "Skip tearing. This breaks models with mixed continuous-integer/boolean unknowns"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT281,79,_OMC_LIT281_data);
+#define _OMC_LIT279_data "Minimal tearing method to only tear discrete variables."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT279,55,_OMC_LIT279_data);
+#define _OMC_LIT279 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT279)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT280,2,0) {_OMC_LIT278,_OMC_LIT279}};
+#define _OMC_LIT280 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT280)
+#define _OMC_LIT281_data "omcTearing"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT281,10,_OMC_LIT281_data);
 #define _OMC_LIT281 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT281)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT282,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT281}};
-#define _OMC_LIT282 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT282)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT283,2,0) {_OMC_LIT280,_OMC_LIT282}};
+#define _OMC_LIT282_data "Tearing method developed by TU Dresden: Frenkel, Schubert."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT282,58,_OMC_LIT282_data);
+#define _OMC_LIT282 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT282)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT283,2,0) {_OMC_LIT281,_OMC_LIT282}};
 #define _OMC_LIT283 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT283)
-#define _OMC_LIT284_data "minimalTearing"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT284,14,_OMC_LIT284_data);
+#define _OMC_LIT284_data "Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT284,75,_OMC_LIT284_data);
 #define _OMC_LIT284 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT284)
-#define _OMC_LIT285_data "Minimal tearing method to only tear discrete variables."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT285,55,_OMC_LIT285_data);
-#define _OMC_LIT285 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT285)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT286,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT285}};
-#define _OMC_LIT286 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT286)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT287,2,0) {_OMC_LIT284,_OMC_LIT286}};
-#define _OMC_LIT287 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT287)
-#define _OMC_LIT288_data "omcTearing"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT288,10,_OMC_LIT288_data);
-#define _OMC_LIT288 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT288)
-#define _OMC_LIT289_data "Tearing method developed by TU Dresden: Frenkel, Schubert."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT289,58,_OMC_LIT289_data);
-#define _OMC_LIT289 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT289)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT290,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT289}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT285,2,0) {_OMC_LIT273,_OMC_LIT284}};
+#define _OMC_LIT285 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT285)
+#define _OMC_LIT286_data "guruTearing"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT286,11,_OMC_LIT286_data);
+#define _OMC_LIT286 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT286)
+#define _OMC_LIT287_data "Tearing based solely on TearingSelect annotation. Forces prefer/always variables to be iteration variables."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT287,107,_OMC_LIT287_data);
+#define _OMC_LIT287 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT287)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT288,2,0) {_OMC_LIT286,_OMC_LIT287}};
+#define _OMC_LIT288 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT288)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT289,2,1) {_OMC_LIT288,MMC_REFSTRUCTLIT(mmc_nil)}};
+#define _OMC_LIT289 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT289)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT290,2,1) {_OMC_LIT285,_OMC_LIT289}};
 #define _OMC_LIT290 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT290)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT291,2,0) {_OMC_LIT288,_OMC_LIT290}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT291,2,1) {_OMC_LIT283,_OMC_LIT290}};
 #define _OMC_LIT291 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT291)
-#define _OMC_LIT292_data "Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT292,75,_OMC_LIT292_data);
-#define _OMC_LIT292 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT292)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT293,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT292}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT292,2,1) {_OMC_LIT280,_OMC_LIT291}};
+#define _OMC_LIT292 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT292)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT293,2,1) {_OMC_LIT277,_OMC_LIT292}};
 #define _OMC_LIT293 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT293)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT294,2,0) {_OMC_LIT278,_OMC_LIT293}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT294,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT293}};
 #define _OMC_LIT294 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT294)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT295,2,1) {_OMC_LIT294,MMC_REFSTRUCTLIT(mmc_nil)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT295,1,1) {_OMC_LIT294}};
 #define _OMC_LIT295 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT295)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT296,2,1) {_OMC_LIT291,_OMC_LIT295}};
-#define _OMC_LIT296 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT296)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT297,2,1) {_OMC_LIT287,_OMC_LIT296}};
+#define _OMC_LIT296_data "Sets the tearing method to use. Select no tearing or choose tearing method."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT296,75,_OMC_LIT296_data);
+#define _OMC_LIT296 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT296)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT297,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(40)),_OMC_LIT272,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT274,_OMC_LIT295,_OMC_LIT296}};
 #define _OMC_LIT297 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT297)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT298,2,1) {_OMC_LIT283,_OMC_LIT297}};
-#define _OMC_LIT298 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT298)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT299,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT298}};
-#define _OMC_LIT299 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT299)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT300,1,1) {_OMC_LIT299}};
+#define _OMC_LIT298_data "matchingAlgorithm"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT298,17,_OMC_LIT298_data);
+#define _OMC_LIT298 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT298)
+#define _OMC_LIT299_data "PFPlusExt"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT299,9,_OMC_LIT299_data);
+#define _OMC_LIT299 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT299)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT300,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT299}};
 #define _OMC_LIT300 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT300)
-#define _OMC_LIT301_data "Sets the tearing method to use. Select no tearing or choose tearing method."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT301,75,_OMC_LIT301_data);
+#define _OMC_LIT301_data "BFSB"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT301,4,_OMC_LIT301_data);
 #define _OMC_LIT301 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT301)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT302,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT301}};
-#define _OMC_LIT302 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT302)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT303,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(44)),_OMC_LIT277,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT279,_OMC_LIT300,_OMC_LIT302}};
+#define _OMC_LIT302_data "Breadth First Search based algorithm."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT302,37,_OMC_LIT302_data);
+#define _OMC_LIT302 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT302)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT303,2,0) {_OMC_LIT301,_OMC_LIT302}};
 #define _OMC_LIT303 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT303)
-#define _OMC_LIT304_data "matchingAlgorithm"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT304,17,_OMC_LIT304_data);
+#define _OMC_LIT304_data "DFSB"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT304,4,_OMC_LIT304_data);
 #define _OMC_LIT304 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT304)
-#define _OMC_LIT305_data "PFPlusExt"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT305,9,_OMC_LIT305_data);
+#define _OMC_LIT305_data "Depth First Search based algorithm."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT305,35,_OMC_LIT305_data);
 #define _OMC_LIT305 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT305)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT306,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT305}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT306,2,0) {_OMC_LIT304,_OMC_LIT305}};
 #define _OMC_LIT306 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT306)
-#define _OMC_LIT307_data "BFSB"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT307,4,_OMC_LIT307_data);
+#define _OMC_LIT307_data "MC21A"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT307,5,_OMC_LIT307_data);
 #define _OMC_LIT307 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT307)
-#define _OMC_LIT308_data "Breadth First Search based algorithm."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT308,37,_OMC_LIT308_data);
+#define _OMC_LIT308_data "Depth First Search based algorithm with look ahead feature."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT308,59,_OMC_LIT308_data);
 #define _OMC_LIT308 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT308)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT309,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT308}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT309,2,0) {_OMC_LIT307,_OMC_LIT308}};
 #define _OMC_LIT309 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT309)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT310,2,0) {_OMC_LIT307,_OMC_LIT309}};
-#define _OMC_LIT310 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT310)
-#define _OMC_LIT311_data "DFSB"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT311,4,_OMC_LIT311_data);
-#define _OMC_LIT311 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT311)
-#define _OMC_LIT312_data "Depth First Search based algorithm."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT312,35,_OMC_LIT312_data);
+#define _OMC_LIT310_data "PF"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT310,2,_OMC_LIT310_data);
+#define _OMC_LIT310 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT310)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT311,2,0) {_OMC_LIT310,_OMC_LIT308}};
+#define _OMC_LIT311 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT311)
+#define _OMC_LIT312_data "PFPlus"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT312,6,_OMC_LIT312_data);
 #define _OMC_LIT312 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT312)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT313,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT312}};
-#define _OMC_LIT313 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT313)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT314,2,0) {_OMC_LIT311,_OMC_LIT313}};
+#define _OMC_LIT313_data "Depth First Search based algorithm with look ahead feature and fair row traversal."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT313,82,_OMC_LIT313_data);
+#define _OMC_LIT313 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT313)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT314,2,0) {_OMC_LIT312,_OMC_LIT313}};
 #define _OMC_LIT314 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT314)
-#define _OMC_LIT315_data "MC21A"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT315,5,_OMC_LIT315_data);
+#define _OMC_LIT315_data "HK"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT315,2,_OMC_LIT315_data);
 #define _OMC_LIT315 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT315)
-#define _OMC_LIT316_data "Depth First Search based algorithm with look ahead feature."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT316,59,_OMC_LIT316_data);
+#define _OMC_LIT316_data "Combined BFS and DFS algorithm."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT316,31,_OMC_LIT316_data);
 #define _OMC_LIT316 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT316)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT317,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT316}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT317,2,0) {_OMC_LIT315,_OMC_LIT316}};
 #define _OMC_LIT317 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT317)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT318,2,0) {_OMC_LIT315,_OMC_LIT317}};
-#define _OMC_LIT318 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT318)
-#define _OMC_LIT319_data "PF"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT319,2,_OMC_LIT319_data);
-#define _OMC_LIT319 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT319)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT320,2,0) {_OMC_LIT319,_OMC_LIT317}};
-#define _OMC_LIT320 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT320)
-#define _OMC_LIT321_data "PFPlus"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT321,6,_OMC_LIT321_data);
-#define _OMC_LIT321 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT321)
-#define _OMC_LIT322_data "Depth First Search based algorithm with look ahead feature and fair row traversal."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT322,82,_OMC_LIT322_data);
+#define _OMC_LIT318_data "HKDW"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT318,4,_OMC_LIT318_data);
+#define _OMC_LIT318 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT318)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT319,2,0) {_OMC_LIT318,_OMC_LIT316}};
+#define _OMC_LIT319 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT319)
+#define _OMC_LIT320_data "ABMP"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT320,4,_OMC_LIT320_data);
+#define _OMC_LIT320 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT320)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT321,2,0) {_OMC_LIT320,_OMC_LIT316}};
+#define _OMC_LIT321 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT321)
+#define _OMC_LIT322_data "PR"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT322,2,_OMC_LIT322_data);
 #define _OMC_LIT322 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT322)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT323,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT322}};
-#define _OMC_LIT323 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT323)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT324,2,0) {_OMC_LIT321,_OMC_LIT323}};
+#define _OMC_LIT323_data "Matching algorithm using push relabel mechanism."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT323,48,_OMC_LIT323_data);
+#define _OMC_LIT323 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT323)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT324,2,0) {_OMC_LIT322,_OMC_LIT323}};
 #define _OMC_LIT324 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT324)
-#define _OMC_LIT325_data "HK"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT325,2,_OMC_LIT325_data);
+#define _OMC_LIT325_data "DFSBExt"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT325,7,_OMC_LIT325_data);
 #define _OMC_LIT325 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT325)
-#define _OMC_LIT326_data "Combined BFS and DFS algorithm."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT326,31,_OMC_LIT326_data);
+#define _OMC_LIT326_data "Depth First Search based Algorithm external c implementation."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT326,61,_OMC_LIT326_data);
 #define _OMC_LIT326 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT326)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT327,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT326}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT327,2,0) {_OMC_LIT325,_OMC_LIT326}};
 #define _OMC_LIT327 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT327)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT328,2,0) {_OMC_LIT325,_OMC_LIT327}};
-#define _OMC_LIT328 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT328)
-#define _OMC_LIT329_data "HKDW"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT329,4,_OMC_LIT329_data);
+#define _OMC_LIT328_data "BFSBExt"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT328,7,_OMC_LIT328_data);
+#define _OMC_LIT328 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT328)
+#define _OMC_LIT329_data "Breadth First Search based Algorithm external c implementation."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT329,63,_OMC_LIT329_data);
 #define _OMC_LIT329 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT329)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT330,2,0) {_OMC_LIT329,_OMC_LIT327}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT330,2,0) {_OMC_LIT328,_OMC_LIT329}};
 #define _OMC_LIT330 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT330)
-#define _OMC_LIT331_data "ABMP"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT331,4,_OMC_LIT331_data);
+#define _OMC_LIT331_data "MC21AExt"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT331,8,_OMC_LIT331_data);
 #define _OMC_LIT331 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT331)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT332,2,0) {_OMC_LIT331,_OMC_LIT327}};
-#define _OMC_LIT332 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT332)
-#define _OMC_LIT333_data "PR"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT333,2,_OMC_LIT333_data);
-#define _OMC_LIT333 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT333)
-#define _OMC_LIT334_data "Matching algorithm using push relabel mechanism."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT334,48,_OMC_LIT334_data);
+#define _OMC_LIT332_data "Depth First Search based Algorithm with look ahead feature external c implementation."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT332,85,_OMC_LIT332_data);
+#define _OMC_LIT332 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT332)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT333,2,0) {_OMC_LIT331,_OMC_LIT332}};
+#define _OMC_LIT333 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT333)
+#define _OMC_LIT334_data "PFExt"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT334,5,_OMC_LIT334_data);
 #define _OMC_LIT334 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT334)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT335,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT334}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT335,2,0) {_OMC_LIT334,_OMC_LIT332}};
 #define _OMC_LIT335 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT335)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT336,2,0) {_OMC_LIT333,_OMC_LIT335}};
-#define _OMC_LIT336 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT336)
-#define _OMC_LIT337_data "DFSBExt"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT337,7,_OMC_LIT337_data);
-#define _OMC_LIT337 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT337)
-#define _OMC_LIT338_data "Depth First Search based Algorithm external c implementation."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT338,61,_OMC_LIT338_data);
+#define _OMC_LIT336_data "Depth First Search based Algorithm with look ahead feature and fair row traversal external c implementation."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT336,108,_OMC_LIT336_data);
+#define _OMC_LIT336 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT336)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT337,2,0) {_OMC_LIT299,_OMC_LIT336}};
+#define _OMC_LIT337 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT337)
+#define _OMC_LIT338_data "HKExt"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT338,5,_OMC_LIT338_data);
 #define _OMC_LIT338 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT338)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT339,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT338}};
-#define _OMC_LIT339 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT339)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT340,2,0) {_OMC_LIT337,_OMC_LIT339}};
+#define _OMC_LIT339_data "Combined BFS and DFS algorithm external c implementation."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT339,57,_OMC_LIT339_data);
+#define _OMC_LIT339 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT339)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT340,2,0) {_OMC_LIT338,_OMC_LIT339}};
 #define _OMC_LIT340 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT340)
-#define _OMC_LIT341_data "BFSBExt"
+#define _OMC_LIT341_data "HKDWExt"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT341,7,_OMC_LIT341_data);
 #define _OMC_LIT341 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT341)
-#define _OMC_LIT342_data "Breadth First Search based Algorithm external c implementation."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT342,63,_OMC_LIT342_data);
-#define _OMC_LIT342 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT342)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT343,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT342}};
-#define _OMC_LIT343 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT343)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT344,2,0) {_OMC_LIT341,_OMC_LIT343}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT342,2,0) {_OMC_LIT341,_OMC_LIT339}};
+#define _OMC_LIT342 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT342)
+#define _OMC_LIT343_data "ABMPExt"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT343,7,_OMC_LIT343_data);
+#define _OMC_LIT343 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT343)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT344,2,0) {_OMC_LIT343,_OMC_LIT339}};
 #define _OMC_LIT344 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT344)
-#define _OMC_LIT345_data "MC21AExt"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT345,8,_OMC_LIT345_data);
+#define _OMC_LIT345_data "PRExt"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT345,5,_OMC_LIT345_data);
 #define _OMC_LIT345 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT345)
-#define _OMC_LIT346_data "Depth First Search based Algorithm with look ahead feature external c implementation."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT346,85,_OMC_LIT346_data);
+#define _OMC_LIT346_data "Matching algorithm using push relabel mechanism external c implementation."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT346,74,_OMC_LIT346_data);
 #define _OMC_LIT346 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT346)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT347,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT346}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT347,2,0) {_OMC_LIT345,_OMC_LIT346}};
 #define _OMC_LIT347 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT347)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT348,2,0) {_OMC_LIT345,_OMC_LIT347}};
-#define _OMC_LIT348 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT348)
-#define _OMC_LIT349_data "PFExt"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT349,5,_OMC_LIT349_data);
+#define _OMC_LIT348_data "BB"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT348,2,_OMC_LIT348_data);
+#define _OMC_LIT348 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT348)
+#define _OMC_LIT349_data "BBs try."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT349,8,_OMC_LIT349_data);
 #define _OMC_LIT349 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT349)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT350,2,0) {_OMC_LIT349,_OMC_LIT347}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT350,2,0) {_OMC_LIT348,_OMC_LIT349}};
 #define _OMC_LIT350 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT350)
-#define _OMC_LIT351_data "Depth First Search based Algorithm with look ahead feature and fair row traversal external c implementation."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT351,108,_OMC_LIT351_data);
+#define _OMC_LIT351_data "SBGraph"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT351,7,_OMC_LIT351_data);
 #define _OMC_LIT351 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT351)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT352,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT351}};
-#define _OMC_LIT352 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT352)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT353,2,0) {_OMC_LIT305,_OMC_LIT352}};
+#define _OMC_LIT352_data "Set-Based Graph matching algorithm for efficient array handling."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT352,64,_OMC_LIT352_data);
+#define _OMC_LIT352 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT352)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT353,2,0) {_OMC_LIT351,_OMC_LIT352}};
 #define _OMC_LIT353 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT353)
-#define _OMC_LIT354_data "HKExt"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT354,5,_OMC_LIT354_data);
+#define _OMC_LIT354_data "pseudo"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT354,6,_OMC_LIT354_data);
 #define _OMC_LIT354 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT354)
-#define _OMC_LIT355_data "Combined BFS and DFS algorithm external c implementation."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT355,57,_OMC_LIT355_data);
+#define _OMC_LIT355_data "Pseudo array matching that uses scalar matching and reconstructs arrays afterwards as much as possible."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT355,103,_OMC_LIT355_data);
 #define _OMC_LIT355 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT355)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT356,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT355}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT356,2,0) {_OMC_LIT354,_OMC_LIT355}};
 #define _OMC_LIT356 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT356)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT357,2,0) {_OMC_LIT354,_OMC_LIT356}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT357,2,1) {_OMC_LIT356,MMC_REFSTRUCTLIT(mmc_nil)}};
 #define _OMC_LIT357 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT357)
-#define _OMC_LIT358_data "HKDWExt"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT358,7,_OMC_LIT358_data);
-#define _OMC_LIT358 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT358)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT359,2,0) {_OMC_LIT358,_OMC_LIT356}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT358,2,1) {_OMC_LIT353,_OMC_LIT357}};
+#define _OMC_LIT358 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT358)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT359,2,1) {_OMC_LIT350,_OMC_LIT358}};
 #define _OMC_LIT359 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT359)
-#define _OMC_LIT360_data "ABMPExt"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT360,7,_OMC_LIT360_data);
-#define _OMC_LIT360 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT360)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT361,2,0) {_OMC_LIT360,_OMC_LIT356}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT360,2,1) {_OMC_LIT347,_OMC_LIT359}};
+#define _OMC_LIT360 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT360)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT361,2,1) {_OMC_LIT344,_OMC_LIT360}};
 #define _OMC_LIT361 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT361)
-#define _OMC_LIT362_data "PRExt"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT362,5,_OMC_LIT362_data);
-#define _OMC_LIT362 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT362)
-#define _OMC_LIT363_data "Matching algorithm using push relabel mechanism external c implementation."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT363,74,_OMC_LIT363_data);
-#define _OMC_LIT363 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT363)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT364,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT363}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT362,2,1) {_OMC_LIT342,_OMC_LIT361}};
+#define _OMC_LIT362 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT362)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT363,2,1) {_OMC_LIT340,_OMC_LIT362}};
+#define _OMC_LIT363 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT363)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT364,2,1) {_OMC_LIT337,_OMC_LIT363}};
 #define _OMC_LIT364 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT364)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT365,2,0) {_OMC_LIT362,_OMC_LIT364}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT365,2,1) {_OMC_LIT335,_OMC_LIT364}};
 #define _OMC_LIT365 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT365)
-#define _OMC_LIT366_data "BB"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT366,2,_OMC_LIT366_data);
-#define _OMC_LIT366 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT366)
-#define _OMC_LIT367_data "BBs try."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT367,8,_OMC_LIT367_data);
-#define _OMC_LIT367 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT367)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT368,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT367}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT366,2,1) {_OMC_LIT333,_OMC_LIT365}};
+#define _OMC_LIT366 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT366)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT367,2,1) {_OMC_LIT330,_OMC_LIT366}};
+#define _OMC_LIT367 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT367)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT368,2,1) {_OMC_LIT327,_OMC_LIT367}};
 #define _OMC_LIT368 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT368)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT369,2,0) {_OMC_LIT366,_OMC_LIT368}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT369,2,1) {_OMC_LIT324,_OMC_LIT368}};
 #define _OMC_LIT369 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT369)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT370,2,1) {_OMC_LIT369,MMC_REFSTRUCTLIT(mmc_nil)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT370,2,1) {_OMC_LIT321,_OMC_LIT369}};
 #define _OMC_LIT370 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT370)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT371,2,1) {_OMC_LIT365,_OMC_LIT370}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT371,2,1) {_OMC_LIT319,_OMC_LIT370}};
 #define _OMC_LIT371 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT371)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT372,2,1) {_OMC_LIT361,_OMC_LIT371}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT372,2,1) {_OMC_LIT317,_OMC_LIT371}};
 #define _OMC_LIT372 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT372)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT373,2,1) {_OMC_LIT359,_OMC_LIT372}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT373,2,1) {_OMC_LIT314,_OMC_LIT372}};
 #define _OMC_LIT373 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT373)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT374,2,1) {_OMC_LIT357,_OMC_LIT373}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT374,2,1) {_OMC_LIT311,_OMC_LIT373}};
 #define _OMC_LIT374 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT374)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT375,2,1) {_OMC_LIT353,_OMC_LIT374}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT375,2,1) {_OMC_LIT309,_OMC_LIT374}};
 #define _OMC_LIT375 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT375)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT376,2,1) {_OMC_LIT350,_OMC_LIT375}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT376,2,1) {_OMC_LIT306,_OMC_LIT375}};
 #define _OMC_LIT376 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT376)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT377,2,1) {_OMC_LIT348,_OMC_LIT376}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT377,2,1) {_OMC_LIT303,_OMC_LIT376}};
 #define _OMC_LIT377 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT377)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT378,2,1) {_OMC_LIT344,_OMC_LIT377}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT378,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT377}};
 #define _OMC_LIT378 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT378)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT379,2,1) {_OMC_LIT340,_OMC_LIT378}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT379,1,1) {_OMC_LIT378}};
 #define _OMC_LIT379 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT379)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT380,2,1) {_OMC_LIT336,_OMC_LIT379}};
-#define _OMC_LIT380 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT380)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT381,2,1) {_OMC_LIT332,_OMC_LIT380}};
+#define _OMC_LIT380_data "Sets the matching algorithm to use. See --help=optmodules for more info."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT380,72,_OMC_LIT380_data);
+#define _OMC_LIT380 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT380)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT381,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(14)),_OMC_LIT298,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT300,_OMC_LIT379,_OMC_LIT380}};
 #define _OMC_LIT381 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT381)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT382,2,1) {_OMC_LIT330,_OMC_LIT381}};
-#define _OMC_LIT382 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT382)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT383,2,1) {_OMC_LIT328,_OMC_LIT382}};
+#define _OMC_LIT382_data "cheapmatchingAlgorithm"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT382,22,_OMC_LIT382_data);
+#define _OMC_LIT382 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT382)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT383,2,5) {&Flags_FlagData_INT__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(3))}};
 #define _OMC_LIT383 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT383)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT384,2,1) {_OMC_LIT324,_OMC_LIT383}};
-#define _OMC_LIT384 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT384)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT385,2,1) {_OMC_LIT320,_OMC_LIT384}};
+#define _OMC_LIT384_data "No cheap matching."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT384,18,_OMC_LIT384_data);
+#define _OMC_LIT384 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT384)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT385,2,0) {_OMC_LIT126,_OMC_LIT384}};
 #define _OMC_LIT385 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT385)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT386,2,1) {_OMC_LIT318,_OMC_LIT385}};
-#define _OMC_LIT386 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT386)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT387,2,1) {_OMC_LIT314,_OMC_LIT386}};
+#define _OMC_LIT386_data "Cheap matching, traverses all equations and match the first free variable."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT386,74,_OMC_LIT386_data);
+#define _OMC_LIT386 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT386)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT387,2,0) {_OMC_LIT123,_OMC_LIT386}};
 #define _OMC_LIT387 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT387)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT388,2,1) {_OMC_LIT310,_OMC_LIT387}};
-#define _OMC_LIT388 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT388)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT389,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT388}};
+#define _OMC_LIT388_data "Random Karp-Sipser: R. M. Karp and M. Sipser. Maximum matching in sparse random graphs."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT388,87,_OMC_LIT388_data);
+#define _OMC_LIT388 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT388)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT389,2,0) {_OMC_LIT125,_OMC_LIT388}};
 #define _OMC_LIT389 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT389)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT390,1,1) {_OMC_LIT389}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT390,2,1) {_OMC_LIT389,MMC_REFSTRUCTLIT(mmc_nil)}};
 #define _OMC_LIT390 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT390)
-#define _OMC_LIT391_data "Sets the matching algorithm to use. See --help=optmodules for more info."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT391,72,_OMC_LIT391_data);
-#define _OMC_LIT391 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT391)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT392,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT391}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT391,2,1) {_OMC_LIT387,_OMC_LIT390}};
+#define _OMC_LIT391 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT391)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT392,2,1) {_OMC_LIT385,_OMC_LIT391}};
 #define _OMC_LIT392 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT392)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT393,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(14)),_OMC_LIT304,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT306,_OMC_LIT390,_OMC_LIT392}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT393,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT392}};
 #define _OMC_LIT393 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT393)
-#define _OMC_LIT394_data "cheapmatchingAlgorithm"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT394,22,_OMC_LIT394_data);
-#define _OMC_LIT394 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT394)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT395,2,5) {&Flags_FlagData_INT__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(3))}};
-#define _OMC_LIT395 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT395)
-#define _OMC_LIT396_data "No cheap matching."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT396,18,_OMC_LIT396_data);
-#define _OMC_LIT396 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT396)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT397,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT396}};
-#define _OMC_LIT397 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT397)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT398,2,0) {_OMC_LIT135,_OMC_LIT397}};
-#define _OMC_LIT398 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT398)
-#define _OMC_LIT399_data "Cheap matching, traverses all equations and match the first free variable."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT399,74,_OMC_LIT399_data);
-#define _OMC_LIT399 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT399)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT400,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT399}};
-#define _OMC_LIT400 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT400)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT401,2,0) {_OMC_LIT132,_OMC_LIT400}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT394,1,1) {_OMC_LIT393}};
+#define _OMC_LIT394 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT394)
+#define _OMC_LIT395_data "Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT395,111,_OMC_LIT395_data);
+#define _OMC_LIT395 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT395)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT396,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(13)),_OMC_LIT382,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT383,_OMC_LIT394,_OMC_LIT395}};
+#define _OMC_LIT396 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT396)
+#define _OMC_LIT397_data "indexReductionMethod"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT397,20,_OMC_LIT397_data);
+#define _OMC_LIT397 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT397)
+#define _OMC_LIT398_data "dynamicStateSelection"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT398,21,_OMC_LIT398_data);
+#define _OMC_LIT398 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT398)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT399,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT398}};
+#define _OMC_LIT399 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT399)
+#define _OMC_LIT400_data "Skip index reduction"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT400,20,_OMC_LIT400_data);
+#define _OMC_LIT400 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT400)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT401,2,0) {_OMC_LIT19,_OMC_LIT400}};
 #define _OMC_LIT401 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT401)
-#define _OMC_LIT402_data "Random Karp-Sipser: R. M. Karp and M. Sipser. Maximum matching in sparse random graphs."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT402,87,_OMC_LIT402_data);
+#define _OMC_LIT402_data "uode"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT402,4,_OMC_LIT402_data);
 #define _OMC_LIT402 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT402)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT403,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT402}};
-#define _OMC_LIT403 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT403)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT404,2,0) {_OMC_LIT134,_OMC_LIT403}};
+#define _OMC_LIT403_data "Use the underlying ODE without the constraints."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT403,47,_OMC_LIT403_data);
+#define _OMC_LIT403 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT403)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT404,2,0) {_OMC_LIT402,_OMC_LIT403}};
 #define _OMC_LIT404 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT404)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT405,2,1) {_OMC_LIT404,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT405 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT405)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT406,2,1) {_OMC_LIT401,_OMC_LIT405}};
+#define _OMC_LIT405_data "Simple index reduction method, select (dynamic) dummy states based on analysis of the system."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT405,93,_OMC_LIT405_data);
+#define _OMC_LIT405 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT405)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT406,2,0) {_OMC_LIT398,_OMC_LIT405}};
 #define _OMC_LIT406 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT406)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT407,2,1) {_OMC_LIT398,_OMC_LIT406}};
-#define _OMC_LIT407 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT407)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT408,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT407}};
-#define _OMC_LIT408 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT408)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT409,1,1) {_OMC_LIT408}};
+#define _OMC_LIT407_data "dummyDerivatives"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT407,16,_OMC_LIT407_data);
+#define _OMC_LIT407 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT407)
+#define _OMC_LIT408_data "Simple index reduction method, select (static) dummy states based on heuristic."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT408,79,_OMC_LIT408_data);
+#define _OMC_LIT408 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT408)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT409,2,0) {_OMC_LIT407,_OMC_LIT408}};
 #define _OMC_LIT409 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT409)
-#define _OMC_LIT410_data "Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT410,111,_OMC_LIT410_data);
-#define _OMC_LIT410 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT410)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT411,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT410}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT410,2,1) {_OMC_LIT409,MMC_REFSTRUCTLIT(mmc_nil)}};
+#define _OMC_LIT410 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT410)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT411,2,1) {_OMC_LIT406,_OMC_LIT410}};
 #define _OMC_LIT411 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT411)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT412,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(13)),_OMC_LIT394,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT395,_OMC_LIT409,_OMC_LIT411}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT412,2,1) {_OMC_LIT404,_OMC_LIT411}};
 #define _OMC_LIT412 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT412)
-#define _OMC_LIT413_data "indexReductionMethod"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT413,20,_OMC_LIT413_data);
-#define _OMC_LIT413 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT413)
-#define _OMC_LIT414_data "dynamicStateSelection"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT414,21,_OMC_LIT414_data);
-#define _OMC_LIT414 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT414)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT415,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT414}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT413,2,1) {_OMC_LIT401,_OMC_LIT412}};
+#define _OMC_LIT413 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT413)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT414,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT413}};
+#define _OMC_LIT414 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT414)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT415,1,1) {_OMC_LIT414}};
 #define _OMC_LIT415 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT415)
-#define _OMC_LIT416_data "Skip index reduction"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT416,20,_OMC_LIT416_data);
+#define _OMC_LIT416_data "Sets the index reduction method to use. See --help=optmodules for more info."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT416,76,_OMC_LIT416_data);
 #define _OMC_LIT416 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT416)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT417,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT416}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT417,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(15)),_OMC_LIT397,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT399,_OMC_LIT415,_OMC_LIT416}};
 #define _OMC_LIT417 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT417)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT418,2,0) {_OMC_LIT80,_OMC_LIT417}};
-#define _OMC_LIT418 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT418)
-#define _OMC_LIT419_data "uode"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT419,4,_OMC_LIT419_data);
+#define _OMC_LIT418_data "postOptModules"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT418,14,_OMC_LIT418_data);
+#define _OMC_LIT418 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT418)
+#define _OMC_LIT419_data "lateInlineFunction"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT419,18,_OMC_LIT419_data);
 #define _OMC_LIT419 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT419)
-#define _OMC_LIT420_data "Use the underlying ODE without the constraints."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT420,47,_OMC_LIT420_data);
+#define _OMC_LIT420_data "wrapFunctionCalls"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT420,17,_OMC_LIT420_data);
 #define _OMC_LIT420 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT420)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT421,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT420}};
-#define _OMC_LIT421 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT421)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT422,2,0) {_OMC_LIT419,_OMC_LIT421}};
-#define _OMC_LIT422 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT422)
-#define _OMC_LIT423_data "Simple index reduction method, select (dynamic) dummy states based on analysis of the system."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT423,93,_OMC_LIT423_data);
+#define _OMC_LIT421_data "inlineArrayEqn"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT421,14,_OMC_LIT421_data);
+#define _OMC_LIT421 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT421)
+#define _OMC_LIT422_data "constantLinearSystem"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT422,20,_OMC_LIT422_data);
+#define _OMC_LIT422 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT422)
+#define _OMC_LIT423_data "simplifysemiLinear"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT423,18,_OMC_LIT423_data);
 #define _OMC_LIT423 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT423)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT424,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT423}};
-#define _OMC_LIT424 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT424)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT425,2,0) {_OMC_LIT414,_OMC_LIT424}};
-#define _OMC_LIT425 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT425)
-#define _OMC_LIT426_data "dummyDerivatives"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT426,16,_OMC_LIT426_data);
+#define _OMC_LIT424_data "removeSimpleEquations"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT424,21,_OMC_LIT424_data);
+#define _OMC_LIT424 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT424)
+#define _OMC_LIT425_data "simplifyComplexFunction"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT425,23,_OMC_LIT425_data);
+#define _OMC_LIT425 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT425)
+#define _OMC_LIT426_data "solveSimpleEquations"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT426,20,_OMC_LIT426_data);
 #define _OMC_LIT426 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT426)
-#define _OMC_LIT427_data "Simple index reduction method, select (static) dummy states based on heuristic."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT427,79,_OMC_LIT427_data);
+#define _OMC_LIT427_data "tearingSystem"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT427,13,_OMC_LIT427_data);
 #define _OMC_LIT427 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT427)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT428,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT427}};
-#define _OMC_LIT428 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT428)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT429,2,0) {_OMC_LIT426,_OMC_LIT428}};
-#define _OMC_LIT429 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT429)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT430,2,1) {_OMC_LIT429,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT430 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT430)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT431,2,1) {_OMC_LIT425,_OMC_LIT430}};
-#define _OMC_LIT431 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT431)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT432,2,1) {_OMC_LIT422,_OMC_LIT431}};
-#define _OMC_LIT432 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT432)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT433,2,1) {_OMC_LIT418,_OMC_LIT432}};
-#define _OMC_LIT433 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT433)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT434,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT433}};
-#define _OMC_LIT434 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT434)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT435,1,1) {_OMC_LIT434}};
-#define _OMC_LIT435 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT435)
-#define _OMC_LIT436_data "Sets the index reduction method to use. See --help=optmodules for more info."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT436,76,_OMC_LIT436_data);
+#define _OMC_LIT428_data "inputDerivativesUsed"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT428,20,_OMC_LIT428_data);
+#define _OMC_LIT428 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT428)
+#define _OMC_LIT429_data "calculateStrongComponentJacobians"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT429,33,_OMC_LIT429_data);
+#define _OMC_LIT429 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT429)
+#define _OMC_LIT430_data "calculateStateSetsJacobians"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT430,27,_OMC_LIT430_data);
+#define _OMC_LIT430 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT430)
+#define _OMC_LIT431_data "symbolicJacobian"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT431,16,_OMC_LIT431_data);
+#define _OMC_LIT431 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT431)
+#define _OMC_LIT432_data "removeConstants"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT432,15,_OMC_LIT432_data);
+#define _OMC_LIT432 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT432)
+#define _OMC_LIT433_data "simplifyTimeIndepFuncCalls"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT433,26,_OMC_LIT433_data);
+#define _OMC_LIT433 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT433)
+#define _OMC_LIT434_data "simplifyAllExpressions"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT434,22,_OMC_LIT434_data);
+#define _OMC_LIT434 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT434)
+#define _OMC_LIT435_data "findZeroCrossings"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT435,17,_OMC_LIT435_data);
+#define _OMC_LIT435 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT435)
+#define _OMC_LIT436_data "collapseArrayExpressions"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT436,24,_OMC_LIT436_data);
 #define _OMC_LIT436 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT436)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT437,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT436}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT437,2,1) {_OMC_LIT436,MMC_REFSTRUCTLIT(mmc_nil)}};
 #define _OMC_LIT437 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT437)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT438,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(15)),_OMC_LIT413,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT415,_OMC_LIT435,_OMC_LIT437}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT438,2,1) {_OMC_LIT435,_OMC_LIT437}};
 #define _OMC_LIT438 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT438)
-#define _OMC_LIT439_data "postOptModules"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT439,14,_OMC_LIT439_data);
-#define _OMC_LIT439 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT439)
-#define _OMC_LIT440_data "lateInlineFunction"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT440,18,_OMC_LIT440_data);
-#define _OMC_LIT440 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT440)
-#define _OMC_LIT441_data "wrapFunctionCalls"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT441,17,_OMC_LIT441_data);
-#define _OMC_LIT441 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT441)
-#define _OMC_LIT442_data "inlineArrayEqn"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT442,14,_OMC_LIT442_data);
-#define _OMC_LIT442 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT442)
-#define _OMC_LIT443_data "constantLinearSystem"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT443,20,_OMC_LIT443_data);
-#define _OMC_LIT443 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT443)
-#define _OMC_LIT444_data "simplifysemiLinear"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT444,18,_OMC_LIT444_data);
-#define _OMC_LIT444 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT444)
-#define _OMC_LIT445_data "removeSimpleEquations"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT445,21,_OMC_LIT445_data);
-#define _OMC_LIT445 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT445)
-#define _OMC_LIT446_data "simplifyComplexFunction"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT446,23,_OMC_LIT446_data);
-#define _OMC_LIT446 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT446)
-#define _OMC_LIT447_data "solveSimpleEquations"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT447,20,_OMC_LIT447_data);
-#define _OMC_LIT447 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT447)
-#define _OMC_LIT448_data "tearingSystem"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT448,13,_OMC_LIT448_data);
-#define _OMC_LIT448 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT448)
-#define _OMC_LIT449_data "inputDerivativesUsed"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT449,20,_OMC_LIT449_data);
-#define _OMC_LIT449 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT449)
-#define _OMC_LIT450_data "calculateStrongComponentJacobians"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT450,33,_OMC_LIT450_data);
-#define _OMC_LIT450 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT450)
-#define _OMC_LIT451_data "calculateStateSetsJacobians"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT451,27,_OMC_LIT451_data);
-#define _OMC_LIT451 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT451)
-#define _OMC_LIT452_data "symbolicJacobian"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT452,16,_OMC_LIT452_data);
-#define _OMC_LIT452 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT452)
-#define _OMC_LIT453_data "removeConstants"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT453,15,_OMC_LIT453_data);
-#define _OMC_LIT453 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT453)
-#define _OMC_LIT454_data "simplifyTimeIndepFuncCalls"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT454,26,_OMC_LIT454_data);
-#define _OMC_LIT454 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT454)
-#define _OMC_LIT455_data "simplifyAllExpressions"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT455,22,_OMC_LIT455_data);
-#define _OMC_LIT455 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT455)
-#define _OMC_LIT456_data "findZeroCrossings"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT456,17,_OMC_LIT456_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT439,2,1) {_OMC_LIT434,_OMC_LIT438}};
+#define _OMC_LIT439 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT439)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT440,2,1) {_OMC_LIT433,_OMC_LIT439}};
+#define _OMC_LIT440 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT440)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT441,2,1) {_OMC_LIT432,_OMC_LIT440}};
+#define _OMC_LIT441 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT441)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT442,2,1) {_OMC_LIT431,_OMC_LIT441}};
+#define _OMC_LIT442 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT442)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT443,2,1) {_OMC_LIT430,_OMC_LIT442}};
+#define _OMC_LIT443 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT443)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT444,2,1) {_OMC_LIT429,_OMC_LIT443}};
+#define _OMC_LIT444 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT444)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT445,2,1) {_OMC_LIT428,_OMC_LIT444}};
+#define _OMC_LIT445 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT445)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT446,2,1) {_OMC_LIT427,_OMC_LIT445}};
+#define _OMC_LIT446 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT446)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT447,2,1) {_OMC_LIT426,_OMC_LIT446}};
+#define _OMC_LIT447 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT447)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT448,2,1) {_OMC_LIT425,_OMC_LIT447}};
+#define _OMC_LIT448 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT448)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT449,2,1) {_OMC_LIT424,_OMC_LIT448}};
+#define _OMC_LIT449 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT449)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT450,2,1) {_OMC_LIT423,_OMC_LIT449}};
+#define _OMC_LIT450 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT450)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT451,2,1) {_OMC_LIT422,_OMC_LIT450}};
+#define _OMC_LIT451 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT451)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT452,2,1) {_OMC_LIT421,_OMC_LIT451}};
+#define _OMC_LIT452 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT452)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT453,2,1) {_OMC_LIT420,_OMC_LIT452}};
+#define _OMC_LIT453 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT453)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT454,2,1) {_OMC_LIT419,_OMC_LIT453}};
+#define _OMC_LIT454 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT454)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT455,2,9) {&Flags_FlagData_STRING__LIST__FLAG__desc,_OMC_LIT454}};
+#define _OMC_LIT455 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT455)
+#define _OMC_LIT456_data "addScaledVars_states"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT456,20,_OMC_LIT456_data);
 #define _OMC_LIT456 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT456)
-#define _OMC_LIT457_data "collapseArrayExpressions"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT457,24,_OMC_LIT457_data);
+#define _OMC_LIT457_data "added var_norm = var/nominal, where var is state"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT457,48,_OMC_LIT457_data);
 #define _OMC_LIT457 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT457)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT458,2,1) {_OMC_LIT457,MMC_REFSTRUCTLIT(mmc_nil)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT458,2,0) {_OMC_LIT456,_OMC_LIT457}};
 #define _OMC_LIT458 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT458)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT459,2,1) {_OMC_LIT456,_OMC_LIT458}};
-#define _OMC_LIT459 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT459)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT460,2,1) {_OMC_LIT455,_OMC_LIT459}};
-#define _OMC_LIT460 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT460)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT461,2,1) {_OMC_LIT454,_OMC_LIT460}};
+#define _OMC_LIT459_data "addScaledVars_inputs"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT459,20,_OMC_LIT459_data);
+#define _OMC_LIT459 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT459)
+#define _OMC_LIT460_data "added var_norm = var/nominal, where var is input"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT460,48,_OMC_LIT460_data);
+#define _OMC_LIT460 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT460)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT461,2,0) {_OMC_LIT459,_OMC_LIT460}};
 #define _OMC_LIT461 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT461)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT462,2,1) {_OMC_LIT453,_OMC_LIT461}};
-#define _OMC_LIT462 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT462)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT463,2,1) {_OMC_LIT452,_OMC_LIT462}};
-#define _OMC_LIT463 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT463)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT464,2,1) {_OMC_LIT451,_OMC_LIT463}};
+#define _OMC_LIT462_data "addTimeAsState"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT462,14,_OMC_LIT462_data);
+#define _OMC_LIT462 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT462)
+#define _OMC_LIT463_data "Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT463,133,_OMC_LIT463_data);
+#define _OMC_LIT463 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT463)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT464,2,0) {_OMC_LIT462,_OMC_LIT463}};
 #define _OMC_LIT464 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT464)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT465,2,1) {_OMC_LIT450,_OMC_LIT464}};
-#define _OMC_LIT465 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT465)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT466,2,1) {_OMC_LIT449,_OMC_LIT465}};
+#define _OMC_LIT465_data "Generates analytical jacobian for dynamic state selection sets."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT465,63,_OMC_LIT465_data);
+#define _OMC_LIT465 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT465)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT466,2,0) {_OMC_LIT430,_OMC_LIT465}};
 #define _OMC_LIT466 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT466)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT467,2,1) {_OMC_LIT448,_OMC_LIT466}};
-#define _OMC_LIT467 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT467)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT468,2,1) {_OMC_LIT447,_OMC_LIT467}};
+#define _OMC_LIT467_data "Generates analytical jacobian for torn linear and non-linear strong components. By default linear components and non-linear components with user-defined function calls are skipped. See also debug flags: LSanalyticJacobian, NLSanalyticJacobian and forceNLSanalyticJacobian"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT467,271,_OMC_LIT467_data);
+#define _OMC_LIT467 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT467)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT468,2,0) {_OMC_LIT429,_OMC_LIT467}};
 #define _OMC_LIT468 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT468)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT469,2,1) {_OMC_LIT446,_OMC_LIT468}};
-#define _OMC_LIT469 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT469)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT470,2,1) {_OMC_LIT445,_OMC_LIT469}};
+#define _OMC_LIT469_data "Simplifies {x[1],x[2],x[3]} → x for arrays of whole variable references (simplifies code generation)."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT469,103,_OMC_LIT469_data);
+#define _OMC_LIT469 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT469)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT470,2,0) {_OMC_LIT436,_OMC_LIT469}};
 #define _OMC_LIT470 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT470)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT471,2,1) {_OMC_LIT444,_OMC_LIT470}};
-#define _OMC_LIT471 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT471)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT472,2,1) {_OMC_LIT443,_OMC_LIT471}};
+#define _OMC_LIT471_data "Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT471,100,_OMC_LIT471_data);
+#define _OMC_LIT471 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT471)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT472,2,0) {_OMC_LIT422,_OMC_LIT471}};
 #define _OMC_LIT472 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT472)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT473,2,1) {_OMC_LIT442,_OMC_LIT472}};
-#define _OMC_LIT473 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT473)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT474,2,1) {_OMC_LIT441,_OMC_LIT473}};
-#define _OMC_LIT474 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT474)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT475,2,1) {_OMC_LIT440,_OMC_LIT474}};
+#define _OMC_LIT473_data "countOperations"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT473,15,_OMC_LIT473_data);
+#define _OMC_LIT473 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT473)
+#define _OMC_LIT474_data "Count the mathematical operations of the system."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT474,48,_OMC_LIT474_data);
+#define _OMC_LIT474 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT474)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT475,2,0) {_OMC_LIT473,_OMC_LIT474}};
 #define _OMC_LIT475 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT475)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT476,2,9) {&Flags_FlagData_STRING__LIST__FLAG__desc,_OMC_LIT475}};
-#define _OMC_LIT476 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT476)
-#define _OMC_LIT477_data "addScaledVars_states"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT477,20,_OMC_LIT477_data);
+#define _OMC_LIT476_data "cseBinary"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT476,9,_OMC_LIT476_data);
+#define _OMC_LIT476 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT476)
+#define _OMC_LIT477_data "Common Sub-expression Elimination"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT477,33,_OMC_LIT477_data);
 #define _OMC_LIT477 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT477)
-#define _OMC_LIT478_data "added var_norm = var/nominal, where var is state"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT478,48,_OMC_LIT478_data);
-#define _OMC_LIT478 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT478)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT479,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT478}};
-#define _OMC_LIT479 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT479)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT480,2,0) {_OMC_LIT477,_OMC_LIT479}};
-#define _OMC_LIT480 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT480)
-#define _OMC_LIT481_data "addScaledVars_inputs"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT481,20,_OMC_LIT481_data);
-#define _OMC_LIT481 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT481)
-#define _OMC_LIT482_data "added var_norm = var/nominal, where var is input"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT482,48,_OMC_LIT482_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT478,2,0) {_OMC_LIT476,_OMC_LIT477}};
+#define _OMC_LIT478 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT478)
+#define _OMC_LIT479_data "dumpComponentsGraphStr"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT479,22,_OMC_LIT479_data);
+#define _OMC_LIT479 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT479)
+#define _OMC_LIT480_data "Dumps the assignment graph used to determine strong components to format suitable for Mathematica"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT480,97,_OMC_LIT480_data);
+#define _OMC_LIT480 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT480)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT481,2,0) {_OMC_LIT479,_OMC_LIT480}};
+#define _OMC_LIT481 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT481)
+#define _OMC_LIT482_data "dumpDAE"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT482,7,_OMC_LIT482_data);
 #define _OMC_LIT482 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT482)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT483,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT482}};
-#define _OMC_LIT483 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT483)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT484,2,0) {_OMC_LIT481,_OMC_LIT483}};
+#define _OMC_LIT483_data "dumps the DAE representation of the current transformation state"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT483,64,_OMC_LIT483_data);
+#define _OMC_LIT483 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT483)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT484,2,0) {_OMC_LIT482,_OMC_LIT483}};
 #define _OMC_LIT484 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT484)
-#define _OMC_LIT485_data "addTimeAsState"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT485,14,_OMC_LIT485_data);
+#define _OMC_LIT485_data "dumpDAEXML"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT485,10,_OMC_LIT485_data);
 #define _OMC_LIT485 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT485)
-#define _OMC_LIT486_data "Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT486,133,_OMC_LIT486_data);
+#define _OMC_LIT486_data "dumps the DAE as xml representation of the current transformation state"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT486,71,_OMC_LIT486_data);
 #define _OMC_LIT486 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT486)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT487,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT486}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT487,2,0) {_OMC_LIT485,_OMC_LIT486}};
 #define _OMC_LIT487 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT487)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT488,2,0) {_OMC_LIT485,_OMC_LIT487}};
-#define _OMC_LIT488 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT488)
-#define _OMC_LIT489_data "Generates analytical jacobian for dynamic state selection sets."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT489,63,_OMC_LIT489_data);
+#define _OMC_LIT488_data "evaluateParameters"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT488,18,_OMC_LIT488_data);
+#define _OMC_LIT488 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT488)
+#define _OMC_LIT489_data "Evaluates parameters with annotation(Evaluate=true). Use '--evaluateFinalParameters=true' or '--evaluateProtectedParameters=true' to specify additional parameters to be evaluated. Use '--replaceEvaluatedParameters=true' if the evaluated parameters should be replaced in the DAE. To evaluate all parameters in the Frontend use -d=evaluateAllParameters."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT489,351,_OMC_LIT489_data);
 #define _OMC_LIT489 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT489)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT490,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT489}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT490,2,0) {_OMC_LIT488,_OMC_LIT489}};
 #define _OMC_LIT490 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT490)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT491,2,0) {_OMC_LIT451,_OMC_LIT490}};
-#define _OMC_LIT491 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT491)
-#define _OMC_LIT492_data "Generates analytical jacobian for torn linear and non-linear strong components. By default linear components and non-linear components with user-defined function calls are skipped. See also debug flags: LSanalyticJacobian, NLSanalyticJacobian and forceNLSanalyticJacobian"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT492,271,_OMC_LIT492_data);
+#define _OMC_LIT491_data "extendDynamicOptimization"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT491,25,_OMC_LIT491_data);
+#define _OMC_LIT491 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT491)
+#define _OMC_LIT492_data "Move loops to constraints."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT492,26,_OMC_LIT492_data);
 #define _OMC_LIT492 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT492)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT493,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT492}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT493,2,0) {_OMC_LIT491,_OMC_LIT492}};
 #define _OMC_LIT493 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT493)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT494,2,0) {_OMC_LIT450,_OMC_LIT493}};
-#define _OMC_LIT494 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT494)
-#define _OMC_LIT495_data "Simplifies {x[1],x[2],x[3]} → x for arrays of whole variable references (simplifies code generation)."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT495,103,_OMC_LIT495_data);
+#define _OMC_LIT494_data "generateSymbolicLinearization"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT494,29,_OMC_LIT494_data);
+#define _OMC_LIT494 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT494)
+#define _OMC_LIT495_data "Generates symbolic linearization matrices A,B,C,D for linear model:\n	:math:`\\dot{x} = Ax + Bu`\n	:math:`y = Cx + Du`"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT495,115,_OMC_LIT495_data);
 #define _OMC_LIT495 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT495)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT496,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT495}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT496,2,0) {_OMC_LIT494,_OMC_LIT495}};
 #define _OMC_LIT496 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT496)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT497,2,0) {_OMC_LIT457,_OMC_LIT496}};
-#define _OMC_LIT497 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT497)
-#define _OMC_LIT498_data "Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT498,100,_OMC_LIT498_data);
+#define _OMC_LIT497_data "generateSymbolicSensitivities"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT497,29,_OMC_LIT497_data);
+#define _OMC_LIT497 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT497)
+#define _OMC_LIT498_data "Generates symbolic Sensivities matrix, where der(x) is differentiated w.r.t. param."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT498,83,_OMC_LIT498_data);
 #define _OMC_LIT498 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT498)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT499,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT498}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT499,2,0) {_OMC_LIT497,_OMC_LIT498}};
 #define _OMC_LIT499 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT499)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT500,2,0) {_OMC_LIT443,_OMC_LIT499}};
-#define _OMC_LIT500 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT500)
-#define _OMC_LIT501_data "countOperations"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT501,15,_OMC_LIT501_data);
-#define _OMC_LIT501 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT501)
-#define _OMC_LIT502_data "Count the mathematical operations of the system."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT502,48,_OMC_LIT502_data);
+#define _OMC_LIT500_data "This module expands all array equations to scalar equations."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT500,60,_OMC_LIT500_data);
+#define _OMC_LIT500 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT500)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT501,2,0) {_OMC_LIT421,_OMC_LIT500}};
+#define _OMC_LIT501 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT501)
+#define _OMC_LIT502_data "Checks if derivatives of inputs are need to calculate the model."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT502,64,_OMC_LIT502_data);
 #define _OMC_LIT502 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT502)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT503,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT502}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT503,2,0) {_OMC_LIT428,_OMC_LIT502}};
 #define _OMC_LIT503 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT503)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT504,2,0) {_OMC_LIT501,_OMC_LIT503}};
-#define _OMC_LIT504 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT504)
-#define _OMC_LIT505_data "cseBinary"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT505,9,_OMC_LIT505_data);
-#define _OMC_LIT505 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT505)
-#define _OMC_LIT506_data "Common Sub-expression Elimination"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT506,33,_OMC_LIT506_data);
+#define _OMC_LIT504_data "Perform function inlining for function with annotation LateInline=true."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT504,71,_OMC_LIT504_data);
+#define _OMC_LIT504 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT504)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT505,2,0) {_OMC_LIT419,_OMC_LIT504}};
+#define _OMC_LIT505 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT505)
+#define _OMC_LIT506_data "partlintornsystem"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT506,17,_OMC_LIT506_data);
 #define _OMC_LIT506 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT506)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT507,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT506}};
-#define _OMC_LIT507 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT507)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT508,2,0) {_OMC_LIT505,_OMC_LIT507}};
+#define _OMC_LIT507_data "partitions linear torn systems."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT507,31,_OMC_LIT507_data);
+#define _OMC_LIT507 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT507)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT508,2,0) {_OMC_LIT506,_OMC_LIT507}};
 #define _OMC_LIT508 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT508)
-#define _OMC_LIT509_data "dumpComponentsGraphStr"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT509,22,_OMC_LIT509_data);
+#define _OMC_LIT509_data "recursiveTearing"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT509,16,_OMC_LIT509_data);
 #define _OMC_LIT509 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT509)
-#define _OMC_LIT510_data "Dumps the assignment graph used to determine strong components to format suitable for Mathematica"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT510,97,_OMC_LIT510_data);
+#define _OMC_LIT510_data "inline and repeat tearing"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT510,25,_OMC_LIT510_data);
 #define _OMC_LIT510 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT510)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT511,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT510}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT511,2,0) {_OMC_LIT509,_OMC_LIT510}};
 #define _OMC_LIT511 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT511)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT512,2,0) {_OMC_LIT509,_OMC_LIT511}};
-#define _OMC_LIT512 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT512)
-#define _OMC_LIT513_data "dumpDAE"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT513,7,_OMC_LIT513_data);
+#define _OMC_LIT512_data "reduceDynamicOptimization"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT512,25,_OMC_LIT512_data);
+#define _OMC_LIT512 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT512)
+#define _OMC_LIT513_data "Removes equations which are not needed for the calculations of cost and constraints. This module requires --postOptModules+=reduceDynamicOptimization."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT513,150,_OMC_LIT513_data);
 #define _OMC_LIT513 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT513)
-#define _OMC_LIT514_data "dumps the DAE representation of the current transformation state"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT514,64,_OMC_LIT514_data);
-#define _OMC_LIT514 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT514)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT515,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT514}};
-#define _OMC_LIT515 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT515)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT516,2,0) {_OMC_LIT513,_OMC_LIT515}};
-#define _OMC_LIT516 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT516)
-#define _OMC_LIT517_data "dumpDAEXML"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT517,10,_OMC_LIT517_data);
-#define _OMC_LIT517 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT517)
-#define _OMC_LIT518_data "dumps the DAE as xml representation of the current transformation state"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT518,71,_OMC_LIT518_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT514,2,0) {_OMC_LIT512,_OMC_LIT513}};
+#define _OMC_LIT514 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT514)
+#define _OMC_LIT515_data "relaxSystem"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT515,11,_OMC_LIT515_data);
+#define _OMC_LIT515 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT515)
+#define _OMC_LIT516_data "relaxation from gausian elemination"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT516,35,_OMC_LIT516_data);
+#define _OMC_LIT516 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT516)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT517,2,0) {_OMC_LIT515,_OMC_LIT516}};
+#define _OMC_LIT517 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT517)
+#define _OMC_LIT518_data "Remove all constants in the system."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT518,35,_OMC_LIT518_data);
 #define _OMC_LIT518 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT518)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT519,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT518}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT519,2,0) {_OMC_LIT432,_OMC_LIT518}};
 #define _OMC_LIT519 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT519)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT520,2,0) {_OMC_LIT517,_OMC_LIT519}};
-#define _OMC_LIT520 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT520)
-#define _OMC_LIT521_data "evaluateParameters"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT521,18,_OMC_LIT521_data);
+#define _OMC_LIT520_data "removeEqualRHS"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT520,14,_OMC_LIT520_data);
+#define _OMC_LIT520 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT520)
+#define _OMC_LIT521_data "Detects equal function calls of the form a=f(b) and c=f(b) and substitutes them to get speed up."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT521,96,_OMC_LIT521_data);
 #define _OMC_LIT521 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT521)
-#define _OMC_LIT522_data "Evaluates parameters with annotation(Evaluate=true). Use '--evaluateFinalParameters=true' or '--evaluateProtectedParameters=true' to specify additional parameters to be evaluated. Use '--replaceEvaluatedParameters=true' if the evaluated parameters should be replaced in the DAE. To evaluate all parameters in the Frontend use -d=evaluateAllParameters."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT522,351,_OMC_LIT522_data);
-#define _OMC_LIT522 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT522)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT523,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT522}};
-#define _OMC_LIT523 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT523)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT524,2,0) {_OMC_LIT521,_OMC_LIT523}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT522,2,0) {_OMC_LIT520,_OMC_LIT521}};
+#define _OMC_LIT522 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT522)
+#define _OMC_LIT523_data "Performs alias elimination and removes constant variables from the DAE, replacing all occurrences of the old variable reference with the new value (constants) or variable reference (alias elimination)."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT523,201,_OMC_LIT523_data);
+#define _OMC_LIT523 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT523)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT524,2,0) {_OMC_LIT424,_OMC_LIT523}};
 #define _OMC_LIT524 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT524)
-#define _OMC_LIT525_data "extendDynamicOptimization"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT525,25,_OMC_LIT525_data);
+#define _OMC_LIT525_data "removeUnusedParameter"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT525,21,_OMC_LIT525_data);
 #define _OMC_LIT525 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT525)
-#define _OMC_LIT526_data "Move loops to constraints."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT526,26,_OMC_LIT526_data);
+#define _OMC_LIT526_data "Strips all parameter not present in the equations from the system to get speed up for compilation of target code."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT526,113,_OMC_LIT526_data);
 #define _OMC_LIT526 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT526)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT527,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT526}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT527,2,0) {_OMC_LIT525,_OMC_LIT526}};
 #define _OMC_LIT527 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT527)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT528,2,0) {_OMC_LIT525,_OMC_LIT527}};
-#define _OMC_LIT528 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT528)
-#define _OMC_LIT529_data "generateSymbolicLinearization"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT529,29,_OMC_LIT529_data);
+#define _OMC_LIT528_data "removeUnusedVariables"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT528,21,_OMC_LIT528_data);
+#define _OMC_LIT528 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT528)
+#define _OMC_LIT529_data "Strips all variables not present in the equations from the system to get speed up for compilation of target code."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT529,113,_OMC_LIT529_data);
 #define _OMC_LIT529 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT529)
-#define _OMC_LIT530_data "Generates symbolic linearization matrices A,B,C,D for linear model:\n	:math:`\\dot{x} = Ax + Bu `\n	:math:`y = Cx +Du`"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT530,115,_OMC_LIT530_data);
-#define _OMC_LIT530 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT530)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT531,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT530}};
-#define _OMC_LIT531 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT531)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT532,2,0) {_OMC_LIT529,_OMC_LIT531}};
-#define _OMC_LIT532 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT532)
-#define _OMC_LIT533_data "generateSymbolicSensitivities"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT533,29,_OMC_LIT533_data);
-#define _OMC_LIT533 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT533)
-#define _OMC_LIT534_data "Generates symbolic Sensivities matrix, where der(x) is differentiated w.r.t. param."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT534,83,_OMC_LIT534_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT530,2,0) {_OMC_LIT528,_OMC_LIT529}};
+#define _OMC_LIT530 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT530)
+#define _OMC_LIT531_data "reshufflePost"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT531,13,_OMC_LIT531_data);
+#define _OMC_LIT531 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT531)
+#define _OMC_LIT532_data "Reshuffles algebraic loops."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT532,27,_OMC_LIT532_data);
+#define _OMC_LIT532 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT532)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT533,2,0) {_OMC_LIT531,_OMC_LIT532}};
+#define _OMC_LIT533 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT533)
+#define _OMC_LIT534_data "Does simplifications on all expressions."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT534,40,_OMC_LIT534_data);
 #define _OMC_LIT534 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT534)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT535,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT534}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT535,2,0) {_OMC_LIT434,_OMC_LIT534}};
 #define _OMC_LIT535 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT535)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT536,2,0) {_OMC_LIT533,_OMC_LIT535}};
-#define _OMC_LIT536 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT536)
-#define _OMC_LIT537_data "This module expands all array equations to scalar equations."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT537,60,_OMC_LIT537_data);
-#define _OMC_LIT537 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT537)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT538,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT537}};
-#define _OMC_LIT538 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT538)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT539,2,0) {_OMC_LIT442,_OMC_LIT538}};
-#define _OMC_LIT539 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT539)
-#define _OMC_LIT540_data "Checks if derivatives of inputs are need to calculate the model."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT540,64,_OMC_LIT540_data);
-#define _OMC_LIT540 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT540)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT541,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT540}};
-#define _OMC_LIT541 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT541)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT542,2,0) {_OMC_LIT449,_OMC_LIT541}};
-#define _OMC_LIT542 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT542)
-#define _OMC_LIT543_data "Perform function inlining for function with annotation LateInline=true."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT543,71,_OMC_LIT543_data);
-#define _OMC_LIT543 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT543)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT544,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT543}};
-#define _OMC_LIT544 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT544)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT545,2,0) {_OMC_LIT440,_OMC_LIT544}};
+#define _OMC_LIT536_data "Some simplifications on complex functions (complex refers to the internal data structure)"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT536,89,_OMC_LIT536_data);
+#define _OMC_LIT536 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT536)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT537,2,0) {_OMC_LIT425,_OMC_LIT536}};
+#define _OMC_LIT537 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT537)
+#define _OMC_LIT538_data "simplifyConstraints"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT538,19,_OMC_LIT538_data);
+#define _OMC_LIT538 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT538)
+#define _OMC_LIT539_data "Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT539,95,_OMC_LIT539_data);
+#define _OMC_LIT539 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT539)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT540,2,0) {_OMC_LIT538,_OMC_LIT539}};
+#define _OMC_LIT540 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT540)
+#define _OMC_LIT541_data "simplifyLoops"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT541,13,_OMC_LIT541_data);
+#define _OMC_LIT541 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT541)
+#define _OMC_LIT542_data "Simplifies algebraic loops. This modules requires +simplifyLoops."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT542,65,_OMC_LIT542_data);
+#define _OMC_LIT542 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT542)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT543,2,0) {_OMC_LIT541,_OMC_LIT542}};
+#define _OMC_LIT543 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT543)
+#define _OMC_LIT544_data "Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT544,142,_OMC_LIT544_data);
+#define _OMC_LIT544 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT544)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT545,2,0) {_OMC_LIT433,_OMC_LIT544}};
 #define _OMC_LIT545 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT545)
-#define _OMC_LIT546_data "partlintornsystem"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT546,17,_OMC_LIT546_data);
+#define _OMC_LIT546_data "Simplifies calls to semiLinear."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT546,31,_OMC_LIT546_data);
 #define _OMC_LIT546 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT546)
-#define _OMC_LIT547_data "partitions linear torn systems."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT547,31,_OMC_LIT547_data);
-#define _OMC_LIT547 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT547)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT548,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT547}};
-#define _OMC_LIT548 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT548)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT549,2,0) {_OMC_LIT546,_OMC_LIT548}};
-#define _OMC_LIT549 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT549)
-#define _OMC_LIT550_data "recursiveTearing"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT550,16,_OMC_LIT550_data);
-#define _OMC_LIT550 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT550)
-#define _OMC_LIT551_data "inline and repeat tearing"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT551,25,_OMC_LIT551_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT547,2,0) {_OMC_LIT423,_OMC_LIT546}};
+#define _OMC_LIT547 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT547)
+#define _OMC_LIT548_data "solveLinearSystem"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT548,17,_OMC_LIT548_data);
+#define _OMC_LIT548 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT548)
+#define _OMC_LIT549_data "solve linear system with newton step"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT549,36,_OMC_LIT549_data);
+#define _OMC_LIT549 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT549)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT550,2,0) {_OMC_LIT548,_OMC_LIT549}};
+#define _OMC_LIT550 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT550)
+#define _OMC_LIT551_data "Solves simple equations"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT551,23,_OMC_LIT551_data);
 #define _OMC_LIT551 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT551)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT552,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT551}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT552,2,0) {_OMC_LIT426,_OMC_LIT551}};
 #define _OMC_LIT552 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT552)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT553,2,0) {_OMC_LIT550,_OMC_LIT552}};
-#define _OMC_LIT553 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT553)
-#define _OMC_LIT554_data "reduceDynamicOptimization"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT554,25,_OMC_LIT554_data);
+#define _OMC_LIT553_data "symSolver"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT553,9,_OMC_LIT553_data);
+#define _OMC_LIT553 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT553)
+#define _OMC_LIT554_data "Rewrites the ode system for implicit Euler method. This module requires +symSolver."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT554,83,_OMC_LIT554_data);
 #define _OMC_LIT554 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT554)
-#define _OMC_LIT555_data "Removes equations which are not needed for the calculations of cost and constraints. This module requires -d=reduceDynOpt."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT555,122,_OMC_LIT555_data);
-#define _OMC_LIT555 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT555)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT556,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT555}};
-#define _OMC_LIT556 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT556)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT557,2,0) {_OMC_LIT554,_OMC_LIT556}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT555,2,0) {_OMC_LIT553,_OMC_LIT554}};
+#define _OMC_LIT555 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT555)
+#define _OMC_LIT556_data "Detects the sparse pattern of the ODE system and calculates also the symbolic Jacobian if flag '--generateDynamicJacobian=symbolic'."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT556,132,_OMC_LIT556_data);
+#define _OMC_LIT556 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT556)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT557,2,0) {_OMC_LIT431,_OMC_LIT556}};
 #define _OMC_LIT557 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT557)
-#define _OMC_LIT558_data "relaxSystem"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT558,11,_OMC_LIT558_data);
+#define _OMC_LIT558_data "For method selection use flag tearingMethod."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT558,44,_OMC_LIT558_data);
 #define _OMC_LIT558 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT558)
-#define _OMC_LIT559_data "relaxation from gausian elemination"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT559,35,_OMC_LIT559_data);
-#define _OMC_LIT559 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT559)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT560,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT559}};
-#define _OMC_LIT560 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT560)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT561,2,0) {_OMC_LIT558,_OMC_LIT560}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT559,2,0) {_OMC_LIT427,_OMC_LIT558}};
+#define _OMC_LIT559 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT559)
+#define _OMC_LIT560_data "This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT560,124,_OMC_LIT560_data);
+#define _OMC_LIT560 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT560)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT561,2,0) {_OMC_LIT420,_OMC_LIT560}};
 #define _OMC_LIT561 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT561)
-#define _OMC_LIT562_data "Remove all constants in the system."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT562,35,_OMC_LIT562_data);
-#define _OMC_LIT562 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT562)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT563,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT562}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_1,2,1) {_OMC_LIT561,MMC_REFSTRUCTLIT(mmc_nil)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_2,2,1) {_OMC_LIT559,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_1)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_3,2,1) {_OMC_LIT557,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_2)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_4,2,1) {_OMC_LIT555,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_3)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_5,2,1) {_OMC_LIT552,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_4)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_6,2,1) {_OMC_LIT550,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_5)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_7,2,1) {_OMC_LIT547,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_6)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_8,2,1) {_OMC_LIT545,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_7)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_9,2,1) {_OMC_LIT543,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_8)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_10,2,1) {_OMC_LIT540,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_9)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_11,2,1) {_OMC_LIT537,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_10)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_12,2,1) {_OMC_LIT535,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_11)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_13,2,1) {_OMC_LIT533,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_12)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_14,2,1) {_OMC_LIT530,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_13)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_15,2,1) {_OMC_LIT527,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_14)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_16,2,1) {_OMC_LIT524,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_15)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_17,2,1) {_OMC_LIT522,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_16)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_18,2,1) {_OMC_LIT519,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_17)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_19,2,1) {_OMC_LIT517,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_18)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_20,2,1) {_OMC_LIT514,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_19)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_21,2,1) {_OMC_LIT511,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_20)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_22,2,1) {_OMC_LIT508,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_21)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_23,2,1) {_OMC_LIT505,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_22)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_24,2,1) {_OMC_LIT503,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_23)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_25,2,1) {_OMC_LIT501,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_24)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_26,2,1) {_OMC_LIT499,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_25)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_27,2,1) {_OMC_LIT496,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_26)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_28,2,1) {_OMC_LIT493,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_27)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_29,2,1) {_OMC_LIT490,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_28)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_30,2,1) {_OMC_LIT487,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_29)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_31,2,1) {_OMC_LIT484,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_30)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_32,2,1) {_OMC_LIT481,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_31)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_33,2,1) {_OMC_LIT478,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_32)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_34,2,1) {_OMC_LIT475,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_33)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_35,2,1) {_OMC_LIT472,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_34)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_36,2,1) {_OMC_LIT470,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_35)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_37,2,1) {_OMC_LIT468,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_36)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_38,2,1) {_OMC_LIT466,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_37)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_39,2,1) {_OMC_LIT464,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_38)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_40,2,1) {_OMC_LIT461,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_39)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_41,2,1) {_OMC_LIT458,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_40)}};
+#define _OMC_LIT562 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT562_cons_41)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT563,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT562}};
 #define _OMC_LIT563 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT563)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT564,2,0) {_OMC_LIT453,_OMC_LIT563}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT564,1,1) {_OMC_LIT563}};
 #define _OMC_LIT564 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT564)
-#define _OMC_LIT565_data "removeEqualRHS"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT565,14,_OMC_LIT565_data);
+#define _OMC_LIT565_data "Sets the post optimization modules to use in the back end. See --help=optmodules for more info."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT565,95,_OMC_LIT565_data);
 #define _OMC_LIT565 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT565)
-#define _OMC_LIT566_data "Detects equal function calls of the form a=f(b) and c=f(b) and substitutes them to get speed up."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT566,96,_OMC_LIT566_data);
-#define _OMC_LIT566 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT566)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT567,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT566}};
-#define _OMC_LIT567 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT567)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT568,2,0) {_OMC_LIT565,_OMC_LIT567}};
-#define _OMC_LIT568 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT568)
-#define _OMC_LIT569_data "Performs alias elimination and removes constant variables from the DAE, replacing all occurrences of the old variable reference with the new value (constants) or variable reference (alias elimination)."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT569,201,_OMC_LIT569_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT566,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(16)),_OMC_LIT418,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT455,_OMC_LIT564,_OMC_LIT565}};
+#define _OMC_LIT566 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT566)
+#define _OMC_LIT567_data "preOptModules"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT567,13,_OMC_LIT567_data);
+#define _OMC_LIT567 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT567)
+#define _OMC_LIT568_data "normalInlineFunction"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT568,20,_OMC_LIT568_data);
+#define _OMC_LIT568 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT568)
+#define _OMC_LIT569_data "simplifyIfEquations"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT569,19,_OMC_LIT569_data);
 #define _OMC_LIT569 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT569)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT570,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT569}};
-#define _OMC_LIT570 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT570)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT571,2,0) {_OMC_LIT445,_OMC_LIT570}};
-#define _OMC_LIT571 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT571)
-#define _OMC_LIT572_data "removeUnusedParameter"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT572,21,_OMC_LIT572_data);
+#define _OMC_LIT570_data "expandDerOperator"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT570,17,_OMC_LIT570_data);
+#define _OMC_LIT570 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT570)
+#define _OMC_LIT571_data "clockPartitioning"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT571,17,_OMC_LIT571_data);
+#define _OMC_LIT571 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT571)
+#define _OMC_LIT572_data "findStateOrder"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT572,14,_OMC_LIT572_data);
 #define _OMC_LIT572 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT572)
-#define _OMC_LIT573_data "Strips all parameter not present in the equations from the system to get speed up for compilation of target code."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT573,113,_OMC_LIT573_data);
+#define _OMC_LIT573_data "replaceEdgeChange"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT573,17,_OMC_LIT573_data);
 #define _OMC_LIT573 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT573)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT574,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT573}};
-#define _OMC_LIT574 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT574)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT575,2,0) {_OMC_LIT572,_OMC_LIT574}};
-#define _OMC_LIT575 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT575)
-#define _OMC_LIT576_data "removeUnusedVariables"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT576,21,_OMC_LIT576_data);
+#define _OMC_LIT574_data "comSubExp"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT574,9,_OMC_LIT574_data);
+#define _OMC_LIT574 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT574)
+#define _OMC_LIT575_data "resolveLoops"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT575,12,_OMC_LIT575_data);
+#define _OMC_LIT575 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT575)
+#define _OMC_LIT576_data "evalFunc"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT576,8,_OMC_LIT576_data);
 #define _OMC_LIT576 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT576)
-#define _OMC_LIT577_data "Strips all variables not present in the equations from the system to get speed up for compilation of target code."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT577,113,_OMC_LIT577_data);
+#define _OMC_LIT577_data "encapsulateWhenConditions"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT577,25,_OMC_LIT577_data);
 #define _OMC_LIT577 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT577)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT578,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT577}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT578,2,1) {_OMC_LIT577,MMC_REFSTRUCTLIT(mmc_nil)}};
 #define _OMC_LIT578 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT578)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT579,2,0) {_OMC_LIT576,_OMC_LIT578}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT579,2,1) {_OMC_LIT576,_OMC_LIT578}};
 #define _OMC_LIT579 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT579)
-#define _OMC_LIT580_data "reshufflePost"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT580,13,_OMC_LIT580_data);
-#define _OMC_LIT580 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT580)
-#define _OMC_LIT581_data "Reshuffles algebraic loops."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT581,27,_OMC_LIT581_data);
-#define _OMC_LIT581 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT581)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT582,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT581}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT580,2,1) {_OMC_LIT575,_OMC_LIT579}};
+#define _OMC_LIT580 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT580)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT581,2,1) {_OMC_LIT574,_OMC_LIT580}};
+#define _OMC_LIT581 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT581)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT582,2,1) {_OMC_LIT424,_OMC_LIT581}};
 #define _OMC_LIT582 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT582)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT583,2,0) {_OMC_LIT580,_OMC_LIT582}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT583,2,1) {_OMC_LIT520,_OMC_LIT582}};
 #define _OMC_LIT583 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT583)
-#define _OMC_LIT584_data "Does simplifications on all expressions."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT584,40,_OMC_LIT584_data);
-#define _OMC_LIT584 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT584)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT585,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT584}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT584,2,1) {_OMC_LIT421,_OMC_LIT583}};
+#define _OMC_LIT584 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT584)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT585,2,1) {_OMC_LIT573,_OMC_LIT584}};
 #define _OMC_LIT585 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT585)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT586,2,0) {_OMC_LIT455,_OMC_LIT585}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT586,2,1) {_OMC_LIT572,_OMC_LIT585}};
 #define _OMC_LIT586 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT586)
-#define _OMC_LIT587_data "Some simplifications on complex functions (complex refers to the internal data structure)"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT587,89,_OMC_LIT587_data);
-#define _OMC_LIT587 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT587)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT588,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT587}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT587,2,1) {_OMC_LIT571,_OMC_LIT586}};
+#define _OMC_LIT587 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT587)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT588,2,1) {_OMC_LIT570,_OMC_LIT587}};
 #define _OMC_LIT588 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT588)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT589,2,0) {_OMC_LIT446,_OMC_LIT588}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT589,2,1) {_OMC_LIT569,_OMC_LIT588}};
 #define _OMC_LIT589 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT589)
-#define _OMC_LIT590_data "simplifyConstraints"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT590,19,_OMC_LIT590_data);
-#define _OMC_LIT590 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT590)
-#define _OMC_LIT591_data "Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT591,95,_OMC_LIT591_data);
-#define _OMC_LIT591 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT591)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT592,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT591}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT590,2,1) {_OMC_LIT488,_OMC_LIT589}};
+#define _OMC_LIT590 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT590)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT591,2,1) {_OMC_LIT568,_OMC_LIT590}};
+#define _OMC_LIT591 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT591)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT592,2,9) {&Flags_FlagData_STRING__LIST__FLAG__desc,_OMC_LIT591}};
 #define _OMC_LIT592 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT592)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT593,2,0) {_OMC_LIT590,_OMC_LIT592}};
-#define _OMC_LIT593 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT593)
-#define _OMC_LIT594_data "simplifyLoops"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT594,13,_OMC_LIT594_data);
+#define _OMC_LIT593_data "introduceOutputAliases"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT593,22,_OMC_LIT593_data);
+#define _OMC_LIT593 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT593)
+#define _OMC_LIT594_data "Introduces aliases for top-level outputs."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT594,41,_OMC_LIT594_data);
 #define _OMC_LIT594 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT594)
-#define _OMC_LIT595_data "Simplifies algebraic loops. This modules requires +simplifyLoops."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT595,65,_OMC_LIT595_data);
-#define _OMC_LIT595 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT595)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT596,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT595}};
-#define _OMC_LIT596 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT596)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT597,2,0) {_OMC_LIT594,_OMC_LIT596}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT595,2,0) {_OMC_LIT593,_OMC_LIT594}};
+#define _OMC_LIT595 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT595)
+#define _OMC_LIT596_data "Does the clock partitioning."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT596,28,_OMC_LIT596_data);
+#define _OMC_LIT596 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT596)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT597,2,0) {_OMC_LIT571,_OMC_LIT596}};
 #define _OMC_LIT597 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT597)
-#define _OMC_LIT598_data "Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT598,142,_OMC_LIT598_data);
+#define _OMC_LIT598_data "Introduces alias assignments for variables which are assigned to simple terms i.e. a = b/c; d = b/c; --> a=d"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT598,108,_OMC_LIT598_data);
 #define _OMC_LIT598 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT598)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT599,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT598}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT599,2,0) {_OMC_LIT574,_OMC_LIT598}};
 #define _OMC_LIT599 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT599)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT600,2,0) {_OMC_LIT454,_OMC_LIT599}};
-#define _OMC_LIT600 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT600)
-#define _OMC_LIT601_data "Simplifies calls to semiLinear."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT601,31,_OMC_LIT601_data);
-#define _OMC_LIT601 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT601)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT602,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT601}};
-#define _OMC_LIT602 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT602)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT603,2,0) {_OMC_LIT444,_OMC_LIT602}};
+#define _OMC_LIT600_data "This module replaces each when condition with a boolean variable."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT600,65,_OMC_LIT600_data);
+#define _OMC_LIT600 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT600)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT601,2,0) {_OMC_LIT577,_OMC_LIT600}};
+#define _OMC_LIT601 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT601)
+#define _OMC_LIT602_data "evaluates functions partially"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT602,29,_OMC_LIT602_data);
+#define _OMC_LIT602 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT602)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT603,2,0) {_OMC_LIT576,_OMC_LIT602}};
 #define _OMC_LIT603 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT603)
-#define _OMC_LIT604_data "solveLinearSystem"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT604,17,_OMC_LIT604_data);
+#define _OMC_LIT604_data "Expands der(expr) using Derive.differentiteExpTime."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT604,51,_OMC_LIT604_data);
 #define _OMC_LIT604 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT604)
-#define _OMC_LIT605_data "solve linear system with newton step"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT605,36,_OMC_LIT605_data);
-#define _OMC_LIT605 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT605)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT606,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT605}};
-#define _OMC_LIT606 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT606)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT607,2,0) {_OMC_LIT604,_OMC_LIT606}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT605,2,0) {_OMC_LIT570,_OMC_LIT604}};
+#define _OMC_LIT605 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT605)
+#define _OMC_LIT606_data "Sets derivative information to states."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT606,38,_OMC_LIT606_data);
+#define _OMC_LIT606 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT606)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT607,2,0) {_OMC_LIT572,_OMC_LIT606}};
 #define _OMC_LIT607 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT607)
-#define _OMC_LIT608_data "Solves simple equations"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT608,23,_OMC_LIT608_data);
+#define _OMC_LIT608_data "Perform function inlining for function with annotation Inline=true."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT608,67,_OMC_LIT608_data);
 #define _OMC_LIT608 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT608)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT609,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT608}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT609,2,0) {_OMC_LIT568,_OMC_LIT608}};
 #define _OMC_LIT609 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT609)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT610,2,0) {_OMC_LIT447,_OMC_LIT609}};
-#define _OMC_LIT610 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT610)
-#define _OMC_LIT611_data "symSolver"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT611,9,_OMC_LIT611_data);
+#define _OMC_LIT610_data "inputDerivativesForDynOpt"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT610,25,_OMC_LIT610_data);
+#define _OMC_LIT610 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT610)
+#define _OMC_LIT611_data "Allowed derivatives of inputs in dyn. optimization."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT611,51,_OMC_LIT611_data);
 #define _OMC_LIT611 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT611)
-#define _OMC_LIT612_data "Rewrites the ode system for implicit Euler method. This module requires +symSolver."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT612,83,_OMC_LIT612_data);
-#define _OMC_LIT612 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT612)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT613,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT612}};
-#define _OMC_LIT613 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT613)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT614,2,0) {_OMC_LIT611,_OMC_LIT613}};
-#define _OMC_LIT614 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT614)
-#define _OMC_LIT615_data "Detects the sparse pattern of the ODE system and calculates also the symbolic Jacobian if flag '--generateSymbolicJacobian' is enabled."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT615,135,_OMC_LIT615_data);
-#define _OMC_LIT615 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT615)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT616,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT615}};
-#define _OMC_LIT616 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT616)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT617,2,0) {_OMC_LIT452,_OMC_LIT616}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT612,2,0) {_OMC_LIT610,_OMC_LIT611}};
+#define _OMC_LIT612 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT612)
+#define _OMC_LIT613_data "introduceDerAlias"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT613,17,_OMC_LIT613_data);
+#define _OMC_LIT613 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT613)
+#define _OMC_LIT614_data "Adds for every der-call an alias equation e.g. dx = der(x)."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT614,59,_OMC_LIT614_data);
+#define _OMC_LIT614 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT614)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT615,2,0) {_OMC_LIT613,_OMC_LIT614}};
+#define _OMC_LIT615 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT615)
+#define _OMC_LIT616_data "Detects equal expressions of the form a=<exp> and b=<exp> and substitutes them to get speed up."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT616,95,_OMC_LIT616_data);
+#define _OMC_LIT616 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT616)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT617,2,0) {_OMC_LIT520,_OMC_LIT616}};
 #define _OMC_LIT617 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT617)
-#define _OMC_LIT618_data "For method selection use flag tearingMethod."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT618,44,_OMC_LIT618_data);
+#define _OMC_LIT618_data "removeProtectedParameters"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT618,25,_OMC_LIT618_data);
 #define _OMC_LIT618 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT618)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT619,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT618}};
-#define _OMC_LIT619 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT619)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT620,2,0) {_OMC_LIT448,_OMC_LIT619}};
+#define _OMC_LIT619_data "Replace all parameters with protected=true in the system."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT619,57,_OMC_LIT619_data);
+#define _OMC_LIT619 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT619)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT620,2,0) {_OMC_LIT618,_OMC_LIT619}};
 #define _OMC_LIT620 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT620)
-#define _OMC_LIT621_data "This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT621,124,_OMC_LIT621_data);
+#define _OMC_LIT621_data "Strips all parameter not present in the equations from the system."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT621,66,_OMC_LIT621_data);
 #define _OMC_LIT621 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT621)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT622,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT621}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT622,2,0) {_OMC_LIT525,_OMC_LIT621}};
 #define _OMC_LIT622 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT622)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT623,2,0) {_OMC_LIT441,_OMC_LIT622}};
-#define _OMC_LIT623 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT623)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_1,2,1) {_OMC_LIT623,MMC_REFSTRUCTLIT(mmc_nil)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_2,2,1) {_OMC_LIT620,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_1)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_3,2,1) {_OMC_LIT617,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_2)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_4,2,1) {_OMC_LIT614,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_3)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_5,2,1) {_OMC_LIT610,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_4)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_6,2,1) {_OMC_LIT607,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_5)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_7,2,1) {_OMC_LIT603,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_6)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_8,2,1) {_OMC_LIT600,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_7)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_9,2,1) {_OMC_LIT597,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_8)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_10,2,1) {_OMC_LIT593,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_9)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_11,2,1) {_OMC_LIT589,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_10)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_12,2,1) {_OMC_LIT586,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_11)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_13,2,1) {_OMC_LIT583,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_12)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_14,2,1) {_OMC_LIT579,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_13)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_15,2,1) {_OMC_LIT575,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_14)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_16,2,1) {_OMC_LIT571,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_15)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_17,2,1) {_OMC_LIT568,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_16)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_18,2,1) {_OMC_LIT564,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_17)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_19,2,1) {_OMC_LIT561,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_18)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_20,2,1) {_OMC_LIT557,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_19)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_21,2,1) {_OMC_LIT553,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_20)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_22,2,1) {_OMC_LIT549,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_21)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_23,2,1) {_OMC_LIT545,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_22)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_24,2,1) {_OMC_LIT542,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_23)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_25,2,1) {_OMC_LIT539,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_24)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_26,2,1) {_OMC_LIT536,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_25)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_27,2,1) {_OMC_LIT532,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_26)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_28,2,1) {_OMC_LIT528,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_27)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_29,2,1) {_OMC_LIT524,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_28)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_30,2,1) {_OMC_LIT520,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_29)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_31,2,1) {_OMC_LIT516,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_30)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_32,2,1) {_OMC_LIT512,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_31)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_33,2,1) {_OMC_LIT508,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_32)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_34,2,1) {_OMC_LIT504,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_33)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_35,2,1) {_OMC_LIT500,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_34)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_36,2,1) {_OMC_LIT497,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_35)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_37,2,1) {_OMC_LIT494,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_36)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_38,2,1) {_OMC_LIT491,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_37)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_39,2,1) {_OMC_LIT488,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_38)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_40,2,1) {_OMC_LIT484,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_39)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_41,2,1) {_OMC_LIT480,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_40)}};
-#define _OMC_LIT624 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624_cons_41)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT625,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT624}};
-#define _OMC_LIT625 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT625)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT626,1,1) {_OMC_LIT625}};
-#define _OMC_LIT626 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT626)
-#define _OMC_LIT627_data "Sets the post optimization modules to use in the back end. See --help=optmodules for more info."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT627,95,_OMC_LIT627_data);
-#define _OMC_LIT627 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT627)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT628,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT627}};
-#define _OMC_LIT628 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT628)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT629,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(16)),_OMC_LIT439,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT476,_OMC_LIT626,_OMC_LIT628}};
+#define _OMC_LIT623_data "Strips all variables not present in the equations from the system."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT623,66,_OMC_LIT623_data);
+#define _OMC_LIT623 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT623)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT624,2,0) {_OMC_LIT528,_OMC_LIT623}};
+#define _OMC_LIT624 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT624)
+#define _OMC_LIT625_data "removeVerySimpleEquations"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT625,25,_OMC_LIT625_data);
+#define _OMC_LIT625 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT625)
+#define _OMC_LIT626_data "[Experimental] Like removeSimpleEquations, but less thorough. Note that this always uses the experimental new alias elimination, --removeSimpleEquations=new, which makes it unstable. In particular, MultiBody systems fail to translate correctly. It can be used for simple (but large) systems of equations."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT626,304,_OMC_LIT626_data);
+#define _OMC_LIT626 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT626)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT627,2,0) {_OMC_LIT625,_OMC_LIT626}};
+#define _OMC_LIT627 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT627)
+#define _OMC_LIT628_data "Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v)."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT628,63,_OMC_LIT628_data);
+#define _OMC_LIT628 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT628)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT629,2,0) {_OMC_LIT573,_OMC_LIT628}};
 #define _OMC_LIT629 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT629)
-#define _OMC_LIT630_data "preOptModules"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT630,13,_OMC_LIT630_data);
+#define _OMC_LIT630_data "residualForm"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT630,12,_OMC_LIT630_data);
 #define _OMC_LIT630 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT630)
-#define _OMC_LIT631_data "normalInlineFunction"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT631,20,_OMC_LIT631_data);
+#define _OMC_LIT631_data "Transforms simple equations x=y to zero-sum equations 0=y-x."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT631,60,_OMC_LIT631_data);
 #define _OMC_LIT631 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT631)
-#define _OMC_LIT632_data "simplifyIfEquations"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT632,19,_OMC_LIT632_data);
-#define _OMC_LIT632 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT632)
-#define _OMC_LIT633_data "expandDerOperator"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT633,17,_OMC_LIT633_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT632,2,0) {_OMC_LIT630,_OMC_LIT631}};
+#define _OMC_LIT632 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT632)
+#define _OMC_LIT633_data "resolves linear equations in loops"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT633,34,_OMC_LIT633_data);
 #define _OMC_LIT633 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT633)
-#define _OMC_LIT634_data "clockPartitioning"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT634,17,_OMC_LIT634_data);
-#define _OMC_LIT634 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT634)
-#define _OMC_LIT635_data "findStateOrder"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT635,14,_OMC_LIT635_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT634,2,0) {_OMC_LIT575,_OMC_LIT633}};
+#define _OMC_LIT634 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT634)
+#define _OMC_LIT635_data "Tries to simplify if equations by use of information from evaluated parameters."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT635,79,_OMC_LIT635_data);
 #define _OMC_LIT635 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT635)
-#define _OMC_LIT636_data "replaceEdgeChange"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT636,17,_OMC_LIT636_data);
-#define _OMC_LIT636 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT636)
-#define _OMC_LIT637_data "comSubExp"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT637,9,_OMC_LIT637_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT636,2,0) {_OMC_LIT569,_OMC_LIT635}};
+#define _OMC_LIT636 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT636)
+#define _OMC_LIT637_data "sortEqnsVars"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT637,12,_OMC_LIT637_data);
 #define _OMC_LIT637 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT637)
-#define _OMC_LIT638_data "evalFunc"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT638,8,_OMC_LIT638_data);
+#define _OMC_LIT638_data "Heuristic sorting for equations and variables."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT638,46,_OMC_LIT638_data);
 #define _OMC_LIT638 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT638)
-#define _OMC_LIT639_data "encapsulateWhenConditions"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT639,25,_OMC_LIT639_data);
-#define _OMC_LIT639 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT639)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT640,2,1) {_OMC_LIT639,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT640 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT640)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT641,2,1) {_OMC_LIT638,_OMC_LIT640}};
-#define _OMC_LIT641 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT641)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT642,2,1) {_OMC_LIT637,_OMC_LIT641}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT639,2,0) {_OMC_LIT637,_OMC_LIT638}};
+#define _OMC_LIT639 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT639)
+#define _OMC_LIT640_data "unitChecking"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT640,12,_OMC_LIT640_data);
+#define _OMC_LIT640 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT640)
+#define _OMC_LIT641_data "This module is no longer available and its use is deprecated. Use --unitChecking instead."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT641,89,_OMC_LIT641_data);
+#define _OMC_LIT641 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT641)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT642,2,0) {_OMC_LIT640,_OMC_LIT641}};
 #define _OMC_LIT642 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT642)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643,2,1) {_OMC_LIT445,_OMC_LIT642}};
-#define _OMC_LIT643 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT644,2,1) {_OMC_LIT565,_OMC_LIT643}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_1,2,1) {_OMC_LIT561,MMC_REFSTRUCTLIT(mmc_nil)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_2,2,1) {_OMC_LIT642,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_1)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_3,2,1) {_OMC_LIT639,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_2)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_4,2,1) {_OMC_LIT636,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_3)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_5,2,1) {_OMC_LIT535,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_4)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_6,2,1) {_OMC_LIT634,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_5)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_7,2,1) {_OMC_LIT632,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_6)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_8,2,1) {_OMC_LIT629,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_7)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_9,2,1) {_OMC_LIT627,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_8)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_10,2,1) {_OMC_LIT624,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_9)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_11,2,1) {_OMC_LIT622,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_10)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_12,2,1) {_OMC_LIT524,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_11)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_13,2,1) {_OMC_LIT620,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_12)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_14,2,1) {_OMC_LIT617,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_13)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_15,2,1) {_OMC_LIT615,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_14)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_16,2,1) {_OMC_LIT612,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_15)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_17,2,1) {_OMC_LIT609,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_16)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_18,2,1) {_OMC_LIT501,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_17)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_19,2,1) {_OMC_LIT607,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_18)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_20,2,1) {_OMC_LIT605,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_19)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_21,2,1) {_OMC_LIT490,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_20)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_22,2,1) {_OMC_LIT603,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_21)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_23,2,1) {_OMC_LIT601,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_22)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_24,2,1) {_OMC_LIT487,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_23)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_25,2,1) {_OMC_LIT484,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_24)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_26,2,1) {_OMC_LIT599,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_25)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_27,2,1) {_OMC_LIT470,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_26)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_28,2,1) {_OMC_LIT597,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_27)}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_29,2,1) {_OMC_LIT595,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_28)}};
+#define _OMC_LIT643 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT643_cons_29)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT644,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT643}};
 #define _OMC_LIT644 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT644)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT645,2,1) {_OMC_LIT442,_OMC_LIT644}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT645,1,1) {_OMC_LIT644}};
 #define _OMC_LIT645 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT645)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT646,2,1) {_OMC_LIT636,_OMC_LIT645}};
-#define _OMC_LIT646 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT646)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT647,2,1) {_OMC_LIT635,_OMC_LIT646}};
+#define _OMC_LIT646_data "Sets the pre optimization modules to use in the back end. See --help=optmodules for more info."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT646,94,_OMC_LIT646_data);
+#define _OMC_LIT646 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT646)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT647,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(12)),_OMC_LIT567,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT592,_OMC_LIT645,_OMC_LIT646}};
 #define _OMC_LIT647 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT647)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT648,2,1) {_OMC_LIT634,_OMC_LIT647}};
-#define _OMC_LIT648 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT648)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT649,2,1) {_OMC_LIT633,_OMC_LIT648}};
+#define _OMC_LIT648_data "initOptModules"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT648,14,_OMC_LIT648_data);
+#define _OMC_LIT648 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT648)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT649,2,1) {_OMC_LIT434,_OMC_LIT437}};
 #define _OMC_LIT649 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT649)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT650,2,1) {_OMC_LIT632,_OMC_LIT649}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT650,2,1) {_OMC_LIT429,_OMC_LIT649}};
 #define _OMC_LIT650 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT650)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT651,2,1) {_OMC_LIT521,_OMC_LIT650}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT651,2,1) {_OMC_LIT426,_OMC_LIT650}};
 #define _OMC_LIT651 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT651)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT652,2,1) {_OMC_LIT631,_OMC_LIT651}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT652,2,1) {_OMC_LIT427,_OMC_LIT651}};
 #define _OMC_LIT652 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT652)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT653,2,9) {&Flags_FlagData_STRING__LIST__FLAG__desc,_OMC_LIT652}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT653,2,1) {_OMC_LIT425,_OMC_LIT652}};
 #define _OMC_LIT653 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT653)
-#define _OMC_LIT654_data "introduceOutputAliases"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT654,22,_OMC_LIT654_data);
-#define _OMC_LIT654 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT654)
-#define _OMC_LIT655_data "Introduces aliases for top-level outputs."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT655,41,_OMC_LIT655_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT654,2,9) {&Flags_FlagData_STRING__LIST__FLAG__desc,_OMC_LIT653}};
+#define _OMC_LIT654 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT654)
+#define _OMC_LIT655_data "generateHomotopyComponents"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT655,26,_OMC_LIT655_data);
 #define _OMC_LIT655 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT655)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT656,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT655}};
-#define _OMC_LIT656 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT656)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT657,2,0) {_OMC_LIT654,_OMC_LIT656}};
+#define _OMC_LIT656_data "Finds the parts of the DAE that have to be handled by the homotopy solver and creates a strong component out of it."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT656,115,_OMC_LIT656_data);
+#define _OMC_LIT656 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT656)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT657,2,0) {_OMC_LIT655,_OMC_LIT656}};
 #define _OMC_LIT657 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT657)
-#define _OMC_LIT658_data "Does the clock partitioning."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT658,28,_OMC_LIT658_data);
+#define _OMC_LIT658_data "inlineHomotopy"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT658,14,_OMC_LIT658_data);
 #define _OMC_LIT658 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT658)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT659,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT658}};
-#define _OMC_LIT659 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT659)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT660,2,0) {_OMC_LIT634,_OMC_LIT659}};
+#define _OMC_LIT659_data "Experimental: Inlines the homotopy expression to allow symbolic simplifications."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT659,80,_OMC_LIT659_data);
+#define _OMC_LIT659 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT659)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT660,2,0) {_OMC_LIT658,_OMC_LIT659}};
 #define _OMC_LIT660 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT660)
-#define _OMC_LIT661_data "Introduces alias assignments for variables which are assigned to simple terms i.e. a = b/c; d = b/c; --> a=d"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT661,108,_OMC_LIT661_data);
+#define _OMC_LIT661_data "replaceHomotopyWithSimplified"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT661,29,_OMC_LIT661_data);
 #define _OMC_LIT661 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT661)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT662,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT661}};
-#define _OMC_LIT662 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT662)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT663,2,0) {_OMC_LIT637,_OMC_LIT662}};
+#define _OMC_LIT662_data "Replaces the homotopy expression homotopy(actual, simplified) with the simplified part."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT662,87,_OMC_LIT662_data);
+#define _OMC_LIT662 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT662)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT663,2,0) {_OMC_LIT661,_OMC_LIT662}};
 #define _OMC_LIT663 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT663)
-#define _OMC_LIT664_data "This module replaces each when condition with a boolean variable."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT664,65,_OMC_LIT664_data);
-#define _OMC_LIT664 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT664)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT665,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT664}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT664,2,1) {_OMC_LIT561,MMC_REFSTRUCTLIT(mmc_nil)}};
+#define _OMC_LIT664 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT664)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT665,2,1) {_OMC_LIT559,_OMC_LIT664}};
 #define _OMC_LIT665 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT665)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT666,2,0) {_OMC_LIT639,_OMC_LIT665}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT666,2,1) {_OMC_LIT552,_OMC_LIT665}};
 #define _OMC_LIT666 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT666)
-#define _OMC_LIT667_data "evaluates functions partially"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT667,29,_OMC_LIT667_data);
-#define _OMC_LIT667 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT667)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT668,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT667}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT667,2,1) {_OMC_LIT543,_OMC_LIT666}};
+#define _OMC_LIT667 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT667)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT668,2,1) {_OMC_LIT540,_OMC_LIT667}};
 #define _OMC_LIT668 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT668)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT669,2,0) {_OMC_LIT638,_OMC_LIT668}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT669,2,1) {_OMC_LIT537,_OMC_LIT668}};
 #define _OMC_LIT669 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT669)
-#define _OMC_LIT670_data "Expands der(expr) using Derive.differentiteExpTime."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT670,51,_OMC_LIT670_data);
-#define _OMC_LIT670 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT670)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT671,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT670}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT670,2,1) {_OMC_LIT535,_OMC_LIT669}};
+#define _OMC_LIT670 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT670)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT671,2,1) {_OMC_LIT663,_OMC_LIT670}};
 #define _OMC_LIT671 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT671)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT672,2,0) {_OMC_LIT633,_OMC_LIT671}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT672,2,1) {_OMC_LIT514,_OMC_LIT671}};
 #define _OMC_LIT672 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT672)
-#define _OMC_LIT673_data "Sets derivative information to states."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT673,38,_OMC_LIT673_data);
-#define _OMC_LIT673 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT673)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT674,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT673}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT673,2,1) {_OMC_LIT511,_OMC_LIT672}};
+#define _OMC_LIT673 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT673)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT674,2,1) {_OMC_LIT503,_OMC_LIT673}};
 #define _OMC_LIT674 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT674)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT675,2,0) {_OMC_LIT635,_OMC_LIT674}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT675,2,1) {_OMC_LIT660,_OMC_LIT674}};
 #define _OMC_LIT675 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT675)
-#define _OMC_LIT676_data "Perform function inlining for function with annotation Inline=true."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT676,67,_OMC_LIT676_data);
-#define _OMC_LIT676 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT676)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT677,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT676}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT676,2,1) {_OMC_LIT657,_OMC_LIT675}};
+#define _OMC_LIT676 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT676)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT677,2,1) {_OMC_LIT493,_OMC_LIT676}};
 #define _OMC_LIT677 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT677)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT678,2,0) {_OMC_LIT631,_OMC_LIT677}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT678,2,1) {_OMC_LIT472,_OMC_LIT677}};
 #define _OMC_LIT678 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT678)
-#define _OMC_LIT679_data "inputDerivativesForDynOpt"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT679,25,_OMC_LIT679_data);
-#define _OMC_LIT679 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT679)
-#define _OMC_LIT680_data "Allowed derivatives of inputs in dyn. optimization."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT680,51,_OMC_LIT680_data);
-#define _OMC_LIT680 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT680)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT681,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT680}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT679,2,1) {_OMC_LIT501,_OMC_LIT678}};
+#define _OMC_LIT679 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT679)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT680,2,1) {_OMC_LIT470,_OMC_LIT679}};
+#define _OMC_LIT680 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT680)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT681,2,1) {_OMC_LIT468,_OMC_LIT680}};
 #define _OMC_LIT681 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT681)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT682,2,0) {_OMC_LIT679,_OMC_LIT681}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT682,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT681}};
 #define _OMC_LIT682 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT682)
-#define _OMC_LIT683_data "introduceDerAlias"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT683,17,_OMC_LIT683_data);
-#define _OMC_LIT683 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT683)
-#define _OMC_LIT684_data "Adds for every der-call an alias equation e.g. dx = der(x)."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT684,59,_OMC_LIT684_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT683,1,1) {_OMC_LIT682}};
+#define _OMC_LIT683 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT683)
+#define _OMC_LIT684_data "Sets the initialization optimization modules to use in the back end. See --help=optmodules for more info."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT684,105,_OMC_LIT684_data);
 #define _OMC_LIT684 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT684)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT685,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT684}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT685,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(67)),_OMC_LIT648,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT654,_OMC_LIT683,_OMC_LIT684}};
 #define _OMC_LIT685 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT685)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT686,2,0) {_OMC_LIT683,_OMC_LIT685}};
-#define _OMC_LIT686 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT686)
-#define _OMC_LIT687_data "Detects equal expressions of the form a=<exp> and b=<exp> and substitutes them to get speed up."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT687,95,_OMC_LIT687_data);
+#define _OMC_LIT686_data "postOptModulesDAE"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT686,17,_OMC_LIT686_data);
+#define _OMC_LIT686 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT686)
+#define _OMC_LIT687_data "createDAEmodeBDAE"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT687,17,_OMC_LIT687_data);
 #define _OMC_LIT687 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT687)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT688,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT687}};
-#define _OMC_LIT688 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT688)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT689,2,0) {_OMC_LIT565,_OMC_LIT688}};
-#define _OMC_LIT689 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT689)
-#define _OMC_LIT690_data "removeProtectedParameters"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT690,25,_OMC_LIT690_data);
-#define _OMC_LIT690 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT690)
-#define _OMC_LIT691_data "Replace all parameters with protected=true in the system."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT691,57,_OMC_LIT691_data);
-#define _OMC_LIT691 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT691)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT692,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT691}};
+#define _OMC_LIT688_data "symbolicJacobianDAE"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT688,19,_OMC_LIT688_data);
+#define _OMC_LIT688 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT688)
+#define _OMC_LIT689_data "setEvaluationStage"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT689,18,_OMC_LIT689_data);
+#define _OMC_LIT689 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT689)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT690,2,1) {_OMC_LIT689,MMC_REFSTRUCTLIT(mmc_nil)}};
+#define _OMC_LIT690 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT690)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT691,2,1) {_OMC_LIT688,_OMC_LIT690}};
+#define _OMC_LIT691 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT691)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT692,2,1) {_OMC_LIT687,_OMC_LIT691}};
 #define _OMC_LIT692 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT692)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT693,2,0) {_OMC_LIT690,_OMC_LIT692}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT693,2,1) {_OMC_LIT435,_OMC_LIT692}};
 #define _OMC_LIT693 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT693)
-#define _OMC_LIT694_data "Strips all parameter not present in the equations from the system."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT694,66,_OMC_LIT694_data);
-#define _OMC_LIT694 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT694)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT695,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT694}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT694,2,1) {_OMC_LIT434,_OMC_LIT693}};
+#define _OMC_LIT694 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT694)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT695,2,1) {_OMC_LIT433,_OMC_LIT694}};
 #define _OMC_LIT695 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT695)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT696,2,0) {_OMC_LIT572,_OMC_LIT695}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT696,2,1) {_OMC_LIT432,_OMC_LIT695}};
 #define _OMC_LIT696 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT696)
-#define _OMC_LIT697_data "Strips all variables not present in the equations from the system."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT697,66,_OMC_LIT697_data);
-#define _OMC_LIT697 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT697)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT698,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT697}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT697,2,1) {_OMC_LIT425,_OMC_LIT696}};
+#define _OMC_LIT697 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT697)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT698,2,1) {_OMC_LIT423,_OMC_LIT697}};
 #define _OMC_LIT698 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT698)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT699,2,0) {_OMC_LIT576,_OMC_LIT698}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT699,2,1) {_OMC_LIT420,_OMC_LIT698}};
 #define _OMC_LIT699 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT699)
-#define _OMC_LIT700_data "removeVerySimpleEquations"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT700,25,_OMC_LIT700_data);
-#define _OMC_LIT700 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT700)
-#define _OMC_LIT701_data "[Experimental] Like removeSimpleEquations, but less thorough. Note that this always uses the experimental new alias elimination, --removeSimpleEquations=new, which makes it unstable. In particular, MultiBody systems fail to translate correctly. It can be used for simple (but large) systems of equations."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT701,304,_OMC_LIT701_data);
-#define _OMC_LIT701 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT701)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT702,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT701}};
-#define _OMC_LIT702 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT702)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT703,2,0) {_OMC_LIT700,_OMC_LIT702}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT700,2,1) {_OMC_LIT419,_OMC_LIT699}};
+#define _OMC_LIT700 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT700)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT701,2,9) {&Flags_FlagData_STRING__LIST__FLAG__desc,_OMC_LIT700}};
+#define _OMC_LIT701 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT701)
+#define _OMC_LIT702_data "Sets the optimization modules for the DAEmode in the back end. See --help=optmodules for more info."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT702,99,_OMC_LIT702_data);
+#define _OMC_LIT702 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT702)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT703,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(114)),_OMC_LIT686,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT701,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT702}};
 #define _OMC_LIT703 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT703)
-#define _OMC_LIT704_data "Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v)."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT704,63,_OMC_LIT704_data);
+#define _OMC_LIT704_data "orderConnections"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT704,16,_OMC_LIT704_data);
 #define _OMC_LIT704 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT704)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT705,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT704}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT705,2,4) {&Flags_FlagData_BOOL__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(1 /* true */))}};
 #define _OMC_LIT705 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT705)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT706,2,0) {_OMC_LIT636,_OMC_LIT705}};
-#define _OMC_LIT706 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT706)
-#define _OMC_LIT707_data "residualForm"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT707,12,_OMC_LIT707_data);
-#define _OMC_LIT707 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT707)
-#define _OMC_LIT708_data "Transforms simple equations x=y to zero-sum equations 0=y-x."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT708,60,_OMC_LIT708_data);
+#define _OMC_LIT706_data "Orders connect equations alphabetically if set."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT706,47,_OMC_LIT706_data);
+#define _OMC_LIT706 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT706)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT707,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(18)),_OMC_LIT704,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT705,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT706}};
+#define _OMC_LIT707 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT707)
+#define _OMC_LIT708_data "graphicsExpMode"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT708,15,_OMC_LIT708_data);
 #define _OMC_LIT708 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT708)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT709,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT708}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT709,1,3) {&Flags_FlagVisibility_INTERNAL__desc,}};
 #define _OMC_LIT709 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT709)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT710,2,0) {_OMC_LIT707,_OMC_LIT709}};
-#define _OMC_LIT710 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT710)
-#define _OMC_LIT711_data "resolveLoops"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT711,12,_OMC_LIT711_data);
-#define _OMC_LIT711 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT711)
-#define _OMC_LIT712_data "resolves linear equations in loops"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT712,34,_OMC_LIT712_data);
+#define _OMC_LIT710_data "Sets whether we are in graphics exp mode (evaluating icons)."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT710,60,_OMC_LIT710_data);
+#define _OMC_LIT710 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT710)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT711,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(102)),_OMC_LIT708,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT709,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT710}};
+#define _OMC_LIT711 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT711)
+#define _OMC_LIT712_data "evalAnnotationParams"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT712,20,_OMC_LIT712_data);
 #define _OMC_LIT712 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT712)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT713,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT712}};
-#define _OMC_LIT713 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT713)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT714,2,0) {_OMC_LIT711,_OMC_LIT713}};
+#define _OMC_LIT713_data "Sets whether to evaluate parameters in annotations or not."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT713,58,_OMC_LIT713_data);
+#define _OMC_LIT713 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT713)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT714,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(27)),_OMC_LIT712,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT713}};
 #define _OMC_LIT714 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT714)
-#define _OMC_LIT715_data "Tries to simplify if equations by use of information from evaluated parameters."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT715,79,_OMC_LIT715_data);
+#define _OMC_LIT715_data "showStartOrigin"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT715,15,_OMC_LIT715_data);
 #define _OMC_LIT715 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT715)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT716,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT715}};
-#define _OMC_LIT716 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT716)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT717,2,0) {_OMC_LIT632,_OMC_LIT716}};
+#define _OMC_LIT716_data "Enables dumping of the DAE startOrigin attribute of the variables."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT716,66,_OMC_LIT716_data);
+#define _OMC_LIT716 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT716)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT717,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(73)),_OMC_LIT715,MMC_IMMEDIATE(MMC_TAGFIXNUM(0 /* false */)),_OMC_LIT716}};
 #define _OMC_LIT717 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT717)
-#define _OMC_LIT718_data "sortEqnsVars"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT718,12,_OMC_LIT718_data);
+#define _OMC_LIT718_data "showStructuralAnnotations"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT718,25,_OMC_LIT718_data);
 #define _OMC_LIT718 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT718)
-#define _OMC_LIT719_data "Heuristic sorting for equations and variables."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT719,46,_OMC_LIT719_data);
+#define _OMC_LIT719_data "Show annotations affecting the solution process in the flattened code."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT719,70,_OMC_LIT719_data);
 #define _OMC_LIT719 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT719)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT720,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT719}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT720,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(118)),_OMC_LIT718,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT719}};
 #define _OMC_LIT720 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT720)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT721,2,0) {_OMC_LIT718,_OMC_LIT720}};
-#define _OMC_LIT721 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT721)
-#define _OMC_LIT722_data "unitChecking"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT722,12,_OMC_LIT722_data);
+#define _OMC_LIT721_data "showAnnotations"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT721,15,_OMC_LIT721_data);
+#define _OMC_LIT721 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT721)
+#define _OMC_LIT722_data "Show annotations in the flattened code."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT722,39,_OMC_LIT722_data);
 #define _OMC_LIT722 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT722)
-#define _OMC_LIT723_data "This module is no longer available and its use is deprecated. Use --unitChecking instead."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT723,89,_OMC_LIT723_data);
-#define _OMC_LIT723 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT723)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT724,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT723}};
-#define _OMC_LIT724 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT724)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT725,2,0) {_OMC_LIT722,_OMC_LIT724}};
-#define _OMC_LIT725 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT725)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_1,2,1) {_OMC_LIT623,MMC_REFSTRUCTLIT(mmc_nil)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_2,2,1) {_OMC_LIT725,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_1)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_3,2,1) {_OMC_LIT721,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_2)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_4,2,1) {_OMC_LIT717,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_3)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_5,2,1) {_OMC_LIT586,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_4)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_6,2,1) {_OMC_LIT714,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_5)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_7,2,1) {_OMC_LIT710,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_6)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_8,2,1) {_OMC_LIT706,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_7)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_9,2,1) {_OMC_LIT703,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_8)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_10,2,1) {_OMC_LIT699,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_9)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_11,2,1) {_OMC_LIT696,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_10)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_12,2,1) {_OMC_LIT571,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_11)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_13,2,1) {_OMC_LIT693,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_12)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_14,2,1) {_OMC_LIT689,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_13)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_15,2,1) {_OMC_LIT686,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_14)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_16,2,1) {_OMC_LIT682,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_15)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_17,2,1) {_OMC_LIT678,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_16)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_18,2,1) {_OMC_LIT539,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_17)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_19,2,1) {_OMC_LIT675,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_18)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_20,2,1) {_OMC_LIT672,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_19)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_21,2,1) {_OMC_LIT524,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_20)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_22,2,1) {_OMC_LIT669,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_21)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_23,2,1) {_OMC_LIT666,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_22)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_24,2,1) {_OMC_LIT520,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_23)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_25,2,1) {_OMC_LIT516,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_24)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_26,2,1) {_OMC_LIT663,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_25)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_27,2,1) {_OMC_LIT497,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_26)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_28,2,1) {_OMC_LIT660,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_27)}};
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_29,2,1) {_OMC_LIT657,MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_28)}};
-#define _OMC_LIT726 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726_cons_29)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT727,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT726}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT723,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(10)),_OMC_LIT721,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT722}};
+#define _OMC_LIT723 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT723)
+#define _OMC_LIT724_data "defaultOCLDevice"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT724,16,_OMC_LIT724_data);
+#define _OMC_LIT724 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT724)
+#define _OMC_LIT725_data "o"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT725,1,_OMC_LIT725_data);
+#define _OMC_LIT725 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT725)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT726,1,1) {_OMC_LIT725}};
+#define _OMC_LIT726 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT726)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT727,2,5) {&Flags_FlagData_INT__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(0))}};
 #define _OMC_LIT727 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT727)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT728,1,1) {_OMC_LIT727}};
-#define _OMC_LIT728 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT728)
-#define _OMC_LIT729_data "Sets the pre optimization modules to use in the back end. See --help=optmodules for more info."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT729,94,_OMC_LIT729_data);
-#define _OMC_LIT729 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT729)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT730,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT729}};
-#define _OMC_LIT730 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT730)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT731,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(12)),_OMC_LIT630,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT653,_OMC_LIT728,_OMC_LIT730}};
-#define _OMC_LIT731 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT731)
-#define _OMC_LIT732_data "initOptModules"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT732,14,_OMC_LIT732_data);
-#define _OMC_LIT732 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT732)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT733,2,1) {_OMC_LIT455,_OMC_LIT458}};
-#define _OMC_LIT733 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT733)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT734,2,1) {_OMC_LIT450,_OMC_LIT733}};
+#define _OMC_LIT728_data "Sets the default OpenCL device to be used for parallel execution."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT728,65,_OMC_LIT728_data);
+#define _OMC_LIT728 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT728)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT729,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(36)),_OMC_LIT724,_OMC_LIT726,_OMC_LIT3,_OMC_LIT727,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT728}};
+#define _OMC_LIT729 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT729)
+#define _OMC_LIT730_data "vectorizationLimit"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT730,18,_OMC_LIT730_data);
+#define _OMC_LIT730 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT730)
+#define _OMC_LIT731_data "v"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT731,1,_OMC_LIT731_data);
+#define _OMC_LIT731 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT731)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT732,1,1) {_OMC_LIT731}};
+#define _OMC_LIT732 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT732)
+#define _OMC_LIT733_data "Sets the vectorization limit, arrays and matrices larger than this will not be vectorized."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT733,90,_OMC_LIT733_data);
+#define _OMC_LIT733 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT733)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT734,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(25)),_OMC_LIT730,_OMC_LIT732,_OMC_LIT3,_OMC_LIT727,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT733}};
 #define _OMC_LIT734 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT734)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT735,2,1) {_OMC_LIT447,_OMC_LIT734}};
-#define _OMC_LIT735 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT735)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT736,2,1) {_OMC_LIT448,_OMC_LIT735}};
-#define _OMC_LIT736 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT736)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT737,2,1) {_OMC_LIT446,_OMC_LIT736}};
+#define _OMC_LIT735_data "noSimplify"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT735,10,_OMC_LIT735_data);
+#define _OMC_LIT735 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT735)
+#define _OMC_LIT736_data "Do not simplify expressions if set."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT736,35,_OMC_LIT736_data);
+#define _OMC_LIT736 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT736)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT737,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(11)),_OMC_LIT735,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT736}};
 #define _OMC_LIT737 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT737)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT738,2,9) {&Flags_FlagData_STRING__LIST__FLAG__desc,_OMC_LIT737}};
-#define _OMC_LIT738 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT738)
-#define _OMC_LIT739_data "generateHomotopyComponents"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT739,26,_OMC_LIT739_data);
+#define _OMC_LIT738_data "annotationVersion"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT738,17,_OMC_LIT738_data);
+#define _OMC_LIT738 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT738)
+#define _OMC_LIT739_data "3.x"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT739,3,_OMC_LIT739_data);
 #define _OMC_LIT739 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT739)
-#define _OMC_LIT740_data "Finds the parts of the DAE that have to be handled by the homotopy solver and creates a strong component out of it."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT740,115,_OMC_LIT740_data);
-#define _OMC_LIT740 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT740)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT741,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT740}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT740,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT739}};
+#define _OMC_LIT740 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT740)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT741,2,1) {_OMC_LIT739,MMC_REFSTRUCTLIT(mmc_nil)}};
 #define _OMC_LIT741 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT741)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT742,2,0) {_OMC_LIT739,_OMC_LIT741}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT742,2,1) {_OMC_LIT134,_OMC_LIT741}};
 #define _OMC_LIT742 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT742)
-#define _OMC_LIT743_data "inlineHomotopy"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT743,14,_OMC_LIT743_data);
-#define _OMC_LIT743 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT743)
-#define _OMC_LIT744_data "Experimental: Inlines the homotopy expression to allow symbolic simplifications."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT744,80,_OMC_LIT744_data);
-#define _OMC_LIT744 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT744)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT745,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT744}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT743,2,1) {_OMC_LIT133,_OMC_LIT742}};
+#define _OMC_LIT743 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT743)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT744,2,3) {&Flags_ValidOptions_STRING__OPTION__desc,_OMC_LIT743}};
+#define _OMC_LIT744 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT744)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT745,1,1) {_OMC_LIT744}};
 #define _OMC_LIT745 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT745)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT746,2,0) {_OMC_LIT743,_OMC_LIT745}};
-#define _OMC_LIT746 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT746)
-#define _OMC_LIT747_data "replaceHomotopyWithSimplified"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT747,29,_OMC_LIT747_data);
-#define _OMC_LIT747 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT747)
-#define _OMC_LIT748_data "Replaces the homotopy expression homotopy(actual, simplified) with the simplified part."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT748,87,_OMC_LIT748_data);
+#define _OMC_LIT746_data "Sets the annotation version that should be used."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT746,48,_OMC_LIT746_data);
+#define _OMC_LIT746 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT746)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT747,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(7)),_OMC_LIT738,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT740,_OMC_LIT745,_OMC_LIT746}};
+#define _OMC_LIT747 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT747)
+#define _OMC_LIT748_data "grammar"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT748,7,_OMC_LIT748_data);
 #define _OMC_LIT748 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT748)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT749,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT748}};
-#define _OMC_LIT749 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT749)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT750,2,0) {_OMC_LIT747,_OMC_LIT749}};
+#define _OMC_LIT749_data "g"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT749,1,_OMC_LIT749_data);
+#define _OMC_LIT749 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT749)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT750,1,1) {_OMC_LIT749}};
 #define _OMC_LIT750 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT750)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT751,2,1) {_OMC_LIT623,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT751 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT751)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT752,2,1) {_OMC_LIT620,_OMC_LIT751}};
+#define _OMC_LIT751_data "Modelica"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT751,8,_OMC_LIT751_data);
+#define _OMC_LIT751 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT751)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT752,2,0) {_OMC_LIT751,MMC_IMMEDIATE(MMC_TAGFIXNUM(1))}};
 #define _OMC_LIT752 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT752)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT753,2,1) {_OMC_LIT610,_OMC_LIT752}};
-#define _OMC_LIT753 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT753)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT754,2,1) {_OMC_LIT597,_OMC_LIT753}};
+#define _OMC_LIT753_data "MetaModelica"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT753,12,_OMC_LIT753_data);
+#define _OMC_LIT753 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT753)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT754,2,0) {_OMC_LIT753,MMC_IMMEDIATE(MMC_TAGFIXNUM(2))}};
 #define _OMC_LIT754 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT754)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT755,2,1) {_OMC_LIT593,_OMC_LIT754}};
-#define _OMC_LIT755 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT755)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT756,2,1) {_OMC_LIT589,_OMC_LIT755}};
+#define _OMC_LIT755_data "ParModelica"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT755,11,_OMC_LIT755_data);
+#define _OMC_LIT755 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT755)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT756,2,0) {_OMC_LIT755,MMC_IMMEDIATE(MMC_TAGFIXNUM(3))}};
 #define _OMC_LIT756 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT756)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT757,2,1) {_OMC_LIT586,_OMC_LIT756}};
-#define _OMC_LIT757 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT757)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT758,2,1) {_OMC_LIT750,_OMC_LIT757}};
+#define _OMC_LIT757_data "Optimica"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT757,8,_OMC_LIT757_data);
+#define _OMC_LIT757 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT757)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT758,2,0) {_OMC_LIT757,MMC_IMMEDIATE(MMC_TAGFIXNUM(4))}};
 #define _OMC_LIT758 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT758)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT759,2,1) {_OMC_LIT557,_OMC_LIT758}};
-#define _OMC_LIT759 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT759)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT760,2,1) {_OMC_LIT553,_OMC_LIT759}};
+#define _OMC_LIT759_data "PDEModelica"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT759,11,_OMC_LIT759_data);
+#define _OMC_LIT759 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT759)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT760,2,0) {_OMC_LIT759,MMC_IMMEDIATE(MMC_TAGFIXNUM(5))}};
 #define _OMC_LIT760 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT760)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT761,2,1) {_OMC_LIT542,_OMC_LIT760}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT761,2,1) {_OMC_LIT760,MMC_REFSTRUCTLIT(mmc_nil)}};
 #define _OMC_LIT761 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT761)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT762,2,1) {_OMC_LIT746,_OMC_LIT761}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT762,2,1) {_OMC_LIT758,_OMC_LIT761}};
 #define _OMC_LIT762 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT762)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT763,2,1) {_OMC_LIT742,_OMC_LIT762}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT763,2,1) {_OMC_LIT756,_OMC_LIT762}};
 #define _OMC_LIT763 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT763)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT764,2,1) {_OMC_LIT528,_OMC_LIT763}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT764,2,1) {_OMC_LIT754,_OMC_LIT763}};
 #define _OMC_LIT764 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT764)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT765,2,1) {_OMC_LIT500,_OMC_LIT764}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT765,2,1) {_OMC_LIT752,_OMC_LIT764}};
 #define _OMC_LIT765 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT765)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT766,2,1) {_OMC_LIT497,_OMC_LIT765}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT766,3,10) {&Flags_FlagData_ENUM__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(1)),_OMC_LIT765}};
 #define _OMC_LIT766 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT766)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT767,2,1) {_OMC_LIT494,_OMC_LIT766}};
-#define _OMC_LIT767 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT767)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT768,2,4) {&Flags_ValidOptions_STRING__DESC__OPTION__desc,_OMC_LIT767}};
+#define _OMC_LIT767_data "Sets the grammar and semantics to accept."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT767,41,_OMC_LIT767_data);
+#define _OMC_LIT767 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT767)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT768,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(6)),_OMC_LIT748,_OMC_LIT750,_OMC_LIT3,_OMC_LIT766,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT767}};
 #define _OMC_LIT768 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT768)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT769,1,1) {_OMC_LIT768}};
-#define _OMC_LIT769 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT769)
-#define _OMC_LIT770_data "Sets the initialization optimization modules to use in the back end. See --help=optmodules for more info."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT770,105,_OMC_LIT770_data);
+#define _OMC_LIT769_data "help"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT769,4,_OMC_LIT769_data);
+#define _OMC_LIT769 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT769)
+#define _OMC_LIT770_data "h"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT770,1,_OMC_LIT770_data);
 #define _OMC_LIT770 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT770)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT771,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT770}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT771,1,1) {_OMC_LIT770}};
 #define _OMC_LIT771 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT771)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT772,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(77)),_OMC_LIT732,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT738,_OMC_LIT769,_OMC_LIT771}};
-#define _OMC_LIT772 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT772)
-#define _OMC_LIT773_data "postOptModulesDAE"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT773,17,_OMC_LIT773_data);
-#define _OMC_LIT773 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT773)
-#define _OMC_LIT774_data "createDAEmodeBDAE"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT774,17,_OMC_LIT774_data);
+#define _OMC_LIT772_data ""
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT772,0,_OMC_LIT772_data);
+#define _OMC_LIT772 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT772)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT773,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT772}};
+#define _OMC_LIT773 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT773)
+#define _OMC_LIT774_data "Displays the help text. Use --help=topics for more information."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT774,63,_OMC_LIT774_data);
 #define _OMC_LIT774 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT774)
-#define _OMC_LIT775_data "detectDAEmodeSparsePattern"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT775,26,_OMC_LIT775_data);
-#define _OMC_LIT775 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT775)
-#define _OMC_LIT776_data "setEvaluationStage"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT776,18,_OMC_LIT776_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT775,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(2)),_OMC_LIT769,_OMC_LIT771,_OMC_LIT3,_OMC_LIT773,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT774}};
+#define _OMC_LIT775 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT775)
+#define _OMC_LIT776_data "version"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT776,7,_OMC_LIT776_data);
 #define _OMC_LIT776 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT776)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT777,2,1) {_OMC_LIT776,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT777 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT777)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT778,2,1) {_OMC_LIT775,_OMC_LIT777}};
+#define _OMC_LIT777_data "Print the version and exit."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT777,27,_OMC_LIT777_data);
+#define _OMC_LIT777 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT777)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT778,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(4)),_OMC_LIT776,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT777}};
 #define _OMC_LIT778 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT778)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT779,2,1) {_OMC_LIT774,_OMC_LIT778}};
-#define _OMC_LIT779 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT779)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT780,2,1) {_OMC_LIT456,_OMC_LIT779}};
-#define _OMC_LIT780 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT780)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT781,2,1) {_OMC_LIT455,_OMC_LIT780}};
+#define _OMC_LIT779_data "silent"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT779,6,_OMC_LIT779_data);
+#define _OMC_LIT779 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT779)
+#define _OMC_LIT780_data "q"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT780,1,_OMC_LIT780_data);
+#define _OMC_LIT780 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT780)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT781,1,1) {_OMC_LIT780}};
 #define _OMC_LIT781 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT781)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT782,2,1) {_OMC_LIT454,_OMC_LIT781}};
-#define _OMC_LIT782 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT782)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT783,2,1) {_OMC_LIT453,_OMC_LIT782}};
+#define _OMC_LIT782_data "Turns on silent mode."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT782,21,_OMC_LIT782_data);
+#define _OMC_LIT782 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT782)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT783,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(22)),_OMC_LIT779,_OMC_LIT781,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT782}};
 #define _OMC_LIT783 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT783)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT784,2,1) {_OMC_LIT446,_OMC_LIT783}};
-#define _OMC_LIT784 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT784)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT785,2,1) {_OMC_LIT444,_OMC_LIT784}};
-#define _OMC_LIT785 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT785)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT786,2,1) {_OMC_LIT441,_OMC_LIT785}};
+#define _OMC_LIT784_data "instClass"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT784,9,_OMC_LIT784_data);
+#define _OMC_LIT784 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT784)
+#define _OMC_LIT785_data "i"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT785,1,_OMC_LIT785_data);
+#define _OMC_LIT785 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT785)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT786,1,1) {_OMC_LIT785}};
 #define _OMC_LIT786 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT786)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT787,2,1) {_OMC_LIT440,_OMC_LIT786}};
-#define _OMC_LIT787 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT787)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT788,2,9) {&Flags_FlagData_STRING__LIST__FLAG__desc,_OMC_LIT787}};
+#define _OMC_LIT787_data "Instantiate the class given by the fully qualified path."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT787,56,_OMC_LIT787_data);
+#define _OMC_LIT787 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT787)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT788,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(24)),_OMC_LIT784,_OMC_LIT786,_OMC_LIT3,_OMC_LIT773,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT787}};
 #define _OMC_LIT788 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT788)
-#define _OMC_LIT789_data "Sets the optimization modules for the DAEmode in the back end. See --help=optmodules for more info."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT789,99,_OMC_LIT789_data);
+#define _OMC_LIT789_data "target"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT789,6,_OMC_LIT789_data);
 #define _OMC_LIT789 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT789)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT790,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT789}};
-#define _OMC_LIT790 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT790)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT791,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(124)),_OMC_LIT773,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT788,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT790}};
+#define _OMC_LIT790_data "gcc"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT790,3,_OMC_LIT790_data);
+#define _OMC_LIT790 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT790)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT791,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT790}};
 #define _OMC_LIT791 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT791)
-#define _OMC_LIT792_data "orderConnections"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT792,16,_OMC_LIT792_data);
+#define _OMC_LIT792_data "msvc"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT792,4,_OMC_LIT792_data);
 #define _OMC_LIT792 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT792)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT793,2,4) {&Flags_FlagData_BOOL__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(1))}};
-#define _OMC_LIT793 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT793)
-#define _OMC_LIT794_data "Orders connect equations alphabetically if set."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT794,47,_OMC_LIT794_data);
+#define _OMC_LIT793_data "msvc10"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT793,6,_OMC_LIT793_data);
+#define _OMC_LIT793 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT793)
+#define _OMC_LIT794_data "msvc12"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT794,6,_OMC_LIT794_data);
 #define _OMC_LIT794 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT794)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT795,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT794}};
-#define _OMC_LIT795 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT795)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT796,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(18)),_OMC_LIT792,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT793,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT795}};
-#define _OMC_LIT796 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT796)
-#define _OMC_LIT797_data "graphicsExpMode"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT797,15,_OMC_LIT797_data);
+#define _OMC_LIT795_data "msvc13"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT795,6,_OMC_LIT795_data);
+#define _OMC_LIT795 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT795)
+#define _OMC_LIT796_data "msvc15"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT796,6,_OMC_LIT796_data);
+#define _OMC_LIT796 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT796)
+#define _OMC_LIT797_data "msvc19"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT797,6,_OMC_LIT797_data);
 #define _OMC_LIT797 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT797)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT798,1,3) {&Flags_FlagVisibility_INTERNAL__desc,}};
-#define _OMC_LIT798 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT798)
-#define _OMC_LIT799_data "Sets whether we are in graphics exp mode (evaluating icons)."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT799,60,_OMC_LIT799_data);
+#define _OMC_LIT798_data "vxworks69"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT798,9,_OMC_LIT798_data);
+#define _OMC_LIT798 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT798)
+#define _OMC_LIT799_data "debugrt"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT799,7,_OMC_LIT799_data);
 #define _OMC_LIT799 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT799)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT800,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT799}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT800,2,1) {_OMC_LIT799,MMC_REFSTRUCTLIT(mmc_nil)}};
 #define _OMC_LIT800 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT800)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT801,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(112)),_OMC_LIT797,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT798,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT800}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT801,2,1) {_OMC_LIT798,_OMC_LIT800}};
 #define _OMC_LIT801 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT801)
-#define _OMC_LIT802_data "evalAnnotationParams"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT802,20,_OMC_LIT802_data);
-#define _OMC_LIT802 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT802)
-#define _OMC_LIT803_data "Sets whether to evaluate parameters in annotations or not."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT803,58,_OMC_LIT803_data);
-#define _OMC_LIT803 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT803)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT804,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT803}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT802,2,1) {_OMC_LIT797,_OMC_LIT801}};
+#define _OMC_LIT802 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT802)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT803,2,1) {_OMC_LIT796,_OMC_LIT802}};
+#define _OMC_LIT803 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT803)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT804,2,1) {_OMC_LIT795,_OMC_LIT803}};
 #define _OMC_LIT804 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT804)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT805,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(30)),_OMC_LIT802,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT804}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT805,2,1) {_OMC_LIT794,_OMC_LIT804}};
 #define _OMC_LIT805 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT805)
-#define _OMC_LIT806_data "showStartOrigin"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT806,15,_OMC_LIT806_data);
-#define _OMC_LIT806 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT806)
-#define _OMC_LIT807_data "Enables dumping of the DAE startOrigin attribute of the variables."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT807,66,_OMC_LIT807_data);
-#define _OMC_LIT807 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT807)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT808,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT807}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT806,2,1) {_OMC_LIT793,_OMC_LIT805}};
+#define _OMC_LIT806 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT806)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT807,2,1) {_OMC_LIT792,_OMC_LIT806}};
+#define _OMC_LIT807 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT807)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT808,2,1) {_OMC_LIT790,_OMC_LIT807}};
 #define _OMC_LIT808 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT808)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT809,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(75)),_OMC_LIT806,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT808}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT809,2,3) {&Flags_ValidOptions_STRING__OPTION__desc,_OMC_LIT808}};
 #define _OMC_LIT809 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT809)
-#define _OMC_LIT810_data "showStructuralAnnotations"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT810,25,_OMC_LIT810_data);
-#define _OMC_LIT810 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT810)
-#define _OMC_LIT811_data "Show annotations affecting the solution process in the flattened code."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT811,70,_OMC_LIT811_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT810,1,1) {_OMC_LIT809}};
+#define _OMC_LIT810 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT810)
+#define _OMC_LIT811_data "Sets the target compiler to use."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT811,32,_OMC_LIT811_data);
 #define _OMC_LIT811 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT811)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT812,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT811}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT812,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(5)),_OMC_LIT789,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT791,_OMC_LIT810,_OMC_LIT811}};
 #define _OMC_LIT812 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT812)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT813,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(128)),_OMC_LIT810,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT812}};
-#define _OMC_LIT813 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT813)
-#define _OMC_LIT814_data "showAnnotations"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT814,15,_OMC_LIT814_data);
+#define _OMC_LIT813_data "simulation"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT813,10,_OMC_LIT813_data);
+#define _OMC_LIT813 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT813)
+#define _OMC_LIT814_data "u"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT814,1,_OMC_LIT814_data);
 #define _OMC_LIT814 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT814)
-#define _OMC_LIT815_data "Show annotations in the flattened code."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT815,39,_OMC_LIT815_data);
-#define _OMC_LIT815 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT815)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT816,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT815}};
-#define _OMC_LIT816 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT816)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT817,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(10)),_OMC_LIT814,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT816}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT815,1,1) {_OMC_LIT814}};
+#define _OMC_LIT815 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT815)
+#define _OMC_LIT816_data "Simulates the last model in the given Modelica file."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT816,52,_OMC_LIT816_data);
+#define _OMC_LIT816 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT816)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT817,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(146)),_OMC_LIT813,_OMC_LIT815,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT816}};
 #define _OMC_LIT817 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT817)
-#define _OMC_LIT818_data "defaultOCLDevice"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT818,16,_OMC_LIT818_data);
+#define _OMC_LIT818_data "simulationCg"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT818,12,_OMC_LIT818_data);
 #define _OMC_LIT818 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT818)
-#define _OMC_LIT819_data "o"
+#define _OMC_LIT819_data "s"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT819,1,_OMC_LIT819_data);
 #define _OMC_LIT819 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT819)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT820,1,1) {_OMC_LIT819}};
 #define _OMC_LIT820 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT820)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT821,2,5) {&Flags_FlagData_INT__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(0))}};
-#define _OMC_LIT821 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT821)
-#define _OMC_LIT822_data "Sets the default OpenCL device to be used for parallel execution."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT822,65,_OMC_LIT822_data);
-#define _OMC_LIT822 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT822)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT823,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT822}};
-#define _OMC_LIT823 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT823)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT824,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(40)),_OMC_LIT818,_OMC_LIT820,_OMC_LIT3,_OMC_LIT821,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT823}};
-#define _OMC_LIT824 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT824)
-#define _OMC_LIT825_data "vectorizationLimit"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT825,18,_OMC_LIT825_data);
-#define _OMC_LIT825 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT825)
-#define _OMC_LIT826_data "v"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT826,1,_OMC_LIT826_data);
+#define _OMC_LIT821_data "Turns on simulation code generation."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT821,36,_OMC_LIT821_data);
+#define _OMC_LIT821 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT821)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT822,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(26)),_OMC_LIT818,_OMC_LIT820,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT821}};
+#define _OMC_LIT822 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT822)
+#define _OMC_LIT823_data "numProcs"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT823,8,_OMC_LIT823_data);
+#define _OMC_LIT823 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT823)
+#define _OMC_LIT824_data "n"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT824,1,_OMC_LIT824_data);
+#define _OMC_LIT824 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT824)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT825,1,1) {_OMC_LIT824}};
+#define _OMC_LIT825 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT825)
+#define _OMC_LIT826_data "Sets the number of processors to use (0=default=auto)."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT826,54,_OMC_LIT826_data);
 #define _OMC_LIT826 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT826)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT827,1,1) {_OMC_LIT826}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT827,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(23)),_OMC_LIT823,_OMC_LIT825,_OMC_LIT3,_OMC_LIT727,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT826}};
 #define _OMC_LIT827 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT827)
-#define _OMC_LIT828_data "Sets the vectorization limit, arrays and matrices larger than this will not be vectorized."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT828,90,_OMC_LIT828_data);
+#define _OMC_LIT828_data "modelicaOutput"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT828,14,_OMC_LIT828_data);
 #define _OMC_LIT828 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT828)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT829,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT828}};
-#define _OMC_LIT829 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT829)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT830,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(28)),_OMC_LIT825,_OMC_LIT827,_OMC_LIT3,_OMC_LIT821,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT829}};
+#define _OMC_LIT829_data "m"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT829,1,_OMC_LIT829_data);
+#define _OMC_LIT829 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT829)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT830,1,1) {_OMC_LIT829}};
 #define _OMC_LIT830 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT830)
-#define _OMC_LIT831_data "noSimplify"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT831,10,_OMC_LIT831_data);
+#define _OMC_LIT831_data "Enables valid modelica output for flat modelica."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT831,48,_OMC_LIT831_data);
 #define _OMC_LIT831 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT831)
-#define _OMC_LIT832_data "Do not simplify expressions if set."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT832,35,_OMC_LIT832_data);
-#define _OMC_LIT832 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT832)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT833,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT832}};
-#define _OMC_LIT833 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT833)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT834,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(11)),_OMC_LIT831,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT833}};
-#define _OMC_LIT834 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT834)
-#define _OMC_LIT835_data "annotationVersion"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT835,17,_OMC_LIT835_data);
-#define _OMC_LIT835 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT835)
-#define _OMC_LIT836_data "3.x"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT836,3,_OMC_LIT836_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT832,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(21)),_OMC_LIT828,_OMC_LIT830,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT831}};
+#define _OMC_LIT832 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT832)
+#define _OMC_LIT833_data "keepArrays"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT833,10,_OMC_LIT833_data);
+#define _OMC_LIT833 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT833)
+#define _OMC_LIT834_data "a"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT834,1,_OMC_LIT834_data);
+#define _OMC_LIT834 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT834)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT835,1,1) {_OMC_LIT834}};
+#define _OMC_LIT835 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT835)
+#define _OMC_LIT836_data "Sets whether to split arrays or not."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT836,36,_OMC_LIT836_data);
 #define _OMC_LIT836 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT836)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT837,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT836}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT837,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(20)),_OMC_LIT833,_OMC_LIT835,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT836}};
 #define _OMC_LIT837 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT837)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT838,2,1) {_OMC_LIT836,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT838 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT838)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT839,2,1) {_OMC_LIT143,_OMC_LIT838}};
-#define _OMC_LIT839 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT839)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT840,2,1) {_OMC_LIT142,_OMC_LIT839}};
+#define _OMC_LIT838_data "typeinfo"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT838,8,_OMC_LIT838_data);
+#define _OMC_LIT838 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT838)
+#define _OMC_LIT839_data "t"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT839,1,_OMC_LIT839_data);
+#define _OMC_LIT839 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT839)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT840,1,1) {_OMC_LIT839}};
 #define _OMC_LIT840 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT840)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT841,2,3) {&Flags_ValidOptions_STRING__OPTION__desc,_OMC_LIT840}};
-#define _OMC_LIT841 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT841)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT842,1,1) {_OMC_LIT841}};
+#define _OMC_LIT841_data "Prints out extra type information if set."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT841,41,_OMC_LIT841_data);
+#define _OMC_LIT841 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT841)
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT842,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(19)),_OMC_LIT838,_OMC_LIT840,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT841}};
 #define _OMC_LIT842 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT842)
-#define _OMC_LIT843_data "Sets the annotation version that should be used."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT843,48,_OMC_LIT843_data);
-#define _OMC_LIT843 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT843)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT844,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT843}};
-#define _OMC_LIT844 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT844)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT845,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(7)),_OMC_LIT835,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT837,_OMC_LIT842,_OMC_LIT844}};
-#define _OMC_LIT845 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT845)
-#define _OMC_LIT846_data "grammar"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT846,7,_OMC_LIT846_data);
-#define _OMC_LIT846 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT846)
-#define _OMC_LIT847_data "g"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT847,1,_OMC_LIT847_data);
-#define _OMC_LIT847 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT847)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT848,1,1) {_OMC_LIT847}};
-#define _OMC_LIT848 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT848)
-#define _OMC_LIT849_data "Modelica"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT849,8,_OMC_LIT849_data);
-#define _OMC_LIT849 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT849)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT850,2,0) {_OMC_LIT849,MMC_IMMEDIATE(MMC_TAGFIXNUM(1))}};
-#define _OMC_LIT850 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT850)
-#define _OMC_LIT851_data "MetaModelica"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT851,12,_OMC_LIT851_data);
-#define _OMC_LIT851 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT851)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT852,2,0) {_OMC_LIT851,MMC_IMMEDIATE(MMC_TAGFIXNUM(2))}};
-#define _OMC_LIT852 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT852)
-#define _OMC_LIT853_data "ParModelica"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT853,11,_OMC_LIT853_data);
-#define _OMC_LIT853 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT853)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT854,2,0) {_OMC_LIT853,MMC_IMMEDIATE(MMC_TAGFIXNUM(3))}};
-#define _OMC_LIT854 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT854)
-#define _OMC_LIT855_data "Optimica"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT855,8,_OMC_LIT855_data);
-#define _OMC_LIT855 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT855)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT856,2,0) {_OMC_LIT855,MMC_IMMEDIATE(MMC_TAGFIXNUM(4))}};
-#define _OMC_LIT856 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT856)
-#define _OMC_LIT857_data "PDEModelica"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT857,11,_OMC_LIT857_data);
-#define _OMC_LIT857 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT857)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT858,2,0) {_OMC_LIT857,MMC_IMMEDIATE(MMC_TAGFIXNUM(5))}};
-#define _OMC_LIT858 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT858)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT859,2,1) {_OMC_LIT858,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT859 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT859)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT860,2,1) {_OMC_LIT856,_OMC_LIT859}};
-#define _OMC_LIT860 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT860)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT861,2,1) {_OMC_LIT854,_OMC_LIT860}};
-#define _OMC_LIT861 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT861)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT862,2,1) {_OMC_LIT852,_OMC_LIT861}};
-#define _OMC_LIT862 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT862)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT863,2,1) {_OMC_LIT850,_OMC_LIT862}};
-#define _OMC_LIT863 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT863)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT864,3,10) {&Flags_FlagData_ENUM__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(1)),_OMC_LIT863}};
-#define _OMC_LIT864 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT864)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT865,2,1) {_OMC_LIT857,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT865 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT865)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT866,2,1) {_OMC_LIT855,_OMC_LIT865}};
-#define _OMC_LIT866 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT866)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT867,2,1) {_OMC_LIT853,_OMC_LIT866}};
-#define _OMC_LIT867 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT867)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT868,2,1) {_OMC_LIT851,_OMC_LIT867}};
-#define _OMC_LIT868 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT868)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT869,2,1) {_OMC_LIT849,_OMC_LIT868}};
-#define _OMC_LIT869 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT869)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT870,2,3) {&Flags_ValidOptions_STRING__OPTION__desc,_OMC_LIT869}};
-#define _OMC_LIT870 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT870)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT871,1,1) {_OMC_LIT870}};
-#define _OMC_LIT871 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT871)
-#define _OMC_LIT872_data "Sets the grammar and semantics to accept."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT872,41,_OMC_LIT872_data);
-#define _OMC_LIT872 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT872)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT873,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT872}};
-#define _OMC_LIT873 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT873)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT874,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(6)),_OMC_LIT846,_OMC_LIT848,_OMC_LIT3,_OMC_LIT864,_OMC_LIT871,_OMC_LIT873}};
-#define _OMC_LIT874 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT874)
-#define _OMC_LIT875_data "help"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT875,4,_OMC_LIT875_data);
-#define _OMC_LIT875 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT875)
-#define _OMC_LIT876_data "h"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT876,1,_OMC_LIT876_data);
-#define _OMC_LIT876 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT876)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT877,1,1) {_OMC_LIT876}};
-#define _OMC_LIT877 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT877)
-#define _OMC_LIT878_data ""
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT878,0,_OMC_LIT878_data);
-#define _OMC_LIT878 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT878)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT879,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT878}};
-#define _OMC_LIT879 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT879)
-#define _OMC_LIT880_data "Displays the help text. Use --help=topics for more information."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT880,63,_OMC_LIT880_data);
-#define _OMC_LIT880 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT880)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT881,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT880}};
-#define _OMC_LIT881 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT881)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT882,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(2)),_OMC_LIT875,_OMC_LIT877,_OMC_LIT3,_OMC_LIT879,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT881}};
-#define _OMC_LIT882 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT882)
-#define _OMC_LIT883_data "version"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT883,7,_OMC_LIT883_data);
-#define _OMC_LIT883 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT883)
-#define _OMC_LIT884_data "-v"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT884,2,_OMC_LIT884_data);
-#define _OMC_LIT884 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT884)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT885,1,1) {_OMC_LIT884}};
-#define _OMC_LIT885 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT885)
-#define _OMC_LIT886_data "Print the version and exit."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT886,27,_OMC_LIT886_data);
-#define _OMC_LIT886 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT886)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT887,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT886}};
-#define _OMC_LIT887 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT887)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT888,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(4)),_OMC_LIT883,_OMC_LIT885,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT887}};
-#define _OMC_LIT888 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT888)
-#define _OMC_LIT889_data "silent"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT889,6,_OMC_LIT889_data);
-#define _OMC_LIT889 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT889)
-#define _OMC_LIT890_data "q"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT890,1,_OMC_LIT890_data);
-#define _OMC_LIT890 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT890)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT891,1,1) {_OMC_LIT890}};
-#define _OMC_LIT891 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT891)
-#define _OMC_LIT892_data "Turns on silent mode."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT892,21,_OMC_LIT892_data);
-#define _OMC_LIT892 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT892)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT893,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT892}};
-#define _OMC_LIT893 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT893)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT894,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(22)),_OMC_LIT889,_OMC_LIT891,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT893}};
-#define _OMC_LIT894 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT894)
-#define _OMC_LIT895_data "instClass"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT895,9,_OMC_LIT895_data);
-#define _OMC_LIT895 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT895)
-#define _OMC_LIT896_data "i"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT896,1,_OMC_LIT896_data);
-#define _OMC_LIT896 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT896)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT897,1,1) {_OMC_LIT896}};
-#define _OMC_LIT897 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT897)
-#define _OMC_LIT898_data "Instantiate the class given by the fully qualified path."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT898,56,_OMC_LIT898_data);
-#define _OMC_LIT898 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT898)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT899,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT898}};
-#define _OMC_LIT899 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT899)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT900,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(27)),_OMC_LIT895,_OMC_LIT897,_OMC_LIT3,_OMC_LIT879,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT899}};
-#define _OMC_LIT900 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT900)
-#define _OMC_LIT901_data "target"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT901,6,_OMC_LIT901_data);
-#define _OMC_LIT901 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT901)
-#define _OMC_LIT902_data "gcc"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT902,3,_OMC_LIT902_data);
-#define _OMC_LIT902 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT902)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT903,2,8) {&Flags_FlagData_STRING__FLAG__desc,_OMC_LIT902}};
-#define _OMC_LIT903 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT903)
-#define _OMC_LIT904_data "msvc"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT904,4,_OMC_LIT904_data);
-#define _OMC_LIT904 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT904)
-#define _OMC_LIT905_data "msvc10"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT905,6,_OMC_LIT905_data);
-#define _OMC_LIT905 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT905)
-#define _OMC_LIT906_data "msvc12"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT906,6,_OMC_LIT906_data);
-#define _OMC_LIT906 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT906)
-#define _OMC_LIT907_data "msvc13"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT907,6,_OMC_LIT907_data);
-#define _OMC_LIT907 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT907)
-#define _OMC_LIT908_data "msvc15"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT908,6,_OMC_LIT908_data);
-#define _OMC_LIT908 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT908)
-#define _OMC_LIT909_data "msvc19"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT909,6,_OMC_LIT909_data);
-#define _OMC_LIT909 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT909)
-#define _OMC_LIT910_data "vxworks69"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT910,9,_OMC_LIT910_data);
-#define _OMC_LIT910 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT910)
-#define _OMC_LIT911_data "debugrt"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT911,7,_OMC_LIT911_data);
-#define _OMC_LIT911 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT911)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT912,2,1) {_OMC_LIT911,MMC_REFSTRUCTLIT(mmc_nil)}};
-#define _OMC_LIT912 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT912)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT913,2,1) {_OMC_LIT910,_OMC_LIT912}};
-#define _OMC_LIT913 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT913)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT914,2,1) {_OMC_LIT909,_OMC_LIT913}};
-#define _OMC_LIT914 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT914)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT915,2,1) {_OMC_LIT908,_OMC_LIT914}};
-#define _OMC_LIT915 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT915)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT916,2,1) {_OMC_LIT907,_OMC_LIT915}};
-#define _OMC_LIT916 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT916)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT917,2,1) {_OMC_LIT906,_OMC_LIT916}};
-#define _OMC_LIT917 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT917)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT918,2,1) {_OMC_LIT905,_OMC_LIT917}};
-#define _OMC_LIT918 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT918)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT919,2,1) {_OMC_LIT904,_OMC_LIT918}};
-#define _OMC_LIT919 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT919)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT920,2,1) {_OMC_LIT902,_OMC_LIT919}};
-#define _OMC_LIT920 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT920)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT921,2,3) {&Flags_ValidOptions_STRING__OPTION__desc,_OMC_LIT920}};
-#define _OMC_LIT921 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT921)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT922,1,1) {_OMC_LIT921}};
-#define _OMC_LIT922 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT922)
-#define _OMC_LIT923_data "Sets the target compiler to use."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT923,32,_OMC_LIT923_data);
-#define _OMC_LIT923 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT923)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT924,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT923}};
-#define _OMC_LIT924 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT924)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT925,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(5)),_OMC_LIT901,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT3,_OMC_LIT903,_OMC_LIT922,_OMC_LIT924}};
-#define _OMC_LIT925 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT925)
-#define _OMC_LIT926_data "simulationCg"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT926,12,_OMC_LIT926_data);
-#define _OMC_LIT926 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT926)
-#define _OMC_LIT927_data "s"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT927,1,_OMC_LIT927_data);
-#define _OMC_LIT927 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT927)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT928,1,1) {_OMC_LIT927}};
-#define _OMC_LIT928 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT928)
-#define _OMC_LIT929_data "Turns on simulation code generation."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT929,36,_OMC_LIT929_data);
-#define _OMC_LIT929 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT929)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT930,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT929}};
-#define _OMC_LIT930 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT930)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT931,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(29)),_OMC_LIT926,_OMC_LIT928,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT930}};
-#define _OMC_LIT931 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT931)
-#define _OMC_LIT932_data "bandwidth"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT932,9,_OMC_LIT932_data);
-#define _OMC_LIT932 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT932)
-#define _OMC_LIT933_data "b"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT933,1,_OMC_LIT933_data);
-#define _OMC_LIT933 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT933)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT934,1,1) {_OMC_LIT933}};
-#define _OMC_LIT934 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT934)
-#define _OMC_LIT935_data "Sets the bandwidth for parallel execution."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT935,42,_OMC_LIT935_data);
-#define _OMC_LIT935 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT935)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT936,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT935}};
-#define _OMC_LIT936 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT936)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT937,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(26)),_OMC_LIT932,_OMC_LIT934,_OMC_LIT3,_OMC_LIT821,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT936}};
-#define _OMC_LIT937 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT937)
-#define _OMC_LIT938_data "latency"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT938,7,_OMC_LIT938_data);
-#define _OMC_LIT938 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT938)
-#define _OMC_LIT939_data "l"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT939,1,_OMC_LIT939_data);
-#define _OMC_LIT939 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT939)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT940,1,1) {_OMC_LIT939}};
-#define _OMC_LIT940 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT940)
-#define _OMC_LIT941_data "Sets the latency for parallel execution."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT941,40,_OMC_LIT941_data);
-#define _OMC_LIT941 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT941)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT942,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT941}};
-#define _OMC_LIT942 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT942)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT943,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(25)),_OMC_LIT938,_OMC_LIT940,_OMC_LIT3,_OMC_LIT821,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT942}};
-#define _OMC_LIT943 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT943)
-#define _OMC_LIT944_data "numProcs"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT944,8,_OMC_LIT944_data);
-#define _OMC_LIT944 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT944)
-#define _OMC_LIT945_data "n"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT945,1,_OMC_LIT945_data);
-#define _OMC_LIT945 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT945)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT946,1,1) {_OMC_LIT945}};
-#define _OMC_LIT946 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT946)
-#define _OMC_LIT947_data "Sets the number of processors to use (0=default=auto)."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT947,54,_OMC_LIT947_data);
-#define _OMC_LIT947 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT947)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT948,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT947}};
-#define _OMC_LIT948 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT948)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT949,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(24)),_OMC_LIT944,_OMC_LIT946,_OMC_LIT3,_OMC_LIT821,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT948}};
-#define _OMC_LIT949 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT949)
-#define _OMC_LIT950_data "modelicaOutput"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT950,14,_OMC_LIT950_data);
-#define _OMC_LIT950 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT950)
-#define _OMC_LIT951_data "m"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT951,1,_OMC_LIT951_data);
-#define _OMC_LIT951 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT951)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT952,1,1) {_OMC_LIT951}};
-#define _OMC_LIT952 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT952)
-#define _OMC_LIT953_data "Enables valid modelica output for flat modelica."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT953,48,_OMC_LIT953_data);
-#define _OMC_LIT953 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT953)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT954,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT953}};
-#define _OMC_LIT954 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT954)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT955,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(21)),_OMC_LIT950,_OMC_LIT952,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT954}};
-#define _OMC_LIT955 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT955)
-#define _OMC_LIT956_data "keepArrays"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT956,10,_OMC_LIT956_data);
-#define _OMC_LIT956 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT956)
-#define _OMC_LIT957_data "a"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT957,1,_OMC_LIT957_data);
-#define _OMC_LIT957 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT957)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT958,1,1) {_OMC_LIT957}};
-#define _OMC_LIT958 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT958)
-#define _OMC_LIT959_data "Sets whether to split arrays or not."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT959,36,_OMC_LIT959_data);
-#define _OMC_LIT959 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT959)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT960,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT959}};
-#define _OMC_LIT960 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT960)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT961,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(20)),_OMC_LIT956,_OMC_LIT958,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT960}};
-#define _OMC_LIT961 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT961)
-#define _OMC_LIT962_data "typeinfo"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT962,8,_OMC_LIT962_data);
-#define _OMC_LIT962 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT962)
-#define _OMC_LIT963_data "t"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT963,1,_OMC_LIT963_data);
-#define _OMC_LIT963 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT963)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT964,1,1) {_OMC_LIT963}};
-#define _OMC_LIT964 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT964)
-#define _OMC_LIT965_data "Prints out extra type information if set."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT965,41,_OMC_LIT965_data);
-#define _OMC_LIT965 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT965)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT966,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT965}};
-#define _OMC_LIT966 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT966)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT967,8,3) {&Flags_ConfigFlag_CONFIG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(19)),_OMC_LIT962,_OMC_LIT964,_OMC_LIT3,_OMC_LIT4,MMC_REFSTRUCTLIT(mmc_none),_OMC_LIT966}};
-#define _OMC_LIT967 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT967)
 #include "util/modelica.h"
 #include "Config_includes.h"
 #if !defined(PROTECTED_FUNCTION_STATIC)
@@ -2419,19 +2171,25 @@ PROTECTED_FUNCTION_STATIC modelica_integer omc_Config_noProcWork(threadData_t *t
 PROTECTED_FUNCTION_STATIC modelica_metatype boxptr_Config_noProcWork(threadData_t *threadData, modelica_metatype _inProc);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Config_noProcWork,2,0) {(void*) boxptr_Config_noProcWork,0}};
 #define boxvar_Config_noProcWork MMC_REFSTRUCTLIT(boxvar_lit_Config_noProcWork)
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_flatModelica(threadData_t *threadData)
 {
 modelica_boolean _value;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_value = omc_Flags_getConfigBool(threadData, _OMC_LIT7);
-if((_value && (!omc_Flags_isSet(threadData, _OMC_LIT20))))
+_value = omc_Flags_getConfigBool(threadData, _OMC_LIT6);
+if((_value && (!omc_Flags_isSet(threadData, _OMC_LIT17))))
 {
-omc_Error_addMessage(threadData, _OMC_LIT12, _OMC_LIT16);
+omc_Error_addMessage(threadData, _OMC_LIT10, _OMC_LIT14);
 _value = 0;
 }
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _value;
 }
 modelica_metatype boxptr_Config_flatModelica(threadData_t *threadData)
@@ -2442,14 +2200,20 @@ _value = omc_Config_flatModelica(threadData);
 out_value = mmc_mk_icon(_value);
 return out_value;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_synchronousFeaturesAllowed(threadData_t *threadData)
 {
 modelica_boolean _outRes;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _outRes = (omc_Config_getLanguageStandard(threadData) >= 6);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outRes;
 }
 modelica_metatype boxptr_Config_synchronousFeaturesAllowed(threadData_t *threadData)
@@ -2460,16 +2224,45 @@ _outRes = omc_Config_synchronousFeaturesAllowed(threadData);
 out_outRes = mmc_mk_icon(_outRes);
 return out_outRes;
 }
-DLLExport
+DLLDirection
+modelica_boolean omc_Config_replacedHomotopy(threadData_t *threadData)
+{
+modelica_boolean _outBoolean;
+modelica_string _replaceHomotopy = NULL;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+_replaceHomotopy = omc_Flags_getConfigString(threadData, _OMC_LIT35);
+_outBoolean = ((stringEqual(_replaceHomotopy, _OMC_LIT23)) || (stringEqual(_replaceHomotopy, _OMC_LIT26)));
+_return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
+return _outBoolean;
+}
+modelica_metatype boxptr_Config_replacedHomotopy(threadData_t *threadData)
+{
+modelica_boolean _outBoolean;
+modelica_metatype out_outBoolean;
+_outBoolean = omc_Config_replacedHomotopy(threadData);
+out_outBoolean = mmc_mk_icon(_outBoolean);
+return out_outBoolean;
+}
+DLLDirection
 modelica_boolean omc_Config_adaptiveHomotopy(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
 modelica_boolean tmp1 = 0;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
 modelica_string tmp4_1;
-tmp4_1 = omc_Flags_getConfigString(threadData, _OMC_LIT47);
+tmp4_1 = omc_Flags_getConfigString(threadData, _OMC_LIT57);
 {
 volatile mmc_switch_type tmp4;
 int tmp5;
@@ -2477,22 +2270,22 @@ tmp4 = 0;
 for (; tmp4 < 4; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
-if (16 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT24), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
+if (16 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT39), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
 tmp1 = 0;
 goto tmp3_done;
 }
 case 1: {
-if (13 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT28), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
+if (13 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT42), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
 tmp1 = 1;
 goto tmp3_done;
 }
 case 2: {
-if (17 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT22), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
+if (17 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT37), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
 tmp1 = 0;
 goto tmp3_done;
 }
 case 3: {
-if (14 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT35), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
+if (14 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT47), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
 tmp1 = 1;
 goto tmp3_done;
 }
@@ -2509,6 +2302,9 @@ tmp3_done:;
 }
 _outBoolean = tmp1;
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_adaptiveHomotopy(threadData_t *threadData)
@@ -2519,16 +2315,19 @@ _outBoolean = omc_Config_adaptiveHomotopy(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_globalHomotopy(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
 modelica_boolean tmp1 = 0;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
 modelica_string tmp4_1;
-tmp4_1 = omc_Flags_getConfigString(threadData, _OMC_LIT47);
+tmp4_1 = omc_Flags_getConfigString(threadData, _OMC_LIT57);
 {
 volatile mmc_switch_type tmp4;
 int tmp5;
@@ -2536,22 +2335,22 @@ tmp4 = 0;
 for (; tmp4 < 4; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
-if (16 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT24), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
+if (16 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT39), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
 tmp1 = 0;
 goto tmp3_done;
 }
 case 1: {
-if (13 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT28), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
+if (13 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT42), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
 tmp1 = 0;
 goto tmp3_done;
 }
 case 2: {
-if (17 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT22), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
+if (17 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT37), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
 tmp1 = 1;
 goto tmp3_done;
 }
 case 3: {
-if (14 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT35), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
+if (14 != MMC_STRLEN(tmp4_1) || strcmp(MMC_STRINGDATA(_OMC_LIT47), MMC_STRINGDATA(tmp4_1)) != 0) goto tmp3_end;
 tmp1 = 1;
 goto tmp3_done;
 }
@@ -2568,6 +2367,9 @@ tmp3_done:;
 }
 _outBoolean = tmp1;
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_globalHomotopy(threadData_t *threadData)
@@ -2578,14 +2380,20 @@ _outBoolean = omc_Config_globalHomotopy(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_ignoreCommandLineOptionsAnnotation(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT51);
+_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT60);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_ignoreCommandLineOptionsAnnotation(threadData_t *threadData)
@@ -2596,24 +2404,30 @@ _outBoolean = omc_Config_ignoreCommandLineOptionsAnnotation(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_string omc_Config_dynamicTearing(threadData_t *threadData)
 {
 modelica_string _outString = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outString = omc_Flags_getConfigString(threadData, _OMC_LIT78);
+_outString = omc_Flags_getConfigString(threadData, _OMC_LIT82);
 _return: OMC_LABEL_UNUSED
 return _outString;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_profileFunctions(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = (!(stringEqual(omc_Flags_getConfigString(threadData, _OMC_LIT115), _OMC_LIT80)));
+_outBoolean = (!(stringEqual(omc_Flags_getConfigString(threadData, _OMC_LIT110), _OMC_LIT19)));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_profileFunctions(threadData_t *threadData)
@@ -2624,14 +2438,20 @@ _outBoolean = omc_Config_profileFunctions(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_profileHtml(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = (stringEqual(omc_Flags_getConfigString(threadData, _OMC_LIT115), _OMC_LIT89));
+_outBoolean = (stringEqual(omc_Flags_getConfigString(threadData, _OMC_LIT110), _OMC_LIT89));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_profileHtml(threadData_t *threadData)
@@ -2642,14 +2462,20 @@ _outBoolean = omc_Config_profileHtml(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_profileAll(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = (stringEqual(omc_Flags_getConfigString(threadData, _OMC_LIT115), _OMC_LIT93));
+_outBoolean = (stringEqual(omc_Flags_getConfigString(threadData, _OMC_LIT110), _OMC_LIT92));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_profileAll(threadData_t *threadData)
@@ -2660,14 +2486,20 @@ _outBoolean = omc_Config_profileAll(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_profileSome(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = (((modelica_integer) 0) == omc_System_strncmp(threadData, omc_Flags_getConfigString(threadData, _OMC_LIT115), _OMC_LIT85, ((modelica_integer) 6)));
+_outBoolean = (((modelica_integer) 0) == omc_System_strncmp(threadData, omc_Flags_getConfigString(threadData, _OMC_LIT110), _OMC_LIT86, ((modelica_integer) 6)));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_profileSome(threadData_t *threadData)
@@ -2678,14 +2510,20 @@ _outBoolean = omc_Config_profileSome(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_intEnumConversion(threadData_t *threadData)
 {
 modelica_boolean _outIntEnumConversion;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outIntEnumConversion = omc_Flags_getConfigBool(threadData, _OMC_LIT119);
+_outIntEnumConversion = omc_Flags_getConfigBool(threadData, _OMC_LIT113);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outIntEnumConversion;
 }
 modelica_metatype boxptr_Config_intEnumConversion(threadData_t *threadData)
@@ -2696,14 +2534,20 @@ _outIntEnumConversion = omc_Config_intEnumConversion(threadData);
 out_outIntEnumConversion = mmc_mk_icon(_outIntEnumConversion);
 return out_outIntEnumConversion;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_scalarizeBindings(threadData_t *threadData)
 {
 modelica_boolean _outScalarizeBindings;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outScalarizeBindings = omc_Flags_getConfigBool(threadData, _OMC_LIT123);
+_outScalarizeBindings = omc_Flags_getConfigBool(threadData, _OMC_LIT116);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outScalarizeBindings;
 }
 modelica_metatype boxptr_Config_scalarizeBindings(threadData_t *threadData)
@@ -2714,14 +2558,20 @@ _outScalarizeBindings = omc_Config_scalarizeBindings(threadData);
 out_outScalarizeBindings = mmc_mk_icon(_outScalarizeBindings);
 return out_outScalarizeBindings;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_scalarizeMinMax(threadData_t *threadData)
 {
 modelica_boolean _outScalarizeMinMax;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outScalarizeMinMax = omc_Flags_getConfigBool(threadData, _OMC_LIT127);
+_outScalarizeMinMax = omc_Flags_getConfigBool(threadData, _OMC_LIT119);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outScalarizeMinMax;
 }
 modelica_metatype boxptr_Config_scalarizeMinMax(threadData_t *threadData)
@@ -2732,14 +2582,20 @@ _outScalarizeMinMax = omc_Config_scalarizeMinMax(threadData);
 out_outScalarizeMinMax = mmc_mk_icon(_outScalarizeMinMax);
 return out_outScalarizeMinMax;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_showErrorMessages(threadData_t *threadData)
 {
 modelica_boolean _outShowErrorMessages;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outShowErrorMessages = omc_Flags_getConfigBool(threadData, _OMC_LIT131);
+_outShowErrorMessages = omc_Flags_getConfigBool(threadData, _OMC_LIT122);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outShowErrorMessages;
 }
 modelica_metatype boxptr_Config_showErrorMessages(threadData_t *threadData)
@@ -2754,7 +2610,9 @@ PROTECTED_FUNCTION_STATIC modelica_integer omc_Config_versionStringToStd2(thread
 {
 modelica_integer _outStandard;
 modelica_integer tmp1 = 0;
-modelica_metatype tmpMeta[4] __attribute__((unused)) = {0};
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
@@ -2764,78 +2622,104 @@ tmp4_1 = _inVersion;
 volatile mmc_switch_type tmp4;
 int tmp5;
 tmp4 = 0;
-for (; tmp4 < 7; tmp4++) {
+for (; tmp4 < 8; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
+modelica_metatype tmpMeta6;
+modelica_metatype tmpMeta7;
 if (listEmpty(tmp4_1)) goto tmp3_end;
-tmpMeta[0] = MMC_CAR(tmp4_1);
-tmpMeta[1] = MMC_CDR(tmp4_1);
-if (1 != MMC_STRLEN(tmpMeta[0]) || strcmp(MMC_STRINGDATA(_OMC_LIT132), MMC_STRINGDATA(tmpMeta[0])) != 0) goto tmp3_end;
+tmpMeta6 = MMC_CAR(tmp4_1);
+tmpMeta7 = MMC_CDR(tmp4_1);
+if (1 != MMC_STRLEN(tmpMeta6) || strcmp(MMC_STRINGDATA(_OMC_LIT123), MMC_STRINGDATA(tmpMeta6)) != 0) goto tmp3_end;
 tmp1 = 1;
 goto tmp3_done;
 }
 case 1: {
+modelica_metatype tmpMeta8;
+modelica_metatype tmpMeta9;
 if (listEmpty(tmp4_1)) goto tmp3_end;
-tmpMeta[0] = MMC_CAR(tmp4_1);
-tmpMeta[1] = MMC_CDR(tmp4_1);
-if (1 != MMC_STRLEN(tmpMeta[0]) || strcmp(MMC_STRINGDATA(_OMC_LIT133), MMC_STRINGDATA(tmpMeta[0])) != 0) goto tmp3_end;
+tmpMeta8 = MMC_CAR(tmp4_1);
+tmpMeta9 = MMC_CDR(tmp4_1);
+if (1 != MMC_STRLEN(tmpMeta8) || strcmp(MMC_STRINGDATA(_OMC_LIT124), MMC_STRINGDATA(tmpMeta8)) != 0) goto tmp3_end;
 tmp1 = 2;
 goto tmp3_done;
 }
 case 2: {
+modelica_metatype tmpMeta10;
+modelica_metatype tmpMeta11;
+modelica_metatype tmpMeta12;
+modelica_metatype tmpMeta13;
 if (listEmpty(tmp4_1)) goto tmp3_end;
-tmpMeta[0] = MMC_CAR(tmp4_1);
-tmpMeta[1] = MMC_CDR(tmp4_1);
-if (1 != MMC_STRLEN(tmpMeta[0]) || strcmp(MMC_STRINGDATA(_OMC_LIT134), MMC_STRINGDATA(tmpMeta[0])) != 0) goto tmp3_end;
-if (listEmpty(tmpMeta[1])) goto tmp3_end;
-tmpMeta[2] = MMC_CAR(tmpMeta[1]);
-tmpMeta[3] = MMC_CDR(tmpMeta[1]);
-if (1 != MMC_STRLEN(tmpMeta[2]) || strcmp(MMC_STRINGDATA(_OMC_LIT135), MMC_STRINGDATA(tmpMeta[2])) != 0) goto tmp3_end;
+tmpMeta10 = MMC_CAR(tmp4_1);
+tmpMeta11 = MMC_CDR(tmp4_1);
+if (1 != MMC_STRLEN(tmpMeta10) || strcmp(MMC_STRINGDATA(_OMC_LIT125), MMC_STRINGDATA(tmpMeta10)) != 0) goto tmp3_end;
+if (listEmpty(tmpMeta11)) goto tmp3_end;
+tmpMeta12 = MMC_CAR(tmpMeta11);
+tmpMeta13 = MMC_CDR(tmpMeta11);
+if (1 != MMC_STRLEN(tmpMeta12) || strcmp(MMC_STRINGDATA(_OMC_LIT126), MMC_STRINGDATA(tmpMeta12)) != 0) goto tmp3_end;
 tmp1 = 3;
 goto tmp3_done;
 }
 case 3: {
+modelica_metatype tmpMeta14;
+modelica_metatype tmpMeta15;
+modelica_metatype tmpMeta16;
+modelica_metatype tmpMeta17;
 if (listEmpty(tmp4_1)) goto tmp3_end;
-tmpMeta[0] = MMC_CAR(tmp4_1);
-tmpMeta[1] = MMC_CDR(tmp4_1);
-if (1 != MMC_STRLEN(tmpMeta[0]) || strcmp(MMC_STRINGDATA(_OMC_LIT134), MMC_STRINGDATA(tmpMeta[0])) != 0) goto tmp3_end;
-if (listEmpty(tmpMeta[1])) goto tmp3_end;
-tmpMeta[2] = MMC_CAR(tmpMeta[1]);
-tmpMeta[3] = MMC_CDR(tmpMeta[1]);
-if (1 != MMC_STRLEN(tmpMeta[2]) || strcmp(MMC_STRINGDATA(_OMC_LIT132), MMC_STRINGDATA(tmpMeta[2])) != 0) goto tmp3_end;
+tmpMeta14 = MMC_CAR(tmp4_1);
+tmpMeta15 = MMC_CDR(tmp4_1);
+if (1 != MMC_STRLEN(tmpMeta14) || strcmp(MMC_STRINGDATA(_OMC_LIT125), MMC_STRINGDATA(tmpMeta14)) != 0) goto tmp3_end;
+if (listEmpty(tmpMeta15)) goto tmp3_end;
+tmpMeta16 = MMC_CAR(tmpMeta15);
+tmpMeta17 = MMC_CDR(tmpMeta15);
+if (1 != MMC_STRLEN(tmpMeta16) || strcmp(MMC_STRINGDATA(_OMC_LIT123), MMC_STRINGDATA(tmpMeta16)) != 0) goto tmp3_end;
 tmp1 = 4;
 goto tmp3_done;
 }
 case 4: {
+modelica_metatype tmpMeta18;
+modelica_metatype tmpMeta19;
 if (listEmpty(tmp4_1)) goto tmp3_end;
-tmpMeta[0] = MMC_CAR(tmp4_1);
-tmpMeta[1] = MMC_CDR(tmp4_1);
-if (1 != MMC_STRLEN(tmpMeta[0]) || strcmp(MMC_STRINGDATA(_OMC_LIT134), MMC_STRINGDATA(tmpMeta[0])) != 0) goto tmp3_end;
-if (listEmpty(tmpMeta[1])) goto tmp3_end;
-tmpMeta[2] = MMC_CAR(tmpMeta[1]);
-tmpMeta[3] = MMC_CDR(tmpMeta[1]);
-if (1 != MMC_STRLEN(tmpMeta[2]) || strcmp(MMC_STRINGDATA(_OMC_LIT133), MMC_STRINGDATA(tmpMeta[2])) != 0) goto tmp3_end;
+tmpMeta18 = MMC_CAR(tmp4_1);
+tmpMeta19 = MMC_CDR(tmp4_1);
+if (1 != MMC_STRLEN(tmpMeta18) || strcmp(MMC_STRINGDATA(_OMC_LIT125), MMC_STRINGDATA(tmpMeta18)) != 0) goto tmp3_end;
 tmp1 = 5;
 goto tmp3_done;
 }
 case 5: {
+modelica_metatype tmpMeta20;
+modelica_metatype tmpMeta21;
+modelica_metatype tmpMeta22;
+modelica_metatype tmpMeta23;
 if (listEmpty(tmp4_1)) goto tmp3_end;
-tmpMeta[0] = MMC_CAR(tmp4_1);
-tmpMeta[1] = MMC_CDR(tmp4_1);
-if (1 != MMC_STRLEN(tmpMeta[0]) || strcmp(MMC_STRINGDATA(_OMC_LIT134), MMC_STRINGDATA(tmpMeta[0])) != 0) goto tmp3_end;
-if (listEmpty(tmpMeta[1])) goto tmp3_end;
-tmpMeta[2] = MMC_CAR(tmpMeta[1]);
-tmpMeta[3] = MMC_CDR(tmpMeta[1]);
-if (1 != MMC_STRLEN(tmpMeta[2]) || strcmp(MMC_STRINGDATA(_OMC_LIT134), MMC_STRINGDATA(tmpMeta[2])) != 0) goto tmp3_end;
-tmp1 = 6;
+tmpMeta20 = MMC_CAR(tmp4_1);
+tmpMeta21 = MMC_CDR(tmp4_1);
+if (1 != MMC_STRLEN(tmpMeta20) || strcmp(MMC_STRINGDATA(_OMC_LIT127), MMC_STRINGDATA(tmpMeta20)) != 0) goto tmp3_end;
+if (listEmpty(tmpMeta21)) goto tmp3_end;
+tmpMeta22 = MMC_CAR(tmpMeta21);
+tmpMeta23 = MMC_CDR(tmpMeta21);
+if (1 != MMC_STRLEN(tmpMeta22) || strcmp(MMC_STRINGDATA(_OMC_LIT126), MMC_STRINGDATA(tmpMeta22)) != 0) goto tmp3_end;
+tmp1 = 7;
 goto tmp3_done;
 }
 case 6: {
+modelica_metatype tmpMeta24;
+modelica_metatype tmpMeta25;
+modelica_metatype tmpMeta26;
+modelica_metatype tmpMeta27;
 if (listEmpty(tmp4_1)) goto tmp3_end;
-tmpMeta[0] = MMC_CAR(tmp4_1);
-tmpMeta[1] = MMC_CDR(tmp4_1);
-if (1 != MMC_STRLEN(tmpMeta[0]) || strcmp(MMC_STRINGDATA(_OMC_LIT134), MMC_STRINGDATA(tmpMeta[0])) != 0) goto tmp3_end;
-tmp1 = 8;
+tmpMeta24 = MMC_CAR(tmp4_1);
+tmpMeta25 = MMC_CDR(tmp4_1);
+if (1 != MMC_STRLEN(tmpMeta24) || strcmp(MMC_STRINGDATA(_OMC_LIT127), MMC_STRINGDATA(tmpMeta24)) != 0) goto tmp3_end;
+if (listEmpty(tmpMeta25)) goto tmp3_end;
+tmpMeta26 = MMC_CAR(tmpMeta25);
+tmpMeta27 = MMC_CDR(tmpMeta25);
+if (1 != MMC_STRLEN(tmpMeta26) || strcmp(MMC_STRINGDATA(_OMC_LIT123), MMC_STRINGDATA(tmpMeta26)) != 0) goto tmp3_end;
+tmp1 = 9;
+goto tmp3_done;
+}
+case 7: {
+tmp1 = 10;
 goto tmp3_done;
 }
 }
@@ -2851,6 +2735,9 @@ tmp3_done:;
 }
 _outStandard = tmp1;
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outStandard;
 }
 PROTECTED_FUNCTION_STATIC modelica_metatype boxptr_Config_versionStringToStd2(threadData_t *threadData, modelica_metatype _inVersion)
@@ -2861,16 +2748,22 @@ _outStandard = omc_Config_versionStringToStd2(threadData, _inVersion);
 out_outStandard = mmc_mk_icon(_outStandard);
 return out_outStandard;
 }
-DLLExport
+DLLDirection
 modelica_integer omc_Config_versionStringToStd(threadData_t *threadData, modelica_string _inVersion)
 {
 modelica_integer _outStandard;
 modelica_metatype _version = NULL;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_version = omc_System_strtok(threadData, _inVersion, _OMC_LIT136);
+_version = omc_System_strtok(threadData, _inVersion, _OMC_LIT128);
 _outStandard = omc_Config_versionStringToStd2(threadData, _version);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outStandard;
 }
 modelica_metatype boxptr_Config_versionStringToStd(threadData_t *threadData, modelica_metatype _inVersion)
@@ -2884,10 +2777,16 @@ return out_outStandard;
 PROTECTED_FUNCTION_STATIC modelica_boolean omc_Config_hasLanguageStandardChanged(threadData_t *threadData, modelica_integer _inOldStandard)
 {
 modelica_boolean _outHasChanged;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _outHasChanged = omc_Config_languageStandardAtMost(threadData, 3);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outHasChanged;
 }
 PROTECTED_FUNCTION_STATIC modelica_metatype boxptr_Config_hasLanguageStandardChanged(threadData_t *threadData, modelica_metatype _inOldStandard)
@@ -2900,16 +2799,18 @@ _outHasChanged = omc_Config_hasLanguageStandardChanged(threadData, tmp1);
 out_outHasChanged = mmc_mk_icon(_outHasChanged);
 return out_outHasChanged;
 }
-DLLExport
-void omc_Config_setLanguageStandardFromMSL(threadData_t *threadData, modelica_string _inLibraryName)
+DLLDirection
+void omc_Config_setLanguageStandardFromMSL(threadData_t *threadData, modelica_string _inLibraryName, modelica_boolean _force)
 {
 jmp_buf *old_mmc_jumper = threadData->mmc_jumper;
 modelica_integer _current_std;
-modelica_metatype tmpMeta[5] __attribute__((unused)) = {0};
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _current_std = omc_Config_getLanguageStandard(threadData);
-if(((modelica_integer)_current_std != 8))
+if(((!_force) && ((modelica_integer)_current_std != 10)))
 {
 goto _return;
 }
@@ -2926,23 +2827,29 @@ threadData->mmc_jumper = &new_mmc_jumper;
 for (; tmp3 < 2; tmp3++) {
 switch (MMC_SWITCH_CAST(tmp3)) {
 case 0: {
-tmpMeta[0] = omc_System_strtok(threadData, _inLibraryName, _OMC_LIT137);
-if (listEmpty(tmpMeta[0])) goto goto_1;
-tmpMeta[1] = MMC_CAR(tmpMeta[0]);
-tmpMeta[2] = MMC_CDR(tmpMeta[0]);
-if (8 != MMC_STRLEN(tmpMeta[1]) || strcmp("Modelica", MMC_STRINGDATA(tmpMeta[1])) != 0) goto goto_1;
-if (listEmpty(tmpMeta[2])) goto goto_1;
-tmpMeta[3] = MMC_CAR(tmpMeta[2]);
-tmpMeta[4] = MMC_CDR(tmpMeta[2]);
-_version = tmpMeta[3];
+modelica_metatype tmpMeta5;
+modelica_metatype tmpMeta6;
+modelica_metatype tmpMeta7;
+modelica_metatype tmpMeta8;
+modelica_metatype tmpMeta9;
+modelica_metatype tmpMeta10;
+tmpMeta5 = omc_System_strtok(threadData, _inLibraryName, _OMC_LIT129);
+if (listEmpty(tmpMeta5)) goto goto_1;
+tmpMeta6 = MMC_CAR(tmpMeta5);
+tmpMeta7 = MMC_CDR(tmpMeta5);
+if (8 != MMC_STRLEN(tmpMeta6) || strcmp("Modelica", MMC_STRINGDATA(tmpMeta6)) != 0) goto goto_1;
+if (listEmpty(tmpMeta7)) goto goto_1;
+tmpMeta8 = MMC_CAR(tmpMeta7);
+tmpMeta9 = MMC_CDR(tmpMeta7);
+_version = tmpMeta8;
 _new_std = omc_Config_versionStringToStd(threadData, _version);
 if(((modelica_integer)_new_std != (modelica_integer)_current_std))
 {
 omc_Config_setLanguageStandard(threadData, (modelica_integer)_new_std);
 if(omc_Config_hasLanguageStandardChanged(threadData, (modelica_integer)_current_std))
 {
-tmpMeta[0] = mmc_mk_cons(omc_Config_languageStandardString(threadData, (modelica_integer)_new_std), mmc_mk_cons(_version, MMC_REFSTRUCTLIT(mmc_nil)));
-omc_Error_addMessage(threadData, _OMC_LIT141, tmpMeta[0]);
+tmpMeta10 = mmc_mk_cons(omc_Config_languageStandardString(threadData, (modelica_integer)_new_std), mmc_mk_cons(_version, MMC_REFSTRUCTLIT(mmc_nil)));
+omc_Error_addMessage(threadData, _OMC_LIT132, tmpMeta10);
 }
 }
 goto tmp2_done;
@@ -2971,18 +2878,27 @@ tmp2_done2:;
 ;
 _return: OMC_LABEL_UNUSED
 threadData->mmc_jumper = old_mmc_jumper;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
-DLLExport
+void boxptr_Config_setLanguageStandardFromMSL(threadData_t *threadData, modelica_metatype _inLibraryName, modelica_metatype _force)
+{
+modelica_integer tmp1;
+tmp1 = mmc_unbox_integer(_force);
+omc_Config_setLanguageStandardFromMSL(threadData, _inLibraryName, tmp1);
+return;
+}
+DLLDirection
 modelica_string omc_Config_languageStandardString(threadData_t *threadData, modelica_integer _inStandard)
 {
 modelica_string _outString = NULL;
-string_array _lookup;
+modelica_metatype _lookup = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-alloc_string_array(&(_lookup), 1, 10);
-string_array_copy_data(_OMC_LIT151, _lookup);
-_outString = string_get(_OMC_LIT151, ((modelica_integer)_inStandard)-1);
+_lookup = _OMC_LIT154;
+_outString = arrayGet(_OMC_LIT154, ((modelica_integer)((modelica_integer)_inStandard)));
 _return: OMC_LABEL_UNUSED
 return _outString;
 }
@@ -2998,6 +2914,9 @@ PROTECTED_FUNCTION_STATIC modelica_integer omc_Config_intLanguageStandard(thread
 {
 modelica_integer _outStandard;
 modelica_integer tmp1 = 0;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
@@ -3042,19 +2961,24 @@ if (34 != tmp4_1) goto tmp3_end;
 tmp1 = 7;
 goto tmp3_done;
 }
-case 1000: {
-if (1000 != tmp4_1) goto tmp3_end;
+case 35: {
+if (35 != tmp4_1) goto tmp3_end;
 tmp1 = 8;
 goto tmp3_done;
 }
-case 1035: {
-if (1035 != tmp4_1) goto tmp3_end;
+case 36: {
+if (36 != tmp4_1) goto tmp3_end;
 tmp1 = 9;
+goto tmp3_done;
+}
+case 1000: {
+if (1000 != tmp4_1) goto tmp3_end;
+tmp1 = 10;
 goto tmp3_done;
 }
 case 9999: {
 if (9999 != tmp4_1) goto tmp3_end;
-tmp1 = 10;
+tmp1 = 11;
 goto tmp3_done;
 }
 }
@@ -3070,6 +2994,9 @@ tmp3_done:;
 }
 _outStandard = tmp1;
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outStandard;
 }
 PROTECTED_FUNCTION_STATIC modelica_metatype boxptr_Config_intLanguageStandard(threadData_t *threadData, modelica_metatype _inValue)
@@ -3085,13 +3012,18 @@ return out_outStandard;
 PROTECTED_FUNCTION_STATIC modelica_integer omc_Config_languageStandardInt(threadData_t *threadData, modelica_integer _inStandard)
 {
 modelica_integer _outValue;
-integer_array _lookup;
+modelica_metatype _lookup = NULL;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-alloc_integer_array(&(_lookup), 1, 10);
-integer_array_copy_data(_OMC_LIT152, _lookup);
-_outValue = integer_get(_OMC_LIT152, ((modelica_integer)_inStandard)-1);
+_lookup = _OMC_LIT166;
+_outValue = mmc_unbox_integer(arrayGet(_OMC_LIT166, ((modelica_integer)((modelica_integer)_inStandard))));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outValue;
 }
 PROTECTED_FUNCTION_STATIC modelica_metatype boxptr_Config_languageStandardInt(threadData_t *threadData, modelica_metatype _inStandard)
@@ -3104,16 +3036,22 @@ _outValue = omc_Config_languageStandardInt(threadData, tmp1);
 out_outValue = mmc_mk_icon(_outValue);
 return out_outValue;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_languageStandardAtMost(threadData_t *threadData, modelica_integer _inStandard)
 {
 modelica_boolean _outRes;
 modelica_integer _std;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _std = omc_Config_getLanguageStandard(threadData);
 _outRes = (omc_Config_languageStandardInt(threadData, (modelica_integer)_std) <= omc_Config_languageStandardInt(threadData, (modelica_integer)_inStandard));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outRes;
 }
 modelica_metatype boxptr_Config_languageStandardAtMost(threadData_t *threadData, modelica_metatype _inStandard)
@@ -3126,16 +3064,22 @@ _outRes = omc_Config_languageStandardAtMost(threadData, tmp1);
 out_outRes = mmc_mk_icon(_outRes);
 return out_outRes;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_languageStandardAtLeast(threadData_t *threadData, modelica_integer _inStandard)
 {
 modelica_boolean _outRes;
 modelica_integer _std;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _std = omc_Config_getLanguageStandard(threadData);
 _outRes = (omc_Config_languageStandardInt(threadData, (modelica_integer)_std) >= omc_Config_languageStandardInt(threadData, (modelica_integer)_inStandard));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outRes;
 }
 modelica_metatype boxptr_Config_languageStandardAtLeast(threadData_t *threadData, modelica_metatype _inStandard)
@@ -3148,13 +3092,19 @@ _outRes = omc_Config_languageStandardAtLeast(threadData, tmp1);
 out_outRes = mmc_mk_icon(_outRes);
 return out_outRes;
 }
-DLLExport
+DLLDirection
 void omc_Config_setLanguageStandard(threadData_t *threadData, modelica_integer _inStandard)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigEnum(threadData, _OMC_LIT189, omc_Config_languageStandardInt(threadData, (modelica_integer)_inStandard));
+omc_FlagsUtil_setConfigEnum(threadData, _OMC_LIT193, omc_Config_languageStandardInt(threadData, (modelica_integer)_inStandard));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
 void boxptr_Config_setLanguageStandard(threadData_t *threadData, modelica_metatype _inStandard)
@@ -3164,14 +3114,20 @@ tmp1 = mmc_unbox_integer(_inStandard);
 omc_Config_setLanguageStandard(threadData, tmp1);
 return;
 }
-DLLExport
+DLLDirection
 modelica_integer omc_Config_getLanguageStandard(threadData_t *threadData)
 {
 modelica_integer _outStandard;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outStandard = omc_Config_intLanguageStandard(threadData, omc_Flags_getConfigEnum(threadData, _OMC_LIT189));
+_outStandard = omc_Config_intLanguageStandard(threadData, omc_Flags_getConfigEnum(threadData, _OMC_LIT193));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outStandard;
 }
 modelica_metatype boxptr_Config_getLanguageStandard(threadData_t *threadData)
@@ -3182,89 +3138,119 @@ _outStandard = omc_Config_getLanguageStandard(threadData);
 out_outStandard = mmc_mk_icon(_outStandard);
 return out_outStandard;
 }
-DLLExport
+DLLDirection
 void omc_Config_setsimCodeTarget(threadData_t *threadData, modelica_string _inString)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigString(threadData, _OMC_LIT214, _inString);
+omc_FlagsUtil_setConfigString(threadData, _OMC_LIT221, _inString);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
-DLLExport
+DLLDirection
 modelica_string omc_Config_simCodeTarget(threadData_t *threadData)
 {
 modelica_string _target = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_target = omc_Flags_getConfigString(threadData, _OMC_LIT214);
+_target = omc_Flags_getConfigString(threadData, _OMC_LIT221);
 _return: OMC_LABEL_UNUSED
 return _target;
 }
-DLLExport
+DLLDirection
 void omc_Config_setTearingHeuristic(threadData_t *threadData, modelica_string _inString)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigString(threadData, _OMC_LIT276, _inString);
+omc_FlagsUtil_setConfigString(threadData, _OMC_LIT271, _inString);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
-DLLExport
+DLLDirection
 modelica_string omc_Config_getTearingHeuristic(threadData_t *threadData)
 {
 modelica_string _outString = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outString = omc_Flags_getConfigString(threadData, _OMC_LIT276);
+_outString = omc_Flags_getConfigString(threadData, _OMC_LIT271);
 _return: OMC_LABEL_UNUSED
 return _outString;
 }
-DLLExport
+DLLDirection
 void omc_Config_setTearingMethod(threadData_t *threadData, modelica_string _inString)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigString(threadData, _OMC_LIT303, _inString);
+omc_FlagsUtil_setConfigString(threadData, _OMC_LIT297, _inString);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
-DLLExport
+DLLDirection
 modelica_string omc_Config_getTearingMethod(threadData_t *threadData)
 {
 modelica_string _outString = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outString = omc_Flags_getConfigString(threadData, _OMC_LIT303);
+_outString = omc_Flags_getConfigString(threadData, _OMC_LIT297);
 _return: OMC_LABEL_UNUSED
 return _outString;
 }
-DLLExport
+DLLDirection
 void omc_Config_setMatchingAlgorithm(threadData_t *threadData, modelica_string _inString)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigString(threadData, _OMC_LIT393, _inString);
+omc_FlagsUtil_setConfigString(threadData, _OMC_LIT381, _inString);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
-DLLExport
+DLLDirection
 modelica_string omc_Config_getMatchingAlgorithm(threadData_t *threadData)
 {
 modelica_string _outString = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outString = omc_Flags_getConfigString(threadData, _OMC_LIT393);
+_outString = omc_Flags_getConfigString(threadData, _OMC_LIT381);
 _return: OMC_LABEL_UNUSED
 return _outString;
 }
-DLLExport
+DLLDirection
 void omc_Config_setCheapMatchingAlgorithm(threadData_t *threadData, modelica_integer _inInteger)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigInt(threadData, _OMC_LIT412, _inInteger);
+omc_FlagsUtil_setConfigInt(threadData, _OMC_LIT396, _inInteger);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
 void boxptr_Config_setCheapMatchingAlgorithm(threadData_t *threadData, modelica_metatype _inInteger)
@@ -3274,14 +3260,20 @@ tmp1 = mmc_unbox_integer(_inInteger);
 omc_Config_setCheapMatchingAlgorithm(threadData, tmp1);
 return;
 }
-DLLExport
+DLLDirection
 modelica_integer omc_Config_getCheapMatchingAlgorithm(threadData_t *threadData)
 {
 modelica_integer _outInteger;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outInteger = omc_Flags_getConfigInt(threadData, _OMC_LIT412);
+_outInteger = omc_Flags_getConfigInt(threadData, _OMC_LIT396);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outInteger;
 }
 modelica_metatype boxptr_Config_getCheapMatchingAlgorithm(threadData_t *threadData)
@@ -3292,90 +3284,114 @@ _outInteger = omc_Config_getCheapMatchingAlgorithm(threadData);
 out_outInteger = mmc_mk_icon(_outInteger);
 return out_outInteger;
 }
-DLLExport
+DLLDirection
 void omc_Config_setIndexReductionMethod(threadData_t *threadData, modelica_string _inString)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigString(threadData, _OMC_LIT438, _inString);
+omc_FlagsUtil_setConfigString(threadData, _OMC_LIT417, _inString);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
-DLLExport
+DLLDirection
 modelica_string omc_Config_getIndexReductionMethod(threadData_t *threadData)
 {
 modelica_string _outString = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outString = omc_Flags_getConfigString(threadData, _OMC_LIT438);
+_outString = omc_Flags_getConfigString(threadData, _OMC_LIT417);
 _return: OMC_LABEL_UNUSED
 return _outString;
 }
-DLLExport
+DLLDirection
 void omc_Config_setPostOptModules(threadData_t *threadData, modelica_metatype _inStringLst)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigStringList(threadData, _OMC_LIT629, _inStringLst);
+omc_FlagsUtil_setConfigStringList(threadData, _OMC_LIT566, _inStringLst);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
-DLLExport
+DLLDirection
 void omc_Config_setPreOptModules(threadData_t *threadData, modelica_metatype _inStringLst)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigStringList(threadData, _OMC_LIT731, _inStringLst);
+omc_FlagsUtil_setConfigStringList(threadData, _OMC_LIT647, _inStringLst);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
-DLLExport
+DLLDirection
 modelica_metatype omc_Config_getInitOptModules(threadData_t *threadData)
 {
 modelica_metatype _outStringLst = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outStringLst = omc_Flags_getConfigStringList(threadData, _OMC_LIT772);
+_outStringLst = omc_Flags_getConfigStringList(threadData, _OMC_LIT685);
 _return: OMC_LABEL_UNUSED
 return _outStringLst;
 }
-DLLExport
+DLLDirection
 modelica_metatype omc_Config_getPostOptModulesDAE(threadData_t *threadData)
 {
 modelica_metatype _outStringLst = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outStringLst = omc_Flags_getConfigStringList(threadData, _OMC_LIT791);
+_outStringLst = omc_Flags_getConfigStringList(threadData, _OMC_LIT703);
 _return: OMC_LABEL_UNUSED
 return _outStringLst;
 }
-DLLExport
+DLLDirection
 modelica_metatype omc_Config_getPostOptModules(threadData_t *threadData)
 {
 modelica_metatype _outStringLst = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outStringLst = omc_Flags_getConfigStringList(threadData, _OMC_LIT629);
+_outStringLst = omc_Flags_getConfigStringList(threadData, _OMC_LIT566);
 _return: OMC_LABEL_UNUSED
 return _outStringLst;
 }
-DLLExport
+DLLDirection
 modelica_metatype omc_Config_getPreOptModules(threadData_t *threadData)
 {
 modelica_metatype _outStringLst = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outStringLst = omc_Flags_getConfigStringList(threadData, _OMC_LIT731);
+_outStringLst = omc_Flags_getConfigStringList(threadData, _OMC_LIT647);
 _return: OMC_LABEL_UNUSED
 return _outStringLst;
 }
-DLLExport
+DLLDirection
 void omc_Config_setOrderConnections(threadData_t *threadData, modelica_boolean _show)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigBool(threadData, _OMC_LIT796, _show);
+omc_FlagsUtil_setConfigBool(threadData, _OMC_LIT707, _show);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
 void boxptr_Config_setOrderConnections(threadData_t *threadData, modelica_metatype _show)
@@ -3385,14 +3401,20 @@ tmp1 = mmc_unbox_integer(_show);
 omc_Config_setOrderConnections(threadData, tmp1);
 return;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_orderConnections(threadData_t *threadData)
 {
 modelica_boolean _show;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_show = omc_Flags_getConfigBool(threadData, _OMC_LIT796);
+_show = omc_Flags_getConfigBool(threadData, _OMC_LIT707);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _show;
 }
 modelica_metatype boxptr_Config_orderConnections(threadData_t *threadData)
@@ -3403,13 +3425,19 @@ _show = omc_Config_orderConnections(threadData);
 out_show = mmc_mk_icon(_show);
 return out_show;
 }
-DLLExport
+DLLDirection
 void omc_Config_setGraphicsExpMode(threadData_t *threadData, modelica_boolean _graphicsExpMode)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigBool(threadData, _OMC_LIT801, _graphicsExpMode);
+omc_FlagsUtil_setConfigBool(threadData, _OMC_LIT711, _graphicsExpMode);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
 void boxptr_Config_setGraphicsExpMode(threadData_t *threadData, modelica_metatype _graphicsExpMode)
@@ -3419,14 +3447,20 @@ tmp1 = mmc_unbox_integer(_graphicsExpMode);
 omc_Config_setGraphicsExpMode(threadData, tmp1);
 return;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_getGraphicsExpMode(threadData_t *threadData)
 {
 modelica_boolean _graphicsExpMode;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_graphicsExpMode = omc_Flags_getConfigBool(threadData, _OMC_LIT801);
+_graphicsExpMode = omc_Flags_getConfigBool(threadData, _OMC_LIT711);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _graphicsExpMode;
 }
 modelica_metatype boxptr_Config_getGraphicsExpMode(threadData_t *threadData)
@@ -3437,13 +3471,19 @@ _graphicsExpMode = omc_Config_getGraphicsExpMode(threadData);
 out_graphicsExpMode = mmc_mk_icon(_graphicsExpMode);
 return out_graphicsExpMode;
 }
-DLLExport
+DLLDirection
 void omc_Config_setEvaluateParametersInAnnotations(threadData_t *threadData, modelica_boolean _shouldEvaluate)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigBool(threadData, _OMC_LIT805, _shouldEvaluate);
+omc_FlagsUtil_setConfigBool(threadData, _OMC_LIT714, _shouldEvaluate);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
 void boxptr_Config_setEvaluateParametersInAnnotations(threadData_t *threadData, modelica_metatype _shouldEvaluate)
@@ -3453,14 +3493,20 @@ tmp1 = mmc_unbox_integer(_shouldEvaluate);
 omc_Config_setEvaluateParametersInAnnotations(threadData, tmp1);
 return;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_getEvaluateParametersInAnnotations(threadData_t *threadData)
 {
 modelica_boolean _shouldEvaluate;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_shouldEvaluate = omc_Flags_getConfigBool(threadData, _OMC_LIT805);
+_shouldEvaluate = omc_Flags_getConfigBool(threadData, _OMC_LIT714);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _shouldEvaluate;
 }
 modelica_metatype boxptr_Config_getEvaluateParametersInAnnotations(threadData_t *threadData)
@@ -3471,14 +3517,20 @@ _shouldEvaluate = omc_Config_getEvaluateParametersInAnnotations(threadData);
 out_shouldEvaluate = mmc_mk_icon(_shouldEvaluate);
 return out_shouldEvaluate;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_showStartOrigin(threadData_t *threadData)
 {
 modelica_boolean _show;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_show = omc_Flags_isSet(threadData, _OMC_LIT809);
+_show = omc_Flags_isSet(threadData, _OMC_LIT717);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _show;
 }
 modelica_metatype boxptr_Config_showStartOrigin(threadData_t *threadData)
@@ -3489,14 +3541,20 @@ _show = omc_Config_showStartOrigin(threadData);
 out_show = mmc_mk_icon(_show);
 return out_show;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_showStructuralAnnotations(threadData_t *threadData)
 {
 modelica_boolean _show;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_show = omc_Flags_getConfigBool(threadData, _OMC_LIT813);
+_show = omc_Flags_getConfigBool(threadData, _OMC_LIT720);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _show;
 }
 modelica_metatype boxptr_Config_showStructuralAnnotations(threadData_t *threadData)
@@ -3507,13 +3565,19 @@ _show = omc_Config_showStructuralAnnotations(threadData);
 out_show = mmc_mk_icon(_show);
 return out_show;
 }
-DLLExport
+DLLDirection
 void omc_Config_setShowAnnotations(threadData_t *threadData, modelica_boolean _show)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigBool(threadData, _OMC_LIT817, _show);
+omc_FlagsUtil_setConfigBool(threadData, _OMC_LIT723, _show);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
 void boxptr_Config_setShowAnnotations(threadData_t *threadData, modelica_metatype _show)
@@ -3523,14 +3587,20 @@ tmp1 = mmc_unbox_integer(_show);
 omc_Config_setShowAnnotations(threadData, tmp1);
 return;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_showAnnotations(threadData_t *threadData)
 {
 modelica_boolean _show;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_show = omc_Flags_getConfigBool(threadData, _OMC_LIT817);
+_show = omc_Flags_getConfigBool(threadData, _OMC_LIT723);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _show;
 }
 modelica_metatype boxptr_Config_showAnnotations(threadData_t *threadData)
@@ -3541,13 +3611,19 @@ _show = omc_Config_showAnnotations(threadData);
 out_show = mmc_mk_icon(_show);
 return out_show;
 }
-DLLExport
+DLLDirection
 void omc_Config_setDefaultOpenCLDevice(threadData_t *threadData, modelica_integer _defdevid)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigInt(threadData, _OMC_LIT824, _defdevid);
+omc_FlagsUtil_setConfigInt(threadData, _OMC_LIT729, _defdevid);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
 void boxptr_Config_setDefaultOpenCLDevice(threadData_t *threadData, modelica_metatype _defdevid)
@@ -3557,14 +3633,20 @@ tmp1 = mmc_unbox_integer(_defdevid);
 omc_Config_setDefaultOpenCLDevice(threadData, tmp1);
 return;
 }
-DLLExport
+DLLDirection
 modelica_integer omc_Config_getDefaultOpenCLDevice(threadData_t *threadData)
 {
 modelica_integer _defdevid;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_defdevid = omc_Flags_getConfigInt(threadData, _OMC_LIT824);
+_defdevid = omc_Flags_getConfigInt(threadData, _OMC_LIT729);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _defdevid;
 }
 modelica_metatype boxptr_Config_getDefaultOpenCLDevice(threadData_t *threadData)
@@ -3575,13 +3657,19 @@ _defdevid = omc_Config_getDefaultOpenCLDevice(threadData);
 out_defdevid = mmc_mk_icon(_defdevid);
 return out_defdevid;
 }
-DLLExport
+DLLDirection
 void omc_Config_setVectorizationLimit(threadData_t *threadData, modelica_integer _limit)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigInt(threadData, _OMC_LIT830, _limit);
+omc_FlagsUtil_setConfigInt(threadData, _OMC_LIT734, _limit);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
 void boxptr_Config_setVectorizationLimit(threadData_t *threadData, modelica_metatype _limit)
@@ -3591,14 +3679,20 @@ tmp1 = mmc_unbox_integer(_limit);
 omc_Config_setVectorizationLimit(threadData, tmp1);
 return;
 }
-DLLExport
+DLLDirection
 modelica_integer omc_Config_vectorizationLimit(threadData_t *threadData)
 {
 modelica_integer _limit;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_limit = omc_Flags_getConfigInt(threadData, _OMC_LIT830);
+_limit = omc_Flags_getConfigInt(threadData, _OMC_LIT734);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _limit;
 }
 modelica_metatype boxptr_Config_vectorizationLimit(threadData_t *threadData)
@@ -3609,13 +3703,19 @@ _limit = omc_Config_vectorizationLimit(threadData);
 out_limit = mmc_mk_icon(_limit);
 return out_limit;
 }
-DLLExport
+DLLDirection
 void omc_Config_setNoSimplify(threadData_t *threadData, modelica_boolean _noSimplify)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigBool(threadData, _OMC_LIT834, _noSimplify);
+omc_FlagsUtil_setConfigBool(threadData, _OMC_LIT737, _noSimplify);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
 void boxptr_Config_setNoSimplify(threadData_t *threadData, modelica_metatype _noSimplify)
@@ -3625,14 +3725,20 @@ tmp1 = mmc_unbox_integer(_noSimplify);
 omc_Config_setNoSimplify(threadData, tmp1);
 return;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_getNoSimplify(threadData_t *threadData)
 {
 modelica_boolean _noSimplify;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_noSimplify = omc_Flags_getConfigBool(threadData, _OMC_LIT834);
+_noSimplify = omc_Flags_getConfigBool(threadData, _OMC_LIT737);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _noSimplify;
 }
 modelica_metatype boxptr_Config_getNoSimplify(threadData_t *threadData)
@@ -3643,33 +3749,45 @@ _noSimplify = omc_Config_getNoSimplify(threadData);
 out_noSimplify = mmc_mk_icon(_noSimplify);
 return out_noSimplify;
 }
-DLLExport
+DLLDirection
 void omc_Config_setAnnotationVersion(threadData_t *threadData, modelica_string _annotationVersion)
 {
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-omc_FlagsUtil_setConfigString(threadData, _OMC_LIT845, _annotationVersion);
+omc_FlagsUtil_setConfigString(threadData, _OMC_LIT747, _annotationVersion);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return;
 }
-DLLExport
+DLLDirection
 modelica_string omc_Config_getAnnotationVersion(threadData_t *threadData)
 {
 modelica_string _annotationVersion = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_annotationVersion = omc_Flags_getConfigString(threadData, _OMC_LIT845);
+_annotationVersion = omc_Flags_getConfigString(threadData, _OMC_LIT747);
 _return: OMC_LABEL_UNUSED
 return _annotationVersion;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_acceptPDEModelicaGrammar(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = (omc_Flags_getConfigEnum(threadData, _OMC_LIT874) == ((modelica_integer) 5));
+_outBoolean = (omc_Flags_getConfigEnum(threadData, _OMC_LIT768) == ((modelica_integer) 5));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_acceptPDEModelicaGrammar(threadData_t *threadData)
@@ -3680,14 +3798,20 @@ _outBoolean = omc_Config_acceptPDEModelicaGrammar(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_acceptOptimicaGrammar(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = (omc_Flags_getConfigEnum(threadData, _OMC_LIT874) == ((modelica_integer) 4));
+_outBoolean = (omc_Flags_getConfigEnum(threadData, _OMC_LIT768) == ((modelica_integer) 4));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_acceptOptimicaGrammar(threadData_t *threadData)
@@ -3698,14 +3822,20 @@ _outBoolean = omc_Config_acceptOptimicaGrammar(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_acceptParModelicaGrammar(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = (omc_Flags_getConfigEnum(threadData, _OMC_LIT874) == ((modelica_integer) 3));
+_outBoolean = (omc_Flags_getConfigEnum(threadData, _OMC_LIT768) == ((modelica_integer) 3));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_acceptParModelicaGrammar(threadData_t *threadData)
@@ -3716,14 +3846,20 @@ _outBoolean = omc_Config_acceptParModelicaGrammar(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_acceptMetaModelicaGrammar(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = (omc_Flags_getConfigEnum(threadData, _OMC_LIT874) == ((modelica_integer) 2));
+_outBoolean = (omc_Flags_getConfigEnum(threadData, _OMC_LIT768) == ((modelica_integer) 2));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_acceptMetaModelicaGrammar(threadData_t *threadData)
@@ -3734,14 +3870,20 @@ _outBoolean = omc_Config_acceptMetaModelicaGrammar(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_integer omc_Config_acceptedGrammar(threadData_t *threadData)
 {
 modelica_integer _outGrammer;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outGrammer = omc_Flags_getConfigEnum(threadData, _OMC_LIT874);
+_outGrammer = omc_Flags_getConfigEnum(threadData, _OMC_LIT768);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outGrammer;
 }
 modelica_metatype boxptr_Config_acceptedGrammar(threadData_t *threadData)
@@ -3752,14 +3894,20 @@ _outGrammer = omc_Config_acceptedGrammar(threadData);
 out_outGrammer = mmc_mk_icon(_outGrammer);
 return out_outGrammer;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_helpRequest(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = (!(stringEqual(omc_Flags_getConfigString(threadData, _OMC_LIT882), _OMC_LIT878)));
+_outBoolean = (!(stringEqual(omc_Flags_getConfigString(threadData, _OMC_LIT775), _OMC_LIT772)));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_helpRequest(threadData_t *threadData)
@@ -3770,14 +3918,20 @@ _outBoolean = omc_Config_helpRequest(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_versionRequest(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT888);
+_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT778);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_versionRequest(threadData_t *threadData)
@@ -3788,14 +3942,20 @@ _outBoolean = omc_Config_versionRequest(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_silent(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT894);
+_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT783);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_silent(threadData_t *threadData)
@@ -3806,34 +3966,64 @@ _outBoolean = omc_Config_silent(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_string omc_Config_classToInstantiate(threadData_t *threadData)
 {
 modelica_string _modelName = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_modelName = omc_Flags_getConfigString(threadData, _OMC_LIT900);
+_modelName = omc_Flags_getConfigString(threadData, _OMC_LIT788);
 _return: OMC_LABEL_UNUSED
 return _modelName;
 }
-DLLExport
+DLLDirection
 modelica_string omc_Config_simulationCodeTarget(threadData_t *threadData)
 {
 modelica_string _outCodeTarget = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outCodeTarget = omc_Flags_getConfigString(threadData, _OMC_LIT925);
+_outCodeTarget = omc_Flags_getConfigString(threadData, _OMC_LIT812);
 _return: OMC_LABEL_UNUSED
 return _outCodeTarget;
 }
-DLLExport
+DLLDirection
+modelica_boolean omc_Config_simulation(threadData_t *threadData)
+{
+modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT817);
+_return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
+return _outBoolean;
+}
+modelica_metatype boxptr_Config_simulation(threadData_t *threadData)
+{
+modelica_boolean _outBoolean;
+modelica_metatype out_outBoolean;
+_outBoolean = omc_Config_simulation(threadData);
+out_outBoolean = mmc_mk_icon(_outBoolean);
+return out_outBoolean;
+}
+DLLDirection
 modelica_boolean omc_Config_simulationCg(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT931);
+_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT822);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_simulationCg(threadData_t *threadData)
@@ -3844,46 +4034,13 @@ _outBoolean = omc_Config_simulationCg(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
-modelica_real omc_Config_bandwidth(threadData_t *threadData)
-{
-modelica_real _outReal;
-MMC_SO();
-_tailrecursive: OMC_LABEL_UNUSED
-_outReal = omc_Flags_getConfigReal(threadData, _OMC_LIT937);
-_return: OMC_LABEL_UNUSED
-return _outReal;
-}
-modelica_metatype boxptr_Config_bandwidth(threadData_t *threadData)
-{
-modelica_real _outReal;
-modelica_metatype out_outReal;
-_outReal = omc_Config_bandwidth(threadData);
-out_outReal = mmc_mk_rcon(_outReal);
-return out_outReal;
-}
-DLLExport
-modelica_real omc_Config_latency(threadData_t *threadData)
-{
-modelica_real _outReal;
-MMC_SO();
-_tailrecursive: OMC_LABEL_UNUSED
-_outReal = omc_Flags_getConfigReal(threadData, _OMC_LIT943);
-_return: OMC_LABEL_UNUSED
-return _outReal;
-}
-modelica_metatype boxptr_Config_latency(threadData_t *threadData)
-{
-modelica_real _outReal;
-modelica_metatype out_outReal;
-_outReal = omc_Config_latency(threadData);
-out_outReal = mmc_mk_rcon(_outReal);
-return out_outReal;
-}
 PROTECTED_FUNCTION_STATIC modelica_integer omc_Config_noProcWork(threadData_t *threadData, modelica_integer _inProc)
 {
 modelica_integer _outInteger;
 modelica_integer tmp1 = 0;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
@@ -3917,6 +4074,9 @@ tmp3_done:;
 }
 _outInteger = tmp1;
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outInteger;
 }
 PROTECTED_FUNCTION_STATIC modelica_metatype boxptr_Config_noProcWork(threadData_t *threadData, modelica_metatype _inProc)
@@ -3929,14 +4089,20 @@ _outInteger = omc_Config_noProcWork(threadData, tmp1);
 out_outInteger = mmc_mk_icon(_outInteger);
 return out_outInteger;
 }
-DLLExport
+DLLDirection
 modelica_integer omc_Config_noProc(threadData_t *threadData)
 {
 modelica_integer _outInteger;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outInteger = omc_Config_noProcWork(threadData, omc_Flags_getConfigInt(threadData, _OMC_LIT949));
+_outInteger = omc_Config_noProcWork(threadData, omc_Flags_getConfigInt(threadData, _OMC_LIT827));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outInteger;
 }
 modelica_metatype boxptr_Config_noProc(threadData_t *threadData)
@@ -3947,14 +4113,20 @@ _outInteger = omc_Config_noProc(threadData);
 out_outInteger = mmc_mk_icon(_outInteger);
 return out_outInteger;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_modelicaOutput(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT955);
+_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT832);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_modelicaOutput(threadData_t *threadData)
@@ -3965,14 +4137,20 @@ _outBoolean = omc_Config_modelicaOutput(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_splitArrays(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = (!omc_Flags_getConfigBool(threadData, _OMC_LIT961));
+_outBoolean = (!omc_Flags_getConfigBool(threadData, _OMC_LIT837));
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_splitArrays(threadData_t *threadData)
@@ -3983,14 +4161,20 @@ _outBoolean = omc_Config_splitArrays(threadData);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
 }
-DLLExport
+DLLDirection
 modelica_boolean omc_Config_typeinfo(threadData_t *threadData)
 {
 modelica_boolean _outBoolean;
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+MemPoolState omc_pool_state = omc_util_get_pool_state();
+#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT967);
+_outBoolean = omc_Flags_getConfigBool(threadData, _OMC_LIT842);
 _return: OMC_LABEL_UNUSED
+#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+omc_util_restore_pool_state(omc_pool_state);
+#endif
 return _outBoolean;
 }
 modelica_metatype boxptr_Config_typeinfo(threadData_t *threadData)

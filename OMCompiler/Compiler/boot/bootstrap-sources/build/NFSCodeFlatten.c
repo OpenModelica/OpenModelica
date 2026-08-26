@@ -1,13 +1,8 @@
-#ifdef OMC_BASE_FILE
-#define OMC_FILE OMC_BASE_FILE
-#else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/NFSCodeFlatten.c"
-#endif
 #include "omc_simulation_settings.h"
 #include "NFSCodeFlatten.h"
 #include "util/modelica.h"
 #include "NFSCodeFlatten_includes.h"
-DLLExport
+DLLDirection
 modelica_metatype omc_NFSCodeFlatten_flattenClassInProgram(threadData_t *threadData, modelica_metatype _inPath, modelica_metatype __omcQ_24in_5FinProgram, modelica_integer *out_dummy)
 {
 modelica_metatype _inProgram = NULL;
@@ -27,7 +22,7 @@ _inProgram = omc_NFSCodeFlatten_flattenClassInProgram(threadData, _inPath, __omc
 if (out_dummy) { *out_dummy = mmc_mk_icon(_dummy); }
 return _inProgram;
 }
-DLLExport
+DLLDirection
 modelica_metatype omc_NFSCodeFlatten_flattenCompleteProgram(threadData_t *threadData, modelica_metatype __omcQ_24in_5FinProgram)
 {
 modelica_metatype _inProgram = NULL;

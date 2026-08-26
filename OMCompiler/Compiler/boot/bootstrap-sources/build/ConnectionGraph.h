@@ -15,9 +15,8 @@ extern struct record_description DAE_Exp_BCONST__desc;
 extern struct record_description DAE_Exp_ICONST__desc;
 extern struct record_description DAE_Type_T__INTEGER__desc;
 extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
-extern struct record_description Gettext_TranslatableContent_gettext__desc;
 extern struct record_description IOStream_IOStreamType_LIST__desc;
-DLLExport
+DLLDirection
 modelica_metatype omc_ConnectionGraph_addBrokenEqualityConstraintEquations(threadData_t *threadData, modelica_metatype _inDAE, modelica_metatype _inBroken);
 #define boxptr_ConnectionGraph_addBrokenEqualityConstraintEquations omc_ConnectionGraph_addBrokenEqualityConstraintEquations
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ConnectionGraph_addBrokenEqualityConstraintEquations,2,0) {(void*) boxptr_ConnectionGraph_addBrokenEqualityConstraintEquations,0}};
@@ -25,7 +24,7 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_ConnectionGraph_addBrokenEqualityConstr
 #define boxptr_ConnectionGraph_removeFromConnects omc_ConnectionGraph_removeFromConnects
 #define boxptr_ConnectionGraph_filterFromSet omc_ConnectionGraph_filterFromSet
 #define boxptr_ConnectionGraph_splitSetByAllowed omc_ConnectionGraph_splitSetByAllowed
-DLLExport
+DLLDirection
 modelica_metatype omc_ConnectionGraph_removeBrokenConnects(threadData_t *threadData, modelica_metatype _inConnects, modelica_metatype _inConnected, modelica_metatype _inBroken);
 #define boxptr_ConnectionGraph_removeBrokenConnects omc_ConnectionGraph_removeBrokenConnects
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ConnectionGraph_removeBrokenConnects,2,0) {(void*) boxptr_ConnectionGraph_removeBrokenConnects,0}};
@@ -36,7 +35,7 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_ConnectionGraph_removeBrokenConnects,2,
 #define boxptr_ConnectionGraph_graphVizDefiniteRoot omc_ConnectionGraph_graphVizDefiniteRoot
 #define boxptr_ConnectionGraph_graphVizDaeEdge omc_ConnectionGraph_graphVizDaeEdge
 #define boxptr_ConnectionGraph_graphVizEdge omc_ConnectionGraph_graphVizEdge
-DLLExport
+DLLDirection
 modelica_metatype omc_ConnectionGraph_merge(threadData_t *threadData, modelica_metatype _inGraph1, modelica_metatype _inGraph2);
 #define boxptr_ConnectionGraph_merge omc_ConnectionGraph_merge
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ConnectionGraph_merge,2,0) {(void*) boxptr_ConnectionGraph_merge,0}};
@@ -70,33 +69,33 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_ConnectionGraph_merge,2,0) {(void*) box
 #define boxptr_ConnectionGraph_connectComponents omc_ConnectionGraph_connectComponents
 #define boxptr_ConnectionGraph_connectBranchComponents omc_ConnectionGraph_connectBranchComponents
 #define boxptr_ConnectionGraph_canonical omc_ConnectionGraph_canonical
-DLLExport
+DLLDirection
 modelica_metatype omc_ConnectionGraph_addConnection(threadData_t *threadData, modelica_metatype _inGraph, modelica_metatype _inRef1, modelica_metatype _inRef2, modelica_metatype _inDae);
 #define boxptr_ConnectionGraph_addConnection omc_ConnectionGraph_addConnection
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ConnectionGraph_addConnection,2,0) {(void*) boxptr_ConnectionGraph_addConnection,0}};
 #define boxvar_ConnectionGraph_addConnection MMC_REFSTRUCTLIT(boxvar_lit_ConnectionGraph_addConnection)
-DLLExport
+DLLDirection
 modelica_metatype omc_ConnectionGraph_addBranch(threadData_t *threadData, modelica_metatype _inGraph, modelica_metatype _inRef1, modelica_metatype _inRef2);
 #define boxptr_ConnectionGraph_addBranch omc_ConnectionGraph_addBranch
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ConnectionGraph_addBranch,2,0) {(void*) boxptr_ConnectionGraph_addBranch,0}};
 #define boxvar_ConnectionGraph_addBranch MMC_REFSTRUCTLIT(boxvar_lit_ConnectionGraph_addBranch)
-DLLExport
+DLLDirection
 modelica_metatype omc_ConnectionGraph_addUniqueRoots(threadData_t *threadData, modelica_metatype _inGraph, modelica_metatype _inRoots, modelica_metatype _inMessage);
 #define boxptr_ConnectionGraph_addUniqueRoots omc_ConnectionGraph_addUniqueRoots
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ConnectionGraph_addUniqueRoots,2,0) {(void*) boxptr_ConnectionGraph_addUniqueRoots,0}};
 #define boxvar_ConnectionGraph_addUniqueRoots MMC_REFSTRUCTLIT(boxvar_lit_ConnectionGraph_addUniqueRoots)
-DLLExport
+DLLDirection
 modelica_metatype omc_ConnectionGraph_addPotentialRoot(threadData_t *threadData, modelica_metatype _inGraph, modelica_metatype _inRoot, modelica_real _inPriority);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_ConnectionGraph_addPotentialRoot(threadData_t *threadData, modelica_metatype _inGraph, modelica_metatype _inRoot, modelica_metatype _inPriority);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ConnectionGraph_addPotentialRoot,2,0) {(void*) boxptr_ConnectionGraph_addPotentialRoot,0}};
 #define boxvar_ConnectionGraph_addPotentialRoot MMC_REFSTRUCTLIT(boxvar_lit_ConnectionGraph_addPotentialRoot)
-DLLExport
+DLLDirection
 modelica_metatype omc_ConnectionGraph_addDefiniteRoot(threadData_t *threadData, modelica_metatype _inGraph, modelica_metatype _inRoot);
 #define boxptr_ConnectionGraph_addDefiniteRoot omc_ConnectionGraph_addDefiniteRoot
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ConnectionGraph_addDefiniteRoot,2,0) {(void*) boxptr_ConnectionGraph_addDefiniteRoot,0}};
 #define boxvar_ConnectionGraph_addDefiniteRoot MMC_REFSTRUCTLIT(boxvar_lit_ConnectionGraph_addDefiniteRoot)
-DLLExport
+DLLDirection
 modelica_metatype omc_ConnectionGraph_handleOverconstrainedConnections(threadData_t *threadData, modelica_metatype _inGraph, modelica_string _modelNameQualified, modelica_metatype _inDAE, modelica_metatype *out_outConnected, modelica_metatype *out_outBroken);
 #define boxptr_ConnectionGraph_handleOverconstrainedConnections omc_ConnectionGraph_handleOverconstrainedConnections
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ConnectionGraph_handleOverconstrainedConnections,2,0) {(void*) boxptr_ConnectionGraph_handleOverconstrainedConnections,0}};

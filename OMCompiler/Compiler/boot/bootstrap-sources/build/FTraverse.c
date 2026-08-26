@@ -1,13 +1,8 @@
-#ifdef OMC_BASE_FILE
-#define OMC_FILE OMC_BASE_FILE
-#else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/FTraverse.c"
-#endif
 #include "omc_simulation_settings.h"
 #include "FTraverse.h"
 #include "util/modelica.h"
 #include "FTraverse_includes.h"
-DLLExport
+DLLDirection
 modelica_metatype omc_FTraverse_walk(threadData_t *threadData, modelica_metatype _inGraph, modelica_fnptr _inWalker, modelica_metatype _inExtra, modelica_metatype _inOptions, modelica_metatype *out_outExtra)
 {
 modelica_metatype _outGraph = NULL;

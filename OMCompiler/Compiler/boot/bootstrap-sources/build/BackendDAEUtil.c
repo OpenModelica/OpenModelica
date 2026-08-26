@@ -1,8 +1,3 @@
-#ifdef OMC_BASE_FILE
-#define OMC_FILE OMC_BASE_FILE
-#else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/BackendDAEUtil.c"
-#endif
 #include "omc_simulation_settings.h"
 #include "BackendDAEUtil.h"
 #define _OMC_LIT0_data "BackendDAEUtil.getAllVarLst"
@@ -22,7 +17,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT4,30,_OMC_LIT4_data);
 #define _OMC_LIT4 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT4)
 #include "util/modelica.h"
 #include "BackendDAEUtil_includes.h"
-DLLExport
+DLLDirection
 modelica_metatype omc_BackendDAEUtil_getAllVarLst(threadData_t *threadData, modelica_metatype _dae)
 {
 modelica_metatype _varLst = NULL;
@@ -33,7 +28,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",54,3,54,35,0};
+FILE_INFO info = {"BackendDAEUtil.mo",89,3,89,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT0));
 }
 }
@@ -41,7 +36,7 @@ omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT0));
 _return: OMC_LABEL_UNUSED
 return _varLst;
 }
-DLLExport
+DLLDirection
 modelica_metatype omc_BackendDAEUtil_getAdjacencyMatrixfromOption(threadData_t *threadData, modelica_metatype _inSyst, modelica_metatype _inIndxType, modelica_metatype _inFunctionTree, modelica_metatype *out_outM, modelica_metatype *out_outMT)
 {
 modelica_metatype _outSyst = NULL;
@@ -54,7 +49,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",47,3,47,35,0};
+FILE_INFO info = {"BackendDAEUtil.mo",82,3,82,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT1));
 }
 }
@@ -64,7 +59,7 @@ if (out_outM) { *out_outM = _outM; }
 if (out_outMT) { *out_outMT = _outMT; }
 return _outSyst;
 }
-DLLExport
+DLLDirection
 modelica_metatype omc_BackendDAEUtil_transformBackendDAE(threadData_t *threadData, modelica_metatype _inDAE, modelica_metatype _inMatchingOptions, modelica_metatype _strmatchingAlgorithm, modelica_metatype _strindexReductionMethod)
 {
 modelica_metatype _outDAE = NULL;
@@ -75,7 +70,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",36,3,36,35,0};
+FILE_INFO info = {"BackendDAEUtil.mo",71,3,71,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT2));
 }
 }
@@ -83,7 +78,7 @@ omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT2));
 _return: OMC_LABEL_UNUSED
 return _outDAE;
 }
-DLLExport
+DLLDirection
 modelica_metatype omc_BackendDAEUtil_preOptimizeBackendDAE(threadData_t *threadData, modelica_metatype _inDAE, modelica_metatype _strPreOptModules)
 {
 modelica_metatype _outDAE = NULL;
@@ -94,7 +89,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",26,3,26,35,0};
+FILE_INFO info = {"BackendDAEUtil.mo",61,3,61,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT3));
 }
 }
@@ -102,7 +97,7 @@ omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT3));
 _return: OMC_LABEL_UNUSED
 return _outDAE;
 }
-DLLExport
+DLLDirection
 modelica_metatype omc_BackendDAEUtil_getSolvedSystem(threadData_t *threadData, modelica_metatype _inDAE, modelica_string _fileNamePrefix, modelica_metatype _strPreOptModules, modelica_metatype _strmatchingAlgorithm, modelica_metatype _strdaeHandler, modelica_metatype _strPostOptModules, modelica_metatype *out_outInitDAE, modelica_metatype *out_outInitDAE_lambda0, modelica_metatype *out_inlineData, modelica_metatype *out_outRemovedInitialEquationLst)
 {
 modelica_metatype _outSODE = NULL;
@@ -117,7 +112,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",18,3,18,35,0};
+FILE_INFO info = {"BackendDAEUtil.mo",53,3,53,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT4));
 }
 }

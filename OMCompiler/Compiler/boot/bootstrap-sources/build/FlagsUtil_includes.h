@@ -1,12 +1,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "Corba.h"
+#include "openmodelica.h"       // Defines OPENMODELICA_H_ for libraries to test if called from OpenModelica.
+#include "ModelicaUtilities.h"  // Make Modelica C util functions available for external includes.
 #include "Error.h"
 #include "ErrorExt.h"
 #include "Flags.h"
 #include "FlagsUtil.h"
-#include "Gettext.h"
+#include "IOStream.h"
 #include "List.h"
 #include "Print.h"
 #include "Settings.h"

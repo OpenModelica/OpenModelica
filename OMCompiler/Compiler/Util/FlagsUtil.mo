@@ -44,7 +44,6 @@ import Flags;
 
 protected
 
-import Corba;
 import Error;
 import ErrorExt;
 import Global;
@@ -96,7 +95,6 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.TRANSFORMS_BEFORE_DUMP,
   Flags.DAE_DUMP_GRAPHV,
   Flags.INTERACTIVE_TCP,
-  Flags.INTERACTIVE_CORBA,
   Flags.INTERACTIVE_DUMP,
   Flags.RELIDX,
   Flags.DUMP_REPL,
@@ -293,7 +291,6 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.KEEP_ARRAYS,
   Flags.MODELICA_OUTPUT,
   Flags.SILENT,
-  Flags.CORBA_SESSION,
   Flags.NUM_PROC,
   Flags.INST_CLASS,
   Flags.VECTORIZATION_LIMIT,
@@ -316,7 +313,6 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.SCALARIZE_MINMAX,
   Flags.STRICT,
   Flags.SCALARIZE_BINDINGS,
-  Flags.CORBA_OBJECT_REFERENCE_FILE_PATH,
   Flags.HPCOM_SCHEDULER,
   Flags.HPCOM_CODE,
   Flags.REWRITE_RULES_FILE,
@@ -1181,13 +1177,6 @@ algorithm
     // The error message might get lost, so also print it directly here.
     print("The flag -d=interactive is depreciated. Please use --interactive=tcp instead.\n");
   end if;
-  if Flags.isSet(Flags.INTERACTIVE_CORBA) then
-    disableDebug(Flags.INTERACTIVE_CORBA);
-    setConfigString(Flags.INTERACTIVE, "corba");
-    Error.addMessage(Error.DEPRECATED_FLAG, {"-d=interactiveCorba", "--interactive=corba"});
-    // The error message might get lost, so also print it directly here.
-    print("The flag -d=interactiveCorba is depreciated. Please use --interactive=corba instead.\n");
-  end if;
   // add other deprecated flags here...
 
   // CONFIG_FLAGS
@@ -1230,7 +1219,6 @@ algorithm
   () := matchcontinue inValue
     local
       Boolean value;
-      String corba_name, corba_objid_path;
 
     // +showErrorMessages needs to be sent to the C runtime.
     case _
@@ -1238,24 +1226,6 @@ algorithm
         true := configFlagsIsEqualIndex(inFlag, Flags.SHOW_ERROR_MESSAGES);
         Flags.BOOL_FLAG(data = value) := inValue;
         ErrorExt.setShowErrorMessages(value);
-      then
-        ();
-
-    // The corba object reference file path needs to be sent to the C runtime.
-    case _
-      algorithm
-        true := configFlagsIsEqualIndex(inFlag, Flags.CORBA_OBJECT_REFERENCE_FILE_PATH);
-        Flags.STRING_FLAG(data = corba_objid_path) := inValue;
-        Corba.setObjectReferenceFilePath(corba_objid_path);
-      then
-        ();
-
-    // The corba session name needs to be sent to the C runtime.
-    case _
-      algorithm
-        true := configFlagsIsEqualIndex(inFlag, Flags.CORBA_SESSION);
-        Flags.STRING_FLAG(data = corba_name) := inValue;
-        Corba.setSessionName(corba_name);
       then
         ();
 

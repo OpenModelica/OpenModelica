@@ -8,15 +8,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-DLLExport
+DLLDirection
 void omc_File_writeSpace(threadData_t *threadData, modelica_complex _file, modelica_integer _n);
-DLLExport
+DLLDirection
 void boxptr_File_writeSpace(threadData_t *threadData, modelica_metatype _file, modelica_metatype _n);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_writeSpace,2,0) {(void*) boxptr_File_writeSpace,0}};
 #define boxvar_File_writeSpace MMC_REFSTRUCTLIT(boxvar_lit_File_writeSpace)
-DLLExport
+DLLDirection
 void omc_File_releaseReference(threadData_t *threadData, modelica_complex _file);
-DLLExport
+DLLDirection
 void boxptr_File_releaseReference(threadData_t *threadData, modelica_metatype _file);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_releaseReference,2,0) {(void*) boxptr_File_releaseReference,0}};
 #define boxvar_File_releaseReference MMC_REFSTRUCTLIT(boxvar_lit_File_releaseReference)
@@ -26,9 +26,9 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_File_releaseReference,2,0) {(void*) box
 * in one of these files and have this prototype:
 * extern void om_file_release_reference(void * (*_file*));
 */
-DLLExport
+DLLDirection
 modelica_metatype omc_File_getReference(threadData_t *threadData, modelica_complex _file);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_File_getReference(threadData_t *threadData, modelica_metatype _file);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_getReference,2,0) {(void*) boxptr_File_getReference,0}};
 #define boxvar_File_getReference MMC_REFSTRUCTLIT(boxvar_lit_File_getReference)
@@ -38,7 +38,7 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_File_getReference,2,0) {(void*) boxptr_
 * in one of these files and have this prototype:
 * extern modelica_metatype om_file_get_reference(void * (*_file*));
 */
-DLLExport
+DLLDirection
 modelica_metatype omc_File_noReference(threadData_t *threadData);
 #define boxptr_File_noReference omc_File_noReference
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_noReference,2,0) {(void*) boxptr_File_noReference,0}};
@@ -49,7 +49,7 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_File_noReference,2,0) {(void*) boxptr_F
 * in one of these files and have this prototype:
 * extern modelica_metatype om_file_no_reference();
 */
-DLLExport
+DLLDirection
 modelica_string omc_File_getFilename(threadData_t *threadData, modelica_metatype _file);
 #define boxptr_File_getFilename omc_File_getFilename
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_getFilename,2,0) {(void*) boxptr_File_getFilename,0}};
@@ -60,9 +60,9 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_File_getFilename,2,0) {(void*) boxptr_F
 * in one of these files and have this prototype:
 * extern const char* om_file_get_filename(modelica_metatype (*_file*));
 */
-DLLExport
+DLLDirection
 modelica_integer omc_File_tell(threadData_t *threadData, modelica_complex _file);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_File_tell(threadData_t *threadData, modelica_metatype _file);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_tell,2,0) {(void*) boxptr_File_tell,0}};
 #define boxvar_File_tell MMC_REFSTRUCTLIT(boxvar_lit_File_tell)
@@ -72,9 +72,9 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_File_tell,2,0) {(void*) boxptr_File_tel
 * in one of these files and have this prototype:
 * extern int om_file_tell(void * (*_file*));
 */
-DLLExport
+DLLDirection
 modelica_boolean omc_File_seek(threadData_t *threadData, modelica_complex _file, modelica_integer _offset, modelica_integer _whence);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_File_seek(threadData_t *threadData, modelica_metatype _file, modelica_metatype _offset, modelica_metatype _whence);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_seek,2,0) {(void*) boxptr_File_seek,0}};
 #define boxvar_File_seek MMC_REFSTRUCTLIT(boxvar_lit_File_seek)
@@ -84,9 +84,9 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_File_seek,2,0) {(void*) boxptr_File_see
 * in one of these files and have this prototype:
 * extern int om_file_seek(void * (*_file*), int (*_offset*), int (*_whence*));
 */
-DLLExport
+DLLDirection
 void omc_File_writeEscape(threadData_t *threadData, modelica_complex _file, modelica_string _data, modelica_integer _escape);
-DLLExport
+DLLDirection
 void boxptr_File_writeEscape(threadData_t *threadData, modelica_metatype _file, modelica_metatype _data, modelica_metatype _escape);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_writeEscape,2,0) {(void*) boxptr_File_writeEscape,0}};
 #define boxvar_File_writeEscape MMC_REFSTRUCTLIT(boxvar_lit_File_writeEscape)
@@ -96,9 +96,9 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_File_writeEscape,2,0) {(void*) boxptr_F
 * in one of these files and have this prototype:
 * extern void om_file_write_escape(void * (*_file*), const char* (*_data*), int (*_escape*));
 */
-DLLExport
+DLLDirection
 void omc_File_writeReal(threadData_t *threadData, modelica_complex _file, modelica_real _data, modelica_string _format);
-DLLExport
+DLLDirection
 void boxptr_File_writeReal(threadData_t *threadData, modelica_metatype _file, modelica_metatype _data, modelica_metatype _format);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_writeReal,2,0) {(void*) boxptr_File_writeReal,0}};
 #define boxvar_File_writeReal MMC_REFSTRUCTLIT(boxvar_lit_File_writeReal)
@@ -108,9 +108,9 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_File_writeReal,2,0) {(void*) boxptr_Fil
 * in one of these files and have this prototype:
 * extern void om_file_write_real(void * (*_file*), double (*_data*), const char* (*_format*));
 */
-DLLExport
+DLLDirection
 void omc_File_writeInt(threadData_t *threadData, modelica_complex _file, modelica_integer _data, modelica_string _format);
-DLLExport
+DLLDirection
 void boxptr_File_writeInt(threadData_t *threadData, modelica_metatype _file, modelica_metatype _data, modelica_metatype _format);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_writeInt,2,0) {(void*) boxptr_File_writeInt,0}};
 #define boxvar_File_writeInt MMC_REFSTRUCTLIT(boxvar_lit_File_writeInt)
@@ -120,9 +120,9 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_File_writeInt,2,0) {(void*) boxptr_File
 * in one of these files and have this prototype:
 * extern void om_file_write_int(void * (*_file*), int (*_data*), const char* (*_format*));
 */
-DLLExport
+DLLDirection
 void omc_File_write(threadData_t *threadData, modelica_complex _file, modelica_string _data);
-DLLExport
+DLLDirection
 void boxptr_File_write(threadData_t *threadData, modelica_metatype _file, modelica_metatype _data);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_write,2,0) {(void*) boxptr_File_write,0}};
 #define boxvar_File_write MMC_REFSTRUCTLIT(boxvar_lit_File_write)
@@ -132,9 +132,9 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_File_write,2,0) {(void*) boxptr_File_wr
 * in one of these files and have this prototype:
 * extern void om_file_write(void * (*_file*), const char* (*_data*));
 */
-DLLExport
+DLLDirection
 void omc_File_open(threadData_t *threadData, modelica_complex _file, modelica_string _filename, modelica_integer _mode);
-DLLExport
+DLLDirection
 void boxptr_File_open(threadData_t *threadData, modelica_metatype _file, modelica_metatype _filename, modelica_metatype _mode);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_open,2,0) {(void*) boxptr_File_open,0}};
 #define boxvar_File_open MMC_REFSTRUCTLIT(boxvar_lit_File_open)
@@ -144,9 +144,9 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_File_open,2,0) {(void*) boxptr_File_ope
 * in one of these files and have this prototype:
 * extern void om_file_open(void * (*_file*), const char* (*_filename*), int (*_mode*));
 */
-DLLExport
+DLLDirection
 modelica_complex omc_File_File_constructor(threadData_t *threadData, modelica_metatype _fromID);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_File_File_constructor(threadData_t *threadData, modelica_metatype _fromID);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_File_constructor,2,0) {(void*) boxptr_File_File_constructor,0}};
 #define boxvar_File_File_constructor MMC_REFSTRUCTLIT(boxvar_lit_File_File_constructor)
@@ -156,9 +156,9 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_File_File_constructor,2,0) {(void*) box
 * in one of these files and have this prototype:
 * extern void * om_file_new(modelica_metatype (*_fromID*));
 */
-DLLExport
+DLLDirection
 void omc_File_File_destructor(threadData_t *threadData, modelica_complex _file);
-DLLExport
+DLLDirection
 void boxptr_File_File_destructor(threadData_t *threadData, modelica_metatype _file);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_File_File_destructor,2,0) {(void*) boxptr_File_File_destructor,0}};
 #define boxvar_File_File_destructor MMC_REFSTRUCTLIT(boxvar_lit_File_File_destructor)

@@ -1,0 +1,63 @@
+#ifndef ValuesDump__H
+#define ValuesDump__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description ErrorTypes_Message_MESSAGE__desc;
+extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
+extern struct record_description ErrorTypes_Severity_ERROR__desc;
+extern struct record_description Flags_ConfigFlag_CONFIG__FLAG__desc;
+extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
+extern struct record_description Flags_FlagData_ENUM__FLAG__desc;
+extern struct record_description Flags_FlagVisibility_EXTERNAL__desc;
+extern struct record_description Values_Value_STRING__desc;
+#define boxptr_ValuesDump_unparseDimSizes omc_ValuesDump_unparseDimSizes
+#define boxptr_ValuesDump_unparsePrimType omc_ValuesDump_unparsePrimType
+#define boxptr_ValuesDump_unparseArrayDescription omc_ValuesDump_unparseArrayDescription
+#define boxptr_ValuesDump_unparseDescription omc_ValuesDump_unparseDescription
+#define boxptr_ValuesDump_unparseValueNumbers omc_ValuesDump_unparseValueNumbers
+DLLDirection
+modelica_string omc_ValuesDump_unparseValues(threadData_t *threadData, modelica_metatype _inValueLst);
+#define boxptr_ValuesDump_unparseValues omc_ValuesDump_unparseValues
+static const MMC_DEFSTRUCTLIT(boxvar_lit_ValuesDump_unparseValues,2,0) {(void*) boxptr_ValuesDump_unparseValues,0}};
+#define boxvar_ValuesDump_unparseValues MMC_REFSTRUCTLIT(boxvar_lit_ValuesDump_unparseValues)
+DLLDirection
+modelica_string omc_ValuesDump_printValStr(threadData_t *threadData, modelica_metatype _v);
+#define boxptr_ValuesDump_printValStr omc_ValuesDump_printValStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_ValuesDump_printValStr,2,0) {(void*) boxptr_ValuesDump_printValStr,0}};
+#define boxvar_ValuesDump_printValStr MMC_REFSTRUCTLIT(boxvar_lit_ValuesDump_printValStr)
+DLLDirection
+void omc_ValuesDump_printVal(threadData_t *threadData, modelica_metatype _v);
+#define boxptr_ValuesDump_printVal omc_ValuesDump_printVal
+static const MMC_DEFSTRUCTLIT(boxvar_lit_ValuesDump_printVal,2,0) {(void*) boxptr_ValuesDump_printVal,0}};
+#define boxvar_ValuesDump_printVal MMC_REFSTRUCTLIT(boxvar_lit_ValuesDump_printVal)
+#define boxptr_ValuesDump_valListString omc_ValuesDump_valListString
+#define boxptr_ValuesDump_valRecordString omc_ValuesDump_valRecordString
+DLLDirection
+void omc_ValuesDump_valString2(threadData_t *threadData, modelica_metatype _inValue);
+#define boxptr_ValuesDump_valString2 omc_ValuesDump_valString2
+static const MMC_DEFSTRUCTLIT(boxvar_lit_ValuesDump_valString2,2,0) {(void*) boxptr_ValuesDump_valString2,0}};
+#define boxvar_ValuesDump_valString2 MMC_REFSTRUCTLIT(boxvar_lit_ValuesDump_valString2)
+#define boxptr_ValuesDump_printJSONString omc_ValuesDump_printJSONString
+#define boxptr_ValuesDump_valJSONRecord omc_ValuesDump_valJSONRecord
+#define boxptr_ValuesDump_valJSONArray omc_ValuesDump_valJSONArray
+#define boxptr_ValuesDump_valJSON omc_ValuesDump_valJSON
+DLLDirection
+modelica_string omc_ValuesDump_valStringJSON(threadData_t *threadData, modelica_metatype _inValue);
+#define boxptr_ValuesDump_valStringJSON omc_ValuesDump_valStringJSON
+static const MMC_DEFSTRUCTLIT(boxvar_lit_ValuesDump_valStringJSON,2,0) {(void*) boxptr_ValuesDump_valStringJSON,0}};
+#define boxvar_ValuesDump_valStringJSON MMC_REFSTRUCTLIT(boxvar_lit_ValuesDump_valStringJSON)
+DLLDirection
+modelica_string omc_ValuesDump_valString(threadData_t *threadData, modelica_metatype _inValue);
+#define boxptr_ValuesDump_valString omc_ValuesDump_valString
+static const MMC_DEFSTRUCTLIT(boxvar_lit_ValuesDump_valString,2,0) {(void*) boxptr_ValuesDump_valString,0}};
+#define boxvar_ValuesDump_valString MMC_REFSTRUCTLIT(boxvar_lit_ValuesDump_valString)
+#ifdef __cplusplus
+}
+#endif
+#endif

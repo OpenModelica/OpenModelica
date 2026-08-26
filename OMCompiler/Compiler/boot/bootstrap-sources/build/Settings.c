@@ -1,8 +1,3 @@
-#ifdef OMC_BASE_FILE
-#define OMC_FILE OMC_BASE_FILE
-#else
-#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Settings.c"
-#endif
 #include "omc_simulation_settings.h"
 #include "Settings.h"
 #include "util/modelica.h"
@@ -10,7 +5,7 @@
 void omc_Settings_setEcho(threadData_t *threadData, modelica_integer _echo)
 {
 int _echo_ext;
-_echo_ext = (int)_echo;
+_echo_ext = (int) _echo;
 Settings_setEcho(_echo_ext);
 return;
 }
@@ -42,7 +37,7 @@ modelica_string omc_Settings_getHomeDir(threadData_t *threadData, modelica_boole
 int _runningTestsuite_ext;
 const char* _outString_ext;
 modelica_string _outString = NULL;
-_runningTestsuite_ext = (int)_runningTestsuite;
+_runningTestsuite_ext = (int) _runningTestsuite;
 _outString_ext = Settings_getHomeDir(_runningTestsuite_ext);
 _outString = (modelica_string)mmc_mk_scon(_outString_ext);
 return _outString;
@@ -60,7 +55,7 @@ modelica_string omc_Settings_getModelicaPath(threadData_t *threadData, modelica_
 int _runningTestsuite_ext;
 const char* _outString_ext;
 modelica_string _outString = NULL;
-_runningTestsuite_ext = (int)_runningTestsuite;
+_runningTestsuite_ext = (int) _runningTestsuite;
 _outString_ext = Settings_getModelicaPath(_runningTestsuite_ext);
 _outString = (modelica_string)mmc_mk_scon(_outString_ext);
 return _outString;
@@ -102,24 +97,6 @@ return _outString;
 void omc_Settings_setTempDirectoryPath(threadData_t *threadData, modelica_string _inString)
 {
 SettingsImpl__setTempDirectoryPath(MMC_STRINGDATA(_inString));
-return;
-}
-modelica_string omc_Settings_getCompileCommand(threadData_t *threadData)
-{
-const char* _outString_ext;
-modelica_string _outString = NULL;
-_outString_ext = Settings_getCompileCommand();
-_outString = (modelica_string)mmc_mk_scon(_outString_ext);
-return _outString;
-}
-void omc_Settings_setCompileCommand(threadData_t *threadData, modelica_string _inString)
-{
-SettingsImpl__setCompileCommand(MMC_STRINGDATA(_inString));
-return;
-}
-void omc_Settings_setCompilePath(threadData_t *threadData, modelica_string _inString)
-{
-SettingsImpl__setCompilePath(MMC_STRINGDATA(_inString));
 return;
 }
 modelica_string omc_Settings_getVersionNr(threadData_t *threadData)

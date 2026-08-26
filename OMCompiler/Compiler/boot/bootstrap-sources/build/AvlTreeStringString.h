@@ -11,163 +11,173 @@ extern "C" {
 extern struct record_description AvlTreeStringString_Tree_EMPTY__desc;
 extern struct record_description AvlTreeStringString_Tree_LEAF__desc;
 extern struct record_description AvlTreeStringString_Tree_NODE__desc;
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_add(threadData_t *threadData, modelica_metatype _inTree, modelica_string _inKey, modelica_string _inValue, modelica_fnptr _conflictFunc);
 #define boxptr_AvlTreeStringString_add omc_AvlTreeStringString_add
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_add,2,0) {(void*) boxptr_AvlTreeStringString_add,0}};
 #define boxvar_AvlTreeStringString_add MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_add)
-DLLExport
+DLLDirection
 modelica_string omc_AvlTreeStringString_addConflictDefault(threadData_t *threadData, modelica_string _newValue, modelica_string _oldValue, modelica_string _key);
 #define boxptr_AvlTreeStringString_addConflictDefault omc_AvlTreeStringString_addConflictDefault
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_addConflictDefault,2,0) {(void*) boxptr_AvlTreeStringString_addConflictDefault,0}};
 #define boxvar_AvlTreeStringString_addConflictDefault MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_addConflictDefault)
-DLLExport
+DLLDirection
 modelica_string omc_AvlTreeStringString_addConflictFail(threadData_t *threadData, modelica_string _newValue, modelica_string _oldValue, modelica_string _key);
 #define boxptr_AvlTreeStringString_addConflictFail omc_AvlTreeStringString_addConflictFail
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_addConflictFail,2,0) {(void*) boxptr_AvlTreeStringString_addConflictFail,0}};
 #define boxvar_AvlTreeStringString_addConflictFail MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_addConflictFail)
-DLLExport
+DLLDirection
 modelica_string omc_AvlTreeStringString_addConflictKeep(threadData_t *threadData, modelica_string _newValue, modelica_string _oldValue, modelica_string _key);
 #define boxptr_AvlTreeStringString_addConflictKeep omc_AvlTreeStringString_addConflictKeep
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_addConflictKeep,2,0) {(void*) boxptr_AvlTreeStringString_addConflictKeep,0}};
 #define boxvar_AvlTreeStringString_addConflictKeep MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_addConflictKeep)
-DLLExport
+DLLDirection
 modelica_string omc_AvlTreeStringString_addConflictReplace(threadData_t *threadData, modelica_string _newValue, modelica_string _oldValue, modelica_string _key);
 #define boxptr_AvlTreeStringString_addConflictReplace omc_AvlTreeStringString_addConflictReplace
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_addConflictReplace,2,0) {(void*) boxptr_AvlTreeStringString_addConflictReplace,0}};
 #define boxvar_AvlTreeStringString_addConflictReplace MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_addConflictReplace)
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_addList(threadData_t *threadData, modelica_metatype __omcQ_24in_5Ftree, modelica_metatype _inValues, modelica_fnptr _conflictFunc);
 #define boxptr_AvlTreeStringString_addList omc_AvlTreeStringString_addList
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_addList,2,0) {(void*) boxptr_AvlTreeStringString_addList,0}};
 #define boxvar_AvlTreeStringString_addList MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_addList)
+DLLDirection
+modelica_metatype omc_AvlTreeStringString_addUpdate(threadData_t *threadData, modelica_metatype __omcQ_24in_5Ftree, modelica_string _key, modelica_fnptr _fn);
+#define boxptr_AvlTreeStringString_addUpdate omc_AvlTreeStringString_addUpdate
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_addUpdate,2,0) {(void*) boxptr_AvlTreeStringString_addUpdate,0}};
+#define boxvar_AvlTreeStringString_addUpdate MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_addUpdate)
 #define boxptr_AvlTreeStringString_balance omc_AvlTreeStringString_balance
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_fold(threadData_t *threadData, modelica_metatype _inTree, modelica_fnptr _inFunc, modelica_metatype _inStartValue);
 #define boxptr_AvlTreeStringString_fold omc_AvlTreeStringString_fold
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_fold,2,0) {(void*) boxptr_AvlTreeStringString_fold,0}};
 #define boxvar_AvlTreeStringString_fold MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_fold)
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_foldCond(threadData_t *threadData, modelica_metatype _tree, modelica_fnptr _foldFunc, modelica_metatype __omcQ_24in_5Fvalue);
 #define boxptr_AvlTreeStringString_foldCond omc_AvlTreeStringString_foldCond
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_foldCond,2,0) {(void*) boxptr_AvlTreeStringString_foldCond,0}};
 #define boxvar_AvlTreeStringString_foldCond MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_foldCond)
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_fold__2(threadData_t *threadData, modelica_metatype _tree, modelica_fnptr _foldFunc, modelica_metatype __omcQ_24in_5FfoldArg1, modelica_metatype __omcQ_24in_5FfoldArg2, modelica_metatype *out_foldArg2);
 #define boxptr_AvlTreeStringString_fold__2 omc_AvlTreeStringString_fold__2
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_fold__2,2,0) {(void*) boxptr_AvlTreeStringString_fold__2,0}};
 #define boxvar_AvlTreeStringString_fold__2 MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_fold__2)
-DLLExport
+DLLDirection
 void omc_AvlTreeStringString_forEach(threadData_t *threadData, modelica_metatype _tree, modelica_fnptr _func);
 #define boxptr_AvlTreeStringString_forEach omc_AvlTreeStringString_forEach
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_forEach,2,0) {(void*) boxptr_AvlTreeStringString_forEach,0}};
 #define boxvar_AvlTreeStringString_forEach MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_forEach)
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_fromList(threadData_t *threadData, modelica_metatype _inValues, modelica_fnptr _conflictFunc);
 #define boxptr_AvlTreeStringString_fromList omc_AvlTreeStringString_fromList
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_fromList,2,0) {(void*) boxptr_AvlTreeStringString_fromList,0}};
 #define boxvar_AvlTreeStringString_fromList MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_fromList)
-DLLExport
+DLLDirection
 modelica_string omc_AvlTreeStringString_get(threadData_t *threadData, modelica_metatype _tree, modelica_string _key);
 #define boxptr_AvlTreeStringString_get omc_AvlTreeStringString_get
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_get,2,0) {(void*) boxptr_AvlTreeStringString_get,0}};
 #define boxvar_AvlTreeStringString_get MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_get)
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_getOpt(threadData_t *threadData, modelica_metatype _tree, modelica_string _key);
 #define boxptr_AvlTreeStringString_getOpt omc_AvlTreeStringString_getOpt
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_getOpt,2,0) {(void*) boxptr_AvlTreeStringString_getOpt,0}};
 #define boxvar_AvlTreeStringString_getOpt MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_getOpt)
-DLLExport
+DLLDirection
 modelica_boolean omc_AvlTreeStringString_hasKey(threadData_t *threadData, modelica_metatype _inTree, modelica_string _inKey);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_AvlTreeStringString_hasKey(threadData_t *threadData, modelica_metatype _inTree, modelica_metatype _inKey);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_hasKey,2,0) {(void*) boxptr_AvlTreeStringString_hasKey,0}};
 #define boxvar_AvlTreeStringString_hasKey MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_hasKey)
-DLLExport
+DLLDirection
 void omc_AvlTreeStringString_intersection(threadData_t *threadData);
 #define boxptr_AvlTreeStringString_intersection omc_AvlTreeStringString_intersection
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_intersection,2,0) {(void*) boxptr_AvlTreeStringString_intersection,0}};
 #define boxvar_AvlTreeStringString_intersection MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_intersection)
-DLLExport
+DLLDirection
 modelica_boolean omc_AvlTreeStringString_isEmpty(threadData_t *threadData, modelica_metatype _tree);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_AvlTreeStringString_isEmpty(threadData_t *threadData, modelica_metatype _tree);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_isEmpty,2,0) {(void*) boxptr_AvlTreeStringString_isEmpty,0}};
 #define boxvar_AvlTreeStringString_isEmpty MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_isEmpty)
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_join(threadData_t *threadData, modelica_metatype __omcQ_24in_5Ftree, modelica_metatype _treeToJoin, modelica_fnptr _conflictFunc);
 #define boxptr_AvlTreeStringString_join omc_AvlTreeStringString_join
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_join,2,0) {(void*) boxptr_AvlTreeStringString_join,0}};
 #define boxvar_AvlTreeStringString_join MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_join)
-DLLExport
+DLLDirection
 modelica_integer omc_AvlTreeStringString_keyCompare(threadData_t *threadData, modelica_string _inKey1, modelica_string _inKey2);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_AvlTreeStringString_keyCompare(threadData_t *threadData, modelica_metatype _inKey1, modelica_metatype _inKey2);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_keyCompare,2,0) {(void*) boxptr_AvlTreeStringString_keyCompare,0}};
 #define boxvar_AvlTreeStringString_keyCompare MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_keyCompare)
-DLLExport
+DLLDirection
 modelica_string omc_AvlTreeStringString_keyStr(threadData_t *threadData, modelica_string _inKey);
 #define boxptr_AvlTreeStringString_keyStr omc_AvlTreeStringString_keyStr
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_keyStr,2,0) {(void*) boxptr_AvlTreeStringString_keyStr,0}};
 #define boxvar_AvlTreeStringString_keyStr MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_keyStr)
-DLLExport
-modelica_metatype omc_AvlTreeStringString_listKeys(threadData_t *threadData, modelica_metatype _inTree, modelica_metatype __omcQ_24in_5Flst);
+DLLDirection
+modelica_metatype omc_AvlTreeStringString_listKeys(threadData_t *threadData, modelica_metatype _tree, modelica_metatype __omcQ_24in_5Flst);
 #define boxptr_AvlTreeStringString_listKeys omc_AvlTreeStringString_listKeys
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_listKeys,2,0) {(void*) boxptr_AvlTreeStringString_listKeys,0}};
 #define boxvar_AvlTreeStringString_listKeys MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_listKeys)
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_listKeysReverse(threadData_t *threadData, modelica_metatype _inTree, modelica_metatype __omcQ_24in_5Flst);
 #define boxptr_AvlTreeStringString_listKeysReverse omc_AvlTreeStringString_listKeysReverse
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_listKeysReverse,2,0) {(void*) boxptr_AvlTreeStringString_listKeysReverse,0}};
 #define boxvar_AvlTreeStringString_listKeysReverse MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_listKeysReverse)
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_listValues(threadData_t *threadData, modelica_metatype _tree, modelica_metatype __omcQ_24in_5Flst);
 #define boxptr_AvlTreeStringString_listValues omc_AvlTreeStringString_listValues
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_listValues,2,0) {(void*) boxptr_AvlTreeStringString_listValues,0}};
 #define boxvar_AvlTreeStringString_listValues MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_listValues)
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_map(threadData_t *threadData, modelica_metatype _inTree, modelica_fnptr _inFunc);
 #define boxptr_AvlTreeStringString_map omc_AvlTreeStringString_map
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_map,2,0) {(void*) boxptr_AvlTreeStringString_map,0}};
 #define boxvar_AvlTreeStringString_map MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_map)
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_mapFold(threadData_t *threadData, modelica_metatype _inTree, modelica_fnptr _inFunc, modelica_metatype _inStartValue, modelica_metatype *out_outResult);
 #define boxptr_AvlTreeStringString_mapFold omc_AvlTreeStringString_mapFold
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_mapFold,2,0) {(void*) boxptr_AvlTreeStringString_mapFold,0}};
 #define boxvar_AvlTreeStringString_mapFold MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_mapFold)
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_new(threadData_t *threadData);
 #define boxptr_AvlTreeStringString_new omc_AvlTreeStringString_new
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_new,2,0) {(void*) boxptr_AvlTreeStringString_new,0}};
 #define boxvar_AvlTreeStringString_new MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_new)
-DLLExport
+DLLDirection
 modelica_string omc_AvlTreeStringString_printNodeStr(threadData_t *threadData, modelica_metatype _inNode);
 #define boxptr_AvlTreeStringString_printNodeStr omc_AvlTreeStringString_printNodeStr
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_printNodeStr,2,0) {(void*) boxptr_AvlTreeStringString_printNodeStr,0}};
 #define boxvar_AvlTreeStringString_printNodeStr MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_printNodeStr)
-DLLExport
+DLLDirection
 modelica_string omc_AvlTreeStringString_printTreeStr(threadData_t *threadData, modelica_metatype _inTree);
 #define boxptr_AvlTreeStringString_printTreeStr omc_AvlTreeStringString_printTreeStr
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_printTreeStr,2,0) {(void*) boxptr_AvlTreeStringString_printTreeStr,0}};
 #define boxvar_AvlTreeStringString_printTreeStr MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_printTreeStr)
 #define boxptr_AvlTreeStringString_rotateLeft omc_AvlTreeStringString_rotateLeft
 #define boxptr_AvlTreeStringString_rotateRight omc_AvlTreeStringString_rotateRight
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_setTreeLeftRight(threadData_t *threadData, modelica_metatype _orig, modelica_metatype _left, modelica_metatype _right);
 #define boxptr_AvlTreeStringString_setTreeLeftRight omc_AvlTreeStringString_setTreeLeftRight
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_setTreeLeftRight,2,0) {(void*) boxptr_AvlTreeStringString_setTreeLeftRight,0}};
 #define boxvar_AvlTreeStringString_setTreeLeftRight MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_setTreeLeftRight)
-DLLExport
+DLLDirection
+modelica_string omc_AvlTreeStringString_smallestKey(threadData_t *threadData, modelica_metatype _tree);
+#define boxptr_AvlTreeStringString_smallestKey omc_AvlTreeStringString_smallestKey
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_smallestKey,2,0) {(void*) boxptr_AvlTreeStringString_smallestKey,0}};
+#define boxvar_AvlTreeStringString_smallestKey MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_smallestKey)
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_toList(threadData_t *threadData, modelica_metatype _inTree, modelica_metatype __omcQ_24in_5Flst);
 #define boxptr_AvlTreeStringString_toList omc_AvlTreeStringString_toList
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_toList,2,0) {(void*) boxptr_AvlTreeStringString_toList,0}};
 #define boxvar_AvlTreeStringString_toList MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_toList)
-DLLExport
+DLLDirection
 modelica_metatype omc_AvlTreeStringString_update(threadData_t *threadData, modelica_metatype _tree, modelica_string _key, modelica_string _value);
 #define boxptr_AvlTreeStringString_update omc_AvlTreeStringString_update
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_update,2,0) {(void*) boxptr_AvlTreeStringString_update,0}};
 #define boxvar_AvlTreeStringString_update MMC_REFSTRUCTLIT(boxvar_lit_AvlTreeStringString_update)
-DLLExport
+DLLDirection
 modelica_string omc_AvlTreeStringString_valueStr(threadData_t *threadData, modelica_string _inValue);
 #define boxptr_AvlTreeStringString_valueStr omc_AvlTreeStringString_valueStr
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AvlTreeStringString_valueStr,2,0) {(void*) boxptr_AvlTreeStringString_valueStr,0}};

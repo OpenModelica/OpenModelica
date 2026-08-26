@@ -9,7 +9,6 @@
 extern "C" {
 #endif
 extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
-extern struct record_description Gettext_TranslatableContent_gettext__desc;
 extern struct record_description SourceInfo_SOURCEINFO__desc;
 extern struct record_description Tpl_BlockType_BT__ANCHOR__desc;
 extern struct record_description Tpl_BlockType_BT__INDENT__desc;
@@ -74,53 +73,53 @@ extern struct record_description TplMain_Statement_ASSIGN__desc;
 extern struct record_description TplMain_Statement_WHILE__desc;
 extern struct record_description TplParser_LineInfo_LINE__INFO__desc;
 extern struct record_description TplParser_ParseInfo_PARSE__INFO__desc;
-DLLExport
+DLLDirection
 modelica_metatype omc_TplMain_intMatrix(threadData_t *threadData, modelica_metatype _txt, modelica_metatype _i_lstOfLst);
 #define boxptr_TplMain_intMatrix omc_TplMain_intMatrix
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplMain_intMatrix,2,0) {(void*) boxptr_TplMain_intMatrix,0}};
 #define boxvar_TplMain_intMatrix MMC_REFSTRUCTLIT(boxvar_lit_TplMain_intMatrix)
 #define boxptr_TplMain_lm__55 omc_TplMain_lm__55
 #define boxptr_TplMain_lm__54 omc_TplMain_lm__54
-DLLExport
+DLLDirection
 modelica_metatype omc_TplMain_oper(threadData_t *threadData, modelica_metatype _in_txt, modelica_metatype _in_i_it);
 #define boxptr_TplMain_oper omc_TplMain_oper
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplMain_oper,2,0) {(void*) boxptr_TplMain_oper,0}};
 #define boxvar_TplMain_oper MMC_REFSTRUCTLIT(boxvar_lit_TplMain_oper)
-DLLExport
+DLLDirection
 modelica_metatype omc_TplMain_exp(threadData_t *threadData, modelica_metatype _in_txt, modelica_metatype _in_i_it);
 #define boxptr_TplMain_exp omc_TplMain_exp
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplMain_exp,2,0) {(void*) boxptr_TplMain_exp,0}};
 #define boxvar_TplMain_exp MMC_REFSTRUCTLIT(boxvar_lit_TplMain_exp)
-DLLExport
+DLLDirection
 modelica_metatype omc_TplMain_statement(threadData_t *threadData, modelica_metatype _in_txt, modelica_metatype _in_i_it);
 #define boxptr_TplMain_statement omc_TplMain_statement
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplMain_statement,2,0) {(void*) boxptr_TplMain_statement,0}};
 #define boxvar_TplMain_statement MMC_REFSTRUCTLIT(boxvar_lit_TplMain_statement)
 #define boxptr_TplMain_lm__1 omc_TplMain_lm__1
-DLLExport
+DLLDirection
 void omc_TplMain_tplMainTest(threadData_t *threadData, modelica_string _inFile);
 #define boxptr_TplMain_tplMainTest omc_TplMain_tplMainTest
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplMain_tplMainTest,2,0) {(void*) boxptr_TplMain_tplMainTest,0}};
 #define boxvar_TplMain_tplMainTest MMC_REFSTRUCTLIT(boxvar_lit_TplMain_tplMainTest)
-DLLExport
+DLLDirection
 modelica_integer omc_TplMain_testTranslateTplFile(threadData_t *threadData, modelica_string _inFile, modelica_boolean _inPrintResult, modelica_boolean _inPrintErrorBuffer, modelica_integer _inNotPassedCnt);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplMain_testTranslateTplFile(threadData_t *threadData, modelica_metatype _inFile, modelica_metatype _inPrintResult, modelica_metatype _inPrintErrorBuffer, modelica_metatype _inNotPassedCnt);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplMain_testTranslateTplFile,2,0) {(void*) boxptr_TplMain_testTranslateTplFile,0}};
 #define boxvar_TplMain_testTranslateTplFile MMC_REFSTRUCTLIT(boxvar_lit_TplMain_testTranslateTplFile)
-DLLExport
+DLLDirection
 modelica_integer omc_TplMain_testStringEquality(threadData_t *threadData, modelica_string _inStringReturned, modelica_string _inStringShouldBe, modelica_boolean _inPrintResult, modelica_boolean _inPrintErrorBuffer, modelica_string _inTestLabel, modelica_integer _inNotPassedCnt);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplMain_testStringEquality(threadData_t *threadData, modelica_metatype _inStringReturned, modelica_metatype _inStringShouldBe, modelica_metatype _inPrintResult, modelica_metatype _inPrintErrorBuffer, modelica_metatype _inTestLabel, modelica_metatype _inNotPassedCnt);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplMain_testStringEquality,2,0) {(void*) boxptr_TplMain_testStringEquality,0}};
 #define boxvar_TplMain_testStringEquality MMC_REFSTRUCTLIT(boxvar_lit_TplMain_testStringEquality)
-DLLExport
-void omc_TplMain_translateFile(threadData_t *threadData, modelica_string _inFile);
+DLLDirection
+void omc_TplMain_translateFile(threadData_t *threadData, modelica_string _inFile, modelica_string _inOutputDir);
 #define boxptr_TplMain_translateFile omc_TplMain_translateFile
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplMain_translateFile,2,0) {(void*) boxptr_TplMain_translateFile,0}};
 #define boxvar_TplMain_translateFile MMC_REFSTRUCTLIT(boxvar_lit_TplMain_translateFile)
-DLLExport
-void omc_TplMain_main(threadData_t *threadData, modelica_string _inFile);
+DLLDirection
+void omc_TplMain_main(threadData_t *threadData, modelica_string _inFile, modelica_string _inOutputDir);
 #define boxptr_TplMain_main omc_TplMain_main
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplMain_main,2,0) {(void*) boxptr_TplMain_main,0}};
 #define boxvar_TplMain_main MMC_REFSTRUCTLIT(boxvar_lit_TplMain_main)
