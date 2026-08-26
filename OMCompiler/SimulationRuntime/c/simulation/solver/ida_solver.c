@@ -1764,7 +1764,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
 
   setContext(data, currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
-  setSundialsSparsePattern(cscPattern, jacobianNumCols(jac), Jac);
+  setSundialsSparsePattern(jac, Jac);
   evalJacobian(data, threadData, jac, NULL, SM_DATA_S(Jac), FALSE);
 
   finishSparseColPtr(Jac, cscPattern->nnz);

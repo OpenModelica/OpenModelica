@@ -872,7 +872,7 @@ static int B_nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
   /* call generic sparse Jacobian with CSC buffer "SM_DATA_S(Jac)" */
   evalJacobian(data, threadData, jacobian, NULL, SM_DATA_S(Jac), FALSE);
-  setSundialsSparsePattern(getJacobianCscPattern(jacobian), jacobianNumCols(jacobian), Jac);
+  setSundialsSparsePattern(jacobian, Jac);
 
   /* Finish sparse matrix and do a cheap check for singularity */
   finishSparseColPtr(Jac, sp->nnz);

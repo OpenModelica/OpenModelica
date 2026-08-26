@@ -333,8 +333,8 @@ static SPARSE_PATTERN* initializeSparsePattern_IRK(DATA* data)
   JACOBIAN* jacobian = getSymbolicOdeJacobian(data);
   SPARSE_PATTERN* sparsePattern_ODE = getJacobianCscPattern(jacobian);
 
-  int sizeRows = jacobianNumRows(jacobian);
-  int sizeCols = jacobianNumCols(jacobian);
+  int sizeRows = jacobian->sizeRows;
+  int sizeCols = jacobian->sizeCols;
   int nStages  = gbData->tableau->nStages;
   int nStates  = gbData->nStates;
   double* A    = gbData->tableau->A;

@@ -5977,6 +5977,7 @@ match sparsity
        * by initSymbolicOdeJacobian() based on the `-jacobian` flag. */
       {
         JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
+        // initialize adjoint Jacobian with check for error and proceed to link it to the forward Jacobian
         if (<%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac)) return 1;
         jacobian->adjointJacobian = adjJac;
         initBidirectionalRecovery(jacobian);

@@ -213,8 +213,7 @@ typedef struct JACOBIAN
                                            In that case the struct describes the transpose J^T, i.e.
                                            sizeCols == number of rows of J    (number of seeds),
                                            sizeRows == number of columns of J (number of results) and
-                                           sparsePattern is CSC of J^T (== CSR of J) with row coloring.
-                                           Use jacobianNumRows()/jacobianNumCols() to get the dimensions of J. */
+                                           sparsePattern is CSC of J^T (== CSR of J) with row coloring. */
   SPARSE_PATTERN* cscPattern;           /* Column oriented (CSC of J) view of a row evaluated Jacobian.
                                            Lazily created by getJacobianCscPattern(), owned. NULL otherwise.
                                            TODO: Is this needed? */

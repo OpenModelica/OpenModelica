@@ -272,7 +272,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     if (gbData->isExplicit) {
       JACOBIAN_METHOD jacobianMethod = getGbodeJacobianMethod(threadData, gbfData->nlsSolverMethod);
       /* GBODE always needs the forward Jacobian A for its evaluation DAG and the
-       * multi-rate path, see gbInternal_evalJacobian() and initRK_NLS_DATA_MR(). */
+       * multi-rate path so set requireForwardJacobian=TRUE. */
       jacobian = initSymbolicOdeJacobian(data, threadData, &jacobianMethod, TRUE);
       if (jacobian->availability != JACOBIAN_AVAILABLE && jacobian->availability != JACOBIAN_ONLY_SPARSITY) {
         throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
@@ -293,7 +293,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
       jacobian = getSymbolicOdeJacobian(data);
     }
     if (jacobian->availability == JACOBIAN_AVAILABLE) {
-      /* The evaluation DAG is generated for the forward Jacobian A only. */
+      /* The evaluation DAG is generated for the forward Jacobian A only so get it explicitly. */
       data->callback->getDAG_JacA(data, threadData, &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]));
     }
     if (!jacobian->dag) {

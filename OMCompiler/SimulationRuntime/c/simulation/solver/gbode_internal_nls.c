@@ -1419,10 +1419,10 @@ void *gbInternalNlsAllocate(int size,
   unsigned int nls_nnz_estimate = 0;
 
   nls->nls_user_data = userData;
-  nls->size = jacobianNumRows(jacobian_ODE);
+  nls->size = jacobian_ODE->sizeRows;
   nls->jacobian_callback = (double *) malloc(jacobian_ODE->sparsePattern->nnz * sizeof(double));
   nls->ode_to_nls = (int *) malloc(jacobian_ODE->sparsePattern->nnz * sizeof(int));
-  nls->nls_diag_indices = (int *) malloc(jacobianNumRows(jacobian_ODE) * sizeof(int));
+  nls->nls_diag_indices = (int *) malloc(jacobian_ODE->sizeRows * sizeof(int));
 
   nls->tabl = tabl;
   nls->use_t_transform = (transform != NULL);
