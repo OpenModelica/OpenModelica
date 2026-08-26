@@ -151,18 +151,41 @@ pub fn format_g(v: f64, p: i32) -> String {
     if !v.is_finite() || v == 0.0 {
         return format!("{v}");
     }
-    let exp = libm::floor(libm::log10(libm::fabs(v))) as i32;
     let trim = |s: String| -> String {
         if !s.contains('.') {
             return s;
         }
         s.trim_end_matches('0').trim_end_matches('.').to_string()
     };
+    let (mut exp, mut m) = decimal_exp(v);
     if exp < -4 || exp >= p {
-        let m = trim(format!("{:.*}", (p - 1) as usize, v / libm::pow(10.0, exp as f64)));
-        return format!("{m}e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.abs());
+        let mut s = format!("{:.*}", (p - 1) as usize, m);
+        // The rounding can carry the mantissa back over ten.
+        if s.trim_start_matches('-').starts_with("10") {
+            exp += 1;
+            m /= 10.0;
+            s = format!("{:.*}", (p - 1) as usize, m);
+        }
+        return format!("{}e{}{:02}", trim(s), if exp < 0 { '-' } else { '+' }, exp.abs());
     }
     trim(format!("{:.*}", (p - 1 - exp).max(0) as usize, v))
+}
+
+/// `v`'s decimal exponent and the mantissa in `[1, 10)`. `log10` is not exactly
+/// rounded (the `libm` crate's lands an ULP off an exact power of ten, where glibc
+/// does not), so the mantissa decides the exponent rather than the other way round —
+/// otherwise `1e-06` prints as `10e-07`.
+pub(crate) fn decimal_exp(v: f64) -> (i32, f64) {
+    let mut exp = libm::floor(libm::log10(libm::fabs(v))) as i32;
+    let mut m = v / libm::pow(10.0, exp as f64);
+    if libm::fabs(m) >= 10.0 {
+        m /= 10.0;
+        exp += 1;
+    } else if libm::fabs(m) < 1.0 {
+        m *= 10.0;
+        exp -= 1;
+    }
+    (exp, m)
 }
 
 /// C's `%e`: six decimals on the mantissa, a two-digit exponent.
@@ -170,7 +193,11 @@ pub fn format_e(v: f64) -> String {
     if !v.is_finite() {
         return format!("{v}");
     }
-    let exp = if v == 0.0 { 0 } else { libm::floor(libm::log10(libm::fabs(v))) as i32 };
-    let m = v / libm::pow(10.0, exp as f64);
-    format!("{m:.6}e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.abs())
+    let (mut exp, m) = if v == 0.0 { (0, 0.0) } else { decimal_exp(v) };
+    let mut s = format!("{m:.6}");
+    if s.trim_start_matches('-').starts_with("10") {
+        exp += 1;
+        s = format!("{:.6}", m / 10.0);
+    }
+    format!("{s}e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.abs())
 }

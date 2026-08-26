@@ -36,6 +36,9 @@ pub(crate) mod extinput;
 /// `-reconcile*`, which needs a filesystem too.
 #[cfg(feature = "std")]
 pub mod datarecon;
+/// `+profiling`'s files, which need one as well.
+#[cfg(feature = "std")]
+pub mod profiling;
 pub mod optimization;
 pub(crate) mod qss;
 pub mod rtclock;
@@ -1059,6 +1062,8 @@ pub struct SimMeta {
     /// What the `-reconcile*` procedures need; `None` unless the model was
     /// translated with `--preOptModules+=dataReconciliation`.
     pub recon: Option<ReconInfo>,
+    /// `+profiling`; `None` for a model translated without it.
+    pub prof: Option<ProfInfo>,
 }
 
 /// One `input` variable. C writes the file's value both to the `start` attribute,
@@ -1073,15 +1078,69 @@ pub struct InputVar {
     pub name: String,
 }
 
+/// A source position, as C's `FILE_INFO`.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SrcInfo {
+    pub file: String,
+    pub line_start: i32,
+    pub col_start: i32,
+    pub line_end: i32,
+    pub col_end: i32,
+    pub read_only: bool,
+}
+
+/// What `+profiling` reports on (`_prof.xml` / `_prof.json`): C's `modelDataXml`
+/// functions and equations plus the `modelData` variable arrays.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ProfInfo {
+    /// C's `measure_time_flag`: 1 `blocks`, 5 `blocks+html`, 2 `all`.
+    pub level: u8,
+    /// In `modelInfo.functions` order — the clock index of function `i` is `i`.
+    pub functions: Vec<ProfFn>,
+    /// C's `modelData` variable arrays in `printModelInfo` order.
+    pub vars: Vec<ProfVar>,
+    /// Dense by equation index (`_info.json` position); index 0 is the dummy.
+    pub equations: Vec<ProfEq>,
+    /// Equation index of profile block `k` — clock `functions.len() + k`.
+    pub blocks: Vec<u32>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ProfFn {
+    pub name: String,
+    pub info: SrcInfo,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ProfVar {
+    pub id: u32,
+    pub name: String,
+    pub comment: String,
+    pub info: SrcInfo,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ProfEq {
+    pub id: u32,
+    /// The variables the equation defines (`_info.json` `defines`).
+    pub defines: Vec<String>,
+}
+
 /// [`SimMeta::nls_vars`] entry.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct NlsVars {
     pub eq_index: u32,
     pub names: Vec<String>,
     /// The tail of C's `eqn_simcode_indices` — the SimCode index of each residual
-    /// equation, in solver order, which `LOG_NLS_SVD` names its rows by. C keeps
-    /// the torn equations ahead of them and slices; only the tail is read.
+    /// equation, in solver order, which `LOG_NLS_SVD` and
+    /// `LOG_NLS_NEWTON_DIAGNOSTICS` name their rows by. C keeps the torn equations
+    /// ahead of them and slices; only the tail is read.
     pub eqns: Vec<i32>,
+    /// C's `NONLINEAR_PATTERN` counts: equations, unknowns, nonlinear entries.
+    pub pattern: [u32; 3],
+    /// In the section `LOG_NLS_NEWTON_DIAGNOSTICS` reports on (see
+    /// `newtonDiagnostics`'s caller in C's `solve_nonlinear_system`).
+    pub init_diag: bool,
 }
 
 impl SimMeta {
@@ -1320,7 +1379,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 15;
+const VERSION: u32 = 16;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1540,6 +1599,10 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
             put_str(&mut o, n);
         }
         put_u32s(&mut o, &v.eqns.iter().map(|e| *e as u32).collect::<Vec<_>>());
+        for c in v.pattern {
+            put_u32(&mut o, c);
+        }
+        o.push(v.init_diag as u8);
     }
     put_u32(&mut o, m.n_lin_systems);
     match &m.dae {
@@ -1670,6 +1733,40 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
             put_str(&mut o, &rc.model_file);
             put_str(&mut o, &rc.model_dir);
             put_str(&mut o, &rc.version);
+        }
+    }
+    fn put_info(o: &mut Vec<u8>, i: &SrcInfo) {
+        put_str(o, &i.file);
+        for v in [i.line_start, i.col_start, i.line_end, i.col_end] {
+            put_u32(o, v as u32);
+        }
+        o.push(i.read_only as u8);
+    }
+    match &m.prof {
+        None => o.push(0),
+        Some(p) => {
+            o.push(p.level);
+            put_u32(&mut o, p.functions.len() as u32);
+            for f in &p.functions {
+                put_str(&mut o, &f.name);
+                put_info(&mut o, &f.info);
+            }
+            put_u32(&mut o, p.vars.len() as u32);
+            for v in &p.vars {
+                put_u32(&mut o, v.id);
+                put_str(&mut o, &v.name);
+                put_str(&mut o, &v.comment);
+                put_info(&mut o, &v.info);
+            }
+            put_u32(&mut o, p.equations.len() as u32);
+            for e in &p.equations {
+                put_u32(&mut o, e.id);
+                put_u32(&mut o, e.defines.len() as u32);
+                for d in &e.defines {
+                    put_str(&mut o, d);
+                }
+            }
+            put_u32s(&mut o, &p.blocks);
         }
     }
     o
@@ -1968,7 +2065,9 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             names.push(r.string()?);
         }
         let eqns = r.u32s()?.into_iter().map(|v| v as i32).collect();
-        nls_vars.push(NlsVars { eq_index, names, eqns });
+        let pattern = [r.u32()?, r.u32()?, r.u32()?];
+        let init_diag = r.u8()? != 0;
+        nls_vars.push(NlsVars { eq_index, names, eqns, pattern, init_diag });
     }
     let n_lin_systems = r.u32()?;
     let dae = match r.u8()? {
@@ -2138,10 +2237,43 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             })
         }
     };
+    let mut info = |r: &mut Reader| -> core::result::Result<SrcInfo, &'static str> {
+        Ok(SrcInfo {
+            file: r.string()?,
+            line_start: r.u32()? as i32,
+            col_start: r.u32()? as i32,
+            line_end: r.u32()? as i32,
+            col_end: r.u32()? as i32,
+            read_only: r.u8()? != 0,
+        })
+    };
+    let prof = match r.u8()? {
+        0 => None,
+        level => {
+            let mut functions = Vec::new();
+            for _ in 0..r.u32()? {
+                functions.push(ProfFn { name: r.string()?, info: info(&mut r)? });
+            }
+            let mut vars = Vec::new();
+            for _ in 0..r.u32()? {
+                vars.push(ProfVar { id: r.u32()?, name: r.string()?, comment: r.string()?, info: info(&mut r)? });
+            }
+            let mut equations = Vec::new();
+            for _ in 0..r.u32()? {
+                let id = r.u32()?;
+                let mut defines = Vec::new();
+                for _ in 0..r.u32()? {
+                    defines.push(r.string()?);
+                }
+                equations.push(ProfEq { id, defines });
+            }
+            Some(ProfInfo { level, functions, vars, equations, blocks: r.u32s()? })
+        }
+    };
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, params, attr_log,
-        removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon,
+        removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon, prof,
     })
 }
 
@@ -2221,6 +2353,8 @@ mod tests {
                 eq_index: 1074,
                 names: vec!["pipe.medium.T".to_string(), "pipe.medium.p".to_string()],
                 eqns: vec![1072, 1073],
+                pattern: [2, 2, 3],
+                init_diag: true,
             }],
             n_lin_systems: 2,
             dae: Some(DaeInfo {
@@ -2305,6 +2439,13 @@ mod tests {
                 model_file: "MyModel.mo".to_string(),
                 model_dir: "/tmp".to_string(),
                 version: "v1.25.0".to_string(),
+            }),
+            prof: Some(ProfInfo {
+                level: 5,
+                functions: vec![ProfFn { name: "f".to_string(), info: SrcInfo { file: "a.mo".to_string(), line_start: 1, col_start: 2, line_end: 3, col_end: 4, read_only: true } }],
+                vars: vec![ProfVar { id: 7, name: "x".to_string(), comment: "c".to_string(), info: SrcInfo::default() }],
+                equations: vec![ProfEq { id: 0, defines: vec![] }, ProfEq { id: 1, defines: vec!["x".to_string()] }],
+                blocks: vec![1],
             }),
         }
     }

@@ -1391,6 +1391,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     // `-lv=LOG_NLS` names the iteration variables, which only the metadata has. The
     // roster is per model, so it is cleared first and pushed only when the stream is
     // on: an ordinary run carries no names.
+    let diag_on = openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::NLS_NEWTON_DIAGNOSTICS);
     if openmodelica_sim_meta::omclog::wants_nls_var_names(log_mask)
         && let Ok(set) = rt_inst.get_typed_func::<(u32, u32, u32), ()>(&mut store, "rt_nls_set_names")
     {
@@ -1410,9 +1411,35 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
             }
         }
     }
+    // `-lv=LOG_NLS_NEWTON_DIAGNOSTICS` also wants each system's equation indices
+    // and nonlinear-pattern counts.
+    if diag_on && let Ok(set) = rt_inst.get_typed_func::<(u32, u32, u32, u32, u32, u32, u32), ()>(&mut store, "rt_nls_set_diag") {
+        let free = rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free").ok();
+        wts(set.call(&mut store, (u32::MAX, 0, 0, 0, 0, 0, 0)))?;
+        for sys in &meta.nls_vars {
+            let blob: Vec<u8> = sys.eqns.iter().flat_map(|i| (*i as u32).to_le_bytes()).collect();
+            let ptr = wts(rt_alloc.call(&mut store, blob.len().max(1) as u32))?;
+            wts(memory.write(&mut store, ptr as usize, &blob))?;
+            let [ne, nv, nn] = sys.pattern;
+            wts(set.call(&mut store, (sys.eq_index, ne, nv, nn, sys.init_diag as u32, ptr, sys.eqns.len() as u32)))?;
+            if let Some(f) = &free {
+                wts(f.call(&mut store, ptr))?;
+            }
+        }
+    }
     // The driver that owns the `SimMeta` stays on the host in this build.
     if let Ok(set) = rt_inst.get_typed_func::<f64, ()>(&mut store, "rt_set_step_size") {
         wts(set.call(&mut store, meta.step_size()))?;
+    }
+    // C's `modelFilePrefix`, which names the files the solvers write.
+    if let Ok(set) = rt_inst.get_typed_func::<(u32, u32), ()>(&mut store, "rt_set_file_prefix") {
+        let bytes = meta.prefix.as_bytes();
+        let ptr = wts(rt_alloc.call(&mut store, bytes.len().max(1) as u32))?;
+        wts(memory.write(&mut store, ptr as usize, bytes))?;
+        wts(set.call(&mut store, (ptr, bytes.len() as u32)))?;
+        if let Ok(free) = rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free") {
+            wts(free.call(&mut store, ptr))?;
+        }
     }
     if bench {
         eprintln!("wasm-jit sim: compile {compile_time:?} | instantiate {inst_time:?}");
@@ -1589,6 +1616,20 @@ impl sim_driver::SimEngine for WasmtimeEngine {
             }
         }
         out
+    }
+    fn prof_row(&mut self) -> u32 {
+        self.rt_inst
+            .get_typed_func::<(), u32>(&mut self.store, "rt_prof_row")
+            .ok()
+            .and_then(|f| f.call(&mut self.store, ()).ok())
+            .unwrap_or(0)
+    }
+    fn prof_dump(&mut self) -> u32 {
+        self.rt_inst
+            .get_typed_func::<(), u32>(&mut self.store, "rt_prof_dump")
+            .ok()
+            .and_then(|f| f.call(&mut self.store, ()).ok())
+            .unwrap_or(0)
     }
     fn context_addr(&mut self) -> u32 {
         self.rt_inst

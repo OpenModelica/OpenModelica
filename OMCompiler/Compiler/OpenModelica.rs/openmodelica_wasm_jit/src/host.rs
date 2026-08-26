@@ -497,6 +497,23 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
         },
     ))?;
     wt(linker.func_wrap("env", "rt_host_now_ms", || -> f64 { openmodelica_sim_meta::driver::now_ms_host() }))?;
+    // The runtime's `files::write_file`: a solver's side file (the homotopy path
+    // CSV), written where C's executable writes it — the working directory.
+    wt(linker.func_wrap(
+        "env",
+        "rt_host_write_file",
+        |caller: wasmtime::Caller<'_, T>, name: u32, name_len: u32, data: u32, data_len: u32| {
+            let Some(memory) = sim_memory::get() else { return };
+            let bytes = memory.data(&caller);
+            let (Some(name), Some(data)) = (
+                bytes.get(name as usize..(name + name_len) as usize),
+                bytes.get(data as usize..(data + data_len) as usize),
+            ) else {
+                return;
+            };
+            let _ = std::fs::write(String::from_utf8_lossy(name).as_ref(), data);
+        },
+    ))?;
     wt(linker.func_wrap("env", "rt_host_cancel", || -> i32 { metamodelica::cancel::check_cancel() as i32 }))?;
     wt(linker.func_wrap("env", "rt_host_init_done", || openmodelica_sim_meta::driver::signal_init_done()))?;
     wt(linker.func_wrap("env", "rt_host_set_no_throw", |v: i32| set_no_throw_asserts(v != 0)))?;
@@ -700,6 +717,24 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
         ),
     );
     imports.define("env", "rt_host_now_ms", Function::new_typed(store, || -> f64 { openmodelica_sim_meta::driver::now_ms_host() }));
+    // See the wasmtime counterpart.
+    imports.define(
+        "env",
+        "rt_host_write_file",
+        Function::new_typed_with_env(
+            store,
+            &mem_env,
+            |env: wasmer::FunctionEnvMut<HostEnv>, name: u32, name_len: u32, data: u32, data_len: u32| {
+                let Some(memory) = env.data().mem.clone() else { return };
+                let mut nbuf = vec![0u8; name_len as usize];
+                let mut dbuf = vec![0u8; data_len as usize];
+                let view = memory.view(&env);
+                if view.read(name as u64, &mut nbuf).is_ok() && view.read(data as u64, &mut dbuf).is_ok() {
+                    let _ = std::fs::write(String::from_utf8_lossy(&nbuf).as_ref(), &dbuf);
+                }
+            },
+        ),
+    );
     imports.define("env", "rt_host_cancel", Function::new_typed(store, || -> i32 { metamodelica::cancel::check_cancel() as i32 }));
     imports.define("env", "rt_host_init_done", Function::new_typed(store, || openmodelica_sim_meta::driver::signal_init_done()));
     imports.define("env", "rt_host_set_no_throw", Function::new_typed(store, |v: i32| set_no_throw_asserts(v != 0)));

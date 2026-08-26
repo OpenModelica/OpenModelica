@@ -211,12 +211,15 @@ openmodelica_codegen_wasm_jit_runtime/Cargo.toml
 openmodelica_codegen_wasm_jit_runtime/build-runtime.sh
 openmodelica_codegen_wasm_jit_runtime/build.rs
 openmodelica_codegen_wasm_jit_runtime/src/delay.rs
+openmodelica_codegen_wasm_jit_runtime/src/files.rs
 openmodelica_codegen_wasm_jit_runtime/src/jacobian_analysis.rs
 openmodelica_codegen_wasm_jit_runtime/src/lib.rs
 openmodelica_codegen_wasm_jit_runtime/src/lis.rs
+openmodelica_codegen_wasm_jit_runtime/src/newton_diagnostics.rs
 openmodelica_codegen_wasm_jit_runtime/src/nls.rs
 openmodelica_codegen_wasm_jit_runtime/src/primme_svds.c
 openmodelica_codegen_wasm_jit_runtime/src/nls_c_trace.rs
+openmodelica_codegen_wasm_jit_runtime/src/prof.rs
 openmodelica_codegen_wasm_jit_runtime/src/omclog.rs
 openmodelica_codegen_wasm_jit_runtime/src/model_ctx.rs
 openmodelica_codegen_wasm_jit_runtime/src/session.rs
@@ -377,6 +380,7 @@ openmodelica_sim_meta/src/optimization/mod.rs
 openmodelica_sim_meta/src/optimization/model.rs
 openmodelica_sim_meta/src/optimization/setup.rs
 openmodelica_sim_meta/src/qss.rs
+openmodelica_sim_meta/src/profiling.rs
 openmodelica_sim_meta/src/rtclock.rs
 openmodelica_sim_meta/src/sync.rs
 openmodelica_sim_meta/src/sysstat.rs

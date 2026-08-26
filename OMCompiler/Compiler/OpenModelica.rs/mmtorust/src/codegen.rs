@@ -15055,8 +15055,8 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // diverges (`continue`/`return`), so the fallback must diverge
                 // too: a value-typed `Err(…)` would not unify with the
                 // `!`-typed arms (and the `loop` body must stay `()`/`!`).
-                if active_tail.is_some() && ctx.current_fn_fallible {
-                    ",\n        _ => return Err(\"match: no arm matched\")".to_owned()
+                if matches!(ctx.qmode, QMode::TryBlock(_)) || (active_tail.is_some() && ctx.current_fn_fallible) {
+                    format!(",\n        _ => {}", emit_diverging_fail("match: no arm matched", false, ctx))
                 } else {
                     ",\n        _ => unreachable!(\"tail-call lowered match: no arm matched\")".to_owned()
                 }
@@ -15066,8 +15066,8 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // unifies with any T) and avoids `bail!`-style return-out
                 // semantics that wouldn't typecheck in every callsite.
                 ",\n        _ => unreachable!(\"match_deref! exhaustiveness placeholder\")".to_owned()
-            } else if ctx.current_fn_fallible {
-                ",\n        _ => return Err(\"match: no arm matched\")".to_owned()
+            } else if matches!(ctx.qmode, QMode::TryBlock(_)) || ctx.current_fn_fallible {
+                format!(",\n        _ => {}", emit_diverging_fail("match: no arm matched", false, ctx))
             } else {
                 // A non-fallible function can't `bail!`; a runtime miss of a
                 // non-exhaustive match panics instead (the typical source is an

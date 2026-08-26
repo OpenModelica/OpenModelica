@@ -1055,6 +1055,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         wts(set.call(&mut store, on as u32))?;
     }
     // See the wasmtime counterpart.
+    let diag_on = openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::NLS_NEWTON_DIAGNOSTICS);
     if openmodelica_sim_meta::omclog::wants_nls_var_names(log_mask)
         && let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32, u32), ()>(&store, "rt_nls_set_names")
     {
@@ -1074,8 +1075,35 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
             }
         }
     }
+    // See the wasmtime counterpart.
+    if diag_on
+        && let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32, u32, u32, u32, u32, u32), ()>(&store, "rt_nls_set_diag")
+    {
+        let free = rt_inst.exports.get_typed_function::<u32, ()>(&store, "rt_free").ok();
+        wts(set.call(&mut store, u32::MAX, 0, 0, 0, 0, 0, 0))?;
+        for sys in &meta.nls_vars {
+            let blob: Vec<u8> = sys.eqns.iter().flat_map(|i| (*i as u32).to_le_bytes()).collect();
+            let ptr = wts(rt_alloc.call(&mut store, blob.len().max(1) as u32))?;
+            wts(memory.view(&store).write(ptr as u64, &blob))?;
+            let [ne, nv, nn] = sys.pattern;
+            wts(set.call(&mut store, sys.eq_index, ne, nv, nn, sys.init_diag as u32, ptr, sys.eqns.len() as u32))?;
+            if let Some(f) = &free {
+                wts(f.call(&mut store, ptr))?;
+            }
+        }
+    }
     if let Ok(set) = rt_inst.exports.get_typed_function::<f64, ()>(&store, "rt_set_step_size") {
         wts(set.call(&mut store, meta.step_size()))?;
+    }
+    // See the wasmtime counterpart.
+    if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32), ()>(&store, "rt_set_file_prefix") {
+        let bytes = meta.prefix.as_bytes();
+        let ptr = wts(rt_alloc.call(&mut store, bytes.len().max(1) as u32))?;
+        wts(memory.view(&store).write(ptr as u64, bytes))?;
+        wts(set.call(&mut store, ptr, bytes.len() as u32))?;
+        if let Ok(free) = rt_inst.exports.get_typed_function::<u32, ()>(&store, "rt_free") {
+            wts(free.call(&mut store, ptr))?;
+        }
     }
     if bench {
         eprintln!("wasm-jit sim: compile {compile_time:?} | instantiate {inst_time:?}");
@@ -1195,6 +1223,18 @@ impl sim_driver::SimEngine for WasmerEngine {
         let words: Vec<f64> =
             bytes.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect();
         openmodelica_sim_meta::sysstat::decode(&words)
+    }
+    fn prof_row(&mut self) -> u32 {
+        match self.rt_inst.exports.get_typed_function::<(), u32>(&self.store, "rt_prof_row") {
+            Ok(f) => f.call(&mut self.store).unwrap_or(0),
+            Err(_) => 0,
+        }
+    }
+    fn prof_dump(&mut self) -> u32 {
+        match self.rt_inst.exports.get_typed_function::<(), u32>(&self.store, "rt_prof_dump") {
+            Ok(f) => f.call(&mut self.store).unwrap_or(0),
+            Err(_) => 0,
+        }
     }
     fn context_addr(&mut self) -> u32 {
         match self.rt_inst.exports.get_typed_function::<(), u32>(&self.store, "rt_context_addr") {

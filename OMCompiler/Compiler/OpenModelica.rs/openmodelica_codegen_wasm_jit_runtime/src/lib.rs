@@ -41,6 +41,7 @@
 extern crate alloc;
 
 mod delay;
+mod files;
 // C's `jacobian_analysis.c` plus the derivative test `kinsolSolver.c` keeps: only
 // the SUNDIALS solvers call them.
 #[cfg(sundials)]
@@ -49,7 +50,9 @@ mod jacobian_analysis;
 /// inside a solve.
 #[cfg(sundials)]
 mod model_ctx;
+mod newton_diagnostics;
 mod nls;
+pub mod prof;
 mod omclog;
 pub use nls::{rt_nls_clean_history, rt_set_step_size};
 #[cfg(test)]

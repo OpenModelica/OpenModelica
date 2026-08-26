@@ -513,6 +513,15 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // Recoverable-assert hooks for a nonlinear-solver residual (see `nls.rs`).
     ("rt_nls_recovering", &[], &[WTy::I32]),
     ("rt_nls_note_assert", &[], &[]),
+    // C's `assertCommonVar` when a catcher is open: `(msg, sim_data, initial)`,
+    // non-zero when the caller must return instead of trapping.
+    ("rt_assert_common", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    // `+profiling`: C's `rt_init` / `SIM_PROF_TICK_*` / `SIM_PROF_ACC_*` /
+    // `SIM_PROF_ADD_NCALL_EQ` (see `prof.rs`).
+    ("rt_prof_init", &[WTy::I32], &[]),
+    ("rt_prof_tick", &[WTy::I32], &[]),
+    ("rt_prof_acc", &[WTy::I32], &[]),
+    ("rt_prof_add_ncall", &[WTy::I32, WTy::I32], &[]),
     // C's `throwStreamPrint` and the reporting half of its `DIVISION_SIM`.
     ("rt_throw_stream", &[WTy::I32], &[]),
     ("rt_div_sim", &[WTy::F64, WTy::F64, WTy::I32, WTy::F64, WTy::I32], &[WTy::F64]),
@@ -1383,6 +1392,28 @@ pub(crate) struct FnCtx<'a> {
 ///
 /// The maps are shared (`Arc`) with `SimVarMap`, not copied: one `SimCtx` is built
 /// per generated function and a large model has hundreds of them.
+/// `+profiling`: which clock each profiled function and equation block ticks —
+/// C's `<fn>_index` defines and `profileBlockIndex` (see `prof.rs`).
+pub(crate) struct ProfPlan {
+    /// C's `measure_time_flag`: bit 1 `blocks`, bit 2 `all`, bit 4 html.
+    pub(crate) level: u8,
+    pub(crate) n_functions: u32,
+    pub(crate) n_blocks: u32,
+    /// Mangled function name -> clock.
+    pub(crate) fn_index: HashMap<String, u32>,
+    /// Equation index -> profile block; the block's clock is `n_functions + block`.
+    pub(crate) blocks: HashMap<i32, u32>,
+}
+
+impl ProfPlan {
+    pub(crate) fn all(&self) -> bool {
+        self.level & 2 != 0
+    }
+    pub(crate) fn block_clock(&self, eq_index: i32) -> Option<u32> {
+        self.blocks.get(&eq_index).map(|b| self.n_functions + b)
+    }
+}
+
 pub(crate) struct SimCtx {
     /// wasm local index holding the `SimData` base pointer.
     pub(crate) data_local: u32,
@@ -1474,6 +1505,8 @@ pub(crate) struct SimCtx {
     /// Sub-clock block of the clocked partition being lowered — C's
     /// `baseClockIndex`/`subClockIndex`, resolved to an address. `None` outside one.
     pub(crate) sub_clock_off: Option<u32>,
+    /// `+profiling`'s clock plan; `None` for a model translated without it.
+    pub(crate) prof: Option<Arc<ProfPlan>>,
 }
 
 /// One base clock's `SimData` slots and its parameter-dependent init expressions
@@ -1537,11 +1570,12 @@ pub(crate) struct NlsJob {
 }
 
 /// Per-system solver state for `n` unknowns: a count (padded to 8), C's
-/// `lastTimeSolved`, the residual scaling carried between calls, and `HIST_DEPTH`
-/// stored solutions (time + `n`). Matches `rt_solve_nls`'s layout.
+/// `lastTimeSolved`, the residual scaling carried between calls, C's
+/// `nlsxExtrapolation`, and `HIST_DEPTH` stored solutions (time + `n`). Matches
+/// `rt_solve_nls`'s layout.
 pub(crate) fn nls_hist_bytes(n: u32) -> u32 {
     const DEPTH: u32 = 10; // = the runtime's `nls::HIST_DEPTH`
-    16 + 8 * n + DEPTH * (8 + 8 * n)
+    16 + 8 * n + 8 * n + DEPTH * (8 + 8 * n)
 }
 
 /// Model global holding the base address of the NLS extrapolation-history block
@@ -1697,7 +1731,7 @@ impl<'a> FnCtx<'a> {
         self.instrs.len()
     }
 
-    fn emit(&mut self, i: we::Instruction<'static>) {
+    pub(crate) fn emit(&mut self, i: we::Instruction<'static>) {
         // Track structured-control nesting so `break`/`continue` can compute their
         // relative branch depth. `Else` keeps the same frame; `End` closes one.
         match i {
@@ -4702,7 +4736,6 @@ fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &Arc<DAE::Exp>, d: &
     }
     ctx.emit(I::I32Eqz);
     ctx.emit(I::If(we::BlockType::Empty));
-    emit_nls_recoverable_return(ctx)?;
     let call = format!("{name}({})", dumped_exp(arg)?);
     emit_str_literal(ctx, format!("Model error: Argument of {call} {}", d.head).as_bytes())?;
     ctx.emit(I::LocalGet(t));
@@ -4713,6 +4746,22 @@ fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &Arc<DAE::Exp>, d: &
     ctx.emit(I::Call(rt_index("rt_concat")?));
     emit_str_literal(ctx, d.tail.as_bytes())?;
     ctx.emit(I::Call(rt_index("rt_concat")?));
+    let msg = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::LocalTee(msg));
+    // C's `assertCommonVar` warns and throws; a solver or the step catches the
+    // throw, so the evaluation returns instead of trapping.
+    match ctx.sim.as_ref().map(|s| s.data_local) {
+        Some(data) => ctx.emit(I::LocalGet(data)),
+        None => ctx.emit(I::I32Const(0)),
+    }
+    emit_initial_flag(ctx);
+    ctx.emit(I::Call(rt_index("rt_assert_common")?));
+    ctx.emit(I::If(we::BlockType::Empty));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(I::Return);
+    ctx.emit(I::End);
+    ctx.emit(I::LocalGet(msg));
     emit_model_error(ctx)?;
     ctx.emit(I::End);
 
@@ -8437,14 +8486,21 @@ fn compile_call(
             let w = compile_exp(ctx, a)?;
             coerce(ctx, w, p.wty());
         }
+        // C's `SIM_PROF_TICK_FN` / `SIM_PROF_ACC_FN` around a profiled call.
+        let clock = prof_fn_clock(ctx, &mangled);
+        emit_prof(ctx, clock, "rt_prof_tick")?;
         ctx.emit(we::Instruction::Call(index));
+        emit_prof(ctx, clock, "rt_prof_acc")?;
         return Ok(results);
     }
     // A call whose result is a record and which is not a generated function is a
     // record constructor `R(v1, …)` (the constructor function itself is not
     // emitted — construction is lowered inline).
     if let Ok(rty @ SigTy::Record { .. }) = sig_ty_quiet(&attr.ty) {
+        let clock = prof_fn_clock(ctx, &mangled);
+        emit_prof(ctx, clock, "rt_prof_tick")?;
         compile_record_call(ctx, &attr.ty, args)?;
+        emit_prof(ctx, clock, "rt_prof_acc")?;
         return Ok(vec![rty]);
     }
     // Otherwise it must be a (builtin) math/string function.
@@ -8473,6 +8529,21 @@ fn compile_call(
         return compile_spatial_distribution(ctx, args).map(|_| vec![SigTy::Real, SigTy::Real]);
     }
     compile_math_builtin(ctx, &name, args, attr).map(|s| vec![s])
+}
+
+/// The profiling clock of the generated function `mangled`, in a simulation with
+/// `+profiling`; C profiles every non-builtin call outside a function body.
+fn prof_fn_clock(ctx: &FnCtx, mangled: &str) -> Option<u32> {
+    ctx.sim.as_ref()?.prof.as_ref()?.fn_index.get(mangled).copied()
+}
+
+/// `rt_prof_tick(clock)` / `rt_prof_acc(clock)` / …, when there is a clock.
+pub(crate) fn emit_prof(ctx: &mut FnCtx, clock: Option<u32>, hook: &str) -> Result<()> {
+    if let Some(c) = clock {
+        ctx.emit(we::Instruction::I32Const(c as i32));
+        ctx.emit(we::Instruction::Call(rt_index(hook)?));
+    }
+    Ok(())
 }
 
 /// `(out0, out1) = spatialDistribution(index, in0, in1, x, positiveVelocity,
