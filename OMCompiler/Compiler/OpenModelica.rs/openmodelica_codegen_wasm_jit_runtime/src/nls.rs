@@ -3499,6 +3499,8 @@ pub extern "C" fn rt_solve_nls(
                 // C's `nlsx`, which `solveHomotopy` overwrites with the start point its entry
                 // phase settled on. `solveHybrd` restarts from that, not from the raw guess.
                 let mut nlsx = start.clone();
+                // The approximation a failed `solveHybrd` leaves in `nlsx` for the next one.
+                let mut best = start.clone();
                 let mut converged = false;
                 // C's `solveHomotopy` opens one `LOG_NLS_V` block over everything down to
                 // its homotopy runs.
@@ -3520,19 +3522,23 @@ pub extern "C" fn rt_solve_nls(
                     }
                 }
                 settled &= converged;
+                // C's `discreteCall` is set for an initial system too; only an event call
+                // has relations to hold, so only there does the continuity flag move.
+                let mut set_cont = |c: bool| {
+                    if saved_rel_fresh == 1 {
+                        unsafe { store_u32(rel_fresh_addr, u32::from(!c)) };
+                    }
+                };
                 // C's `solveHomotopy` on `newtonAlgorithm`'s `info == -1`.
                 if !converged {
                     stat_inc(STAT_NLS_RETRY);
-                    // C's `discreteCall` is set for an initial system too; only an event call
-                    // has relations to hold, so only there does the continuity flag move.
-                    let mut set_cont = |c: bool| {
-                        if saved_rel_fresh == 1 {
-                            unsafe { store_u32(rel_fresh_addr, u32::from(!c)) };
-                        }
-                    };
                     converged = hybrd_c(
                         n, &mut x, &nlsx, &warm, &nominal, &bounds, &t, &mut eval, &mut set_cont,
                     );
+                    if !converged {
+                        // C's "take the best approximation" at the end of `solveHybrd`.
+                        best.copy_from_slice(&x);
+                    }
                 }
                 // The rungs below are not `solveHomotopy`'s; they catch what C gives up on.
                 // `nls_accept` takes only a point at tolerance, so none can report a non-root.
@@ -3576,6 +3582,15 @@ pub extern "C" fn rt_solve_nls(
                             converged = true;
                             break;
                         }
+                    }
+                    // C's `solveNLS` `NLS_MIXED` tail: `solveHomotopy` having failed, the
+                    // whole of `solveHybrd` runs once more from the approximation it left,
+                    // every rung counted from zero again.
+                    if !converged && homotopy_solver {
+                        stat_inc(STAT_NLS_RETRY);
+                        converged = hybrd_c(
+                            n, &mut x, &best, &warm, &nominal, &bounds, &t, &mut eval, &mut set_cont,
+                        );
                     }
                 }
                 if homotopy_solver {
