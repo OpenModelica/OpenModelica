@@ -507,6 +507,9 @@ pub const ERROR_SIMULATION: i32 = 0;
 pub const ERROR_INTEGRATOR: i32 = 1;
 /// C's outer `MMC_TRY_INTERNAL(simulationJumpBuffer)`, held by [`StepRetry`].
 pub const ERROR_SIMULATION_STEP: i32 = 3;
+/// C's `handleEvents` stage: `getBestJumpBuffer` sends a model error raised here
+/// past the step's catch, so it ends the run instead of being retried.
+pub const ERROR_EVENTHANDLING: i32 = 4;
 
 /// What a region displaced (C's `saveJumpState`), so regions nest.
 #[derive(Clone, Copy, Default)]
@@ -590,8 +593,12 @@ impl StepRetry {
     }
 
     /// C's `storeOldValues`, at the end of every accepted step — where it also
-    /// clears `retry`.
+    /// clears `retry`. `simulationUpdate` runs `storePreValues` immediately before
+    /// it, so `pre(x)` of a *continuous* variable is the last accepted step's value
+    /// (`$_signNoNull($PRE.x + …)` picks a branch of a symbolically solved `abs()`
+    /// that way); the two belong together.
     fn store(&mut self, e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+        seed_pre_from_live(e, sim_data, layout)?;
         let regions = [
             (REAL_OFF, layout.real_bytes()),
             (layout.int_off, layout.n_int_alg() as usize * 4),
@@ -613,7 +620,17 @@ impl StepRetry {
         // Only a model error the region absorbed reaches C's catch; a rethrown
         // `assert()` is `MMC_THROW_INTERNAL`, which jumps past it.
         let caught = self.end(e) || self.threw;
-        if !caught || !self.stored || self.armed {
+        if !caught || !self.stored {
+            return Ok(None);
+        }
+        if self.armed {
+            // C's catch with `retry` already spent: the run ends here.
+            let t = read_f64(e, sim_data + TIME_OFF).unwrap_or(f64::NAN);
+            omclog::info(
+                omclog::STDOUT,
+                false,
+                &format!("model terminate | Simulation terminated by an assert at time: {}", format_g(t, 6)),
+            );
             return Ok(None);
         }
         self.armed = true;
@@ -1095,15 +1112,15 @@ pub(crate) fn write_time(e: &mut dyn SimEngine, sim_data: u32, t: f64) -> Result
     Ok(())
 }
 
-/// Error out if a nonlinear system raised the `nls_fail` flag during the last
-/// equation call in a context that cannot back off (initialisation, an output
-/// point, the Euler loop). The DASSL residual handles this recoverably instead.
+/// Raise the throw C's `equationNonlinear` makes when the last equation call left
+/// the `nls_fail` flag up. The step's catch retries it; a DASSL residual has
+/// already answered `IRES = -1` and never reaches here.
 pub(crate) fn check_nls(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     let failed = read_i32(e, sim_data + layout.nls_fail_off)?;
     if failed != 0 {
         init_report::set_failed_system(failed - 1);
         report_nls_failure(e, sim_data, layout);
-        return Err("CodegenWasmJit: nonlinear system did not converge");
+        return Err(ASSERT_ERR);
     }
     Ok(())
 }
@@ -3445,6 +3462,20 @@ fn fire_time_event(
     layout: &SimLayout,
     te: f64,
 ) -> Result<()> {
+    let addr = e.error_stage_addr();
+    let save = set_error_stage(e, addr, ERROR_EVENTHANDLING);
+    let r = fire_time_event_inner(e, samples, sim_data, layout, te);
+    took_error_stage(e, addr, save);
+    r
+}
+
+fn fire_time_event_inner(
+    e: &mut dyn SimEngine,
+    samples: &mut Samples,
+    sim_data: u32,
+    layout: &SimLayout,
+    te: f64,
+) -> Result<()> {
     write_time(e, sim_data, te)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
     refresh_relations(e, sim_data, layout)?;
@@ -3545,6 +3576,20 @@ pub struct EventUpdate {
 /// `EventsDriver` inlines this same sequence around its row bookkeeping.
 /// A sample due at `time` is a time event, otherwise it is a state event.
 pub fn event_update(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    samples: Option<&mut Samples>,
+    time: f64,
+) -> Result<EventUpdate> {
+    let addr = e.error_stage_addr();
+    let save = set_error_stage(e, addr, ERROR_EVENTHANDLING);
+    let r = event_update_inner(e, sim_data, layout, samples, time);
+    took_error_stage(e, addr, save);
+    r
+}
+
+fn event_update_inner(
     e: &mut dyn SimEngine,
     sim_data: u32,
     layout: &SimLayout,
@@ -3959,8 +4004,11 @@ pub fn drive(
             unreachable!("optimization::AVAILABLE is false");
         }
         // `-csvInput` moves the inputs between steps, which the in-wasm loop cannot
-        // do: it never returns until it is done.
-        if !use_events && method == "euler" && !host_driven && !csv_input_given() {
+        // do: it never returns until it is done. Nor can it retry a step a model
+        // error threw in (C's `retrySimulationStep`), which is why a model that only
+        // reached `euler` for want of states -- where the loop saves nothing anyway,
+        // there being no integration -- keeps the host driver.
+        if !use_events && method == "euler" && layout.n_states > 0 && !host_driven && !csv_input_given() {
             // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
             label = "euler-wasm";
             solver_setup(e, model, sim_data)?;
@@ -7486,6 +7534,8 @@ impl Driver for EventsDriver {
                 let eps = reached_eps(tout, stop - start);
                 let mut grid_covered = false;
                 let mut event_step = false;
+                // C's `MMC_TRY_INTERNAL(simulationJumpBuffer)` around the whole step.
+                self.retry.open(e, self.rows.len());
                 open_assert_window();
                 // Handle every event (state or sample) up to `tout`, earliest first.
                 loop {
@@ -7610,13 +7660,12 @@ impl Driver for EventsDriver {
                         break;
                     }
                 }
-                // Event handling is C's `ERROR_EVENTHANDLING`, never retried.
-                self.retry.open(e, self.rows.len());
                 if !grid_covered {
                     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                     let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
                     close_assert_window(e, sim_data).and(emitted)?;
                     if terminated(e, sim_data, layout)? {
+                        self.retry.end(e);
                         self.finished = true;
                         return Ok(Advance::Terminated);
                     }
@@ -7665,6 +7714,9 @@ impl Driver for EventsDriver {
                 self.grid_covered = false;
                 self.did_event_step = false;
             }
+            // C's `MMC_TRY_INTERNAL(simulationJumpBuffer)`: the whole step, the
+            // integration included, falls back to the last accepted point.
+            self.retry.open(e, self.rows.len());
             // C's `simulationUpdate` window: until this row's events are handled,
             // the state the model is evaluated at may still be discarded.
             open_assert_window();
@@ -7675,9 +7727,13 @@ impl Driver for EventsDriver {
                 Step::Yielded => {
                     // Resume on the same row; `mid_row` keeps `grid_covered`.
                     self.mid_row = true;
+                    self.retry.close(e)?;
                     return Ok(Advance::Running);
                 }
-                Step::Cancelled => return Ok(Advance::Cancelled),
+                Step::Cancelled => {
+                    self.retry.close(e)?;
+                    return Ok(Advance::Cancelled);
+                }
                 Step::Terminated => break Advance::Terminated,
                 // Nothing is deferred here, so `Event` never arises.
                 Step::Event { .. } => unreachable!("the output-grid driver defers no event"),
@@ -7689,8 +7745,6 @@ impl Driver for EventsDriver {
             // Row's inner loop done; the rest is bounded — next yield is a clean boundary.
             self.mid_row = false;
             self.reached = if self.grid_covered { self.core.t } else { tout };
-            // See the no-unknowns branch above.
-            self.retry.open(e, self.rows.len());
             if !self.grid_covered {
                 write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
                 did_step = true;
@@ -7722,6 +7776,7 @@ impl Driver for EventsDriver {
             self.row += 1;
         };
         self.core.nfe = ctx.nfe;
+        self.retry.end(e); // a `break` out of the region still has to leave it
         if matches!(outcome, Advance::Done | Advance::Terminated) {
             self.finished = true;
         }
