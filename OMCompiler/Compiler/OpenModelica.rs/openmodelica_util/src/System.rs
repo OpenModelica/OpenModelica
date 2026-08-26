@@ -617,7 +617,14 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
     // Spawn /bin/sh -c <command>; if outFile is non-empty, redirect both
     // stdout and stderr there. Returns the child's exit code, or -1 on
     // spawn failure.
+    use std::io::Write;
     use std::process::{Command, Stdio};
+    // C's `fflush(NULL)` around the call: the child writes to the same fd 1, so
+    // whatever `print()` left in the buffer has to be out first.
+    let flush = || {
+        let _ = std::io::stdout().flush();
+    };
+    flush();
     let mut cmd = Command::new("/bin/sh");
     cmd.arg("-c").arg(command.as_str());
     if !outFile.is_empty() {
@@ -633,10 +640,12 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
             Err(_) => return -1,
         }
     }
-    match cmd.status() {
+    let status = match cmd.status() {
         Ok(s) => s.code().unwrap_or(-1),
         Err(_) => -1,
-    }
+    };
+    flush();
+    status
 }
 
 pub fn popen(command: ArcStr) -> (ArcStr, i32) {

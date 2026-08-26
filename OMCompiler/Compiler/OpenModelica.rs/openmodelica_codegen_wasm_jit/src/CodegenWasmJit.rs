@@ -427,6 +427,7 @@ fn capture_last_sim(model: &SimModel, run: &sim_driver::RunResult, keep: &[bool]
     let params: Vec<CapturedParam> = model
         .editable_params
         .iter()
+        .filter(|p| !p.is_string)
         .map(|p| CapturedParam {
             name: p.name.clone(),
             comment: p.comment.clone(),
@@ -925,8 +926,9 @@ fn result_path(flags: &simflags::SimFlags, meta: &SimMeta, derived: &str) -> Str
 }
 
 /// Resolve each `-override=name=value` to its editable parameter's `SimData` slot.
-/// Returns `(param_overrides, start_overrides)`: plain parameters vs. state start
-/// values, applied at different points of initialization (see `run_initialization`).
+/// Returns `(param_overrides, start_overrides, string_overrides)`: plain parameters
+/// vs. state start values, applied at different points of initialization (see
+/// `run_initialization`), and the String parameters, whose value is bytes.
 ///
 /// C's `doOverride` also reports what it could not do, walking the `_init.xml`
 /// quantities in class order. The result signals are that roster in that order,
@@ -934,7 +936,7 @@ fn result_path(flags: &simflags::SimFlags, meta: &SimMeta, derived: &str) -> Str
 fn resolve_overrides(
     model: &SimModel,
     flags: &simflags::SimFlags,
-) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>) {
+) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>, Vec<(u32, String)>) {
     let raw = flags.override_raw.as_deref();
     let file = flags.override_file.as_ref();
     if let (Some(raw), Some((path, _))) = (raw, file) {
@@ -945,7 +947,7 @@ fn resolve_overrides(
     }
     if raw.is_none() && file.is_none() {
         omclog::info(omclog::SOLVER, false, "NO override given on the command line.");
-        return (Vec::new(), Vec::new());
+        return (Vec::new(), Vec::new(), Vec::new());
     }
     let given = |v: Option<&str>| v.unwrap_or("[not given]").to_string();
     omclog::info(omclog::SOLVER, false, &format!("-override={}", given(raw)));
@@ -969,10 +971,13 @@ fn resolve_overrides(
 
     let mut params = Vec::new();
     let mut starts = Vec::new();
+    let mut strings = Vec::new();
     let mut used: Vec<&str> = Vec::new();
-    // C's `singleOverride` walks the `_init.xml` quantities in class order.
-    for v in &model.result_vars {
-        let Some(&(name, val)) = map.iter().find(|(n, _)| *n == v.name) else { continue };
+    // C's `singleOverride` walks the `_init.xml` quantities in class order. The String
+    // parameters are not result signals, so they follow, as `_init.xml` has them.
+    let string_names = model.editable_params.iter().filter(|p| p.is_string).map(|p| p.name.as_str());
+    for name in model.result_vars.iter().map(|v| v.name.as_str()).chain(string_names) {
+        let Some(&(name, val)) = map.iter().find(|(n, _)| *n == name) else { continue };
         used.push(name);
         let Some(p) = model.editable_params.iter().find(|p| p.name == name) else {
             omclog::warning(
@@ -986,6 +991,10 @@ fn resolve_overrides(
             continue;
         };
         omclog::info(omclog::SOLVER, false, &format!("override {name} = {val}"));
+        if p.is_string {
+            strings.push((p.off, val.to_string()));
+            continue;
+        }
         // C warns only for the real and integer parameters (`warn_small_override`).
         let numeric_param = !p.is_start && (p.wty == WTy::F64 || !p.is_bool);
         if numeric_param && val.parse::<f64>().is_ok_and(|v| v.abs() < 1e-6) {
@@ -1011,7 +1020,7 @@ fn resolve_overrides(
         }
     }
     omclog::info(omclog::SOLVER, false, "override done!");
-    (params, starts)
+    (params, starts, strings)
 }
 
 /// Resolve `-iif=<file>` against the model's [`SimMeta::import_roster`] at `-iit`
@@ -1177,8 +1186,8 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
     sim_driver::set_result_file_reader(read_result_values);
     let (meta, experiment_log) = run_experiment(&model, &flags);
     openmodelica_wasi::wasi::start_stdout_capture();
-    let (param_ov, start_ov) = resolve_overrides(&model, &flags);
-    sim_driver::set_param_overrides(param_ov, start_ov);
+    let (param_ov, start_ov, string_ov) = resolve_overrides(&model, &flags);
+    sim_driver::set_param_overrides(param_ov, start_ov, string_ov);
     sim_driver::set_start_imports(resolve_start_imports(&meta, &flags));
     // `-abortSlowSimulation`: stop the run when chattering is detected.
     sim_driver::set_abort_slow(flags.abort_slow);
@@ -1395,8 +1404,8 @@ mod session {
             "CodegenWasmJit: unsupported output format"
         })?;
         openmodelica_wasi::wasi::start_stdout_capture();
-        let (param_ov, start_ov) = resolve_overrides(&model, &flags);
-        sim_driver::set_param_overrides(param_ov, start_ov);
+        let (param_ov, start_ov, string_ov) = resolve_overrides(&model, &flags);
+        sim_driver::set_param_overrides(param_ov, start_ov, string_ov);
         sim_driver::set_start_imports(resolve_start_imports(&meta, &flags));
         // Build the backend (instantiate, init, emit row 0). An init trap is usually
         // a failed `assert()`; the host driver routes it via `enrich_trap`.
@@ -2478,6 +2487,20 @@ fn add_resource(entries: &mut Vec<(String, Vec<u8>)>, path: &str) {
     }
 }
 
+/// Ship `dir` as the FMU's `terminalsAndIcons/`: the XML SimCode wrote and the icons
+/// the OMGraphics renderer put beside it, as the C export's `fmutmp` subtree is.
+fn add_terminals(entries: &mut Vec<(String, Vec<u8>)>, dir: &str) {
+    if dir.is_empty() {
+        return;
+    }
+    let Ok(files) = openmodelica_wasi::fs::read_dir(dir) else { return };
+    for e in files {
+        if let Ok(bytes) = openmodelica_wasi::fs::read(&format!("{}/{}", dir.trim_end_matches('/'), e.name)) {
+            entries.push((format!("terminalsAndIcons/{}", e.name), bytes));
+        }
+    }
+}
+
 /// A ZIP assembled in-process rather than by an external `zip`, deflated unless
 /// that would grow the entry.
 /// `--fmuDirectory`: the same entries as files under `path`, which then names a
@@ -2584,9 +2607,10 @@ pub fn emitMeFmu(
     _guid: ArcStr,
     model_description: ArcStr,
     extra_files: Arc<List<(ArcStr, ArcStr)>>,
+    terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, extra_files, simulation_flags_json, (FMI3_ME_ADAPTER, &[]), "ME")
+    emit_fmu(sim_code, fmu_path, model_description, extra_files, terminals_dir, simulation_flags_json, (FMI3_ME_ADAPTER, &[]), "ME")
 }
 
 /// Co-Simulation: the FMU integrates itself, so the adapter embeds the driver.
@@ -2601,9 +2625,10 @@ pub fn emitCsFmu(
     _guid: ArcStr,
     model_description: ArcStr,
     extra_files: Arc<List<(ArcStr, ArcStr)>>,
+    terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, extra_files, simulation_flags_json, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "CS")
+    emit_fmu(sim_code, fmu_path, model_description, extra_files, terminals_dir, simulation_flags_json, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "CS")
 }
 
 /// me_cs: one component exporting both interfaces (the wasm equivalent of a
@@ -2614,9 +2639,10 @@ pub fn emitMeCsFmu(
     _guid: ArcStr,
     model_description: ArcStr,
     extra_files: Arc<List<(ArcStr, ArcStr)>>,
+    terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, extra_files, simulation_flags_json, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "me_cs")
+    emit_fmu(sim_code, fmu_path, model_description, extra_files, terminals_dir, simulation_flags_json, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "me_cs")
 }
 
 /// Say that the FMU answers `fmi3GetDirectionalDerivative` when the model was
@@ -2975,6 +3001,7 @@ fn emit_fmu(
     fmu_path: ArcStr,
     model_description: ArcStr,
     extra_files: Arc<List<(ArcStr, ArcStr)>>,
+    terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
     adapter: (&[u8], &[u8]),
     kind: &str,
@@ -3019,11 +3046,11 @@ fn emit_fmu(
         let mut entries = vec![
             ("modelDescription.xml".to_string(), announce_directional_derivatives(&model_description, &model).into_bytes()),
         ];
-        // terminalsAndIcons/, documentation/ — whatever the caller rendered.
         if !bare {
             for (name, content) in lst(&extra_files) {
                 entries.push((name.to_string(), content.as_bytes().to_vec()));
             }
+            add_terminals(&mut entries, &terminals_dir);
         }
         // What the FMU was built with, where C's carries what its runtime reads.
         if !simulation_flags_json.is_empty() {
@@ -3582,6 +3609,7 @@ fn build_var_map(
     let mut editable: Vec<EditableParam> = Vec::new();
     // Collected separately: the `push_editable` closure borrows `editable`. Merged below.
     let mut start_editable: Vec<EditableParam> = Vec::new();
+    let mut string_editable: Vec<EditableParam> = Vec::new();
     let mut push_editable = |sv: &SimCodeVar::SimVar, name: &str, off: u32, wty: WTy| {
         if sv.isValueChangeable && is_result_output(sv) {
             if let Some(disp) = result_name(name) {
@@ -3593,6 +3621,7 @@ fn build_var_map(
                     wty,
                     is_start: false,
                     is_bool: is_boolean_type(&sv.type_),
+                    is_string: false,
                     enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
                 });
             }
@@ -3645,6 +3674,7 @@ fn build_var_map(
                     wty: WTy::F64,
                     is_start: true,
                     is_bool: is_boolean_type(&sv.type_),
+                    is_string: false,
                     enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
                 });
             }
@@ -3707,7 +3737,24 @@ fn build_var_map(
         insert_var(&mut map, sv, layout.str_off + (i as u32) * 4, WTy::I32, true)?;
     }
     for (k, sv) in lst(&vars.stringParamVars).enumerate() {
-        insert_var(&mut map, sv, layout.sparam_off + (k as u32) * 4, WTy::I32, true)?;
+        let off = layout.sparam_off + (k as u32) * 4;
+        insert_var(&mut map, sv, off, WTy::I32, true)?;
+        // Not a result signal, but `_init.xml` lists it and C's `-override` reaches it.
+        if sv.isValueChangeable && is_result_output(sv)
+            && let Some(disp) = result_name(&cref_display(&sv.name)?)
+        {
+            string_editable.push(EditableParam {
+                name: disp,
+                comment: sv.comment.to_string(),
+                unit: sv.unit.to_string(),
+                off,
+                wty: WTy::I32,
+                is_start: false,
+                is_bool: false,
+                is_string: true,
+                enum_names: Vec::new(),
+            });
+        }
     }
     // External objects: one i32 pointer-registry handle each. Not heap (no ARC);
     // the constructor (a parameter equation) writes the handle, the destructor
@@ -3856,6 +3903,7 @@ fn build_var_map(
 
     finalize_array_groups(&mut map)?;
     editable.extend(start_editable);
+    editable.extend(string_editable);
     Ok((map, result_vars, editable))
 }
 
@@ -4439,6 +4487,30 @@ fn ext_import_sig(sig: &ExtCallSig) -> openmodelica_wasm_jit::sig::FnSig {
 }
 
 /// `fmi_vrs`: also record the FMI value-reference table (FMU export only).
+/// One `<entry>$guard`, per the wrappers `build_sim_model` emits.
+fn build_guard_fn(target: u32) -> we::Function {
+    use we::Instruction as I;
+    let mut f = we::Function::new([(1, we::ValType::I32)]);
+    let threw = 1; // param 0 is the SimData pointer
+    f.instruction(&I::Block(we::BlockType::Empty)); // done
+    f.instruction(&I::Block(we::BlockType::Result(we::ValType::EXNREF))); // handler
+    f.instruction(&I::TryTable(we::BlockType::Empty, vec![we::Catch::OneRef { tag: 0, label: 0 }].into()));
+    f.instruction(&I::LocalGet(0));
+    f.instruction(&I::Call(target));
+    f.instruction(&I::End); // try_table
+    f.instruction(&I::I32Const(0));
+    f.instruction(&I::LocalSet(threw));
+    f.instruction(&I::Br(1)); // done
+    f.instruction(&I::End); // handler: the exception is on the stack
+    f.instruction(&I::Drop);
+    f.instruction(&I::I32Const(1));
+    f.instruction(&I::LocalSet(threw));
+    f.instruction(&I::End); // done
+    f.instruction(&I::LocalGet(threw));
+    f.instruction(&I::End);
+    f
+}
+
 fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost) -> Result<SimModel> {
     crate::CodegenWasmJitFunctions::set_record_decls(&sim_code.recordDecls)?;
     let mi = &sim_code.modelInfo;
@@ -4878,7 +4950,13 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // proposal.
     let throw_fn_type = types.len();
     types.ty().function([], []);
-    let error_tag_type = (!ext_imports.is_empty()).then_some(throw_fn_type);
+    // A host-free module also carries one: nothing outside it catches a trap, so a
+    // failed `assert()` unwinds to the entry point it fired under instead.
+    let host_free = matches!(ext_host, ExtHost::Wasm);
+    let error_tag_type = (!ext_imports.is_empty() || host_free).then_some(throw_fn_type);
+    // `<entry>$guard`'s type: (i32 SimData) -> i32, nonzero if it threw.
+    let guard_fn_type = types.len();
+    types.ty().function([we::ValType::I32], [we::ValType::I32]);
     let mut model_fn_type: Vec<u32> = Vec::with_capacity(model_fns.len());
     for f in &model_fns {
         let (_, sig) = function_signature(f)?;
@@ -4970,6 +5048,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // With a tag in the module, every `ext` call is lowered under a `try_table`
     // (tag index 0: the module imports none).
     crate::CodegenWasmJitFunctions::set_ext_error_catch(error_tag_type.map(|_| 0));
+    crate::CodegenWasmJitFunctions::set_assert_throw_tag(host_free.then_some(0));
     // Model functions first, in index order; poll for cancellation between them so
     // a long emit is interruptible like the frontend/backend upstream.
     for f in &model_fns {
@@ -5529,6 +5608,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
 
     // --- Function section (type index per body, in body order). ---
     crate::CodegenWasmJitFunctions::set_ext_error_catch(None);
+    crate::CodegenWasmJitFunctions::set_assert_throw_tag(None);
 
     let mut functions = we::FunctionSection::new();
     for ti in &model_fn_type {
@@ -5679,6 +5759,46 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         }));
     }
 
+    // `<entry>$guard`: the entry point under a `try_table` for the model-error tag, so
+    // the adapter answers a status rather than trapping — a trapped component is done.
+    let guarded: Vec<(&str, u32)> = vec![
+        ("functionParameters", eqfn.parameters),
+        ("functionInitialEquations", eqfn.initial),
+        ("functionInitStartValues", eqfn.init_start_values),
+        ("functionODE", eqfn.ode),
+        ("functionAlgebraics", eqfn.algebraics),
+        ("functionOutputs", outputs_idx),
+        ("callExternalObjectDestructors", destructors_idx),
+        ("initSample", init_sample_idx),
+        ("functionZeroCrossingsEquations", zc_equations_idx),
+        ("functionStateSetJacobians", stateset_jac_idx),
+        ("functionJacA_constantEqns", jac_a_idx),
+        ("functionJacA_column", jac_a_idx + 1),
+        ("functionInitialEquations_lambda0", init_lambda0_idx),
+        ("functionCheckAsserts", check_asserts_idx),
+        ("functionUpdateRelations", update_relations_idx),
+        ("functionStoreDelayed", store_delayed_idx),
+        ("functionInitDelay", init_delay_idx),
+        ("functionStoreSpatialDistribution", store_spatial_idx),
+        ("functionInitSpatialDistribution", init_spatial_idx),
+        ("functionUpdateBoundParameters", update_bound_params_idx),
+        ("functionUpdateBoundVariableAttributes", update_bound_attrs_idx),
+        ("functionRemovedInitialEquations", removed_init_idx),
+        ("functionInitSynchronous", sync_idx.0),
+        ("symbolicInlineSystem", sym_inline_idx),
+        ("linearJacA", linz_jac_idx),
+        ("linearJacB", linz_jac_idx + 1),
+        ("linearJacC", linz_jac_idx + 2),
+        ("linearJacD", linz_jac_idx + 3),
+    ];
+    let guard_base = import_base + bodies.len() as u32;
+    if error_tag_type.is_some() {
+        for (_, target) in &guarded {
+            functions.function(guard_fn_type);
+            bodies.push(build_guard_fn(*target));
+        }
+    }
+
     // --- Code section. ---
     let mut code = we::CodeSection::new();
     for body in &bodies {
@@ -5742,6 +5862,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         exports.export("evaluateDAEResiduals", we::ExportKind::Func, idx);
     }
     exports.export("symbolicInlineSystem", we::ExportKind::Func, sym_inline_idx);
+    if error_tag_type.is_some() {
+        for (k, (name, _)) in guarded.iter().enumerate() {
+            exports.export(&format!("{name}$guard"), we::ExportKind::Func, guard_base + k as u32);
+        }
+    }
 
     // --- Name section: without it a trap backtrace is bare function indices. The
     // unnamed remainder is the NLS callbacks, the closure thunks and `start`. ---
@@ -9746,6 +9871,9 @@ mod link_tests {
             funcs.function(4);
         }
         funcs.function(5); // om_throw_model_error
+        for _ in &one_arg {
+            funcs.function(0); // <entry>$guard: (i32)->i32, like rt_alloc's type
+        }
         m.section(&funcs);
 
         // Defined-func indices start at 1 (rt_alloc is import 0).
@@ -9765,6 +9893,11 @@ mod link_tests {
             we::ExportKind::Func,
             meta_ptr_idx + 3 + two_arg.len() as u32,
         );
+        // The adapter reaches the one-argument entry points only through their guards.
+        let guard_base = meta_ptr_idx + 4 + two_arg.len() as u32;
+        for (i, name) in one_arg.iter().enumerate() {
+            exports.export(&format!("{name}$guard"), we::ExportKind::Func, guard_base + i as u32);
+        }
         m.section(&exports);
 
         let mut code = we::CodeSection::new();
@@ -9800,6 +9933,13 @@ mod link_tests {
         throw.instruction(&I::Unreachable);
         throw.instruction(&I::End);
         code.function(&throw);
+        // Each guard: nothing threw.
+        for _ in &one_arg {
+            let mut f = we::Function::new([]);
+            f.instruction(&I::I32Const(0));
+            f.instruction(&I::End);
+            code.function(&f);
+        }
         m.section(&code);
 
         m.finish()

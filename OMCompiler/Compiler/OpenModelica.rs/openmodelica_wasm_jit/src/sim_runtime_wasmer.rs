@@ -1179,6 +1179,19 @@ impl sim_driver::SimEngine for WasmerEngine {
             let _ = f.call(&mut self.store, time);
         }
     }
+    fn set_string(&mut self, addr: u32, bytes: &[u8]) -> Result<()> {
+        let exports = &self.rt_inst.exports;
+        let str_new = wt(exports.get_typed_function::<u32, u32>(&self.store, "rt_str_new"))?;
+        let str_data = wt(exports.get_typed_function::<u32, u32>(&self.store, "rt_str_data"))?;
+        let release = wt(exports.get_typed_function::<u32, ()>(&self.store, "rt_release"))?;
+        let mut old = [0u8; 4];
+        self.read_bytes(addr, &mut old)?;
+        let obj = wt(str_new.call(&mut self.store, bytes.len() as u32))?;
+        let at = wt(str_data.call(&mut self.store, obj))?;
+        self.write_bytes(at, bytes)?;
+        self.write_bytes(addr, &obj.to_le_bytes())?;
+        wt(release.call(&mut self.store, u32::from_le_bytes(old)))
+    }
 }
 
 // ---------------------------------------------------------------------------

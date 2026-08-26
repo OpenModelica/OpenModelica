@@ -22,6 +22,9 @@ regex = "1"
 roxmltree.workspace=true
 # FMU extraction in the hand-written FMIExt.rs.
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+# The port's FMU reader, which `importFMU` reads an FMI 3.0 model description
+# with. `component` is the wasm-tools half, which nothing here looks at.
+openmodelica_fmi = { path = "../openmodelica_fmi", default-features = false }
 # Resolves the `d*_` symbols `src/Lapack.rs` declares, on every target, in place
 # of a system `liblapack.so` — so wasm (nothing to link) and Windows (no MSVC-ABI
 # LAPACK) run the same code as Linux instead of a reduced fallback.

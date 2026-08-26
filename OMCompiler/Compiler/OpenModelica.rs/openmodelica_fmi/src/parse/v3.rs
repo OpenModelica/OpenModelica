@@ -110,7 +110,10 @@ fn variables(root: Node) -> Result<Vec<Variable>> {
         v.variability = variability(
             attr(n, "variability"),
             match (ty, v.causality) {
-                (_, Causality::StructuralParameter) => Variability::Fixed,
+                // Spec: the default for a parameter of any kind is `fixed`.
+                (_, Causality::Parameter | Causality::StructuralParameter | Causality::CalculatedParameter) => {
+                    Variability::Fixed
+                }
                 (VarType::Float32 | VarType::Float64, _) => Variability::Continuous,
                 _ => Variability::Discrete,
             },
@@ -140,6 +143,10 @@ fn variables(root: Node) -> Result<Vec<Variable>> {
             .collect();
         v.start = start(n, ty);
         v.clock = (ty == VarType::Clock).then(|| clock_info(n));
+        v.binary = (ty == VarType::Binary).then(|| BinaryInfo {
+            mime_type: attr(n, "mimeType").unwrap_or("application/octet-stream").to_string(),
+            max_size: u64_attr(n, "maxSize"),
+        });
         v.aliases = children(n, "Alias")
             .filter_map(|a| {
                 Some(VariableAlias {

@@ -976,6 +976,7 @@ public function emitWasmFMU
   input Absyn.Program program;
 protected
   String guid, modelDescriptionStr, simulationFlagsJson, htmlFile, htmlContent;
+  String fmutmp, terminalsDir = "";
   list<tuple<String,String>> extraFiles = {};
   list<SimCode.FmiTerminal> terminals;
   // `--fmuDirectory`: an export for an OpenModelica importer, which reads the
@@ -996,14 +997,25 @@ algorithm
     modelDescriptionStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
       CodegenFMU3.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
     ExecStat.execStat("FMU modelDescription.xml");
-    // The same XML the C target writes into terminalsAndIcons/. FMI 3.0 only. An
-    // unzipped export carries neither this nor the documentation, so it does not
-    // render them either.
+    // terminalsAndIcons/ by the C target's route: SimCode writes the XML, then the
+    // OMGraphics renderer adds the <GraphicalRepresentation> and the icons beside it.
     if not bareExport then
+      // The C export's scratch directory; old contents would be shipped verbatim.
+      fmutmp := Util.hashFileNamePrefix(simCode.fileNamePrefix) + ".fmutmp";
+      if System.directoryExists(fmutmp) and not System.removeDirectory(fmutmp) then
+        Error.addInternalError("Failed to remove directory: " + fmutmp, sourceInfo());
+        fail();
+      end if;
+      terminalsDir := fmutmp + "/terminalsAndIcons/";
       terminals := SimCodeUtil.getFMI3Terminals(simCode);
       if not listEmpty(terminals) then
-        extraFiles := ("terminalsAndIcons/terminalsAndIcons.xml",
-                       Tpl.textString(CodegenFMU3.fmiTerminalsAndIcons(Tpl.emptyTxt, terminals))) :: extraFiles;
+        Util.createDirectoryTree(terminalsDir);
+        System.writeFile(terminalsDir + "terminalsAndIcons.xml",
+                         Tpl.textString(CodegenFMU3.fmiTerminalsAndIcons(Tpl.emptyTxt, terminals)));
+      end if;
+      CevalScriptBackend.generateFMI3GraphicalRepresentation(simCode.modelInfo.name, fmutmp, simCode.fileNamePrefix);
+      if not System.directoryExists(terminalsDir) then
+        terminalsDir := "";
       end if;
       ExecStat.execStat("FMU terminalsAndIcons.xml");
     end if;
@@ -1017,11 +1029,11 @@ algorithm
   end if;
   simulationFlagsJson := wasmFMUSimulationFlagsJson(simCode);
   if FMI.isFMIMEType(FMUType) and FMI.isFMICSType(FMUType) then
-    CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, extraFiles, simulationFlagsJson);
+    CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, extraFiles, terminalsDir, simulationFlagsJson);
   elseif FMI.isFMICSType(FMUType) then
-    CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, extraFiles, simulationFlagsJson);
+    CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, extraFiles, terminalsDir, simulationFlagsJson);
   else
-    CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, extraFiles, simulationFlagsJson);
+    CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, extraFiles, terminalsDir, simulationFlagsJson);
   end if;
   setGlobalRoot(Global.optionSimCode, NONE());
 end emitWasmFMU;

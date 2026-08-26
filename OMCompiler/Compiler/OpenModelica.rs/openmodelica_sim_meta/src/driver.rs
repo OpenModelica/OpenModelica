@@ -470,6 +470,11 @@ pub trait SimEngine {
     /// C's `RHSFinalFlag` (`dassl.c`): 0 while DASKR evaluates the residual, 1
     /// while the accepted step's outputs are evaluated, for `external "C"` to read.
     fn set_rhs_final(&mut self, _final_eval: bool) {}
+    /// Assign a runtime String holding `bytes` to the String-handle slot at `addr`,
+    /// releasing what was there. Only an `-override` of a String parameter needs it.
+    fn set_string(&mut self, _addr: u32, _bytes: &[u8]) -> Result<()> {
+        Err("CodegenWasmJit: this backend cannot set a String")
+    }
 }
 
 /// C's `EVAL_CONTEXT`, mirrored from the runtime's `nls.rs`. `unsetContext` restores
@@ -618,7 +623,7 @@ impl StepRetry {
     fn undo(&mut self, e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Option<f64>> {
         // Only a model error the region absorbed reaches C's catch; a rethrown
         // `assert()` is `MMC_THROW_INTERNAL`, which jumps past it.
-        let caught = self.end(e) || self.threw;
+        let caught = self.end(e) || self.threw || RUNTIME_ERROR.load(Ordering::Relaxed);
         if !caught || !self.stored {
             return Ok(None);
         }
@@ -1172,13 +1177,16 @@ mod overrides_store {
         use super::WTy;
         use alloc::vec::Vec;
         use core::cell::RefCell;
+        use alloc::string::String;
         std::thread_local! {
             static PARAM: RefCell<Vec<(u32, WTy, f64)>> = const { RefCell::new(Vec::new()) };
             static START: RefCell<Vec<(u32, WTy, f64)>> = const { RefCell::new(Vec::new()) };
+            static STRINGS: RefCell<Vec<(u32, String)>> = const { RefCell::new(Vec::new()) };
         }
-        pub fn set(p: Vec<(u32, WTy, f64)>, s: Vec<(u32, WTy, f64)>) {
+        pub fn set(p: Vec<(u32, WTy, f64)>, s: Vec<(u32, WTy, f64)>, t: Vec<(u32, String)>) {
             PARAM.with(|o| *o.borrow_mut() = p);
             START.with(|o| *o.borrow_mut() = s);
+            STRINGS.with(|o| *o.borrow_mut() = t);
         }
         pub fn params() -> Vec<(u32, WTy, f64)> {
             PARAM.with(|o| o.borrow().clone())
@@ -1186,19 +1194,24 @@ mod overrides_store {
         pub fn starts() -> Vec<(u32, WTy, f64)> {
             START.with(|o| o.borrow().clone())
         }
+        pub fn strings() -> Vec<(u32, String)> {
+            STRINGS.with(|o| o.borrow().clone())
+        }
     }
 
     #[cfg(not(feature = "std"))]
     mod imp {
         use super::WTy;
+        use alloc::string::String;
         use alloc::vec::Vec;
         use core::cell::UnsafeCell;
         // The in-wasm runtime is single-threaded, so a plain cell is sound.
-        struct Store(UnsafeCell<(Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>)>);
+        type Groups = (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>, Vec<(u32, String)>);
+        struct Store(UnsafeCell<Groups>);
         unsafe impl Sync for Store {}
-        static STORE: Store = Store(UnsafeCell::new((Vec::new(), Vec::new())));
-        pub fn set(p: Vec<(u32, WTy, f64)>, s: Vec<(u32, WTy, f64)>) {
-            unsafe { *STORE.0.get() = (p, s) };
+        static STORE: Store = Store(UnsafeCell::new((Vec::new(), Vec::new(), Vec::new())));
+        pub fn set(p: Vec<(u32, WTy, f64)>, s: Vec<(u32, WTy, f64)>, t: Vec<(u32, String)>) {
+            unsafe { *STORE.0.get() = (p, s, t) };
         }
         pub fn params() -> Vec<(u32, WTy, f64)> {
             unsafe { (*STORE.0.get()).0.clone() }
@@ -1206,21 +1219,30 @@ mod overrides_store {
         pub fn starts() -> Vec<(u32, WTy, f64)> {
             unsafe { (*STORE.0.get()).1.clone() }
         }
+        pub fn strings() -> Vec<(u32, String)> {
+            unsafe { (*STORE.0.get()).2.clone() }
+        }
     }
 
-    pub use imp::{params, set, starts};
+    pub use imp::{params, set, starts, strings};
 }
 
 /// Set the parameter/start overrides applied by the next [`run_initialization`].
-pub fn set_param_overrides(params: Vec<(u32, WTy, f64)>, starts: Vec<(u32, WTy, f64)>) {
-    overrides_store::set(params, starts);
+/// `strings` are the String parameters among them, whose value is bytes rather
+/// than a number.
+pub fn set_param_overrides(
+    params: Vec<(u32, WTy, f64)>,
+    starts: Vec<(u32, WTy, f64)>,
+    strings: Vec<(u32, String)>,
+) {
+    overrides_store::set(params, starts, strings);
 }
 
-/// The overrides last set, as `(params, starts)`. A host driving the in-wasm
-/// session must forward these into it: the runtime module has its own copy of this
-/// store, which `set_param_overrides` on the host side does not reach.
-pub fn param_overrides() -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>) {
-    (overrides_store::params(), overrides_store::starts())
+/// The overrides last set, as `(params, starts, strings)`. A host driving the
+/// in-wasm session must forward these into it: the runtime module has its own copy
+/// of this store, which [`set_param_overrides`] on the host side does not reach.
+pub fn param_overrides() -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>, Vec<(u32, String)>) {
+    (overrides_store::params(), overrides_store::starts(), overrides_store::strings())
 }
 
 fn apply_overrides(e: &mut dyn SimEngine, sim_data: u32, overrides: &[(u32, WTy, f64)]) -> Result<()> {
@@ -1234,7 +1256,11 @@ fn apply_overrides(e: &mut dyn SimEngine, sim_data: u32, overrides: &[(u32, WTy,
 }
 
 fn apply_param_overrides(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
-    apply_overrides(e, sim_data, &overrides_store::params())
+    apply_overrides(e, sim_data, &overrides_store::params())?;
+    for (off, value) in overrides_store::strings() {
+        e.set_string(sim_data + off, value.as_bytes())?;
+    }
+    Ok(())
 }
 
 /// What `-iif` found, by index into the concatenated [`SimMeta::import_roster`]. The
@@ -1420,7 +1446,9 @@ pub const ASSERT_ERR: &str = "assertion failed";
 /// cancelled run or a raw wasm trap is not. Which buffer it targeted, and so whether
 /// the step is retried, is [`StepRetry::undo`]'s.
 pub fn is_model_throw(err: &str) -> bool {
-    err == ASSERT_ERR
+    // An external function's `ModelicaError` unwinds as a bare engine trap; only the
+    // flag it left says the solver may retake the step.
+    err == ASSERT_ERR || RUNTIME_ERROR.load(Ordering::Relaxed)
 }
 /// C's `initialization()` returning nonzero: the reason is already logged.
 pub const INIT_FAILED_ERR: &str = "initialization failed";
@@ -2510,6 +2538,15 @@ pub(crate) fn terminated(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -
     Ok(true)
 }
 
+/// `printInfo`'s bracketed position, then the message.
+static TERMINATE_REPORTER: AtomicUsize = AtomicUsize::new(0);
+
+/// Report `terminate()` this way instead of as the driver's own notice — C's
+/// `omc_terminate`, which `fmi2Instantiate` swaps for `omc_terminate_fmi`.
+pub fn set_terminate_reporter(f: fn(&str, &str)) {
+    TERMINATE_REPORTER.store(f as usize, Ordering::Relaxed);
+}
+
 /// C's `checkSimulationTerminated` notice: the source position raw (`printInfo`,
 /// outside the message system) then the message, once per run. `at_init` picks
 /// the wording C uses before the main loop.
@@ -2520,10 +2557,16 @@ fn report_terminate(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, at_ini
     let w = |i: u32| read_i32(e, sim_data + layout.term_info_off + i * 4);
     let msg = read_rt_string(e, w(0)?)?;
     let file = read_rt_string(e, w(1)?)?;
+    let ro = if w(6)? != 0 { "readonly" } else { "writable" };
+    let pos = format!("[{file}:{}:{}-{}:{}:{ro}]", w(2)?, w(3)?, w(4)?, w(5)?);
+    let p = TERMINATE_REPORTER.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn(&str, &str) = unsafe { core::mem::transmute(p) };
+        f(&pos, &msg);
+        return Ok(());
+    }
     if !file.is_empty() {
-        let ro = if w(6)? != 0 { "readonly" } else { "writable" };
-        log_line(crate::omclog::STDOUT, crate::omclog::INFO,
-                 &format!("[{file}:{}:{}-{}:{}:{ro}]\n", w(2)?, w(3)?, w(4)?, w(5)?));
+        log_line(crate::omclog::STDOUT, crate::omclog::INFO, &format!("{pos}\n"));
     }
     let time = format_f(read_f64(e, sim_data + TIME_OFF)?);
     let at = if at_init { format!("at initialization (time {time})") } else { format!("at time {time}") };
