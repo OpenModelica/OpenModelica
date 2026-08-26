@@ -9,13 +9,13 @@
 extern "C" {
 #endif
 #define boxptr_HashTableStringToProgram_dummyStr omc_HashTableStringToProgram_dummyStr
-DLLExport
+DLLDirection
 modelica_metatype omc_HashTableStringToProgram_emptyHashTableSized(threadData_t *threadData, modelica_integer _size);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_HashTableStringToProgram_emptyHashTableSized(threadData_t *threadData, modelica_metatype _size);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_HashTableStringToProgram_emptyHashTableSized,2,0) {(void*) boxptr_HashTableStringToProgram_emptyHashTableSized,0}};
 #define boxvar_HashTableStringToProgram_emptyHashTableSized MMC_REFSTRUCTLIT(boxvar_lit_HashTableStringToProgram_emptyHashTableSized)
-DLLExport
+DLLDirection
 modelica_metatype omc_HashTableStringToProgram_emptyHashTable(threadData_t *threadData);
 #define boxptr_HashTableStringToProgram_emptyHashTable omc_HashTableStringToProgram_emptyHashTable
 static const MMC_DEFSTRUCTLIT(boxvar_lit_HashTableStringToProgram_emptyHashTable,2,0) {(void*) boxptr_HashTableStringToProgram_emptyHashTable,0}};

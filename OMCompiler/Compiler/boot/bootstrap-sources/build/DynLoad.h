@@ -10,9 +10,9 @@ extern "C" {
 #endif
 extern struct record_description SourceInfo_SOURCEINFO__desc;
 extern modelica_metatype DynLoad_executeFunction(OpenModelica_threadData_ThreadData*, int /*_handle*/, modelica_metatype /*_values*/, int /*_debug*/);
-DLLExport
+DLLDirection
 modelica_metatype omc_DynLoad_executeFunction(threadData_t *threadData, modelica_integer _handle, modelica_metatype _values, modelica_boolean _debug);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_DynLoad_executeFunction(threadData_t *threadData, modelica_metatype _handle, modelica_metatype _values, modelica_metatype _debug);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_DynLoad_executeFunction,2,0) {(void*) boxptr_DynLoad_executeFunction,0}};
 #define boxvar_DynLoad_executeFunction MMC_REFSTRUCTLIT(boxvar_lit_DynLoad_executeFunction)

@@ -29,8 +29,7 @@ extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
 extern struct record_description ErrorTypes_Severity_ERROR__desc;
 extern struct record_description FCore_Status_VAR__TYPED__desc;
 extern struct record_description FCore_Status_VAR__UNTYPED__desc;
-extern struct record_description Gettext_TranslatableContent_gettext__desc;
-extern struct record_description GlobalScript_Variable_IVAR__desc;
+extern struct record_description InteractiveTypes_Variable_IVAR__desc;
 extern struct record_description SCode_Attributes_ATTR__desc;
 extern struct record_description SCode_Comment_COMMENT__desc;
 extern struct record_description SCode_ConnectorType_POTENTIAL__desc;
@@ -48,83 +47,128 @@ extern struct record_description SymbolTable_SYMBOLTABLE__desc;
 #define boxptr_SymbolTable_updateUriMapping omc_SymbolTable_updateUriMapping
 #define boxptr_SymbolTable_addVarToEnv omc_SymbolTable_addVarToEnv
 #define boxptr_SymbolTable_addVarsToEnv omc_SymbolTable_addVarsToEnv
-DLLExport
+DLLDirection
 modelica_metatype omc_SymbolTable_buildEnv(threadData_t *threadData);
 #define boxptr_SymbolTable_buildEnv omc_SymbolTable_buildEnv
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_buildEnv,2,0) {(void*) boxptr_SymbolTable_buildEnv,0}};
 #define boxvar_SymbolTable_buildEnv MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_buildEnv)
 #define boxptr_SymbolTable_addVarToVarList omc_SymbolTable_addVarToVarList
-DLLExport
+DLLDirection
+modelica_boolean omc_SymbolTable_restoreAST(threadData_t *threadData, modelica_integer _id);
+DLLDirection
+modelica_metatype boxptr_SymbolTable_restoreAST(threadData_t *threadData, modelica_metatype _id);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_restoreAST,2,0) {(void*) boxptr_SymbolTable_restoreAST,0}};
+#define boxvar_SymbolTable_restoreAST MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_restoreAST)
+DLLDirection
+modelica_integer omc_SymbolTable_storeAST(threadData_t *threadData);
+DLLDirection
+modelica_metatype boxptr_SymbolTable_storeAST(threadData_t *threadData);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_storeAST,2,0) {(void*) boxptr_SymbolTable_storeAST,0}};
+#define boxvar_SymbolTable_storeAST MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_storeAST)
+DLLDirection
 void omc_SymbolTable_deleteVarFirstEntry(threadData_t *threadData, modelica_string _inIdent);
 #define boxptr_SymbolTable_deleteVarFirstEntry omc_SymbolTable_deleteVarFirstEntry
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_deleteVarFirstEntry,2,0) {(void*) boxptr_SymbolTable_deleteVarFirstEntry,0}};
 #define boxvar_SymbolTable_deleteVarFirstEntry MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_deleteVarFirstEntry)
-DLLExport
+DLLDirection
 void omc_SymbolTable_appendVar(threadData_t *threadData, modelica_string _inIdent, modelica_metatype _inValue, modelica_metatype _inType);
 #define boxptr_SymbolTable_appendVar omc_SymbolTable_appendVar
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_appendVar,2,0) {(void*) boxptr_SymbolTable_appendVar,0}};
 #define boxvar_SymbolTable_appendVar MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_appendVar)
-DLLExport
+DLLDirection
 void omc_SymbolTable_addVar(threadData_t *threadData, modelica_metatype _inCref, modelica_metatype _inValue, modelica_metatype _inEnv);
 #define boxptr_SymbolTable_addVar omc_SymbolTable_addVar
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_addVar,2,0) {(void*) boxptr_SymbolTable_addVar,0}};
 #define boxvar_SymbolTable_addVar MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_addVar)
-DLLExport
+DLLDirection
 void omc_SymbolTable_addVars(threadData_t *threadData, modelica_metatype _inCref, modelica_metatype _inValues, modelica_metatype _inEnv);
 #define boxptr_SymbolTable_addVars omc_SymbolTable_addVars
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_addVars,2,0) {(void*) boxptr_SymbolTable_addVars,0}};
 #define boxvar_SymbolTable_addVars MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_addVars)
-DLLExport
+DLLDirection
 void omc_SymbolTable_setVars(threadData_t *threadData, modelica_metatype _vars);
 #define boxptr_SymbolTable_setVars omc_SymbolTable_setVars
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_setVars,2,0) {(void*) boxptr_SymbolTable_setVars,0}};
 #define boxvar_SymbolTable_setVars MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_setVars)
-DLLExport
+DLLDirection
 modelica_metatype omc_SymbolTable_getVars(threadData_t *threadData);
 #define boxptr_SymbolTable_getVars omc_SymbolTable_getVars
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_getVars,2,0) {(void*) boxptr_SymbolTable_getVars,0}};
 #define boxvar_SymbolTable_getVars MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_getVars)
-DLLExport
+DLLDirection
 void omc_SymbolTable_clearProgram(threadData_t *threadData);
 #define boxptr_SymbolTable_clearProgram omc_SymbolTable_clearProgram
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_clearProgram,2,0) {(void*) boxptr_SymbolTable_clearProgram,0}};
 #define boxvar_SymbolTable_clearProgram MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_clearProgram)
-DLLExport
+DLLDirection
 void omc_SymbolTable_clearSCode(threadData_t *threadData);
 #define boxptr_SymbolTable_clearSCode omc_SymbolTable_clearSCode
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_clearSCode,2,0) {(void*) boxptr_SymbolTable_clearSCode,0}};
 #define boxvar_SymbolTable_clearSCode MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_clearSCode)
-DLLExport
+DLLDirection
 void omc_SymbolTable_setSCode(threadData_t *threadData, modelica_metatype _ast);
 #define boxptr_SymbolTable_setSCode omc_SymbolTable_setSCode
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_setSCode,2,0) {(void*) boxptr_SymbolTable_setSCode,0}};
 #define boxvar_SymbolTable_setSCode MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_setSCode)
-DLLExport
+DLLDirection
 modelica_metatype omc_SymbolTable_getSCode(threadData_t *threadData);
 #define boxptr_SymbolTable_getSCode omc_SymbolTable_getSCode
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_getSCode,2,0) {(void*) boxptr_SymbolTable_getSCode,0}};
 #define boxvar_SymbolTable_getSCode MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_getSCode)
-DLLExport
+DLLDirection
+void omc_SymbolTable_setAbsynDeleted(threadData_t *threadData, modelica_metatype _ast, modelica_metatype _path);
+#define boxptr_SymbolTable_setAbsynDeleted omc_SymbolTable_setAbsynDeleted
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_setAbsynDeleted,2,0) {(void*) boxptr_SymbolTable_setAbsynDeleted,0}};
+#define boxvar_SymbolTable_setAbsynDeleted MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_setAbsynDeleted)
+#define boxptr_SymbolTable_setAbsynLoaded_update__element omc_SymbolTable_setAbsynLoaded_update__element
+DLLDirection
+void omc_SymbolTable_setAbsynLoaded(threadData_t *threadData, modelica_metatype _ast, modelica_metatype _loaded);
+#define boxptr_SymbolTable_setAbsynLoaded omc_SymbolTable_setAbsynLoaded
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_setAbsynLoaded,2,0) {(void*) boxptr_SymbolTable_setAbsynLoaded,0}};
+#define boxvar_SymbolTable_setAbsynLoaded MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_setAbsynLoaded)
+#define boxptr_SymbolTable_setAbsynClass_update__element omc_SymbolTable_setAbsynClass_update__element
+DLLDirection
+void omc_SymbolTable_setAbsynClass(threadData_t *threadData, modelica_metatype _ast, modelica_metatype _cls, modelica_metatype _path);
+#define boxptr_SymbolTable_setAbsynClass omc_SymbolTable_setAbsynClass
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_setAbsynClass,2,0) {(void*) boxptr_SymbolTable_setAbsynClass,0}};
+#define boxvar_SymbolTable_setAbsynClass MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_setAbsynClass)
+#define boxptr_SymbolTable_setAbsynElement_update__element omc_SymbolTable_setAbsynElement_update__element
+DLLDirection
+void omc_SymbolTable_setAbsynElement(threadData_t *threadData, modelica_metatype _ast, modelica_metatype _element, modelica_metatype _path);
+#define boxptr_SymbolTable_setAbsynElement omc_SymbolTable_setAbsynElement
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_setAbsynElement,2,0) {(void*) boxptr_SymbolTable_setAbsynElement,0}};
+#define boxvar_SymbolTable_setAbsynElement MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_setAbsynElement)
+DLLDirection
 void omc_SymbolTable_setAbsyn(threadData_t *threadData, modelica_metatype _ast);
 #define boxptr_SymbolTable_setAbsyn omc_SymbolTable_setAbsyn
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_setAbsyn,2,0) {(void*) boxptr_SymbolTable_setAbsyn,0}};
 #define boxvar_SymbolTable_setAbsyn MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_setAbsyn)
-DLLExport
+DLLDirection
 modelica_metatype omc_SymbolTable_getAbsyn(threadData_t *threadData);
 #define boxptr_SymbolTable_getAbsyn omc_SymbolTable_getAbsyn
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_getAbsyn,2,0) {(void*) boxptr_SymbolTable_getAbsyn,0}};
 #define boxvar_SymbolTable_getAbsyn MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_getAbsyn)
-DLLExport
+DLLDirection
 modelica_metatype omc_SymbolTable_get(threadData_t *threadData);
 #define boxptr_SymbolTable_get omc_SymbolTable_get
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_get,2,0) {(void*) boxptr_SymbolTable_get,0}};
 #define boxvar_SymbolTable_get MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_get)
-DLLExport
+DLLDirection
 void omc_SymbolTable_update(threadData_t *threadData, modelica_metatype _table);
 #define boxptr_SymbolTable_update omc_SymbolTable_update
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_update,2,0) {(void*) boxptr_SymbolTable_update,0}};
 #define boxvar_SymbolTable_update MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_update)
-DLLExport
+DLLDirection
+void omc_SymbolTable_applyConnectorFlags(threadData_t *threadData, modelica_metatype _flags);
+#define boxptr_SymbolTable_applyConnectorFlags omc_SymbolTable_applyConnectorFlags
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_applyConnectorFlags,2,0) {(void*) boxptr_SymbolTable_applyConnectorFlags,0}};
+#define boxvar_SymbolTable_applyConnectorFlags MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_applyConnectorFlags)
+DLLDirection
+modelica_metatype omc_SymbolTable_currentConnectorFlags(threadData_t *threadData);
+#define boxptr_SymbolTable_currentConnectorFlags omc_SymbolTable_currentConnectorFlags
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_currentConnectorFlags,2,0) {(void*) boxptr_SymbolTable_currentConnectorFlags,0}};
+#define boxvar_SymbolTable_currentConnectorFlags MMC_REFSTRUCTLIT(boxvar_lit_SymbolTable_currentConnectorFlags)
+DLLDirection
 void omc_SymbolTable_reset(threadData_t *threadData);
 #define boxptr_SymbolTable_reset omc_SymbolTable_reset
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SymbolTable_reset,2,0) {(void*) boxptr_SymbolTable_reset,0}};
