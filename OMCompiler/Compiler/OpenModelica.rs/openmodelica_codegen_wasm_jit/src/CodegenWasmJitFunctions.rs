@@ -357,7 +357,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // The element area itself, for an `external "C"` array argument.
     ("rt_array_data", &[WTy::I32], &[WTy::I32]),
     // The out-of-range arm of the inlined element-address computation.
-    ("rt_elem_ptr_oob", &[], &[WTy::I32]),
+    ("rt_elem_ptr_oob", &[WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_array_release", &[WTy::I32], &[]),
     // Value-semantics copy (for whole-array assignment from a variable source).
     ("rt_array_copy", &[WTy::I32], &[WTy::I32]),
@@ -1569,6 +1569,8 @@ pub(crate) struct ArrayGroup {
     pub(crate) base_off: u32,
     /// Element value type (`F64` for Real, `I32` for Integer/Boolean).
     pub(crate) wty: WTy,
+    /// The elements are heap handles (String), so a read borrows and must retain.
+    pub(crate) heap: bool,
     /// Array dimension sizes (row-major, outermost first).
     pub(crate) dims: Vec<u32>,
     /// Product of `dims` (number of scalar elements).
@@ -1600,6 +1602,8 @@ impl ArrayGroup {
 #[derive(Clone)]
 pub(crate) struct ScatterGroup {
     pub(crate) wty: WTy,
+    /// See [`ArrayGroup::heap`].
+    pub(crate) heap: bool,
     pub(crate) dims: Vec<u32>,
     /// `SimData` byte offset and alias negation of each element, row-major.
     pub(crate) elems: Vec<(u32, Neg)>,
@@ -3462,7 +3466,7 @@ fn keep_call_result(ctx: &mut FnCtx, results: &[SigTy], want: usize) -> Result<W
 fn store_fresh_into_tuple_target(ctx: &mut FnCtx, target: &DAE::Exp, sty: &SigTy, vt: u32) -> Result<()> {
     use DAE::Exp as E;
     match target {
-        E::CREF { componentRef, .. } => {
+        E::CREF { componentRef, ty } => {
             // `_` output: discard (release a heap value).
             if let DAE::ComponentRef::WILD = &**componentRef {
                 if let Some(release_fn) = sty.release_fn() {
@@ -3471,7 +3475,20 @@ fn store_fresh_into_tuple_target(ctx: &mut FnCtx, target: &DAE::Exp, sty: &SigTy
                 }
                 return Ok(());
             }
-            store_fresh_into_cref(ctx, componentRef, sty.wty(), vt)
+            // An `Integer` output can land in a `Real` target with no cast in the
+            // statement (`Modelica.Math.Vectors.interpolate`'s `iNew`); C stores
+            // through the target's own type, so convert to it here.
+            let dst = sig_ty_quiet(ty).map(|s| s.wty()).unwrap_or_else(|_| sty.wty());
+            let vt = if dst == sty.wty() {
+                vt
+            } else {
+                let t = ctx.alloc_temp(dst);
+                ctx.emit(we::Instruction::LocalGet(vt));
+                coerce(ctx, sty.wty(), dst);
+                ctx.emit(we::Instruction::LocalSet(t));
+                t
+            };
+            store_fresh_into_cref(ctx, componentRef, dst, vt)
         }
         // Alias elimination replaces a record-valued target by its components, as a
         // constructor call or a `RECORD` (C's `tupleReturnVariableUpdates`).
@@ -3676,6 +3693,12 @@ fn record_fields(ty: &DAE::Type) -> Result<Option<Vec<RecField>>> {
     let mut out = Vec::with_capacity(declared.len());
     for (name, fty) in declared {
         let var = vars.iter().find(|v| v.name == name);
+        // A `[:,:]` field has its shape only at the use site, which is where C
+        // reads it (`var_lst |> v => constVarOrDaeExp(v, ...)`).
+        let fty = match var {
+            Some(v) if type_array_dims(&fty).iter().any(|d| matches!(&**d, DAE::Dimension::DIM_UNKNOWN)) => v.ty.clone(),
+            _ => fty,
+        };
         out.push(RecField {
             sig: sig_ty(&fty)?,
             default: var.and_then(|v| record_field_default(v)),
@@ -4787,6 +4810,19 @@ fn compile_loop_body(
     Ok(())
 }
 
+/// Modelica scopes a loop or reduction iterator to its body, and the name may
+/// shadow one the enclosing scope already binds: put that binding back.
+fn restore_local(ctx: &mut FnCtx, name: &str, prev: Option<(u32, SigTy)>) {
+    match prev {
+        Some(v) => {
+            ctx.locals.insert(name.to_string(), v);
+        }
+        None => {
+            ctx.locals.remove(name);
+        }
+    }
+}
+
 /// Lower a `for iter in range loop ...` statement. An Integer (or enumeration)
 /// scalar `start:stop` / `start:step:stop` range uses an efficient counter loop
 /// (no allocation); any other iterable — an array variable, an array literal, a
@@ -4819,7 +4855,7 @@ fn compile_for_int_range(
     };
     // Allocate the iterator local and stop/step locals.
     let it = ctx.alloc_temp(WTy::I32);
-    ctx.locals.insert(iter.to_string(), (it, SigTy::Int));
+    let prev = ctx.locals.insert(iter.to_string(), (it, SigTy::Int));
     let stop_l = ctx.alloc_temp(WTy::I32);
     let step_l = ctx.alloc_temp(WTy::I32);
 
@@ -4854,6 +4890,7 @@ fn compile_for_int_range(
     ctx.emit(we::Instruction::Br(0));
     ctx.emit(we::Instruction::End); // loop
     ctx.emit(we::Instruction::End); // block
+    restore_local(ctx, iter, prev);
     Ok(())
 }
 
@@ -4892,7 +4929,7 @@ fn compile_for_array(
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::LocalSet(k));
     let it = ctx.alloc_temp(elem.wty());
-    ctx.locals.insert(iter.to_string(), (it, elem.clone()));
+    let prev = ctx.locals.insert(iter.to_string(), (it, elem.clone()));
     if elem.is_heap() {
         ctx.borrowed_locals.push(it);
     }
@@ -4920,6 +4957,7 @@ fn compile_for_array(
     ctx.emit(we::Instruction::End); // loop
     ctx.emit(we::Instruction::End); // block
     release_temp_array(ctx, arr_t)?;
+    restore_local(ctx, iter, prev);
     Ok(())
 }
 
@@ -5113,6 +5151,8 @@ fn emit_red_thread(
     body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
+    let saved: Vec<(String, Option<(u32, SigTy)>)> =
+        iters.iter().map(|i| (i.id.to_string(), ctx.locals.get(i.id.as_str()).cloned())).collect();
     let mut binds = Vec::with_capacity(iters.len());
     for iter in iters {
         binds.push(bind_thread_iter(ctx, iter)?);
@@ -5166,6 +5206,9 @@ fn emit_red_thread(
         if let ThreadIter::Array { arr, .. } = b {
             release_temp_array(ctx, *arr)?;
         }
+    }
+    for (name, prev) in saved {
+        restore_local(ctx, &name, prev);
     }
     Ok(())
 }
@@ -5248,6 +5291,7 @@ fn emit_red_nest(
     let DAE::Exp::RANGE { start, step, stop, .. } = &*iter.exp else {
         return emit_red_nest_array(ctx, iter, rest, body);
     };
+    let prev = ctx.locals.get(iter.id.as_str()).cloned();
     let (it, step_l, stop_l) = emit_range_iter(ctx, &iter.id, start, step, stop)?;
     ctx.emit(we::Instruction::Block(we::BlockType::Empty));
     ctx.emit(we::Instruction::Loop(we::BlockType::Empty));
@@ -5261,6 +5305,7 @@ fn emit_red_nest(
     ctx.emit(we::Instruction::Br(0));
     ctx.emit(we::Instruction::End); // loop
     ctx.emit(we::Instruction::End); // block
+    restore_local(ctx, &iter.id, prev);
     Ok(())
 }
 
@@ -5287,7 +5332,7 @@ fn emit_red_nest_array(
     ctx.emit(we::Instruction::I32Const(1));
     ctx.emit(we::Instruction::LocalSet(k));
     let it = ctx.alloc_temp(elem.wty());
-    ctx.locals.insert(iter.id.to_string(), (it, elem.clone()));
+    let prev = ctx.locals.insert(iter.id.to_string(), (it, elem.clone()));
     if elem.is_heap() {
         ctx.borrowed_locals.push(it);
     }
@@ -5311,7 +5356,9 @@ fn emit_red_nest_array(
     ctx.emit(we::Instruction::Br(0));
     ctx.emit(we::Instruction::End); // loop
     ctx.emit(we::Instruction::End); // block
-    release_temp_array(ctx, arr)
+    release_temp_array(ctx, arr)?;
+    restore_local(ctx, &iter.id, prev);
+    Ok(())
 }
 
 /// The inner levels of [`emit_red_nest`], run under this iterator's `guardExp`.
@@ -5739,6 +5786,20 @@ fn sim_pre_is_stored(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
             Ok(sim.array_groups.contains_key(&base) || sim.scatter_groups.contains_key(&base))
         }
         None => Ok(false),
+    }
+}
+
+/// [`sim_pre_is_stored`] for an assignment *target*: a whole-array `$PRE.x := …`
+/// keeps the prefix in C where its right-hand side drops it, so the write must
+/// land on the pre-value mirror and not on the live array.
+fn sim_pre_is_stored_lhs(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
+    if sim_pre_is_stored(ctx, cref)? {
+        return Ok(true);
+    }
+    let sim = ctx.sim()?;
+    match sim_cref_key(cref) {
+        Ok(key) => Ok(sim.array_groups.contains_key(&key) || sim.scatter_groups.contains_key(&key)),
+        Err(_) => Ok(false),
     }
 }
 
@@ -6323,10 +6384,13 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
                     WTy::F64 => ctx.emit(we::Instruction::F64Load(mem_arg(0, 3))),
                     WTy::I32 => ctx.emit(we::Instruction::I32Load(mem_arg(0, 2))),
                 }
+                emit_retain_top(ctx, group.heap)?;
                 return Ok(Some(wty));
             }
             if let Some(group) = ctx.sim()?.scatter_groups.get(&base).filter(|g| g.dims.len() == sub_exps.len()).cloned() {
-                return emit_sim_scatter_elem(ctx, &group, &sub_exps, false).map(Some);
+                let wty = emit_sim_scatter_elem(ctx, &group, &sub_exps, false)?;
+                emit_retain_top(ctx, group.heap)?;
+                return Ok(Some(wty));
             }
         }
     }
@@ -6372,6 +6436,9 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
             // A whole record model variable: gather its scalar field slots into a
             // fresh runtime record object.
             if try_emit_sim_record_gather(ctx, cref)? {
+                return Ok(Some(WTy::I32));
+            }
+            if try_emit_empty_sim_array(ctx, cref)? {
                 return Ok(Some(WTy::I32));
             }
             crate::CodegenWasmJit::record_error(format!(
@@ -6449,7 +6516,7 @@ fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef, rhs: RhsSo
         }
         // `$PRE.x := e` targets x's pre-slot when one is registered; otherwise
         // (no pre-slot, e.g. a parameter) fall back to the live slot.
-        if ident.as_str() == "$PRE" && !sim_pre_is_stored(ctx, cref)? {
+        if ident.as_str() == "$PRE" && !sim_pre_is_stored_lhs(ctx, cref)? {
             return compile_sim_cref_assign(ctx, componentRef, rhs);
         }
     }
@@ -6587,7 +6654,7 @@ pub(crate) fn sim_const_store(
         if ident.as_str() == "$START" {
             return sim_const_store(ctx, componentRef, exp);
         }
-        if ident.as_str() == "$PRE" && !sim_pre_is_stored(ctx, cref)? {
+        if ident.as_str() == "$PRE" && !sim_pre_is_stored_lhs(ctx, cref)? {
             return sim_const_store(ctx, componentRef, exp);
         }
     }
@@ -6737,6 +6804,46 @@ fn emit_sim_array_gather(ctx: &mut FnCtx, group: &ArrayGroup) -> Result<()> {
     Ok(())
 }
 
+/// Retain the heap handle on top of the stack, leaving it there: a slot read
+/// borrows, and the consuming operation releases what it is given.
+fn emit_retain_top(ctx: &mut FnCtx, heap: bool) -> Result<()> {
+    if !heap {
+        return Ok(());
+    }
+    let t = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalTee(t));
+    ctx.emit(we::Instruction::LocalGet(t));
+    ctx.emit(we::Instruction::Call(rt_index("rt_retain")?));
+    Ok(())
+}
+
+/// An array with a zero dimension scalarizes to nothing, so no slot range holds
+/// it and no `SimVar` names it: build it from the declared shape alone, as C's
+/// `hasZeroDimension` arm of `daeExpCrefRhs` does.
+fn try_emit_empty_sim_array(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
+    let ty = cref_leaf_value_type(cref)?;
+    let dims = type_array_dims(&ty);
+    if !dims.iter().any(|d| dim_is_zero(d)) {
+        return Ok(false);
+    }
+    let SigTy::Array { elem, .. } = sig_ty(&ty)? else { return Ok(false) };
+    let obj = ctx.alloc_temp(WTy::I32);
+    emit_array_alloc(ctx, obj, &elem, &dims)?;
+    ctx.emit(we::Instruction::LocalGet(obj));
+    Ok(true)
+}
+
+/// C's `Expression.hasZeroDimension` for one dimension: a size known to be zero.
+/// An unknown (`:`) dimension is not one — it says nothing about the shape.
+fn dim_is_zero(dim: &DAE::Dimension) -> bool {
+    match dim {
+        DAE::Dimension::DIM_INTEGER { integer } => *integer == 0,
+        DAE::Dimension::DIM_ENUM { size, .. } => *size == 0,
+        DAE::Dimension::DIM_EXP { exp } => matches!(&**exp, DAE::Exp::ICONST { integer: 0 }),
+        _ => false,
+    }
+}
+
 /// [`emit_sim_array_gather`] for a constant array: nothing to copy from, each
 /// element is its own literal.
 fn emit_const_array(ctx: &mut FnCtx, key: &str) -> Result<()> {
@@ -6853,6 +6960,9 @@ fn emit_sim_array_scatter(ctx: &mut FnCtx, group: &ArrayGroup, rhs: RhsSource) -
         return Err("CodegenWasmJit: whole-array assignment rhs is not an array handle");
     }
     ctx.emit(we::Instruction::LocalSet(h));
+    // A String array's slots own their handles: drop what they held before the
+    // copy overwrites them.
+    emit_slot_range_refcount(ctx, group, "rt_release")?;
     // memory.copy(dst = SimData + base_off, src = rhs data, len = total * stride).
     ctx.emit(we::Instruction::LocalGet(data));
     ctx.emit(we::Instruction::I32Const(group.base_off as i32));
@@ -6862,9 +6972,45 @@ fn emit_sim_array_scatter(ctx: &mut FnCtx, group: &ArrayGroup, rhs: RhsSource) -
     ctx.emit(we::Instruction::Call(rt_index("rt_array_elem_ptr")?));
     ctx.emit(we::Instruction::I32Const((group.total * stride) as i32));
     ctx.emit(we::Instruction::MemoryCopy { src_mem: 0, dst_mem: 0 });
+    // …and take one on what it handed over, since the release below frees the
+    // rhs array's own references to them.
+    emit_slot_range_refcount(ctx, group, "rt_retain")?;
     // Consume the rhs reference (we copied out the element data, not the handle).
     ctx.emit(we::Instruction::LocalGet(h));
     ctx.emit(we::Instruction::Call(rt_index("rt_array_release")?));
+    Ok(())
+}
+
+/// Call `f` on every slot of a heap-element array group; nothing for a value type.
+fn emit_slot_range_refcount(ctx: &mut FnCtx, group: &ArrayGroup, f: &str) -> Result<()> {
+    use we::Instruction as I;
+    if !group.heap {
+        return Ok(());
+    }
+    let data = ctx.sim()?.data_local;
+    let i = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(i));
+    ctx.emit(I::Block(we::BlockType::Empty));
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(i));
+    ctx.emit(I::I32Const(group.total as i32));
+    ctx.emit(I::I32GeU);
+    ctx.emit(I::BrIf(1));
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::LocalGet(i));
+    ctx.emit(I::I32Const(4));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Load(mem_arg(group.base_off, 2)));
+    ctx.emit(I::Call(rt_index(f)?));
+    ctx.emit(I::LocalGet(i));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(i));
+    ctx.emit(I::Br(0));
+    ctx.emit(I::End);
+    ctx.emit(I::End);
     Ok(())
 }
 
@@ -9285,6 +9431,8 @@ fn emit_elem_ptr(ctx: &mut FnCtx, elem: &SigTy) -> Result<()> {
     ctx.emit(I::I32GtS);
     ctx.emit(I::I32Or);
     ctx.emit(I::If(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(ot));
+    ctx.emit(I::LocalGet(it));
     ctx.emit(I::Call(rt_index("rt_elem_ptr_oob")?));
     ctx.emit(I::Br(1));
     ctx.emit(I::End);

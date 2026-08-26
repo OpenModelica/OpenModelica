@@ -3795,6 +3795,7 @@ fn build_var_map(
                 off: slot.off,
                 wty: slot.wty,
                 neg: slot.negate,
+                heap: slot.heap,
             });
         }
         if let (Some(name), Some(kind)) = (
@@ -3843,6 +3844,7 @@ fn build_var_map(
                         off: layout.pre_slot_off(e.off)?,
                         wty: e.wty,
                         neg: e.neg,
+                        heap: e.heap,
                     })
                 })
                 .collect();
@@ -3870,6 +3872,7 @@ fn insert_var(map: &mut SimVarMap, sv: &SimCodeVar::SimVar, off: u32, wty: WTy, 
             off,
             wty,
             neg: Neg::None,
+            heap,
         });
     }
     Ok(())
@@ -3937,6 +3940,7 @@ struct AccElem {
     off: u32,
     wty: WTy,
     neg: Neg,
+    heap: bool,
 }
 
 /// The name with every subscript stripped, the subscripts outermost-first, and
@@ -4039,7 +4043,8 @@ fn finalize_array_groups(map: &mut SimVarMap) -> Result<()> {
             continue; // not all elements present (e.g. a sub-slice is its own variable)
         }
         let wty = first.wty;
-        if elems.iter().any(|e| e.wty != wty) {
+        let heap = first.heap;
+        if elems.iter().any(|e| e.wty != wty || e.heap != heap) {
             continue; // mixed element storage types: not a uniform array
         }
         // Row-major element table. `total == elems.len()` only rules out a hole if
@@ -4060,12 +4065,12 @@ fn finalize_array_groups(map: &mut SimVarMap) -> Result<()> {
         });
         if !contiguous {
             Arc::make_mut(&mut map.scatter_groups)
-                .insert(base, ScatterGroup { wty, dims, elems: table });
+                .insert(base, ScatterGroup { wty, heap, dims, elems: table });
             continue;
         }
         let key_pieces = first.pieces.clone();
         Arc::make_mut(&mut map.array_groups)
-            .insert(base, ArrayGroup { base_off, wty, dims, total, key_pieces });
+            .insert(base, ArrayGroup { base_off, wty, heap, dims, total, key_pieces });
     }
     finalize_const_groups(map)
 }
