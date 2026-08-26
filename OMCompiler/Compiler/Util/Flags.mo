@@ -837,7 +837,7 @@ constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(36, "locale",
   "Override the locale from the environment.");
 constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(37, "defaultOCLDevice",
   SOME("o"), EXTERNAL(), INT_FLAG(0), NONE(),
-  "Sets the default OpenCL device to be used for parallel execution.");
+  "Sets the default OpenCL device to be used for parallel execution. 0 (the\n   default) picks a suitable device automatically.");
 constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(38, "maxTraversals",
   NONE(), EXTERNAL(), INT_FLAG(2),NONE(),
   "Maximal traversals to find simple equations in the acausal system.");
