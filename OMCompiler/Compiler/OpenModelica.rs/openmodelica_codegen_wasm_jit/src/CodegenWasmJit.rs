@@ -4746,15 +4746,27 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     // nonlinear systems) and consumed by the equation-function builders below. ---
     let param_eqs = flatten_eqs(&sim_code.parameterEquations);
     let initial_eqs = flatten_eqs(&sim_code.initialEquations);
-    let mut computed_params = assigned_cref_keys(&param_eqs);
-    computed_params.extend(assigned_cref_keys(&initial_eqs));
+    let mut computed_params = assigned_cref_keys(&eqs_with_nested(&param_eqs));
+    computed_params.extend(assigned_cref_keys(&eqs_with_nested(&initial_eqs)));
     let param_bindings = collect_param_bindings(vars, &computed_params);
     // When the model has `when`-equations, the discrete update (when-bodies with
     // edge detection) must run each step between the condition and output
     // equations. `allEquations` is the full solved list in that order, so it is
     // used as the per-step function (in place of `algebraicEquations`), and
     // pre-values are saved after each step so the next step's edge test sees them.
-    let algebraic_eqs = if has_when { all_eqs } else { flatten_eqs_ll(&sim_code.algebraicEquations) };
+    // C's `functionODE` and `functionDAE` both open with `functionLocalKnownVars`
+    // (`--preOptModules+=removeLocalKnownVars` moves the equations that depend only
+    // on states and inputs there); empty unless that module ran.
+    let with_local_known = |eqs: Vec<Arc<SimCode::SimEqSystem>>| -> Vec<Arc<SimCode::SimEqSystem>> {
+        if local_known_eqs.is_empty() {
+            return eqs;
+        }
+        let mut out = local_known_eqs.clone();
+        out.extend(eqs);
+        out
+    };
+    let algebraic_eqs =
+        with_local_known(if has_when { all_eqs } else { flatten_eqs_ll(&sim_code.algebraicEquations) });
     let output_eqs = if has_when { flatten_eqs_ll(&sim_code.algebraicEquations) } else { Vec::new() };
     // pre := live regions, appended to the per-step (algebraic) function when the
     // model has `when`-equations (see `sim_save_pre_values`).
@@ -4769,7 +4781,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     };
     let lambda0_eqs = flatten_eqs(&sim_code.initialEquations_lambda0);
     let assert_eqs = flatten_eqs(&sim_code.algorithmAndEquationAsserts);
-    let ode_eqs = flatten_eqs_ll(&sim_code.odeEquations);
+    let ode_eqs = with_local_known(flatten_eqs_ll(&sim_code.odeEquations));
     let zc_eqs = flatten_eqs(&sim_code.equationsForZeroCrossings);
     let inline_eqs = flatten_eqs(&sim_code.inlineEquations);
     // Register every nonlinear system with the runtime solver `rt_solve_nls`
