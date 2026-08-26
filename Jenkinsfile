@@ -5,7 +5,6 @@ def shouldWeBuildEnterpriseLinux
 def shouldWeBuildFedora
 def shouldWeEnableMacOSCMakeBuild
 def shouldWeBuildWindows
-def shouldWeDisableAllCMakeBuilds
 def shouldWeRunTests
 def shouldWeRunRustTests
 
@@ -76,9 +75,6 @@ pipeline {
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
             }
-          }
-          environment {
-            QTDIR = "/usr/lib/qt4"
           }
           options {
             retry(count: 2, conditions: [nonresumable()])
@@ -729,7 +725,12 @@ pipeline {
 
         stage('18 testsuite-clang-parmod') {
           agent {
-            label 'linux'
+            // Intel only: ParModelica compiles its OpenCL kernels through the node's ICD,
+            // which on AMD is PoCL. Jammy's PoCL 1.8 (LLVM 14) cannot name a Zen CPU it
+            // does not know and falls back to the target CPU 'generic', which LLVM
+            // rejects; the POCL_LLVM_CPU_NAME override only exists in later PoCL. Lifting
+            // this needs both the build and the tests on a newer image (Ubunut 26.04 or newer).
+            label 'linux-intel-x64'
           }
           when {
             beforeAgent true
@@ -741,10 +742,7 @@ pipeline {
           steps {
             script {
               // No runtest.db cache necessary; the tests run in serial and do not load libraries!
-              // 26.04 rather than the usual 22.04: ParModelica needs PoCL to compile the
-              // OpenCL kernels, and only 26.04's PoCL 6.0 is built against an LLVM new
-              // enough (19+) to recognise recent CPUs.
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04', '') {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04', '') {
                 common.partestParmod()
               }
             }
