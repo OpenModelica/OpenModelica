@@ -239,14 +239,28 @@ function logModelOutput(prefix) {
 // Phase breakdown of the last `runResumable`, reported back with the snapshot.
 let lastPhases = null;
 
-// The run's simflags: `-override=` plus the solver selectors the page picked.
-// They are read at `omc_sim_start`, not baked into the build, so a re-simulate
-// honours a change without recompiling; an empty selection is left out.
+// The run's simflags: the experiment, `-override=` and the solver selectors the
+// page picked. They are read at `omc_sim_start`, not baked into the build, so a
+// re-simulate honours a change without recompiling; an empty selection is left
+// out. `-stepSize` travels with `-stopTime` because C's `read_experiment` reads
+// start/stop without it as "recompute for 500 intervals", and warns.
 function simflagsFor(a) {
   const sel = a.solvers || {};
   const flags = Object.keys(sel).filter((k) => sel[k]).map((k) => `-${k}=${sel[k]}`);
+  if (a.method) flags.push(`-s=${a.method}`);
+  if (a.stopTime) {
+    const intervals = Math.max(1, Math.round(a.intervals || 500));
+    flags.push(`-stopTime=${a.stopTime}`, `-stepSize=${(a.stopTime - startTimeOf(a.name)) / intervals}`);
+  }
+  if (a.tolerance) flags.push(`-tolerance=${a.tolerance}`);
   if (a.override) flags.push(a.override);
   return flags.join(' ');
+}
+
+// The model's own startTime, which the page never edits.
+function startTimeOf(name) {
+  const n = (omc_eval(`getSimulationOptions(${name})`).match(/-?[0-9][0-9.eE+-]*/g) || []).map(Number);
+  return Number.isFinite(n[0]) ? n[0] : 0;
 }
 
 // The settings a run used, to seed the dialog: the explicit ones the page sent, or
@@ -360,19 +374,17 @@ self.onmessage = async (ev) => {
         break;
       }
       case 'simulate': {
-        // buildModel (translate + JIT, bakes the settings) then runResumable (a
-        // cancellable chunked run + `.mat`). Omitted args use the experiment annotation.
-        const opts = [];
-        if (a.stopTime) opts.push(`stopTime=${a.stopTime}`);
-        if (a.intervals) opts.push(`numberOfIntervals=${a.intervals}`);
-        if (a.tolerance) opts.push(`tolerance=${a.tolerance}`);
-        if (a.method) opts.push(`method="${a.method}"`);
+        // translateModelFMU (translate + JIT) then runResumable (a cancellable
+        // chunked run + `.mat`). The kernel it lowers is the very module an Export
+        // FMU links its adapter onto, so pressing Export costs a link and an XML
+        // render rather than a second translation. The experiment travels in the
+        // simflags rather than being baked in, so changing it needs no rebuild.
         const _tb = performance.now();
-        const built = (await evalWithDownloads(`buildModel(${a.name}${opts.length ? ',' + opts.join(',') : ''})`, status)).trim();
+        const built = (await evalWithDownloads(
+          `translateModelFMU(${a.name}, version="3.0", fmuType="me_cs", platforms={"wasm"})`, status)).trim();
         const buildMs = performance.now() - _tb;
-        // buildModel → {"<prefix>","<initfile>"}; an empty first element means it failed.
-        if (!/^\{\s*"[^"]/.test(built)) return reply(simError('Build failed.'));
-        logCompilerMessages('buildModel ' + a.name);
+        if (built !== 'true') return reply(simError('Build failed.'));
+        logCompilerMessages('translateModelFMU ' + a.name);
         const _ts = performance.now();
         const st = await runResumable(a.name, simflagsFor(a), status);
         const simMs = performance.now() - _ts;
@@ -434,6 +446,9 @@ self.onmessage = async (ev) => {
         // writing <name>.fmu into the VFS; read it back and hand the bytes to the
         // page to download. No server, no external toolchain. fmuType is me / cs /
         // me_cs; method is the embedded Co-Simulation solver.
+        // The compile step's translation is still in memory, so this renders the
+        // metadata and links an adapter onto that kernel — except for a pure
+        // Co-Simulation export, whose preOptModules differ (see the dialog's hint).
         status('Exporting FMU…');
         clearCancel();   // discard a cancel that raced in before this export
         const fmuType = a.fmuType || 'me';

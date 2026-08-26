@@ -569,6 +569,8 @@ name = "openmodelica_fmi3_wasm"
 version = "0.1.0"
 dependencies = [
  "openmodelica_codegen_wasm_jit_runtime",
+ "openmodelica_mat_writer",
+ "openmodelica_plt_writer",
  "openmodelica_sim_meta",
  "wit-bindgen",
 ]
@@ -584,6 +586,13 @@ dependencies = [
 [[package]]
 name = "openmodelica_mat_writer"
 version = "0.1.0"
+
+[[package]]
+name = "openmodelica_plt_writer"
+version = "0.1.0"
+dependencies = [
+ "libm",
+]
 
 [[package]]
 name = "openmodelica_sim_meta"

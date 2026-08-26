@@ -110,6 +110,14 @@ pub(crate) mod optimization;
 #[path = "CodegenWasmJit/datarecon.rs"]
 pub(crate) mod datarecon;
 
+#[cfg(all(feature = "artifact", not(target_arch = "wasm32")))]
+#[path = "CodegenWasmJit/artifact.rs"]
+pub(crate) mod artifact;
+
+#[cfg(all(feature = "artifact", feature = "jit", not(target_arch = "wasm32")))]
+#[path = "CodegenWasmJit/dylink_fmi.rs"]
+pub(crate) mod dylink_fmi;
+
 /// Iterate a MetaModelica `List` (which is `IntoIterator` by reference, not via
 /// an `.iter()` method).
 pub(crate) fn lst<T: Clone>(l: &Arc<List<T>>) -> impl Iterator<Item = &T> {
@@ -286,6 +294,21 @@ fn sys_stats_section(s: &SolveStats, nonlinear: bool) -> String {
 fn sim_models() -> &'static Mutex<HashMap<String, Arc<SimModel>>> {
     static MODELS: OnceLock<Mutex<HashMap<String, Arc<SimModel>>>> = OnceLock::new();
     MODELS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// A model kernel a wasm FMU can be built around. Only kernels an export can
+/// actually use are kept, so finding one is the whole test.
+struct FmuKernel {
+    model: Arc<SimModel>,
+    /// Reaches the kernel's embedded metadata, so a different one cannot reuse it.
+    method: String,
+}
+
+/// Kept by [`translateFmu`] so the export that follows links this kernel rather
+/// than lowering it again. Keyed by file-name prefix.
+fn fmu_kernels() -> &'static Mutex<HashMap<String, Arc<FmuKernel>>> {
+    static KERNELS: OnceLock<Mutex<HashMap<String, Arc<FmuKernel>>>> = OnceLock::new();
+    KERNELS.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
 /// One captured result signal: its name/description and the resolved value over
@@ -542,6 +565,13 @@ fn init_success_line() -> String {
 const RUN_CHECKPOINT: ArcStr = arcstr::literal!("wasm-jit simulation run");
 
 pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcStr) -> i32 {
+    // `resimulateExecutable` may name an exported wasm artifact instead of a model
+    // this session translated; then the run happens inside it (or through its FMI
+    // interfaces) rather than in the JIT engine.
+    #[cfg(all(feature = "artifact", not(target_arch = "wasm32")))]
+    if let Some(path) = artifact::locate(&fileNamePrefix) {
+        return run_artifact(&path, &fileNamePrefix, &resultFile, &simflags);
+    }
     openmodelica_error::ErrorExt::setCheckpoint(RUN_CHECKPOINT);
     let (res, init_output, sim_output, post_output) = run_simulation_inner(&fileNamePrefix, &resultFile, &simflags);
     openmodelica_error::ErrorExt::rollBack(RUN_CHECKPOINT);
@@ -584,6 +614,27 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
         Ok(()) => 0,
         Err(_) => 1,
     }
+}
+
+/// Simulate an exported wasm artifact. The three faces (`-s fmi3:me[:solver]`,
+/// `-s fmi3:cs`, and the artifact's own simulation runtime otherwise) all report
+/// themselves through `<prefix>.log`, as a run of a translated model does.
+#[cfg(all(feature = "artifact", not(target_arch = "wasm32")))]
+fn run_artifact(path: &std::path::Path, prefix: &str, result_file: &str, simflags: &str) -> i32 {
+    let (face, rest) = match artifact::select_face(simflags) {
+        Ok(v) => v,
+        Err(e) => {
+            let _ = write_output(&format!("{prefix}.log"), format!("LOG_ERROR         | error   | {e}\n").as_bytes());
+            return 1;
+        }
+    };
+    let (res, mut log) = artifact::run(path, face, result_file, &rest);
+    match &res {
+        Ok(()) => log.push_str("LOG_SUCCESS       | info    | The simulation finished successfully.\n"),
+        Err(e) => log.push_str(&format!("LOG_ERROR         | error   | {e}\n")),
+    }
+    let _ = write_output(&format!("{prefix}.log"), log.as_bytes());
+    if res.is_ok() { 0 } else { 1 }
 }
 
 /// `CodegenWasmJit.finishCompile`: force the model's wasm modules to finish
@@ -2420,6 +2471,32 @@ fn add_resource(entries: &mut Vec<(String, Vec<u8>)>, path: &str) {
 
 /// A ZIP assembled in-process rather than by an external `zip`, deflated unless
 /// that would grow the entry.
+/// `--fmuDirectory`: the same entries as files under `path`, which then names a
+/// directory rather than a zip. A stale export of the same name is removed first,
+/// so what is there is what this run wrote.
+fn write_directory(path: &str, entries: &[(String, Vec<u8>)]) -> Result<()> {
+    let root = std::path::Path::new(path);
+    if root.is_dir() {
+        let _ = std::fs::remove_dir_all(root);
+    } else {
+        let _ = std::fs::remove_file(root);
+    }
+    for (name, bytes) in entries {
+        let out = root.join(name);
+        if let Some(parent) = out.parent()
+            && std::fs::create_dir_all(parent).is_err()
+        {
+            record_error(format!("CodegenWasmJit: cannot create {}", parent.display()));
+            return Err("CodegenWasmJit: cannot write the FMU directory");
+        }
+        if write_output(&out.to_string_lossy(), bytes).is_err() {
+            record_error(format!("CodegenWasmJit: cannot write {}", out.display()));
+            return Err("CodegenWasmJit: cannot write the FMU directory");
+        }
+    }
+    Ok(())
+}
+
 fn zip_archive(entries: &[(String, Vec<u8>)]) -> Vec<u8> {
     let mut out = Vec::new();
     let mut central = Vec::new();
@@ -2557,6 +2634,39 @@ fn fmi_version() -> String {
     if v.is_empty() { "3.0".to_string() } else { v.to_string() }
 }
 
+/// Where an unzipped export keeps the model kernel. Not `binaries/wasm32-wasip2/`,
+/// which fmi-ls-wasm defines as a *component*: this is a dylink library, and only
+/// a host that links it against the adapter can run it.
+pub(crate) const DYLINK_DIR: &str = "binaries/wasm32-om-dylink";
+
+/// What the host has to load beside the model kernel, decided here because this
+/// is where the model's `external "C"` libraries were resolved. A tiny JSON, read
+/// by `CodegenWasmJit::artifact`.
+fn artifact_manifest(model: &SimModel, sundials: bool) -> String {
+    let ext = first_external_import(&model.wasm).is_some();
+    let mut out = String::from("{\n");
+    out.push_str(&format!("  \"externalC\": {ext},\n"));
+    out.push_str(&format!("  \"lapack\": {},\n", needs_lapack(&model.wasm, &model.ext_libs)));
+    out.push_str(&format!("  \"sundials\": {sundials},\n"));
+    out.push_str(&format!("  \"extLibraries\": {}\n", model.ext_libs.len()));
+    out.push_str("}\n");
+    out
+}
+
+/// `--fmuDirectory`: write the export as an unzipped directory holding only what
+/// an OpenModelica importer reads, rather than a portable FMU in a zip.
+fn fmu_directory() -> bool {
+    openmodelica_util::Flags::getConfigBool(openmodelica_util::Flags::FMU_DIRECTORY.clone())
+        .unwrap_or(false)
+}
+
+/// A `-d=execstat` phase, beside the `FMU modelDescription.xml` ones the
+/// MetaModelica side emits. Not a compiler notification: those reach
+/// `getErrorString()`, where a timing makes every FMU test depend on the clock.
+fn export_phase(name: &str) {
+    let _ = openmodelica_util::ExecStat::execStat(ArcStr::from(name));
+}
+
 /// The platforms `platforms={...}` named besides `"wasm"`.
 fn requested_native_platforms() -> Vec<String> {
     openmodelica_util::Flags::getConfigString(openmodelica_util::Flags::FMU_NATIVE_PLATFORMS.clone())
@@ -2571,12 +2681,79 @@ fn requested_native_platforms() -> Vec<String> {
 /// Per platform named in `platforms={...}` besides `"wasm"`: the component
 /// compiled ahead of time for it, plus the loader that serves the FMI C API from
 /// that artifact. The FMU then works with a WebAssembly-unaware importer.
+/// Compile the component for this machine and keep it, so the runs that follow
+/// the export in this session neither serialize it nor read it back.
+///
+/// An unzipped export is for this omc, so it is always compiled — and then the
+/// `.cwasm` need not be written at all unless `platforms` asked for one. A zipped
+/// export is only compiled here if it is going to carry this machine's artifact
+/// anyway. `None` if the engine refuses it; the caller then falls back to
+/// [`native_fmu::precompile`].
+#[cfg(all(feature = "artifact", not(target_arch = "wasm32")))]
+fn compile_for_host(
+    component: &[u8],
+    fmu_path: &str,
+    linked: bool,
+) -> Option<std::sync::Arc<openmodelica_fmi_driver::component::WasmArtifact>> {
+    // The unzipped form is not a component at all — the host links the model
+    // kernel against the adapter it has already compiled — so there is nothing
+    // here to compile ahead of time.
+    if linked {
+        return None;
+    }
+    let host = native_fmu::host_platform()?;
+    if !requested_native_platforms().iter().any(|n| native_fmu::lookup(n).is_some_and(|p| p.fmi == host.fmi)) {
+        return None;
+    }
+    // The resources it reads through are written after this, so the caller points
+    // it at them ([`WasmArtifact::use_resources`]) and remembers it then.
+    let _ = fmu_path;
+    Some(std::sync::Arc::new(
+        openmodelica_fmi_driver::component::WasmArtifact::compile(component, None).ok()?,
+    ))
+}
+
+#[cfg(not(all(feature = "artifact", not(target_arch = "wasm32"))))]
+fn compile_for_host(_component: &[u8], _fmu_path: &str, _linked: bool) -> Option<()> {
+    None
+}
+
+/// The `.cwasm` for `platform`: serialized out of what [`compile_for_host`] just
+/// compiled when it is this machine's, and a cross-compile otherwise.
+#[cfg(all(feature = "artifact", not(target_arch = "wasm32")))]
+fn host_cwasm(
+    host: Option<&std::sync::Arc<openmodelica_fmi_driver::component::WasmArtifact>>,
+    platform: &native_fmu::Platform,
+    component: &[u8],
+) -> Result<Vec<u8>> {
+    match host.filter(|_| native_fmu::host_platform().is_some_and(|h| h.fmi == platform.fmi)) {
+        Some(a) => a.serialize().map_err(|e| {
+            record_error(format!("CodegenWasmJit: serializing the artifact for {}: {e}", platform.fmi));
+            "CodegenWasmJit: cannot serialize the compiled artifact"
+        }),
+        None => native_fmu::precompile(component, platform),
+    }
+}
+
+#[cfg(not(all(feature = "artifact", not(target_arch = "wasm32"))))]
+fn host_cwasm(_host: Option<&()>, platform: &native_fmu::Platform, component: &[u8]) -> Result<Vec<u8>> {
+    native_fmu::precompile(component, platform)
+}
+
 fn add_native_platforms(
     entries: &mut Vec<(String, Vec<u8>)>,
     component: &[u8],
     model_id: &str,
     version: &str,
+    linked: bool,
+    #[cfg(all(feature = "artifact", not(target_arch = "wasm32")))]
+    host: Option<&std::sync::Arc<openmodelica_fmi_driver::component::WasmArtifact>>,
+    #[cfg(not(all(feature = "artifact", not(target_arch = "wasm32"))))] host: Option<&()>,
 ) -> Result<()> {
+    if linked {
+        // Nothing to precompile: see `compile_for_host`.
+        return Ok(());
+    }
     for name in requested_native_platforms() {
         let Some(platform) = native_fmu::lookup(&name) else {
             record_error(format!(
@@ -2598,7 +2775,7 @@ fn add_native_platforms(
             ));
             return Err("CodegenWasmJit: no FMU loader for the requested platform");
         };
-        let cwasm = native_fmu::precompile(component, platform)?;
+        let cwasm = host_cwasm(host, platform, component)?;
         entries.push((
             format!("binaries/{dir}/{}", native_fmu::loader_file_name(platform, model_id)),
             loader,
@@ -2655,6 +2832,133 @@ fn cad_basename(uri: &str) -> &str {
     uri.rsplit(['/', '\\']).next().unwrap_or(uri)
 }
 
+/// The integration method the export settles on, onto the settings the lowering
+/// reads. C's FMU reads `-s` from `_flags.json` at run time; this one is linked
+/// against one solver, so the flag has to reach the export.
+fn settle_fmu_method(sim_code: &mut SimCode::SimCode, simulation_flags_json: &str, kind: &str) {
+    let Some(settings) = sim_code.simulationSettingsOpt.as_mut() else { return };
+    match fmi_flag(simulation_flags_json, "s") {
+        Some(s) => settings.method = ArcStr::from(s.as_str()),
+        // A wasm FMU's embedded driver has the solvers a simulation has, so a
+        // Co-Simulation export keeps the model's own method and falls back to
+        // DASKR for one the driver cannot step to a communication point. C
+        // defaults to euler only because `fmu_read_flags.c` knows no other.
+        None if kind != "ME" && !fmu_cs_solvers().contains(&settings.method.as_str()) => {
+            settings.method = ArcStr::from("dassl")
+        }
+        None => {}
+    }
+}
+
+/// Lower the model kernel a wasm FMU is built around, and check that this omc and
+/// this `kind` can serve it. Shared linear memory across model + runtime +
+/// ModelicaExternalC, so `external "C"` calls pass real pointers rather than
+/// runtime handles — which is also why the simulation path cannot bind it.
+fn lower_fmu_kernel(sim_code: &SimCode::SimCode, kind: &str) -> Result<SimModel> {
+    let model = crate::CodegenWasmJitFunctions::with_shared_externals(|| build_sim_model(sim_code, true, ExtHost::Wasm))?;
+    if let Some(func) = first_external_import(&model.wasm) {
+        if !external_c_available() {
+            record_error(format!(
+                "CodegenWasmJit: model `{}` uses the external C function `{func}`, but this omc \
+                 was built without the PIC wasi-libc needed for external \"C\" in a host-free \
+                 wasm FMU. Rebuild with a PIC wasi-libc (set OMC_WASI_PIC_SYSROOT), or simulate \
+                 the model in the browser (`--simCodeTarget=wasm-jit`) instead.", model.model_name));
+            return Err("CodegenWasmJit: external \"C\" support not built into this omc");
+        }
+    }
+    check_fmu_method(&model, kind)?;
+    Ok(model)
+}
+
+/// A CS FMU integrates itself, so an unservable method has to fail at export
+/// rather than at the importer's first do-step. Empty is the dassl default.
+fn check_fmu_method(model: &SimModel, kind: &str) -> Result<()> {
+    if kind != "ME" && !model.method.is_empty() && !fmu_cs_solvers().contains(&model.method.as_str()) {
+        record_error(format!(
+            "CodegenWasmJit: a Co-Simulation wasm FMU cannot integrate with method=\"{}\". \
+             Available: {}.",
+            model.method,
+            fmu_cs_solvers().join(", ")
+        ));
+        return Err("CodegenWasmJit: unusable Co-Simulation integration method");
+    }
+    Ok(())
+}
+
+/// The kernel to build this FMU around: the one [`translateFmu`] left behind if it
+/// was lowered the way this export needs, and a fresh lowering otherwise.
+fn fmu_kernel(sim_code: &SimCode::SimCode, kind: &str) -> Result<Arc<SimModel>> {
+    let prefix = sim_code.fileNamePrefix.to_string();
+    let method = settled_method(sim_code);
+    let cached = fmu_kernels().lock().unwrap_or_else(|e| e.into_inner()).get(&prefix).cloned();
+    if let Some(k) = cached.filter(|k| k.method == method) {
+        check_fmu_method(&k.model, kind)?;
+        return Ok(k.model.clone());
+    }
+    let model = Arc::new(lower_fmu_kernel(sim_code, kind)?);
+    keep_fmu_kernel(&prefix, &model);
+    Ok(model)
+}
+
+/// What [`settle_fmu_method`] left on the settings.
+fn settled_method(sim_code: &SimCode::SimCode) -> String {
+    sim_code.simulationSettingsOpt.as_ref().map(|s| s.method.to_string()).unwrap_or_default()
+}
+
+fn keep_fmu_kernel(prefix: &str, model: &Arc<SimModel>) {
+    fmu_kernels().lock().unwrap_or_else(|e| e.into_inner()).insert(
+        prefix.to_string(),
+        Arc::new(FmuKernel { model: model.clone(), method: model.method.clone() }),
+    );
+}
+
+/// `CodegenWasmJit.translateFmu`: the wasm counterpart of the C target generating
+/// the FMU sources without building them. Lower the model once and keep it, both
+/// for the `buildModelFMU` that follows and as the prepared simulation model, so a
+/// run and an export share one kernel.
+pub fn translateFmu(sim_code: SimCode::SimCode, fmu_type: ArcStr, simulation_flags_json: ArcStr) -> Result<()> {
+    sync_engine_threading()?;
+    sim_runtime::start_runtime_compile();
+    let kind = fmu_kind(&fmu_type);
+    let mut sim_code = sim_code;
+    settle_fmu_method(&mut sim_code, &simulation_flags_json, kind);
+    let prefix = sim_code.fileNamePrefix.to_string();
+    let _ = openmodelica_wasi::fs::remove_file(&format!("{prefix}.wasm"));
+    let errs_before = openmodelica_util::Error::getNumErrorMessages();
+    let outcome = (|| -> Result<()> {
+        // Lowered the way the simulation path binds it, since that is what runs it.
+        // With no `external "C"` this is the FMU kernel too: shared externals
+        // change the lowering only where there are `ext` imports.
+        let model = Arc::new(build_sim_model(&sim_code, true, ExtHost::SIM)?);
+        check_fmu_method(&model, kind)?;
+        write_output(&format!("{prefix}.wasm"), &model.wasm).map_err(|_| "CodegenWasmJit: write failed")?;
+        sim_models().lock().unwrap_or_else(|e| e.into_inner()).insert(prefix.clone(), model.clone());
+        // With `external "C"` the two differ, and the export lowers its own.
+        if first_external_import(&model.wasm).is_none() {
+            keep_fmu_kernel(&prefix, &model);
+        }
+        Ok(())
+    })();
+    if let Err(e) = &outcome {
+        if openmodelica_util::Error::getNumErrorMessages() == errs_before {
+            record_error(format!(
+                "CodegenWasmJit: cannot build the FMU model kernel for `{prefix}`: {}",
+                with_engine_detail(e)
+            ));
+        }
+    }
+    outcome
+}
+
+/// `emit_fmu`'s `kind` for a `buildModelFMU(fmuType=)`.
+fn fmu_kind(fmu_type: &str) -> &'static str {
+    match fmu_type {
+        "me" => "ME",
+        "cs" => "CS",
+        _ => "me_cs",
+    }
+}
+
 /// `adapter` is `(plain, with-SUNDIALS)`; the second is picked for a method that needs
 /// CVODE/IDA and is empty for Model Exchange.
 fn emit_fmu(
@@ -2668,19 +2972,8 @@ fn emit_fmu(
 ) -> Result<()> {
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
-    // C's FMU reads `-s` from _flags.json at run time; this one is linked against
-    // one solver, so the flag has to reach the export. On the settings it reaches
-    // both the adapter choice and the metadata the driver reads.
     let mut sim_code = sim_code;
-    if let Some(settings) = sim_code.simulationSettingsOpt.as_mut() {
-        match fmi_flag(&simulation_flags_json, "s") {
-            Some(s) => settings.method = ArcStr::from(s.as_str()),
-            // C's `FMI2CS_initializeSolverData` default. The method the model was
-            // translated with is the standalone simulation's, not the FMU's.
-            None if kind != "ME" => settings.method = ArcStr::from("euler"),
-            None => {}
-        }
-    }
+    settle_fmu_method(&mut sim_code, &simulation_flags_json, kind);
     // Emitting the model takes seconds; a host that compiles the native platforms
     // out of process can spend them loading its compiler.
     if !requested_native_platforms().is_empty() {
@@ -2688,34 +2981,29 @@ fn emit_fmu(
     }
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
     let outcome = (|| -> Result<()> {
-        // Shared linear memory across model + runtime + ModelicaExternalC, so
-        // `external "C"` calls pass real pointers, not handles.
-        let model = crate::CodegenWasmJitFunctions::with_shared_externals(|| build_sim_model(&sim_code, true, ExtHost::Wasm))?;
-        if let Some(func) = first_external_import(&model.wasm) {
-            if !external_c_available() {
-                record_error(format!(
-                    "CodegenWasmJit: model `{}` uses the external C function `{func}`, but this omc \
-                     was built without the PIC wasi-libc needed for external \"C\" in a host-free \
-                     wasm FMU. Rebuild with a PIC wasi-libc (set OMC_WASI_PIC_SYSROOT), or simulate \
-                     the model in the browser (`--simCodeTarget=wasm-jit`) instead.", model.model_name));
-                return Err("CodegenWasmJit: external \"C\" support not built into this omc");
-            }
-        }
-        // A CS FMU integrates itself, so an unservable method must fail here rather
-        // than at the importer's first do-step. Empty is the dassl default.
+        let model = fmu_kernel(&sim_code, kind)?;
+        export_phase("FMU model kernel");
         let cs = kind != "ME";
-        if cs && !model.method.is_empty() && !fmu_cs_solvers().contains(&model.method.as_str()) {
-            record_error(format!(
-                "CodegenWasmJit: a Co-Simulation wasm FMU cannot integrate with method=\"{}\". \
-                 Available: {}.",
-                model.method,
-                fmu_cs_solvers().join(", ")
-            ));
-            return Err("CodegenWasmJit: unusable Co-Simulation integration method");
-        }
         let sundials = cs && fmu_needs_sundials(&model.method);
-        let component =
-            link_fmu_component(&model.wasm, if sundials { adapter.1 } else { adapter.0 }, sundials, &model.ext_libs)?;
+        // An unzipped export is for an OpenModelica importer: it holds the model
+        // description and the model kernel and nothing else, and the host links
+        // that kernel against an adapter it compiled once into
+        // `~/.openmodelica/cache`. A component would carry that megabyte itself
+        // and be compiled with it, which is nearly all of what exporting a small
+        // model used to cost. `OMC_WASM_LINKED_ARTIFACT=0` asks for one anyway.
+        let bare = fmu_directory();
+        let linked = bare && std::env::var("OMC_WASM_LINKED_ARTIFACT").as_deref() != Ok("0");
+        let component = if linked {
+            // The model kernel exactly as the ordinary simulation path runs it —
+            // not a dylink library. PIC would put its every data access behind
+            // `__memory_base` and its calls through the indirect table, in the
+            // loop that dominates a run; only the *adapter* has to be relocatable,
+            // because only the adapter is shared between models.
+            model.wasm.clone()
+        } else {
+            link_fmu_component(&model.wasm, if sundials { adapter.1 } else { adapter.0 }, sundials, &model.ext_libs)?
+        };
+        export_phase("FMU component link");
         // The modelIdentifier modelDescription.xml declares, not the class name:
         // an importer resolves `binaries/<platform>/<modelIdentifier>`.
         let model_id = model_name_prefix(&sim_code);
@@ -2723,8 +3011,10 @@ fn emit_fmu(
             ("modelDescription.xml".to_string(), announce_directional_derivatives(&model_description, &model).into_bytes()),
         ];
         // terminalsAndIcons/, documentation/ — whatever the caller rendered.
-        for (name, content) in lst(&extra_files) {
-            entries.push((name.to_string(), content.as_bytes().to_vec()));
+        if !bare {
+            for (name, content) in lst(&extra_files) {
+                entries.push((name.to_string(), content.as_bytes().to_vec()));
+            }
         }
         // What the FMU was built with, where C's carries what its runtime reads.
         if !simulation_flags_json.is_empty() {
@@ -2734,7 +3024,11 @@ fn emit_fmu(
             ));
         }
         let version = fmi_version();
-        add_native_platforms(&mut entries, &component, &model_id, &version)?;
+        // This machine's artifact, compiled once: the runs that follow in this
+        // session get the live component and never read a `.cwasm` back.
+        let host = compile_for_host(&component, &fmu_path, linked);
+        add_native_platforms(&mut entries, &component, &model_id, &version, linked, host.as_ref())?;
+        export_phase("FMU precompile");
         if version == "2.0" {
             if requested_native_platforms().is_empty() {
                 record_error(format!(
@@ -2749,6 +3043,14 @@ fn emit_fmu(
             // Not in binaries/: an FMI 2.0 FMU is not an fmi-ls-wasm one. Here so
             // a platform can still be added to it later, as the browser page does.
             entries.push((format!("resources/{model_id}.wasm"), component));
+        } else if linked {
+            // Not a component: the model kernel as a dylink library, which the host
+            // links against the adapter and libc it has already compiled.
+            entries.push((format!("{DYLINK_DIR}/{model_id}.wasm"), component));
+            entries.push(("resources/artifact.json".to_string(), artifact_manifest(&model, sundials).into_bytes()));
+            for (i, lib) in model.ext_libs.iter().enumerate() {
+                entries.push((format!("resources/ext/{i:02}.wasm"), lib.bytes.clone()));
+            }
         } else {
             entries.push((format!("binaries/wasm32-wasip2/{model_id}.wasm"), component));
         }
@@ -2775,8 +3077,27 @@ fn emit_fmu(
                 }
             }
         }
-        let fmu = zip_archive(&entries);
-        write_output(&fmu_path, &fmu).map_err(|_| "CodegenWasmJit: cannot write .fmu")?;
+        let (packed, how) = if bare {
+            write_directory(&fmu_path, &entries)?;
+            (entries.iter().map(|(_, b)| b.len()).sum::<usize>(), "unzipped")
+        } else {
+            let fmu = zip_archive(&entries);
+            let n = fmu.len();
+            write_output(&fmu_path, &fmu).map_err(|_| "CodegenWasmJit: cannot write .fmu")?;
+            (n, "zipped")
+        };
+        // Now that the files are there, hand the compiled component to the runs
+        // that follow, pointed at the resources they read through.
+        #[cfg(all(feature = "artifact", not(target_arch = "wasm32")))]
+        if let Some(a) = &host {
+            let path = std::path::Path::new(&*fmu_path);
+            let resources = path.join("resources");
+            if bare && resources.is_dir() {
+                a.use_resources(&resources);
+            }
+            artifact::remember(path, a.clone());
+        }
+        export_phase(&format!("FMU write ({} MB {how})", (packed as f64 / 1.0e6 * 10.0).round() / 10.0));
         Ok(())
     })();
     if let Err(e) = &outcome {

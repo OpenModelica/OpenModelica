@@ -98,6 +98,23 @@ algorithm
   fail();
 end emitStandalone;
 
+function translateFmu
+  " Lower the model in `simCode` to the WebAssembly kernel a wasm FMU is built
+    around and keep it in-process, without writing an FMU: the wasm counterpart of
+    the C target generating the FMU sources without building them
+    (translateModelFMU). The buildModelFMU that follows links an adapter onto this
+    kernel rather than translating the model a second time, and unless the model
+    has external \"C\" the kernel is also registered as the prepared simulation
+    model, so `simulate` runs the very module the FMU will carry. Implemented in
+    Rust. "
+  input SimCode.SimCode simCode;
+  input String fmuType "me, cs or me_cs: a pure Co-Simulation kernel embeds a different driver";
+  input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
+algorithm
+  Error.addInternalError("CodegenWasmJit.translateFmu: the wasm FMU target is only implemented in the Rust omc build", sourceInfo());
+  fail();
+end translateFmu;
+
 function emitMeFmu
   " wasm Model-Exchange export: lower the model, link it with the
     model-agnostic ME adapter into an fmi-ls-wasm component

@@ -25,6 +25,10 @@ pub mod ffi;
 #[cfg(target_arch = "wasm32")]
 pub mod wasm_host;
 
+/// An fmi-ls-wasm component driven in this process by wasmtime.
+#[cfg(all(feature = "component", not(target_arch = "wasm32")))]
+pub mod component;
+
 use openmodelica_fmi::{InterfaceKind, ModelDescription, VarType};
 
 #[derive(Debug)]
@@ -40,6 +44,8 @@ pub enum Error {
     Io(String),
     /// The integrator gave up (step size underflow, no convergence).
     Solver(&'static str),
+    /// The FMU's own simulation runtime reported a failure.
+    Simulation(String),
     /// The FMU asked for termination during initialization.
     TerminatedAtInit,
     Cancelled,
@@ -60,6 +66,7 @@ impl std::fmt::Display for Error {
             Error::Load(m) => write!(f, "cannot load the FMU binary: {m}"),
             Error::Io(m) => write!(f, "{m}"),
             Error::Solver(m) => write!(f, "{m}"),
+            Error::Simulation(m) => write!(f, "{m}"),
             Error::TerminatedAtInit => {
                 write!(f, "the FMU requested termination during initialization")
             }

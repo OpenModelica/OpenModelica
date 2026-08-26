@@ -70,6 +70,19 @@ unsafe extern "C" {
     fn om_meta_len() -> u32;
 }
 
+// The rest of the driver's entry points, imported only by the me_cs build, which
+// also carries the model's own simulation runtime (`om:sim/simulation`). The
+// emitter exports all of them from every model, so the link resolves regardless.
+#[cfg(all(feature = "me", feature = "cs"))]
+#[link(wasm_import_module = "env")]
+unsafe extern "C" {
+    fn simulate(sim_data: u32, start: f64, stop: f64, n_steps: u32) -> u32;
+    fn linearJacA(sim_data: u32);
+    fn linearJacB(sim_data: u32);
+    fn linearJacC(sim_data: u32);
+    fn linearJacD(sim_data: u32);
+}
+
 // ── Messages ─────────────────────────────────────────────────────────────────
 // Two channels, as C's FMU has: `messageText` prints the `-lv` streams to stdout,
 // and the `log-message` callback (`fmi3LogMessage`) carries what
@@ -152,9 +165,22 @@ fn logger() -> &'static mut Logger {
     unsafe { &mut *core::ptr::addr_of_mut!(LOGGER) }
 }
 
+#[cfg(not(feature = "capi"))]
 fn log_raw(status: Status, cat: u32, msg: &str) {
     let l = logger();
     fmi::fmi3::callbacks::log_message(&l.name, status, CATEGORIES[cat as usize], msg.trim_end_matches('\n'));
+}
+
+/// Linked as a core module there is no importer to call back into, so what the
+/// component sends through `fmi3LogMessage` goes where its `-lv` streams already
+/// go: the FMU's stdout, which the host captures.
+#[cfg(feature = "capi")]
+fn log_raw(status: Status, cat: u32, msg: &str) {
+    let _ = status;
+    let l = logger();
+    stdio::print(
+        alloc::format!("{}: {}: {}\n", l.name, CATEGORIES[cat as usize], msg.trim_end_matches('\n')).as_bytes(),
+    );
 }
 
 /// [`Engine::call1`] was asked for a model function this adapter does not import.
@@ -311,6 +337,14 @@ impl SimEngine for Engine {
                 "functionInitSynchronous" => functionInitSynchronous(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
                 "symbolicInlineSystem" => symbolicInlineSystem(arg),
+                #[cfg(all(feature = "me", feature = "cs"))]
+                "linearJacA" => linearJacA(arg),
+                #[cfg(all(feature = "me", feature = "cs"))]
+                "linearJacB" => linearJacB(arg),
+                #[cfg(all(feature = "me", feature = "cs"))]
+                "linearJacC" => linearJacC(arg),
+                #[cfg(all(feature = "me", feature = "cs"))]
+                "linearJacD" => linearJacD(arg),
                 _ => return Err(UNKNOWN_MODEL_FN),
             }
         }
@@ -336,6 +370,13 @@ impl SimEngine for Engine {
             r => r,
         }
     }
+    #[cfg(all(feature = "me", feature = "cs"))]
+    fn call_simulate(&mut self, s: u32, a: f64, b: f64, n: u32) -> driver::Result<u32> {
+        Ok(unsafe { simulate(s, a, b, n) })
+    }
+    /// The FMI interfaces step the model themselves; only the simulation runtime
+    /// the me_cs build carries takes the emitted `simulate` loop.
+    #[cfg(not(all(feature = "me", feature = "cs")))]
     fn call_simulate(&mut self, _s: u32, _a: f64, _b: f64, _n: u32) -> driver::Result<u32> {
         Err("fmi3-me: simulate not used")
     }
@@ -578,6 +619,9 @@ wit_bindgen::generate!({
     world: "model-exchange-and-co-simulation-fmu",
     path: "wit",
     std_feature,
+    // The OpenModelica simulation interface is ours; the FMI ones come from the
+    // world's own package.
+    with: { "om:sim/simulation@0.1.0": generate },
 });
 
 use exports::fmi::fmi3::common::Guest as CommonGuest;
@@ -1432,4 +1476,17 @@ impl CsGuest for Fmu {
     type CoSimulationInstance = Instance;
 }
 
+/// The model's own simulation runtime, exported alongside the FMI interfaces by
+/// the me_cs build (the world that declares `om:sim/simulation`).
+#[cfg(all(feature = "me", feature = "cs"))]
+mod sim_run;
+
+/// The same adapter reached as a core module rather than a component, so a host
+/// can compile it once and keep the artifact.
+#[cfg(feature = "capi")]
+mod capi;
+
+// The component's exports, which is what pulls in the resource intrinsics: the
+// C-API build is linked as a core module and needs none of them.
+#[cfg(not(feature = "capi"))]
 export!(Fmu);

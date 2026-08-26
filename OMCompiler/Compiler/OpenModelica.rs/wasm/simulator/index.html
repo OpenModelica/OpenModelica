@@ -217,7 +217,8 @@
       <select id="csSolver"></select>
       <label>Also run natively on</label>
       <div class="chk-group" id="fmuPlatforms"></div>
-      <p class="modal-hint">FMI 3.0 wasm component. Co-Simulation embeds the solver; Model Exchange leaves integration to the importer. A native platform adds a machine-code build of the same component, so importers that cannot run WebAssembly load the FMU too.</p>
+      <p class="modal-hint">FMI 3.0 wasm component, built around the module this model was compiled to — the export links an adapter onto it rather than translating again. Co-Simulation embeds the solver; Model Exchange leaves integration to the importer. A native platform adds a machine-code build of the same component, so importers that cannot run WebAssembly load the FMU too.</p>
+      <p class="modal-hint" id="csOnlyHint" hidden>Co-Simulation on its own is translated separately, so that export takes as long as a compile: it needs the output derivatives <code>fmi3GetOutputDerivatives</code> answers from, which only a pure Co-Simulation translation carries.</p>
     </div>
     <div class="modal-foot">
       <button class="ghost" id="exportCancel">Cancel</button>
@@ -391,7 +392,10 @@ function promote() {
   retireW1();
 }
 function retireW1() {
-  if (primaryWorker !== w1 && w1 && jobWorker !== w1) {
+  // Not while a job is on it: terminating a worker mid-call leaves the page
+  // waiting on a reply that can never come. An export holds w1 through
+  // activeExportWorker rather than jobWorker, and retires it when it finishes.
+  if (primaryWorker !== w1 && w1 && jobWorker !== w1 && activeExportWorker !== w1) {
     log('terminating w1');
     if (builtWorker === w1) { builtModel = null; builtWorker = null; }   // its model is gone → next run rebuilds
     w1.terminate(); w1 = null;
@@ -470,7 +474,8 @@ function fillSolverMenus(options) {
     for (const v of options[flag] || []) sel.add(new Option(v, v));
     sel.value = keep;                     // survives a second worker reporting the same set
   }
-  // The integration method has no "unset": it is a buildModel argument, not a flag.
+  // The integration method is the `-s` flag, so its menu is that flag's values —
+  // but with no "unset" entry: a run always names one.
   const m = el('method'), keep = m.value;
   if (options.s && options.s.length) {
     m.replaceChildren(...options.s.map((v) => new Option(v, v)));
@@ -554,7 +559,9 @@ async function run(kind) {                       // 'full' | 'resim'
     // Re-simulate the already-built model (fast, no recompile) when possible.
     if (kind === 'resim' && builtModel && builtWorker) {
       jobWorker = builtWorker;
-      const r = await call(builtWorker, 'resimulate', { name: builtModel, override: ov, solvers });
+      // The experiment reaches the run as simflags, so a changed stopTime,
+      // tolerance or solver is honoured here too — no rebuild.
+      const r = await call(builtWorker, 'resimulate', { name: builtModel, override: ov, solvers, ...settings });
       runMs = performance.now() - tRun;
       if (r.cancelled) { setStatus('Simulation cancelled.'); return; }
       if (!r.ok) return fail(r.error);
@@ -959,21 +966,31 @@ async function exportFmu({ fmuType, method, platforms }) {
     const worker = await pickWorker(text);
     if (!worker) throw new Error('compiler not ready');
     activeExportWorker = worker;   // so a Cancel targets this worker's control block
-    const name = parseModelName(text);
-    const lm = await call(worker, 'loadSource', { text, name });
-    if (!lm.ok) return fail(lm.error);
-    const r = await call(worker, 'exportFmu', { name: lm.name, fmuType, method, platforms });
+    // Loading the source again replaces the program in omc's symbol table, which
+    // is precisely what marks the compile step's translation stale — so an
+    // unchanged model goes straight to the export and links onto the kernel it
+    // already has. A changed one has to be reloaded, and is translated again.
+    let name = builtModel;
+    if (!(name && builtWorker === worker && text === lastText)) {
+      const lm = await call(worker, 'loadSource', { text, name: parseModelName(text) });
+      if (!lm.ok) return fail(lm.error);
+      name = lm.name;
+    }
+    const r = await call(worker, 'exportFmu', { name, fmuType, method, platforms });
     if (r.cancelled) { setStatus('Export cancelled.'); return; }
     if (!r.ok) return fail(r.error);
     downloadBlob(r.filename, r.bytes);
     setStatus(`Exported ${r.filename} (${fmuType}) — ${r.bytes.length} bytes.`);
   } catch (e) { fail('' + e); }
-  finally { exporting = false; activeExportWorker = null; exportBtn.textContent = 'Export FMU'; }
+  finally { exporting = false; activeExportWorker = null; exportBtn.textContent = 'Export FMU'; retireW1(); }
 }
 
 // FMU export dialog: pick interface(s) and (for CS) the embedded solver.
 const exportBackdrop = el('exportBackdrop'), fmiMe = el('fmiMe'), fmiCs = el('fmiCs'), csSolver = el('csSolver');
 function syncExportDialog() {
+  // Only a pure Co-Simulation export needs its own translation; every other
+  // combination is served by the one the model was compiled with.
+  el('csOnlyHint').hidden = !(fmiCs.checked && !fmiMe.checked);
   csSolver.disabled = !fmiCs.checked;
   el('exportGo').disabled = !(fmiMe.checked || fmiCs.checked);
 }

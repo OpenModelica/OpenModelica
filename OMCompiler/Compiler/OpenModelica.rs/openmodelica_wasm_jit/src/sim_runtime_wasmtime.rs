@@ -1762,3 +1762,212 @@ impl Drop for InWasmSession {
     }
 }
 
+
+// ===========================================================================
+// The dylink artifact: a model kernel linked against the FMI3 adapter
+// ===========================================================================
+//
+// A component is compiled as one artifact, so the megabyte of adapter, libc and
+// runtime inside it is compiled again for every model. Reached this way instead,
+// the adapter is a *fixed* dylink library and takes the on-disk `.cwasm` cache
+// (`aot_module`) that the runtime and the `external "C"` libraries already use:
+// this machine compiles it once, and a model's export compiles only the model.
+
+/// A loaded artifact: the runtime, the FMI3 adapter and the model kernel sharing
+/// one linear memory, with the adapter's `om_fmi3*`/`om_sim_run` reachable.
+pub struct DylinkFmu {
+    store: Store,
+    loaded: crate::dylink_engine::Loaded,
+    memory: wasmtime::Memory,
+    alloc: wasmtime::TypedFunc<u32, u32>,
+    /// The model, held so the store keeps it for as long as the adapter can call it.
+    _instance: Option<wasmtime::Instance>,
+}
+
+/// One library of an artifact, as `CodegenWasmJit::artifact` read it out of the
+/// export.
+pub struct ArtifactLib {
+    pub name: String,
+    pub bytes: Vec<u8>,
+}
+
+impl DylinkFmu {
+    /// Link `model` — the kernel, an ordinary module — against `adapter` and
+    /// whatever its `external "C"` needs. `resources` is the guest's `/`.
+    pub fn load(
+        adapter: &'static [u8],
+        model: &[u8],
+        ext: &[ArtifactLib],
+        external_c: bool,
+        lapack: bool,
+        resources: &str,
+    ) -> std::result::Result<DylinkFmu, String> {
+        use crate::dylink_engine::Library;
+        if adapter.is_empty() {
+            return Err("CodegenWasmJit: this omc has no FMI3 C-API adapter (build with the \
+                        wasm32-unknown-unknown toolchain)"
+                .to_string());
+        }
+        let engine = sim_engine();
+        let mut linker = wasmtime::Linker::new(engine);
+        add_host_builtins(&mut linker)?;
+        wasi_shim::add_to_linker(&mut linker)?;
+        let runtime_module = runtime_module()?;
+        let mut store = wasmtime::Store::new(engine, WasiCtx::new(resources, Vec::new()));
+        let rt_inst = wts(linker.instantiate(&mut store, runtime_module))?;
+        wts(linker.instance(&mut store, "rt", rt_inst))?;
+        let memory = rt_inst
+            .get_memory(&mut store, "memory")
+            .ok_or_else(|| "CodegenWasmJit: runtime has no `memory` export".to_string())?;
+        let table = rt_inst
+            .get_table(&mut store, "__indirect_function_table")
+            .ok_or_else(|| "CodegenWasmJit: runtime has no table export".to_string())?;
+        crate::host::set_sim_memory(memory);
+        let ext_rt = crate::dylink_engine::ExtRt {
+            str_new: wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_str_new"))?,
+            str_data: wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_str_data"))?,
+            release: wts(rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_release"))?,
+            alloc: wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc"))?,
+            free: wts(rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free"))?,
+            record_new: wts(rt_inst.get_typed_func::<(u32, u32), u32>(&mut store, "rt_record_new"))?,
+            nls: Some(NlsHooks {
+                recovering: wts(rt_inst.get_typed_func::<(), i32>(&mut store, "rt_nls_recovering"))?,
+                note: wts(rt_inst.get_typed_func::<(), ()>(&mut store, "rt_nls_note_assert"))?,
+            }),
+        };
+        // The model is instantiated the way the ordinary simulation path
+        // instantiates it — a plain module bound to the runtime under `rt`, its
+        // code non-PIC and its calls direct. Only the adapter is a dylink library,
+        // because only the adapter is shared between models and worth caching; a
+        // PIC model would pay for that relocatability in its hot loop.
+        // The `rt` names the host serves rather than the runtime module: the same
+        // ones the ordinary simulation path defines before instantiating a model.
+        define_print_import(&mut linker, memory)?;
+        crate::host::define_uri_import(&mut linker, memory, ext_rt.str_new.clone(), ext_rt.str_data.clone())?;
+        // The model's `external "C"` first: the model imports those and the
+        // adapter imports the model, so the three go in that order.
+        let mut ext_libs: Vec<Library> = Vec::new();
+        if external_c {
+            let libc = openmodelica_wasi_libc::LIBC_PIC;
+            if libc.is_empty() {
+                return Err("CodegenWasmJit: this omc was built without the PIC wasi-libc, so it \
+                            cannot load an artifact whose model uses external \"C\""
+                    .to_string());
+            }
+            ext_libs.push(Library::builtin("libc.so", libc));
+        }
+        for l in ext {
+            // Fixed: the artifact holds the same bytes every run, so they are worth
+            // the on-disk `.cwasm` rather than a compile per instantiation.
+            ext_libs.push(Library { name: l.name.clone(), bytes: l.bytes.clone(), fixed: true });
+        }
+        if external_c {
+            ext_libs.push(Library::builtin("modelicaexternalc", openmodelica_wasi_libc::EXTERNAL_C_DYLINK));
+            if !openmodelica_wasi_libc::USERTAB_DYLINK.is_empty() {
+                ext_libs.push(Library::builtin("usertab", openmodelica_wasi_libc::USERTAB_DYLINK));
+            }
+        }
+        if lapack && !crate::LAPACK_DYLINK.is_empty() {
+            ext_libs.push(Library::builtin("lapack", crate::LAPACK_DYLINK));
+        }
+        let model_module = wts(wasmtime::Module::new(engine, model))?;
+        if !ext_libs.is_empty() {
+            let utilities = crate::dylink_engine::modelica_utilities_imports(&mut store, &ext_rt);
+            let libs = crate::dylink_engine::load(
+                &mut store,
+                engine,
+                memory,
+                table,
+                &ext_rt.alloc,
+                &ext_libs,
+                &utilities,
+            )?;
+            crate::host::set_shadow_stack(libs.shadow_stack());
+            let wanted: Vec<String> = model_module
+                .imports()
+                .filter(|i| i.module() == "ext")
+                .map(|i| i.name().to_string())
+                .collect();
+            for name in wanted {
+                let f = libs.func_or_addr(&mut store, &name).ok_or_else(|| {
+                    format!("CodegenWasmJit: the artifact's model needs `external \"C\"` function `{name}`, \
+                             which none of the libraries beside it defines")
+                })?;
+                wts(linker.define(&store, "ext", &name, f))?;
+            }
+        }
+        let model_inst = wts(linker.instantiate(&mut store, &model_module))?;
+        // What the adapter calls into: the model's entry points, and the runtime's
+        // primitives, both as ordinary cross-instance calls.
+        let mut host: std::collections::HashMap<String, wasmtime::Func> =
+            crate::dylink_engine::modelica_utilities_imports(&mut store, &ext_rt);
+        for inst in [model_inst, rt_inst] {
+            let exports: Vec<(String, wasmtime::Extern)> = inst
+                .exports(&mut store)
+                .map(|e| (e.name().to_string(), e.into_extern()))
+                .collect();
+            for (name, ext) in exports {
+                if let wasmtime::Extern::Func(f) = ext {
+                    host.entry(name).or_insert(f);
+                }
+            }
+        }
+        let loaded =
+            crate::dylink_engine::load(&mut store, engine, memory, table, &ext_rt.alloc, &[Library::builtin("fmi3adapter", adapter)], &host)?;
+        crate::host::set_shadow_stack(loaded.shadow_stack());
+        Ok(DylinkFmu { store, loaded, memory, alloc: ext_rt.alloc, _instance: Some(model_inst) })
+    }
+
+    /// Scratch in the shared memory, for the arrays an FMI call passes by pointer.
+    pub fn alloc(&mut self, bytes: u32) -> std::result::Result<u32, String> {
+        self.alloc.call(&mut self.store, bytes.max(8)).map_err(|e| format!("rt_alloc: {e}"))
+    }
+
+    pub fn write(&mut self, addr: u32, bytes: &[u8]) -> std::result::Result<(), String> {
+        self.memory
+            .write(&mut self.store, addr as usize, bytes)
+            .map_err(|e| format!("artifact: write at {addr}: {e}"))
+    }
+
+    pub fn read(&mut self, addr: u32, out: &mut [u8]) -> std::result::Result<(), String> {
+        self.memory
+            .read(&mut self.store, addr as usize, out)
+            .map_err(|e| format!("artifact: read at {addr}: {e}"))
+    }
+
+    pub fn read_u32(&mut self, addr: u32) -> std::result::Result<u32, String> {
+        let mut b = [0u8; 4];
+        self.read(addr, &mut b)?;
+        Ok(u32::from_le_bytes(b))
+    }
+
+    pub fn read_f64(&mut self, addr: u32) -> std::result::Result<f64, String> {
+        let mut b = [0u8; 8];
+        self.read(addr, &mut b)?;
+        Ok(f64::from_le_bytes(b))
+    }
+
+    /// Call one of the adapter's exports. The FMI 3.0 entry points all take and
+    /// return machine words, so the parameters cross as `Val`.
+    pub fn call(&mut self, name: &str, args: &[wasmtime::Val]) -> std::result::Result<i32, String> {
+        let f = *self
+            .loaded
+            .func(name)
+            .ok_or_else(|| format!("CodegenWasmJit: the artifact's adapter has no `{name}`"))?;
+        let mut out = [wasmtime::Val::I32(0)];
+        f.call(&mut self.store, args, &mut out).map_err(|e| format!("{name}: {e:#}"))?;
+        match out[0] {
+            wasmtime::Val::I32(v) => Ok(v),
+            _ => Ok(0),
+        }
+    }
+
+    /// The same, for an entry point that returns nothing.
+    pub fn call_void(&mut self, name: &str, args: &[wasmtime::Val]) -> std::result::Result<(), String> {
+        let f = *self
+            .loaded
+            .func(name)
+            .ok_or_else(|| format!("CodegenWasmJit: the artifact's adapter has no `{name}`"))?;
+        f.call(&mut self.store, args, &mut []).map_err(|e| format!("{name}: {e:#}"))
+    }
+}

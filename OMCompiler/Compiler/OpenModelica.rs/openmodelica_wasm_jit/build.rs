@@ -532,6 +532,15 @@ const ADAPTER_VARIANTS: &[AdapterVariant] = &[
         label: "me_cs+SUNDIALS",
         cargo_args: &["--no-default-features", "--features", "me,cs,sundials"],
     },
+    // The same me_cs adapter with an FMI 3.0 C API instead of the component's WIT
+    // exports, for a host that links it as a dylink library: it is then a *fixed*
+    // library, compiled once into the on-disk `.cwasm` cache rather than into
+    // every model's component.
+    AdapterVariant {
+        name: "mecs_capi",
+        label: "me_cs (C API)",
+        cargo_args: &["--no-default-features", "--features", "me,cs,capi"],
+    },
 ];
 
 fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant) {

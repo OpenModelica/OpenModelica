@@ -1448,6 +1448,9 @@ constant ConfigFlag FMU_NATIVE_PLATFORMS = CONFIG_FLAG(171,
 constant ConfigFlag TPL_OUTPUT_DIR = CONFIG_FLAG(172, "tplOutputDir",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Directory the .mo generated from a Susan .tpl is written to. Empty (the\ndefault) writes it next to the .tpl, which is how the templates used to be\ngenerated into the source tree.");
+constant ConfigFlag FMU_DIRECTORY = CONFIG_FLAG(173, "fmuDirectory",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Write an exported FMU as an unzipped directory named <prefix>.fmu rather than\na zip file. An importer that reads a directory (OpenModelica's own does) then\npays neither the compression nor the extraction, which for a wasm FMU carrying a\nprecompiled artifact is most of what packing it costs. wasm FMUs only.");
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
