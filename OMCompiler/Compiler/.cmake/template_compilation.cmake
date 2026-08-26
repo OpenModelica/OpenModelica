@@ -29,6 +29,7 @@ macro(omc_add_template_target)
     # message(STATUS "${template_file} : ${depends_on}")
 
     get_filename_component(file_name_no_ext ${template_file} NAME_WLE)
+    get_filename_component(file_name ${template_file} NAME)
     get_filename_component(source_dir ${template_file} DIRECTORY)
     # Mirror the template's own directory (Template, susan_codegen, ...) under
     # the generated-mo root, so the tree matches the source layout.
@@ -48,7 +49,14 @@ macro(omc_add_template_target)
         # regenerated after the Susan binary is (re)built.
         DEPENDS ${template_file} ${depends_on} ${TPL_EXTRA_DEPENDS}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}
-        COMMAND ${OMC_EXE} -d=failtrace --tplOutputDir=${output_dir} ${template_file} > ${output_log_file} || (cat ${output_log_file} && false)
+        # Susan copies the template path it is given verbatim into the generated
+        # .mo (Tpl.sourceInfo("...", line, column)), and from there it ends up in
+        # the C generated for the compiler. Pass it relative to the working
+        # directory set above so that stays "CodegenC.tpl" instead of the absolute
+        # path of whoever ran the build; the bootstrapping snapshot produced by
+        # .cmake/bootstrap_sources.cmake has to be the same no matter where it was
+        # generated.
+        COMMAND ${OMC_EXE} -d=failtrace --tplOutputDir=${output_dir} ${file_name} > ${output_log_file} || (cat ${output_log_file} && false)
 
         OUTPUT ${output_mo_file}
         COMMENT "Generating ${output_mo_file} from ${template_file}"
