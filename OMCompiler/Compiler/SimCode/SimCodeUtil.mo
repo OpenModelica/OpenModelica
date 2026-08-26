@@ -17005,15 +17005,14 @@ public function linearSystemMatrixFormat
 protected
   Option<Integer> nnz;
 algorithm
-  format := match ls
-    case SimCode.LINEARSYSTEM() algorithm
-      nnz := match ls.jacobianMatrix
-        case SOME(SimCode.JAC_MATRIX(sparsity = {})) then simJacNonzeros(ls.simJac);
-        case SOME(SimCode.JAC_MATRIX()) then sparsityNonzeros(ls.jacobianMatrix);
-        else simJacNonzeros(ls.simJac);
-      end match;
-    then matrixFormatC(listLength(ls.vars), nnz, true);
-  end match;
+  nnz := sparsityNonzeros(ls.jacobianMatrix);
+  if isNone(nnz) then
+    // No legacy sparsity and no resizable sparsityMatrix either (e.g. the
+    // jacobianMatrix itself is NONE()) -- fall back to the torn system's own
+    // simJac entry count.
+    nnz := simJacNonzeros(ls.simJac);
+  end if;
+  format := matrixFormatC(listLength(ls.vars), nnz, true);
 end linearSystemMatrixFormat;
 
 public function nonlinearSystemMatrixFormat
@@ -17034,7 +17033,10 @@ protected function simJacNonzeros
 end simJacNonzeros;
 
 protected function sparsityNonzeros
-  "Entries of a Jacobian's sparsity pattern, unknown without one."
+  "Entries of a Jacobian's sparsity pattern, unknown without one. Falls back to
+   the resizable sparsityMatrix (NBackend's sparsity representation, which
+   never populates the legacy sparsity field) when that legacy field is
+   empty."
   input Option<SimCode.JacobianMatrix> ojac;
   output Option<Integer> nnz;
 protected
@@ -17043,9 +17045,15 @@ algorithm
   nnz := match ojac
     local
       SimCode.SparsityPattern sparsity;
+      list<SimCode.SparsityRow> rows;
     case SOME(SimCode.JAC_MATRIX(sparsity = sparsity)) guard not listEmpty(sparsity) algorithm
       for col in sparsity loop
         entries := entries + listLength(Util.tuple22(col));
+      end for;
+    then SOME(entries);
+    case SOME(SimCode.JAC_MATRIX(sparsityMatrix = SimCode.Sparsity.SPARSITY(rows = rows))) algorithm
+      for row in rows loop
+        entries := entries + listLength(row.dependencies);
       end for;
     then SOME(entries);
     else NONE();

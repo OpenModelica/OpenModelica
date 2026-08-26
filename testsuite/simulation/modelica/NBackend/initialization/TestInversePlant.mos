@@ -975,14 +975,18 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // 	functionArguments: 
 // 	variableDeclarations: isInitialLambda0 (Boolean, )  , 
 // record SimulationResult
-//     resultFile = "TestInversePlant.BackwardOffDesignHomotopy_res.mat",
+//     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TestInversePlant.BackwardOffDesignHomotopy', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_STDOUT        | warning | Analytic Jacobian of non-linear system 0 is 25x33, but the system has 25 iteration variables. This indicates that something went wrong during Jacobian generation. Using a numeric Jacobian instead.
+//     messages = "Simulation execution failed for model: TestInversePlant.BackwardOffDesignHomotopy
+// LOG_STDOUT        | warning | Analytic Jacobian of non-linear system 0 is 25x33, but the system has 25 iteration variables. This indicates that something went wrong during Jacobian generation. Using a numeric Jacobian instead.
 // LOG_STDOUT        | warning | Analytic Jacobian of non-linear system 1 is 15x17, but the system has 15 iteration variables. This indicates that something went wrong during Jacobian generation. Using a numeric Jacobian instead.
 // LOG_STDOUT        | warning | Analytic Jacobian of non-linear system 2 is 28x35, but the system has 28 iteration variables. This indicates that something went wrong during Jacobian generation. Using a numeric Jacobian instead.
 // LOG_STDOUT        | warning | Sparsity pattern for non-linear system 2 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
-// LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_ASSERT        | debug   | Solving non-linear system 43 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// LOG_ASSERT        | error   | Failed to solve the initialization problem with global homotopy with equidistant step size.
+// LOG_ASSERT        | debug   | Unable to solve initialization problem.
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
 // ""

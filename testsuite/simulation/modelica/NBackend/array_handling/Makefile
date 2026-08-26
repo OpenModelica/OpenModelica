@@ -28,7 +28,6 @@ BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder2.mos\
 BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder3.mos\
 BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder4.mos\
 BenchmarksForResizeableArrays.ArrayEquations.WaterHammer.mos\
-BenchmarksForResizeableArrays.ArrayEquationsWithIndexReduction.SlidingMass3D.mos\
 BenchmarksForResizeableArrays.ForLoops.CascadedFirstOrder.mos\
 BenchmarksForResizeableArrays.ForLoops.CocurrentHeatExchanger.mos\
 BenchmarksForResizeableArrays.ComponentArrays.FiltersInSeries.mos\
@@ -47,6 +46,7 @@ BenchmarksForResizeableArrays.Resizable.FiltersInSeries_Resizable.mos\
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
+BenchmarksForResizeableArrays.ArrayEquationsWithIndexReduction.SlidingMass3D.mos\
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

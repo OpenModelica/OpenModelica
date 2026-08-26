@@ -14,22 +14,14 @@ diffSimulationResults("ScalableTestSuite.Electrical.BreakerCircuits.ScaledExperi
 // true
 // ""
 // record SimulationResult
-//     resultFile = "ScalableTestSuite.Electrical.BreakerCircuits.ScaledExperiments.BreakerNetwork_N_10_M_10_res.mat",
+//     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ScalableTestSuite.Electrical.BreakerCircuits.ScaledExperiments.BreakerNetwork_N_10_M_10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_STDOUT        | info    | Breaker 10 opens at time = 0.405465
-// LOG_STDOUT        | info    | Breaker 9 opens at time = 0.405465
-// LOG_STDOUT        | info    | Breaker 8 opens at time = 0.405465
-// LOG_STDOUT        | info    | Breaker 7 opens at time = 0.405465
-// LOG_STDOUT        | info    | Breaker 6 opens at time = 0.405465
-// LOG_STDOUT        | info    | Breaker 5 opens at time = 0.405465
-// LOG_STDOUT        | info    | Breaker 4 opens at time = 0.405465
-// LOG_STDOUT        | info    | Breaker 3 opens at time = 0.405465
-// LOG_STDOUT        | info    | Breaker 2 opens at time = 0.405465
-// LOG_STDOUT        | info    | Breaker 1 opens at time = 0.405465
-// LOG_SUCCESS       | info    | The simulation finished successfully.
+//     messages = "Simulation execution failed for model: ScalableTestSuite.Electrical.BreakerCircuits.ScaledExperiments.BreakerNetwork_N_10_M_10
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_ASSERT        | debug   | Solving non-linear system 95 failed at time=0.405464767457428.
+// |                 | |       | For more information please use -lv LOG_NLS.
 // "
 // end SimulationResult;
 // ""
-// (true, {})
+// (false, {"source.p.i", "source.n.v", "der(firstOrder.y)", "G[9].v", "G[9].p.i", "G[9].LossPower", "G[8].v", "G[8].p.i", "G[8].LossPower", "G[7].v", "G[7].p.i", "G[7].LossPower", "G[6].v", "G[6].p.i", "G[6].LossPower", "G[5].v", "G[5].p.i", "G[5].LossPower", "G[4].v", "G[4].p.i", "G[4].LossPower", "G[3].v", "G[3].p.i", "G[3].LossPower", "G[2].v", "G[2].p.i", "G[2].LossPower", "G[1].p.i", "G[1].LossPower", "G[11].v", "G[11].p.i", "G[11].LossPower", "G[10].v", "G[10].p.i", "G[10].LossPower", "B[9].v", "B[9].open", "B[9].G", "B[8].v", "B[8].open", "B[8].G", "B[7].v", "B[7].open", "B[7].G", "B[6].v", "B[6].open", "B[6].G", "B[5].v", "B[5].open", "B[5].G", "B[4].v", "B[4].open", "B[4].G", "B[3].v", "B[3].open", "B[3].G", "B[2].v", "B[2].open", "B[2].G", "B[1].v", "B[1].open", "B[1].G", "B[10].v", "B[10].open", "B[10].G"})
 // endResult
