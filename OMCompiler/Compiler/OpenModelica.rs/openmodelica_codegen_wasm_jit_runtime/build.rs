@@ -33,6 +33,10 @@ const LIBS: &[&str] = &[
     "lis", // self-contained, so its position is free
 ];
 
+/// `--features primme`: the partial SVD, which resolves its BLAS/LAPACK against
+/// this crate's `openmodelica_lapack`. Rides in the same hand-off directory.
+const PRIMME: &str = "primme";
+
 fn main() {
     println!("cargo::rustc-check-cfg=cfg(sundials)");
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_WASM_DIR");
@@ -54,6 +58,12 @@ fn main() {
     println!("cargo:rustc-link-search=native={}", lib.display());
     for l in LIBS {
         println!("cargo:rustc-link-lib=static={l}");
+    }
+    if std::env::var("CARGO_FEATURE_PRIMME").is_ok() {
+        if !lib.join(format!("lib{PRIMME}.a")).exists() {
+            panic!("--features primme, but {}/lib{PRIMME}.a is missing", lib.display());
+        }
+        println!("cargo:rustc-link-lib=static={PRIMME}");
     }
     println!("cargo:rustc-cfg=sundials");
 }

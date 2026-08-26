@@ -41,6 +41,14 @@
 extern crate alloc;
 
 mod delay;
+// C's `jacobian_analysis.c` plus the derivative test `kinsolSolver.c` keeps: only
+// the SUNDIALS solvers call them.
+#[cfg(sundials)]
+mod jacobian_analysis;
+/// The run's model and `SimData`, for the analyses the nonlinear solver runs from
+/// inside a solve.
+#[cfg(sundials)]
+mod model_ctx;
 mod nls;
 mod omclog;
 pub use nls::{rt_nls_clean_history, rt_set_step_size};
@@ -105,6 +113,13 @@ fn trap() -> ! {
 /// statics, so the flag goes over `env.rt_host_runtime_error` too.
 pub(crate) fn note_runtime_error(msg: &str) {
     openmodelica_sim_meta::driver::note_runtime_error(msg);
+    host_runtime_error();
+}
+
+/// [`note_runtime_error`] for a throw whose message C suppresses (a nonlinear
+/// solver's, with `LOG_NLS` off): the run still ends on it.
+pub(crate) fn note_runtime_error_flag() {
+    openmodelica_sim_meta::driver::note_runtime_error_flag();
     host_runtime_error();
 }
 

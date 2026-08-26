@@ -58,8 +58,10 @@ pub mod faer_backend;
 #[cfg(feature = "faer-backend")]
 mod faer_real_schur;
 pub mod qr;
+pub mod rand;
 pub mod rz;
 pub mod svd;
+pub mod syev;
 pub mod trevc;
 
 pub use band::{dgbsv, dgtsv};

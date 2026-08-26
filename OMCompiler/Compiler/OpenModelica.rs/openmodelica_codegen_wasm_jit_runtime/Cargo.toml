@@ -27,12 +27,17 @@ session = ["dep:daskr"]
 # instantiates has it; the FMI3 adapter has no `env` host, and installs its own sink.
 host_log = []
 # Standalone-export driver (src/standalone.rs, `_start` + model-importing), wasip1 only.
-standalone = ["dep:daskr", "dep:openmodelica_mat_writer", "dep:openmodelica_plt_writer", "inwasm_solve"]
+standalone = ["dep:daskr", "dep:openmodelica_plt_writer", "inwasm_solve"]
 # In-wasm sparse solve (rsparse). Off for the native interactive runtime, which
 # delegates to the host (`host_lin_solve`) instead of linking rsparse.
 inwasm_solve = ["dep:rsparse"]
 # Delegate the sparse solve to the host (`env.rt_host_lin_solve`); native interactive only.
 host_lin_solve = []
+# PRIMME's partial SVD, which `-lv=LOG_NLS_SVD` with `-svdCount` runs. Its archive
+# rides with the SUNDIALS hand-off, and its BLAS/LAPACK calls bind to
+# openmodelica_lapack's Fortran ABI -- which is why the feature turns that on, and
+# why it is not a default: enabling it host-side would shadow the system LAPACK.
+primme = ["openmodelica_lapack/fortran-abi"]
 
 [dependencies]
 # The shared `-lv` stream table + `omc_error.c` message layout the NLS solver logs
@@ -63,7 +68,10 @@ daskr = { path = "../daskr", default-features = false, optional = true }
 # `.mat`. wasip1 has std, so these keep their default (`std`) features.
 [target.'cfg(target_os = "wasi")'.dependencies]
 openmodelica_sim_meta = { path = "../openmodelica_sim_meta", features = ["std"] }
-openmodelica_mat_writer = { path = "../openmodelica_mat_writer", optional = true }
+# The `.mat` serializer: the standalone driver's result file, and the state
+# `-saveInitialGuess_system` writes from inside the nonlinear solver. `no_std`,
+# so it costs the interactive runtimes nothing they do not call.
+openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
 openmodelica_plt_writer = { path = "../openmodelica_plt_writer", optional = true }
 daskr = { path = "../daskr", optional = true }
 # Sparse direct solver (CSparse port, AMD fill-reducing ordering) for torn linear

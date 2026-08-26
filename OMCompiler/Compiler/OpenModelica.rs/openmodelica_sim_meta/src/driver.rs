@@ -22,7 +22,7 @@ use crate::simflags::JacobianMethod;
 use crate::simflags::{CvodeIter, CvodeLmm};
 use crate::sync::SYNC_EPS;
 use crate::{
-    JacAInfo, Layout as SimLayout, MetaKind as ResultKind, Neg, REAL_OFF, SimMeta, SolveStats, StateSetInfo,
+    JacAInfo, Layout as SimLayout, MetaKind as ResultKind, REAL_OFF, SimMeta, SolveStats, StateSetInfo,
     TIME_OFF,
     WTy,
 };
@@ -1884,7 +1884,7 @@ pub fn run_initialization_with_clocks(
     // An event clock whose `when` already fired during the initial discrete update
     // is only *scheduled* here (C's `data->simulationInfo->initial` case).
     sync.take_fired(e, model.start_time)?;
-    log_event_status(e, sim_data, model, omclog::EVENTS)?;
+    log_event_status(e, sim_data, &model.layout, omclog::EVENTS)?;
     signal_init_done();
     terminate_at_init(e, sim_data, &model.layout)?;
     Ok(sync)
@@ -1905,6 +1905,9 @@ fn init_model(
         }
     }
     rtclock::enter_init();
+    if let Some(m) = model {
+        event_dump_store::set(EventDump::new(m));
+    }
     // `functionInitDelay` reads `startTime` from `TIME_OFF`; init the buffers
     // before any equation function (`rt_delay_eval` traps on unallocated ones).
     write_time(e, sim_data, start_time)?;
@@ -1926,6 +1929,9 @@ fn init_model(
     // entered on the `a` side) is reached by nothing but the exact sweep.
     refresh_relations(e, sim_data, layout)?;
     iterate_discrete(e, sim_data, layout)?;
+    // C's generated `functionDAE` throws on a system that did not converge, and the
+    // throw is still inside `initializeModel`.
+    check_nls(e, sim_data, layout)?;
     // C's position: a `sample(t0, p)` start that is a `fixed=false` parameter is
     // only known once the initial equations have computed it.
     if layout.n_samples > 0 {
@@ -2473,7 +2479,7 @@ impl HomotopyPath {
 /// matching `SimLayout::n_row_total()` and the column layout `kind_from_slot`
 /// assigns. Used by the host-driven drivers; the in-wasm `simulate` emits the
 /// same layout.
-pub(crate) fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
+pub fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
     // C's `emit` — the result writer's share of the run (`SIM_TIMER_OUTPUT`).
     rtclock::tick(rtclock::OUTPUT);
     let out = capture_row_values(e, rows, sim_data, layout);
@@ -2680,6 +2686,7 @@ pub fn emit_terminal_row(
     }
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_time(e, sim_data, time)?;
+    omclog::info(omclog::EVENTS_V, false, &format!("terminal event at stop time {}", format_g(time, 6)));
     write_i32(e, sim_data + layout.terminal_off, 1)?;
     // A discrete call, so relations are live (C's `updateDiscreteSystem`
     // prologue): a condition that only becomes true at `stop` flips here.
@@ -3108,19 +3115,14 @@ fn log_state_event(time: f64, roots: &[usize], model: &SimMeta) {
     }
 }
 
-/// C's `algStmtReinit` message, from what the model recorded during the update.
-fn log_reinits(e: &mut dyn SimEngine, model: &SimMeta) {
+/// C's `algStmtReinit` message, from what the model recorded during the pass.
+fn log_reinits(e: &mut dyn SimEngine) {
     for (off, value) in e.take_pending_reinits() {
         if !omclog::active(omclog::EVENTS) {
             continue;
         }
-        let col = 1 + off.saturating_sub(REAL_OFF) / 8; // column 0 is `time`
-        let name = model
-            .vars
-            .iter()
-            .find(|v| matches!(v.kind, ResultKind::Column { col: c, negate: Neg::None } if c == col))
-            .map(|v| v.name.as_str())
-            .unwrap_or_default();
+        let i = off.saturating_sub(REAL_OFF) as usize / 8;
+        let name = event_dump_store::with(|d| d.real_names.get(i).cloned().unwrap_or_default());
         omclog::info(omclog::EVENTS, false, &format!("reinit {name} = {}", format_g(value, 6)));
     }
 }
@@ -3141,30 +3143,161 @@ fn log_time_event(time: f64, samples: &Samples, model: &SimMeta) {
     }
 }
 
-/// C's `printRelations` + `printZeroCrossings` (`model_help.c`), which
-/// `initializeModel` ends with on `LOG_EVENTS`.
-pub fn log_event_status(e: &dyn SimEngine, sim_data: u32, model: &SimMeta, stream: omclog::Stream) -> Result<()> {
+/// What C's `updateDiscreteSystem` names on `LOG_EVENTS`/`LOG_EVENTS_V`. Installed
+/// once per run because the event paths that print it carry only a [`SimLayout`].
+#[derive(Default)]
+pub(crate) struct EventDump {
+    rel_desc: Vec<String>,
+    zc_desc: Vec<String>,
+    /// `(name, live, pre)` in C's walk order. Strings have no `pre` region here.
+    reals: Vec<(String, u32, u32)>,
+    ints: Vec<(String, u32, u32)>,
+    bools: Vec<(String, u32, u32)>,
+    /// Every real variable in index order, for [`log_reinits`].
+    real_names: Vec<String>,
+}
+
+impl EventDump {
+    fn new(model: &SimMeta) -> Self {
+        let l = &model.layout;
+        let n_real = 2 * l.n_states + l.n_real_alg;
+        let first = n_real.saturating_sub(model.soti.n_discrete_real) as usize;
+        let slots = |names: &[String], live: u32, pre: u32, w: u32, from: usize| -> Vec<(String, u32, u32)> {
+            names
+                .iter()
+                .enumerate()
+                .skip(from)
+                // C skips common-subexpression temporaries.
+                .filter(|(_, n)| !n.starts_with("$cse"))
+                .map(|(i, n)| (n.clone(), live + i as u32 * w, pre + i as u32 * w))
+                .collect()
+        };
+        let named = |v: &[(String, i32)]| v.iter().map(|(n, _)| n.clone()).collect::<Vec<_>>();
+        EventDump {
+            rel_desc: model.rel_desc.clone(),
+            zc_desc: model.zc_desc.clone(),
+            reals: slots(&model.soti.reals, REAL_OFF, l.pre_real_off, 8, first),
+            ints: slots(&named(&model.soti.ints), l.int_off, l.pre_int_off, 4, 0),
+            bools: slots(&named(&model.soti.bools), l.bool_off, l.pre_bool_off, 4, 0),
+            real_names: model.soti.reals.clone(),
+        }
+    }
+}
+
+pub(crate) mod event_dump_store {
+    use super::EventDump;
+
+    #[cfg(feature = "std")]
+    mod imp {
+        use super::EventDump;
+        use core::cell::RefCell;
+        std::thread_local! {
+            static DUMP: RefCell<EventDump> = RefCell::new(EventDump::default());
+        }
+        pub fn set(d: EventDump) {
+            DUMP.with(|c| *c.borrow_mut() = d);
+        }
+        pub fn with<R>(f: impl FnOnce(&EventDump) -> R) -> R {
+            DUMP.with(|c| f(&c.borrow()))
+        }
+    }
+
+    #[cfg(not(feature = "std"))]
+    mod imp {
+        use super::EventDump;
+        use core::cell::UnsafeCell;
+        // The in-wasm runtime is single-threaded, as `super::overrides_store`.
+        struct Store(UnsafeCell<Option<EventDump>>);
+        unsafe impl Sync for Store {}
+        static DUMP: Store = Store(UnsafeCell::new(None));
+        pub fn set(d: EventDump) {
+            unsafe { *DUMP.0.get() = Some(d) };
+        }
+        pub fn with<R>(f: impl FnOnce(&EventDump) -> R) -> R {
+            let slot = unsafe { &mut *DUMP.0.get() };
+            f(slot.get_or_insert_with(EventDump::default))
+        }
+    }
+
+    pub use imp::{set, with};
+}
+
+/// C's `printRelations` + `printZeroCrossings` (`model_help.c`): `initializeModel`
+/// ends with them on `LOG_EVENTS`, and each event-iteration pass repeats them on
+/// `LOG_EVENTS_V`.
+pub fn log_event_status(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, stream: omclog::Stream) -> Result<()> {
     if !omclog::active(stream) {
         return Ok(());
     }
-    let layout = &model.layout;
     let time = format_g(read_f64(e, sim_data + TIME_OFF)?, 12);
-    omclog::info(stream, true, &format!("status of relations at time={time}"));
-    for i in 0..layout.n_rel {
-        let flag = |off: u32| if read_i32(e, sim_data + off + i * 4).unwrap_or(0) != 0 { " true" } else { "false" };
-        let desc = model.rel_desc.get(i as usize).map(String::as_str).unwrap_or_default();
-        let (pre, cur) = (flag(layout.relations_pre_off), flag(layout.relations_off));
-        omclog::info(stream, false, &format!("[{}] (pre: {pre}) {cur} = {desc}", i + 1));
-    }
-    omclog::close(stream);
-    omclog::info(stream, true, &format!("status of zero crossings at time={time}"));
-    for i in 0..layout.n_zc {
-        let g = |off: u32| omclog::g(read_f64(e, sim_data + off + i * 8).unwrap_or(0.0), 2, 1);
-        let desc = model.zc_desc.get(i as usize).map(String::as_str).unwrap_or_default();
-        let (pre, cur) = (g(layout.zc_pre_off), g(layout.zc_off));
-        omclog::info(stream, false, &format!("[{}] (pre: {pre}) {cur} = {desc}", i + 1));
-    }
-    omclog::close(stream);
+    event_dump_store::with(|d| {
+        omclog::info(stream, true, &format!("status of relations at time={time}"));
+        for i in 0..layout.n_rel {
+            let flag = |off: u32| if read_i32(e, sim_data + off + i * 4).unwrap_or(0) != 0 { " true" } else { "false" };
+            let desc = d.rel_desc.get(i as usize).map(String::as_str).unwrap_or_default();
+            let (pre, cur) = (flag(layout.relations_pre_off), flag(layout.relations_off));
+            omclog::info(stream, false, &format!("[{}] (pre: {pre}) {cur} = {desc}", i + 1));
+        }
+        omclog::close(stream);
+        omclog::info(stream, true, &format!("status of zero crossings at time={time}"));
+        for i in 0..layout.n_zc {
+            let g = |off: u32| omclog::g(read_f64(e, sim_data + off + i * 8).unwrap_or(0.0), 2, 1);
+            let desc = d.zc_desc.get(i as usize).map(String::as_str).unwrap_or_default();
+            let (pre, cur) = (g(layout.zc_pre_off), g(layout.zc_off));
+            omclog::info(stream, false, &format!("[{}] (pre: {pre}) {cur} = {desc}", i + 1));
+        }
+        omclog::close(stream);
+    });
+    Ok(())
+}
+
+/// The `pre` values C's `checkForDiscreteChanges` compares against. Read *before*
+/// the evaluation: an emitted `functionAlgebraics` ends with C's `storePreValues`,
+/// so afterwards the mirror already holds the new values.
+fn discrete_pre_values(e: &dyn SimEngine, sim_data: u32) -> Result<(Vec<f64>, Vec<i32>)> {
+    event_dump_store::with(|d| {
+        let reals = d.reals.iter().map(|(_, _, pre)| read_f64(e, sim_data + pre)).collect::<Result<_>>()?;
+        let ints = d
+            .ints
+            .iter()
+            .chain(&d.bools)
+            .map(|(_, _, pre)| read_i32(e, sim_data + pre))
+            .collect::<Result<_>>()?;
+        Ok((reals, ints))
+    })
+}
+
+/// C's `checkForDiscreteChanges` printing half; the detection half is
+/// [`discrete_snapshot`], which compares the same regions in bulk.
+fn log_discrete_changes(e: &dyn SimEngine, sim_data: u32, before: &(Vec<f64>, Vec<i32>)) -> Result<()> {
+    let time = format_g(read_f64(e, sim_data + TIME_OFF)?, 12);
+    omclog::info(omclog::EVENTS_V, true, &format!("check for discrete changes at time={time}"));
+    event_dump_store::with(|d| {
+        for ((name, live, _), v1) in d.reals.iter().zip(&before.0) {
+            let v2 = read_f64(e, sim_data + live)?;
+            if *v1 != v2 {
+                let line = format!("discrete var changed: {name} from {} to {}", format_g(*v1, 6), format_g(v2, 6));
+                omclog::info(omclog::EVENTS_V, false, &line);
+            }
+        }
+        let n_int = d.ints.len();
+        for ((name, live, _), v1) in d.ints.iter().zip(&before.1) {
+            let v2 = read_i32(e, sim_data + live)?;
+            if *v1 != v2 {
+                omclog::info(omclog::EVENTS_V, false, &format!("discrete var changed: {name} from {v1} to {v2}"));
+            }
+        }
+        for ((name, live, _), v1) in d.bools.iter().zip(&before.1[n_int..]) {
+            let b = |v: i32| if v != 0 { "true" } else { "false" };
+            let v2 = read_i32(e, sim_data + live)?;
+            if *v1 != v2 {
+                let line = format!("discrete var changed: {name} from {} to {}", b(*v1), b(v2));
+                omclog::info(omclog::EVENTS_V, false, &line);
+            }
+        }
+        Ok(())
+    })?;
+    omclog::close(omclog::EVENTS_V);
     Ok(())
 }
 
@@ -3301,7 +3434,16 @@ pub(crate) fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &Si
             seed_pre_from_live(e, sim_data, layout)?;
         }
         update_relations_pre(e, sim_data, layout)?;
+        if iter > 0 {
+            log_event_status(e, sim_data, layout, omclog::EVENTS_V)?;
+        }
+        let events_v = omclog::active(omclog::EVENTS_V);
+        let before = if events_v { Some(discrete_pre_values(e, sim_data)?) } else { None };
         eval_discrete(e, sim_data, layout)?;
+        log_reinits(e);
+        if let Some(before) = &before {
+            log_discrete_changes(e, sim_data, before)?;
+        }
         if discrete_snapshot(e, sim_data, layout)? == prev {
             return Ok(());
         }
@@ -3635,7 +3777,13 @@ pub fn set_zc_tolerance(
     tolerance: f64,
 ) -> Result<()> {
     let rtol = if tolerance > 0.0 { tolerance } else { 1e-6 };
-    write_f64(e, sim_data + layout.zctol_off, 1e-4 * rtol.max(1e-12))
+    let tol_zc = 1e-4 * rtol.max(1e-12);
+    omclog::info(
+        omclog::EVENTS_V,
+        false,
+        &format!("Set tolerance for zero-crossing hysteresis to: {}", omclog::e(tol_zc, 0, 6)),
+    );
+    write_f64(e, sim_data + layout.zctol_off, tol_zc)
 }
 
 /// Build the resumable driver (init + row 0 + the zero-crossing band); shared by
@@ -6843,7 +6991,6 @@ impl SolverCore {
         }
         fire_clocks(e, sync, model, sim_data, t, SYNC_EPS, rows.as_deref_mut())?;
         store_operators(e, sim_data, layout)?;
-        log_reinits(e, model);
         omclog::close(omclog::EVENTS);
         if terminated(e, sim_data, layout)? {
             return Ok(true);
@@ -7023,7 +7170,6 @@ impl SolverCore {
                     // C's "add event to spatialDistribution": the post-event input
                     // jump becomes a discontinuity in the transported profile.
                     store_operators(e, sim_data, layout)?;
-                    log_reinits(e, model);
                     omclog::close(omclog::EVENTS);
                     if terminated(e, sim_data, layout)? {
                         return Ok(Step::Terminated);
@@ -7080,7 +7226,6 @@ impl SolverCore {
                 }
                 save_zero_crossings_after_event(e, sim_data, layout)?;
                 store_operators(e, sim_data, layout)?;
-                log_reinits(e, model);
                 omclog::close(omclog::EVENTS);
                 if terminated(e, sim_data, layout)? {
                     return Ok(Step::Terminated);
@@ -7624,8 +7769,7 @@ impl Driver for EventsDriver {
                         store_operators(e, sim_data, layout)?;
                         read_zero_crossings(e, sim_data, layout, &mut zc0)?;
                         save_zc_pre(e, sim_data, layout)?;
-                        log_reinits(e, model);
-                        omclog::close(omclog::EVENTS);
+                                omclog::close(omclog::EVENTS);
                         if tout - tr < GRID_SKIP_EPS {
                             grid_covered = true;
                         }
@@ -7659,8 +7803,7 @@ impl Driver for EventsDriver {
                             read_zero_crossings(e, sim_data, layout, &mut zc0)?;
                             save_zc_pre(e, sim_data, layout)?;
                         }
-                        log_reinits(e, model);
-                        omclog::close(omclog::EVENTS);
+                                omclog::close(omclog::EVENTS);
                         if tout - te < GRID_SKIP_EPS {
                             grid_covered = true;
                         }

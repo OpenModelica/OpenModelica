@@ -197,6 +197,9 @@ fn run() {
     // wasip1 has a monotonic clock, so `-alarm` works; nothing cancels a command.
     driver::set_clock(now_ms);
     // `+inf` budget = run to completion; the driver short-circuits that deadline.
+    // See `session::rt_sim_start`.
+    #[cfg(sundials)]
+    crate::model_ctx::set_context(&m, sim_data);
     let (result, _label) = match driver::drive(&mut engine, &m, sim_data, m.method.as_str(), false, false) {
         Ok(v) => v,
         Err(e) => {

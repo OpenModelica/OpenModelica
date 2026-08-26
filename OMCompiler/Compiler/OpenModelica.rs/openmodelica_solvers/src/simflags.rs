@@ -43,6 +43,8 @@ pub enum Nls {
     Newton = 3,
     Mixed = 4,
     Homotopy = 5,
+    /// C's `NLS_KINSOL_B` (`kinsol_b.c`): KINSOL over an explicitly scaled system.
+    KinsolB = 6,
 }
 
 /// `-nlsLS`, the linear solver inside the nonlinear one. `Rsparse` is wasm-jit's
@@ -175,6 +177,18 @@ pub struct SimFlags {
     pub newton_ftol: Option<f64>,
     pub newton_xtol: Option<f64>,
     pub newton_max_step_factor: Option<f64>,
+    /// `-nlsJacTestATol` / `-nlsJacTestRTol`: what `LOG_NLS_DERIVATIVE_TEST` calls
+    /// an anomaly, read through [`jac_test_tolerances`].
+    pub nls_jac_test_atol: Option<f64>,
+    pub nls_jac_test_rtol: Option<f64>,
+    /// `-svdCount` / `-svdSigma`: how many of the smallest singular triplets
+    /// `LOG_NLS_SVD` computes (0 = the dense decomposition) and the regularization
+    /// the sparse solver's Jacobi preconditioner adds.
+    pub svd_count: Option<i32>,
+    pub svd_sigma: Option<f64>,
+    /// `-saveInitialGuess_system=<file.mat>,<nls index>`: write the state as the
+    /// nonlinear system with that index is about to be solved, then stop.
+    pub save_initial_guess: Option<(String, i32)>,
     /// `-steadyState` / `-steadyStateTol` (C's default 1e-3), read through
     /// [`steady_state_tol`].
     pub steady_state: bool,
@@ -767,6 +781,22 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "newtonFTol" => f.newton_ftol = Some(real(name, &value(name)?)?),
             "newtonXTol" => f.newton_xtol = Some(real(name, &value(name)?)?),
             "newtonMaxStepFactor" => f.newton_max_step_factor = Some(real(name, &value(name)?)?),
+            "saveInitialGuess_system" => {
+                let v = value(name)?;
+                let bad = || {
+                    "Error: Invalid format for --saveInitialGuess_system flag - Expected: '--saveInitialGuess_system=/path/to/file.mat,nls_index')".to_string()
+                };
+                let (path, idx) = v.rsplit_once(',').ok_or_else(bad)?;
+                let idx: i32 = idx.trim().parse().map_err(|_| bad())?;
+                if idx < 0 {
+                    return Err(bad());
+                }
+                f.save_initial_guess = Some((path.to_string(), idx));
+            }
+            "svdCount" => f.svd_count = Some(int(name, &value(name)?)?),
+            "svdSigma" => f.svd_sigma = Some(real(name, &value(name)?)?),
+            "nlsJacTestATol" => f.nls_jac_test_atol = Some(real(name, &value(name)?)?),
+            "nlsJacTestRTol" => f.nls_jac_test_rtol = Some(real(name, &value(name)?)?),
             "steadyState" => f.steady_state = true,
             "steadyStateTol" => f.steady_state_tol = Some(real(name, &value(name)?)?),
             "w" => f.show_all_warnings = true,
@@ -1158,6 +1188,20 @@ pub fn newton_tuning(f: &SimFlags) -> (f64, f64, f64) {
     )
 }
 
+/// C's `nlsKinsolDenseDerivativeTest` tolerances: `100 * DBL_EPSILON` and `1e-4`
+/// where the flags are absent.
+pub fn jac_test_tolerances(f: &SimFlags) -> (f64, f64) {
+    (
+        f.nls_jac_test_atol.unwrap_or(100.0 * f64::EPSILON),
+        f.nls_jac_test_rtol.unwrap_or(1e-4),
+    )
+}
+
+/// C's `FLAG_SVD_SPARSE_COUNT` / `FLAG_SVD_SPARSE_SIGMA`, with C's defaults.
+pub fn svd_params(f: &SimFlags) -> (i32, f64) {
+    (f.svd_count.unwrap_or(0), libm::fabs(f.svd_sigma.unwrap_or(1e-8)))
+}
+
 /// `-ils` and the tri-state `-homotopyOnFirstTry` for the wasm runtime's
 /// `rt_set_homotopy`: 0 unset, 1 on, 2 off.
 pub fn homotopy_codes(f: &SimFlags) -> (u32, u32) {
@@ -1257,6 +1301,7 @@ const SOLVERS: &[Value<Solver>] = &[
 const NLS_VALUES: &[Value<Nls>] = &[
     ("hybrid", Nls::Hybrid, Offer::Always),
     ("kinsol", Nls::Kinsol, Offer::WithSundials),
+    ("experimental-kinsol", Nls::KinsolB, Offer::WithSundials),
     ("newton", Nls::Newton, Offer::Always),
     ("mixed", Nls::Mixed, Offer::Always),
     ("homotopy", Nls::Homotopy, Offer::Always),

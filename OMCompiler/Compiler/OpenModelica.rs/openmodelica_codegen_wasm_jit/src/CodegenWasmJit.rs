@@ -5045,9 +5045,15 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let nls_vars = nls_systems
         .iter()
         .map(|sys| {
+            let names = lst(&sys.crefs).map(cref_display).collect::<Result<Vec<_>>>()?;
+            // C's `eqn_simcode_indices` runs over the torn equations first; only
+            // the `size` residual ones at the end are read back.
+            let eqns: Vec<i32> = lst(&sys.eqs).map(|e| eq_index_of(e)).collect();
+            let tail = eqns.len().saturating_sub(names.len());
             Ok(openmodelica_sim_meta::NlsVars {
                 eq_index: sys.index as u32,
-                names: lst(&sys.crefs).map(cref_display).collect::<Result<Vec<_>>>()?,
+                names,
+                eqns: eqns[tail..].to_vec(),
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -6315,7 +6321,8 @@ fn soti_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_meta::SotiVa
     for sv in lst(&vars.stringAlgVars) {
         strings.push((named(sv)?, const_str(&sv.initialValue).unwrap_or_default()));
     }
-    Ok(openmodelica_sim_meta::SotiVars { reals, ints, bools, strings })
+    let n_discrete_real = lst(&vars.discreteAlgVars).count() as u32;
+    Ok(openmodelica_sim_meta::SotiVars { reals, ints, bools, strings, n_discrete_real })
 }
 
 /// C's `modelData` parameter arrays: the same lists, in the same order, as the

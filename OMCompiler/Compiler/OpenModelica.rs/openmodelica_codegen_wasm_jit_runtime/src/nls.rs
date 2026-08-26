@@ -2110,7 +2110,7 @@ unsafe impl Sync for NamesCell {}
 static NAMES: NamesCell = NamesCell(UnsafeCell::new(alloc::vec::Vec::new()));
 
 /// `eq_index`'s iteration-variable names, or `[]` when they were not pushed in.
-fn var_names(eq_index: u32) -> &'static [alloc::string::String] {
+pub(crate) fn var_names(eq_index: u32) -> &'static [alloc::string::String] {
     match unsafe { &*NAMES.0.get() }.iter().find(|(i, _)| *i == eq_index) {
         Some((_, v)) => v.as_slice(),
         None => &[],
@@ -3111,6 +3111,9 @@ fn kinsol_sparse_solve(
     nnz: usize,
     jac_csc: bool,
     handle: u32,
+    eq_index: u32,
+    time: f64,
+    old_values: &[f64],
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     #[cfg(sundials)]
@@ -3122,13 +3125,56 @@ fn kinsol_sparse_solve(
             unsafe { core::slice::from_raw_parts((pat_addr + ((n + 1) * 4) as u32) as *const i32, nnz) };
         let gather = (!jac_csc).then(|| read_pattern(pat_addr, n, nnz));
         let mut assemble = make_assemble(n, x_ptr, sim_data, jac_idx, val_ptr, gather);
+        if crate::solvers::nls() == Nls::KinsolB {
+            // C's `INITIAL_EXTRAPOLATION`: `discreteCall ? nlsx : nlsxExtrapolation`,
+            // which is the start point the caller already picked.
+            let start = x.to_vec();
+            return crate::sundials::kinsol_b_solve(
+                handle, n, nnz, Some((colptr, rowidx)), nominal, &start, old_values, x, eq_index, time,
+                x_ptr, eval, Some(&mut assemble),
+            );
+        }
         return crate::sundials::kinsol_solve(
-            handle, n, nnz, colptr, rowidx, nominal, guess, x, eval, &mut assemble,
+            handle, n, nnz, colptr, rowidx, nominal, guess, x, eq_index, time, eval, &mut assemble,
         );
     }
+    let _ = (eq_index, time, old_values); // only the KINSOL path names the system it dumps
     newton_sparse_solve(
         n, x, guess, warm, nominal, sim_data, x_ptr, jac_idx, val_ptr, pat_addr, nnz, jac_csc, handle, eval,
     )
+}
+
+/// C's `-nls=experimental-kinsol` on a system with no sparsity pattern: the dense
+/// linear solver, and the analytic Jacobian only where the model emits one.
+#[allow(clippy::too_many_arguments)]
+fn kinsol_b_dense_solve(
+    n: usize,
+    x: &mut [f64],
+    nominal: &[f64],
+    old_values: &[f64],
+    jac_idx: u32,
+    has_jac: bool,
+    handle: u32,
+    eq_index: u32,
+    time: f64,
+    x_ptr: u32,
+    eval: &mut dyn FnMut(&[f64], &mut [f64]),
+    jaceval: &mut dyn FnMut(&[f64], &mut [f64]),
+) -> bool {
+    #[cfg(sundials)]
+    {
+        let start = x.to_vec();
+        let dense = has_jac && jac_idx != u32::MAX;
+        return crate::sundials::kinsol_b_solve(
+            handle, n, 0, None, nominal, &start, old_values, x, eq_index, time, x_ptr, eval,
+            dense.then_some(jaceval),
+        );
+    }
+    #[cfg(not(sundials))]
+    {
+        let _ = (n, x, nominal, old_values, jac_idx, has_jac, handle, eq_index, time, x_ptr, eval, jaceval);
+        false
+    }
 }
 
 /// A scaled Newton iteration with a line search over the same CSC Jacobian, using
@@ -3426,7 +3472,7 @@ pub extern "C" fn rt_solve_nls(
         && match pick {
             // With neither `-nlss*` flag this is the codegen's own answer.
             Nls::Default => crate::solvers::nls_use_sparse(n, nnz as usize),
-            Nls::Kinsol => true,
+            Nls::Kinsol | Nls::KinsolB => true,
             _ => false,
         };
     // A dense solver over a CSC-emitting `jac`: C's `evalJacobian` with `isDense`.
@@ -3597,10 +3643,18 @@ pub extern "C" fn rt_solve_nls(
             // A system C would hand to kinsol+KLU: scaled Newton over the CSC Jacobian
             // (`kinsol_sparse_solve`). The dense ladder below is O(n^2) per Jacobian and
             // O(n^3) per step, which is what the sparse choice exists to avoid.
-            let converged = if sparse {
+            let converged = if !sparse && pick == Nls::KinsolB {
+                // C hands *every* system to the selected solver; without a sparsity
+                // pattern `initKinsolMemory` takes its dense linear solver, and
+                // KINSOL differences the Jacobian itself.
+                kinsol_b_dense_solve(
+                    n, &mut x, &nominal, &nlsx_old, jac_idx, has_jac, lss_handle, eq_index, time,
+                    x_ptr, &mut eval, &mut jaceval,
+                )
+            } else if sparse {
                 kinsol_sparse_solve(
                     n, &mut x, &guess, &warm, &nominal, sim_data, x_ptr, jac_idx, jac_ptr,
-                    pat_addr, nnz as usize, jac_csc, lss_handle, &mut eval,
+                    pat_addr, nnz as usize, jac_csc, lss_handle, eq_index, time, &nlsx_old, &mut eval,
                 )
             } else if pick == Nls::Newton {
                 let ok = solve_newton_c(

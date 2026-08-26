@@ -313,7 +313,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
 
     crate::nls::rt_set_step_size(model.step_size());
     // `-lv=LOG_NLS` names the iteration variables; only the metadata has them.
-    crate::nls::set_var_names(if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::NLS) {
+    crate::nls::set_var_names(if openmodelica_sim_meta::omclog::wants_nls_var_names(openmodelica_sim_meta::omclog::mask()) {
         model.nls_vars.iter().map(|s| (s.eq_index, s.names.clone())).collect()
     } else {
         Vec::new()
@@ -358,6 +358,12 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         stats: SolveStats::default(),
         lin: Vec::new(),
     });
+    // What C's `NLS_USERDATA` carries as `DATA*`: the run's model and `SimData`,
+    // for the analyses the nonlinear solver runs from inside a solve.
+    #[cfg(sundials)]
+    if let Some(s) = session().as_ref() {
+        crate::model_ctx::set_context(&s.model, s.sim_data);
+    }
     0
 }
 

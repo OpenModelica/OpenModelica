@@ -793,14 +793,30 @@ fn find_wasm_builtins() -> Option<PathBuf> {
 
 /// Return the SUNDIALS/KLU wasm archives dir prebuilt by CMake.
 ///
+/// PRIMME's archive rides in the SUNDIALS hand-off directory; the runtime's
+/// `primme` feature is only servable when it is there.
+fn has_primme(sundials_dir: Option<&Path>) -> bool {
+    sundials_dir.is_some_and(|d| d.join("lib").join("libprimme.a").exists())
+}
+
+fn standalone_features(sundials_dir: Option<&Path>) -> String {
+    let mut f = "standalone".to_string();
+    if has_primme(sundials_dir) {
+        f.push_str(",primme");
+    }
+    f
+}
+
 /// Returns `Some((dir, key))` when `OMC_SUNDIALS_WASM_DIR` is set (the key is
 /// appended to the runtime stamp so sundials on/off toggles rebuild the blobs).
 /// Returns `None` when the env var is absent (sundials feature disabled).
 fn sundials_wasm_dir() -> Option<(PathBuf, String)> {
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_WASM_DIR");
-    let dir = std::env::var("OMC_SUNDIALS_WASM_DIR").ok()?
-        .into();
-    Some((dir, "cmake".to_owned()))
+    let dir: PathBuf = std::env::var("OMC_SUNDIALS_WASM_DIR").ok()?.into();
+    // PRIMME arriving or leaving changes the runtime's features, so it belongs in
+    // the key too.
+    let key = if has_primme(Some(&dir)) { "cmake+primme" } else { "cmake" };
+    Some((dir, key.to_owned()))
 }
 
 /// Build + embed the `wasm32-unknown-unknown` JIT runtime (`runtime.wasm`): the
@@ -895,7 +911,7 @@ fn build_wasip1_runtime(
         "wasm32-wasip1",
         "openmodelica_codegen_wasm_jit_runtime",
         "runtime-target",
-        &["--no-default-features", "--features", "standalone"],
+        &["--no-default-features", "--features", &standalone_features(sundials_dir)],
         sundials_dir,
     ) {
         Ok(produced) => {
@@ -966,11 +982,14 @@ fn build_wasip1_interactive_runtime(
     let native = std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() != Ok("wasm32");
     let wasmer = std::env::var("CARGO_FEATURE_ENGINE_WASMER").is_ok();
     let inwasm_driver = std::env::var("CARGO_FEATURE_INWASM_DRIVER").is_ok();
-    let features = if native && !wasmer && !inwasm_driver {
-        "host_lin_solve,host_log"
+    let mut features = if native && !wasmer && !inwasm_driver {
+        "host_lin_solve,host_log".to_string()
     } else {
-        "session,inwasm_solve,host_log"
+        "session,inwasm_solve,host_log".to_string()
     };
+    if has_primme(sundials_dir) {
+        features.push_str(",primme");
+    }
     // The feature set is part of the cache key: toggling the engine must rebuild.
     let stamp_val = format!("{hash}:{features}");
 
@@ -984,7 +1003,7 @@ fn build_wasip1_interactive_runtime(
         "wasm32-wasip1",
         "openmodelica_codegen_wasm_jit_runtime",
         "runtime-interactive-target",
-        &["--no-default-features", "--features", features],
+        &["--no-default-features", "--features", &features],
         sundials_dir,
     ) {
         Ok(produced) => {

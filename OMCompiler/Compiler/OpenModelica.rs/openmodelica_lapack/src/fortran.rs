@@ -1154,3 +1154,231 @@ pub unsafe extern "C" fn dtrevc_(
     );
     unsafe { *info = r };
 }
+
+// ───────────────────────────── BLAS ─────────────────────────────
+// The kernels a linked-in library (PRIMME) calls but nothing in this crate does.
+
+/// A strided Fortran vector gathered into a contiguous buffer. A negative
+/// increment runs the vector backwards, as BLAS defines it.
+unsafe fn gather(x: *const f64, n: usize, inc: i32) -> Vec<f64> {
+    let start = if inc < 0 { (n - 1) as isize * (-inc as isize) } else { 0 };
+    (0..n).map(|k| unsafe { *x.offset(start + k as isize * inc as isize) }).collect()
+}
+
+unsafe fn scatter(x: *mut f64, n: usize, inc: i32, v: &[f64]) {
+    let start = if inc < 0 { (n - 1) as isize * (-inc as isize) } else { 0 };
+    for (k, val) in v.iter().enumerate().take(n) {
+        unsafe { *x.offset(start + k as isize * inc as isize) = *val };
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn dcopy_(n: *const i32, x: *const f64, incx: *const i32, y: *mut f64, incy: *const i32) {
+    let n = unsafe { u(n) };
+    let v = unsafe { gather(x, n, *incx) };
+    unsafe { scatter(y, n, *incy, &v) };
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn daxpy_(
+    n: *const i32, alpha: *const f64, x: *const f64, incx: *const i32, y: *mut f64, incy: *const i32,
+) {
+    let n = unsafe { u(n) };
+    let xv = unsafe { gather(x, n, *incx) };
+    let mut yv = unsafe { gather(y, n, *incy) };
+    crate::blas::daxpy(unsafe { *alpha }, &xv, &mut yv);
+    unsafe { scatter(y, n, *incy, &yv) };
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ddot_(
+    n: *const i32, x: *const f64, incx: *const i32, y: *const f64, incy: *const i32,
+) -> f64 {
+    let n = unsafe { u(n) };
+    let (xv, yv) = unsafe { (gather(x, n, *incx), gather(y, n, *incy)) };
+    crate::blas::ddot(&xv, &yv)
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn dscal_(n: *const i32, alpha: *const f64, x: *mut f64, incx: *const i32) {
+    let n = unsafe { u(n) };
+    let mut v = unsafe { gather(x, n, *incx) };
+    crate::blas::dscal(unsafe { *alpha }, &mut v);
+    unsafe { scatter(x, n, *incx, &v) };
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn dgemv_(
+    trans: *const c_char, m: *const i32, n: *const i32, alpha: *const f64, a: *const f64,
+    lda: *const i32, x: *const f64, incx: *const i32, beta: *const f64, y: *mut f64, incy: *const i32,
+) {
+    let (m, n, lda) = unsafe { (u(m), u(n), u(lda)) };
+    let t = unsafe { ch(trans) } != "N";
+    let (xlen, ylen) = if t { (m, n) } else { (n, m) };
+    let xv = unsafe { gather(x, xlen, *incx) };
+    let mut yv = unsafe { gather(y, ylen, *incy) };
+    let av = slc!(a, lda * n.max(1));
+    crate::blas::dgemv(t, m, n, unsafe { *alpha }, av, lda, &xv, unsafe { *beta }, &mut yv);
+    unsafe { scatter(y, ylen, *incy, &yv) };
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn dgemm_(
+    transa: *const c_char, transb: *const c_char, m: *const i32, n: *const i32, k: *const i32,
+    alpha: *const f64, a: *const f64, lda: *const i32, b: *const f64, ldb: *const i32,
+    beta: *const f64, c: *mut f64, ldc: *const i32,
+) {
+    let (m, n, k) = unsafe { (u(m), u(n), u(k)) };
+    let (lda, ldb, ldc) = unsafe { (u(lda), u(ldb), u(ldc)) };
+    let (ta, tb) = unsafe { (ch(transa) != "N", ch(transb) != "N") };
+    let av = slc!(a, lda * if ta { m } else { k }.max(1));
+    let bv = slc!(b, ldb * if tb { k } else { n }.max(1));
+    let cv = sl!(c, ldc * n.max(1));
+    crate::blas::dgemm(ta, tb, m, n, k, unsafe { *alpha }, av, lda, bv, ldb, unsafe { *beta }, cv, ldc);
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn dsymm_(
+    side: *const c_char, uplo: *const c_char, m: *const i32, n: *const i32, alpha: *const f64,
+    a: *const f64, lda: *const i32, b: *const f64, ldb: *const i32, beta: *const f64,
+    c: *mut f64, ldc: *const i32,
+) {
+    let (m, n) = unsafe { (u(m), u(n)) };
+    let (lda, ldb, ldc) = unsafe { (u(lda), u(ldb), u(ldc)) };
+    let left = unsafe { ch(side) } == "L";
+    let upper = unsafe { ch(uplo) } == "U";
+    let av = slc!(a, lda * if left { m } else { n }.max(1));
+    let bv = slc!(b, ldb * n.max(1));
+    let cv = sl!(c, ldc * n.max(1));
+    crate::blas::dsymm(left, upper, m, n, unsafe { *alpha }, av, lda, bv, ldb, unsafe { *beta }, cv, ldc);
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn dtrmm_(
+    side: *const c_char, uplo: *const c_char, transa: *const c_char, diag: *const c_char,
+    m: *const i32, n: *const i32, alpha: *const f64, a: *const f64, lda: *const i32,
+    b: *mut f64, ldb: *const i32,
+) {
+    let (m, n, lda, ldb) = unsafe { (u(m), u(n), u(lda), u(ldb)) };
+    let left = unsafe { ch(side) } == "L";
+    let upper = unsafe { ch(uplo) } == "U";
+    let trans = unsafe { ch(transa) } != "N";
+    let unit = unsafe { ch(diag) } == "U";
+    let av = slc!(a, lda * if left { m } else { n }.max(1));
+    let bv = sl!(b, ldb * n.max(1));
+    crate::blas::dtrmm(left, upper, trans, unit, m, n, unsafe { *alpha }, av, lda, bv, ldb);
+}
+
+// ───────────────────── Random numbers, symmetric eigenproblem ─────────────────────
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn dlarnv_(idist: *const i32, iseed: *mut i32, n: *const i32, x: *mut f64) {
+    let n = unsafe { u(n) };
+    let seed = sl!(iseed, 4);
+    let mut s = [seed[0], seed[1], seed[2], seed[3]];
+    crate::rand::dlarnv(unsafe { *idist }, &mut s, sl!(x, n));
+    seed.copy_from_slice(&s);
+}
+
+/// Only `RANGE = 'A'`; a selected range returns `INFO = -2`. `ABSTOL`, `IWORK` and
+/// `IFAIL` are accepted and ignored: this decomposition fails no eigenvector.
+#[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn dsyevx_(
+    jobz: *const c_char, range: *const c_char, uplo: *const c_char, n: *const i32, a: *mut f64,
+    lda: *const i32, _vl: *const f64, _vu: *const f64, _il: *const i32, _iu: *const i32,
+    _abstol: *const f64, m: *mut i32, w: *mut f64, z: *mut f64, ldz: *const i32, work: *mut f64,
+    lwork: *const i32, _iwork: *mut i32, _ifail: *mut i32, info: *mut i32,
+) {
+    let (n, lda, ldz) = unsafe { (u(n), u(lda), u(ldz)) };
+    if unsafe { query(lwork, work, 8 * n) } {
+        unsafe { *info = 0 };
+        return;
+    }
+    if unsafe { ch(range) } != "A" {
+        unsafe { *info = -2 };
+        return;
+    }
+    let vectors = unsafe { ch(jobz) } == "V";
+    let upper = unsafe { ch(uplo) } == "U";
+    let av = slc!(a, lda * n.max(1));
+    let out = vectors.then(|| (sl!(z, ldz * n.max(1)), ldz));
+    let rc = crate::syev::dsyevx(upper, n, av, lda, sl!(w, n), out);
+    unsafe {
+        *m = n as i32;
+        *info = rc;
+    }
+}
+
+/// [`dsyevx_`] for `A x = lambda B x` (`ITYPE = 1` only).
+#[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn dsygvx_(
+    itype: *const i32, jobz: *const c_char, range: *const c_char, uplo: *const c_char,
+    n: *const i32, a: *mut f64, lda: *const i32, b: *mut f64, ldb: *const i32, _vl: *const f64,
+    _vu: *const f64, _il: *const i32, _iu: *const i32, _abstol: *const f64, m: *mut i32,
+    w: *mut f64, z: *mut f64, ldz: *const i32, work: *mut f64, lwork: *const i32,
+    _iwork: *mut i32, _ifail: *mut i32, info: *mut i32,
+) {
+    let (n, lda, ldb, ldz) = unsafe { (u(n), u(lda), u(ldb), u(ldz)) };
+    if unsafe { query(lwork, work, 8 * n) } {
+        unsafe { *info = 0 };
+        return;
+    }
+    if unsafe { *itype } != 1 {
+        unsafe { *info = -1 };
+        return;
+    }
+    if unsafe { ch(range) } != "A" {
+        unsafe { *info = -3 };
+        return;
+    }
+    let vectors = unsafe { ch(jobz) } == "V";
+    let upper = unsafe { ch(uplo) } == "U";
+    let (av, bv) = (slc!(a, lda * n.max(1)), slc!(b, ldb * n.max(1)));
+    let out = vectors.then(|| (sl!(z, ldz * n.max(1)), ldz));
+    let rc = crate::syev::dsygvx(upper, n, av, lda, bv, ldb, sl!(w, n), out);
+    unsafe {
+        *m = n as i32;
+        *info = rc;
+    }
+}
+
+/// `DSYTRF`/`DSYTRS` as PRIMME's own `USE_ZGESV` fallback defines them: mirror the
+/// stored triangle and factor it with `DGETRF`, so `A` and `IPIV` carry an LU
+/// rather than LAPACK's packed `LDL^T`. Its only caller runs the pair together
+/// (`Num_hetrf` then `Num_hetrs`) and reads neither.
+#[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn dsytrf_(
+    uplo: *const c_char, n: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32,
+    work: *mut f64, lwork: *const i32, info: *mut i32,
+) {
+    let (n, lda) = unsafe { (u(n), u(lda)) };
+    if unsafe { query(lwork, work, n.max(1)) } {
+        unsafe { *info = 0 };
+        return;
+    }
+    let upper = unsafe { ch(uplo) } == "U";
+    let av = sl!(a, lda * n.max(1));
+    for j in 0..n {
+        for i in 0..n {
+            if (i <= j) != upper && i != j {
+                av[j * lda + i] = av[i * lda + j];
+            }
+        }
+    }
+    let rc = lu::dgetrf(n, n, av, lda, sl!(ipiv, n.max(1)));
+    unsafe { *info = rc };
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn dsytrs_(
+    _uplo: *const c_char, n: *const i32, nrhs: *const i32, a: *const f64, lda: *const i32,
+    ipiv: *const i32, b: *mut f64, ldb: *const i32, info: *mut i32,
+) {
+    let (n, nrhs, lda, ldb) = unsafe { (u(n), u(nrhs), u(lda), u(ldb)) };
+    let av = slc!(a, lda * n.max(1));
+    let rc = lu::dgetrs("N", n, nrhs, av, lda, slc!(ipiv, n.max(1)), sl!(b, ldb * nrhs.max(1)), ldb);
+    unsafe { *info = rc };
+}
