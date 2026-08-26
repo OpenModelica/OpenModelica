@@ -473,6 +473,19 @@ self.onmessage = async (ev) => {
         reply({ ok: true, filename: (a.name || 'model') + '.fmu', bytes: buf }, [buf.buffer]);
         break;
       }
+      case 'resultFile': {
+        // runResumable already wrote it, so this is a read, not a re-simulation.
+        const info = omc_sim_info();
+        const model = (info && info.model) || a.name;
+        if (!model) return reply({ ok: false, error: 'no simulation has been run' });
+        const file = model + '_res.mat';
+        const bytes = wasiReadFile(file);
+        if (!bytes || !bytes.length) return reply({ ok: false, error: 'no result file at ' + file });
+        // Copy out of wasm memory before transferring (wasiReadFile may view it).
+        const buf = bytes.slice();
+        reply({ ok: true, filename: file, bytes: buf }, [buf.buffer]);
+        break;
+      }
       case 'eval':
         reply(await evalWithDownloads(a.src, status));
         break;

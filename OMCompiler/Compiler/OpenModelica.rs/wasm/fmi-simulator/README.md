@@ -64,9 +64,11 @@ launcher gives that one icon a white chip instead of recolouring the artwork.
 
 ## Results
 
-Samples are recorded for every numeric variable that can change, and the run
-writes the usual OpenModelica `.mat` through WASI, which the page offers as a
-download — the same file OMPlot and `omc-diff` read for a simulated model.
+Samples are recorded for every numeric variable that can change. The download
+button in the header writes the usual OpenModelica `.mat` through WASI and hands
+it over — the same file OMPlot and `omc-diff` read for a simulated model. It is
+written when asked for rather than after every run, since serialising the whole
+result is the expensive part and most runs are only ever plotted.
 
 Inputs are expressions in `t` (`sin(2*PI*t)`, `t < 1 ? 0 : 1`) evaluated by the
 driver wherever the solver asks for a value; parameters are constants applied

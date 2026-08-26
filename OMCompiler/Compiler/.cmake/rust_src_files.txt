@@ -506,3 +506,4 @@ wasm/simulator/examples/BouncingBall.mo
 wasm/simulator/index.html
 wasm/simulator/omc-worker.js
 wasm/theme.css
+wasm/ui.js

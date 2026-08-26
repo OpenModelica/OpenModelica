@@ -15,9 +15,12 @@
 
   /* FMU summary, or the drop target when nothing is loaded yet. */
   .info { padding:2px 12px 12px; }
-  .drop { margin:10px 12px; border:1.5px dashed var(--border); border-radius:8px;
-    padding:28px 16px; text-align:center; color:var(--muted); font-size:14px; }
-  .drop.over { border-color:var(--accent); color:var(--fg); background:#2d2d30; }
+  /* A button, so click and Enter open the file dialog. */
+  .drop { display:block; width:calc(100% - 24px); margin:10px 12px; background:transparent;
+    border:1.5px dashed var(--border); border-radius:8px; cursor:pointer;
+    padding:28px 16px; text-align:center; white-space:normal;
+    color:var(--muted); font:inherit; font-size:14px; }
+  .drop:hover, .drop.over { border-color:var(--accent); color:var(--fg); background:#2d2d30; }
   .drop b { color:var(--fg); font-weight:600; }
   .kv { display:grid; grid-template-columns:auto 1fr; gap:3px 10px; font-size:13.5px; }
   .kv dt { color:var(--muted); }
@@ -26,14 +29,9 @@
     padding:0 5px; margin-right:4px; font-size:12px; color:var(--teal); }
   .tag.off { color:var(--muted); opacity:.55; }
   .grid2 .wide { grid-column:2 / -1; }
-  .grid2 label.chk:not([hidden]) { color:var(--fg); display:flex; align-items:center; gap:7px; white-space:normal; cursor:pointer; font-size:13px; }
-  .grid2 label.chk input { width:auto; margin:0; }
+  /* .chk is shared (theme.css); the settings grid only relaxes its nowrap. */
+  .grid2 label.chk { white-space:normal; font-size:13px; }
   input:disabled { color:var(--muted); }
-  #nativePanel { padding:0 2px 6px; }
-  #nativePanel .chk-group { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
-  #nativePanel .chk { display:flex; align-items:center; gap:7px; color:var(--fg); font-size:13px; cursor:pointer; }
-  #nativePanel .chk input { width:auto; margin:0; }
-  #nativePanel .modal-hint { color:var(--muted); font-size:12px; margin:8px 0 0; }
 
   #icPanel { flex:1 1 auto; overflow-y:auto; min-height:80px; }
   .ic-grid { padding:8px 12px 12px; display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:7px 18px; }
@@ -85,30 +83,21 @@
   <span class="status" id="status">Open an FMI 3.0 wasm FMU to begin.</span>
   <input type="file" id="file" accept=".fmu,application/zip" hidden />
   <button class="ghost" id="open">Open FMU…</button>
+  <button class="ghost" id="nativeBtn" title="Compile this FMU's component for native platforms and repack it" hidden disabled>Native binaries…</button>
   <button class="ghost" id="figToggle" title="Switch between the FMU's figures and all recorded variables" hidden>All variables</button>
   <button id="run" disabled>Simulate</button>
-  <a class="ghost" id="download" hidden download>Download result</a>
+  <button class="ghost icon-only" id="download" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg></button>
 </header>
 
 <main>
   <div class="left">
     <div class="section-label">FMU</div>
     <div class="info" id="info">
-      <div class="drop" id="drop">
-        <b>Drop an .fmu here</b><br />
+      <button type="button" class="drop" id="drop">
+        <b>Drop an .fmu here, or click to browse</b><br />
         FMI 3.0 Co-Simulation or Model Exchange with a<br />
         <code>binaries/wasm32-wasip2</code> component (FMI-LS-WASM).
-      </div>
-    </div>
-
-    <div class="section-label" id="nativeLabel" hidden>Add native binaries</div>
-    <div id="nativePanel" hidden>
-      <div class="chk-group" id="nativePlatforms"></div>
-      <button class="ghost" id="nativeGo" disabled>Build native FMU</button>
-      <p class="modal-hint">Compiles this FMU's component ahead of time for the
-      platforms you tick and repacks it with the matching FMI 3.0 loader library,
-      so importers that cannot run WebAssembly load it too. Nothing is uploaded —
-      the compiler runs here.</p>
+      </button>
     </div>
 
     <div class="section-label">Inputs, parameters and start values</div>
@@ -151,11 +140,33 @@
   </div>
 </main>
 
+<div class="modal-backdrop" id="nativeBackdrop" hidden>
+  <div class="modal" role="dialog" aria-label="Add native binaries" aria-modal="true">
+    <div class="modal-head">
+      <span>Add native binaries</span>
+      <button class="icon-btn" data-close title="Close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>Platforms</label>
+      <div class="chk-group" id="nativePlatforms"></div>
+      <p class="modal-hint">Compiles this FMU's component ahead of time for the
+      platforms you tick and repacks it with the matching FMI 3.0 loader library,
+      so importers that cannot run WebAssembly load it too. Nothing is uploaded —
+      the compiler runs here.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="ghost" data-close>Cancel</button>
+      <button id="nativeGo" disabled>Build FMU</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { loadFmu, readResource, findComponent, writeZip } from './fmu.js';
 import { loaderIndex, loaderBytes, compileForPlatform } from '../fmu-aot.js';
 import { Session } from './session.js';
 import { COLORS, createCharts, escapeHtml, unitHTML } from '../plot.js';
+import { bindModal, downloadBlob } from '../ui.js';
 import { AnimView } from '../anim/anim-view.js';
 import { buildAnimData, attachCadMeshes } from '../anim/anim-core.js';
 
@@ -177,7 +188,7 @@ let running = false, cancelled = false, logCount = 0;
 let lastRec = null;     // the most recent simulation record, for re-rendering
 let viewMode = 'auto';  // 'auto' -> figures when the FMU has them, else all vars
 let animView = null;    // shared 3D animation panel, if the FMU carries a <Visualization>
-let downloadUrl = null; // object URL of the last result file
+let resultName = null;  // the last run's result file, or null when there is none
 
 const setStatus = (text, cls = '') => { statusEl.textContent = text; statusEl.className = 'status ' + cls; };
 const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : d; };
@@ -232,6 +243,7 @@ const session = new Session({
 
 // --- loading ----------------------------------------------------------------
 openBtn.onclick = () => fileEl.click();
+dropEl.onclick = () => fileEl.click();     // a real button, so Enter works too
 fileEl.onchange = () => { if (fileEl.files[0]) openFile(fileEl.files[0]); fileEl.value = ''; };
 
 for (const ev of ['dragenter', 'dragover']) {
@@ -245,6 +257,7 @@ document.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if
 async function openFile(file) {
   if (running) return;
   runBtn.disabled = true;
+  hideResultFile();
   setStatus(`Loading ${file.name}…`, 'busy');
   try {
     const buf = await file.arrayBuffer();
@@ -259,11 +272,12 @@ async function openFile(file) {
     renderFields();
     applyDefaults();
     runBtn.disabled = false;
-    nativeGo.disabled = !nativeGroup.querySelector('input:checked');
+    syncNativeDialog();
     setStatus(`${fmu.md.modelName || file.name} loaded in ${ms} ms — the FMU reports FMI ${probe.fmiVersion}.`);
   } catch (e) {
     fmu = null;
     runBtn.disabled = true;
+    syncNativeDialog();
     setStatus(`${file.name}: ${e.message}`, 'err');
     log('host', `load failed: ${e.stack || e.message}`);
   }
@@ -410,6 +424,8 @@ runBtn.onclick = () => {
     session.terminate();
     fmu = null;
     runBtn.disabled = true;
+    hideResultFile();
+    syncNativeDialog();
   }
 };
 
@@ -433,6 +449,7 @@ async function run() {
   if (!(opts.stepSize > 0)) { setStatus('Step size must be positive.', 'err'); return; }
 
   running = true; cancelled = false;
+  hideResultFile();
   runBtn.textContent = 'Cancel'; runBtn.className = 'cancel';
   openBtn.disabled = true;
   setStatus('Simulating…', 'busy');
@@ -442,7 +459,7 @@ async function run() {
     const ms = Math.round(performance.now() - t0);
     renderCharts(rec);
     renderAnimation(rec);
-    await offerResultFile();
+    offerResultFile();
     if (rec.summary.cancelled) {
       setStatus(`Cancelled at t = ${(+rec.time.at(-1).toPrecision(6))} — ${rec.time.length} samples kept.`);
       return;
@@ -489,23 +506,33 @@ function toRecord(result) {
   };
 }
 
-/// Write the result file — through the driver's WASI, like every other
-/// simulation — and offer it for download.
-async function offerResultFile() {
-  const name = `${(fmu.md.modelName || 'result').replace(/[^\w.-]+/g, '_')}_res.mat`;
-  try {
-    const bytes = await session.mat(`/${name}`);
-    if (!bytes) return;
-    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
-    downloadUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
-    downloadEl.href = downloadUrl;
-    downloadEl.download = name;
-    downloadEl.hidden = false;
-    downloadEl.textContent = `Download ${name}`;
-  } catch (e) {
-    log('warning', `the result file could not be written: ${e.message}`);
-  }
+// Written on demand: serialising the whole result is the expensive part.
+function offerResultFile() {
+  resultName = `${(fmu.md.modelName || 'result').replace(/[^\w.-]+/g, '_')}_res.mat`;
+  downloadEl.hidden = false;
+  downloadEl.title = downloadEl.ariaLabel = `Download ${resultName}`;
 }
+
+function hideResultFile() {
+  resultName = null;
+  downloadEl.hidden = true;
+}
+
+downloadEl.onclick = async () => {
+  if (!resultName || downloadEl.disabled) return;
+  downloadEl.disabled = true;
+  try {
+    const bytes = await session.mat(`/${resultName}`);
+    if (!bytes || !bytes.length) throw new Error('the driver wrote no result file');
+    downloadBlob(resultName, bytes);
+    setStatus(`${resultName} — ${bytes.length} bytes.`, 'ok');
+  } catch (e) {
+    setStatus(`The result file could not be written: ${e.message}`, 'err');
+    log('warning', `the result file could not be written: ${e.message}`);
+  } finally {
+    downloadEl.disabled = false;
+  }
+};
 
 // --- charts -----------------------------------------------------------------
 const haveFigures = () => !!(fmu && fmu.md.figures && fmu.md.figures.length);
@@ -635,26 +662,36 @@ const PLATFORM_NAMES = {
   'x86_64-windows': 'Windows x86-64', 'aarch64-windows': 'Windows ARM64',
   'x86_64-darwin': 'macOS x86-64', 'aarch64-darwin': 'macOS ARM64',
 };
-const nativeGo = el('nativeGo'), nativeGroup = el('nativePlatforms');
+const nativeBtn = el('nativeBtn'), nativeGo = el('nativeGo'), nativeGroup = el('nativePlatforms');
 let loaders = [];
+
+const nativeDialog = bindModal(el('nativeBackdrop'));
+nativeBtn.onclick = () => nativeDialog.open();
 
 (async () => {
   loaders = await loaderIndex();
   if (!loaders.length) return;
   nativeGroup.replaceChildren(...loaders.map((e) => {
     const box = Object.assign(document.createElement('input'), { type: 'checkbox', value: e.platform });
-    box.onchange = () => { nativeGo.disabled = !fmu || !nativeGroup.querySelector('input:checked'); };
+    box.onchange = syncNativeDialog;
     const label = Object.assign(document.createElement('label'), { className: 'chk' });
     label.append(box, ' ' + (PLATFORM_NAMES[e.platform] || e.platform));
     return label;
   }));
-  el('nativeLabel').hidden = el('nativePanel').hidden = false;
+  nativeBtn.hidden = false;
+  syncNativeDialog();
 })();
+
+function syncNativeDialog() {
+  nativeBtn.disabled = !fmu;
+  nativeGo.disabled = !fmu || !nativeGroup.querySelector('input:checked');
+}
 
 nativeGo.onclick = async () => {
   const picked = [...nativeGroup.querySelectorAll('input:checked')].map((c) => c.value);
   if (!fmu || !picked.length) return;
-  nativeGo.disabled = true;
+  nativeDialog.close();
+  nativeGo.disabled = nativeBtn.disabled = true;
   const id = (fmu.md.cs || fmu.md.me).modelIdentifier;
   try {
     const component = findComponent(fmu.files, fmu.md);
@@ -669,17 +706,13 @@ nativeGo.onclick = async () => {
       files.set(`resources/${platform}.cwasm`, cwasm);
     }
     const blob = await writeZip(files);
-    const a = Object.assign(document.createElement('a'), {
-      href: URL.createObjectURL(blob), download: `${id}-native.fmu`,
-    });
-    a.click();
-    URL.revokeObjectURL(a.href);
-    setStatus(`${id}-native.fmu — ${picked.join(', ')} (${blob.size} bytes).`);
+    downloadBlob(`${id}-native.fmu`, blob);
+    setStatus(`${id}-native.fmu — ${picked.join(', ')} (${blob.size} bytes).`, 'ok');
   } catch (e) {
     setStatus(`Native build failed: ${e.message}`, 'err');
     log('host', e.stack || e.message);
   } finally {
-    nativeGo.disabled = false;
+    syncNativeDialog();
   }
 };
 

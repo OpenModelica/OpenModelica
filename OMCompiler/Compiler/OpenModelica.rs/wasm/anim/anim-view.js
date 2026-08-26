@@ -20,7 +20,7 @@ export class AnimView {
     root.className = 'anim';
     root.hidden = true;
     root.innerHTML = `
-      <div class="anim-view">
+      <div class="anim-view" title="Drag to rotate · right-drag to pan · wheel to zoom">
         <div class="anim-views">
           <button data-view="iso" title="Isometric">Iso</button>
           <button data-view="side" title="Side (look −Z; x→ right, y↑ up)">Side</button>

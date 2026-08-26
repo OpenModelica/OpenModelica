@@ -1722,6 +1722,7 @@ function(omc_rust_setup_wasm)
         ${RUST_OMC_DIR}/wasm/simulator/examples/BouncingBall.mo
         ${RUST_OMC_DIR}/wasm/plot.js
         ${RUST_OMC_DIR}/wasm/theme.css
+        ${RUST_OMC_DIR}/wasm/ui.js
         ${RUST_OMC_DIR}/wasm/fmu-aot.js
         ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
         # Shared 3D animation view (anim/), used by both simulator pages.
@@ -1746,6 +1747,7 @@ function(omc_rust_setup_wasm)
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${RUST_OMC_DIR}/wasm/plot.js
                 ${RUST_OMC_DIR}/wasm/theme.css
+                ${RUST_OMC_DIR}/wasm/ui.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot.js
                 ${RUST_OMC_DIR}/wasm/fmu-aot-worker.js
                 ${_web_dir}/
