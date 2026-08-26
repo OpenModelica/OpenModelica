@@ -56,6 +56,10 @@ use openmodelica_util::Error;
 
 pub fn serialize(code: SimCode::SimCode) -> Result<ArcStr> {
     for jac in &*code.jacobianMatrices {
+        // NBackEnd Jacobians colour at run time from sparsityMatrix.
+        if !matches!(jac.sparsityMatrix, SimCode::Sparsity::EMPTY) {
+            continue;
+        }
         // Pick sparsity and coloring depending on the isAdjoint flag.
         let (pattern, colorList) = if jac.isAdjoint {
             // For the adjoint Jacobian a row coloring must exist.

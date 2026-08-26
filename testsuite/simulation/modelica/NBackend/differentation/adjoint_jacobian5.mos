@@ -32,7 +32,7 @@ buildModel(AlgorithmSSATest); getErrorString();
 //
 // ##################################
 // ============
-//   SimVars
+//   SimVars 
 // ============
 // States (2)
 // ************
@@ -63,8 +63,8 @@ buildModel(AlgorithmSSATest); getErrorString();
 // ODE Partition 1
 // -----------------
 //   (8) Alias of 3
-//   (7) Alias of 2
-//   (6) Alias of 1
+//   (7) Alias of 1
+//   (6) Alias of 2
 //
 // Event Partition
 // -----------------
@@ -99,8 +99,8 @@ buildModel(AlgorithmSSATest); getErrorString();
 //
 // SeedVars (size = 2)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.b
-//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.a
+//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.a
+//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.b
 //
 // TmpVars (size = 4)
 // ********************
@@ -115,11 +115,11 @@ buildModel(AlgorithmSSATest); getErrorString();
 // Column Equations (size = 3)
 // -----------------------------
 //   (11) Algorithm
-//   $pDER_ODE_JAC_ADJ.b := $pDER_ODE_JAC_ADJ.b - $SEED_ODE_JAC_ADJ.$DER.b;
-//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $SEED_ODE_JAC_ADJ.$DER.b;
-//   (10) Algorithm
 //   $pDER_ODE_JAC_ADJ.a := $pDER_ODE_JAC_ADJ.a - $SEED_ODE_JAC_ADJ.$DER.a;
 //   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $SEED_ODE_JAC_ADJ.$DER.a;
+//   (10) Algorithm
+//   $pDER_ODE_JAC_ADJ.b := $pDER_ODE_JAC_ADJ.b - $SEED_ODE_JAC_ADJ.$DER.b;
+//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $SEED_ODE_JAC_ADJ.$DER.b;
 //   (9) Algorithm
 //   $pDER_ODE_JAC_ADJ.x_2 := $pDER_ODE_JAC_ADJ.x;
 //   $pDER_ODE_JAC_ADJ.x_1 := $pDER_ODE_JAC_ADJ.x_1 + 3.0 * $pDER_ODE_JAC_ADJ.x_2;
@@ -128,8 +128,8 @@ buildModel(AlgorithmSSATest); getErrorString();
 //
 // Resizable Sparsity Pattern
 // ----------------------------
-// $RES_SIM_2 ... {$SEED_ODE_JAC_ADJ.$DER.a} ... {($pDER_ODE_JAC_ADJ.a, {}, false)}
 // $RES_SIM_1 ... {$SEED_ODE_JAC_ADJ.$DER.b} ... {($pDER_ODE_JAC_ADJ.b, {}, false)}
+// $RES_SIM_2 ... {$SEED_ODE_JAC_ADJ.$DER.a} ... {($pDER_ODE_JAC_ADJ.a, {}, false)}
 //
 // ============================================================
 //   [EMPTY] SimCode Jacobian OPT_LFG(idx = 7, partition = 0)
@@ -154,8 +154,8 @@ buildModel(AlgorithmSSATest); getErrorString();
 // ========================================
 //
 // 8: alias of 3
-// 7: alias of 2
-// 6: alias of 1
+// 7: alias of 1
+// 6: alias of 2
 // ========================================
 //
 //
@@ -163,8 +163,8 @@ buildModel(AlgorithmSSATest); getErrorString();
 // odeEquations (1 systems):
 // ========================================
 // 8: alias of 3
-// 7: alias of 2
-// 6: alias of 1
+// 7: alias of 1
+// 6: alias of 2
 // ========================================
 //
 //
@@ -229,11 +229,11 @@ buildModel(AlgorithmSSATest); getErrorString();
 //
 // jacobianEquations:
 // ========================================
-// 11:   $pDER_ODE_JAC_ADJ.b := $pDER_ODE_JAC_ADJ.b - $SEED_ODE_JAC_ADJ.$DER.b;
-//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $SEED_ODE_JAC_ADJ.$DER.b;
-//
-// 10:   $pDER_ODE_JAC_ADJ.a := $pDER_ODE_JAC_ADJ.a - $SEED_ODE_JAC_ADJ.$DER.a;
+// 11:   $pDER_ODE_JAC_ADJ.a := $pDER_ODE_JAC_ADJ.a - $SEED_ODE_JAC_ADJ.$DER.a;
 //   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $SEED_ODE_JAC_ADJ.$DER.a;
+//
+// 10:   $pDER_ODE_JAC_ADJ.b := $pDER_ODE_JAC_ADJ.b - $SEED_ODE_JAC_ADJ.$DER.b;
+//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $SEED_ODE_JAC_ADJ.$DER.b;
 //
 // 9:   $pDER_ODE_JAC_ADJ.x_2 := $pDER_ODE_JAC_ADJ.x;
 //   $pDER_ODE_JAC_ADJ.x_1 := $pDER_ODE_JAC_ADJ.x_1 + 3.0 * $pDER_ODE_JAC_ADJ.x_2;
@@ -244,30 +244,30 @@ buildModel(AlgorithmSSATest); getErrorString();
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
-//
+// 	
 // 	Jacobian idx: 2
-//
+// 	
 // 	Jacobian idx: 3
-//
+// 	
 // 	Jacobian idx: 4
-//
+// 	
 // 	Jacobian idx: 5
-//
+// 	
 // 	Jacobian idx: 6
-//
+// 	
 // 	Jacobian idx: 1
-// 	11:   $pDER_ODE_JAC_ADJ.b := $pDER_ODE_JAC_ADJ.b - $SEED_ODE_JAC_ADJ.$DER.b;
-//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $SEED_ODE_JAC_ADJ.$DER.b;
-//
-// 	10:   $pDER_ODE_JAC_ADJ.a := $pDER_ODE_JAC_ADJ.a - $SEED_ODE_JAC_ADJ.$DER.a;
+// 	11:   $pDER_ODE_JAC_ADJ.a := $pDER_ODE_JAC_ADJ.a - $SEED_ODE_JAC_ADJ.$DER.a;
 //   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $SEED_ODE_JAC_ADJ.$DER.a;
+//
+// 	10:   $pDER_ODE_JAC_ADJ.b := $pDER_ODE_JAC_ADJ.b - $SEED_ODE_JAC_ADJ.$DER.b;
+//   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $SEED_ODE_JAC_ADJ.$DER.b;
 //
 // 	9:   $pDER_ODE_JAC_ADJ.x_2 := $pDER_ODE_JAC_ADJ.x;
 //   $pDER_ODE_JAC_ADJ.x_1 := $pDER_ODE_JAC_ADJ.x_1 + 3.0 * $pDER_ODE_JAC_ADJ.x_2;
 //   $pDER_ODE_JAC_ADJ.v := $pDER_ODE_JAC_ADJ.v + $pDER_ODE_JAC_ADJ.x_1 * cos(v);
 //   $pDER_ODE_JAC_ADJ.x := $pDER_ODE_JAC_ADJ.x + $pDER_ODE_JAC_ADJ.v * x + $pDER_ODE_JAC_ADJ.v * x;
 //
-//
+// 	
 // columnVars(4)
 // ----------------------
 // index:0: $pDER_ODE_JAC_ADJ.x_2 (no alias)  initial: 	no arrCref index:(1) []
@@ -275,11 +275,11 @@ buildModel(AlgorithmSSATest); getErrorString();
 // index:2: $pDER_ODE_JAC_ADJ.v (no alias)  initial: 	no arrCref index:(3) []
 // index:3: $pDER_ODE_JAC_ADJ.x (no alias)  initial: 	no arrCref index:(4) []
 // 	Jacobian idx: 7
-//
+// 	
 // 	Jacobian idx: 8
-//
+// 	
 // 	Jacobian idx: 9
-//
+// 	
 //
 // modelInfo:
 // ========================================

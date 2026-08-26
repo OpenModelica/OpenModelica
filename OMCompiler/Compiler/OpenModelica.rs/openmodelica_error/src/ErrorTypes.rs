@@ -44,7 +44,7 @@ use const_str;
 use arcstr::{ArcStr, literal, format};
 
 /// severity of message
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Severity {
     /// Error because of a failure in the tool
     INTERNAL,
@@ -72,7 +72,7 @@ impl Default for Severity {
 pub use self::Severity::{INTERNAL,ERROR,WARNING,NOTIFICATION};
 
 /// runtime scripting /interpretation error
-#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum MessageType {
     /// syntax errors
     SYNTAX,
@@ -110,7 +110,7 @@ pub use self::MessageType::{SYNTAX,GRAMMAR,TRANSLATION,SYMBOLIC,SIMULATION,SCRIP
 ///        look up message string and type and severity
 pub type ErrorID = i32;
 
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Message {
     pub id: ErrorID,
     pub ty: MessageType,
@@ -141,7 +141,7 @@ impl Default for Message {
 pub type MESSAGE = Message;
 
 
-#[derive(Clone, Debug, Eq, Hash, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
+#[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct TotalMessage {
     pub msg: Message,
     pub info: SourceInfo,

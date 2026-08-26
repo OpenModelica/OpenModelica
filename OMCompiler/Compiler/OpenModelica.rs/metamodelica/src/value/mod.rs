@@ -47,27 +47,28 @@ pub fn valueCompare<A: Ord>(a1: A, a2: A) -> i32 {
     }
 }
 
-/// Returns the constructor tag for a value.
-///
-/// In MetaModelica `valueConstructor(v)` returns the variant index of a
-/// boxed uniontype value (it is the *value* that matters, not its static
-/// type — two values of the same uniontype but different records produce
-/// different tags). In Rust we implement this using
-/// [`std::mem::discriminant`], hashed into an `i32`.
-///
-/// For enums this yields a stable, distinct number per variant.  For
-/// non-enum types `mem::discriminant` returns a single constant value (so
-/// all instances hash to the same `i32`), which matches MetaModelica's
-/// "records have a single constructor" semantics.
-///
-/// The caller is expected to pass `&value` — for `Arc<T>`-wrapped values
-/// generated code must deref through the `Arc` (`&*arc`) so that the
-/// inspected discriminant belongs to the inner enum, not to `Arc` itself.
-pub fn valueConstructor<A>(value: &A) -> Result<i32> {
-    use std::hash::{Hash, Hasher};
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    std::mem::discriminant(value).hash(&mut hasher);
-    Ok((hasher.finish() & 0x7FFF_FFFF) as i32)
+/// MMC's constructor tag: the record's position in its uniontype plus 3
+/// (`MMC_STRUCTHDR`), a plain record being tag 3. `Expression.compare` and
+/// friends order values by this number, so the numbering itself matters.
+pub trait MMCtor {
+    fn mm_ctor(&self) -> i32;
+}
+
+/// mmtorust adds this to every generated MM value type (`GenCtx::derives_for`).
+pub use metamodelica_derive::MMCtor;
+
+macro_rules! mm_ctor_forward {
+    ($($t:ty),*) => {$(
+        impl<A: MMCtor + ?Sized> MMCtor for $t {
+            fn mm_ctor(&self) -> i32 { (**self).mm_ctor() }
+        }
+    )*};
+}
+mm_ctor_forward!(std::sync::Arc<A>, std::rc::Rc<A>, Box<A>, &A);
+
+/// MetaModelica `valueConstructor`.
+pub fn valueConstructor<A: MMCtor + ?Sized>(value: &A) -> Result<i32> {
+    Ok(value.mm_ctor())
 }
 
 /// Returns the current time in seconds relative to process start.
@@ -180,21 +181,18 @@ mod tests {
 
         #[test]
         fn test_value_constructor() {
-            // MetaModelica semantics: same variant → same tag; different
-            // variants of the same uniontype → different tags. Implemented
-            // via `std::mem::discriminant`, so values of the same enum
-            // variant compare equal (e.g. `Some(1)` and `Some(2)`), while
-            // values of different variants compare unequal.
             #[allow(dead_code)]
-            enum E { A(i32), B(i32), C }
-            let a1 = valueConstructor(&E::A(1)).unwrap();
-            let a2 = valueConstructor(&E::A(99)).unwrap();
-            let b  = valueConstructor(&E::B(1)).unwrap();
-            let c  = valueConstructor(&E::C).unwrap();
-            assert_eq!(a1, a2);
-            assert_ne!(a1, b);
-            assert_ne!(a1, c);
-            assert_ne!(b, c);
+            #[derive(MMCtor)]
+            enum E { A(i32), B { x: i32 }, C }
+            assert_eq!(valueConstructor(&E::A(1)).unwrap(), 3);
+            assert_eq!(valueConstructor(&E::A(99)).unwrap(), 3);
+            assert_eq!(valueConstructor(&E::B { x: 1 }).unwrap(), 4);
+            assert_eq!(valueConstructor(&E::C).unwrap(), 5);
+            assert_eq!(valueConstructor(&Arc::new(E::C)).unwrap(), 5);
+
+            #[derive(MMCtor)]
+            struct R { x: i32 }
+            assert_eq!(valueConstructor(&R { x: 1 }).unwrap(), 3);
         }
 
         #[test]

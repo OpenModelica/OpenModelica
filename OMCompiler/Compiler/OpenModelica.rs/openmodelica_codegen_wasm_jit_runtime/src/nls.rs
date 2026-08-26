@@ -236,6 +236,13 @@ fn assert_logged() -> bool {
     }
 }
 
+/// C's stage switch in `va_throwStreamPrint`, which unlike the assert one leaves
+/// the integrator region ungated.
+fn throw_logged() -> bool {
+    ERROR_STAGE[0].load(Ordering::Relaxed) != ERROR_NONLINEARSOLVER
+        || crate::omclog::active(crate::omclog::NLS)
+}
+
 fn rt_string(h: i32) -> alloc::string::String {
     if h == 0 {
         return alloc::string::String::new();
@@ -261,9 +268,9 @@ pub(crate) fn model_error() {
     crate::trap()
 }
 
-/// C's `throwStreamPrint`: log `msg` on `LOG_ASSERT` and unwind — so a trial the
-/// solver goes on to reject still reports why. `msg` is borrowed (the module's
-/// literal pool owns it). Returns only where the unwind is recoverable.
+/// C's `throwStreamPrint`: log `msg` on `LOG_ASSERT` and unwind. `msg` is borrowed
+/// (the module's literal pool owns it). Returns only where the unwind is
+/// recoverable.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_throw_stream(msg: u32) {
     throw_stream(core::str::from_utf8(unsafe { crate::str_bytes(msg) }).unwrap_or(""))
@@ -280,11 +287,11 @@ pub(crate) fn throw_stream(s: &str) {
     // throw per evaluation. Here each frame returns and the ones above it carry on:
     // report only the throw C's jump would have carried out.
     if throw_reports() {
-        if recovering {
-            crate::omclog::debug(crate::omclog::ASSERT, false, s);
-        } else {
+        if !recovering {
             // Also arms the trap below to report as an assertion, not a crash.
             crate::note_runtime_error(s);
+        } else if throw_logged() {
+            crate::omclog::debug(crate::omclog::ASSERT, false, s);
         }
     }
     if !recovering {

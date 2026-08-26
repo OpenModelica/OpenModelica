@@ -1605,8 +1605,10 @@ static void B_save_initial_guess_system(DATA *data, threadData_t *threadData, NO
     mat4_emit4(&file_result, data, threadData);
     mat4_free4(&file_result, data, threadData);
 
-    /* exit as we do not want to compute any of the following variables */
-    throwStreamPrint(threadData, "Success: Initial guess has been written to disk (path = %s). The program will terminate now.\n", path);
+    /* exit as we do not want to compute any of the following variables; the
+     * throw unwinds into the solver, which keeps its message to OMC_LOG_NLS */
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Success: Initial guess has been written to disk (path = %s). The program will terminate now.", path);
+    throwStreamPrint(threadData, "Initial guess for non-linear system %d written to disk.", nls_idx);
   }
   else
   {
