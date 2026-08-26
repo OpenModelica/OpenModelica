@@ -33,4 +33,4 @@ libloading = { version = "0.8", optional = true }
 # tied to one build and one configuration, so there can only be one.
 wasmtime = { workspace = true, optional = true, features = ["component-model", "gc", "gc-null", "gc-drc"] }
 # An FMU whose model has `external "C"` reaches libc, and libc imports WASI.
-wasmtime-wasi = { version = "45", default-features = false, optional = true, features = ["p2"] }
+wasmtime-wasi = { version = "46", default-features = false, optional = true, features = ["p2"] }
