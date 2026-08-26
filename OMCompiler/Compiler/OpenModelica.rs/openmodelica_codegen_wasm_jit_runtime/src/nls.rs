@@ -65,6 +65,8 @@ pub const ERROR_INTEGRATOR: u32 = 1;
 pub const ERROR_NONLINEARSOLVER: u32 = 2;
 /// C's `MMC_TRY_INTERNAL(simulationJumpBuffer)`, which the driver holds over one step.
 pub const ERROR_SIMULATION_STEP: u32 = 3;
+/// C's `handleEvents`: a model error there is not the step's to retry.
+pub const ERROR_EVENTHANDLING: u32 = 4;
 static ERROR_STAGE: [AtomicU32; 2] = [AtomicU32::new(ERROR_SIMULATION), AtomicU32::new(0)];
 
 /// C's `saveJumpState`: the stage held over the solver region and put back after.
@@ -3750,6 +3752,12 @@ pub extern "C" fn rt_solve_nls(
             if load_u32(nls_fail_addr) == 0 {
                 store_u32(nls_fail_addr, eq_index + 1);
             }
+        }
+        // C's `equationNonlinear` throws here (`throwStreamPrintWithEquationIndexes`),
+        // so whichever region is open absorbs it: an integrator residual answers
+        // `IRES = -1`, an enclosing solve voids its trial, and the step falls back.
+        if error_caught() {
+            rt_nls_note_assert();
         }
         stat_inc(STAT_NLS_FAIL);
         1

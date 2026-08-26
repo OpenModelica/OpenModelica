@@ -11,6 +11,9 @@ use openmodelica_sim_meta::driver::{format_e, format_g};
 /// C `DBL_EPSILON`.
 const DBL_EPSILON: f64 = f64::EPSILON;
 
+/// C's `DASSL_STEP_EPS` (`simulation/solver/epsilon.h`).
+const DASSL_STEP_EPS: f64 = 1e-13;
+
 /// C `printRingBuffer` with `printDelayBuffer`, minus the element addresses.
 fn print_buffer(stream: omclog::Stream, buf: &VecDeque<Row>) {
     if !omclog::active(stream) {
@@ -132,7 +135,7 @@ impl DelayState {
 
     /// C `delayImpl`: `expr(time - delay_time)` by linear interpolation, with the
     /// pre-start / empty / oldest-value special cases.
-    fn eval(&self, idx: usize, time: f64, value: f64, delay_time: f64) -> f64 {
+    fn eval(&self, idx: usize, time: f64, value: f64, delay_time: f64, delay_max: f64) -> f64 {
         let buf = &self.buffers[idx];
         let length = buf.len();
         omclog::info(
@@ -145,6 +148,30 @@ impl DelayState {
                 format_g(delay_time, 6)
             ),
         );
+        // C's `assertStreamPrint` guards, `DASSL_STEP_EPS` being 1e-13. Each one
+        // throws in C, so at most one is reported and the caller's value stands in
+        // for the interpolation the jump skipped.
+        if delay_time < 0.0 {
+            crate::nls::throw_stream(&alloc::format!(
+                "Negative delay requested: delayTime = {}",
+                format_g(delay_time, 6)
+            ));
+            return value;
+        }
+        if delay_time < DASSL_STEP_EPS {
+            crate::nls::throw_stream(
+                "delayImpl: delayTime is zero or too small.\nOpenModelica doesn't support delay operator with zero delay time.",
+            );
+            return value;
+        }
+        if delay_time > delay_max {
+            crate::nls::throw_stream(&alloc::format!(
+                "Too large delay requested: delayTime = {}, delayMax = {}",
+                format_g(delay_time, 6),
+                format_g(delay_max, 6)
+            ));
+            return value;
+        }
         if time <= self.start_time {
             return value;
         }
@@ -230,8 +257,8 @@ pub extern "C" fn rt_delay_store(idx: u32, time: f64, value: f64, delay_time: f6
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_delay_eval(idx: u32, time: f64, value: f64, delay_time: f64, _delay_max: f64) -> f64 {
-    state().eval(idx as usize, time, value, delay_time)
+pub extern "C" fn rt_delay_eval(idx: u32, time: f64, value: f64, delay_time: f64, delay_max: f64) -> f64 {
+    state().eval(idx as usize, time, value, delay_time, delay_max)
 }
 
 #[unsafe(no_mangle)]
@@ -274,16 +301,16 @@ mod tests {
         s.store(0, 1.0, 10.0, 1.0);
         s.store(0, 2.0, 20.0, 1.0);
         // at time 2, delay 1 -> value at t=1 == 10
-        assert!((s.eval(0, 2.0, 20.0, 1.0) - 10.0).abs() < 1e-9);
+        assert!((s.eval(0, 2.0, 20.0, 1.0, 1e60) - 10.0).abs() < 1e-9);
         // at time 1.5, delay 1 -> value at t=0.5 == 5 (interpolated 0..10)
-        assert!((s.eval(0, 1.5, 15.0, 1.0) - 5.0).abs() < 1e-9);
+        assert!((s.eval(0, 1.5, 15.0, 1.0, 1e60) - 5.0).abs() < 1e-9);
     }
 
     #[test]
     fn eval_pre_start_returns_arg() {
         let s = DelayState::new(1, 0.0);
-        assert_eq!(s.eval(0, 0.0, 42.0, 1.0), 42.0); // time <= start
-        assert_eq!(s.eval(0, 0.5, 7.0, 1.0), 7.0); // empty buffer
+        assert_eq!(s.eval(0, 0.0, 42.0, 1.0, 1e60), 42.0); // time <= start
+        assert_eq!(s.eval(0, 0.5, 7.0, 1.0, 1e60), 7.0); // empty buffer
     }
 
     #[test]
@@ -292,7 +319,7 @@ mod tests {
         s.store(0, 0.0, 3.0, 1.0);
         s.store(0, 0.5, 4.0, 1.0);
         // time 0.5 <= start(0) + delay(1) -> oldest value 3
-        assert_eq!(s.eval(0, 0.5, 4.0, 1.0), 3.0);
+        assert_eq!(s.eval(0, 0.5, 4.0, 1.0, 1e60), 3.0);
     }
 
     #[test]
