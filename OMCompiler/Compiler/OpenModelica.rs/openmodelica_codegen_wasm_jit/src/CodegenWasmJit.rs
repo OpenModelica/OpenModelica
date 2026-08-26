@@ -1952,11 +1952,12 @@ pub(crate) fn include_overrides_builtin(sources: &[String]) -> bool {
     sources.iter().any(|s| s.contains("usertab"))
 }
 
-/// The `external "C"` functions neither `libs` nor the libraries every run loads
-/// (libc, ModelicaExternalC) export — what an `Include` still has to provide.
+/// The `external "C"` functions neither `libs` nor the libraries every run can
+/// load (libc, ModelicaExternalC, LAPACK) export — what an `Include` still has to
+/// provide.
 pub(crate) fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary]) -> Vec<ExtCallSig> {
     let mut defined: HashSet<&str> = HashSet::new();
-    for bytes in libs.iter().map(|l| &l.bytes[..]).chain([LIBC_PIC, EXTERNAL_C_DYLINK]) {
+    for bytes in libs.iter().map(|l| &l.bytes[..]).chain([LIBC_PIC, EXTERNAL_C_DYLINK, LAPACK_DYLINK]) {
         defined.extend(wasm_exports(bytes));
     }
     ext_imports.iter().filter(|s| !defined.contains(s.name.as_str())).cloned().collect()
