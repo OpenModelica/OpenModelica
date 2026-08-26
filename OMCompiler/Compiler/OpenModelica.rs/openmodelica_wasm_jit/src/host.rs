@@ -935,3 +935,17 @@ pub mod native_stdout {
 pub mod native_stdout {
     pub fn install() {}
 }
+
+/// A guest path as the host sees it: the simulation's WASI cwd is the preopen
+/// root, so a name a flag gave relative to omc's own working directory has to be
+/// resolved before it crosses into the module.
+pub fn absolute_path(path: &str) -> String {
+    let p = std::path::Path::new(path);
+    if p.is_absolute() {
+        return path.to_string();
+    }
+    match std::env::current_dir() {
+        Ok(dir) => dir.join(p).to_string_lossy().into_owned(),
+        Err(_) => path.to_string(),
+    }
+}

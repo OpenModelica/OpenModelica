@@ -1307,6 +1307,32 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         let n = openmodelica_sim_meta::simflags::with_flags(|f| f.max_warn.unwrap_or(3));
         wts(set.call(&mut store, n))?;
     }
+    // `-nlsJacTestATol` / `-nlsJacTestRTol`: the derivative test runs in-wasm.
+    if let Ok(set) = rt_inst.get_typed_func::<(f64, f64), ()>(&mut store, "rt_set_jac_test_tolerances") {
+        let t = openmodelica_sim_meta::simflags::with_flags(|f| {
+            openmodelica_sim_meta::simflags::jac_test_tolerances(f)
+        });
+        wts(set.call(&mut store, t))?;
+    }
+    // `-svdCount` / `-svdSigma`: `LOG_NLS_SVD` runs inside the nonlinear solver.
+    if let Ok(set) = rt_inst.get_typed_func::<(u32, f64), ()>(&mut store, "rt_set_svd") {
+        let (c, sigma) = openmodelica_sim_meta::simflags::with_flags(|f| {
+            openmodelica_sim_meta::simflags::svd_params(f)
+        });
+        wts(set.call(&mut store, (c.max(0) as u32, sigma)))?;
+    }
+    // `-saveInitialGuess_system`: the nonlinear solver writes the file itself.
+    if let Ok(set) = rt_inst.get_typed_func::<(i32, u32, u32), ()>(&mut store, "rt_set_save_initial_guess") {
+        let req = openmodelica_sim_meta::simflags::with_flags(|f| f.save_initial_guess.clone());
+        match req.map(|(p, i)| (format!("{p}\0{}", crate::host::absolute_path(&p)), i)) {
+            Some((names, idx)) => {
+                let ptr = wts(rt_alloc.call(&mut store, names.len() as u32))?;
+                wts(memory.write(&mut store, ptr as usize, names.as_bytes()))?;
+                wts(set.call(&mut store, (idx, ptr, names.len() as u32)))?;
+            }
+            None => wts(set.call(&mut store, (-1, 0, 0)))?,
+        }
+    }
     // `-ils` / `-homotopyOnFirstTry`: a local approach sweeps inside `rt_solve_nls`.
     if let Ok(set) = rt_inst.get_typed_func::<(u32, u32), ()>(&mut store, "rt_set_homotopy") {
         let h = openmodelica_sim_meta::simflags::with_flags(|f| {
@@ -1341,7 +1367,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     // `-lv=LOG_NLS` names the iteration variables, which only the metadata has. The
     // roster is per model, so it is cleared first and pushed only when the stream is
     // on: an ordinary run carries no names.
-    if openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::NLS)
+    if openmodelica_sim_meta::omclog::wants_nls_var_names(log_mask)
         && let Ok(set) = rt_inst.get_typed_func::<(u32, u32, u32), ()>(&mut store, "rt_nls_set_names")
     {
         let free = rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free").ok();
@@ -1388,6 +1414,16 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
     // before building the in-wasm driver on it.
     if std::env::var("OMC_WASM_SIM_PROBE").is_ok() {
         run_table_probe(&mut store, rt_inst, instance, memory, sim_data, layout.total)?;
+    }
+
+    // What C's `NLS_USERDATA` carries as `DATA*`: `-saveInitialGuess_system` writes
+    // the model state from inside the nonlinear solver, where this module's driver
+    // and metadata are out of reach.
+    if let Ok(set) = rt_inst.get_typed_func::<(u32, u32, u32), i32>(&mut store, "rt_set_model_context") {
+        let blob = openmodelica_sim_meta::encode(meta);
+        let ptr = wts(rt_alloc.call(&mut store, blob.len() as u32))?;
+        wts(memory.write(&mut store, ptr as usize, &blob))?;
+        wts(set.call(&mut store, (ptr, blob.len() as u32, sim_data)))?;
     }
 
     let engine = WasmtimeEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), funcs2: HashMap::new() };

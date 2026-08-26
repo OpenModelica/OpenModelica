@@ -104,6 +104,10 @@ pub const NLS: Stream = 32;
 pub const NLS_V: Stream = 33;
 pub const NLS_HOMOTOPY: Stream = 34;
 pub const NLS_JAC: Stream = 35;
+pub const NLS_JAC_SUMS: Stream = 37;
+pub const NLS_DERIVATIVE_TEST: Stream = 39;
+pub const NLS_SVD: Stream = 40;
+pub const NLS_SVD_V: Stream = 41;
 pub const NLS_RES: Stream = 42;
 pub const NLS_EXTRAPOLATE: Stream = 43;
 pub const SIMULATION: Stream = 46;
@@ -141,6 +145,12 @@ pub const FMU_STREAMS: Mask = (1 << STDOUT) | (1 << ASSERT);
 /// It rides in the mask, above every stream index, so the single value a run pushes
 /// into the wasm runtime carries it too.
 pub const SHOW_ALL_WARNINGS: Mask = 1 << 63;
+
+/// Which streams name a nonlinear system's iteration variables, and so need the
+/// roster the model metadata carries (C reads it out of `modelDataXml` instead).
+pub fn wants_nls_var_names(m: Mask) -> bool {
+    [NLS, NLS_DERIVATIVE_TEST, NLS_SVD, NLS_SVD_V].iter().any(|s| mask_has(m, *s))
+}
 
 pub fn mask_has(m: Mask, s: Stream) -> bool {
     m & (1 << s) != 0

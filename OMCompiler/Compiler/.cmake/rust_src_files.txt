@@ -211,11 +211,14 @@ openmodelica_codegen_wasm_jit_runtime/Cargo.toml
 openmodelica_codegen_wasm_jit_runtime/build-runtime.sh
 openmodelica_codegen_wasm_jit_runtime/build.rs
 openmodelica_codegen_wasm_jit_runtime/src/delay.rs
+openmodelica_codegen_wasm_jit_runtime/src/jacobian_analysis.rs
 openmodelica_codegen_wasm_jit_runtime/src/lib.rs
 openmodelica_codegen_wasm_jit_runtime/src/lis.rs
 openmodelica_codegen_wasm_jit_runtime/src/nls.rs
+openmodelica_codegen_wasm_jit_runtime/src/primme_svds.c
 openmodelica_codegen_wasm_jit_runtime/src/nls_c_trace.rs
 openmodelica_codegen_wasm_jit_runtime/src/omclog.rs
+openmodelica_codegen_wasm_jit_runtime/src/model_ctx.rs
 openmodelica_codegen_wasm_jit_runtime/src/session.rs
 openmodelica_codegen_wasm_jit_runtime/src/solvers.rs
 openmodelica_codegen_wasm_jit_runtime/src/spatial.rs
@@ -310,8 +313,10 @@ openmodelica_lapack/src/hqr.rs
 openmodelica_lapack/src/lib.rs
 openmodelica_lapack/src/lu.rs
 openmodelica_lapack/src/qr.rs
+openmodelica_lapack/src/rand.rs
 openmodelica_lapack/src/rz.rs
 openmodelica_lapack/src/svd.rs
+openmodelica_lapack/src/syev.rs
 openmodelica_lapack/src/trevc.rs
 openmodelica_lapack/tests/reference.rs
 openmodelica_lapack/tests/small_gevd.rs

@@ -601,6 +601,9 @@ pub struct SotiVars {
     pub bools: Vec<(String, i32)>,
     /// String variables with their `start` attribute.
     pub strings: Vec<(String, String)>,
+    /// C's `nDiscreteRealArray`: how many of [`SotiVars::reals`] at the tail are
+    /// discrete. `checkForDiscreteChanges` walks exactly those.
+    pub n_discrete_real: u32,
 }
 
 /// C's `modelData` parameter arrays (name, `start`, `fixed`) in the order of the
@@ -1075,6 +1078,10 @@ pub struct InputVar {
 pub struct NlsVars {
     pub eq_index: u32,
     pub names: Vec<String>,
+    /// The tail of C's `eqn_simcode_indices` — the SimCode index of each residual
+    /// equation, in solver order, which `LOG_NLS_SVD` names its rows by. C keeps
+    /// the torn equations ahead of them and slices; only the tail is read.
+    pub eqns: Vec<i32>,
 }
 
 impl SimMeta {
@@ -1523,6 +1530,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         put_str(&mut o, n);
         put_str(&mut o, v);
     }
+    put_u32(&mut o, m.soti.n_discrete_real);
     put_u32s(&mut o, &m.sens_params);
     put_u32(&mut o, m.nls_vars.len() as u32);
     for v in &m.nls_vars {
@@ -1531,6 +1539,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         for n in &v.names {
             put_str(&mut o, n);
         }
+        put_u32s(&mut o, &v.eqns.iter().map(|e| *e as u32).collect::<Vec<_>>());
     }
     put_u32(&mut o, m.n_lin_systems);
     match &m.dae {
@@ -1947,6 +1956,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     for _ in 0..r.u32()? {
         soti.strings.push((r.string()?, r.string()?));
     }
+    soti.n_discrete_real = r.u32()?;
     let sens_params = r.u32s()?;
     let nsys = r.u32()? as usize;
     let mut nls_vars = Vec::with_capacity(nsys);
@@ -1957,7 +1967,8 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         for _ in 0..nn {
             names.push(r.string()?);
         }
-        nls_vars.push(NlsVars { eq_index, names });
+        let eqns = r.u32s()?.into_iter().map(|v| v as i32).collect();
+        nls_vars.push(NlsVars { eq_index, names, eqns });
     }
     let n_lin_systems = r.u32()?;
     let dae = match r.u8()? {
@@ -2209,6 +2220,7 @@ mod tests {
             nls_vars: vec![NlsVars {
                 eq_index: 1074,
                 names: vec!["pipe.medium.T".to_string(), "pipe.medium.p".to_string()],
+                eqns: vec![1072, 1073],
             }],
             n_lin_systems: 2,
             dae: Some(DaeInfo {

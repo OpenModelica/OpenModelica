@@ -509,6 +509,9 @@ pub(crate) mod kinsol {
         fn SUNSparseMatrix_IndexPointers(a: SunMatrix) -> *mut i32;
         fn SUNSparseMatrix_IndexValues(a: SunMatrix) -> *mut i32;
         fn SUNLinSol_KLU(y: NVector, a: SunMatrix, ctx: SunContext) -> SunLinSol;
+        fn SUNDenseMatrix(m: i32, n: i32, ctx: SunContext) -> SunMatrix;
+        fn SUNDenseMatrix_Data(a: SunMatrix) -> *mut f64;
+        fn SUNLinSol_Dense(y: NVector, a: SunMatrix, ctx: SunContext) -> SunLinSol;
         fn SUNLinSol_KLUReInit(s: SunLinSol, a: SunMatrix, nnz: i32, reinit_type: c_int) -> c_int;
         fn SUNLinSolFree(s: SunLinSol) -> c_int;
     }
@@ -551,6 +554,9 @@ pub(crate) mod kinsol {
         assemble: &'a mut dyn FnMut(&[f64], &mut [f64]),
         /// Difference the Jacobian rather than assemble it analytically.
         numeric: bool,
+        /// What the `LOG_NLS_DERIVATIVE_TEST` header names.
+        eq_index: u32,
+        time: f64,
     }
 
     /// Extract the backing array pointer from an N_Vector.
@@ -594,6 +600,19 @@ pub(crate) mod kinsol {
         }
     }
 
+    /// The `LOG_NLS_DERIVATIVE_TEST` tail C gives `nlsSparseSymJac`/`nlsSparseJac`.
+    /// Unscaled: this port applies `xScale` where it reads the Jacobian, so C's
+    /// `nominalJac` is never set here.
+    fn derivative_test(ud: &mut Ud, x: &mut [f64], vals: &[f64]) {
+        if !crate::omclog::active(crate::omclog::NLS_DERIVATIVE_TEST) {
+            return;
+        }
+        crate::jacobian_analysis::derivative_test(
+            ud.eq_index, ud.time, ud.n, x, ud.colptr, ud.rowidx, vals, false,
+            crate::jacobian_analysis::Caller::KinsolJacEval, ud.eval,
+        );
+    }
+
     extern "C" fn jacobian(u: NVector, fu: NVector, j: SunMatrix, user: *mut c_void, _t1: NVector, _t2: NVector) -> c_int {
         let ud = unsafe { &mut *(user as *mut Ud) };
         let x = data(u, ud.n);
@@ -608,6 +627,7 @@ pub(crate) mod kinsol {
             core::ptr::copy_nonoverlapping(ud.colptr.as_ptr(), SUNSparseMatrix_IndexPointers(j), ud.n + 1);
             core::ptr::copy_nonoverlapping(ud.rowidx.as_ptr(), SUNSparseMatrix_IndexValues(j), ud.nnz);
         }
+        derivative_test(ud, x, vals);
         0
     }
 
@@ -660,6 +680,11 @@ pub(crate) mod kinsol {
         maxstepfactor: f64,
         /// Set for good once `KIN_LSETUP_FAIL` rejects the analytic Jacobian.
         numeric_jac: bool,
+        /// C's `kinsolData->solved == NLS_SOLVED`: the last solve converged to the
+        /// full tolerance, so [`f_scaling`](Self::f_scaling) reuses [`Self::vals`].
+        solved: bool,
+        /// The Jacobian values the scaling was last taken from.
+        vals: vec::Vec<f64>,
     }
 
     impl Solver {
@@ -682,6 +707,8 @@ pub(crate) mod kinsol {
                 strategy: KIN_LINESEARCH,
                 maxstepfactor: crate::solvers::max_step_factor(),
                 numeric_jac: false,
+                solved: false,
+                vals: vec![0.0; nnz],
             };
             if s.kin.is_null()
                 || s.j.is_null()
@@ -719,8 +746,15 @@ pub(crate) mod kinsol {
 
         /// `fScale[i] = 1/max_j |J_ij / xScale_j|` from the Jacobian at the start
         /// point (C's `SCALING_JACOBIAN`), with C's `1e-12` floor on the row maximum.
-        fn f_scaling(&mut self, ud: &mut Ud, vals: &mut [f64]) {
-            (ud.assemble)(data(self.u, self.n), vals);
+        /// The Jacobian is re-evaluated unless the last solve reached full accuracy,
+        /// where C scales the one still in memory.
+        fn f_scaling(&mut self, ud: &mut Ud) {
+            let vals = &mut self.vals;
+            if !self.solved {
+                let x = data(self.u, self.n);
+                (ud.assemble)(x, vals);
+                derivative_test(ud, x, vals);
+            }
             let xscale = data(self.xscale, self.n);
             let fscale = data(self.fscale, self.n);
             fscale.fill(1e-12);
@@ -802,6 +836,7 @@ pub(crate) mod kinsol {
         /// C's `nlsKinsolSolve`: solve from `guess`, retrying per
         /// [`handle_error`](Self::handle_error) until it gives up or `RETRY_MAX`.
         /// On success `x` is the solution.
+        #[allow(clippy::too_many_arguments)]
         pub fn solve(
             &mut self,
             guess: &[f64],
@@ -809,13 +844,23 @@ pub(crate) mod kinsol {
             colptr: &[i32],
             rowidx: &[i32],
             x: &mut [f64],
+            eq_index: u32,
+            time: f64,
             eval: &mut dyn FnMut(&[f64], &mut [f64]),
             assemble: &mut dyn FnMut(&[f64], &mut [f64]),
         ) -> bool {
-            let mut ud =
-                Ud { n: self.n, nnz: self.nnz, colptr, rowidx, eval, assemble, numeric: self.numeric_jac };
+            let mut ud = Ud {
+                n: self.n,
+                nnz: self.nnz,
+                colptr,
+                rowidx,
+                eval,
+                assemble,
+                numeric: self.numeric_jac,
+                eq_index,
+                time,
+            };
             unsafe { KINSetUserData(self.kin, &mut ud as *mut Ud as *mut c_void) };
-            let mut vals = vec![0.0f64; self.nnz];
             let mut success = false;
             let mut reset_tol = false;
             let mut retries = 0;
@@ -823,7 +868,7 @@ pub(crate) mod kinsol {
             loop {
                 data(self.u, self.n).copy_from_slice(guess);
                 self.x_scaling(nominal);
-                self.f_scaling(&mut ud, &mut vals);
+                self.f_scaling(&mut ud);
                 self.max_newton_step();
                 let flag = unsafe { KINSol(self.kin, self.u, self.strategy, self.xscale, self.fscale) };
                 success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK | KIN_STEP_LT_STPTOL);
@@ -835,6 +880,7 @@ pub(crate) mod kinsol {
                     break;
                 }
             }
+            self.solved = success && !reset_tol;
             if reset_tol {
                 unsafe {
                     KINSetFuncNormTol(self.kin, crate::solvers::newton_ftol());
@@ -873,6 +919,639 @@ pub(crate) mod kinsol {
             }
         }
     }
+
+    // ---------------------------------------------------------------------------
+    // `kinsol_b.c` ("experimental-kinsol"): the same library, driven differently.
+    // KINSOL gets unit scale vectors and the solver keeps `x`, `f` and the Jacobian
+    // in scaled units itself, so the analyses see a scaled matrix -- which is what
+    // their headers report.
+    // ---------------------------------------------------------------------------
+
+    /// C's `B_FTOL_WITH_LESS_ACCURACY` / `B_RETRY_MAX`.
+    const B_FTOL_LESS_ACCURACY: f64 = 1.0e-6;
+    const B_RETRY_MAX: i32 = 5;
+
+    /// C's `B_initialMode`.
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum BInitial {
+        Extrapolation,
+        OldValues,
+    }
+
+    /// C's `B_scalingMode`.
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum BScaling {
+        NominalStart,
+        Ones,
+        Jacobian,
+    }
+
+    /// The system being solved, plus C's `useScaling` and its two scale vectors.
+    struct BUd<'a> {
+        n: usize,
+        nnz: usize,
+        /// `Some` for a system with a sparsity pattern, whose matrix is CSC; `None`
+        /// for C's dense linear solver, whose matrix is column-major `n×n`.
+        pattern: Option<(&'a [i32], &'a [i32])>,
+        eval: &'a mut dyn FnMut(&[f64], &mut [f64]),
+        /// C's `analyticalJacobianColumn`; `None` differences the Jacobian instead.
+        assemble: Option<&'a mut dyn FnMut(&[f64], &mut [f64])>,
+        eq_index: u32,
+        time: f64,
+        /// The model's iteration-variable buffer, which the residual last wrote.
+        /// C's `evalJacobian` reads the model where it stands rather than at a
+        /// point handed to it, so the scaling Jacobian is taken there too.
+        x_ptr: u32,
+        scaling: bool,
+        xscale: vec::Vec<f64>,
+        fscale: vec::Vec<f64>,
+    }
+
+    impl BUd<'_> {
+        /// Every stored entry as `(column, row, index into the value array)`.
+        fn for_each_entry(&self, mut f: impl FnMut(usize, usize, usize)) {
+            match self.pattern {
+                Some((colptr, rowidx)) => {
+                    for c in 0..self.n {
+                        for k in colptr[c] as usize..colptr[c + 1] as usize {
+                            f(c, rowidx[k] as usize, k);
+                        }
+                    }
+                }
+                None => {
+                    for c in 0..self.n {
+                        for r in 0..self.n {
+                            f(c, r, c * self.n + r);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// C's `nlsKinsolInplaceScaleX` / `…UnscaleX`.
+        fn scale_x(&self, x: &mut [f64]) {
+            for (v, s) in x.iter_mut().zip(self.xscale.iter()) {
+                *v *= *s;
+            }
+        }
+
+        fn unscale_x(&self, x: &mut [f64]) {
+            for (v, s) in x.iter_mut().zip(self.xscale.iter()) {
+                *v /= *s;
+            }
+        }
+
+        /// C's `nlsKinsolInplaceScaleJac`: `J[row][col] *= fScale[row] / xScale[col]`.
+        fn scale_jac(&self, vals: &mut [f64]) {
+            let (xscale, fscale) = (&self.xscale, &self.fscale);
+            self.for_each_entry(|c, r, k| vals[k] *= fscale[r] / xscale[c]);
+        }
+
+        fn unscale_jac(&self, vals: &mut [f64]) {
+            let (xscale, fscale) = (&self.xscale, &self.fscale);
+            self.for_each_entry(|c, r, k| vals[k] *= xscale[c] / fscale[r]);
+        }
+
+        /// C's `B_nlsKinsolResiduals` called outside a KINSOL callback.
+        fn residual(&mut self, x: &mut [f64], f: &mut [f64]) {
+            if self.scaling {
+                self.unscale_x(x);
+            }
+            (self.eval)(x, f);
+            if self.scaling {
+                self.scale_x(x);
+                for (v, s) in f.iter_mut().zip(self.fscale.iter()) {
+                    *v *= *s;
+                }
+            }
+        }
+
+        /// C's `B_nlsSparseSymJac` / `B_nlsSparseJac` / `B_nlsDenseJac` body. C
+        /// evaluates `f(x)` itself before differencing, scaling off for the pass.
+        fn jacobian(&mut self, x: &mut [f64], vals: &mut [f64]) {
+            let scaled = self.scaling;
+            if scaled {
+                self.unscale_x(x);
+                self.scaling = false;
+            }
+            match &mut self.assemble {
+                Some(assemble) => assemble(x, vals),
+                None => {
+                    let mut f = vec![0.0f64; self.n];
+                    (self.eval)(x, &mut f);
+                    b_numeric_jac(self, x, &f, vals);
+                }
+            }
+            self.scaling = scaled;
+            if scaled {
+                self.scale_x(x);
+                self.scale_jac(vals);
+            }
+            self.derivative_test(x, vals);
+        }
+
+        /// C's `nlsKinsolDenseDerivativeTest`, its reference differences going
+        /// through this solver's scaling as C's do.
+        fn derivative_test(&mut self, x: &mut [f64], vals: &[f64]) {
+            if !crate::omclog::active(crate::omclog::NLS_DERIVATIVE_TEST) {
+                return;
+            }
+            let (n, scaling) = (self.n, self.scaling);
+            let (xscale, fscale) = (self.xscale.to_vec(), self.fscale.to_vec());
+            let eval = &mut *self.eval;
+            let mut scaled_eval = |xs: &[f64], f: &mut [f64]| {
+                let mut xu = xs.to_vec();
+                if scaling {
+                    for (v, s) in xu.iter_mut().zip(&xscale) {
+                        *v /= *s;
+                    }
+                }
+                eval(&xu, f);
+                if scaling {
+                    for (v, s) in f.iter_mut().zip(&fscale) {
+                        *v *= *s;
+                    }
+                }
+            };
+            let Some((colptr, rowidx)) = self.pattern else { return };
+            crate::jacobian_analysis::derivative_test(
+                self.eq_index, self.time, n, x, colptr, rowidx, vals, scaling,
+                crate::jacobian_analysis::Caller::KinsolBJacEval, &mut scaled_eval,
+            );
+        }
+    }
+
+    /// C's `B_nlsSparseJac` / `B_nlsDenseJac` difference quotients, one column at a
+    /// time (see [`numeric_csc`] for why the colouring is not replayed).
+    fn b_numeric_jac(ud: &mut BUd, x: &mut [f64], fx: &[f64], vals: &mut [f64]) {
+        /// `sqrt(DBL_EPSILON * 2e1)`, C's difference step.
+        const DELTA_H: f64 = 6.664001874625056e-08;
+        let mut fres = vec![0.0f64; ud.n];
+        for c in 0..ud.n {
+            let saved = x[c];
+            let dh = DELTA_H * (libm::fabs(saved) + 1.0);
+            x[c] = saved + dh;
+            (ud.eval)(x, &mut fres);
+            x[c] = saved;
+            let inv = 1.0 / dh;
+            match ud.pattern {
+                Some((colptr, rowidx)) => {
+                    for k in colptr[c] as usize..colptr[c + 1] as usize {
+                        let row = rowidx[k] as usize;
+                        vals[k] = (fres[row] - fx[row]) * inv;
+                    }
+                }
+                None => {
+                    for r in 0..ud.n {
+                        vals[c * ud.n + r] = (fres[r] - fx[r]) * inv;
+                    }
+                }
+            }
+        }
+    }
+
+    extern "C" fn b_residual(u: NVector, fval: NVector, user: *mut c_void) -> c_int {
+        let ud = unsafe { &mut *(user as *mut BUd) };
+        let (x, f) = (data(u, ud.n), data(fval, ud.n));
+        ud.residual(x, f);
+        crate::nls::assert_hit() as c_int
+    }
+
+    /// Only registered for the sparse matrix: with C's dense linear solver KINSOL
+    /// differences its own Jacobian (`initKinsolMemory` sets no `KINSetJacFn`).
+    extern "C" fn b_jacobian(u: NVector, _fu: NVector, j: SunMatrix, user: *mut c_void, _t1: NVector, _t2: NVector) -> c_int {
+        let ud = unsafe { &mut *(user as *mut BUd) };
+        let x = data(u, ud.n);
+        let vals = unsafe { core::slice::from_raw_parts_mut(SUNSparseMatrix_Data(j), ud.nnz) };
+        ud.jacobian(x, vals);
+        if let Some((colptr, rowidx)) = ud.pattern {
+            unsafe {
+                core::ptr::copy_nonoverlapping(colptr.as_ptr(), SUNSparseMatrix_IndexPointers(j), ud.n + 1);
+                core::ptr::copy_nonoverlapping(rowidx.as_ptr(), SUNSparseMatrix_IndexValues(j), ud.nnz);
+            }
+        }
+        0
+    }
+
+    /// One system's `B_NLS_KINSOL_DATA`.
+    pub struct BSolver {
+        ctx: SunContext,
+        kin: *mut c_void,
+        /// C's `initialGuess`, which is also KINSOL's solution vector.
+        u: NVector,
+        ones_x: NVector,
+        ones_f: NVector,
+        j: SunMatrix,
+        ls: SunLinSol,
+        n: usize,
+        nnz: usize,
+        /// The matrix is CSC over a sparsity pattern; otherwise column-major dense.
+        sparse: bool,
+        /// Set for good once `KIN_LSETUP_FAIL` rejects the analytic Jacobian, as C
+        /// re-points `KINSetJacFn` at its numeric one.
+        numeric_jac: bool,
+        strategy: c_int,
+        maxstepfactor: f64,
+        /// C's `kinsolData->solved == NLS_SOLVED`: the f-scaling then reuses `j`.
+        solved: bool,
+        reset_tol: bool,
+    }
+
+    impl BSolver {
+        /// `nnz == 0` selects C's dense linear solver, which is what a system without
+        /// a sparsity pattern gets (`initKinsolMemory`).
+        pub fn new(n: usize, nnz: usize) -> Option<BSolver> {
+            let ctx = context();
+            if ctx.is_null() {
+                return None;
+            }
+            let ones = |ctx| {
+                let v = unsafe { N_VNew_Serial(n as i32, ctx) };
+                if !v.is_null() {
+                    unsafe { N_VConst(1.0, v) };
+                }
+                v
+            };
+            let sparse = nnz != 0;
+            let mut s = BSolver {
+                ctx,
+                kin: unsafe { KINCreate(ctx) },
+                u: unsafe { N_VNew_Serial(n as i32, ctx) },
+                ones_x: ones(ctx),
+                ones_f: ones(ctx),
+                j: unsafe {
+                    if sparse {
+                        SUNSparseMatrix(n as i32, n as i32, nnz as i32, CSC_MAT, ctx)
+                    } else {
+                        SUNDenseMatrix(n as i32, n as i32, ctx)
+                    }
+                },
+                ls: core::ptr::null_mut(),
+                n,
+                nnz: if sparse { nnz } else { n * n },
+                sparse,
+                numeric_jac: false,
+                strategy: KIN_LINESEARCH,
+                maxstepfactor: crate::solvers::max_step_factor(),
+                solved: false,
+                reset_tol: false,
+            };
+            if s.kin.is_null() || s.j.is_null() || [s.u, s.ones_x, s.ones_f].iter().any(|v| v.is_null()) {
+                return None;
+            }
+            s.ls = unsafe {
+                if sparse { SUNLinSol_KLU(s.u, s.j, s.ctx) } else { SUNLinSol_Dense(s.u, s.j, s.ctx) }
+            };
+            if s.ls.is_null() {
+                return None;
+            }
+            unsafe {
+                if KINInit(s.kin, b_residual, s.u) != KIN_SUCCESS
+                    || KINSetLinearSolver(s.kin, s.ls, s.j) != KIN_SUCCESS
+                    || (sparse && KINSetJacFn(s.kin, b_jacobian) != KIN_SUCCESS)
+                {
+                    return None;
+                }
+                KINSetFuncNormTol(s.kin, crate::solvers::newton_ftol());
+                KINSetScaledStepTol(s.kin, crate::solvers::newton_xtol());
+                KINSetNumMaxIters(s.kin, 100 * n as c_long);
+                KINSetNoInitSetup(s.kin, 0);
+            }
+            Some(s)
+        }
+
+        /// The Jacobian values KINSOL, the scaling and the analyses all share --
+        /// C's one `kinsolData->J`.
+        fn jvals(&self) -> &'static mut [f64] {
+            let data = unsafe {
+                if self.sparse { SUNSparseMatrix_Data(self.j) } else { SUNDenseMatrix_Data(self.j) }
+            };
+            unsafe { core::slice::from_raw_parts_mut(data, self.nnz) }
+        }
+
+        fn write_pattern(&self, ud: &BUd) {
+            let Some((colptr, rowidx)) = ud.pattern else { return };
+            unsafe {
+                core::ptr::copy_nonoverlapping(colptr.as_ptr(), SUNSparseMatrix_IndexPointers(self.j), self.n + 1);
+                core::ptr::copy_nonoverlapping(rowidx.as_ptr(), SUNSparseMatrix_IndexValues(self.j), self.nnz);
+            }
+        }
+
+        /// C's `B_nlsKinsolResetInitialUnscaled`.
+        fn reset_initial(&self, mode: BInitial, start: &[f64], old: &[f64]) {
+            let src = match mode {
+                BInitial::Extrapolation => start,
+                BInitial::OldValues => old,
+            };
+            data(self.u, self.n).copy_from_slice(src);
+        }
+
+        /// C's `B_nlsKinsolXScaling`.
+        fn x_scaling(&self, ud: &mut BUd, nominal: &[f64], mode: BScaling) {
+            let start = data(self.u, self.n);
+            match mode {
+                BScaling::NominalStart => {
+                    for (i, s) in ud.xscale.iter_mut().enumerate() {
+                        *s = 1.0 / libm::fmax(nominal[i], libm::fabs(start[i]));
+                    }
+                }
+                _ => ud.xscale.fill(1.0),
+            }
+        }
+
+        /// C's `B_nlsKinsolFScaling`: `fScale[i] = 1/max_j |J_ij / xScale_j|`, with
+        /// C's `1e-12` floor. The Jacobian is re-evaluated unless the last solve
+        /// reached full accuracy.
+        fn f_scaling(&mut self, ud: &mut BUd, mode: BScaling) {
+            ud.scaling = false;
+            if mode != BScaling::Jacobian {
+                ud.fscale.fill(1.0);
+                return;
+            }
+            if !self.solved {
+                // C's `B_nlsSparseSymJac` passes `initialGuess` but `evalJacobian`
+                // ignores it: after a failed `KINSol` the matrix is the one at that
+                // solve's last iterate, not at the start point just restored.
+                let mut x: vec::Vec<f64> =
+                    (0..self.n).map(|i| unsafe { crate::load_f64(ud.x_ptr + (i * 8) as u32) }).collect();
+                let vals = self.jvals();
+                ud.jacobian(&mut x, vals);
+                self.write_pattern(ud);
+            }
+            let vals = self.jvals();
+            ud.fscale.fill(1e-12);
+            // C's `_omc_SUNSparseMatrixVecScaling` on a copy, then the row maxima.
+            let (n, pattern) = (ud.n, ud.pattern);
+            let BUd { xscale, fscale, .. } = &mut *ud;
+            let mut row_max = |c: usize, r: usize, k: usize| {
+                let v = libm::fabs(vals[k] / xscale[c]);
+                if fscale[r] < v {
+                    fscale[r] = v;
+                }
+            };
+            match pattern {
+                Some((colptr, rowidx)) => {
+                    for c in 0..n {
+                        for k in colptr[c] as usize..colptr[c + 1] as usize {
+                            row_max(c, rowidx[k] as usize, k);
+                        }
+                    }
+                }
+                None => {
+                    for c in 0..n {
+                        for r in 0..n {
+                            row_max(c, r, c * n + r);
+                        }
+                    }
+                }
+            }
+            for s in fscale.iter_mut() {
+                *s = 1.0 / *s;
+            }
+        }
+
+        /// C's `B_nlsKinsolSetMaxNewtonStep`: `N_VWL2Norm(xScale, maxstepfactor·1)`.
+        fn max_newton_step(&self, ud: &BUd) {
+            let sq: f64 = ud.xscale.iter().map(|s| s * self.maxstepfactor).map(|v| v * v).sum();
+            unsafe { KINSetMaxNewtonStep(self.kin, libm::sqrt(sq)) };
+        }
+
+        /// C's `nlsKinsolErrorHandler` (`kinsol_b.c`): `true` to try again.
+        fn handle_error(
+            &mut self,
+            code: c_int,
+            ud: &mut BUd,
+            nominal: &[f64],
+            start: &[f64],
+            old: &[f64],
+            retries: &mut i32,
+        ) -> bool {
+            unsafe { KINSetNoInitSetup(self.kin, 0) };
+            match code {
+                KIN_MEM_NULL | KIN_ILL_INPUT | KIN_NO_MALLOC => return false,
+                KIN_MXNEWT_5X_EXCEEDED => {
+                    self.maxstepfactor *= 1e5;
+                    self.max_newton_step(ud);
+                    return true;
+                }
+                KIN_LINESEARCH_NONCONV => {
+                    self.strategy = KIN_NONE;
+                    *retries -= 1;
+                    return true;
+                }
+                KIN_LSOLVE_FAIL => {
+                    unsafe { SUNLinSol_KLUReInit(self.ls, self.j, self.nnz as i32, SUNKLU_REINIT_PARTIAL) };
+                    return true;
+                }
+                // C's own `return errorCode` here is a nonzero "retry".
+                KIN_LINIT_FAIL => return true,
+                // A Jacobian KLU cannot factorize: difference it from here on, as C
+                // re-points `KINSetJacFn`.
+                KIN_LSETUP_FAIL => {
+                    self.numeric_jac = true;
+                    ud.assemble = None;
+                }
+                KIN_MAXITER_REACHED | KIN_REPTD_SYSFUNC_ERR | KIN_LINESEARCH_BCFAIL => {}
+                _ => return false,
+            }
+            let mut fnorm = 0.0;
+            unsafe { KINGetFuncNorm(self.kin, &mut fnorm) };
+            if fnorm < B_FTOL_LESS_ACCURACY {
+                unsafe {
+                    KINSetFuncNormTol(self.kin, B_FTOL_LESS_ACCURACY);
+                    KINSetScaledStepTol(self.kin, B_FTOL_LESS_ACCURACY);
+                }
+                self.reset_tol = true;
+                return true;
+            }
+            match *retries {
+                0 => {
+                    self.x_scaling(ud, nominal, BScaling::Ones);
+                    self.f_scaling(ud, BScaling::Ones);
+                }
+                1 => {
+                    self.reset_initial(BInitial::OldValues, start, old);
+                    self.strategy = KIN_LINESEARCH;
+                }
+                2 => {
+                    self.reset_initial(BInitial::Extrapolation, start, old);
+                    self.strategy = KIN_NONE;
+                }
+                3 => {
+                    self.x_scaling(ud, nominal, BScaling::NominalStart);
+                    self.f_scaling(ud, BScaling::Jacobian);
+                    self.reset_initial(BInitial::Extrapolation, start, old);
+                    unsafe { KINSetMaxSetupCalls(self.kin, 1) };
+                    self.strategy = KIN_LINESEARCH;
+                }
+                4 => {
+                    self.x_scaling(ud, nominal, BScaling::Ones);
+                    self.f_scaling(ud, BScaling::Ones);
+                    self.reset_initial(BInitial::OldValues, start, old);
+                    unsafe { KINSetMaxSetupCalls(self.kin, 1) };
+                    self.strategy = KIN_LINESEARCH;
+                }
+                _ => return false,
+            }
+            true
+        }
+
+        /// C's `B_nlsKinsolSolve`.
+        #[allow(clippy::too_many_arguments)]
+        pub fn solve<'a>(
+            &mut self,
+            start: &[f64],
+            old: &[f64],
+            nominal: &[f64],
+            pattern: Option<(&'a [i32], &'a [i32])>,
+            x: &mut [f64],
+            eq_index: u32,
+            time: f64,
+            x_ptr: u32,
+            eval: &'a mut dyn FnMut(&[f64], &mut [f64]),
+            assemble: Option<&'a mut dyn FnMut(&[f64], &mut [f64])>,
+        ) -> bool {
+            let mut ud = BUd {
+                n: self.n,
+                nnz: self.nnz,
+                pattern,
+                eval,
+                assemble: if self.numeric_jac { None } else { assemble },
+                eq_index,
+                time,
+                x_ptr,
+                scaling: false,
+                xscale: vec![1.0f64; self.n],
+                fscale: vec![1.0f64; self.n],
+            };
+            unsafe { KINSetUserData(self.kin, &mut ud as *mut BUd as *mut c_void) };
+            let v = crate::omclog::NLS_V;
+            crate::omclog::info(
+                v, true,
+                &alloc::format!(
+                    "Start solving Non-Linear System {eq_index} (size {}) at time {} with Kinsol Solver",
+                    self.n,
+                    openmodelica_sim_meta::driver::format_g(time, 6)
+                ),
+            );
+            let mut success = false;
+            let mut retries = 0;
+            let mut passes = 0;
+            self.reset_tol = false;
+            loop {
+                ud.scaling = false;
+                self.reset_initial(BInitial::Extrapolation, start, old);
+                self.x_scaling(&mut ud, nominal, BScaling::NominalStart);
+                self.f_scaling(&mut ud, BScaling::Jacobian);
+                self.max_newton_step(&ud);
+                ud.scaling = true;
+                ud.scale_x(data(self.u, self.n));
+                ud.scale_jac(self.jvals());
+                self.write_pattern(&ud);
+                if let Some((colptr, rowidx)) = pattern {
+                    crate::jacobian_analysis::svd_analysis(
+                        eq_index, time, self.n, colptr, rowidx, self.jvals(), true,
+                        crate::jacobian_analysis::Caller::KinsolBEntry,
+                    );
+                }
+                // C's `B_save_initial_guess_system`, which throws once written; the
+                // solve fails here instead, and the run ends on the failed system.
+                if let Some((path, file)) = crate::model_ctx::take_request(eq_index) {
+                    let mut f = vec![0.0f64; self.n];
+                    ud.residual(data(self.u, self.n), &mut f);
+                    crate::omclog::info(
+                        crate::omclog::STDOUT,
+                        false,
+                        &alloc::format!(
+                            "Trying to write write initial guess for NLS system with index {eq_index} to file {path}."
+                        ),
+                    );
+                    match crate::model_ctx::write(&file) {
+                        Ok(()) => crate::omclog::info(
+                            crate::omclog::STDOUT,
+                            false,
+                            &alloc::format!(
+                                "Success: Initial guess has been written to disk (path = {path}). The program will terminate now."
+                            ),
+                        ),
+                        Err(e) => crate::omclog::error(crate::omclog::STDOUT, false, e),
+                    }
+                    // C throws here; the message it would carry is suppressed with
+                    // `LOG_NLS` off, but the run still ends on the failed system.
+                    crate::note_runtime_error_flag();
+                    unsafe { KINSetUserData(self.kin, core::ptr::null_mut()) };
+                    return false;
+                }
+                let flag = unsafe { KINSol(self.kin, self.u, self.strategy, self.ones_x, self.ones_f) };
+                let finished = alloc::format!("KINSol finished with errorCode {flag}.");
+                if flag < 0 {
+                    crate::omclog::warning(crate::omclog::NLS, false, &finished);
+                } else {
+                    crate::omclog::info(v, false, &finished);
+                }
+                success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK | KIN_STEP_LT_STPTOL);
+                let retry = flag < 0
+                    && self.handle_error(flag, &mut ud, nominal, start, old, &mut retries);
+                retries += 1;
+                passes += 1;
+                crate::omclog::info(
+                    v, false,
+                    &alloc::format!(
+                        "Next try? success = {}, retry = {}, retries = {retries} = {}\n",
+                        success as u32,
+                        retry as u32,
+                        !success && !retry && retries < B_RETRY_MAX
+                    ),
+                );
+                if success || !retry || retries >= B_RETRY_MAX || passes >= 2 * B_RETRY_MAX {
+                    break;
+                }
+            }
+            self.solved = success && !self.reset_tol;
+            if self.reset_tol {
+                unsafe {
+                    KINSetFuncNormTol(self.kin, crate::solvers::newton_ftol());
+                    KINSetScaledStepTol(self.kin, crate::solvers::newton_xtol());
+                }
+                self.reset_tol = false;
+            }
+            if success {
+                if ud.scaling {
+                    ud.unscale_x(data(self.u, self.n));
+                    ud.unscale_jac(self.jvals());
+                    ud.scaling = false;
+                }
+                x.copy_from_slice(data(self.u, self.n));
+            }
+            crate::omclog::close(v);
+            unsafe { KINSetUserData(self.kin, core::ptr::null_mut()) };
+            success
+        }
+    }
+
+    impl Drop for BSolver {
+        fn drop(&mut self) {
+            unsafe {
+                if !self.kin.is_null() {
+                    KINFree(&mut self.kin);
+                }
+                if !self.ls.is_null() {
+                    SUNLinSolFree(self.ls);
+                }
+                if !self.j.is_null() {
+                    SUNMatDestroy(self.j);
+                }
+                for v in [self.u, self.ones_x, self.ones_f] {
+                    if !v.is_null() {
+                        N_VDestroy(v);
+                    }
+                }
+                if !self.ctx.is_null() {
+                    SUNContext_Free(&mut self.ctx);
+                }
+            }
+        }
+    }
 }
 
 #[cfg(sundials)]
@@ -881,6 +1560,46 @@ std::thread_local! {
     /// KLU reuse their setup.
     static KIN_CACHE: core::cell::RefCell<std::collections::HashMap<u32, kinsol::Solver>> =
         core::cell::RefCell::new(std::collections::HashMap::new());
+}
+
+#[cfg(sundials)]
+std::thread_local! {
+    /// [`KIN_CACHE`] for `-nls=experimental-kinsol`.
+    static KIN_B_CACHE: core::cell::RefCell<std::collections::HashMap<u32, kinsol::BSolver>> =
+        core::cell::RefCell::new(std::collections::HashMap::new());
+}
+
+/// [`kinsol_solve`] for `-nls=experimental-kinsol` (C's `B_nlsKinsolSolve`).
+/// `start` is C's `INITIAL_EXTRAPOLATION` value and `old` its `INITIAL_OLDVALUES`.
+#[cfg(sundials)]
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn kinsol_b_solve<'a>(
+    handle: u32,
+    n: usize,
+    nnz: usize,
+    pattern: Option<(&'a [i32], &'a [i32])>,
+    nominal: &[f64],
+    start: &[f64],
+    old: &[f64],
+    x: &mut [f64],
+    eq_index: u32,
+    time: f64,
+    x_ptr: u32,
+    eval: &'a mut dyn FnMut(&[f64], &mut [f64]),
+    assemble: Option<&'a mut dyn FnMut(&[f64], &mut [f64])>,
+) -> bool {
+    KIN_B_CACHE.with(|cell| {
+        let mut solver = match cell.borrow_mut().remove(&handle) {
+            Some(s) => s,
+            None => match kinsol::BSolver::new(n, nnz) {
+                Some(s) => s,
+                None => return false,
+            },
+        };
+        let ok = solver.solve(start, old, nominal, pattern, x, eq_index, time, x_ptr, eval, assemble);
+        cell.borrow_mut().insert(handle, solver);
+        ok
+    })
 }
 
 /// Solve system `handle` with KINSOL + KLU from `guess`, writing the solution into
@@ -896,6 +1615,8 @@ pub(crate) fn kinsol_solve(
     nominal: &[f64],
     guess: &[f64],
     x: &mut [f64],
+    eq_index: u32,
+    time: f64,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     assemble: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
@@ -908,7 +1629,7 @@ pub(crate) fn kinsol_solve(
                 None => return false,
             },
         };
-        let ok = solver.solve(guess, nominal, colptr, rowidx, x, eval, assemble);
+        let ok = solver.solve(guess, nominal, colptr, rowidx, x, eq_index, time, eval, assemble);
         cell.borrow_mut().insert(handle, solver);
         ok
     })

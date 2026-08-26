@@ -19,6 +19,20 @@ use openmodelica_lapack as om;
 unsafe extern "C" {
     fn dgesv_(n: *const i32, nrhs: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32,
               b: *mut f64, ldb: *const i32, info: *mut i32);
+    #[allow(clippy::too_many_arguments)]
+    fn dsyevx_(jobz: *const c_char, range: *const c_char, uplo: *const c_char, n: *const i32,
+               a: *mut f64, lda: *const i32, vl: *const f64, vu: *const f64, il: *const i32,
+               iu: *const i32, abstol: *const f64, m: *mut i32, w: *mut f64, z: *mut f64,
+               ldz: *const i32, work: *mut f64, lwork: *const i32, iwork: *mut i32,
+               ifail: *mut i32, info: *mut i32);
+    #[allow(clippy::too_many_arguments)]
+    fn dsygvx_(itype: *const i32, jobz: *const c_char, range: *const c_char, uplo: *const c_char,
+               n: *const i32, a: *mut f64, lda: *const i32, b: *mut f64, ldb: *const i32,
+               vl: *const f64, vu: *const f64, il: *const i32, iu: *const i32,
+               abstol: *const f64, m: *mut i32, w: *mut f64, z: *mut f64, ldz: *const i32,
+               work: *mut f64, lwork: *const i32, iwork: *mut i32, ifail: *mut i32,
+               info: *mut i32);
+    fn dlarnv_(idist: *const i32, iseed: *mut i32, n: *const i32, x: *mut f64);
     fn dgetrf_(m: *const i32, n: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32,
                info: *mut i32);
     fn dgetrs_(trans: *const c_char, n: *const i32, nrhs: *const i32, a: *const f64,
@@ -1311,6 +1325,181 @@ fn dtrsm_matches() {
                             same(&b, &wb,
                                  &format!("dtrsm {side}/{uplo}/{transa}/{diag} {m}x{n} a={alpha}"));
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// `RANGE = 'A'`: PRIMME's Rayleigh-Ritz step is the only caller, and it asks for
+/// the whole spectrum. The eigenvectors are compared *with* their signs: a caller
+/// that reports them (PRIMME, and through it `LOG_NLS_SVD`) would otherwise print
+/// the negated vector.
+#[test]
+fn dsyevx_matches() {
+    for n in [1usize, 2, 3, 5, 9, 17] {
+        let a = spd(n, 91 + n as u64);
+        let (mut wg, mut zg) = (vec![0.0; n], vec![0.0; n * n]);
+        assert_eq!(om::syev::dsyevx(true, n, &a, n, &mut wg, Some((&mut zg, n))), 0);
+
+        let (mut ar, mut wr, mut zr) = (a.clone(), vec![0.0; n], vec![0.0; n * n]);
+        let (mut m, mut info) = (0, 0);
+        let mut work = vec![0.0; 64 * n + 64];
+        let mut iwork = vec![0; 5 * n];
+        let mut ifail = vec![0; n];
+        let lwork = i(work.len());
+        unsafe {
+            dsyevx_(&c("V"), &c("A"), &c("U"), &i(n), ar.as_mut_ptr(), &i(n), &0.0, &0.0, &0, &0,
+                    &0.0, &mut m, wr.as_mut_ptr(), zr.as_mut_ptr(), &i(n), work.as_mut_ptr(),
+                    &lwork, iwork.as_mut_ptr(), ifail.as_mut_ptr(), &mut info);
+        }
+        assert_eq!((info, m), (0, i(n)), "dsyevx n={n}");
+        same(&wg, &wr, "dsyevx eigenvalues");
+        same(&zg, &zr, "dsyevx eigenvectors");
+    }
+}
+
+#[test]
+fn dsygvx_matches() {
+    for n in [1usize, 2, 4, 7] {
+        let (a, b) = (spd(n, 7 + n as u64), spd(n, 300 + n as u64));
+        let (mut wg, mut zg) = (vec![0.0; n], vec![0.0; n * n]);
+        assert_eq!(om::syev::dsygvx(true, n, &a, n, &b, n, &mut wg, Some((&mut zg, n))), 0);
+
+        let (mut ar, mut br) = (a.clone(), b.clone());
+        let (mut wr, mut zr) = (vec![0.0; n], vec![0.0; n * n]);
+        let (mut m, mut info) = (0, 0);
+        let mut work = vec![0.0; 64 * n + 64];
+        let mut iwork = vec![0; 5 * n];
+        let mut ifail = vec![0; n];
+        let lwork = i(work.len());
+        unsafe {
+            dsygvx_(&1, &c("V"), &c("A"), &c("U"), &i(n), ar.as_mut_ptr(), &i(n), br.as_mut_ptr(),
+                    &i(n), &0.0, &0.0, &0, &0, &0.0, &mut m, wr.as_mut_ptr(), zr.as_mut_ptr(),
+                    &i(n), work.as_mut_ptr(), &lwork, iwork.as_mut_ptr(), ifail.as_mut_ptr(),
+                    &mut info);
+        }
+        assert_eq!((info, m), (0, i(n)), "dsygvx n={n}");
+        same(&wg, &wr, "dsygvx eigenvalues");
+        same(&zg, &zr, "dsygvx eigenvectors");
+    }
+}
+
+/// Bit-exact, not just close: a library seeded from this (PRIMME) has to take the
+/// same iterates here as against the system LAPACK.
+#[test]
+fn dlarnv_matches() {
+    for idist in [1, 2] {
+        for n in [1usize, 5, 64, 65, 200] {
+            let (mut sg, mut sr) = ([1, 3, 5, 7], [1, 3, 5, 7]);
+            let (mut xg, mut xr) = (vec![0.0; n], vec![0.0; n]);
+            om::rand::dlarnv(idist, &mut sg, &mut xg);
+            unsafe { dlarnv_(&idist, sr.as_mut_ptr(), &i(n), xr.as_mut_ptr()) };
+            assert_eq!(xg, xr, "dlarnv idist={idist} n={n}");
+            assert_eq!(sg, sr, "dlarnv seed idist={idist} n={n}");
+        }
+    }
+}
+
+#[link(name = "blas")]
+unsafe extern "C" {
+    fn dgemv_(trans: *const c_char, m: *const i32, n: *const i32, alpha: *const f64,
+              a: *const f64, lda: *const i32, x: *const f64, incx: *const i32, beta: *const f64,
+              y: *mut f64, incy: *const i32);
+    #[allow(clippy::too_many_arguments)]
+    fn dgemm_(ta: *const c_char, tb: *const c_char, m: *const i32, n: *const i32, k: *const i32,
+              alpha: *const f64, a: *const f64, lda: *const i32, b: *const f64, ldb: *const i32,
+              beta: *const f64, c: *mut f64, ldc: *const i32);
+    #[allow(clippy::too_many_arguments)]
+    fn dsymm_(side: *const c_char, uplo: *const c_char, m: *const i32, n: *const i32,
+              alpha: *const f64, a: *const f64, lda: *const i32, b: *const f64, ldb: *const i32,
+              beta: *const f64, c: *mut f64, ldc: *const i32);
+    #[allow(clippy::too_many_arguments)]
+    fn dtrmm_(side: *const c_char, uplo: *const c_char, transa: *const c_char,
+              diag: *const c_char, m: *const i32, n: *const i32, alpha: *const f64,
+              a: *const f64, lda: *const i32, b: *mut f64, ldb: *const i32);
+}
+
+#[test]
+fn blas_level_2_3_match() {
+    let (alpha, beta) = (0.75, -1.25);
+    for &(m, n, k) in &[(1usize, 1usize, 1usize), (3, 4, 5), (6, 2, 4), (5, 5, 5)] {
+        let (a, b) = (rand_mat(m, k, 11), rand_mat(k, n, 12));
+        for &(ta, tb) in &[("N", "N"), ("T", "N"), ("N", "T"), ("T", "T")] {
+            let (at, bt) = (ta == "T", tb == "T");
+            let (av, lda) = if at { (rand_mat(k, m, 11), k) } else { (a.clone(), m) };
+            let (bv, ldb) = if bt { (rand_mat(n, k, 12), n) } else { (b.clone(), k) };
+            let c0 = rand_mat(m, n, 13);
+            let mut cg = c0.clone();
+            om::blas::dgemm(at, bt, m, n, k, alpha, &av, lda, &bv, ldb, beta, &mut cg, m);
+            let mut cr = c0.clone();
+            unsafe {
+                dgemm_(&c(ta), &c(tb), &i(m), &i(n), &i(k), &alpha, av.as_ptr(), &i(lda),
+                       bv.as_ptr(), &i(ldb), &beta, cr.as_mut_ptr(), &i(m));
+            }
+            same(&cg, &cr, &format!("dgemm {ta}{tb} {m}x{n}x{k}"));
+        }
+
+        let a = rand_mat(m, n, 21);
+        for &trans in &["N", "T"] {
+            let t = trans == "T";
+            let (xn, yn) = if t { (m, n) } else { (n, m) };
+            let x = rand_mat(xn, 1, 22);
+            let y0 = rand_mat(yn, 1, 23);
+            let mut yg = y0.clone();
+            om::blas::dgemv(t, m, n, alpha, &a, m, &x, beta, &mut yg);
+            let mut yr = y0.clone();
+            unsafe {
+                dgemv_(&c(trans), &i(m), &i(n), &alpha, a.as_ptr(), &i(m), x.as_ptr(), &1, &beta,
+                       yr.as_mut_ptr(), &1);
+            }
+            same(&yg, &yr, &format!("dgemv {trans} {m}x{n}"));
+        }
+
+        let s = spd(m, 31);
+        let b = rand_mat(m, n, 32);
+        for &uplo in &["U", "L"] {
+            let c0 = rand_mat(m, n, 33);
+            let mut cg = c0.clone();
+            om::blas::dsymm(true, uplo == "U", m, n, alpha, &s, m, &b, m, beta, &mut cg, m);
+            let mut cr = c0.clone();
+            unsafe {
+                dsymm_(&c("L"), &c(uplo), &i(m), &i(n), &alpha, s.as_ptr(), &i(m), b.as_ptr(),
+                       &i(m), &beta, cr.as_mut_ptr(), &i(m));
+            }
+            same(&cg, &cr, &format!("dsymm L{uplo} {m}x{n}"));
+        }
+        let s = spd(n, 34);
+        for &uplo in &["U", "L"] {
+            let c0 = rand_mat(m, n, 35);
+            let mut cg = c0.clone();
+            om::blas::dsymm(false, uplo == "U", m, n, alpha, &s, n, &b, m, beta, &mut cg, m);
+            let mut cr = c0.clone();
+            unsafe {
+                dsymm_(&c("R"), &c(uplo), &i(m), &i(n), &alpha, s.as_ptr(), &i(n), b.as_ptr(),
+                       &i(m), &beta, cr.as_mut_ptr(), &i(m));
+            }
+            same(&cg, &cr, &format!("dsymm R{uplo} {m}x{n}"));
+        }
+
+        for &side in &["L", "R"] {
+            let left = side == "L";
+            let sz = if left { m } else { n };
+            let t = rand_mat(sz, sz, 41);
+            for &uplo in &["U", "L"] {
+                for &tr in &["N", "T"] {
+                    for &diag in &["N", "U"] {
+                        let b0 = rand_mat(m, n, 42);
+                        let mut bg = b0.clone();
+                        om::blas::dtrmm(left, uplo == "U", tr == "T", diag == "U", m, n, alpha,
+                                        &t, sz, &mut bg, m);
+                        let mut br = b0.clone();
+                        unsafe {
+                            dtrmm_(&c(side), &c(uplo), &c(tr), &c(diag), &i(m), &i(n), &alpha,
+                                   t.as_ptr(), &i(sz), br.as_mut_ptr(), &i(m));
+                        }
+                        same(&bg, &br, &format!("dtrmm {side}{uplo}{tr}{diag} {m}x{n}"));
                     }
                 }
             }

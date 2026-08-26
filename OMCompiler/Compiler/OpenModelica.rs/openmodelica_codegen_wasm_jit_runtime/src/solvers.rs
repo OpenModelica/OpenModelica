@@ -22,6 +22,8 @@ pub(crate) enum Nls {
     /// C's `NLS_MIXED`: `solveHomotopy` (damped Newton, minpack fallback), dense.
     Mixed,
     Homotopy,
+    /// C's `NLS_KINSOL_B` (`kinsol_b.c`): KINSOL over an explicitly scaled system.
+    KinsolB,
 }
 
 /// `-nlsLS`, the linear solver inside the nonlinear one.
@@ -99,6 +101,39 @@ pub(crate) fn newton_xtol() -> f64 {
 #[cfg(sundials)]
 pub(crate) fn max_step_factor() -> f64 {
     f64::from_bits(MAX_STEP_FACTOR.load(Ordering::Relaxed))
+}
+
+/// `-nlsJacTestATol` / `-nlsJacTestRTol`, at C's defaults until a run sets them.
+static JAC_TEST_ATOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3D19000000000000); // 100 * DBL_EPSILON
+static JAC_TEST_RTOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3F1A36E2EB1C432D); // 1e-4
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_jac_test_tolerances(atol: f64, rtol: f64) {
+    JAC_TEST_ATOL.store(atol.to_bits(), Ordering::Relaxed);
+    JAC_TEST_RTOL.store(rtol.to_bits(), Ordering::Relaxed);
+}
+
+#[cfg(sundials)]
+pub(crate) fn jac_test_tolerances() -> (f64, f64) {
+    (
+        f64::from_bits(JAC_TEST_ATOL.load(Ordering::Relaxed)),
+        f64::from_bits(JAC_TEST_RTOL.load(Ordering::Relaxed)),
+    )
+}
+
+/// `-svdCount` / `-svdSigma`.
+static SVD_COUNT: AtomicU32 = AtomicU32::new(0);
+static SVD_SIGMA: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3E45798EE2308C3A); // 1e-8
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_svd(count: u32, sigma: f64) {
+    SVD_COUNT.store(count, Ordering::Relaxed);
+    SVD_SIGMA.store(sigma.to_bits(), Ordering::Relaxed);
+}
+
+#[cfg(sundials)]
+pub(crate) fn svd_params() -> (u32, f64) {
+    (SVD_COUNT.load(Ordering::Relaxed), f64::from_bits(SVD_SIGMA.load(Ordering::Relaxed)))
 }
 
 /// `-lvMaxWarn`, C's `maxWarnDisplays` (`DEFAULT_FLAG_LV_MAX_WARN`).
@@ -222,6 +257,12 @@ pub(crate) fn apply_flags(f: &openmodelica_sim_meta::simflags::SimFlags) {
     let (ftol, xtol, msf) = openmodelica_sim_meta::simflags::newton_tuning(f);
     rt_set_newton_tuning(ftol, xtol, msf);
     rt_set_max_warn(f.max_warn.unwrap_or(3));
+    let (atol, rtol) = openmodelica_sim_meta::simflags::jac_test_tolerances(f);
+    rt_set_jac_test_tolerances(atol, rtol);
+    let (svd_count, svd_sigma) = openmodelica_sim_meta::simflags::svd_params(f);
+    rt_set_svd(svd_count.max(0) as u32, svd_sigma);
+    #[cfg(sundials)]
+    crate::model_ctx::set_request(f.save_initial_guess.clone());
     let (steps, first) = openmodelica_sim_meta::simflags::homotopy_codes(f);
     rt_set_homotopy(steps, first);
     let h = openmodelica_sim_meta::simflags::hom_tuning(f);
@@ -239,6 +280,7 @@ pub(crate) fn nls() -> Nls {
         3 => Nls::Newton,
         4 => Nls::Mixed,
         5 => Nls::Homotopy,
+        6 => Nls::KinsolB,
         _ => Nls::Default,
     }
 }
