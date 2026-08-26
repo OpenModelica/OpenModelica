@@ -3123,6 +3123,7 @@ fn emit_fmu(
 
 /// The data the equation-function lowering needs to resolve component
 /// references: the cref->slot map and the per-variable start expressions.
+#[derive(Clone)]
 pub(crate) struct SimVarMap {
     /// Shared with every [`SimCtx`] rather than copied per generated function, so
     /// filled through `Arc::make_mut` (single owner until emission starts).
@@ -3935,6 +3936,7 @@ struct GroupEntry {
 
 /// One scalarized element accumulated for an array base: where it sits in the
 /// array, how the group spells its key, and where its value lives.
+#[derive(Clone)]
 struct AccElem {
     subs: Vec<i32>,
     pieces: Vec<String>,
@@ -4839,7 +4841,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     build_lin_jac_infos(sim_code, &layout, &mut var_map)?;
     // Same, for the `-l` matrices; "A" there is the ODE state Jacobian, so these
     // are also the slots the integrators seed and read.
-    let linz_jac_infos = build_linz_jac_infos(&linz, &layout, &mut var_map)?;
+    let (linz_jac_infos, adj_jac_info) = build_linz_jac_infos(&linz, &layout, &mut var_map)?;
     let recon_base = layout.linz_off + linz.n_scratch_f64() * 8;
     let mut recon_jac_infos = datarecon::build_jac_infos(&recon, recon_base, &mut var_map)?;
     var_map.nls_jobs = Arc::new(nls_jobs);
@@ -5034,7 +5036,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     apply_variable_filter(&mut result_vars, &settings.variableFilter);
     let model_name = openmodelica_frontend_dump::AbsynUtil::pathString(mi.name.clone(), arcstr::literal!("."), true, false)?.to_string();
     // Solver metadata, shared by the embedded blob and the host `SimModel`.
-    let mut jac_a = build_jac_a_info(sim_code, n_states);
+    let jac_a_n = match dae_mode {
+        Some(_) => dae_res_vars.len() as u32,
+        None => n_states,
+    };
+    let mut jac_a = build_jac_a_info(sim_code, jac_a_n);
     // Build the driver metadata once: embedded in the module (for the in-wasm
     // driver / standalone) and kept on the `SimModel` (for the host driver).
     // Only the FMU export needs the vr table; a plain simulation would just carry
@@ -5074,9 +5080,9 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         .transpose()?;
     // Lowering the columns is what decides which matrices survive; everything below
     // reads `linz.jacs` after this.
-    let (linz_jac_fns, jac_a_fns, opt_jac_fns) = build_jac_fns(
+    let (linz_jac_fns, jac_a_fns, opt_jac_fns, jac_adj_fns) = build_jac_fns(
         &mut linz, &linz_jac_infos, optimization::is_optimization(sim_code), &layout, &var_map,
-        &eq_index, &by_name, &mut literals,
+        &eq_index, &by_name, &mut literals, adj_jac_info.as_ref().map(|a| &a.map),
     )?;
     // Same for F/H, before the metadata is built: a matrix that does not lower is
     // dropped from the plan, and `ReconInfo` must not advertise it.
@@ -5100,7 +5106,20 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
                 .as_ref()
                 .and_then(|jm| lst(&jm.columns).next())
                 .is_some_and(|c| lst(&c.constantEqns).next().is_some()),
+            adj: None,
         });
+        if let (Some(jm), Some(adj), Some(sym)) = (linz.adj.as_ref(), adj_jac_info.as_ref(), info.sym.as_mut())
+            && adj.info.seed_offs.len() == n_states as usize
+            && adj.info.result_offs.len() == n_states as usize
+        {
+            sym.adj = Some(openmodelica_sim_meta::JacAdj {
+                seed_offs: adj.info.seed_offs.clone(),
+                result_offs: adj.info.result_offs.iter().map(|o| o.unwrap_or(u32::MAX)).collect(),
+                zero_offs: adj.zero_offs.clone(),
+                has_constant: lst(&jm.columns).next().is_some_and(|c| lst(&c.constantEqns).next().is_some()),
+                row_colors: row_coloring(&info.rows_by_col, n_states as usize),
+            });
+        }
     }
     // `method="optimization"`: B, C and D with the slots the optimizer seeds and
     // reads, plus the problem's own metadata.
@@ -5320,6 +5339,11 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let jac_a_idx = {
         let idx = import_base + bodies.len() as u32;
         bodies.extend(jac_a_fns);
+        idx
+    };
+    let jac_adj_idx = {
+        let idx = import_base + bodies.len() as u32;
+        bodies.extend(jac_adj_fns);
         idx
     };
     // The lambda-0 (simplified) initial system, for the homotopy continuation's
@@ -5565,6 +5589,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     functions.function(eqfn_type); // functionStateSetJacobians: (i32) -> ()
     functions.function(eqfn_type); // functionJacA_constantEqns: (i32) -> ()
     functions.function(eqfn_type); // functionJacA_column: (i32) -> ()
+    functions.function(eqfn_type); // functionJacADJ_constantEqns: (i32) -> ()
+    functions.function(eqfn_type); // functionJacADJ_column: (i32) -> ()
     functions.function(eqfn_type); // functionInitialEquations_lambda0: (i32) -> ()
     functions.function(eqfn_type); // functionCheckAsserts: (i32) -> ()
     functions.function(eqfn_type); // functionZeroCrossingsEquations: (i32) -> ()
@@ -5710,6 +5736,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     exports.export("functionStateSetJacobians", we::ExportKind::Func, stateset_jac_idx);
     exports.export("functionJacA_constantEqns", we::ExportKind::Func, jac_a_idx);
     exports.export("functionJacA_column", we::ExportKind::Func, jac_a_idx + 1);
+    exports.export("functionJacADJ_constantEqns", we::ExportKind::Func, jac_adj_idx);
+    exports.export("functionJacADJ_column", we::ExportKind::Func, jac_adj_idx + 1);
     exports.export("functionInitialEquations_lambda0", we::ExportKind::Func, init_lambda0_idx);
     exports.export("functionCheckAsserts", we::ExportKind::Func, check_asserts_idx);
     exports.export("functionUpdateRelations", we::ExportKind::Func, update_relations_idx);
@@ -5778,6 +5806,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         ("functionStateSetJacobians", stateset_jac_idx),
         ("functionJacA_constantEqns", jac_a_idx),
         ("functionJacA_column", jac_a_idx + 1),
+        ("functionJacADJ_constantEqns", jac_adj_idx),
+        ("functionJacADJ_column", jac_adj_idx + 1),
         ("functionInitialEquations_lambda0", init_lambda0_idx),
         ("functionCheckAsserts", check_asserts_idx),
         ("functionUpdateRelations", update_relations_idx),
@@ -6008,11 +6038,22 @@ struct NlsJacPattern {
     colors: Vec<Vec<u32>>,
 }
 
+impl NlsJacPattern {
+    fn passes_sanity_check(&self, n: usize) -> bool {
+        sparsity_sanity_check(&self.colptr, &self.rowidx, self.colptr.len() - 1, n)
+    }
+
+    /// C keeps a pattern that is not `n × n`; no solver here could use one.
+    fn is_square(&self, n: usize) -> bool {
+        self.colptr.len() == n + 1 && self.rowidx.iter().all(|&r| (r as usize) < n)
+    }
+}
+
 /// The two patterns C can carry, in the order `functionNonLinearResiduals` picks
 /// them, minus what C's `sparsitySanityCheck` rejects.
 fn nls_jac_pattern(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
     let pat = nls_jac_pattern_raw(jm, n)?;
-    sparsity_sanity_check(&pat.colptr, &pat.rowidx, n).then_some(pat)
+    (pat.passes_sanity_check(n) && pat.is_square(n)).then_some(pat)
 }
 
 /// The pattern as the backend emitted it, before C's sanity check.
@@ -6023,17 +6064,17 @@ fn nls_jac_pattern_raw(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacP
     }
 }
 
-/// C's `sparsitySanityCheck` over the CSC pattern (its `leadindex`/`index`). A
-/// homotopy system always fails it: `__HOM_LAMBDA` has no residual row.
-fn sparsity_sanity_check(colptr: &[i32], rowidx: &[i32], n: usize) -> bool {
+/// C's `sparsitySanityCheck`; `size_cols` is what the pattern was built with,
+/// which need not be `n`.
+fn sparsity_sanity_check(colptr: &[i32], rowidx: &[i32], size_cols: usize, n: usize) -> bool {
     if n == 0 || rowidx.len() < n {
         return false;
     }
-    if (1..n).any(|i| colptr[i] == colptr[i - 1]) {
+    if (1..size_cols.min(n)).any(|i| colptr[i] == colptr[i - 1]) {
         return false;
     }
     let mut seen = vec![false; n];
-    for &r in &rowidx[..colptr[n] as usize] {
+    for &r in &rowidx[..colptr[size_cols] as usize] {
         if let Some(s) = seen.get_mut(r as usize) {
             *s = true;
         }
@@ -6046,7 +6087,7 @@ fn sparsity_sanity_check(colptr: &[i32], rowidx: &[i32], n: usize) -> bool {
 fn nls_jac_pattern_static(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
     let mut cols: Vec<Vec<i32>> =
         lst(&jm.sparsity).map(|(_, rows)| lst(rows).copied().collect()).collect();
-    if cols.len() != n || cols.iter().flatten().any(|&r| r < 0 || r as usize >= n) {
+    if cols.iter().flatten().any(|&r| r < 0) {
         return None;
     }
     let (colptr, rowidx) = csc_from_columns(&mut cols)?;
@@ -6055,51 +6096,244 @@ fn nls_jac_pattern_static(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJ
     let colors: Vec<Vec<u32>> =
         lst(&jm.coloredCols).map(|grp| lst(grp).map(|&c| c as u32).collect()).collect();
     let mut seen = vec![false; n];
-    let partition = colors.iter().flatten().all(|&c| {
-        (c as usize) < n && !core::mem::replace(&mut seen[c as usize], true)
-    }) && seen.iter().all(|&s| s);
-    let colors = if partition { colors } else { computed_coloring(&colptr, &rowidx, n) };
+    let partition = cols.len() == n
+        && colors.iter().flatten().all(|&c| {
+            (c as usize) < n && !core::mem::replace(&mut seen[c as usize], true)
+        })
+        && seen.iter().all(|&s| s);
+    let colors = match (partition, rowidx.iter().all(|&r| (r as usize) < cols.len())) {
+        (true, _) => colors,
+        (false, true) => computed_coloring(&colptr, &rowidx, cols.len()),
+        (false, false) => (0..cols.len() as u32).map(|c| vec![c]).collect(),
+    };
     Some(NlsJacPattern { colptr, rowidx, colors })
 }
 
-/// C's `initialResizableAnalyticJacobian`: the column of a dependency is the seed
-/// variable's `SimVar.index`, the row of a solved `$pDER` cref is that variable's
-/// index. An array-valued row (equation iterators) needs the run-time loops the C
-/// template emits, so those systems keep the numerical Jacobian.
-fn nls_jac_pattern_resizable(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
-    use openmodelica_backend_types::BackendDAE::VarKind;
+/// C's `initialResizableAnalyticJacobian<M>`, with the equation iterators expanded
+/// at build time. A regular whole-array dependency of a whole-array unknown pairs
+/// element-wise (`resizableColCountRegular`); everything else is the cross product.
+fn resizable_rows_by_col(jm: &SimCode::JacobianMatrix, n_cols: usize, n_rows: usize) -> Option<Vec<Vec<i32>>> {
     let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else { return None };
-    let mut seed_col: HashMap<String, usize> = HashMap::new();
-    for sv in lst(&jm.seedVars) {
-        seed_col.insert(sim_cref_key(&sv.name).ok()?, usize::try_from(sv.index).ok()?);
-    }
-    let mut res_row: HashMap<String, usize> = HashMap::new();
-    for sv in &jac_column_vars(jm) {
-        if matches!(sv.varKind, VarKind::JAC_VAR) {
-            res_row.insert(sim_cref_key(&sv.name).ok()?, usize::try_from(sv.index).ok()?);
+    let slots = JacArraySlots::of(jm)?;
+    let mut cols: Vec<Vec<i32>> = vec![Vec::new(); n_cols];
+    let mut add = |r: usize, c: usize| {
+        if r < n_rows && c < n_cols {
+            cols[c].push(r as i32);
         }
-    }
-    let mut cols: Vec<Vec<i32>> = vec![Vec::new(); n];
+    };
     for row in lst(rows) {
-        if lst(&row.equation_iterators).next().is_some() {
-            return None;
+        let iters: Vec<&BackendDAE::SimIterator> = lst(&row.equation_iterators).collect();
+        for (flat, bindings) in iterator_expansion(&iters).ok()?.into_iter().enumerate() {
+            for sc in lst(&row.solved_crefs) {
+                let sc = BoundCref::new(sc, &bindings)?;
+                let sc_offs = match sc.whole_1d() && !bindings.is_empty() {
+                    true => vec![slots.base(&sc.cref)? + flat],
+                    false => slots.offsets(&sc)?,
+                };
+                for (seed, dep, rep) in lst(&row.dependencies) {
+                    let seed = BoundCref::new(seed, &bindings)?;
+                    let regular = !*rep && lst(&dep.kinds).next() == Some(&false) && seed.whole_1d() && sc.whole_1d();
+                    if regular {
+                        let (rb, cb) = (slots.base(&sc.cref)?, slots.base(&seed.cref)?);
+                        match bindings.is_empty() {
+                            true => (0..sc.first_dim()?).for_each(|k| add(rb + k, cb + k)),
+                            false => add(rb + flat, cb + flat),
+                        }
+                        continue;
+                    }
+                    for c in slots.offsets(&seed)? {
+                        for &r in &sc_offs {
+                            add(r, c);
+                        }
+                    }
+                }
+            }
         }
-        for sc in lst(&row.solved_crefs) {
-            let r = *res_row.get(&sim_cref_key(sc).ok()?)?;
-            if r >= n {
+    }
+    Some(cols)
+}
+
+/// `SimVar.index` per array base (the C template's `crefsHT` after `crefStripSubs`).
+struct JacArraySlots {
+    base: HashMap<String, usize>,
+}
+
+impl JacArraySlots {
+    fn of(jm: &SimCode::JacobianMatrix) -> Option<JacArraySlots> {
+        let mut base = HashMap::new();
+        for sv in lst(&jm.seedVars).cloned().chain(jac_listed_vars(jm)) {
+            let Ok(index) = usize::try_from(sv.index) else { continue };
+            let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(sv.name.clone()).ok()?;
+            base.entry(sim_cref_key(&stripped).ok()?).or_insert(index);
+        }
+        Some(JacArraySlots { base })
+    }
+
+    fn base(&self, cr: &Arc<DAE::ComponentRef>) -> Option<usize> {
+        let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(cr.clone()).ok()?;
+        self.base.get(&sim_cref_key(&stripped).ok()?).copied()
+    }
+
+    fn offsets(&self, cr: &BoundCref) -> Option<Vec<usize>> {
+        let base = self.base(&cr.cref)?;
+        let mut offs = vec![0usize];
+        for (dim, positions) in &cr.dims {
+            let mut next = Vec::with_capacity(offs.len() * positions.len());
+            for o in &offs {
+                for p in positions {
+                    next.push(o * dim + p);
+                }
+            }
+            offs = next;
+        }
+        Some(offs.into_iter().map(|o| base + o).collect())
+    }
+}
+
+/// A sparsity cref with its iterators bound: per dimension, size and selected
+/// 0-based positions.
+struct BoundCref {
+    cref: Arc<DAE::ComponentRef>,
+    dims: Vec<(usize, Vec<usize>)>,
+    whole: Vec<bool>,
+}
+
+impl BoundCref {
+    fn new(cr: &Arc<DAE::ComponentRef>, bindings: &[(String, Arc<DAE::Exp>)]) -> Option<BoundCref> {
+        let mut dims = Vec::new();
+        let mut whole = Vec::new();
+        let mut part = cr;
+        loop {
+            let (ty, subs, next) = match &**part {
+                DAE::ComponentRef::CREF_IDENT { identType, subscriptLst, .. } => (identType, subscriptLst, None),
+                DAE::ComponentRef::CREF_QUAL { identType, subscriptLst, componentRef, .. } => {
+                    (identType, subscriptLst, Some(componentRef))
+                }
+                _ => return None,
+            };
+            let part_dims = type_dims(ty)?;
+            let subs: Vec<&Arc<DAE::Subscript>> = lst(subs).collect();
+            if subs.len() > part_dims.len() {
                 return None;
             }
-            for (seed, _, _) in lst(&row.dependencies) {
-                let c = *seed_col.get(&sim_cref_key(seed).ok()?)?;
-                if c >= n {
-                    return None;
-                }
-                cols[c].push(r as i32);
+            for (k, &dim) in part_dims.iter().enumerate() {
+                let (positions, is_whole) = match subs.get(k).map(|s| &***s) {
+                    None | Some(DAE::Subscript::WHOLEDIM) | Some(DAE::Subscript::WHOLE_NONEXP { .. }) => {
+                        ((0..dim).collect(), true)
+                    }
+                    Some(DAE::Subscript::INDEX { exp }) => {
+                        let v = bound_int(exp, bindings)?;
+                        (usize::try_from(v - 1).ok().into_iter().collect(), false)
+                    }
+                    Some(DAE::Subscript::SLICE { exp }) => {
+                        let vs = bound_ints(exp, bindings)?;
+                        (vs.into_iter().filter_map(|v| usize::try_from(v - 1).ok()).collect(), false)
+                    }
+                };
+                dims.push((dim, positions));
+                whole.push(is_whole);
+            }
+            match next {
+                Some(n) => part = n,
+                None => break,
             }
         }
+        Some(BoundCref { cref: cr.clone(), dims, whole })
     }
+
+    /// C's `crefSubs(cr) == {WHOLEDIM()}`.
+    fn whole_1d(&self) -> bool {
+        self.dims.len() == 1 && self.whole[0]
+    }
+
+    fn first_dim(&self) -> Option<usize> {
+        self.dims.first().map(|(d, _)| *d)
+    }
+}
+
+fn type_dims(ty: &DAE::Type) -> Option<Vec<usize>> {
+    let mut out = Vec::new();
+    let mut ty = ty;
+    while let DAE::Type::T_ARRAY { ty: inner, dims } = ty {
+        for d in lst(dims) {
+            match &**d {
+                DAE::Dimension::DIM_INTEGER { integer } => out.push(usize::try_from(*integer).ok()?),
+                _ => return None,
+            }
+        }
+        ty = inner;
+    }
+    Some(out)
+}
+
+fn bound_int(exp: &Arc<DAE::Exp>, bindings: &[(String, Arc<DAE::Exp>)]) -> Option<i32> {
+    const_int_exp(&*bound_exp(exp, bindings)?)
+}
+
+fn bound_ints(exp: &Arc<DAE::Exp>, bindings: &[(String, Arc<DAE::Exp>)]) -> Option<Vec<i32>> {
+    match &*bound_exp(exp, bindings)? {
+        DAE::Exp::ARRAY { array, .. } => lst(array).map(|e| const_int_exp(e)).collect(),
+        DAE::Exp::RANGE { start, step, stop, .. } => {
+            let (start, stop) = (const_int_exp(start)?, const_int_exp(stop)?);
+            let step = match step {
+                Some(s) => const_int_exp(s)?,
+                None => 1,
+            };
+            if step == 0 {
+                return None;
+            }
+            let mut out = Vec::new();
+            let mut v = start;
+            while (step > 0 && v <= stop) || (step < 0 && v >= stop) {
+                out.push(v);
+                v += step;
+            }
+            Some(out)
+        }
+        e => const_int_exp(e).map(|v| vec![v]),
+    }
+}
+
+fn bound_exp(exp: &Arc<DAE::Exp>, bindings: &[(String, Arc<DAE::Exp>)]) -> Option<Arc<DAE::Exp>> {
+    let mut e = exp.clone();
+    for (name, value) in bindings {
+        e = subst_iterator(&e, name, value).ok()?;
+    }
+    openmodelica_frontend_base::ExpressionSimplify::simplify1(e).ok().map(|(e, _)| e)
+}
+
+/// Every iterator combination, first iterator least significant (C's `forIteratorBody`).
+fn iterator_expansion(iters: &[&BackendDAE::SimIterator]) -> Result<Vec<Vec<(String, Arc<DAE::Exp>)>>> {
+    let mut out: Vec<Vec<(String, Arc<DAE::Exp>)>> = vec![Vec::new()];
+    for iter in iters {
+        let (name, values, sub_iters) = iterator_bindings(iter)?;
+        let mut next = Vec::with_capacity(out.len() * values.len());
+        for (pos, value) in values.iter().enumerate() {
+            for prev in &out {
+                let mut b = prev.clone();
+                b.push((name.clone(), value.clone()));
+                for (sub_name, table) in &sub_iters {
+                    let v = table.get(pos).ok_or("CodegenWasmJit: dependent iterator range is too short")?;
+                    b.push((sub_name.clone(), v.clone()));
+                }
+                next.push(b);
+            }
+        }
+        out = next;
+    }
+    Ok(out)
+}
+
+/// Built at C's size (`numScalarElems(seedVars)` columns, rows unguarded) so the
+/// sanity check sees what C's does.
+fn nls_jac_pattern_resizable(jm: &SimCode::JacobianMatrix, _n: usize) -> Option<NlsJacPattern> {
+    let n_cols = jac_seed_scalar_count(jm)?;
+    let mut cols = resizable_rows_by_col(jm, n_cols, usize::MAX)?;
     let (colptr, rowidx) = csc_from_columns(&mut cols)?;
-    let colors = computed_coloring(&colptr, &rowidx, n);
+    let colors = match rowidx.iter().all(|&r| (r as usize) < n_cols) {
+        true => computed_coloring(&colptr, &rowidx, n_cols),
+        false => (0..n_cols as u32).map(|c| vec![c]).collect(),
+    };
     Some(NlsJacPattern { colptr, rowidx, colors })
 }
 
@@ -6137,6 +6371,20 @@ fn nls_system_nnz(nlsystem: &SimCode::NonlinearSystem) -> usize {
     nls_jac_pattern(jm, n).map_or(0, |p| p.rowidx.len())
 }
 
+/// Row coloring for the adjoint evaluation: rows seeded together share no column.
+fn row_coloring(rows_by_col: &[Vec<u32>], n: usize) -> Vec<Vec<u32>> {
+    let mut cols_by_row: Vec<Vec<i32>> = vec![Vec::new(); n];
+    for (c, rows) in rows_by_col.iter().enumerate() {
+        for &r in rows {
+            cols_by_row[r as usize].push(c as i32);
+        }
+    }
+    match csc_from_columns(&mut cols_by_row) {
+        Some((colptr, rowidx)) => computed_coloring(&colptr, &rowidx, n),
+        None => (0..n as u32).map(|r| vec![r]).collect(),
+    }
+}
+
 /// The ODE state Jacobian "A", if the backend emitted one at all.
 fn jac_a_matrix(sim_code: &SimCode::SimCode) -> Option<&SimCode::JacobianMatrix> {
     lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == "A").map(|j| &**j)
@@ -6162,15 +6410,29 @@ fn jac_pattern_info(jac: &SimCode::JacobianMatrix, n: usize) -> Option<JacAInfo>
     if n == 0 {
         return None;
     }
-    // sparsity: positional per column → 0-based nonzero rows (CSC), one entry per
-    // column (empty columns carry an empty row list).
-    let rows_by_col: Vec<Vec<u32>> = lst(&jac.sparsity)
-        .map(|(_, rows)| lst(rows).map(|r| *r as u32).collect())
-        .collect();
-    // coloredCols: each color → its 0-based column indices.
-    let colors: Vec<Vec<u32>> = lst(&jac.coloredCols)
-        .map(|grp| lst(grp).map(|c| *c as u32).collect())
-        .collect();
+    let (rows_by_col, colors): (Vec<Vec<u32>>, Vec<Vec<u32>>) = match &jac.sparsityMatrix {
+        SimCode::Sparsity::SPARSITY { .. } => {
+            if jac_seed_scalar_count(jac)? != n {
+                return None;
+            }
+            let mut cols = resizable_rows_by_col(jac, n, n)?;
+            let (colptr, rowidx) = csc_from_columns(&mut cols)?;
+            let colors = computed_coloring(&colptr, &rowidx, n);
+            (cols.iter().map(|c| c.iter().map(|&r| r as u32).collect()).collect(), colors)
+        }
+        _ => {
+            // sparsity: positional per column → 0-based nonzero rows (CSC), one entry per
+            // column (empty columns carry an empty row list).
+            let rows_by_col = lst(&jac.sparsity)
+                .map(|(_, rows)| lst(rows).map(|r| *r as u32).collect())
+                .collect();
+            // coloredCols: each color → its 0-based column indices.
+            let colors = lst(&jac.coloredCols)
+                .map(|grp| lst(grp).map(|c| *c as u32).collect())
+                .collect();
+            (rows_by_col, colors)
+        }
+    };
     if rows_by_col.len() != n
         || colors.is_empty()
         || colors.iter().flatten().any(|&c| c as usize >= n)
@@ -7816,7 +8078,10 @@ fn nls_parts(
     for e in lst(&nlsystem.eqs) {
         match &**e {
             E::SES_RESIDUAL { exp, res_index, .. } => {
-                residuals.push(NlsResidual::Scalar { exp: exp.clone(), res_index: *res_index });
+                residuals.push(match exp_array_rows(exp) {
+                    Some(rows) => NlsResidual::Array { exp: exp.clone(), res_index: *res_index, rows },
+                    None => NlsResidual::Scalar { exp: exp.clone(), res_index: *res_index },
+                });
             }
             E::SES_FOR_RESIDUAL { iterators, exp, res_index, .. } => {
                 residuals.push(NlsResidual::For {
@@ -7858,6 +8123,13 @@ fn nls_parts(
     Ok((inner, NlsResiduals::Explicit(residuals), iter_vars))
 }
 
+/// The element count of an array-typed expression; `None` for a scalar.
+fn exp_array_rows(exp: &Arc<DAE::Exp>) -> Option<usize> {
+    let ty = openmodelica_frontend_base::Expression::r#typeof(exp.clone()).ok()?;
+    let dims = type_dims(&ty)?;
+    (!dims.is_empty()).then(|| dims.iter().product())
+}
+
 /// Dynamic tearing: each casual tearing set's equation index -> its strict set's.
 fn nls_strict_map(eq_lists: &[&[Arc<SimCode::SimEqSystem>]]) -> HashMap<i32, i32> {
     use SimCode::SimEqSystem as E;
@@ -7892,9 +8164,8 @@ fn collect_nls_jobs(
 ) -> (Vec<Arc<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<f64>, Vec<i32>, Vec<String>) {
     use SimCode::SimEqSystem as E;
     let mut systems: Vec<Arc<SimCode::NonlinearSystem>> = Vec::new();
-    // C's `initializeNonlinearSystems` warning for a rejected pattern, indexed by
-    // the system ordinal as C's `sysNum` is.
-    let mut warnings: Vec<String> = Vec::new();
+    // Numbered and ordered by `indexNonLinearSystem`, as C's `sysNum` loop is.
+    let mut warnings: Vec<(i32, String)> = Vec::new();
     let mut jobs: HashMap<i32, NlsJob> = HashMap::new();
     let mut hist_off = 0u32;
     let mut nominal_off = 0u32;
@@ -7923,7 +8194,20 @@ fn collect_nls_jobs(
                     continue;
                 }
                 let n = lst(&nlSystem.crefs).count() as u32;
-                let has_jac = nls_jac_usable(nlSystem);
+                let mut has_jac = nls_jac_usable(nlSystem);
+                // C's `initializeNonlinearSystemData` shape check.
+                if let Some((rows, cols)) = nls_jac_dims(nlSystem) {
+                    let size = n as usize;
+                    if rows != size - nls_lambda_extra(nlSystem) as usize || cols != size {
+                        warnings.push((nlSystem.indexNonLinearSystem, format!(
+                            "Analytic Jacobian of non-linear system {} is {rows}x{cols}, but the system \
+                             has {size} iteration variables. This indicates that something went wrong \
+                             during Jacobian generation. Using a numeric Jacobian instead.",
+                            nlSystem.indexNonLinearSystem
+                        )));
+                        has_jac = false;
+                    }
+                }
                 let mixed = nlSystem.mixedSystem;
                 // The pattern goes in whenever it exists: C's density/size rule only
                 // picks the *default* solver (kinsol+KLU vs the dense ladder), while
@@ -7935,16 +8219,17 @@ fn collect_nls_jobs(
                     .as_ref()
                     .and_then(|jm| nls_jac_pattern_raw(jm, n as usize));
                 let pat = raw_pat.filter(|p| {
-                    sparsity_sanity_check(&p.colptr, &p.rowidx, n as usize) || {
-                        warnings.push(format!(
+                    p.passes_sanity_check(n as usize) || {
+                        warnings.push((nlSystem.indexNonLinearSystem, format!(
                             "Sparsity pattern for non-linear system {} is not regular. This indicates \
                              that something went wrong during sparsity pattern generation. Removing \
                              sparsity pattern and disabling NLS scaling.",
-                            systems.len()
-                        ));
+                            nlSystem.indexNonLinearSystem
+                        )));
                         false
                     }
                 });
+                let pat = pat.filter(|p| p.is_square(n as usize));
                 let pat = if has_jac { pat } else { None };
                 let nnz = pat.as_ref().map_or(0, |p| p.rowidx.len() as u32);
                 let sparse_default = nnz != 0 && nls_use_sparse(n as usize, nnz as usize);
@@ -7984,7 +8269,8 @@ fn collect_nls_jobs(
             }
         }
     }
-    (systems, jobs, hist_off, nominals, bounds, patterns, warnings)
+    warnings.sort_by_key(|(k, _)| *k);
+    (systems, jobs, hist_off, nominals, bounds, patterns, warnings.into_iter().map(|(_, w)| w).collect())
 }
 
 /// The optimizer's Jacobian entry points, in emission order: for B, C and D the
@@ -8110,8 +8396,8 @@ impl JacSlots {
     /// Anything else is a model variable, which lowering resolves by itself.
     fn resolvable(&self, cr: &Arc<DAE::ComponentRef>) -> bool {
         match sim_cref_key(cr) {
-            Ok(key) => self.keys.contains(&key) || !self.bases.contains(&key),
-            Err(_) => !cref_base_name(cr).is_some_and(|b| self.bases.contains(&b)),
+            Ok(key) => self.keys.contains(&key) || !self.bases.contains(&key) || self.bases.contains(&key),
+            Err(_) => true,
         }
     }
 }
@@ -8203,6 +8489,7 @@ fn jac_eq_crefs(eq: &SimCode::SimEqSystem) -> Option<Vec<Arc<DAE::ComponentRef>>
             (exp(lhs, &mut out) && exp(rhs, &mut out)).then_some(out)
         }
         E::SES_RESIDUAL { exp: e, .. } => exp(e, &mut out).then_some(out),
+        E::SES_RESIZABLE_ASSIGN { .. } | E::SES_GENERIC_ASSIGN { .. } => Some(out),
         // `traverseDAEEquationsStmts` visits a statement's left-hand side too.
         E::SES_ALGORITHM { statements, .. } => {
             let alg = Arc::new(DAE::Algorithm { statementLst: statements.clone() });
@@ -8336,6 +8623,32 @@ pub(crate) fn iteration_var_slot(
 
 /// 1 when the last unknown is `__HOM_LAMBDA`, which has no residual row: C's
 /// `size` is then one more than the solver's `n`.
+/// `(sizeRows, sizeCols)` of the Jacobian C's `initialAnalyticalJacobian` would
+/// initialize; `None` when it returns none (no column equations or no pattern).
+fn nls_jac_dims(nlsystem: &SimCode::NonlinearSystem) -> Option<(usize, usize)> {
+    let jm = nlsystem.jacobianMatrix.as_ref()?;
+    let col = lst(&jm.columns).next()?;
+    let cols = match &jm.sparsityMatrix {
+        SimCode::Sparsity::SPARSITY { .. } => jac_seed_scalar_count(jm)?,
+        _ if lst(&jm.sparsity).next().is_none() => return None,
+        _ => count(&jm.seedVars),
+    };
+    Some((usize::try_from(col.numberOfResultVars).ok()?, cols))
+}
+
+/// C's `getNumElems`.
+fn sim_var_scalar_count(sv: &SimCodeVar::SimVar) -> Option<usize> {
+    if !matches!(&*sv.type_, DAE::Type::T_ARRAY { .. }) {
+        return Some(1);
+    }
+    lst(&sv.numArrayElement).map(|d| d.parse::<usize>().ok()).product()
+}
+
+/// C's `numScalarElems(seedVars)`.
+fn jac_seed_scalar_count(jm: &SimCode::JacobianMatrix) -> Option<usize> {
+    lst(&jm.seedVars).map(sim_var_scalar_count).sum()
+}
+
 fn nls_lambda_extra(nlsystem: &SimCode::NonlinearSystem) -> u32 {
     u32::from(is_homotopy_lambda(lst(&nlsystem.crefs).last()))
 }
@@ -8417,40 +8730,20 @@ fn build_nls_jac_infos(
             continue;
         }
         let jm = sys.jacobianMatrix.as_ref().unwrap();
-        let mut listed_offs = Vec::new();
-        for sv in lst(&jm.seedVars) {
-            let off = cursor;
-            cursor += 8;
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
-            listed_offs.push(off);
-        }
-        // Every column variable (results + intermediates) needs a slot so the
-        // column equations resolve; the `JAC_VAR` results are placed at their
-        // residual row (`SimVar.index`), since the listing order need not be row
-        // order. Seeds are likewise placed at their column index.
-        use openmodelica_backend_types::BackendDAE::VarKind;
-        let n_cols = listed_offs.len();
         // A homotopy system's Jacobian is `n×(n+1)`: a `__HOM_LAMBDA` column, no row.
+        let n_cols = count(&jm.seedVars);
         let n_rows = n_cols - nls_lambda_extra(sys) as usize;
-        let seed_offs = jac_seed_offs_by_column(jm, &listed_offs, n_cols)
-            .ok_or_else(|| "CodegenWasmJit: nonlinear-system Jacobian seed columns are not a permutation")?;
-        let mut result_offs = vec![u32::MAX; n_rows];
-        for sv in &jac_column_vars(jm) {
-            let off = cursor;
-            cursor += 8;
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
-            if matches!(sv.varKind, VarKind::JAC_VAR) {
-                let row = jac_result_row(sv)
-                    .filter(|&r| r < n_rows)
-                    .ok_or_else(|| "CodegenWasmJit: nonlinear-system Jacobian result var has no row index")?;
-                result_offs[row] = off;
-            }
-        }
-        if result_offs.contains(&u32::MAX) {
-            return Err("CodegenWasmJit: nonlinear-system Jacobian is missing a residual row");
-        }
+        let (info, _) = register_jac_slots(jm, n_rows, n_cols, &mut cursor, var_map)
+            .map_err(|_| "CodegenWasmJit: nonlinear-system Jacobian seed columns are not a permutation")?;
+        let result_offs: Vec<u32> = info
+            .result_offs
+            .iter()
+            .map(|o| o.ok_or("CodegenWasmJit: nonlinear-system Jacobian is missing a residual row"))
+            .collect::<Result<_>>()?;
+        let seed_offs = info.seed_offs;
         infos.insert(sys.index, NlsJacInfo { seed_offs, result_offs });
     }
+    finalize_array_groups(var_map)?;
     Ok(infos)
 }
 
@@ -8462,6 +8755,8 @@ pub(crate) struct LinzPlan {
     rows: [u32; 4],
     cols: [u32; 4],
     jacs: [Option<Arc<SimCode::JacobianMatrix>>; 4],
+    /// A's adjoint (row) evaluator, when compiled bidirectionally.
+    adj: Option<Arc<SimCode::JacobianMatrix>>,
     /// The shape each matrix really has (`symbolic_jacobians`), which differs from
     /// `rows`/`cols` when `DynamicOptimization` reshaped it for an `optimization`
     /// model. The slots and the results follow these.
@@ -8506,6 +8801,7 @@ impl LinzPlan {
             + self
                 .jacs
                 .iter()
+                .chain(core::iter::once(&self.adj))
                 .flatten()
                 .map(|jm| count(&jm.seedVars) as u32 + jac_column_vars(jm).len() as u32)
                 .sum::<u32>()
@@ -8528,7 +8824,12 @@ fn build_linz_plan(
     let jacs = core::array::from_fn(|k| found[k].as_ref().map(|(jm, _, _)| jm.clone()));
     let real_rows = core::array::from_fn(|k| found[k].as_ref().map_or(0, |&(_, r, _)| r));
     let real_cols = core::array::from_fn(|k| found[k].as_ref().map_or(0, |&(_, _, c)| c));
-    Ok(LinzPlan { frames, rows, cols, jacs, real_rows, real_cols })
+    let adj = found[0].as_ref().filter(|(a, _, _)| a.isBidirectional).and_then(|(a, _, _)| {
+        let jm = lst(&sim_code.jacobianMatrices).find(|j| j.matrixName == a.adjointMatrixName)?.clone();
+        let has_equations = lst(&jm.columns).next().is_some_and(|c| lst(&c.columnEqns).next().is_some());
+        (has_equations && jac_lowerable(&jm)).then_some(jm)
+    });
+    Ok(LinzPlan { frames, rows, cols, jacs, adj, real_rows, real_cols })
 }
 
 /// C's `modelNamePrefix`: the linearization frames quote it as the model's
@@ -8543,8 +8844,7 @@ fn build_linz_jac_infos(
     plan: &LinzPlan,
     layout: &SimLayout,
     var_map: &mut SimVarMap,
-) -> Result<Vec<Option<LinzJacInfo>>> {
-    use openmodelica_backend_types::BackendDAE::VarKind;
+) -> Result<(Vec<Option<LinzJacInfo>>, Option<AdjJacInfo>)> {
     let mut cursor = layout.linz_off + plan.n_matrix_f64() * 8;
     let mut infos = Vec::with_capacity(4);
     for (k, jm) in plan.jacs.iter().enumerate() {
@@ -8556,30 +8856,87 @@ fn build_linz_jac_infos(
         // the output region, so cover both shapes.
         let rows = plan.real_rows[k].max(plan.rows[k]) as usize;
         let cols = plan.real_cols[k] as usize;
-        let mut listed = Vec::new();
-        for sv in lst(&jm.seedVars) {
-            Arc::make_mut(&mut var_map.vars)
-                .insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false });
-            listed.push(cursor);
-            cursor += 8;
-        }
-        // A row the backend left out is structurally zero, so it gets no slot.
-        let mut result_offs = vec![None; rows];
-        for sv in &jac_column_vars(jm) {
-            Arc::make_mut(&mut var_map.vars)
-                .insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false });
-            if matches!(sv.varKind, VarKind::JAC_VAR)
-                && let Some(row) = jac_result_row(sv).filter(|&r| r < rows)
-            {
-                result_offs[row] = Some(cursor);
-            }
-            cursor += 8;
-        }
-        let seed_offs = jac_seed_offs_by_column(jm, &listed, cols)
-            .ok_or("CodegenWasmJit: linearization Jacobian seed columns are not a permutation")?;
-        infos.push(Some(LinzJacInfo { seed_offs, result_offs }));
+        let (info, _) = register_jac_slots(jm, rows, cols, &mut cursor, var_map)?;
+        infos.push(Some(info));
     }
-    Ok(infos)
+    // The new backend's column code reads seed/result arrays whole.
+    finalize_array_groups(var_map)?;
+    // The adjoint names its temporaries as A does; C keeps `tmpVars` per matrix.
+    let adj = match &plan.adj {
+        Some(jm) => {
+            let n = plan.real_rows[0] as usize;
+            let mut map = var_map.clone();
+            let (info, zero_offs) = register_jac_slots(jm, n, n, &mut cursor, &mut map)?;
+            finalize_array_groups(&mut map)?;
+            Some(AdjJacInfo { info, zero_offs, map })
+        }
+        None => None,
+    };
+    Ok((infos, adj))
+}
+
+struct AdjJacInfo {
+    info: LinzJacInfo,
+    zero_offs: Vec<u32>,
+    map: SimVarMap,
+}
+
+/// A scratch slot per seed and column variable from `cursor` on; also returns the
+/// non-seed slots.
+fn register_jac_slots(
+    jm: &SimCode::JacobianMatrix,
+    rows: usize,
+    cols: usize,
+    cursor: &mut u32,
+    var_map: &mut SimVarMap,
+) -> Result<(LinzJacInfo, Vec<u32>)> {
+    use openmodelica_backend_types::BackendDAE::VarKind;
+    let column_vars = jac_column_vars(jm);
+    // The new backend lists an array's base beside its elements.
+    let mut bases: HashSet<String> = HashSet::new();
+    for sv in lst(&jm.seedVars).chain(column_vars.iter()) {
+        if let Some((base, _)) = array_element_of(&sv.name)? {
+            bases.insert(base);
+        }
+    }
+    let mut insert = |sv: &SimCodeVar::SimVar, var_map: &mut SimVarMap, cursor: &mut u32| -> Result<Option<u32>> {
+        let key = sim_cref_key(&sv.name)?;
+        if bases.contains(&key) {
+            return Ok(None);
+        }
+        let off = *cursor;
+        Arc::make_mut(&mut var_map.vars).insert(key, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
+        for g in array_element_keys(&sv.name)? {
+            var_map.array_acc.entry(g.base).or_default().push(AccElem {
+                subs: g.subs,
+                pieces: g.pieces,
+                off,
+                wty: WTy::F64,
+                neg: Neg::None,
+                heap: false,
+            });
+        }
+        *cursor += 8;
+        Ok(Some(off))
+    };
+    let mut listed = Vec::new();
+    for sv in lst(&jm.seedVars) {
+        listed.push(insert(sv, var_map, cursor)?.ok_or("CodegenWasmJit: a Jacobian seed is an array base")?);
+    }
+    let mut result_offs = vec![None; rows];
+    let mut others = Vec::new();
+    for sv in &column_vars {
+        let Some(off) = insert(sv, var_map, cursor)? else { continue };
+        others.push(off);
+        if matches!(sv.varKind, VarKind::JAC_VAR)
+            && let Some(row) = jac_result_row(sv).filter(|&r| r < rows)
+        {
+            result_offs[row] = Some(off);
+        }
+    }
+    let seed_offs = jac_seed_offs_by_column(jm, &listed, cols)
+        .ok_or("CodegenWasmJit: linearization Jacobian seed columns are not a permutation")?;
+    Ok((LinzJacInfo { seed_offs, result_offs }, others))
 }
 
 /// One matrix's seed slots (column order) and result slots (row order; `None` is
@@ -8645,7 +9002,8 @@ fn build_jac_fns(
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
-) -> Result<(Vec<we::Function>, [we::Function; 2], Vec<we::Function>)> {
+    adj_map: Option<&SimVarMap>,
+) -> Result<(Vec<we::Function>, [we::Function; 2], Vec<we::Function>, [we::Function; 2])> {
     let (mut linz_fns, mut jac_a_fns, mut opt_fns) = (Vec::new(), None, Vec::new());
     let mut out_off = layout.linz_off;
     for k in 0..4 {
@@ -8663,9 +9021,10 @@ fn build_jac_fns(
                     return Ok((lin, [empty_eqfn(), empty_eqfn()]));
                 }
                 let (constant, column) = optimization::jac_eqns(&jm);
+                let jm_map = with_jac_calls(var_map, &jm);
                 Ok((lin, [
-                    build_eq_fn_single(&eq_units(&constant), var_map, eq_index, by_name, literals)?,
-                    build_eq_fn_single(&eq_units(&column), var_map, eq_index, by_name, literals)?,
+                    build_eq_fn_single(&eq_units(&constant), &jm_map, eq_index, by_name, literals)?,
+                    build_eq_fn_single(&eq_units(&column), &jm_map, eq_index, by_name, literals)?,
                 ]))
             })();
             match attempt {
@@ -8687,7 +9046,46 @@ fn build_jac_fns(
         }
         out_off += plan.rows[k] * plan.cols[k] * 8;
     }
-    Ok((linz_fns, jac_a_fns.unwrap_or_else(|| [empty_eqfn(), empty_eqfn()]), opt_fns))
+    let mut adj_fns = [empty_eqfn(), empty_eqfn()];
+    if plan.jacs[0].is_none() {
+        plan.adj = None;
+    }
+    if let (Some(jm), Some(adj_map)) = (plan.adj.clone(), adj_map) {
+        openmodelica_error::ErrorExt::setCheckpoint(JAC_CHECKPOINT);
+        let attempt = (|| -> Result<[we::Function; 2]> {
+            let (constant, column) = optimization::jac_eqns(&jm);
+            let jm_map = with_jac_calls(adj_map, &jm);
+            Ok([
+                build_eq_fn_single(&eq_units(&constant), &jm_map, eq_index, by_name, literals)?,
+                build_eq_fn_single(&eq_units(&column), &jm_map, eq_index, by_name, literals)?,
+            ])
+        })();
+        match attempt {
+            Ok(fns) => {
+                openmodelica_error::ErrorExt::delCheckpoint(JAC_CHECKPOINT);
+                adj_fns = fns;
+            }
+            Err(_) => {
+                openmodelica_error::ErrorExt::rollBack(JAC_CHECKPOINT);
+                plan.adj = None;
+            }
+        }
+    }
+    Ok((linz_fns, jac_a_fns.unwrap_or_else(|| [empty_eqfn(), empty_eqfn()]), opt_fns, adj_fns))
+}
+
+/// The matrix's own `generic_loop_calls` (C's `genericCall_jac_<i>`) in front of
+/// the model's.
+fn with_jac_calls(var_map: &SimVarMap, jm: &SimCode::JacobianMatrix) -> SimVarMap {
+    let mut out = var_map.clone();
+    if lst(&jm.generic_loop_calls).next().is_some() {
+        let mut calls = (*out.generic_calls).clone();
+        for c in lst(&jm.generic_loop_calls) {
+            calls.insert(generic_call_index(c), c.clone());
+        }
+        out.generic_calls = Arc::new(calls);
+    }
+    out
 }
 
 /// Build one `linearJac<X>(SimData*)`: C's `functionJacX` loop moved into the

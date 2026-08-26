@@ -3660,6 +3660,23 @@ pub(crate) fn effective_method<'a>(method: &'a str) -> &'a str {
 }
 
 /// The `-s` values C serves from `dassl.c`.
+/// C's `realVarsData[i].info.name` for the states: the first `n` real result columns.
+fn state_names(model: &SimModel, n: usize) -> Vec<String> {
+    (0..n)
+        .map(|i| {
+            model
+                .vars
+                .iter()
+                .find(|v| {
+                    matches!(v.kind, ResultKind::Column { col, .. } if col as usize == i + 1)
+                        && v.filter & crate::var_filter::ALIAS == 0
+                })
+                .map(|v| v.name.clone())
+                .unwrap_or_default()
+        })
+        .collect()
+}
+
 fn is_dassl(method: &str) -> bool {
     matches!(method, "dassl" | "dasslrt" | "dassljac" | "")
 }
@@ -3805,12 +3822,7 @@ fn make_driver_resolved(
     };
     #[cfg(sundials)]
     if method == "ida" {
-        // In DAE mode the backend leaves `A` empty; C reads it all the same.
-        let avail = match layout.dae_mode() {
-            true => None,
-            false => jac_a_avail,
-        };
-        ida_jacobian_method(avail, ida_linear_solver(layout), true);
+        ida_jacobian_method(jac_a_avail, ida_linear_solver(layout), true);
     }
     if is_dassl(method) {
         set_jacobian_method(jac_a_avail, true);
@@ -4347,6 +4359,8 @@ struct ResCtx {
     nominal_factor: f64,
     /// Relative tolerance; with `nominals` it gives the first step's floor.
     tol: f64,
+    /// For `LOG_JAC`; null when the driver keeps none.
+    state_names: *const Vec<String>,
     /// What IDA's Jacobian callback needs on top of the above; all-null otherwise.
     #[cfg(sundials)]
     ida: IdaCtx,
@@ -4600,10 +4614,9 @@ fn set_jacobian_method(jac: Option<&JacAInfo>, log: bool) -> JacobianMethod {
     if log {
         omclog::info(omclog::JAC, false, &format!("Using Jacobian method: {}", method.desc()));
     }
-    // Never compiled bidirectionally here, so C's `evalJacobian` degenerates to the
-    // plain colored evaluation.
+    // Without an adjoint C's `evalJacobian` degenerates to the colored evaluation.
     match method {
-        M::BicoloredSymJac => {
+        M::BicoloredSymJac if jac.and_then(|j| j.sym.as_ref()).is_none_or(|s| s.adj.is_none()) => {
             if log {
                 omclog::warning(
                     omclog::SOLVER,
@@ -4620,7 +4633,7 @@ fn set_jacobian_method(jac: Option<&JacAInfo>, log: bool) -> JacobianMethod {
 
 /// Whether the method assembles from the symbolic column equations.
 fn jac_method_symbolic(m: JacobianMethod) -> bool {
-    matches!(m, JacobianMethod::SymJac | JacobianMethod::ColoredSymJac)
+    matches!(m, JacobianMethod::SymJac | JacobianMethod::ColoredSymJac | JacobianMethod::BicoloredSymJac)
 }
 
 /// Whether the method evaluates once per colour rather than once per column.
@@ -4719,7 +4732,7 @@ unsafe fn dassl_jac(
     pd: *mut f64,
     cj: *mut f64,
     h: *mut f64,
-    _wt: *mut f64,
+    wt: *mut f64,
     _rpar: *mut f64,
     _ipar: *mut i32,
 ) {
@@ -4755,12 +4768,16 @@ unsafe fn dassl_jac(
     };
     let run = (|| -> Result<()> {
         write_time(e, ctx.sim_data, unsafe { *t })?;
-        if jac_method_symbolic(ctx.jac_method) {
+        if ctx.jac_method == JacobianMethod::BicoloredSymJac {
+            eval_bicolored_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, &mut |row, col, v| {
+                unsafe { *pd.add(col * n + row) = 0.0 - v };
+            })?;
+        } else if jac_method_symbolic(ctx.jac_method) {
             // C's `jacA_symColored` / `jacA_sym`. This residual is G = y' − f, the
             // negative of C's F = f − y', so ∂f/∂y enters negated (and the `cj·I`
             // below is added where C subtracts it).
             eval_sym_jacobian(e, ctx.sim_data, jac, ctx.ctx_addr, colored, &mut |row, col, _, v| {
-                unsafe { *pd.add(col * n + row) = -v };
+                unsafe { *pd.add(col * n + row) = 0.0 - v };
             })?;
         } else {
             set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
@@ -4813,6 +4830,9 @@ unsafe fn dassl_jac(
         for col in 0..n {
             unsafe { *pd.add(col * n + col) += cj };
         }
+        if jac_method_symbolic(ctx.jac_method) && omclog::active(omclog::JAC) {
+            dassl_log_jacobian(ctx, e, unsafe { *t }, y, yprime, base, pd, cj, h, wt)?;
+        }
         Ok(())
     })();
     set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
@@ -4839,6 +4859,209 @@ fn fd_step(yi: f64, hyp: f64, tol: f64, nominal: f64, factor: f64) -> f64 {
     let ewt_inv = tol * (yi.abs() + nominal);
     let step = if scale > ewt_inv { scale } else { ewt_inv.max(factor * nominal) };
     signed(DELTA_X_SOLVER * step, hyp)
+}
+
+/// C's `numericalJacobianStep` as `jacA_num` calls it.
+fn fd_step_ewt(yi: f64, hyp: f64, ewt_inv: f64, nominal: f64) -> f64 {
+    let scale = yi.abs().max(hyp.abs());
+    let step = if scale > ewt_inv { scale } else { ewt_inv.max(nominal) };
+    signed(DELTA_X_SOLVER * step, hyp)
+}
+
+/// C's `LOG_JAC` block: `printJacobianMatrix`, then the largest differences against
+/// `jacA_num`. C's matrix is `∂F/∂y − cj·I` with `F = f − y'`; `pd` is its negative.
+#[allow(clippy::too_many_arguments)]
+unsafe fn dassl_log_jacobian(
+    ctx: &mut ResCtx,
+    e: &mut dyn SimEngine,
+    t: f64,
+    y: *mut f64,
+    yprime: *mut f64,
+    base: *mut f64,
+    pd: *mut f64,
+    cj: f64,
+    h: f64,
+    wt: *mut f64,
+) -> Result<()> {
+    let n = ctx.n_states;
+    let names: Vec<String> = match ctx.state_names.is_null() {
+        true => (0..n).map(|i| format!("{i}")).collect(),
+        false => unsafe { (*ctx.state_names).clone() },
+    };
+    let name = |i: usize| names.get(i).map(String::as_str).unwrap_or("");
+    let value = |col: usize, row: usize| -(unsafe { *pd.add(col * n + row) });
+    omclog::info(omclog::JAC, true, &format!(
+        "DASSL-Solver: analytical Jacobian pd (column-major) at time={}",
+        format_g(t, 6)
+    ));
+    for col in 0..n {
+        for row in 0..n {
+            omclog::info(omclog::JAC, false, &format!(
+                "J(row={row}:'{}', col={col}:'{}') = {} [flat={}]",
+                name(row), name(col), format_g(value(col, row), 16), col * n + row
+            ));
+        }
+    }
+    omclog::close(omclog::JAC);
+    let mut numerical = vec![0.0f64; n * n];
+    set_context(e, ctx.ctx_addr, CONTEXT_JACOBIAN);
+    for col in (0..n).rev() {
+        let yi = unsafe { *y.add(col) };
+        let hyp = h * unsafe { *yprime.add(col) };
+        let ewt_inv = (1.0 / unsafe { *wt.add(col) }).abs();
+        let nom = unsafe { *ctx.nominals.add(col) };
+        let mut del = fd_step_ewt(yi, hyp, ewt_inv, ctx.nominal_factor * nom);
+        del = yi + del - yi;
+        let inv = 1.0 / del;
+        unsafe { *y.add(col) = yi + del };
+        write_i32(e, ctx.sim_data + ctx.nls_fail_off, 0)?;
+        let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
+        e.write_bytes(ctx.states_base, y_bytes)?;
+        e.call1("functionODE", ctx.sim_data)?;
+        e.read_bytes(ctx.ders_base, &mut ctx.jac_ders)?;
+        for row in 0..n {
+            let f = f64::from_le_bytes(ctx.jac_ders[row * 8..row * 8 + 8].try_into().unwrap());
+            // `base` is G = y' − f.
+            let f_new = f - unsafe { *yprime.add(row) };
+            let f_old = -unsafe { *base.add(row) };
+            numerical[col * n + row] = (f_new - f_old) * inv;
+        }
+        unsafe { *y.add(col) = yi };
+    }
+    set_context(e, ctx.ctx_addr, CONTEXT_ALGEBRAIC);
+    let y_bytes = unsafe { core::slice::from_raw_parts(y as *const u8, n * 8) };
+    e.write_bytes(ctx.states_base, y_bytes)?;
+    for k in 0..n {
+        numerical[k * n + k] -= cj;
+    }
+    let (mut max_abs, mut max_rel) = (0.0f64, 0.0f64);
+    let (mut abs_at, mut rel_at) = ((0usize, 0usize), (0usize, 0usize));
+    for col in 0..n {
+        for row in 0..n {
+            let num = numerical[col * n + row];
+            let abs_diff = (value(col, row) - num).abs();
+            let rel_diff = abs_diff / num.abs().max(1e-15);
+            if abs_diff > max_abs {
+                max_abs = abs_diff;
+                abs_at = (row, col);
+            }
+            if rel_diff > max_rel {
+                max_rel = rel_diff;
+                rel_at = (row, col);
+            }
+        }
+    }
+    omclog::info(omclog::JAC, true, "Jacobian verification: analytical vs. numerical");
+    omclog::info(omclog::JAC, false, &format!(
+        "Max absolute difference: {} at (row={}:'{}', col={}:'{}')",
+        format_g(max_abs, 6), abs_at.0, name(abs_at.0), abs_at.1, name(abs_at.1)
+    ));
+    omclog::info(omclog::JAC, false, &format!(
+        "Max relative difference: {} at (row={}:'{}', col={}:'{}')",
+        format_g(max_rel, 6), rel_at.0, name(rel_at.0), rel_at.1, name(rel_at.1)
+    ));
+    omclog::close(omclog::JAC);
+    Ok(())
+}
+
+/// C's `evalJacobianBidirectional`: a column phase over A's coloring and a row
+/// phase over the adjoint's, each entry taken from the phase that recovers it alone
+/// (`initBidirectionalRecovery`).
+pub fn eval_bicolored_jacobian(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    jac: &JacAInfo,
+    ctx_addr: u32,
+    set: &mut dyn FnMut(usize, usize, f64),
+) -> Result<()> {
+    let sym = jac.sym.as_ref().ok_or("CodegenWasmJit: no symbolic Jacobian to evaluate")?;
+    let adj = sym.adj.as_ref().ok_or("CodegenWasmJit: no adjoint Jacobian to evaluate")?;
+    let n = jac.n as usize;
+    let mut col_color = vec![0usize; n];
+    for (c, cols) in jac.colors.iter().enumerate() {
+        for &col in cols {
+            col_color[col as usize] = c;
+        }
+    }
+    let mut row_color = vec![0usize; n];
+    for (c, rows) in adj.row_colors.iter().enumerate() {
+        for &row in rows {
+            row_color[row as usize] = c;
+        }
+    }
+    let mut cols_by_row: Vec<Vec<usize>> = vec![Vec::new(); n];
+    for (col, rows) in jac.rows_by_col.iter().enumerate() {
+        for &row in rows {
+            cols_by_row[row as usize].push(col);
+        }
+    }
+    let fwd_ok = |row: usize, col: usize| {
+        cols_by_row[row].iter().all(|&c2| c2 == col || col_color[c2] != col_color[col])
+    };
+    let adj_ok = |row: usize, col: usize| {
+        jac.rows_by_col[col].iter().all(|&r2| r2 as usize == row || row_color[r2 as usize] != row_color[row])
+    };
+    set_context(e, ctx_addr, CONTEXT_SYM_JACOBIAN);
+    let run = (|| -> Result<()> {
+        for &off in sym.seed_offs.iter().chain(adj.seed_offs.iter()) {
+            write_f64(e, sim_data + off, 0.0)?;
+        }
+        if sym.has_constant {
+            e.call1("functionJacA_constantEqns", sim_data)?;
+        }
+        if adj.has_constant {
+            e.call1("functionJacADJ_constantEqns", sim_data)?;
+        }
+        for group in &jac.colors {
+            for &c in group {
+                write_f64(e, sim_data + sym.seed_offs[c as usize], 1.0)?;
+            }
+            e.call1("functionJacA_column", sim_data)?;
+            for &c in group {
+                let col = c as usize;
+                for &r in &jac.rows_by_col[col] {
+                    let row = r as usize;
+                    if fwd_ok(row, col) {
+                        let v = match sym.result_offs[row] {
+                            u32::MAX => 0.0,
+                            off => read_f64(e, sim_data + off)?,
+                        };
+                        set(row, col, v);
+                    }
+                }
+                write_f64(e, sim_data + sym.seed_offs[col], 0.0)?;
+            }
+        }
+        for &off in &adj.zero_offs {
+            write_f64(e, sim_data + off, 0.0)?;
+        }
+        for group in &adj.row_colors {
+            for &r in group {
+                write_f64(e, sim_data + adj.seed_offs[r as usize], 1.0)?;
+            }
+            e.call1("functionJacADJ_column", sim_data)?;
+            for &r in group {
+                let row = r as usize;
+                for &col in &cols_by_row[row] {
+                    if adj_ok(row, col) {
+                        let v = match adj.result_offs[col] {
+                            u32::MAX => 0.0,
+                            off => read_f64(e, sim_data + off)?,
+                        };
+                        set(row, col, v);
+                    }
+                }
+                write_f64(e, sim_data + adj.seed_offs[row], 0.0)?;
+            }
+            // The row evaluator accumulates.
+            for &off in &adj.zero_offs {
+                write_f64(e, sim_data + off, 0.0)?;
+            }
+        }
+        Ok(())
+    })();
+    set_context(e, ctx_addr, CONTEXT_ALGEBRAIC);
+    run
 }
 
 /// C's `-noEquidistantTimeGrid` (`dassl.c`'s `dasslSteps`): DASKR's own steps are
@@ -5065,6 +5288,8 @@ struct DasslDriver {
     jac_a: Option<JacAInfo>,
     /// C's `dasslData->dasslJacobian`.
     jac_method: JacobianMethod,
+    /// The states' names, in `y` order (`LOG_JAC`).
+    state_names: Vec<String>,
     /// Jacobian evaluation count, accumulated across chunks (for the bench line).
     nje: u64,
     past: DaskrCounters,
@@ -5195,6 +5420,7 @@ impl DasslDriver {
             finished: false,
             jac_a,
             jac_method,
+            state_names: state_names(model, n_states),
             nje: 0,
             past: DaskrCounters::default(),
             retry,
@@ -5319,6 +5545,7 @@ impl Driver for DasslDriver {
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
             tol: self.tol,
+            state_names: &self.state_names,
             #[cfg(sundials)]
             ida: IdaCtx::default(),
         };
@@ -6627,6 +6854,7 @@ impl SolverCore {
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
             tol: self.tol,
+            state_names: core::ptr::null(),
             #[cfg(sundials)]
             ida: self.ida_ctx(),
         }
@@ -8119,6 +8347,7 @@ impl Driver for CvodeDriver {
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
             tol: self.tol,
+            state_names: core::ptr::null(),
             #[cfg(sundials)]
             ida: IdaCtx::default(),
         };
@@ -8465,10 +8694,9 @@ impl IdaSetup {
             (Some(j), IdaLs::Klu) => Some(IdaPattern::new(j, dae.is_none())),
             _ => None,
         };
-        // C decides the method from the ODE `A` even in DAE mode, where the backend
-        // leaves it empty — hence the `INTERNALNUMJAC`-with-KLU downgrade there.
-        // `jac_a` above is what the difference quotient runs over instead.
-        let avail = match dae.is_some() || env_var("OMC_WASM_NO_ANALYTIC_JAC").is_some() {
+        // In DAE mode only the new backend fills "A"; the old one takes C's
+        // `INTERNALNUMJAC` downgrade.
+        let avail = match env_var("OMC_WASM_NO_ANALYTIC_JAC").is_some() {
             true => None,
             false => model.jac_a.as_ref(),
         };
@@ -9065,6 +9293,7 @@ impl Driver for IdaDriver {
             nominals: self.nominals.as_ptr(),
             nominal_factor: nominal_factor(),
             tol: self.tol,
+            state_names: core::ptr::null(),
             ida: self.setup.ctx(Some(ida)),
         };
         if !ida.set_user_data(&mut ctx as *mut ResCtx as *mut core::ffi::c_void) {

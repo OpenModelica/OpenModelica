@@ -42,6 +42,8 @@ fn emit_residual_eval(
 /// `SES_GENERIC_RESIDUAL` (the same over a list of flat indices).
 pub(crate) enum NlsResidual {
     Scalar { exp: Arc<DAE::Exp>, res_index: i32 },
+    /// An array-valued `SES_RESIDUAL`: `rows` entries from `res_index`.
+    Array { exp: Arc<DAE::Exp>, res_index: i32, rows: usize },
     For {
         iterators: Vec<BackendDAE::SimIterator>,
         exp: Arc<DAE::Exp>,
@@ -60,6 +62,7 @@ impl NlsResidual {
     pub(crate) fn rows(&self) -> Option<usize> {
         match self {
             NlsResidual::Scalar { .. } => Some(1),
+            NlsResidual::Array { rows, .. } => Some(*rows),
             NlsResidual::Generic { scal_indices, .. } => Some(scal_indices.len()),
             NlsResidual::For { .. } => None,
         }
@@ -109,6 +112,24 @@ pub(crate) fn emit_nls_residual_body(
                 let w = compile_exp(ctx, exp)?;
                 coerce(ctx, w, WTy::F64);
                 ctx.emit(I::F64Store(mem_arg(dest * 8, 3)));
+            }
+            NlsResidual::Array { exp, res_index, rows } => {
+                let w = compile_exp(ctx, exp)?;
+                if w != WTy::I32 {
+                    return Err("CodegenWasmJit: array residual did not evaluate to an array");
+                }
+                let arr = ctx.alloc_temp(WTy::I32);
+                ctx.emit(I::LocalTee(arr));
+                ctx.emit(I::Call(rt_index("rt_array_data")?));
+                let data = ctx.alloc_temp(WTy::I32);
+                ctx.emit(I::LocalSet(data));
+                for k in 0..*rows as u32 {
+                    ctx.emit(I::LocalGet(2)); // r
+                    ctx.emit(I::LocalGet(data));
+                    ctx.emit(I::F64Load(mem_arg(k * 8, 3)));
+                    ctx.emit(I::F64Store(mem_arg((*res_index as u32 + k) * 8, 3)));
+                }
+                release_temp_array(ctx, arr)?;
             }
             NlsResidual::For { iterators, exp, res_index } => {
                 emit_for_residual(ctx, iterators, exp, *res_index, &[])?;

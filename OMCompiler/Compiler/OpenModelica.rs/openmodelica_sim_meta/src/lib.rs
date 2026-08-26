@@ -681,6 +681,21 @@ pub struct JacSym {
     pub result_offs: Vec<u32>,
     /// `functionJacA_constantEqns` has a body (C's `jacobian->constantEqns`).
     pub has_constant: bool,
+    /// The adjoint (row) evaluator of a bidirectionally compiled matrix.
+    pub adj: Option<JacAdj>,
+}
+
+/// C's `adjointJacobian`: `functionJacADJ_column`, seeded by row, results by column.
+#[derive(Clone, PartialEq, Debug, Default)]
+pub struct JacAdj {
+    pub seed_offs: Vec<u32>,
+    /// Result slot per column; `u32::MAX` is a structural zero.
+    pub result_offs: Vec<u32>,
+    /// Result and temporary slots, cleared between colors (they accumulate).
+    pub zero_offs: Vec<u32>,
+    pub has_constant: bool,
+    /// Each color: the rows seeded together.
+    pub row_colors: Vec<Vec<u32>>,
 }
 
 /// `--daeMode` metadata the [`Layout`]'s scalars cannot carry.
@@ -1364,6 +1379,17 @@ fn put_jac(o: &mut Vec<u8>, j: &Option<JacAInfo>) {
                     put_u32s(o, &s.seed_offs);
                     put_u32s(o, &s.result_offs);
                     o.push(s.has_constant as u8);
+                    match &s.adj {
+                        None => o.push(0),
+                        Some(a) => {
+                            o.push(1);
+                            put_u32s(o, &a.seed_offs);
+                            put_u32s(o, &a.result_offs);
+                            put_u32s(o, &a.zero_offs);
+                            o.push(a.has_constant as u8);
+                            put_u32s2(o, &a.row_colors);
+                        }
+                    }
                 }
             }
         }
@@ -1697,6 +1723,16 @@ impl<'a> Reader<'a> {
                         seed_offs: self.u32s()?,
                         result_offs: self.u32s()?,
                         has_constant: self.u8()? != 0,
+                        adj: match self.u8()? {
+                            0 => None,
+                            _ => Some(JacAdj {
+                                seed_offs: self.u32s()?,
+                                result_offs: self.u32s()?,
+                                zero_offs: self.u32s()?,
+                                has_constant: self.u8()? != 0,
+                                row_colors: self.u32s2()?,
+                            }),
+                        },
                     }),
                 },
             }),
@@ -2135,6 +2171,7 @@ mod tests {
                     seed_offs: vec![300, 308],
                     result_offs: vec![316, u32::MAX],
                     has_constant: true,
+                    adj: None,
                 }),
             }),
             state_sets: vec![StateSetInfo {
