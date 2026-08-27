@@ -337,6 +337,8 @@ pub const MODEL_FNS: &[&str] = &[
     "reconJacF",
     "reconJacH",
     "symbolicInlineSystem",
+    "functionLocalKnownVars",
+    "parmodTask",
 ];
 
 /// The clock a model entry point runs under, where `CodegenC.tpl` ticks one inside
@@ -394,11 +396,24 @@ pub trait SimEngine {
     /// [`SimEngine::call1_raw`] under the clock C's generated entry point ticks
     /// around its own body ([`model_fn_clock`]); every driver goes through here.
     fn call1(&mut self, name: &str, arg: u32) -> Result<()> {
-        let Some(ix) = model_fn_clock(name) else { return self.call1_raw(name, arg) };
+        let parmod = name == "functionODE" && crate::parmod::active();
+        let Some(ix) = model_fn_clock(name) else {
+            return if parmod { self.call_parmod_ode(arg) } else { self.call1_raw(name, arg) };
+        };
         rtclock::tick(ix);
-        let out = self.call1_raw(name, arg);
+        let out = if parmod { self.call_parmod_ode(arg) } else { self.call1_raw(name, arg) };
         rtclock::accumulate(ix);
         out
+    }
+    /// C's `functionODE` under `--parmodauto`: the scheduler decides between the
+    /// sequential entry point and the per-task `parmodTask(sim_data, task)`.
+    fn call_parmod_ode(&mut self, sim_data: u32) -> Result<()> {
+        use crate::parmod::Op;
+        crate::parmod::evaluate_ode(&mut |op| match op {
+            Op::All => self.call1_raw("functionODE", sim_data),
+            Op::LocalKnown => self.call1_if_present_raw("functionLocalKnownVars", sim_data),
+            Op::Task(k) => self.call2_raw("parmodTask", sim_data, k),
+        })
     }
     fn call1_if_present(&mut self, name: &str, arg: u32) -> Result<()> {
         let Some(ix) = model_fn_clock(name) else { return self.call1_if_present_raw(name, arg) };
@@ -4091,6 +4106,7 @@ fn solver_setup(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Resul
     );
     omclog::close(omclog::NLS);
     set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
+    crate::parmod::init(model);
     for k in 0..layout.n_sens {
         write_f64(e, sim_data + layout.sens_off + k * 8, 0.0)?;
     }
@@ -4304,7 +4320,7 @@ pub fn drive(
         // reached `euler` for want of states -- where the loop saves nothing anyway,
         // there being no integration -- keeps the host driver. `+profiling` also
         // needs the row-emitting loop (`fmtEmitStep`), so it stays off this path.
-        if !use_events && method == "euler" && layout.n_states > 0 && !host_driven && !csv_input_given() && model.prof.is_none() {
+        if !use_events && method == "euler" && layout.n_states > 0 && !host_driven && !csv_input_given() && model.prof.is_none() && model.parmod.is_none() {
             // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
             label = "euler-wasm";
             solver_setup(e, model, sim_data)?;
@@ -4412,6 +4428,7 @@ pub fn drive(
         log_line(crate::omclog::STDOUT, crate::omclog::INFO, &recon_log);
     }
     recon_res?;
+    crate::parmod::finish();
     rtclock::accumulate(rtclock::TOTAL);
     crate::profiling::end_of_run(e);
     (stats.timers, stats.tcalls) = rtclock::snapshot();

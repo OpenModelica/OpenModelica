@@ -378,6 +378,7 @@ openmodelica_sim_meta/src/optimization/eval.rs
 openmodelica_sim_meta/src/optimization/ipopt.rs
 openmodelica_sim_meta/src/optimization/ipopt_out.rs
 openmodelica_sim_meta/src/optimization/mod.rs
+openmodelica_sim_meta/src/parmod.rs
 openmodelica_sim_meta/src/optimization/model.rs
 openmodelica_sim_meta/src/optimization/setup.rs
 openmodelica_sim_meta/src/qss.rs
