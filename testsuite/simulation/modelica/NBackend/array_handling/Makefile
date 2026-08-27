@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 array_start_vector.mos\
+arrayResultFile.mos\
 simple_for.mos\
 simple_nested_for.mos\
 irregular_for.mos\
