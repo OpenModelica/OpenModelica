@@ -71,7 +71,7 @@ client. The Debian package of the \%OpenModelica Project includes the clients
 \%\fBOMNotebook\fP and \fBOMShell\fP are Qt\-Windows applications. The client
 \%\fBOMShell-terminal\fP is a console application and runs in most terminal 
 like gnome\-terminal. The communication between the clients
-and the server can be based on \fBCORBA\fP or on \fBBSD\-sockets\fP.
+and the server can be based on \fBZeroMQ\fP or on \fBBSD\-sockets\fP.
 .P
 More documentation will be found in the enclosed \%OpenModelica System
 Documentation or the \%OpenModelica Users Guide. The documentation
@@ -127,13 +127,14 @@ the initial values for parameters
 .B +d=interactive
 Will start \fBomc\fP as a server listening on the socket interface.
 .TP
-.B +d=interactiveCorba
-Will start \fBomc\fP as a server listening on the CORBA interface.
-.TP
-.B +c=corbaName
-Works together with +d=interactiveCorba. It will start \fBomc\fP with
-a different CORBA session name. This way multiple \fBomc\fP compilers
-can be started.
+.BI +interactive=< "value">
+Will start \fBomc\fP as a server. Accepted values are \fBnone\fP, \fBtcp\fP
+and \fBzmq\fP. With \fBtcp\fP the server listens on the BSD socket interface,
+with \fBzmq\fP on the ZeroMQ interface used by the graphical clients.
+.RS
+.IP "Default interactive value:" 26
+none
+.RE
 .TP
 .BI +annotationVersion=< "value">
 What annotation version should we use. Accepted values are 1.x, 2.x or 3.x.
@@ -408,22 +409,6 @@ libraries and other libraries are stored under the following directory.
 .I /usr/lib/omc/
 .RE
 .
-.\" --------------------------------------------------------------------
-.SS JAVA interface:
-.\" --------------------------------------------------------------------
-.
-The following files supports the bidirectional OpenModelica-Java CORBA
-interoperability.
-.
-.RS 3
-.IP "Files:" 7
-.IR antlr-3.1.3.jar ", " modelica_java.jar
-.PD 0
-.IP "Path:" 7
-.I /usr/share/java/
-.PD
-.RE
-.
 .
 .\" --------------------------------------------------------------------
 .SH "USING OMC"
@@ -584,102 +569,56 @@ omc sim_dcmotor.mos
 The next examples will show how to start \fBomc\fP in the server mode. In the
 server mode \fBomc\fP runs as independent process and will act upon inquiries
 from a client. The communication between \fBomc\fP and the client can use
-two different communication interfaces. One is based on the BSD socket
-interface, the other use CORBA. The following examples shows how to run
-the server \fBomc\fP with the client \fBOMShell\-terminal\fP. In the first
-example \fBomc\fP will be launched in server mode with the BSD socket
-interface:
+two different communication interfaces: the BSD socket interface and ZeroMQ.
+The graphical clients \fBOMShell\fP, \fBOMNotebook\fP and \fBOMEdit\fP use
+ZeroMQ. Launch \fBomc\fP as a ZeroMQ server with:
 .
 .RS
 .P
 First console
 .PD 0
 .IP "\fBuser\fP@\fBhost\fP$>" 13
-omc +d=interactive
+omc +interactive=zmq
 .PD
 .P
-In a second console run the following command:
+The server writes the port it listens on to a file in the temporary directory,
+which the clients pick up. Start a client in a second console:
 .P
 Second console
 .PD 0
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-OMShell\-terminal -noserv
-.PD
-.P
-The option -noserv is required. Without the option -noserv the client
-\fBOMShell\-terminal\fP will create his own instance of the compiler
-\fBomc\fP.
-.P
-The second example does the same, but the communication between the server and
-the client will use the CORBA interface:
-.P
-First console
-.PD 0
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-omc +d=interactiveCorba
-.PD
-.P
-In a second console run the following command:
-.P
-Second console
-.PD 0
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-OMShell\-terminal -noserv -corba
-.PD
-.
-.IP "NOTE:" 7
-In the above and in the following examples the compiler \fBomc\fP can't be put
-in the background. A command like \*[lq]omc \%+d=interactive &\*[rq]
-will not do the expected job. Only in a script the compiler can run in the
-background. The script \fBOMShell\-terminal\fP shows how the compiler \fBomc\fP
-can be put in background. The script is stored in the directory \fI/usr/bin/\fP.
-.
-.P
-The clients \fBOMShell\fP and \fBOMNotebook\fP needs some special treatment.
-These clients don't know the options -noserv and -corba. The default
-communication interface is CORBA and it can't be changed. Consequently the
-compiler \fBomc\fP can only be put in the independent server mode
-\%\*[lq]interactiveCorba\*[rq].
-.
-.P
-The compiler \fBomc\fP needs a special treatment to. Running \fBomc\fP in an
-independent server mode and with one of the above clients \fBOMShell\fP or
-\fBOMNotebook\fP, the current working directory shouldn't be the user's home
-directory. The start of \fBomc\fP should be happened in a sub directory. The
-next examples uses the directory \fI/home/\fP\fB${USER}\fP\fI/OMWorkspace/\fP
-as start and working directory.
-.
-.P
-The following examples will run the compiler \fBomc\fP in the independent
-server mode and with the communication interface CORBA. The clients will be
-called in a separate console. The clients will switched automatically to the
-interface of the server \fBomc\fP. In these cases the option -noserv is not
-needed:
-.P
-First console
-.PD 0
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-cd /home/${USER}/OMWorkspace/
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-omc +d=interactiveCorba
-.PD
-.P
-Second console
-.PD 0
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-cd /home/${USER}/OMWorkspace/
 .IP "\fBuser\fP@\fBhost\fP$>" 13
 OMShell
 .PD
 .P
-The next example does the same but now \fBOMNotebook\fP runs as client:
+The BSD socket interface is selected with \fB+interactive=tcp\fP instead. The
+server then listens on port 29500:
+.P
+First console
+.PD 0
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+omc +interactive=tcp
+.PD
+.
+.IP "NOTE:" 7
+In the above and in the following examples the compiler \fBomc\fP can't be put
+in the background. A command like \*[lq]omc \%+interactive=zmq &\*[rq]
+will not do the expected job. Only in a script the compiler can run in the
+background.
+.
+.P
+The compiler \fBomc\fP needs a special treatment to. Running \fBomc\fP in an
+independent server mode and with one of the clients \fBOMShell\fP or
+\fBOMNotebook\fP, the current working directory shouldn't be the user's home
+directory. The start of \fBomc\fP should be happened in a sub directory. The
+next example uses the directory \fI/home/\fP\fB${USER}\fP\fI/OMWorkspace/\fP
+as start and working directory.
 .P
 First console
 .PD 0
 .IP "\fBuser\fP@\fBhost\fP$>" 13
 cd /home/${USER}/OMWorkspace/
 .IP "\fBuser\fP@\fBhost\fP$>" 13
-omc +d=interactiveCorba
+omc +interactive=zmq
 .PD
 .P
 Second console
