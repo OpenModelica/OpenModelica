@@ -321,14 +321,13 @@ pub extern "C" fn rt_nls_assert_failed(
 
 /// C's `assertCommonVar` (a math builtin's domain guard): `omc_assert_warning`
 /// heads the `LOG_ASSERT` block and `throwStreamPrintWithEquationIndexes` adds the
-/// message and unwinds. Returns non-zero where the unwind is caught — a solver
-/// residual or the step — so the caller returns; the model-error path reports a
-/// fatal one. `msg` is this call's to release.
+/// message, both before `getBestJumpBuffer` picks the jump buffer — so a fatal
+/// violation reports exactly as a caught one does. Returns non-zero where a solver
+/// residual or the step catches it, so the caller returns instead of unwinding.
+/// `msg` is this call's to release.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_assert_common(msg: i32, sim_data: i32, initial: i32) -> i32 {
-    if !error_caught() {
-        return 0;
-    }
+    let caught = error_caught();
     if throw_reports() {
         use openmodelica_sim_meta::TIME_OFF;
         let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
@@ -341,13 +340,20 @@ pub extern "C" fn rt_assert_common(msg: i32, sim_data: i32, initial: i32) -> i32
                 crate::omclog::f(time, 0, 6)
             ),
         );
-        crate::omclog::debug(crate::omclog::ASSERT, false, &rt_string(msg));
+        if throw_logged() {
+            crate::omclog::debug(crate::omclog::ASSERT, false, &rt_string(msg));
+        }
     }
-    rt_nls_note_assert();
     if msg != 0 {
         crate::rt_release(msg as u32);
     }
-    1
+    if caught {
+        rt_nls_note_assert();
+        return 1;
+    }
+    // The flag is what makes the caller's unwind report as an assertion, not a crash.
+    crate::note_runtime_error_flag();
+    0
 }
 
 /// C's stage switch in `va_omc_assert_simulation_withEquationIndexes`.

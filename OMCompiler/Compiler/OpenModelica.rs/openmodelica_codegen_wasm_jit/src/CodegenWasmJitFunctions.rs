@@ -4649,18 +4649,49 @@ fn emit_nls_recoverable_return(ctx: &mut FnCtx) -> Result<()> {
     Ok(())
 }
 
-/// Trap on a model error whose message String handle is already on the stack — C's
-/// `assertCommonVar`: no dumped condition, `omc_dummyFileInfo`.
+/// C's `assertCommonVar` for a model error whose message String handle is on the
+/// stack. Where a solver or the step catches the unwind, the evaluation returns with
+/// its outputs untouched, as [`emit_nls_recoverable_return`] does.
 fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
-    emit_str_literal(ctx, b"")?; // file
-    for _ in 0..5 {
-        ctx.emit(we::Instruction::I32Const(0)); // line/col start+end, isReadOnly
+    use we::Instruction as I;
+    // C's `FUNCTION_CONTEXT` arm is `omc_assert(threadData, omc_dummyFileInfo, msg)`,
+    // which a simulation binds to `omc_assert_simulation` — `emit_assert`'s two arms.
+    if ctx.sim.is_none() {
+        let msg = ctx.alloc_temp(WTy::I32);
+        ctx.emit(I::LocalSet(msg));
+        let mut report_args = |ctx: &mut FnCtx| -> Result<()> {
+            ctx.emit(I::LocalGet(msg));
+            emit_str_literal(ctx, b"")?; // file
+            for _ in 0..5 {
+                ctx.emit(I::I32Const(0)); // line/col start+end, isReadOnly
+            }
+            ctx.emit(I::I32Const(0)); // no condition: never suppressed
+            emit_initial_flag(ctx);
+            emit_sim_data_or_zero(ctx);
+            Ok(())
+        };
+        ctx.emit(I::Call(rt_index("rt_nls_recovering")?));
+        ctx.emit(I::If(we::BlockType::Empty));
+        report_args(ctx)?;
+        ctx.emit(I::Call(rt_index("rt_nls_assert_failed")?));
+        release_heap_locals(ctx)?;
+        push_outputs(ctx);
+        ctx.emit(I::Return);
+        ctx.emit(I::End);
+        report_args(ctx)?;
+        ctx.emit(I::Call(env_extra_index("rt_assert")?));
+        ctx.emit(I::Drop); // a model error is never suppressed
+        emit_assert_unwind(ctx);
+        return Ok(());
     }
-    ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
-    emit_initial_flag(ctx);
     emit_sim_data_or_zero(ctx);
-    ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
-    ctx.emit(we::Instruction::Drop);
+    emit_initial_flag(ctx);
+    ctx.emit(I::Call(rt_index("rt_assert_common")?));
+    ctx.emit(I::If(we::BlockType::Empty));
+    release_heap_locals(ctx)?;
+    push_outputs(ctx);
+    ctx.emit(I::Return);
+    ctx.emit(I::End);
     emit_assert_unwind(ctx);
     Ok(())
 }
@@ -4746,22 +4777,6 @@ fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &Arc<DAE::Exp>, d: &
     ctx.emit(I::Call(rt_index("rt_concat")?));
     emit_str_literal(ctx, d.tail.as_bytes())?;
     ctx.emit(I::Call(rt_index("rt_concat")?));
-    let msg = ctx.alloc_temp(WTy::I32);
-    ctx.emit(I::LocalTee(msg));
-    // C's `assertCommonVar` warns and throws; a solver or the step catches the
-    // throw, so the evaluation returns instead of trapping.
-    match ctx.sim.as_ref().map(|s| s.data_local) {
-        Some(data) => ctx.emit(I::LocalGet(data)),
-        None => ctx.emit(I::I32Const(0)),
-    }
-    emit_initial_flag(ctx);
-    ctx.emit(I::Call(rt_index("rt_assert_common")?));
-    ctx.emit(I::If(we::BlockType::Empty));
-    release_heap_locals(ctx)?;
-    push_outputs(ctx);
-    ctx.emit(I::Return);
-    ctx.emit(I::End);
-    ctx.emit(I::LocalGet(msg));
     emit_model_error(ctx)?;
     ctx.emit(I::End);
 

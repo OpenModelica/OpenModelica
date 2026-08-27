@@ -119,8 +119,8 @@ pub(crate) fn note_runtime_error(msg: &str) {
     host_runtime_error();
 }
 
-/// [`note_runtime_error`] for a throw whose message C suppresses (a nonlinear
-/// solver's, with `LOG_NLS` off): the run still ends on it.
+/// [`note_runtime_error`] without the log line: the message is already logged, or C
+/// suppresses it (a nonlinear solver's, with `LOG_NLS` off). The run still ends on it.
 pub(crate) fn note_runtime_error_flag() {
     openmodelica_sim_meta::driver::note_runtime_error_flag();
     host_runtime_error();
@@ -143,8 +143,7 @@ fn host_runtime_error() {}
 #[cfg(not(all(target_arch = "wasm32", not(feature = "host_log"), not(feature = "standalone"))))]
 pub(crate) fn omc_assert(msg: &str) -> ! {
     omclog::error(omclog::ASSERT, false, msg);
-    openmodelica_sim_meta::driver::note_runtime_error_flag();
-    host_runtime_error();
+    note_runtime_error_flag();
     trap()
 }
 
