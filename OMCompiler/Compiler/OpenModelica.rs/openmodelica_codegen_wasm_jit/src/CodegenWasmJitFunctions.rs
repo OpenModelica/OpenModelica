@@ -2753,6 +2753,8 @@ fn emit_shared_external_call(
         Cell { ptr: u32, ty: SigTy, out: Option<Target> },
         /// A Fortran array: copy back if it is an output, then release any scratch.
         F77Array { handle: u32, ptr: u32, is_out: bool },
+        /// C's `<record>_external`: copy its fields into `out`, then free it.
+        CRecord { ptr: u32, fields: Arc<Vec<(ArcStr, SigTy)>>, out: Target },
     }
     let fortran = sig.lang == ExtLang::Fortran77;
     let native = is_native_external(&sig.name);
@@ -2879,6 +2881,23 @@ fn emit_shared_external_call(
             SigTy::Ptr => push_value(ctx, "an external-object", WTy::I32)?,
             // A record still crosses as the runtime object, not C's `<record>_external`.
             SigTy::Record { .. } if !is_out && !fortran => push_value(ctx, "a record", WTy::I32)?,
+            // C writes a `<record>_external` (the fields' C types, no runtime
+            // header), so it gets a scratch one and the fields are copied back.
+            SigTy::Record { fields, .. } if !fortran => {
+                let size = openmodelica_wasm_jit::sig::c_record_layout(fields, 4).size.max(1);
+                ctx.emit(we::Instruction::I32Const(size as i32));
+                ctx.emit(we::Instruction::Call(rt_index("rt_alloc")?));
+                let ptr = ctx.alloc_temp(WTy::I32);
+                ctx.emit(we::Instruction::LocalSet(ptr));
+                // `rt_alloc` reuses freed blocks.
+                ctx.emit(we::Instruction::LocalGet(ptr));
+                ctx.emit(we::Instruction::I32Const(0));
+                ctx.emit(we::Instruction::I32Const(size as i32));
+                ctx.emit(we::Instruction::MemoryFill(0));
+                ctx.emit(we::Instruction::LocalGet(ptr));
+                let out = output_target(ctx, ext_arg_output_index(a), cref)?;
+                cleanups.push(Cleanup::CRecord { ptr, fields: fields.clone(), out });
+            }
             other => {
                 openmodelica_wasm_jit::set_engine_error_detail(format!(
                     "  {}, external `{}`: {other:?} cannot be passed to a shared-memory {}",
@@ -2918,6 +2937,11 @@ fn emit_shared_external_call(
                     ctx.emit(we::Instruction::LocalGet(*ptr));
                     ctx.emit(we::Instruction::I32Const(0));
                     ctx.emit(we::Instruction::Call(rt_index("rt_f77_arr_out")?));
+                }
+                // The call did not return, so nothing is copied back out of it.
+                Cleanup::CRecord { ptr, .. } => {
+                    ctx.emit(we::Instruction::LocalGet(*ptr));
+                    ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
                 }
             }
         }
@@ -2986,6 +3010,32 @@ fn emit_shared_external_call(
                 ctx.emit(we::Instruction::LocalGet(*ptr));
                 ctx.emit(we::Instruction::I32Const(i32::from(*is_out)));
                 ctx.emit(we::Instruction::Call(rt_index("rt_f77_arr_out")?));
+            }
+            Cleanup::CRecord { ptr, fields, out } => {
+                let c = openmodelica_wasm_jit::sig::c_record_layout(fields, 4);
+                let rec = match &out.out_sty {
+                    SigTy::Record { path, .. } => path.as_str(),
+                    _ => "the output record",
+                };
+                for (i, (name, fty)) in fields.iter().enumerate() {
+                    if !matches!(fty, SigTy::Real | SigTy::Int | SigTy::Bool) {
+                        // As C's `recordMemberCopyToFromExternal` refuses a String.
+                        openmodelica_wasm_jit::set_engine_error_detail(format!(
+                            "  {}, external `{}`: cannot read output field `{name}` of `{rec}` back \
+                             from C - only Real, Integer and Boolean record members are copied",
+                            fn_path(),
+                            sig.name,
+                        ));
+                        return Err("CodegenWasmJit: unsupported external output record field");
+                    }
+                    ctx.emit(we::Instruction::LocalGet(*ptr));
+                    field_load(ctx, fty.wty(), c.offsets[i]);
+                    let vt = ctx.alloc_temp(fty.wty());
+                    ctx.emit(we::Instruction::LocalSet(vt));
+                    store_fresh_into_field(ctx, out.out_idx, fields, name, vt)?;
+                }
+                ctx.emit(we::Instruction::LocalGet(*ptr));
+                ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
             }
         }
     }
@@ -6171,6 +6221,32 @@ pub(crate) fn push_qual_subs(subs: &Arc<List<Arc<DAE::Subscript>>>, s: &mut Stri
 }
 
 /// If `exp` is a constant index (`ICONST`/enum literal), its 1-based value.
+/// A constant subscript outside the array's range, e.g. the `T[0]` scalarizing
+/// `for i in 1:n loop ... T[i-1] ...` leaves in a branch the model never takes. C
+/// emits that access too, so it lowers to the run-time error instead of failing the
+/// translation. Leaves a value of the element type on the stack.
+fn emit_sim_const_index_error(ctx: &mut FnCtx, cref: &DAE::ComponentRef, key: &str) -> Result<Option<WTy>> {
+    let Some((base, subs)) = array_ref_of(cref)? else { return Ok(None) };
+    let Some(group) = ctx.sim()?.array_groups.get(&base).cloned() else { return Ok(None) };
+    if subs.len() != group.dims.len() {
+        return Ok(None);
+    }
+    let outside = subs
+        .iter()
+        .zip(&group.dims)
+        .any(|(e, d)| matches!(const_index_value(e), Some(i) if i < 1 || i > *d as i32));
+    if !outside {
+        return Ok(None);
+    }
+    let dims = group.dims.iter().map(|d| d.to_string()).collect::<Vec<_>>().join(",");
+    emit_runtime_error(ctx, &format!("Index out of bounds: `{key}` of array of size [{dims}]"))?;
+    match group.wty {
+        WTy::F64 => ctx.emit(we::Instruction::F64Const(0.0.into())),
+        WTy::I32 => ctx.emit(we::Instruction::I32Const(0)),
+    }
+    Ok(Some(group.wty))
+}
+
 fn const_index_value(exp: &DAE::Exp) -> Option<i32> {
     match exp {
         DAE::Exp::ICONST { integer } => Some(*integer),
@@ -6729,6 +6805,9 @@ fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Op
             }
             if try_emit_empty_sim_array(ctx, cref)? {
                 return Ok(Some(WTy::I32));
+            }
+            if let Some(wty) = emit_sim_const_index_error(ctx, cref, &key)? {
+                return Ok(Some(wty));
             }
             crate::CodegenWasmJit::record_error(format!(
                 "CodegenWasmJit: simulation reference to unknown variable `{key}`"

@@ -731,7 +731,9 @@ void partestRust(partition) {
   // cSources/fmuCSources check generated C files or FMU sources - wasm-jit does not use C
   // 63bit/antlr: the port's Integer is i32 and its parser is winnow, not ANTLR
   // stackoverflow: Rust aborts on stack overflow, MMC unwinds out of the SEGV handler
-  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-cSources,-fmuCSources,-stackoverflow'
+  // wasm: off everywhere else - these tests select the wasm-jit/wasm target
+  // themselves, which only this build has.
+  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-cSources,-fmuCSources,-stackoverflow,+wasm'
   // wasmtime reserves ~4 GiB of address space per wasm memory, and shrinking that
   // reservation to fit an RLIMIT_AS costs the bounds-check-free fast path.
   String asLimit = params.RUST_PARTEST_SIMCODETARGET == 'wasm-jit'
