@@ -72,7 +72,7 @@ impl Rat {
 /// without adding a reason of its own.
 fn init_assert(msg: &str) -> &'static str {
     omclog::debug(omclog::ASSERT, false, msg);
-    omclog::info(omclog::ASSERT, false, "simulation terminated by an assertion at initialization");
+    driver::log_init_assert_notice();
     driver::ASSERT_ERR
 }
 

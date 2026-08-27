@@ -542,7 +542,8 @@ target_include_directories(primme PRIVATE
     COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_WASM_DIR}/lib
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       ${_sundials_ep_build}/include ${RUST_SUNDIALS_WASM_DIR}/include
-    COMMAND ${CMAKE_COMMAND} -E copy
+    # copy_if_different: build.rs keys the runtime blobs on these mtimes.
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
       ${_suitesparse_ep_build}/KLU/libklu.a
       ${_suitesparse_ep_build}/UMFPACK/libumfpack.a
       ${_suitesparse_ep_build}/AMD/libamd.a

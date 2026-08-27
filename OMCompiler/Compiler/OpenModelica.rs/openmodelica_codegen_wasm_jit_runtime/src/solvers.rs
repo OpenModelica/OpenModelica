@@ -121,19 +121,25 @@ pub(crate) fn jac_test_tolerances() -> (f64, f64) {
     )
 }
 
-/// `-svdCount` / `-svdSigma`.
+/// `-svdCount` / `-svdSigma` / `-svdTol`.
 static SVD_COUNT: AtomicU32 = AtomicU32::new(0);
 static SVD_SIGMA: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3E45798EE2308C3A); // 1e-8
+static SVD_TOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3E45798EE2308C3A); // 1e-8
 
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_set_svd(count: u32, sigma: f64) {
+pub extern "C" fn rt_set_svd(count: u32, sigma: f64, tol: f64) {
     SVD_COUNT.store(count, Ordering::Relaxed);
     SVD_SIGMA.store(sigma.to_bits(), Ordering::Relaxed);
+    SVD_TOL.store(tol.to_bits(), Ordering::Relaxed);
 }
 
 #[cfg(sundials)]
-pub(crate) fn svd_params() -> (u32, f64) {
-    (SVD_COUNT.load(Ordering::Relaxed), f64::from_bits(SVD_SIGMA.load(Ordering::Relaxed)))
+pub(crate) fn svd_params() -> (u32, f64, f64) {
+    (
+        SVD_COUNT.load(Ordering::Relaxed),
+        f64::from_bits(SVD_SIGMA.load(Ordering::Relaxed)),
+        f64::from_bits(SVD_TOL.load(Ordering::Relaxed)),
+    )
 }
 
 /// `-lvMaxWarn`, C's `maxWarnDisplays` (`DEFAULT_FLAG_LV_MAX_WARN`).
@@ -259,8 +265,8 @@ pub(crate) fn apply_flags(f: &openmodelica_sim_meta::simflags::SimFlags) {
     rt_set_max_warn(f.max_warn.unwrap_or(3));
     let (atol, rtol) = openmodelica_sim_meta::simflags::jac_test_tolerances(f);
     rt_set_jac_test_tolerances(atol, rtol);
-    let (svd_count, svd_sigma) = openmodelica_sim_meta::simflags::svd_params(f);
-    rt_set_svd(svd_count.max(0) as u32, svd_sigma);
+    let (svd_count, svd_sigma, svd_tol) = openmodelica_sim_meta::simflags::svd_params(f);
+    rt_set_svd(svd_count.max(0) as u32, svd_sigma, svd_tol);
     #[cfg(sundials)]
     crate::model_ctx::set_request(f.save_initial_guess.clone());
     let (steps, first) = openmodelica_sim_meta::simflags::homotopy_codes(f);

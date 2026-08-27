@@ -815,8 +815,43 @@ fn sundials_wasm_dir() -> Option<(PathBuf, String)> {
     let dir: PathBuf = std::env::var("OMC_SUNDIALS_WASM_DIR").ok()?.into();
     // PRIMME arriving or leaving changes the runtime's features, so it belongs in
     // the key too.
-    let key = if has_primme(Some(&dir)) { "cmake+primme" } else { "cmake" };
-    Some((dir, key.to_owned()))
+    let base = if has_primme(Some(&dir)) { "cmake+primme" } else { "cmake" };
+    let key = format!("{base}:{}", archives_key(&dir.join("lib")));
+    Some((dir, key))
+}
+
+/// The archives the wasip1 runtimes link, as part of the runtime stamp: cargo
+/// tracks the crate's sources, not what the linker pulls in. CMake collects them
+/// with `copy_if_different`, so an unchanged archive keeps its mtime.
+fn archives_key(lib: &Path) -> String {
+    let mut archives: Vec<PathBuf> = std::fs::read_dir(lib)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|e| e == "a"))
+        .collect();
+    archives.sort();
+    let mut h: u64 = 0xcbf29ce484222325;
+    let mut feed = |bytes: &[u8]| {
+        for b in bytes {
+            h ^= *b as u64;
+            h = h.wrapping_mul(0x100000001b3);
+        }
+    };
+    for p in &archives {
+        println!("cargo:rerun-if-changed={}", p.display());
+        let meta = std::fs::metadata(p).ok();
+        let len = meta.as_ref().map_or(0, |m| m.len());
+        let mtime = meta
+            .and_then(|m| m.modified().ok())
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map_or(0, |d| d.as_nanos());
+        feed(p.file_name().unwrap_or_default().as_encoded_bytes());
+        feed(&len.to_le_bytes());
+        feed(&mtime.to_le_bytes());
+    }
+    format!("{h:016x}")
 }
 
 /// Build + embed the `wasm32-unknown-unknown` JIT runtime (`runtime.wasm`): the
@@ -1106,7 +1141,8 @@ fn hash_inputs(runtime_dir: &Path, extra_dirs: &[PathBuf]) -> (String, Vec<PathB
         println!("cargo:rerun-if-changed={}", dir.join("src").display());
         collect_files(&dir.join("src"), &mut files);
         let manifest = dir.join("Cargo.toml");
-        for m in ["Cargo.toml", "Cargo.lock"] {
+        // `build.rs` too: it picks the archives and the cfgs, and is not in `src`.
+        for m in ["Cargo.toml", "Cargo.lock", "build.rs"] {
             let p = dir.join(m);
             if p.exists() {
                 files.push(p);

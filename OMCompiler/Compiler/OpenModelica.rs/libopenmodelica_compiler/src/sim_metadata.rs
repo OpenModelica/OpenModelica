@@ -16,7 +16,7 @@ pub struct CStrTable<const N: usize>(pub [*const c_char; N]);
 unsafe impl<const N: usize> Sync for CStrTable<N> {}
 
 #[unsafe(no_mangle)]
-pub static FLAG_NAME: CStrTable<156> = CStrTable([
+pub static FLAG_NAME: CStrTable<157> = CStrTable([
     c"FLAG_UNKNOWN".as_ptr(),
     c"abortSlowSimulation".as_ptr(),
     c"alarm".as_ptr(),
@@ -160,6 +160,7 @@ pub static FLAG_NAME: CStrTable<156> = CStrTable([
     c"stopTime".as_ptr(),
     c"svdCount".as_ptr(),
     c"svdSigma".as_ptr(),
+    c"svdTol".as_ptr(),
     c"sx".as_ptr(),
     c"tolerance".as_ptr(),
     c"keepHessian".as_ptr(),
@@ -176,7 +177,7 @@ pub static FLAG_NAME: CStrTable<156> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static FLAG_DETAILED_DESC: CStrTable<156> = CStrTable([
+pub static FLAG_DETAILED_DESC: CStrTable<157> = CStrTable([
     c"unknown".as_ptr(),
     c"  Aborts if the simulation chatters.".as_ptr(),
     c"  Aborts after the given number of seconds (default=0 disables the alarm).".as_ptr(),
@@ -320,6 +321,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<156> = CStrTable([
     c"  Sets stopTime for the simulation.".as_ptr(),
     c"  Number of extremal singular values and vectors computed for LOG_NLS_SVD (0 disables).".as_ptr(),
     c"  Estimated smallest singular value for the preconditioner in SVD analysis.".as_ptr(),
+    c"  Convergence tolerance of the sparse SVD analysis: PRIMME stops at\n  ||r|| <= svdTol*||A||. The normal equations it uses resolve no singular value\n  below sqrt(DBL_EPSILON)*||A||, so tightening it past that buys nothing.".as_ptr(),
     c"  Value specifies an csv-file with inputs as covariance matrix Sx for DataReconciliation".as_ptr(),
     c"  Specifies solver tolerance.".as_ptr(),
     c"  Value specifies the number of steps, which keep Hessian matrix constant.".as_ptr(),

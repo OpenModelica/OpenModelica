@@ -130,7 +130,7 @@ static void compute_jacobi_diags(omc_ctx *c, double sigma)
 }
 
 static int run(omc_ctx *c, int numSvals, primme_svds_target target, int print_level,
-               double *svals, double *svecs, double *rnorms)
+               double tol, double *svals, double *svecs, double *rnorms)
 {
    primme_svds_params p;
    primme_svds_initialize(&p);
@@ -141,9 +141,10 @@ static int run(omc_ctx *c, int numSvals, primme_svds_target target, int print_le
    p.matrix = c;
    p.applyPreconditioner = GenericJacobiPreconditioner;
    p.preconditioner = c;
-   p.eps = 1e-8;
+   p.eps = tol;
    p.target = target;
    if (target == primme_svds_largest) p.numSvals = 1;
+   /* Normal equations, as `svd_sparse_compute` explains. */
    primme_svds_set_method(primme_svds_normalequations, PRIMME_DEFAULT_MIN_TIME,
                           PRIMME_DEFAULT_MIN_MATVECS, &p);
    p.printLevel = print_level;
@@ -158,7 +159,7 @@ static int run(omc_ctx *c, int numSvals, primme_svds_target target, int print_le
 /* Returns the number of smallest triplets computed, or -1. `svecs_least` holds
  * PRIMME's layout: the left vectors first, then the right ones. */
 int omc_primme_svds(int n, const int *colptr, const int *rowidx, const double *vals,
-                    int svd_count, double sigma, int print_level,
+                    int svd_count, double sigma, double tol, int print_level,
                     double *sval_top, double *rnorm_top,
                     double *svals_least, double *rnorms_least, double *svecs_least)
 {
@@ -172,10 +173,11 @@ int omc_primme_svds(int n, const int *colptr, const int *rowidx, const double *v
    compute_jacobi_diags(&c, sigma);
 
    double *svecs_top = (double *)malloc(2 * n * sizeof(double));
-   int rc = run(&c, svd_count, primme_svds_largest, print_level, sval_top, svecs_top, rnorm_top);
+   int rc = run(&c, svd_count, primme_svds_largest, print_level, tol, sval_top, svecs_top,
+                rnorm_top);
    free(svecs_top);
    if (rc >= 0)
-      rc = run(&c, svd_count, primme_svds_smallest, print_level, svals_least, svecs_least,
+      rc = run(&c, svd_count, primme_svds_smallest, print_level, tol, svals_least, svecs_least,
                rnorms_least);
 
    free(c.inv_diag_AtA);
