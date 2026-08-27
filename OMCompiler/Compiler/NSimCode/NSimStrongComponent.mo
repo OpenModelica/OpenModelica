@@ -638,11 +638,7 @@ public
     end fromPartition;
 
     function blockSource
-      "The DAE.ElementSource of a block, for block kinds that track one (torn
-      linear systems need one source per residual/inner-equation block).
-      Kinds that carry no source of their own (ALIAS, ALGORITHM,
-      INVERSE_ALGORITHM) or are never valid loop members (LINEAR, NONLINEAR,
-      HYBRID) fall back to DAE.emptyElementSource."
+      "The DAE.ElementSource of a block, for block kinds that track one."
       input Block blck;
       output DAE.ElementSource source;
     algorithm
@@ -663,9 +659,7 @@ public
     end blockSource;
 
     function jacobianHasGenericLoopCalls
-      "True if this Jacobian's per-column evaluation goes through generic
-      for-loop/array (DAG-based, 'resizable') calls rather than a plain
-      per-column function -- see the caller in fromStrongComponent."
+      "True if this Jacobian's per-column evaluation uses generic for-loop/array calls."
       input SimJacobian jac;
       output Boolean b;
     algorithm
@@ -675,12 +669,7 @@ public
     end jacobianHasGenericLoopCalls;
 
     function isForOrGenericResidual
-      "True for the for-loop/generic-index residual block kinds. CodegenC.tpl's
-      linear-system residual-function template (functionSetupLinearSystems)
-      has unimplemented placeholder stubs (literal 'case 1'/'case 2'/etc. text)
-      for SES_FOR_RESIDUAL -- never finished because OB apparently never
-      produces this shape inside a LINEARSYSTEM. Used to keep such loops on
-      the (fully working) nonlinear path until that template gap is closed."
+      "True for for-loop/generic-index residual block kinds (unsupported by the linear-system codegen)."
       input Block blck;
       output Boolean b;
     algorithm
@@ -831,33 +820,9 @@ public
              and not List.any(eqns, isForOrGenericResidual)
              and not jacobianHasGenericLoopCalls(Util.getOption(jacobian))
              and allLinVarsFound then
-            // Genuinely linear torn systems with an analytic Jacobian get solved
-            // directly (A*x=b) by the runtime instead of going through Newton
-            // iteration -- see issue #16458. Systems without an analytic
-            // Jacobian still fall back to the nonlinear path below since the
-            // "no Jacobian" linear solve (beqs/simJac symbolic A/b setters)
-            // isn't implemented here yet. Systems needing homotopy also fall
-            // back: LINEAR_SYSTEM/CodegenC.tpl's linear-system codegen has no
-            // homotopySupport field at all (only NONLINEARSYSTEM does) -- OB
-            // never routes a homotopy-needing system through its linear path
-            // either, so this mirrors existing behavior rather than losing it.
-            // Systems with a for-loop/generic residual also fall back: see
-            // isForOrGenericResidual -- CodegenC.tpl's linear residual-function
-            // template has unimplemented placeholder stubs for that shape.
-            // Systems whose Jacobian needs generic_loop_calls (generic-index
-            // for-loop/array calls in the Jacobian itself, not just the
-            // residual) also fall back, conservatively, as an untested shape.
-            // (Note: the untorn-tearing correctness bug seen in
-            // BenchmarksForResizeableArrays...SlidingMass3D is NOT this --
-            // that Jacobian has empty generic_loop_calls and still fails; it
-            // is a separate, pre-existing NBackend tearing-quality bug where
-            // NBackend leaves an algebraic loop untorn where OB tears it down
-            // to a single unknown, and Newton iteration was silently
-            // tolerating the resulting Jacobian's defect. Filed separately;
-            // not guarded against here.)
-            // Systems whose iteration variables aren't all in simcode_map
-            // also fall back (seen with adjoint-Jacobian loops) rather than
-            // crash on the lookup -- see allLinVarsFound above.
+            // Linear torn systems with an analytic Jacobian get solved directly (A*x=b)
+            // instead of via Newton (#16458). Homotopy, for-loop/generic residuals, and
+            // generic_loop_calls Jacobians fall back below -- unsupported by this codegen path.
             linSystem := LINEAR_SYSTEM(
               index         = simCodeIndices.equationIndex,
               mixed         = comp.mixed,

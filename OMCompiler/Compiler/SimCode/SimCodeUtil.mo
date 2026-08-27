@@ -17007,9 +17007,7 @@ protected
 algorithm
   nnz := sparsityNonzeros(ls.jacobianMatrix);
   if isNone(nnz) then
-    // No legacy sparsity and no resizable sparsityMatrix either (e.g. the
-    // jacobianMatrix itself is NONE()) -- fall back to the torn system's own
-    // simJac entry count.
+    // No sparsity info at all -- fall back to the simJac entry count.
     nnz := simJacNonzeros(ls.simJac);
   end if;
   format := matrixFormatC(listLength(ls.vars), nnz, true);
@@ -17033,10 +17031,7 @@ protected function simJacNonzeros
 end simJacNonzeros;
 
 protected function sparsityNonzeros
-  "Entries of a Jacobian's sparsity pattern, unknown without one. Falls back to
-   the resizable sparsityMatrix (NBackend's sparsity representation, which
-   never populates the legacy sparsity field) when that legacy field is
-   empty."
+  "Entries of a Jacobian's sparsity pattern, unknown without one."
   input Option<SimCode.JacobianMatrix> ojac;
   output Option<Integer> nnz;
 protected
