@@ -2688,6 +2688,31 @@ fn store_operators_at(
     store_operators(e, sim_data, layout)
 }
 
+/// C's `findRoot`/`findRoot_gb` tail: the pre-event operator history is recorded at
+/// the bracket's *left* end. Storing only at the root leaves both rows of the jump at
+/// the same time, and `delayImpl` then reads the post-event value a step early.
+fn store_operators_left(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    states_base: u32,
+    time: f64,
+    y: &[f64],
+) -> Result<()> {
+    // Nothing to record: the `relationsPre` this freezes is overwritten by the
+    // discrete update that follows.
+    if !layout.has_history_ops {
+        return Ok(());
+    }
+    write_time(e, sim_data, time)?;
+    if !y.is_empty() {
+        write_f64s(e, states_base, y)?;
+    }
+    eval_continuous(e, sim_data, layout)?;
+    store_operators(e, sim_data, layout)?;
+    update_relations_pre(e, sim_data, layout)
+}
+
 pub(crate) fn eval_continuous(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::ALGEBRAIC);
@@ -3478,7 +3503,7 @@ fn zc_crossed_idx(a: &[f64], b: &[f64]) -> Vec<usize> {
 }
 
 /// C's `findRoot`/`bisection` (`events.c`) with only `time` varying. Returns the
-/// bracket's right end, C's event time.
+/// bracket's two ends: the point `findRoot` evaluates at, and C's event time.
 fn locate_zc_root(
     e: &mut dyn SimEngine,
     sim_data: u32,
@@ -3487,7 +3512,7 @@ fn locate_zc_root(
     mut b: f64,
     zc_left: &[f64],
     zc_right: &[f64],
-) -> Result<f64> {
+) -> Result<(f64, f64)> {
     let hunted = zc_crossed_idx(zc_left, zc_right);
     let ttol = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE * libm::fabs(b - a);
     let mut iters = bisection_iterations(b - a, ttol);
@@ -3511,7 +3536,7 @@ fn locate_zc_root(
             cur.copy_from_slice(&backup);
         }
     }
-    Ok(b)
+    Ok((a, b))
 }
 
 /// Snapshot of the discrete state — boolean/integer algebraics and held relations
@@ -7318,6 +7343,29 @@ impl SolverCore {
         }
     }
 
+    /// C's `solverInfo->solverRootFinding`: the solver rooted for itself, so
+    /// `simulationUpdate` still evaluates at the root. For the two that bisect here,
+    /// `findRoot` has already pulled that evaluation back to the bracket's left end.
+    fn solver_root_finding(&self) -> bool {
+        !matches!(self.solver, Solver::Fixed(_) | Solver::Sym(_))
+    }
+
+    /// C's `time_left`/`states_left`, or `None` for a solver that roots without
+    /// bisecting.
+    fn event_left(&self) -> Option<(f64, Vec<f64>)> {
+        let (t, y) = match &self.solver {
+            Solver::Daskr(_) => return None,
+            #[cfg(sundials)]
+            Solver::Cvode(_) => return None,
+            #[cfg(sundials)]
+            Solver::Ida(_) => return None,
+            Solver::Gbode(g) => g.event_left(),
+            Solver::Fixed(f) => f.event_left(),
+            Solver::Sym(s) => s.event_left(),
+        };
+        Some((t, y.to_vec()))
+    }
+
     /// Every crossing whose indicator flipped at the located root — C's `eventLst`.
     fn roots_nonzero(&self) -> Vec<usize> {
         let pos = |r: &[i32]| r.iter().enumerate().filter(|(_, v)| **v != 0).map(|(i, _)| i).collect();
@@ -7534,6 +7582,15 @@ impl SolverCore {
                     let roots = self.roots_nonzero();
                     log_state_event(troot, &roots, model);
                     self.note_chatter(model, roots.first().copied().unwrap_or(0))?;
+                    if let Some((t_l, y_l)) = self.event_left() {
+                        store_operators_left(e, sim_data, layout, self.states_base, t_l, &y_l)?;
+                        // C restores `time_right`/`states_right`.
+                        write_time(e, sim_data, troot)?;
+                        self.write_states(e)?;
+                    }
+                    if self.solver_root_finding() {
+                        store_operators_at(e, sim_data, layout, troot)?;
+                    }
                     // pre-event row (before the discrete update), then event +
                     // post-event row.
                     if let Some(r) = rows.as_deref_mut()
@@ -7541,7 +7598,6 @@ impl SolverCore {
                     {
                         capture_pre(e, r, sim_data, layout, troot)?;
                     }
-                    store_operators_at(e, sim_data, layout, troot)?;
                     let _ = save_zero_crossings(e, sim_data, layout)?;
                     event_update(e, sim_data, layout, None, troot)?;
                     save_zero_crossings_after_event(e, sim_data, layout)?;
@@ -8128,15 +8184,15 @@ impl Driver for EventsDriver {
                             )?);
                         }
                     }
-                    if let Some(tr) = troot {
+                    if let Some((tleft, tr)) = troot {
                         supersede(e, &mut evaluated);
+                        store_operators_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
                         // The bisection left `SimData` at its last trial point.
                         update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
                         log_state_event(tr, &zc_crossed_idx(&zc0, &scratch), model);
                         if !no_event_emit() {
                             capture_pre(e, &mut self.rows, sim_data, layout, tr)?; // pre-event row
                         }
-                        store_operators_at(e, sim_data, layout, tr)?;
                         event_update(e, sim_data, layout, None, tr)?;
                         self.core.state_events += 1;
                         self.core.walk_steps += 1;
