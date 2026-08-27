@@ -177,6 +177,12 @@ impl SimEngine for StandaloneEngine {
     fn prof_dump(&mut self) -> u32 {
         crate::prof::rt_prof_dump()
     }
+    fn prof_clear(&mut self) {
+        crate::prof::rt_prof_clear(0);
+    }
+    fn prof_init(&mut self, n: u32) {
+        crate::prof::rt_prof_init(n);
+    }
     fn error_stage_addr(&mut self) -> u32 {
         crate::nls::rt_error_stage_addr()
     }
@@ -299,18 +305,11 @@ fn run() {
         }
         openmodelica_plt_writer::write_plt(&signals, &result.rows, result.n_reals, &kept_params)
     };
-    std::fs::write(result_file(&m.prefix, &m.output_format), bytes)
-        .expect("wasm-jit standalone: cannot write result file");
-}
-
-/// C's result-file resolution (`simulation_runtime.cpp`): `-r` outright, else
-/// `<prefix>_res.<format>` under `-outputPath`.
-fn result_file(prefix: &str, format: &str) -> String {
-    simflags::with_flags(|f| match (&f.result_file, &f.output_path) {
-        (Some(r), _) => r.clone(),
-        (None, Some(dir)) => format!("{dir}/{prefix}_res.{format}"),
-        (None, None) => format!("{prefix}_res.{format}"),
-    })
+    let path = m.result_file();
+    let size = bytes.len() as i64;
+    std::fs::write(&path, bytes).expect("wasm-jit standalone: cannot write result file");
+    // C's `printModelInfo`, which the executable runs after closing the result.
+    openmodelica_sim_meta::profiling::finish(&m, &path, size);
 }
 
 /// C's `linearize`: `linearized_model.<ext>` under `-outputPath`.

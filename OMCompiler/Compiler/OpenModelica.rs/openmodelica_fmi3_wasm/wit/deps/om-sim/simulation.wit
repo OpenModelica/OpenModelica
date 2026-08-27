@@ -11,6 +11,13 @@ interface simulation {
     file: list<u8>,
     /// `-l`'s linearized model: the file name and its content.
     linear-file: option<tuple<string, string>>,
+    /// `+profiling`'s report files (`_prof.xml`, `_prof.json`, `_prof.plt` and the
+    /// two binary traces), each as a name and its content. Empty unless the model
+    /// was translated with profiling on.
+    prof-files: list<tuple<string, list<u8>>>,
+    /// `+profiling=...+html`: the caller should run gnuplot and xsltproc over
+    /// them (C's `measure_time_flag & 4`, which a wasm module cannot do itself).
+    prof-html: bool,
     /// Output rows written.
     rows: u32,
     /// The integration method the run actually used.

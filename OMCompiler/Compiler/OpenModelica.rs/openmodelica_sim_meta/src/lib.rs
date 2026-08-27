@@ -21,6 +21,7 @@
 
 extern crate alloc;
 
+use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 
@@ -36,9 +37,11 @@ pub(crate) mod extinput;
 /// `-reconcile*`, which needs a filesystem too.
 #[cfg(feature = "std")]
 pub mod datarecon;
-/// `+profiling`'s files, which need one as well.
-#[cfg(feature = "std")]
+/// `+profiling`, whose files go out through [`files`] like every other side file,
+/// so an artifact's in-wasm driver reports as the host does.
 pub mod profiling;
+/// The writer every file a run leaves beside its result goes through.
+pub mod files;
 pub mod optimization;
 pub(crate) mod qss;
 pub mod rtclock;
@@ -1256,6 +1259,17 @@ impl SimMeta {
             }
         }
         keep
+    }
+
+    /// C's result-file resolution (`simulation_runtime.cpp`): `-r` outright, else
+    /// `<prefix>_res.<format>` under `-outputPath`. What a driver that writes the
+    /// file itself names it, and what `+profiling` reports as `outputFilename`.
+    pub fn result_file(&self) -> String {
+        crate::simflags::with_flags(|f| match (&f.result_file, &f.output_path) {
+            (Some(r), _) => r.clone(),
+            (None, Some(dir)) => format!("{dir}/{}_res.{}", self.prefix, self.output_format),
+            (None, None) => format!("{}_res.{}", self.prefix, self.output_format),
+        })
     }
 
     /// C's `simulationInfo->stepSize`: the output interval `SimCodeMain` writes into

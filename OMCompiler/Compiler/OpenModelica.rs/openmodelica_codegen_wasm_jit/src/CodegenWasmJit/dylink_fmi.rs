@@ -22,6 +22,10 @@ use wasmtime::Val;
 pub struct SimRun {
     pub file: Vec<u8>,
     pub linear_file: Option<(String, String)>,
+    /// `+profiling`'s report files, each as a name and its content.
+    pub prof_files: Vec<(String, Vec<u8>)>,
+    /// The report asked for gnuplot + xsltproc (`+profiling=...+html`).
+    pub prof_html: bool,
     pub rows: u32,
     pub solver: String,
 }
@@ -133,11 +137,12 @@ impl DylinkInstance {
             .fmu
             .call("om_sim_run", &[Val::I32(p as i32), Val::I32(blob.len() as i32)])
             .map_err(|e| err("om_sim_run", e))? as u32;
-        // The header is ten words: status, then (pointer, length) for the result
-        // file, the linearized model's name and content, the row count, and the
-        // solver's name.
+        // The header is thirteen words: status, then (pointer, length) for the
+        // result file, the linearized model's name and content, the row count, the
+        // solver's name, `+profiling`'s packed files, and whether the report wants
+        // gnuplot and xsltproc run over them.
         let read = (|| -> std::result::Result<SimRun, String> {
-            let mut head = [0u32; 10];
+            let mut head = [0u32; 13];
             for (i, w) in head.iter_mut().enumerate() {
                 *w = self.fmu.read_u32(out + i as u32 * 4)?;
             }
@@ -160,12 +165,39 @@ impl DylinkInstance {
                 linear_file: (!name.is_empty()).then(|| {
                     (String::from_utf8_lossy(&name).into_owned(), String::from_utf8_lossy(&content).into_owned())
                 }),
+                prof_files: unpack_files(&bytes(head[10], head[11])?),
+                prof_html: head[12] != 0,
                 rows: head[7],
                 solver: String::from_utf8_lossy(&solver).into_owned(),
             })
         })();
         read.map_err(Error::Simulation)
     }
+}
+
+/// The named files `om_sim_run` packed: per file a `u32` name length, the name, a
+/// `u32` content length, the content. A truncated blob ends the list.
+fn unpack_files(blob: &[u8]) -> Vec<(String, Vec<u8>)> {
+    let word = |p: usize| u32::from_le_bytes(blob[p..p + 4].try_into().unwrap()) as usize;
+    let mut out = Vec::new();
+    let mut p = 0usize;
+    while p + 4 <= blob.len() {
+        let n = word(p);
+        p += 4;
+        if p + n + 4 > blob.len() {
+            break;
+        }
+        let name = String::from_utf8_lossy(&blob[p..p + n]).into_owned();
+        p += n;
+        let len = word(p);
+        p += 4;
+        if p + len > blob.len() {
+            break;
+        }
+        out.push((name, blob[p..p + len].to_vec()));
+        p += len;
+    }
+    out
 }
 
 /// The `om_fmi3Get*`/`Set*` entry point for a base type, and how wide one value is.

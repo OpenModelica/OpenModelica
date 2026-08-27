@@ -226,16 +226,20 @@ pub fn library_module(
     fixed: bool,
 ) -> std::result::Result<wasmtime::Module, String> {
     let key = aot_cache_key(blob, alarm_secs() != 0);
-    static MEMO: OnceLock<std::sync::Mutex<HashMap<u64, wasmtime::Module>>> = OnceLock::new();
+    // A module's types belong to the engine that compiled it.
+    type Memo = std::sync::Mutex<HashMap<u64, (wasmtime::Engine, wasmtime::Module)>>;
+    static MEMO: OnceLock<Memo> = OnceLock::new();
     let memo = MEMO.get_or_init(Default::default);
-    if let Some(m) = memo.lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
-        return Ok(m.clone());
+    if let Some((e, m)) = memo.lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
+        if wasmtime::Engine::same(e, engine) {
+            return Ok(m.clone());
+        }
     }
     let m = match fixed {
         true => aot_module(engine, &format!("lib-{name}"), blob, alarm_secs() != 0)?,
         false => wts(wasmtime::Module::new(engine, blob))?,
     };
-    memo.lock().unwrap_or_else(|e| e.into_inner()).insert(key, m.clone());
+    memo.lock().unwrap_or_else(|e| e.into_inner()).insert(key, (engine.clone(), m.clone()));
     Ok(m)
 }
 
@@ -1189,6 +1193,12 @@ fn run_inwasm(model: &SimModel, bench: bool) -> std::result::Result<sim_driver::
         }
     }
     let result = sess.take_result()?;
+    // The traces were collected in-wasm; the report is rendered here, once the
+    // result file the run reports on has been written.
+    let prof = sess.take_prof()?;
+    if !prof.is_empty() {
+        openmodelica_sim_meta::profiling::adopt(&model.meta, &prof);
+    }
     if bench {
         let n = model.n_intervals;
         eprintln!(
@@ -1631,6 +1641,16 @@ impl sim_driver::SimEngine for WasmtimeEngine {
             .and_then(|f| f.call(&mut self.store, ()).ok())
             .unwrap_or(0)
     }
+    fn prof_clear(&mut self) {
+        if let Ok(f) = self.rt_inst.get_typed_func::<u32, ()>(&mut self.store, "rt_prof_clear") {
+            let _ = f.call(&mut self.store, 0);
+        }
+    }
+    fn prof_init(&mut self, n: u32) {
+        if let Ok(f) = self.rt_inst.get_typed_func::<u32, ()>(&mut self.store, "rt_prof_init") {
+            let _ = f.call(&mut self.store, n);
+        }
+    }
     fn context_addr(&mut self) -> u32 {
         self.rt_inst
             .get_typed_func::<(), u32>(&mut self.store, "rt_context_addr")
@@ -1694,6 +1714,8 @@ pub struct InWasmSession {
     stat_f: wasmtime::TypedFunc<u32, u64>,
     lin_ptr: wasmtime::TypedFunc<(), u32>,
     lin_len: wasmtime::TypedFunc<(), u32>,
+    prof_ptr: wasmtime::TypedFunc<(), u32>,
+    prof_len: wasmtime::TypedFunc<(), u32>,
     sys_ptr: wasmtime::TypedFunc<(), u32>,
     sys_len: wasmtime::TypedFunc<(), u32>,
     free_f: wasmtime::TypedFunc<(), ()>,
@@ -1758,6 +1780,8 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         stat_f: wts(rt_inst.get_typed_func::<u32, u64>(&mut store, "rt_sim_stat"))?,
         lin_ptr: gf(&mut store, "rt_sim_lin_ptr")?,
         lin_len: gf(&mut store, "rt_sim_lin_len")?,
+        prof_ptr: gf(&mut store, "rt_sim_prof_ptr")?,
+        prof_len: gf(&mut store, "rt_sim_prof_len")?,
         sys_ptr: gf(&mut store, "rt_sys_stats_ptr")?,
         sys_len: gf(&mut store, "rt_sys_stats_len")?,
         free_f: wts(rt_inst.get_typed_func::<(), ()>(&mut store, "rt_sim_free"))?,
@@ -1854,6 +1878,20 @@ impl InWasmSession {
         openmodelica_sim_meta::rtclock::read_stat_slots(&mut stats, &mut stat)?;
         let lin = self.take_lin()?;
         Ok(sim_driver::RunResult { rows, n_reals, params, stats, lin })
+    }
+
+    /// `+profiling`'s collected state, for the host's `profiling::adopt`: the
+    /// driver ran in-wasm, but the report is the host's to write.
+    pub fn take_prof(&mut self) -> Result<Vec<u8>> {
+        let p = wt(self.prof_ptr.call(&mut self.store, ()))?;
+        let n = wt(self.prof_len.call(&mut self.store, ()))? as usize;
+        let mut bytes = vec![0u8; n];
+        if n > 0 {
+            self.memory
+                .read(&self.store, p as usize, &mut bytes)
+                .map_err(|_| "CodegenWasmJit: profiling read")?;
+        }
+        Ok(bytes)
     }
 
     /// The runtime's `-l` blob (`<file name>\0<content>`), empty when unasked.

@@ -323,6 +323,8 @@ impl WasmArtifact {
         Ok(SimRun {
             file: out.file,
             linear_file: out.linear_file,
+            prof_files: out.prof_files,
+            prof_html: out.prof_html,
             rows: out.rows,
             solver: out.solver,
             log: std::mem::take(&mut store.data_mut().log),
@@ -347,6 +349,10 @@ pub struct SimRun {
     pub file: Vec<u8>,
     /// `-l`'s linearized model: its file name and content.
     pub linear_file: Option<(String, String)>,
+    /// `+profiling`'s report files, each as a name and its content.
+    pub prof_files: Vec<(String, Vec<u8>)>,
+    /// The report asked for gnuplot + xsltproc (`+profiling=...+html`).
+    pub prof_html: bool,
     pub rows: u32,
     /// The integration method the run actually used.
     pub solver: String,

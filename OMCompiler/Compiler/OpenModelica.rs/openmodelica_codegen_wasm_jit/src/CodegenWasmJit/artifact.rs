@@ -457,7 +457,14 @@ fn run_simulation(
             for (_, category, message) in &r.log {
                 log.push_str(&format!("LOG_STDOUT        | info    | {category}: {message}\n"));
             }
-            super::dylink_fmi::SimRun { file: r.file, linear_file: r.linear_file, rows: r.rows, solver: r.solver }
+            super::dylink_fmi::SimRun {
+                file: r.file,
+                linear_file: r.linear_file,
+                prof_files: r.prof_files,
+                prof_html: r.prof_html,
+                rows: r.rows,
+                solver: r.solver,
+            }
         }
         Form::Dylink { .. } => {
             loaded.with_dylink(|i| i.run_simulation(&args).map_err(|e| e.to_string()))?
@@ -475,10 +482,63 @@ fn run_simulation(
         };
         write_output(&path, content.as_bytes()).map_err(|e| format!("cannot write {path}: {e}"))?;
     }
+    place_prof_files(&run, log);
     if run.file.is_empty() {
         return Ok(());
     }
     write_output(out, &run.file).map_err(|e| format!("cannot write {out}: {e}"))
+}
+
+/// `+profiling`'s report: the run generated the five files inside the artifact
+/// (their names already carry `-outputPath`, as C's do), so they only need placing
+/// here — and `gnuplot` and `xsltproc` running over them for `blocks+html`, which
+/// a wasm module cannot do itself.
+fn place_prof_files(run: &super::dylink_fmi::SimRun, log: &mut String) {
+    let mut prefix = String::new();
+    for (name, content) in &run.prof_files {
+        if let Err(e) = write_output(name, content) {
+            log.push_str(&format!("LOG_STDOUT        | warning | cannot write {name}: {e}\n"));
+            return;
+        }
+        if let Some(p) = name.strip_suffix("_prof.xml") {
+            prefix = p.to_string();
+        }
+    }
+    if prefix.is_empty() || !run.prof_html {
+        return;
+    }
+    let cmd = format!("gnuplot {prefix}_prof.plt");
+    if !run_shell(&cmd) {
+        log.push_str(&format!("LOG_STDOUT        | warning | Plot command failed: {cmd}\n"));
+    }
+    let failure = match openmodelica_util::Settings::getInstallationDirectoryPath() {
+        Ok(home) => {
+            let xsl = format!("{home}/share/omc/scripts/default_profiling.xsl");
+            let cmd = format!("xsltproc -o {prefix}_prof.html {xsl} {prefix}_prof.xml");
+            (!run_shell(&cmd)).then_some(cmd)
+        }
+        Err(_) => Some("OPENMODELICAHOME missing".to_string()),
+    };
+    if let Some(cmd) = failure {
+        log.push_str(&format!(
+            "LOG_STDOUT        | warning | Failed to generate html version of profiling results: {cmd}\n"
+        ));
+    }
+}
+
+/// C's `system(cmd)`, for the two commands above. The wasm omc build has no
+/// processes to run, so the plots stay undrawn there — as they do for the C target
+/// on a machine without gnuplot.
+fn run_shell(cmd: &str) -> bool {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        std::process::Command::new("sh").arg("-c").arg(cmd).status().map(|s| s.success()).unwrap_or(false)
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        let _ = cmd;
+        false
+    }
 }
 
 /// Model Exchange (this process integrates) or Co-Simulation (the FMU does).

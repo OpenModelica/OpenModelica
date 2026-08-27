@@ -25,6 +25,39 @@ impl SimGuest for Fmu {
     }
 }
 
+/// The files the run writes beside its result (`+profiling`'s report and traces):
+/// there is no filesystem to write them to here, so they are collected and handed
+/// back for the caller to place. Single-threaded, like everything in this module.
+mod side_files {
+    use alloc::string::{String, ToString};
+    use alloc::vec::Vec;
+    use core::cell::UnsafeCell;
+
+    struct Store(UnsafeCell<Vec<(String, Vec<u8>)>>);
+    unsafe impl Sync for Store {}
+    static FILES: Store = Store(UnsafeCell::new(Vec::new()));
+
+    fn collect(name: &str, bytes: &[u8]) -> bool {
+        let files = unsafe { &mut *FILES.0.get() };
+        let entry = (name.to_string(), bytes.to_vec());
+        match files.iter_mut().find(|(n, _)| n == name) {
+            Some(slot) => *slot = entry,
+            None => files.push(entry),
+        }
+        true
+    }
+
+    /// Route this run's side files here, dropping any earlier run's.
+    pub fn arm() {
+        unsafe { (*FILES.0.get()).clear() };
+        openmodelica_sim_meta::files::set_writer(collect);
+    }
+
+    pub fn take() -> Vec<(String, Vec<u8>)> {
+        core::mem::take(unsafe { &mut *FILES.0.get() })
+    }
+}
+
 /// WASI's monotonic clock, in ms since the first reading. The driver's per-step
 /// deadline (`-alarm`) and the `LOG_STATS` timings need one; the component gets
 /// it from the same preview1 adapter its stdout comes from.
@@ -36,6 +69,7 @@ mod clock {
     }
 
     const MONOTONIC: u32 = 1;
+    const REALTIME: u32 = 0;
 
     fn now_ns() -> u64 {
         let mut t = 0u64;
@@ -43,6 +77,16 @@ mod clock {
             return 0;
         }
         t
+    }
+
+    /// C's `time(NULL)` for the profiling report's `<date>`: the same adapter's
+    /// realtime clock.
+    pub fn epoch_secs() -> i64 {
+        let mut t = 0u64;
+        if unsafe { clock_time_get(REALTIME, 1_000, &mut t) } != 0 {
+            return 0;
+        }
+        (t / 1_000_000_000) as i64
     }
 
     pub fn now_ms() -> f64 {
@@ -91,6 +135,11 @@ pub(crate) fn run(args: Vec<String>) -> Result<RunResult, String> {
     );
     openmodelica_codegen_wasm_jit_runtime::enable_sys_stats(meta::omclog::active(meta::omclog::STATS_V));
     driver::set_clock(clock::now_ms);
+    // `+profiling` writes five files and would run gnuplot/xsltproc over two of
+    // them; both belong to the caller here.
+    side_files::arm();
+    meta::profiling::set_wall_clock(clock::epoch_secs);
+    meta::profiling::set_plots_on_host(true);
 
     let sim_data = openmodelica_codegen_wasm_jit_runtime::rt_alloc(m.layout.total);
     unsafe { core::ptr::write_bytes(sim_data as *mut u8, 0, m.layout.total as usize) };
@@ -100,9 +149,13 @@ pub(crate) fn run(args: Vec<String>) -> Result<RunResult, String> {
 
     let rows = if result.n_reals == 0 { 0 } else { result.rows.len() / result.n_reals as usize };
     let bytes = write_result_file(&m, &result);
+    // C's `printModelInfo`, over the result file the caller is about to write.
+    meta::profiling::finish(&m, &m.result_file(), bytes.len() as i64);
     Ok(RunResult {
         file: bytes,
         linear_file: result.lin.as_ref().map(|f| (f.name.clone(), f.content.clone())),
+        prof_files: side_files::take(),
+        prof_html: m.prof.as_ref().is_some_and(|p| p.level & 4 != 0),
         rows: rows as u32,
         solver: label.to_string(),
     })

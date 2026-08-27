@@ -151,13 +151,7 @@ pub(crate) fn build_opt_info(
     // C's `realVarsData[i].info.name`, which the optimizer's messages quote.
     let real_names: Vec<String> = reals
         .iter()
-        .map(|sv| {
-            let n = crate::CodegenWasmJit::cref_display(&sv.name).unwrap_or_default();
-            match n.strip_prefix("$DER.") {
-                Some(base) => format!("der({base})"),
-                None => n,
-            }
-        })
+        .map(|sv| crate::CodegenWasmJit::cref_display(&sv.name).unwrap_or_default())
         .collect();
     let [jac_b, jac_c, jac_d] = jacs;
     Ok(Some(OptInfo {

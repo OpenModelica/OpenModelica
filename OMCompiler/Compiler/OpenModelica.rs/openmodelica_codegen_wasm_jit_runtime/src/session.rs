@@ -181,6 +181,12 @@ impl SimEngine for InWasmEngine {
     fn prof_dump(&mut self) -> u32 {
         crate::prof::rt_prof_dump()
     }
+    fn prof_clear(&mut self) {
+        crate::prof::rt_prof_clear(0);
+    }
+    fn prof_init(&mut self, n: u32) {
+        crate::prof::rt_prof_init(n);
+    }
     fn error_stage_addr(&mut self) -> u32 {
         crate::nls::rt_error_stage_addr()
     }
@@ -210,6 +216,9 @@ struct Session {
     stats: SolveStats,
     /// `-l`'s linearized model as `<file name>\0<content>`, for the host to write.
     lin: Vec<u8>,
+    /// `+profiling`'s collected state (`profiling::snapshot`), for the host to
+    /// render into the report once it has written the result file.
+    prof: Vec<u8>,
 }
 
 struct SessionCell(UnsafeCell<Option<Session>>);
@@ -351,13 +360,19 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     use openmodelica_sim_meta::rtclock;
     rtclock::reset(
         openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::STATS)
-            || openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::STATS_V),
+            || openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::STATS_V)
+            // `+profiling` is C's other `measure_time_flag` source, as in `drive`.
+            || model.prof.is_some(),
     );
     rtclock::tick(rtclock::TOTAL);
     rtclock::tick(rtclock::PREINIT);
     crate::sysstats::enable(openmodelica_sim_meta::omclog::active(
         openmodelica_sim_meta::omclog::STATS_V,
     ));
+    // `+profiling`: the traces are collected here and rendered by the host, which
+    // is the side that knows what the result file it reports on ended up being
+    // (`profiling::snapshot` / `rt_sim_prof_ptr`).
+    openmodelica_sim_meta::profiling::start(&mut InWasmEngine { fn_base, present_mask }, &model);
     driver::set_cancel_hook(cancel_hook);
     driver::set_init_done_hook(init_done_hook);
     driver::set_no_throw_hook(|v| unsafe { rt_host_set_no_throw(v as i32) });
@@ -383,6 +398,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
         params: Vec::new(),
         stats: SolveStats::default(),
         lin: Vec::new(),
+        prof: Vec::new(),
     });
     // What C's `NLS_USERDATA` carries as `DATA*`: the run's model and `SimData`,
     // for the analyses the nonlinear solver runs from inside a solve.
@@ -452,6 +468,8 @@ fn finish(s: &mut Session) {
     s.params = driver::finalize_run(&mut s.engine, &s.model, s.sim_data).unwrap_or_default();
     use openmodelica_sim_meta::rtclock;
     rtclock::accumulate(rtclock::TOTAL);
+    openmodelica_sim_meta::profiling::end_of_run(&mut s.engine);
+    s.prof = openmodelica_sim_meta::profiling::snapshot();
     (s.stats.timers, s.stats.tcalls) = rtclock::snapshot();
     s.finished = true;
 }
@@ -489,6 +507,17 @@ pub extern "C" fn rt_sim_lin_ptr() -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_lin_len() -> u32 {
     session().as_ref().map_or(0, |s| s.lin.len() as u32)
+}
+
+/// `+profiling`'s collected state, valid once the run is done.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_prof_ptr() -> u32 {
+    session().as_ref().map_or(0, |s| s.prof.as_ptr() as u32)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sim_prof_len() -> u32 {
+    session().as_ref().map_or(0, |s| s.prof.len() as u32)
 }
 
 #[unsafe(no_mangle)]

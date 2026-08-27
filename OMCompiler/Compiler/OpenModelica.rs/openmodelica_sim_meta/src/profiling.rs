@@ -4,14 +4,17 @@
 //! `gnuplot` and `xsltproc` run over them for `blocks+html`.
 //!
 //! The function and block clocks live in the runtime module (`prof.rs`), where the
-//! instrumented code runs; the driver's own clocks are [`rtclock`].
+//! instrumented code runs; the driver's own clocks are [`rtclock`]. The five files
+//! go out through [`crate::files`], so an in-wasm driver reports as the host does.
 
-use std::cell::RefCell;
-use std::fs::File;
-use std::io::Write;
+use alloc::format;
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use crate::driver::{format_g, SimEngine};
-use crate::{omclog, rtclock, ProfInfo, SimMeta};
+use crate::{files, omclog, rtclock, ProfInfo, SimMeta};
 
 /// Bytes per clock in the runtime's `rt_prof_dump` record.
 const DUMP_RECORD: usize = 40;
@@ -29,8 +32,11 @@ struct Totals {
 struct Profiler {
     level: u8,
     n: usize,
-    real: Option<File>,
-    int: Option<File>,
+    /// C's `MEASURE_TIME` streams, buffered: the report transposes them at the
+    /// end, which needs the whole trace anyway, and a buffer is the one thing
+    /// every target has (a `FILE*` is not).
+    real: Vec<u8>,
+    int: Vec<u8>,
     step: u32,
     /// `-outputPath` with its trailing separator, or empty.
     out: String,
@@ -38,43 +44,76 @@ struct Profiler {
     totals: Vec<Totals>,
 }
 
-thread_local! {
-    static PROF: RefCell<Option<Profiler>> = const { RefCell::new(None) };
+#[cfg(feature = "std")]
+mod state {
+    use super::Profiler;
+    use core::cell::RefCell;
+    std::thread_local! {
+        static PROF: RefCell<Option<Profiler>> = const { RefCell::new(None) };
+    }
+    pub fn with<R>(f: impl FnOnce(&mut Option<Profiler>) -> R) -> R {
+        PROF.with(|c| f(&mut c.borrow_mut()))
+    }
+}
+
+#[cfg(not(feature = "std"))]
+mod state {
+    use super::Profiler;
+    use core::cell::UnsafeCell;
+    // The in-wasm runtime is single-threaded, so a plain cell is sound.
+    struct Store(UnsafeCell<Option<Profiler>>);
+    unsafe impl Sync for Store {}
+    static PROF: Store = Store(UnsafeCell::new(None));
+    pub fn with<R>(f: impl FnOnce(&mut Option<Profiler>) -> R) -> R {
+        f(unsafe { &mut *PROF.0.get() })
+    }
+}
+
+static WALL_CLOCK: AtomicUsize = AtomicUsize::new(0);
+static HOME: AtomicUsize = AtomicUsize::new(0);
+static PLOTS_ON_HOST: AtomicBool = AtomicBool::new(false);
+
+/// Install the wall clock C's `time(NULL)` reads for the report's `<date>`. Needed
+/// wherever `std::time::SystemTime::now()` is not available: it panics in the web
+/// omc, and the in-wasm runtime has no clock of its own at all.
+pub fn set_wall_clock(f: fn() -> i64) {
+    WALL_CLOCK.store(f as usize, Ordering::Relaxed);
+}
+
+/// Install the lookup for C's `simulationInfo->OPENMODELICAHOME`, which the report
+/// needs to find `default_profiling.xsl`. omc knows its own installation root even
+/// where the environment does not (the web build has no environment at all).
+pub fn set_home(f: fn() -> Option<String>) {
+    HOME.store(f as usize, Ordering::Relaxed);
+}
+
+/// The embedder runs `gnuplot` and `xsltproc` over the files it is handed, so this
+/// run only writes them. For an artifact's in-wasm driver, which cannot spawn a
+/// process and would otherwise report C's failure messages for something its
+/// caller does on its behalf.
+pub fn set_plots_on_host(v: bool) {
+    PLOTS_ON_HOST.store(v, Ordering::Relaxed);
 }
 
 /// C's `fmtInit`, at the start of a run whose model was translated with
-/// `+profiling`: open the step files and start the step clock.
-pub fn start(model: &SimMeta) {
+/// `+profiling`: open the step traces and start the step clock.
+pub fn start(e: &mut dyn SimEngine, model: &SimMeta) {
     let Some(p) = &model.prof else {
-        PROF.with(|c| *c.borrow_mut() = None);
+        state::with(|c| *c = None);
         return;
     };
     let out = crate::simflags::with_flags(|f| f.output_path.clone()).map(|d| format!("{d}/")).unwrap_or_default();
     let n = p.functions.len() + p.blocks.len();
-    let open = |suffix: &str| -> Option<File> {
-        let name = format!("{out}{}{suffix}", model.prefix);
-        match File::create(&name) {
-            Ok(f) => Some(f),
-            Err(e) => {
-                omclog::warning(
-                    omclog::STDOUT,
-                    false,
-                    &format!("Time measurements output file {name} could not be opened: {e}"),
-                );
-                None
-            }
-        }
-    };
-    let real = open("_prof.realdata");
-    let int = if real.is_some() { open("_prof.intdata") } else { None };
-    let (real, int) = if int.is_none() { (None, None) } else { (real, int) };
+    // C's `rt_init` sizes every clock before the first tick; the model's own ticks
+    // land in the runtime module, so the engine arms them there.
+    e.prof_init(n as u32);
     rtclock::tick(rtclock::STEP);
-    PROF.with(|c| {
-        *c.borrow_mut() = Some(Profiler {
+    state::with(|c| {
+        *c = Some(Profiler {
             level: p.level,
             n,
-            real,
-            int,
+            real: Vec::new(),
+            int: Vec::new(),
             step: 0,
             out,
             prefix: model.prefix.clone(),
@@ -85,31 +124,124 @@ pub fn start(model: &SimMeta) {
 
 /// C's `fmtEmitStep` then `clear_rt_step`, once per emitted row.
 pub fn on_row(e: &mut dyn SimEngine, time: f64) {
-    PROF.with(|c| {
-        if let Some(p) = c.borrow_mut().as_mut() {
+    state::with(|c| {
+        if let Some(p) = c.as_mut() {
             p.emit_step(e, time);
             p.clear_step(e);
         }
     });
 }
 
+/// This run's collected state, for a driver that ran somewhere else: the in-wasm
+/// session hands it over so the *host* renders the report, once the result file it
+/// reports on — and its size — exists. Empty when the run was not profiled.
+pub fn snapshot() -> Vec<u8> {
+    state::with(|c| {
+        let Some(p) = c.as_ref() else { return Vec::new() };
+        let mut o = Vec::new();
+        o.extend_from_slice(&p.step.to_le_bytes());
+        o.extend_from_slice(&(p.totals.len() as u32).to_le_bytes());
+        for t in &p.totals {
+            o.extend_from_slice(&t.total.to_le_bytes());
+            o.extend_from_slice(&t.max.to_le_bytes());
+            o.extend_from_slice(&t.ncall_total.to_le_bytes());
+            o.extend_from_slice(&t.ncall_min.to_le_bytes());
+            o.extend_from_slice(&t.ncall_max.to_le_bytes());
+        }
+        for b in [&p.real, &p.int, &rtclock::pack()] {
+            o.extend_from_slice(&(b.len() as u32).to_le_bytes());
+            o.extend_from_slice(b);
+        }
+        o
+    })
+}
+
+/// Adopt a [`snapshot`] taken by another driver: everything else about the run is
+/// in `model`, as [`start`] reads it.
+pub fn adopt(model: &SimMeta, bytes: &[u8]) {
+    let Some(p) = &model.prof else { return };
+    if bytes.len() < 8 {
+        return;
+    }
+    let u32_at = |o: usize| u32::from_le_bytes(bytes[o..o + 4].try_into().unwrap());
+    let f64_at = |o: usize| f64::from_le_bytes(bytes[o..o + 8].try_into().unwrap());
+    let step = u32_at(0);
+    let n = u32_at(4) as usize;
+    let mut o = 8;
+    if bytes.len() < o + n * 28 {
+        return;
+    }
+    let mut totals = Vec::with_capacity(n);
+    for _ in 0..n {
+        totals.push(Totals {
+            total: f64_at(o),
+            max: f64_at(o + 8),
+            ncall_total: u32_at(o + 16),
+            ncall_min: u32_at(o + 20),
+            ncall_max: u32_at(o + 24),
+        });
+        o += 28;
+    }
+    let take = |o: &mut usize| -> Vec<u8> {
+        if bytes.len() < *o + 4 {
+            return Vec::new();
+        }
+        let n = u32_at(*o) as usize;
+        *o += 4;
+        let end = (*o + n).min(bytes.len());
+        let v = bytes[*o..end].to_vec();
+        *o = end;
+        v
+    };
+    let real = take(&mut o);
+    let int = take(&mut o);
+    // The driver's own clocks ran wherever the driver did; the report reads them
+    // from this side's `rtclock`.
+    rtclock::unpack(&take(&mut o));
+    let out = crate::simflags::with_flags(|f| f.output_path.clone()).map(|d| format!("{d}/")).unwrap_or_default();
+    state::with(|c| {
+        *c = Some(Profiler {
+            level: p.level,
+            n: p.functions.len() + p.blocks.len(),
+            real,
+            int,
+            step,
+            out,
+            prefix: model.prefix.clone(),
+            totals,
+        })
+    });
+}
+
 /// The clocks' run totals, read while the engine is still up.
 pub fn end_of_run(e: &mut dyn SimEngine) {
-    PROF.with(|c| {
-        if let Some(p) = c.borrow_mut().as_mut() {
+    state::with(|c| {
+        if let Some(p) = c.as_mut() {
             p.totals = read_totals(e, p.n);
         }
     });
 }
 
-/// C's `printModelInfo` and `printModelInfoJSON`, after the result file is written.
-pub fn finish(model: &SimMeta, result_file: &str) {
-    let Some(mut p) = PROF.with(|c| c.borrow_mut().take()) else { return };
+/// C's `printModelInfo` and `printModelInfoJSON`, after the result file is
+/// written. `result_size` is that file's size, which C reads back with `fileSize`.
+pub fn finish(model: &SimMeta, result_file: &str, result_size: i64) {
+    let Some(p) = state::with(|c| c.take()) else { return };
     let Some(info) = &model.prof else { return };
-    p.real = None;
-    p.int = None;
-    print_model_info(&p, info, model, result_file);
-    print_model_info_json(&p, info, model, result_file);
+    write_traces(&p);
+    print_model_info(&p, info, model, result_file, result_size);
+    print_model_info_json(&p, info, model, result_file, result_size);
+}
+
+/// C's `fmtEmitStep` writes a record per step and `fmtClose` closes the streams;
+/// the buffered run goes out in one piece here — before `gnuplot` reads it, and
+/// still in the record-per-step layout its bindings expect.
+fn write_traces(p: &Profiler) {
+    for (suffix, bytes) in [("_prof.realdata", &p.real), ("_prof.intdata", &p.int)] {
+        let name = format!("{}{}{suffix}", p.out, p.prefix);
+        if !files::write(&name, bytes) {
+            omclog::warning(omclog::STDOUT, false, &format!("Time measurements output file {name} could not be opened"));
+        }
+    }
 }
 
 fn read_totals(e: &mut dyn SimEngine, n: usize) -> Vec<Totals> {
@@ -136,41 +268,29 @@ fn read_totals(e: &mut dyn SimEngine, n: usize) -> Vec<Totals> {
 
 impl Profiler {
     fn emit_step(&mut self, e: &mut dyn SimEngine, time: f64) {
-        let (Some(real), Some(int)) = (self.real.as_mut(), self.int.as_mut()) else { return };
         rtclock::accumulate(rtclock::STEP);
         rtclock::tick(rtclock::OVERHEAD);
         let n = self.n;
         let mut row = vec![0u8; n * 12];
         let ptr = e.prof_row();
-        let ok = ptr != 0 && e.read_bytes(ptr, &mut row).is_ok();
-        let mut ok = ok && int.write_all(&self.step.to_le_bytes()).is_ok();
-        self.step += 1;
-        ok = ok && real.write_all(&time.to_le_bytes()).is_ok();
-        ok = ok && real.write_all(&rtclock::accumulated(rtclock::STEP).to_le_bytes()).is_ok();
-        ok = ok && int.write_all(&row[..4 * n]).is_ok();
-        ok = ok && real.write_all(&row[4 * n..]).is_ok();
-        rtclock::accumulate(rtclock::OVERHEAD);
-        if !ok {
-            omclog::warning(
-                omclog::SOLVER,
-                false,
-                "Disabled time measurements because the output file could not be generated",
-            );
-            self.real = None;
-            self.int = None;
+        if ptr != 0 && e.read_bytes(ptr, &mut row).is_ok() {
+            self.int.extend_from_slice(&self.step.to_le_bytes());
+            self.step += 1;
+            self.real.extend_from_slice(&time.to_le_bytes());
+            self.real.extend_from_slice(&rtclock::accumulated(rtclock::STEP).to_le_bytes());
+            // `rt_prof_row`'s record: the call counts, then the seconds.
+            self.int.extend_from_slice(&row[..4 * n]);
+            self.real.extend_from_slice(&row[4 * n..]);
         }
+        rtclock::accumulate(rtclock::OVERHEAD);
     }
 
     /// C's `clear_rt_step`.
     fn clear_step(&mut self, e: &mut dyn SimEngine) {
-        let _ = e.call1_if_present_raw("rt_prof_clear", 0);
+        e.prof_clear();
         rtclock::clear(rtclock::STEP);
         rtclock::tick(rtclock::STEP);
     }
-}
-
-fn file_size(name: &str) -> i64 {
-    std::fs::metadata(name).map(|m| m.len() as i64).unwrap_or(-1)
 }
 
 fn xml_escape(s: &str) -> String {
@@ -205,13 +325,29 @@ fn json_escape(s: &str) -> String {
     o
 }
 
-/// C's `strftime("%Y-%m-%d %H:%M:%S")` of `localtime(time(NULL))`; UTC here,
-/// there being no tz database in wasm.
-fn date_string() -> String {
-    let secs = std::time::SystemTime::now()
+/// C's `time(NULL)`: seconds since the Unix epoch, from the installed
+/// [`set_wall_clock`] or, natively, the std wall clock.
+fn epoch_secs() -> i64 {
+    let p = WALL_CLOCK.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn() -> i64 = unsafe { core::mem::transmute(p) };
+        return f();
+    }
+    // `SystemTime::now()` panics in the web build (wasm32 without WASI); every
+    // other `std` target, wasip1 included, has a real wall clock.
+    #[cfg(all(feature = "std", any(not(target_arch = "wasm32"), target_os = "wasi")))]
+    return std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs() as i64)
         .unwrap_or(0);
+    #[cfg(not(all(feature = "std", any(not(target_arch = "wasm32"), target_os = "wasi"))))]
+    0
+}
+
+/// C's `strftime("%Y-%m-%d %H:%M:%S")` of `localtime(time(NULL))`; UTC here,
+/// there being no tz database in wasm.
+fn date_string() -> String {
+    let secs = epoch_secs();
     let days = secs.div_euclid(86400);
     let rem = secs.rem_euclid(86400);
     // Howard Hinnant's civil-from-days.
@@ -329,7 +465,7 @@ fn plot_command(
     }
 }
 
-fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file: &str) {
+fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file: &str, result_size: i64) {
     let (out, prefix) = (&p.out, &p.prefix);
     let plot_format = crate::simflags::with_flags(|f| f.measure_time_plot_format.clone()).unwrap_or_else(|| "svg".to_string());
     let n_fn = info.functions.len();
@@ -355,7 +491,7 @@ fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file:
     x.push_str(&format!("  <method>{}</method>\n", xml_escape(&model.method)));
     x.push_str(&format!("  <outputFormat>{}</outputFormat>\n", xml_escape(&model.output_format)));
     x.push_str(&format!("  <outputFilename>{}</outputFilename>\n", xml_escape(result_file)));
-    x.push_str(&format!("  <outputFilesize>{}</outputFilesize>\n", file_size(result_file)));
+    x.push_str(&format!("  <outputFilesize>{result_size}</outputFilesize>\n"));
     x.push_str(&format!("  <overheadTime>{}</overheadTime>\n", f6(rtclock::accumulated(rtclock::OVERHEAD))));
     x.push_str(&format!("  <preinitTime>{}</preinitTime>\n", f6(rtclock::accumulated(rtclock::PREINIT))));
     x.push_str(&format!("  <initTime>{}</initTime>\n", f6(rtclock::accumulated(rtclock::INIT))));
@@ -370,9 +506,10 @@ fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file:
     x.push_str(&format!("  <odeTime>{}</odeTime>\n", f6(rtclock::accumulated(rtclock::FUNCTION_ODE))));
     x.push_str(&format!("  <odeTimeTicks>{}</odeTimeTicks>\n", rtclock::ncall(rtclock::FUNCTION_ODE)));
     x.push_str("</modelinfo_ext>\n<profilingdataheader>\n");
-    let data_name = format!("{prefix}_prof.data");
-    x.push_str(&format!("  <filename>{}</filename>\n", xml_escape(&data_name)));
-    x.push_str(&format!("  <filesize>{}</filesize>\n", file_size(&data_name)));
+    // C reports on a `_prof.data` no runtime has written for a long time, so its
+    // `fileSize` is the missing-file `-1`.
+    x.push_str(&format!("  <filename>{}_prof.data</filename>\n", xml_escape(prefix)));
+    x.push_str("  <filesize>-1</filesize>\n");
     x.push_str("  <format>\n    <uint32>step</uint32>\n    <double>time</double>\n    <double>cpu time</double>\n");
     for f in &info.functions {
         x.push_str(&format!("    <uint32>{} (calls)</uint32>\n", xml_escape(&f.name)));
@@ -430,32 +567,34 @@ fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file:
     x.push_str("</profileblocks>\n</simulation>\n");
     let xml_name = format!("{out}{prefix}_prof.xml");
     let plt_name = format!("{out}{prefix}_prof.plt");
-    if let Err(e) = std::fs::write(&xml_name, x) {
-        omclog::warning(omclog::STDOUT, false, &format!("Failed to open {xml_name}: {e}"));
+    if !files::write(&xml_name, x.as_bytes()) {
+        omclog::warning(omclog::STDOUT, false, &format!("Failed to open {xml_name}"));
         return;
     }
-    if let Err(e) = std::fs::write(&plt_name, plt) {
-        omclog::warning(omclog::DIVISION, false, &format!("Plots of profiling data were disabled: {e}\n"));
+    if !files::write(&plt_name, plt.as_bytes()) {
+        omclog::warning(omclog::DIVISION, false, "Plots of profiling data were disabled\n");
         return;
     }
     let html = p.level & 4 != 0;
-    if html {
-        let cmd = format!("gnuplot {plt_name}");
-        if !run_shell(&cmd) {
-            omclog::warning(omclog::DIVISION, false, &format!("Plot command failed: {cmd}\n"));
+    if !PLOTS_ON_HOST.load(Ordering::Relaxed) {
+        if html {
+            let cmd = format!("gnuplot {plt_name}");
+            if !run_shell(&cmd) {
+                omclog::warning(omclog::DIVISION, false, &format!("Plot command failed: {cmd}\n"));
+            }
         }
-    }
-    let (gen_html_failed, cmd) = match std::env::var("OPENMODELICAHOME") {
-        Ok(omhome) => {
-            let cmd = format!(
-                "xsltproc -o {out}{prefix}_prof.html {omhome}/share/omc/scripts/default_profiling.xsl {out}{prefix}_prof.xml"
-            );
-            (html && !run_shell(&cmd), cmd)
+        let (gen_html_failed, cmd) = match openmodelica_home() {
+            Some(omhome) => {
+                let cmd = format!(
+                    "xsltproc -o {out}{prefix}_prof.html {omhome}/share/omc/scripts/default_profiling.xsl {out}{prefix}_prof.xml"
+                );
+                (html && !run_shell(&cmd), cmd)
+            }
+            None => (true, "OPENMODELICAHOME missing".to_string()),
+        };
+        if gen_html_failed {
+            omclog::warning(omclog::STDOUT, false, &format!("Failed to generate html version of profiling results: {cmd}\n"));
         }
-        Err(_) => (true, "OPENMODELICAHOME missing".to_string()),
-    };
-    if gen_html_failed {
-        omclog::warning(omclog::STDOUT, false, &format!("Failed to generate html version of profiling results: {cmd}\n"));
     }
     if html {
         omclog::info(
@@ -473,27 +612,43 @@ fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file:
 /// C's `system(cmd)` through `/bin/sh`; `true` on exit status 0. A wasm build
 /// has no processes to run.
 fn run_shell(cmd: &str) -> bool {
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(feature = "std", not(target_arch = "wasm32")))]  // no processes in wasm
     {
         std::process::Command::new("sh").arg("-c").arg(cmd).status().map(|s| s.success()).unwrap_or(false)
     }
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(not(all(feature = "std", not(target_arch = "wasm32"))))]
     {
         let _ = cmd;
         false
     }
 }
 
-/// C's `convertProfileData`: transpose the step files in place from one record
-/// per step to one series per column.
+/// C reads `OPENMODELICAHOME` out of `simulationInfo`; here it is [`set_home`]'s,
+/// or the environment where nobody installed one.
+fn openmodelica_home() -> Option<String> {
+    let p = HOME.load(Ordering::Relaxed);
+    if p != 0 {
+        let f: fn() -> Option<String> = unsafe { core::mem::transmute(p) };
+        return f();
+    }
+    #[cfg(feature = "std")]
+    return std::env::var("OPENMODELICAHOME").ok();
+    #[cfg(not(feature = "std"))]
+    None
+}
+
+/// C's `convertProfileData`: rewrite the step files from one record per step to
+/// one series per column. C mmaps and transposes them in place, after `gnuplot`
+/// has read the record-per-step layout its bindings name.
 fn convert_profile_data(p: &Profiler) {
-    let n_all = p.n;
     let (out, prefix) = (&p.out, &p.prefix);
-    fn transpose(path: &str, elem: usize, cols: usize) {
-        let Ok(bytes) = std::fs::read(path) else { return };
+    for (suffix, bytes, elem, cols) in [
+        ("_prof.intdata", &p.int, 4usize, 1 + p.n),
+        ("_prof.realdata", &p.real, 8usize, 2 + p.n),
+    ] {
         let row = elem * cols;
-        if row == 0 || bytes.len() % row != 0 {
-            return;
+        if bytes.is_empty() || bytes.len() % row != 0 {
+            continue;
         }
         let rows = bytes.len() / row;
         let mut t = vec![0u8; bytes.len()];
@@ -504,28 +659,28 @@ fn convert_profile_data(p: &Profiler) {
                 t[dst..dst + elem].copy_from_slice(&bytes[src..src + elem]);
             }
         }
-        let _ = std::fs::write(path, t);
+        files::write(&format!("{out}{prefix}{suffix}"), &t);
     }
-    transpose(&format!("{out}{prefix}_prof.intdata"), 4, 1 + n_all);
-    transpose(&format!("{out}{prefix}_prof.realdata"), 8, 2 + n_all);
 }
 
-fn print_model_info_json(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file: &str) {
+fn print_model_info_json(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file: &str, result_size: i64) {
     let (out, prefix) = (&p.out, &p.prefix);
     convert_profile_data(p);
     let n_fn = info.functions.len();
     let g = |v: f64| format_g(v, 6);
     let mut j = String::new();
-    // C sums the top-level blocks only; the equation table has no parents here, so
-    // every block counts.
-    let total_eqs: f64 = (0..info.blocks.len()).map(|k| p.totals[n_fn + k].total).sum();
+    // C sums the blocks whose equation has no parent -- which is every block: its
+    // `readEquation` skips the `parent` field of `_info.json` and leaves the
+    // `calloc`ed zero behind.
+    // `fold` from `0.0`, not `sum()`: its identity is `-0.0`, and C prints `0`.
+    let total_eqs = (0..info.blocks.len()).map(|k| p.totals[n_fn + k].total).fold(0.0, |a, b| a + b);
     j.push_str(&format!("{{\n\"name\":\"{}\"", json_escape(&model.model_name)));
     j.push_str(&format!(",\n\"prefix\":\"{}\"", json_escape(prefix)));
     j.push_str(&format!(",\n\"date\":\"{}\"", json_escape(&date_string())));
     j.push_str(&format!(",\n\"method\":\"{}\"", json_escape(&model.method)));
     j.push_str(&format!(",\n\"outputFormat\":\"{}\"", json_escape(&model.output_format)));
     j.push_str(&format!(",\n\"outputFilename\":\"{}\"", json_escape(result_file)));
-    j.push_str(&format!(",\n\"outputFilesize\":{}", file_size(result_file)));
+    j.push_str(&format!(",\n\"outputFilesize\":{result_size}"));
     j.push_str(&format!(",\n\"overheadTime\":{}", g(rtclock::accumulated(rtclock::OVERHEAD))));
     j.push_str(&format!(",\n\"preinitTime\":{}", g(rtclock::accumulated(rtclock::PREINIT))));
     j.push_str(&format!(",\n\"initTime\":{}", g(rtclock::accumulated(rtclock::INIT))));
@@ -557,7 +712,7 @@ fn print_model_info_json(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_
     }
     j.push_str("\n]\n}");
     let name = format!("{out}{prefix}_prof.json");
-    if let Err(e) = std::fs::write(&name, j) {
-        omclog::warning(omclog::STDOUT, false, &format!("Failed to open file {name} for writing: {e}"));
+    if !files::write(&name, j.as_bytes()) {
+        omclog::warning(omclog::STDOUT, false, &format!("Failed to open file {name} for writing"));
     }
 }
