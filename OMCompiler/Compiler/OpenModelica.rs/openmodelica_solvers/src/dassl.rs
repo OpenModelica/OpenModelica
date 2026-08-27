@@ -348,17 +348,20 @@ unsafe fn root(
     rval: *mut f64,
     _rpar: *mut f64,
     _ipar: *mut i32,
-) {
-    let Some(ctx) = context() else { return };
+) -> i32 {
+    let Some(ctx) = context() else { return 1 };
     let (y, zc) = unsafe {
         (
             core::slice::from_raw_parts(y, ctx.n_states),
             core::slice::from_raw_parts_mut(rval, ctx.n_zc),
         )
     };
-    if let Err(e) = ctx.ode.eval_zc(unsafe { *t }, y, zc) {
-        ctx.failed.get_or_insert(e);
-        zc.fill(0.0);
+    match ctx.ode.eval_zc(unsafe { *t }, y, zc) {
+        Ok(()) => 0,
+        Err(e) => {
+            ctx.failed.get_or_insert(e);
+            1
+        }
     }
 }
 

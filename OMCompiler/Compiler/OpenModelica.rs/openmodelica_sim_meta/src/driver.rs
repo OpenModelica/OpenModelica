@@ -553,6 +553,22 @@ fn set_error_stage(e: &mut dyn SimEngine, addr: u32, stage: i32) -> StageSave {
     save
 }
 
+fn stage_hit(e: &dyn SimEngine, addr: u32) -> bool {
+    addr != 0 && read_i32(e, addr + 4).unwrap_or(0) != 0
+}
+
+fn clear_stage_hit(e: &mut dyn SimEngine, addr: u32) {
+    if addr != 0 {
+        let _ = write_i32(e, addr + 4, 0);
+    }
+}
+
+fn mark_stage_hit(e: &mut dyn SimEngine, addr: u32) {
+    if addr != 0 {
+        let _ = write_i32(e, addr + 4, 1);
+    }
+}
+
 /// Close the region [`set_error_stage`] opened: put `save` back, and report whether a
 /// model error was absorbed in it (C's `success == 0`).
 fn took_error_stage(e: &mut dyn SimEngine, addr: u32, save: StageSave) -> bool {
@@ -4699,8 +4715,9 @@ impl LambdaRamp {
 /// whose sign change is a state event. Writes the candidate `t`/`y` into SimData,
 /// evaluates the continuous equations (`functionODE`) so any algebraics a
 /// crossing depends on are current, then the emitted `functionZeroCrossings`, and
-/// reads the results back. Errors are stashed in `ResCtx::err` (the C-style
-/// callback cannot return a status).
+/// reads the results back. A trap is stashed in `ResCtx::err`. A model error
+/// aborts the call, as C's `longjmp` out of the root function does
+/// ([`Solved::RootThrew`]).
 unsafe fn dassl_rt(
     _neq: *mut i32,
     t: *mut f64,
@@ -4710,14 +4727,15 @@ unsafe fn dassl_rt(
     rval: *mut f64,
     _rpar: *mut f64,
     _ipar: *mut i32,
-) {
+) -> i32 {
     let ctx = RES_CTX.load(Ordering::Relaxed);
     if ctx.is_null() {
-        return;
+        return 1;
     }
     let ctx = unsafe { &mut *ctx };
     let e = unsafe { &mut *ctx.engine };
     let _clock = rtclock::Handover::new(rtclock::SOLVER, rtclock::EVENT);
+    let hit_before = stage_hit(e, ctx.err_stage_addr);
     let run = (|| -> Result<()> {
         // A root probe may sit at an awkward candidate state where a nonlinear
         // system can't converge; keep that transient failure from leaking into the
@@ -4734,8 +4752,12 @@ unsafe fn dassl_rt(
         e.read_bytes(ctx.sim_data + ctx.zc_probe_off, rval_bytes)?;
         Ok(())
     })();
-    if let Err(err) = run {
-        ctx.err = Some(err);
+    match run {
+        Err(err) => {
+            ctx.err = Some(err);
+            1
+        }
+        Ok(()) => (!hit_before && stage_hit(e, ctx.err_stage_addr)) as i32,
     }
 }
 
@@ -6062,6 +6084,8 @@ enum Progress {
     Root,
     /// The per-call work quota ran out before the target; call again to continue.
     WorkQuota,
+    /// The root function raised a model error; see [`Solved::RootThrew`].
+    RootThrew,
     Failed(&'static str),
 }
 
@@ -6141,6 +6165,9 @@ impl DaskrState {
             return Progress::WorkQuota;
         }
         self.ev_retries = 0; // this target's integration is done (or failing)
+        if self.idid == solver::IDID_RT_ABORT {
+            return Progress::RootThrew;
+        }
         if self.idid < 0 {
             return Progress::Failed(report_dassl_failure(self.idid, *t));
         }
@@ -6253,6 +6280,7 @@ impl CvodeState {
                 self.work_retries += 1;
                 Progress::WorkQuota
             }
+            crate::sundials::Stop::Failed(crate::sundials::CV_RTFUNC_FAIL) => Progress::RootThrew,
             crate::sundials::Stop::Failed(_) => Progress::Failed("CodegenWasmJit: CVODE failed"),
             other => {
                 self.work_retries = 0;
@@ -6377,6 +6405,7 @@ impl IdaState {
                 );
                 Progress::WorkQuota
             }
+            crate::sundials::Stop::Failed(crate::sundials::IDA_RTFUNC_FAIL) => Progress::RootThrew,
             crate::sundials::Stop::Failed(_) => Progress::Failed("CodegenWasmJit: IDA failed"),
             other => {
                 self.work_retries = 0;
@@ -6694,6 +6723,10 @@ enum Solved {
     Stepped,
     /// A root function changed sign; `SolverCore::t` is where.
     Root,
+    /// The root function raised a model error. C's `dassl_step` catches that
+    /// `longjmp` with `retVal` still 0, so `simulationUpdate` evaluates the probe
+    /// point `SimData` was left at, and only its throw reaches the step's retry.
+    RootThrew(&'static str),
     Yielded,
     Cancelled,
 }
@@ -7183,11 +7216,16 @@ impl SolverCore {
             self.nje = ctx.nje;
             *did_step = true;
             // A wasm error in a callback outranks whatever the solver reported.
-            if let Some(err) = ctx.err.take() {
+            let err = ctx.err.take();
+            if let Progress::RootThrew = again {
+                return Ok(Solved::RootThrew(err.unwrap_or(ASSERT_ERR)));
+            }
+            if let Some(err) = err {
                 return Err(err);
             }
             match again {
                 Progress::WorkQuota => continue,
+                Progress::RootThrew => unreachable!(),
                 // An internal step below the target: only `-noEquidistantTimeGrid`
                 // makes it an output point, so otherwise integrate on, as C's
                 // `dassl_step` loop does while IDID == 1.
@@ -7436,6 +7474,17 @@ impl SolverCore {
                     }
                     Solved::Reached | Solved::Stepped => false,
                     Solved::Root => true,
+                    Solved::RootThrew(err) => {
+                        // C's `updateContinuousSystem` at the probe point; C carries on
+                        // if it does not throw, here the root function's throw is the step's.
+                        clear_stage_hit(e, ctx.err_stage_addr);
+                        let evaluated = eval_continuous(e, sim_data, layout);
+                        if err == ASSERT_ERR && !stage_hit(e, ctx.err_stage_addr) {
+                            mark_stage_hit(e, ctx.err_stage_addr);
+                        }
+                        evaluated?;
+                        return Err(err);
+                    }
                 };
                 self.write_states(e)?;
                 // C runs `simulationUpdate` on every accepted step, row due or not.
@@ -7680,7 +7729,7 @@ pub enum CsStep {
 /// `cvode_solver_initial` so the banner reaches the log either way. `defer` decides
 /// the root-finding line — see [`CsDriver::new`].
 pub fn log_cs_solver_setup(model: &SimModel, defer: CsDefer) {
-    let Ok(method) = resolve_solver_method(&model.method, model.layout.dae_mode()) else { return };
+    let Ok(method) = resolve_solver_method(model.cs_method(), model.layout.dae_mode()) else { return };
     // "No states present, continuing without ODE solver": C falls back to euler,
     // which has nothing to set up and nothing to say.
     if method != "cvode" || model.layout.n_states == 0 {
@@ -7704,7 +7753,7 @@ pub fn log_cs_solver_setup(model: &SimModel, defer: CsDefer) {
 
 impl CsDriver {
     /// Build over an already-initialized model at time `t`, integrating with the
-    /// method the FMU was exported with (`buildModelFMU`'s `method=`).
+    /// method the FMU was exported with ([`SimMeta::cs_method`]).
     ///
     /// The integrator watches event indicators only under [`CsDefer::Any`], the one
     /// mode whose master can be handed the crossing time (Event Mode with early
@@ -7720,7 +7769,7 @@ impl CsDriver {
     ) -> Result<Self> {
         daskr::auxiliary::xsetf(0);
         let layout = &model.layout;
-        let method = resolve_solver_method(&model.method, layout.dae_mode())?;
+        let method = resolve_solver_method(model.cs_method(), layout.dae_mode())?;
         // QSS runs a whole simulation of its own; C's `solver_main_step` throws
         // "Unhandled case" for it rather than stepping it.
         if method == "qss" {
@@ -9771,7 +9820,7 @@ impl GuessStepper {
                     frac = 1.0;
                 }
                 Ok(Solved::Cancelled) => return Err("CodegenWasmJit: simulation cancelled"),
-                Err(err) => {
+                Ok(Solved::RootThrew(err)) | Err(err) => {
                     iter += 1;
                     if iter > 10 {
                         omclog::warning(

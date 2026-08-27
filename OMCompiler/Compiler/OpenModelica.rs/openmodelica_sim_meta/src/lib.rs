@@ -1002,6 +1002,10 @@ pub struct SimMeta {
     pub n_intervals: u32,
     /// Integration method (`"dassl"`, `"euler"`, …; empty = the dassl default).
     pub method: String,
+    /// What a Co-Simulation `do-step` integrates with (C's
+    /// `FMI2CS_initializeSolverData`: `-s` from `_flags.json`, else euler).
+    /// Empty except for a CS export.
+    pub cs_method: String,
     /// Relative/absolute tolerance for the adaptive integrators.
     pub tolerance: f64,
     /// Result file format (`"mat"`, `"empty"`).
@@ -1147,6 +1151,10 @@ pub struct NlsVars {
 }
 
 impl SimMeta {
+    pub fn cs_method(&self) -> &str {
+        if self.cs_method.is_empty() { &self.method } else { &self.cs_method }
+    }
+
     /// [`ImportRoster`] for this model: the codegen resolves the `-iif` file against
     /// it and the driver applies the result, so both index the same list.
     pub fn import_roster(&self) -> ImportRoster<'_> {
@@ -1393,7 +1401,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 16;
+const VERSION: u32 = 17;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1506,6 +1514,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     put_f64(&mut o, m.stop_time);
     put_u32(&mut o, m.n_intervals);
     put_str(&mut o, &m.method);
+    put_str(&mut o, &m.cs_method);
     put_f64(&mut o, m.tolerance);
     put_str(&mut o, &m.output_format);
     put_str(&mut o, &m.prefix);
@@ -1977,6 +1986,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let stop_time = r.f64()?;
     let n_intervals = r.u32()?;
     let method = r.string()?;
+    let cs_method = r.string()?;
     let tolerance = r.f64()?;
     let output_format = r.string()?;
     let prefix = r.string()?;
@@ -2285,7 +2295,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         }
     };
     Ok(SimMeta {
-        layout, start_time, stop_time, n_intervals, method, tolerance, output_format, prefix,
+        layout, start_time, stop_time, n_intervals, method, cs_method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, params, attr_log,
         removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon, prof,
     })
@@ -2308,6 +2318,7 @@ mod tests {
             stop_time: 1.0,
             n_intervals: 500,
             method: "dassl".to_string(),
+            cs_method: "euler".to_string(),
             tolerance: 1e-6,
             output_format: "mat".to_string(),
             prefix: "MyModel".to_string(),
