@@ -1490,6 +1490,11 @@ function isJacobianResultVar
           ovar := NONE();
         else
           ovar := getVarSeed(old_var_ptr);
+          // var_seed is a single-slot cache shared across all Jacobians; reject a hit
+          // cached under a different Jacobian's name (cref root is always $SEED_<name>).
+          if isSome(ovar) and ComponentRef.firstName(ComponentRef.last(getVarName(Util.getOption(ovar)))) <> SEED_STR + "_" + name then
+            ovar := NONE();
+          end if;
         end if;
         if isSome(ovar) then
           var_ptr := Util.getOption(ovar);
@@ -1548,6 +1553,11 @@ function isJacobianResultVar
       case qual as InstNode.VAR_NODE() algorithm
         res_ptr := getVarPointer(cref, sourceInfo());
         ovar := getVarPDer(res_ptr, isTmp);
+        // var_pder_res/tmp is a single-slot cache shared across all Jacobians; reject a hit
+        // cached under a different Jacobian's name (cref root is always $pDER_<name>).
+        if isSome(ovar) and ComponentRef.firstName(ComponentRef.last(getVarName(Util.getOption(ovar)))) <> PARTIAL_DERIVATIVE_STR + "_" + name then
+          ovar := NONE();
+        end if;
         if isSome(ovar) then
           var_ptr := Util.getOption(ovar);
           cref := getVarName(var_ptr);
