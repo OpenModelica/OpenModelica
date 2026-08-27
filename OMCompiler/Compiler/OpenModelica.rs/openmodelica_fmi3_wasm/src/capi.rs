@@ -474,6 +474,13 @@ struct RunOut {
     rows: u32,
     solver: u32,
     solver_len: u32,
+    /// `+profiling`'s files as a self-describing blob: per file a `u32` name
+    /// length, the name, a `u32` content length, the content.
+    prof: u32,
+    prof_len: u32,
+    /// The report asked for gnuplot + xsltproc (`+profiling=...+html`), which the
+    /// host runs over the files above.
+    prof_html: u32,
 }
 
 static mut RUN_OUT: RunOut = RunOut {
@@ -487,8 +494,23 @@ static mut RUN_OUT: RunOut = RunOut {
     rows: 0,
     solver: 0,
     solver_len: 0,
+    prof: 0,
+    prof_len: 0,
+    prof_html: 0,
 };
-static mut RUN_KEEP: Option<(Vec<u8>, String, String, String)> = None;
+static mut RUN_KEEP: Option<(Vec<u8>, String, String, String, Vec<u8>)> = None;
+
+/// Serialize named files into the blob [`RunOut::prof`] describes.
+fn pack_files(files: &[(String, Vec<u8>)]) -> Vec<u8> {
+    let mut o = Vec::new();
+    for (name, content) in files {
+        o.extend_from_slice(&(name.len() as u32).to_le_bytes());
+        o.extend_from_slice(name.as_bytes());
+        o.extend_from_slice(&(content.len() as u32).to_le_bytes());
+        o.extend_from_slice(content);
+    }
+    o
+}
 
 /// Run the whole simulation in-wasm, as `om:sim/simulation.run` does for a
 /// component. `args` is the flag list as NUL-separated UTF-8, without the program
@@ -508,7 +530,7 @@ pub extern "C" fn om_sim_run(args: u32, args_len: u32) -> u32 {
     let (out, keep) = match crate::sim_run::run(argv) {
         Ok(r) => {
             let (name, content) = r.linear_file.unwrap_or_default();
-            let keep = (r.file, name, content, r.solver);
+            let keep = (r.file, name, content, r.solver, pack_files(&r.prof_files));
             let mut out = RunOut { status: 0, rows: r.rows, ..RunOut::default() };
             out.file = keep.0.as_ptr() as u32;
             out.file_len = keep.0.len() as u32;
@@ -518,10 +540,13 @@ pub extern "C" fn om_sim_run(args: u32, args_len: u32) -> u32 {
             out.lin_content_len = keep.2.len() as u32;
             out.solver = keep.3.as_ptr() as u32;
             out.solver_len = keep.3.len() as u32;
+            out.prof = keep.4.as_ptr() as u32;
+            out.prof_len = keep.4.len() as u32;
+            out.prof_html = r.prof_html as u32;
             (out, keep)
         }
         Err(e) => {
-            let keep = (e.into_bytes(), String::new(), String::new(), String::new());
+            let keep = (e.into_bytes(), String::new(), String::new(), String::new(), Vec::new());
             let mut out = RunOut { status: 1, ..RunOut::default() };
             out.file = keep.0.as_ptr() as u32;
             out.file_len = keep.0.len() as u32;

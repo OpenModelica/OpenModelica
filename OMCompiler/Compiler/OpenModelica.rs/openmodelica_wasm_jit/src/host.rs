@@ -511,7 +511,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
             ) else {
                 return;
             };
-            let _ = std::fs::write(String::from_utf8_lossy(name).as_ref(), data);
+            let _ = openmodelica_wasi::fs::write(String::from_utf8_lossy(name).as_ref(), data);
         },
     ))?;
     wt(linker.func_wrap("env", "rt_host_cancel", || -> i32 { metamodelica::cancel::check_cancel() as i32 }))?;
@@ -730,7 +730,7 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
                 let mut dbuf = vec![0u8; data_len as usize];
                 let view = memory.view(&env);
                 if view.read(name as u64, &mut nbuf).is_ok() && view.read(data as u64, &mut dbuf).is_ok() {
-                    let _ = std::fs::write(String::from_utf8_lossy(&nbuf).as_ref(), &dbuf);
+                    let _ = openmodelica_wasi::fs::write(String::from_utf8_lossy(&nbuf).as_ref(), &dbuf);
                 }
             },
         ),

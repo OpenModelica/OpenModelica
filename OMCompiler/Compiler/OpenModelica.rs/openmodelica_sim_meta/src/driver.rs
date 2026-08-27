@@ -462,6 +462,15 @@ pub trait SimEngine {
     fn prof_dump(&mut self) -> u32 {
         0
     }
+    /// The runtime's `rt_prof_clear`: C's `rt_clear` over every profiling clock, so
+    /// the step's share joins the run's totals. The clocks live in the runtime
+    /// module, not the model's, hence an engine hook rather than a call by name.
+    fn prof_clear(&mut self) {}
+    /// The runtime's `rt_prof_init`: C's `rt_init` for the `n` function and block
+    /// clocks, at the head of a profiled run.
+    fn prof_init(&mut self, n: u32) {
+        let _ = n;
+    }
     /// Address of the runtime's error stage / absorbed-error pair, or 0 when the
     /// backend has no such export.
     fn error_stage_addr(&mut self) -> u32 {
@@ -2513,7 +2522,7 @@ impl HomotopyPath {
     fn finish(&mut self) {
         #[cfg(feature = "std")]
         if let Some((path, buf)) = self.file.take() {
-            let _ = std::fs::write(path, buf);
+            crate::files::write(&path, buf.as_bytes());
         }
     }
 }
@@ -2735,7 +2744,6 @@ fn emit_row_evaluated(
     capture_row(e, rows, sim_data, layout)?;
     let checked = check_asserts(e, sim_data, layout, if time >= stop { omclog::WARNING } else { omclog::INFO });
     // C's `fmtEmitStep`, once per global step.
-    #[cfg(feature = "std")]
     crate::profiling::on_row(e, time);
     checked
 }
@@ -4198,8 +4206,7 @@ pub fn drive(
     rtclock::reset(omclog::active(omclog::STATS) || omclog::active(omclog::STATS_V) || model.prof.is_some());
     rtclock::tick(rtclock::TOTAL);
     rtclock::tick(rtclock::PREINIT);
-    #[cfg(feature = "std")]
-    crate::profiling::start(model);
+    crate::profiling::start(e, model);
 
     let mut stats = SolveStats::default();
     let use_events = layout.n_samples > 0 || layout.n_zc > 0 || !model.clocks.is_empty();
@@ -4365,7 +4372,6 @@ pub fn drive(
     }
     recon_res?;
     rtclock::accumulate(rtclock::TOTAL);
-    #[cfg(feature = "std")]
     crate::profiling::end_of_run(e);
     (stats.timers, stats.tcalls) = rtclock::snapshot();
     stats.systems = e.sys_stats();

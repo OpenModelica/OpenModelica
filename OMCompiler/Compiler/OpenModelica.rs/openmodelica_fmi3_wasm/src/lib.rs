@@ -459,6 +459,20 @@ impl SimEngine for Engine {
     fn clean_nls_history(&mut self, time: f64) {
         openmodelica_codegen_wasm_jit_runtime::rt_nls_clean_history(time);
     }
+    // `+profiling`'s clocks: the artifact links the model and the runtime into one
+    // module, so they are this module's own.
+    fn prof_row(&mut self) -> u32 {
+        openmodelica_codegen_wasm_jit_runtime::prof::rt_prof_row()
+    }
+    fn prof_dump(&mut self) -> u32 {
+        openmodelica_codegen_wasm_jit_runtime::prof::rt_prof_dump()
+    }
+    fn prof_clear(&mut self) {
+        openmodelica_codegen_wasm_jit_runtime::prof::rt_prof_clear(0);
+    }
+    fn prof_init(&mut self, n: u32) {
+        openmodelica_codegen_wasm_jit_runtime::prof::rt_prof_init(n);
+    }
 }
 
 // ── Value references ─────────────────────────────────────────────────────────

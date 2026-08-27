@@ -466,6 +466,12 @@ fn write_output(path: &str, bytes: &[u8]) -> std::io::Result<()> {
     openmodelica_wasi::fs::write(path, bytes)
 }
 
+/// C's `fileSize(outputFilename)`, which the `+profiling` report quotes: `-1` when
+/// the file is not there.
+fn output_size(path: &str) -> i64 {
+    openmodelica_wasi::fs::len(path).map(|n| n as i64).unwrap_or(-1)
+}
+
 // ===========================================================================
 // Public entry points (called from the MetaModelica sources after regen)
 // ===========================================================================
@@ -1216,7 +1222,7 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
         let path = result_path(&flags, &meta, result_file);
         write_result(&model, &meta, &path, &run, &keep)?;
         // C's `printModelInfo`, after the result file is closed.
-        openmodelica_sim_meta::profiling::finish(&meta, &path);
+        openmodelica_sim_meta::profiling::finish(&meta, &path, output_size(&path));
         post = write_lin_file(&meta, &run, &flags);
         Ok(())
     })();
@@ -1378,7 +1384,7 @@ mod session {
         let keep = output_selection(model);
         capture_last_sim(model, run, &keep);
         write_result(model, meta, result_file, run, &keep)?;
-        openmodelica_sim_meta::profiling::finish(meta, result_file);
+        openmodelica_sim_meta::profiling::finish(meta, result_file, output_size(result_file));
         Ok(write_lin_file(meta, run, &simflags::flags()))
     }
 
@@ -3507,10 +3513,27 @@ pub(crate) struct SimVarMap {
     prof: Option<Arc<ProfPlan>>,
 }
 
-/// Display name of a model variable's component reference (OMC `.`-separated
-/// form, e.g. `body.r[1]`).
+/// C's `crefStrXml`: the display name `_init.xml` carries into `modelData`'s
+/// `info.name`, and with it the result file. `$DER` / `$PRE` qualifiers print as
+/// `der(...)` / `pre(...)`, nesting included (`$DER.$DER.x` -> `der(der(x))`).
 pub(crate) fn cref_display(cr: &Arc<DAE::ComponentRef>) -> Result<String> {
-    Ok(ComponentReferenceBasics::printComponentRefStr(cr.clone())?.to_string())
+    use DAE::ComponentRef as C;
+    Ok(match &**cr {
+        C::CREF_QUAL { ident, componentRef, .. } if &**ident == "$DER" => {
+            format!("der({})", cref_display(componentRef)?)
+        }
+        C::CREF_QUAL { ident, componentRef, .. } if &**ident == "$PRE" => {
+            format!("pre({})", cref_display(componentRef)?)
+        }
+        C::CREF_QUAL { componentRef, .. } => format!(
+            "{}.{}",
+            ComponentReferenceBasics::printComponentRefStr(ComponentReferenceBasics::crefFirstCref(
+                cr.clone()
+            )?)?,
+            cref_display(componentRef)?
+        ),
+        _ => ComponentReferenceBasics::printComponentRefStr(cr.clone())?.to_string(),
+    })
 }
 
 /// C's `shouldFilterOutput`: protected variables and `HideResult=true`, each
@@ -3576,14 +3599,12 @@ fn enumeration_names(ty: &DAE::Type) -> Option<Vec<String>> {
     }
 }
 
-/// Map a raw cref display name to the name it carries in the result file, or
-/// `None` to drop it. The new backend names a derivative of a non-state variable
-/// `$DER.x`; the C runtime shows it as `der(x)`. Other `$`-prefixed names are
-/// backend-internal auxiliaries (`$cse*`, `$PRE*`, …) and are not output.
+/// Map a display name ([`cref_display`], so a derivative already reads `der(x)`)
+/// to the name it carries in the result file, or `None` to drop it. `$`-prefixed
+/// names are backend-internal auxiliaries (`$cse*`, `$whenCondition*`, …) and are
+/// not output.
 fn result_name(raw: &str) -> Option<String> {
-    if let Some(rest) = raw.strip_prefix("$DER.") {
-        Some(format!("der({rest})"))
-    } else if raw.starts_with('$') && !OPT_RESULT_PREFIXES.iter().any(|p| raw.starts_with(p)) {
+    if raw.starts_with('$') && !OPT_RESULT_PREFIXES.iter().any(|p| raw.starts_with(p)) {
         None
     } else {
         Some(raw.to_string())
@@ -3974,11 +3995,7 @@ fn build_var_map(
         push_primary(&mut map, &mut result_vars, sv, REAL_OFF + (i as u32) * 8, WTy::F64, false, name)?;
     }
     for (i, sv) in ders.iter().enumerate() {
-        // der(x) is displayed as `der(<state name>)`.
-        let name = match states.get(i) {
-            Some(s) => format!("der({})", cref_display(&s.name)?),
-            None => cref_display(&sv.name)?,
-        };
+        let name = cref_display(&sv.name)?;
         push_start(&mut map, sv, layout.n_states + i as u32, &name)?;
         push_primary(&mut map, &mut result_vars, sv, REAL_OFF + (layout.n_states + i as u32) * 8, WTy::F64, false, name)?;
     }
@@ -6071,10 +6088,6 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         if let Some((fn_indices, _)) = &nls_wiring {
             let sizes: Vec<u32> = nls_systems.iter().map(|s| lst(&s.crefs).count() as u32).collect();
             emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &sizes, &nls_nominals, &nls_bounds, &nls_patterns);
-            if let Some(p) = &var_map.prof {
-                f.instruction(&we::Instruction::I32Const((p.n_functions + p.n_blocks) as i32));
-                f.instruction(&we::Instruction::Call(rt_index("rt_prof_init").expect("rt_prof_init is a runtime builtin")));
-            }
         }
         if !thunk_indices.is_empty() {
             crate::CodegenWasmJitFunctions::closures::emit_start(&mut f, &thunk_indices, closure_global);
@@ -6908,16 +6921,8 @@ fn collect_var_units(vars: &SimCodeVar::SimVars) -> Result<HashMap<String, Strin
             units.insert(name, sv.unit.to_string());
         }
     };
-    let states: Vec<&SimCodeVar::SimVar> = lst(&vars.stateVars).collect();
-    for sv in &states {
+    for sv in lst(&vars.stateVars).chain(lst(&vars.derivativeVars)) {
         add(cref_display(&sv.name)?, sv);
-    }
-    for (i, sv) in lst(&vars.derivativeVars).enumerate() {
-        let name = match states.get(i) {
-            Some(s) => format!("der({})", cref_display(&s.name)?),
-            None => cref_display(&sv.name)?,
-        };
-        add(name, sv);
     }
     for sv in lst(&vars.algVars)
         .chain(lst(&vars.discreteAlgVars))
@@ -7010,14 +7015,7 @@ fn build_sim_meta(
 /// C's `modelData` variable arrays: the same lists, in the same order, as the
 /// `SimData` variable regions.
 fn soti_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_meta::SotiVars> {
-    // C's `info.name`: a derivative reads `der(x)`, other `$` names stay raw.
-    let named = |sv: &SimCodeVar::SimVar| -> Result<String> {
-        let raw = cref_display(&sv.name)?.to_string();
-        Ok(match raw.strip_prefix("$DER.") {
-            Some(rest) => format!("der({rest})"),
-            None => raw,
-        })
-    };
+    let named = |sv: &SimCodeVar::SimVar| cref_display(&sv.name);
     let mut reals = Vec::new();
     for sv in lst(&vars.stateVars).chain(lst(&vars.derivativeVars)).chain(real_alg_vars(vars)) {
         reals.push(named(sv)?);
@@ -7211,9 +7209,32 @@ fn prof_plan(
         };
         fn_index.insert(crate::CodegenWasmJitFunctions::mangle(name)?, i as u32);
         functions.push(ProfFn {
-            name: openmodelica_frontend_dump::AbsynUtil::pathString(name.clone(), arcstr::literal!("."), true, false)?.to_string(),
+            // `SerializeModelInfo.serializePath`, which drops the `FULLYQUALIFIED`
+            // wrapper without a leading delimiter: `MeasureTime.A.f`, not `.MeasureTime.A.f`.
+            name: openmodelica_frontend_dump::AbsynUtil::pathString(name.clone(), arcstr::literal!("."), false, false)?
+                .to_string(),
             info: src_info(info),
         });
+    }
+    // C's `info.id` is the variable's `_init.xml` value reference: one counter from
+    // 1000 over `SerializeInitXML.modelVariables`' lists, the alias and sensitivity
+    // variables included. The report lists `modelData`'s arrays instead, so an id is
+    // not a position in it.
+    let mut vr_of: HashMap<String, u32> = HashMap::new();
+    let mut vr = 1000u32;
+    for list in [
+        &mi.vars.stateVars, &mi.vars.derivativeVars, &mi.vars.algVars, &mi.vars.discreteAlgVars,
+        &mi.vars.realOptimizeConstraintsVars, &mi.vars.realOptimizeFinalConstraintsVars,
+        &mi.vars.paramVars, &mi.vars.aliasVars,
+        &mi.vars.intAlgVars, &mi.vars.intParamVars, &mi.vars.intAliasVars,
+        &mi.vars.boolAlgVars, &mi.vars.boolParamVars, &mi.vars.boolAliasVars,
+        &mi.vars.stringAlgVars, &mi.vars.stringParamVars, &mi.vars.stringAliasVars,
+        &mi.vars.sensitivityVars,
+    ] {
+        for sv in lst(list) {
+            vr_of.entry(cref_display(&sv.name)?).or_insert(vr);
+            vr += 1;
+        }
     }
     // C's `modelData` variable arrays, in `printModelInfo` order.
     let mut vars = Vec::new();
@@ -7223,9 +7244,10 @@ fn prof_plan(
         &mi.vars.stringAlgVars, &mi.vars.stringParamVars,
     ] {
         for sv in lst(list) {
+            let name = cref_display(&sv.name)?;
             vars.push(ProfVar {
-                id: vars.len() as u32,
-                name: cref_display(&sv.name)?,
+                id: vr_of.get(&name).copied().unwrap_or(0),
+                name,
                 comment: sv.comment.to_string(),
                 info: src_info(&sv.source.info),
             });

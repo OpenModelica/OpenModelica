@@ -138,6 +138,43 @@ pub fn enter_init() {
     tick(INIT);
 }
 
+/// The whole clock state as a blob: `acc`, `total`, `max`, then `ncall` and
+/// `ncall_total`. `+profiling`'s report reads all five, so an in-wasm run hands
+/// them to the host along with its traces ([`crate::profiling::snapshot`]).
+pub fn pack() -> alloc::vec::Vec<u8> {
+    let c = clocks();
+    let mut o = alloc::vec::Vec::with_capacity(N * 40);
+    for a in [&c.acc, &c.total, &c.max] {
+        for v in a {
+            o.extend_from_slice(&v.to_le_bytes());
+        }
+    }
+    for a in [&c.ncall, &c.ncall_total] {
+        for v in a {
+            o.extend_from_slice(&v.to_le_bytes());
+        }
+    }
+    o
+}
+
+/// Adopt a [`pack`]ed state, leaving the timers on so the report can read them.
+pub fn unpack(b: &[u8]) {
+    if b.len() < N * 40 {
+        return;
+    }
+    let c = clocks();
+    c.on = true;
+    let f = |i: usize| f64::from_le_bytes(b[i * 8..i * 8 + 8].try_into().unwrap());
+    let u = |i: usize| u64::from_le_bytes(b[i * 8..i * 8 + 8].try_into().unwrap());
+    for ix in 0..N {
+        c.acc[ix] = f(ix);
+        c.total[ix] = f(N + ix);
+        c.max[ix] = f(2 * N + ix);
+        c.ncall[ix] = u(3 * N + ix);
+        c.ncall_total[ix] = u(4 * N + ix);
+    }
+}
+
 /// Every clock as `(seconds, calls)`, for the snapshot that travels with
 /// [`crate::SolveStats`] out of an in-wasm run.
 pub fn snapshot() -> ([f64; N], [u64; N]) {

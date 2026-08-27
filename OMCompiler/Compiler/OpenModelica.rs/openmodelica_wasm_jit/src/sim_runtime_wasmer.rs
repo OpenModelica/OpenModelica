@@ -873,6 +873,12 @@ fn run_inwasm(model: &SimModel, bench: bool) -> std::result::Result<sim_driver::
         }
     }
     let result = sess.take_result()?;
+    // The traces were collected in-wasm; the report is rendered here, once the
+    // result file the run reports on has been written.
+    let prof = sess.take_prof()?;
+    if !prof.is_empty() {
+        openmodelica_sim_meta::profiling::adopt(&model.meta, &prof);
+    }
     if bench {
         eprintln!(
             "wasm-jit sim [in-wasm]: integrate {:?} ({} intervals), {} steps, {} residual evals",
@@ -1236,6 +1242,16 @@ impl sim_driver::SimEngine for WasmerEngine {
             Err(_) => 0,
         }
     }
+    fn prof_clear(&mut self) {
+        if let Ok(f) = self.rt_inst.exports.get_typed_function::<u32, ()>(&self.store, "rt_prof_clear") {
+            let _ = f.call(&mut self.store, 0);
+        }
+    }
+    fn prof_init(&mut self, n: u32) {
+        if let Ok(f) = self.rt_inst.exports.get_typed_function::<u32, ()>(&self.store, "rt_prof_init") {
+            let _ = f.call(&mut self.store, n);
+        }
+    }
     fn context_addr(&mut self) -> u32 {
         match self.rt_inst.exports.get_typed_function::<(), u32>(&self.store, "rt_context_addr") {
             Ok(f) => f.call(&mut self.store).unwrap_or(0),
@@ -1293,6 +1309,8 @@ pub struct InWasmSession {
     stat_f: wasmer::TypedFunction<u32, u64>,
     lin_ptr: wasmer::TypedFunction<(), u32>,
     lin_len: wasmer::TypedFunction<(), u32>,
+    prof_ptr: wasmer::TypedFunction<(), u32>,
+    prof_len: wasmer::TypedFunction<(), u32>,
     sys_ptr: wasmer::TypedFunction<(), u32>,
     sys_len: wasmer::TypedFunction<(), u32>,
     free_f: wasmer::TypedFunction<(), ()>,
@@ -1361,6 +1379,8 @@ pub fn build_inwasm_session(model: &SimModel) -> std::result::Result<InWasmSessi
         stat_f: wts(rt_inst.exports.get_typed_function(&store, "rt_sim_stat"))?,
         lin_ptr: gf(&store, "rt_sim_lin_ptr")?,
         lin_len: gf(&store, "rt_sim_lin_len")?,
+        prof_ptr: gf(&store, "rt_sim_prof_ptr")?,
+        prof_len: gf(&store, "rt_sim_prof_len")?,
         sys_ptr: gf(&store, "rt_sys_stats_ptr")?,
         sys_len: gf(&store, "rt_sys_stats_len")?,
         free_f: wts(rt_inst.exports.get_typed_function(&store, "rt_sim_free"))?,
@@ -1456,6 +1476,21 @@ impl InWasmSession {
         openmodelica_sim_meta::rtclock::read_stat_slots(&mut stats, &mut stat)?;
         let lin = self.take_lin()?;
         Ok(sim_driver::RunResult { rows, n_reals, params, stats, lin })
+    }
+
+    /// `+profiling`'s collected state, for the host's `profiling::adopt`: the
+    /// driver ran in-wasm, but the report is the host's to write.
+    pub fn take_prof(&mut self) -> Result<Vec<u8>> {
+        let p = wt(self.prof_ptr.call(&mut self.store))?;
+        let n = wt(self.prof_len.call(&mut self.store))? as usize;
+        let mut bytes = vec![0u8; n];
+        if n > 0 {
+            self.memory
+                .view(&self.store)
+                .read(p as u64, &mut bytes)
+                .map_err(|_| "CodegenWasmJit: profiling read")?;
+        }
+        Ok(bytes)
     }
 
     /// The runtime's `-l` blob (`<file name>\0<content>`), empty when unasked.
