@@ -2891,6 +2891,12 @@ fn newton_c(
             if dt_violated() {
                 return (false, false);
             }
+            if assert_hit() {
+                if let Some(t) = trace {
+                    crate::omclog::debug_double(crate::omclog::NLS_V, UPS, t.time);
+                }
+                return (false, false);
+            }
             let error_f2_sqrd = nsq(&fvec);
             if trace.is_some() {
                 crate::omclog::debug_double(crate::omclog::NLS_V, "Need to damp, error_f2 = ", libm::sqrt(error_f2_sqrd));
@@ -2926,6 +2932,12 @@ fn newton_c(
                 }
                 eval(&x1, &mut fvec);
                 if dt_violated() {
+                    return (false, false);
+                }
+                if assert_hit() {
+                    if let Some(t) = trace {
+                        crate::omclog::debug_double(crate::omclog::NLS_V, UPS, t.time);
+                    }
                     return (false, false);
                 }
                 if trace.is_some() {
@@ -3787,6 +3799,16 @@ pub extern "C" fn rt_solve_nls(
         // and its line search takes a nan step length, which no exit test catches.
         // Not a model throw — see [`NLS_EVAL_THREW`].
         if xs.iter().any(|v| !v.is_finite()) {
+            if let Some(i) = xs[..n.min(xs.len())].iter().position(|v| !v.is_finite()) {
+                crate::omclog::error(
+                    crate::omclog::NLS,
+                    false,
+                    &alloc::format!(
+                        "residualFunc{eq_index}: Iteration variable `{}` is inf or nan.",
+                        var_names(eq_index).get(i).map_or("", |s| s.as_str())
+                    ),
+                );
+            }
             note_eval_hit(true, false);
             for i in 0..n {
                 r[i] = ASSERT_RESIDUAL;

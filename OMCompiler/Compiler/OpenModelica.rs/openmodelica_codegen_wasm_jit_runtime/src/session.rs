@@ -348,11 +348,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::NLS_NEWTON_DIAGNOSTICS) {
         crate::nls::set_diag(&model.nls_vars);
     }
-    crate::nls::set_var_names(if openmodelica_sim_meta::omclog::wants_nls_var_names(openmodelica_sim_meta::omclog::mask()) {
-        model.nls_vars.iter().map(|s| (s.eq_index, s.names.clone())).collect()
-    } else {
-        Vec::new()
-    });
+    crate::nls::set_var_names(model.nls_vars.iter().map(|s| (s.eq_index, s.names.clone())).collect());
 
     driver::set_clock(now_ms_hook);
     // This session runs its own start/advance/finish instead of `drive`, so the

@@ -295,6 +295,7 @@ my $test_queue = Thread::Queue->new();
 my $tests_failed :shared = 0;
 my @failed_tests :shared;
 my $testscript = cwd() . "/runtest.pl";
+-f $testscript or die "runtests.pl must be started from the partest directory; no runtest.pl in " . cwd() . "\n";
 if ( $osname eq 'MSWin32' ) {
   $testscript = "perl " . $testscript;
 }
@@ -346,7 +347,17 @@ sub read_file {
   open(my $in, "<", $file) or die "Couldn't open $file: $!";
 
   while(<$in>) {
-    push @test_list, trim($_);
+    my $test = trim($_);
+    push @test_list, $test if length($test);
+  }
+}
+
+sub check_file_tests {
+  my $file = shift;
+
+  for my $test (@test_list) {
+    $test =~ m{^\./} or die "$file: '$test' should be given as ./path/to/test.mos, relative to the testsuite root\n";
+    -f $test or die "$file: '$test' not found from " . cwd() . "\n";
   }
 }
 
@@ -446,6 +457,7 @@ if (!defined($file)) {
 } else {
   read_file($file);
   chdir("..");
+  check_file_tests($file);
 }
 
 my $test_count = @test_list;

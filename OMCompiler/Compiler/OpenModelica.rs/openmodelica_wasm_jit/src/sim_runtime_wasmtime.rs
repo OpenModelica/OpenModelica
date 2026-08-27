@@ -1398,13 +1398,10 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         let on = openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::STATS_V);
         wts(set.call(&mut store, on as u32))?;
     }
-    // `-lv=LOG_NLS` names the iteration variables, which only the metadata has. The
-    // roster is per model, so it is cleared first and pushed only when the stream is
-    // on: an ordinary run carries no names.
+    // The iteration-variable names, which only the metadata has: the per-model
+    // roster is cleared, then pushed per system.
     let diag_on = openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::NLS_NEWTON_DIAGNOSTICS);
-    if openmodelica_sim_meta::omclog::wants_nls_var_names(log_mask)
-        && let Ok(set) = rt_inst.get_typed_func::<(u32, u32, u32), ()>(&mut store, "rt_nls_set_names")
-    {
+    if let Ok(set) = rt_inst.get_typed_func::<(u32, u32, u32), ()>(&mut store, "rt_nls_set_names") {
         let free = rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free").ok();
         wts(set.call(&mut store, (u32::MAX, 0, 0)))?;
         for sys in &meta.nls_vars {

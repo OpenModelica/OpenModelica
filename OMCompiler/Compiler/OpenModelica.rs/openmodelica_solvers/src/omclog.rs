@@ -147,14 +147,6 @@ pub const FMU_STREAMS: Mask = (1 << STDOUT) | (1 << ASSERT);
 /// into the wasm runtime carries it too.
 pub const SHOW_ALL_WARNINGS: Mask = 1 << 63;
 
-/// Which streams name a nonlinear system's iteration variables, and so need the
-/// roster the model metadata carries (C reads it out of `modelDataXml` instead).
-pub fn wants_nls_var_names(m: Mask) -> bool {
-    [NLS, NLS_DERIVATIVE_TEST, NLS_SVD, NLS_SVD_V, INIT_HOMOTOPY, NLS_NEWTON_DIAGNOSTICS]
-        .iter()
-        .any(|s| mask_has(m, *s))
-}
-
 pub fn mask_has(m: Mask, s: Stream) -> bool {
     m & (1 << s) != 0
 }
