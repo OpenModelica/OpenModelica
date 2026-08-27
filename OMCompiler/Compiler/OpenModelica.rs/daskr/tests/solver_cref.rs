@@ -173,8 +173,9 @@ unsafe fn jac_r(_t: *mut f64, _y: *mut f64, _yp: *mut f64, pd: *mut f64, _d: *mu
 unsafe extern "C" fn rt_c(_neq: *mut i32, _t: *mut f64, y: *mut f64, _yp: *mut f64, _nrt: *mut i32, rval: *mut f64, _rp: *mut f64, _ip: *mut i32) {
     *rval.add(0) = *y.add(0);
 }
-unsafe fn rt_r(_neq: *mut i32, _t: *mut f64, y: *mut f64, _yp: *mut f64, _nrt: *mut i32, rval: *mut f64, _rp: *mut f64, _ip: *mut i32) {
+unsafe fn rt_r(_neq: *mut i32, _t: *mut f64, y: *mut f64, _yp: *mut f64, _nrt: *mut i32, rval: *mut f64, _rp: *mut f64, _ip: *mut i32) -> i32 {
     *rval.add(0) = *y.add(0);
+    0
 }
 
 // C dummies matching the typed ABIs.

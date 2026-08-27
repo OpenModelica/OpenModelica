@@ -106,6 +106,7 @@ unsafe extern "C" fn err_handler(
 }
 /// `mxstep` internal steps taken without reaching `tout`; resuming continues.
 pub const CV_TOO_MUCH_WORK: c_int = -1;
+pub const CV_RTFUNC_FAIL: c_int = -12;
 
 unsafe extern "C" {
     /// `SUNComm` is a plain `int` without MPI, and `SUN_COMM_NULL` is 0.
@@ -442,6 +443,7 @@ pub type IdaJacFn = unsafe extern "C" fn(
 
 /// `mxstep` internal steps taken without reaching `tout`; resuming continues.
 pub const IDA_TOO_MUCH_WORK: c_int = -1;
+pub const IDA_RTFUNC_FAIL: c_int = -12;
 /// Error test failures on one step, corrector convergence failures, and a failed
 /// linear-solver setup — what `ida_solver_step` restarts from.
 pub const IDA_ERR_FAIL: c_int = -3;

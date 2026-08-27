@@ -99,7 +99,9 @@ pub type JacFn = unsafe fn(
 );
 
 /// Root (constraint) function: `(neq, t, y, yprime, nrt, rval, rpar, ipar)`.
-/// Fills `rval[0..nrt]` with the values whose zeros are sought.
+/// Fills `rval[0..nrt]` with the values whose zeros are sought. A nonzero return
+/// abandons the call with `IDID` = [`IDID_RT_ABORT`] (C's runtime `longjmp`s out
+/// of the root function instead).
 pub type RtFn = unsafe fn(
     neq: *mut i32,
     t: *mut f64,
@@ -109,7 +111,11 @@ pub type RtFn = unsafe fn(
     rval: *mut f64,
     rpar: *mut f64,
     ipar: *mut i32,
-);
+) -> i32;
+
+/// Not one of DDASKR's own codes.
+pub const IDID_RT_ABORT: i32 = -34;
+const IRT_ABORT: i32 = -3;
 
 /// Krylov Jacobian/preconditioner setup `jac`:
 /// `(res, ires, neq, t, y, yprime, rewt, savr, wk, h, cj, wp, iwp, ier, rpar, ipar)`.
@@ -866,7 +872,8 @@ pub unsafe fn dummy_rt(
     _rval: *mut f64,
     _rpar: *mut f64,
     _ipar: *mut i32,
-) {
+) -> i32 {
+    0
 }
 
 /// Krylov nonlinear-solver driver (placeholder until the Krylov path is ported).
@@ -2175,7 +2182,10 @@ pub(crate) unsafe fn drchek(
     if job == 1 {
         // Evaluate R at initial T; check for zeros.
         ddatrp(*tn, at!(rwork, 51), y, yp, *neq, *kold, phi, psi);
-        rt(neq, lt0, y, yp, nrt, r0, rpar, ipar);
+        if rt(neq, lt0, y, yp, nrt, r0, rpar, ipar) != 0 {
+            *irt = IRT_ABORT;
+            return;
+        }
         at!(iwork, 36) = 1;
         let mut zroot = false;
         for i in 1..=*nrt {
@@ -2193,7 +2203,10 @@ pub(crate) unsafe fn drchek(
         for i in 1..=*neq {
             at!(y, i) += temp2 * at2!(phi, i, 2, *neq);
         }
-        rt(neq, lt0, y, yp, nrt, r0, rpar, ipar);
+        if rt(neq, lt0, y, yp, nrt, r0, rpar, ipar) != 0 {
+            *irt = IRT_ABORT;
+            return;
+        }
         at!(iwork, 36) += 1;
         zroot = false;
         for i in 1..=*nrt {
@@ -2212,7 +2225,10 @@ pub(crate) unsafe fn drchek(
         } else {
             // A root was found last step: evaluate R0 = R(T0).
             ddatrp(*tn, at!(rwork, 51), y, yp, *neq, *kold, phi, psi);
-            rt(neq, lt0, y, yp, nrt, r0, rpar, ipar);
+            if rt(neq, lt0, y, yp, nrt, r0, rpar, ipar) != 0 {
+                *irt = IRT_ABORT;
+                return;
+            }
             at!(iwork, 36) += 1;
             let mut zroot = false;
             for i in 1..=*nrt {
@@ -2235,7 +2251,10 @@ pub(crate) unsafe fn drchek(
                         at!(y, i) += temp2 * at2!(phi, i, 2, *neq);
                     }
                 }
-                rt(neq, lt0, y, yp, nrt, r0, rpar, ipar);
+                if rt(neq, lt0, y, yp, nrt, r0, rpar, ipar) != 0 {
+                    *irt = IRT_ABORT;
+                    return;
+                }
                 at!(iwork, 36) += 1;
                 for i in 1..=*nrt {
                     if at!(r0, i).abs() > 0.0 {
@@ -2279,7 +2298,10 @@ pub(crate) unsafe fn drchek(
             }
         }
         ddatrp(*tn, t1, y, yp, *neq, *kold, phi, psi);
-        rt(neq, &mut t1, y, yp, nrt, r1, rpar, ipar);
+        if rt(neq, &mut t1, y, yp, nrt, r1, rpar, ipar) != 0 {
+            *irt = IRT_ABORT;
+            return;
+        }
         at!(iwork, 36) += 1;
 
         // Search for a root in (T0, T1) via DROOTS.
@@ -2292,7 +2314,10 @@ pub(crate) unsafe fn drchek(
                 break;
             }
             ddatrp(*tn, xx, y, yp, *neq, *kold, phi, psi);
-            rt(neq, &mut xx, y, yp, nrt, rx, rpar, ipar);
+            if rt(neq, &mut xx, y, yp, nrt, rx, rpar, ipar) != 0 {
+                *irt = IRT_ABORT;
+                return;
+            }
             at!(iwork, 36) += 1;
         }
         at!(rwork, 51) = xx;
@@ -2940,6 +2965,10 @@ pub unsafe fn ddaskr(
                 1, rt, &mut nrt_l, &mut neq_l, t, tout, y, yprime, rw(lphi), rw(39), iw(8), rw(lr0),
                 rw(lr1), rw(lrx), jroot, &mut irt, rw(9), at!(info, 3), rwork, iwork, rpar, ipar,
             );
+            if irt == IRT_ABORT {
+                *idid = IDID_RT_ABORT;
+                l590!();
+            }
             if irt < 0 {
                 xerrwd("DASKR--  R IS ILL-DEFINED.  ZERO VALUES WERE FOUND AT TWO", 31, 1, 0, 0, 0, 0, 0.0, 0.0);
                 xerrwd("         VERY CLOSE T VALUES, AT T = R1", 31, 1, 0, 0, 0, 1, at!(rwork, 51), 0.0);
@@ -2961,6 +2990,10 @@ pub unsafe fn ddaskr(
                 rw(lr0), rw(lr1), rw(lrx), jroot, &mut irt, rw(9), at!(info, 3), rwork, iwork, rpar,
                 ipar,
             );
+            if irt == IRT_ABORT {
+                *idid = IDID_RT_ABORT;
+                l590!();
+            }
             if irt < 0 {
                 xerrwd("DASKR--  R IS ILL-DEFINED.  ZERO VALUES WERE FOUND AT TWO", 31, 1, 0, 0, 0, 0, 0.0, 0.0);
                 xerrwd("         VERY CLOSE T VALUES, AT T = R1", 31, 1, 0, 0, 0, 1, at!(rwork, 51), 0.0);
@@ -3187,6 +3220,10 @@ pub unsafe fn ddaskr(
                 rw(lr0), rw(lr1), rw(lrx), jroot, &mut irt, rw(9), at!(info, 3), rwork, iwork, rpar,
                 ipar,
             );
+            if irt == IRT_ABORT {
+                *idid = IDID_RT_ABORT;
+                l590!();
+            }
             if irt == 1 {
                 at!(iwork, 37) = 1;
                 *idid = 5;

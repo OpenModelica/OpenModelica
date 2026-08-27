@@ -301,7 +301,7 @@ fn sim_models() -> &'static Mutex<HashMap<String, Arc<SimModel>>> {
 struct FmuKernel {
     model: Arc<SimModel>,
     /// Reaches the kernel's embedded metadata, so a different one cannot reuse it.
-    method: String,
+    cs_method: String,
 }
 
 /// Kept by [`translateFmu`] so the export that follows links this kernel rather
@@ -535,7 +535,7 @@ pub fn translateModel(simCode: SimCode::SimCode) -> Result<()> {
     let prefix = simCode.fileNamePrefix.to_string();
     let _ = std::fs::remove_file(format!("{prefix}.wasm"));
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
-    let outcome = build_sim_model(&simCode, false, ExtHost::SIM).and_then(|model| {
+    let outcome = build_sim_model(&simCode, false, ExtHost::SIM, "").and_then(|model| {
         write_output(&format!("{prefix}.wasm"), &model.wasm).map_err(|_| "CodegenWasmJit: write failed")?;
         sim_models().lock().unwrap_or_else(|e| e.into_inner()).insert(prefix.clone(), Arc::new(model));
         Ok(())
@@ -1657,7 +1657,7 @@ use openmodelica_wasm_jit::RUNTIME_WASIP1;
 /// `wasm-merge` is an external tool, absent in the omc wasm build.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn emit_standalone_module(sim_code: &SimCode::SimCode) -> Result<Vec<u8>> {
-    let model = build_sim_model(sim_code, false, ExtHost::Wasm)?;
+    let model = build_sim_model(sim_code, false, ExtHost::Wasm, "")?;
     merge_standalone(&model.wasm)
 }
 
@@ -3116,21 +3116,13 @@ fn cad_basename(uri: &str) -> &str {
     uri.rsplit(['/', '\\']).next().unwrap_or(uri)
 }
 
-/// The integration method the export settles on, onto the settings the lowering
-/// reads. C's FMU reads `-s` from `_flags.json` at run time; this one is linked
-/// against one solver, so the flag has to reach the export.
-fn settle_fmu_method(sim_code: &mut SimCode::SimCode, simulation_flags_json: &str, kind: &str) {
-    let Some(settings) = sim_code.simulationSettingsOpt.as_mut() else { return };
+/// C's `FMI2CS_initializeSolverData`: `-s` from `_flags.json`, euler otherwise.
+/// The model's own method stays for the artifact's plain-simulation face.
+fn fmu_cs_method(simulation_flags_json: &str, kind: &str) -> String {
     match fmi_flag(simulation_flags_json, "s") {
-        Some(s) => settings.method = ArcStr::from(s.as_str()),
-        // A wasm FMU's embedded driver has the solvers a simulation has, so a
-        // Co-Simulation export keeps the model's own method and falls back to
-        // DASKR for one the driver cannot step to a communication point. C
-        // defaults to euler only because `fmu_read_flags.c` knows no other.
-        None if kind != "ME" && !fmu_cs_solvers().contains(&settings.method.as_str()) => {
-            settings.method = ArcStr::from("dassl")
-        }
-        None => {}
+        Some(s) => s,
+        None if kind != "ME" => "euler".to_string(),
+        None => String::new(),
     }
 }
 
@@ -3138,8 +3130,10 @@ fn settle_fmu_method(sim_code: &mut SimCode::SimCode, simulation_flags_json: &st
 /// this `kind` can serve it. Shared linear memory across model + runtime +
 /// ModelicaExternalC, so `external "C"` calls pass real pointers rather than
 /// runtime handles — which is also why the simulation path cannot bind it.
-fn lower_fmu_kernel(sim_code: &SimCode::SimCode, kind: &str) -> Result<SimModel> {
-    let model = crate::CodegenWasmJitFunctions::with_shared_externals(|| build_sim_model(sim_code, true, ExtHost::Wasm))?;
+fn lower_fmu_kernel(sim_code: &SimCode::SimCode, kind: &str, cs_method: &str) -> Result<SimModel> {
+    let model = crate::CodegenWasmJitFunctions::with_shared_externals(|| {
+        build_sim_model(sim_code, true, ExtHost::Wasm, cs_method)
+    })?;
     if let Some(func) = first_external_import(&model.wasm) {
         if !external_c_available() {
             record_error(format!(
@@ -3155,13 +3149,13 @@ fn lower_fmu_kernel(sim_code: &SimCode::SimCode, kind: &str) -> Result<SimModel>
 }
 
 /// A CS FMU integrates itself, so an unservable method has to fail at export
-/// rather than at the importer's first do-step. Empty is the dassl default.
+/// rather than at the importer's first do-step.
 fn check_fmu_method(model: &SimModel, kind: &str) -> Result<()> {
-    if kind != "ME" && !model.method.is_empty() && !fmu_cs_solvers().contains(&model.method.as_str()) {
+    if kind != "ME" && !fmu_cs_solvers().contains(&model.meta.cs_method.as_str()) {
         record_error(format!(
             "CodegenWasmJit: a Co-Simulation wasm FMU cannot integrate with method=\"{}\". \
              Available: {}.",
-            model.method,
+            model.meta.cs_method,
             fmu_cs_solvers().join(", ")
         ));
         return Err("CodegenWasmJit: unusable Co-Simulation integration method");
@@ -3171,28 +3165,22 @@ fn check_fmu_method(model: &SimModel, kind: &str) -> Result<()> {
 
 /// The kernel to build this FMU around: the one [`translateFmu`] left behind if it
 /// was lowered the way this export needs, and a fresh lowering otherwise.
-fn fmu_kernel(sim_code: &SimCode::SimCode, kind: &str) -> Result<Arc<SimModel>> {
+fn fmu_kernel(sim_code: &SimCode::SimCode, kind: &str, cs_method: &str) -> Result<Arc<SimModel>> {
     let prefix = sim_code.fileNamePrefix.to_string();
-    let method = settled_method(sim_code);
     let cached = fmu_kernels().lock().unwrap_or_else(|e| e.into_inner()).get(&prefix).cloned();
-    if let Some(k) = cached.filter(|k| k.method == method) {
+    if let Some(k) = cached.filter(|k| k.cs_method == cs_method) {
         check_fmu_method(&k.model, kind)?;
         return Ok(k.model.clone());
     }
-    let model = Arc::new(lower_fmu_kernel(sim_code, kind)?);
+    let model = Arc::new(lower_fmu_kernel(sim_code, kind, cs_method)?);
     keep_fmu_kernel(&prefix, &model);
     Ok(model)
-}
-
-/// What [`settle_fmu_method`] left on the settings.
-fn settled_method(sim_code: &SimCode::SimCode) -> String {
-    sim_code.simulationSettingsOpt.as_ref().map(|s| s.method.to_string()).unwrap_or_default()
 }
 
 fn keep_fmu_kernel(prefix: &str, model: &Arc<SimModel>) {
     fmu_kernels().lock().unwrap_or_else(|e| e.into_inner()).insert(
         prefix.to_string(),
-        Arc::new(FmuKernel { model: model.clone(), method: model.method.clone() }),
+        Arc::new(FmuKernel { model: model.clone(), cs_method: model.meta.cs_method.clone() }),
     );
 }
 
@@ -3204,8 +3192,7 @@ pub fn translateFmu(sim_code: SimCode::SimCode, fmu_type: ArcStr, simulation_fla
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
     let kind = fmu_kind(&fmu_type);
-    let mut sim_code = sim_code;
-    settle_fmu_method(&mut sim_code, &simulation_flags_json, kind);
+    let cs_method = fmu_cs_method(&simulation_flags_json, kind);
     let prefix = sim_code.fileNamePrefix.to_string();
     let _ = openmodelica_wasi::fs::remove_file(&format!("{prefix}.wasm"));
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
@@ -3213,7 +3200,7 @@ pub fn translateFmu(sim_code: SimCode::SimCode, fmu_type: ArcStr, simulation_fla
         // Lowered the way the simulation path binds it, since that is what runs it.
         // With no `external "C"` this is the FMU kernel too: shared externals
         // change the lowering only where there are `ext` imports.
-        let model = Arc::new(build_sim_model(&sim_code, true, ExtHost::SIM)?);
+        let model = Arc::new(build_sim_model(&sim_code, true, ExtHost::SIM, &cs_method)?);
         check_fmu_method(&model, kind)?;
         write_output(&format!("{prefix}.wasm"), &model.wasm).map_err(|_| "CodegenWasmJit: write failed")?;
         sim_models().lock().unwrap_or_else(|e| e.into_inner()).insert(prefix.clone(), model.clone());
@@ -3243,7 +3230,7 @@ fn keep_translated_model(sim_code: &SimCode::SimCode, kernel: &Arc<SimModel>) ->
     let model = match kept {
         Some(m) => m,
         None if first_external_import(&kernel.wasm).is_none() => kernel.clone(),
-        None => Arc::new(build_sim_model(sim_code, true, ExtHost::SIM)?),
+        None => Arc::new(build_sim_model(sim_code, true, ExtHost::SIM, &kernel.meta.cs_method)?),
     };
     if model.prepared.lock().unwrap_or_else(|e| e.into_inner()).is_none()
         && let Ok(compiled) = sim_runtime::take_compiled_model(&model)
@@ -3277,8 +3264,7 @@ fn emit_fmu(
 ) -> Result<()> {
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
-    let mut sim_code = sim_code;
-    settle_fmu_method(&mut sim_code, &simulation_flags_json, kind);
+    let cs_method = fmu_cs_method(&simulation_flags_json, kind);
     // Emitting the model takes seconds; a host that compiles the native platforms
     // out of process can spend them loading its compiler.
     if !requested_native_platforms().is_empty() {
@@ -3286,7 +3272,7 @@ fn emit_fmu(
     }
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
     let outcome = (|| -> Result<()> {
-        let model = fmu_kernel(&sim_code, kind)?;
+        let model = fmu_kernel(&sim_code, kind, &cs_method)?;
         export_phase("FMU model kernel");
         let natives = native_externals(&model, kind)?;
         let bare = fmu_directory();
@@ -3295,7 +3281,7 @@ fn emit_fmu(
             export_phase("FMU translated model");
         }
         let cs = kind != "ME";
-        let sundials = cs && fmu_needs_sundials(&model.method);
+        let sundials = cs && (fmu_needs_sundials(&model.meta.cs_method) || fmu_needs_sundials(&model.method));
         // An unzipped export is for an OpenModelica importer: it holds the model
         // description and the model kernel and nothing else, and the host links
         // that kernel against an adapter it compiled once into
@@ -4821,7 +4807,12 @@ fn build_guard_fn(target: u32) -> we::Function {
     f
 }
 
-fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost) -> Result<SimModel> {
+fn build_sim_model(
+    sim_code: &SimCode::SimCode,
+    fmi_vrs: bool,
+    ext_host: ExtHost,
+    cs_method: &str,
+) -> Result<SimModel> {
     crate::CodegenWasmJitFunctions::set_record_decls(&sim_code.recordDecls)?;
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
@@ -5596,7 +5587,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         }
     }
     let meta = build_sim_meta(
-        &layout, &result_vars, settings, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
+        &layout, &result_vars, settings, cs_method, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
         fmi_vrs, zc_descriptions(&zero_crossings), rel_descriptions(&sim_code.relations),
         param_vars(vars)?, attr_log_entries(sim_code)?,
         removed_init_residuals(sim_code).iter().map(|e| dump_exp(e)).collect(),
@@ -6946,6 +6937,7 @@ fn build_sim_meta(
     layout: &SimLayout,
     result_vars: &[ResultVar],
     settings: &SimCode::SimulationSettings,
+    cs_method: &str,
     model_name: &str,
     prefix: &str,
     jac_a: Option<JacAInfo>,
@@ -6976,6 +6968,7 @@ fn build_sim_meta(
         stop_time: settings.stopTime.into_inner(),
         n_intervals: settings.numberOfIntervals.max(0) as u32,
         method: settings.method.to_string(),
+        cs_method: cs_method.to_string(),
         tolerance: settings.tolerance.into_inner(),
         output_format: settings.outputFormat.to_string(),
         prefix: prefix.to_string(),
