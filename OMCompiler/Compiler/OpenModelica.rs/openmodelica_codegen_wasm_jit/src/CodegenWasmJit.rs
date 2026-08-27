@@ -5309,12 +5309,13 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         types.ty().function([we::ValType::I32], [we::ValType::I32]);
         Some((residual_type, load_type, strict_type))
     };
-    // `evaluateDAEResiduals(SimData*, stage)`: (i32,i32) -> (), for a DAE-mode model.
-    let dae_fn_type = (!dae_eqs.is_empty()).then(|| {
+    // `evaluateDAEResiduals(SimData*, stage)`: (i32,i32) -> (). Emitted (empty for an
+    // explicit-ODE model) either way, so the shared FMI adapter can import it.
+    let dae_fn_type = {
         let ti = types.len();
         types.ty().function([we::ValType::I32, we::ValType::I32], []);
         ti
-    });
+    };
     // `functionUpdateSynchronous`/`functionEquationsSynchronous`: (i32,i32) -> ().
     let sync_fn_type = {
         let ti = types.len();
@@ -5931,15 +5932,12 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         });
         idx
     };
-    // Emitted only for a DAE-mode model: its absence is how the standalone export and
-    // the FMU adapters know the model is an explicit ODE.
-    let dae_residuals_idx = match dae_fn_type {
-        None => None,
-        Some(ty) => {
-            let idx = import_base + bodies.len() as u32;
-            splits.push(build_split_fn("evaluateDAEResiduals", &dae_units(&dae_eqs), 2, ty, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
-            Some(idx)
-        }
+    // `layout.dae_mode()`, not this function's presence, is what tells a driver
+    // which form the model is in.
+    let dae_residuals_idx = {
+        let idx = import_base + bodies.len() as u32;
+        splits.push(build_split_fn("evaluateDAEResiduals", &dae_units(&dae_eqs), 2, dae_fn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+        idx
     };
     // C's `symbolicInlineSystem`. Emitted (empty without `--symSolver`) either way,
     // so every module's entry points sit at the same indices.
@@ -6036,9 +6034,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     functions.function(sync_fn_type); // functionUpdateSynchronous: (i32, i32) -> ()
     functions.function(sync_fn_type); // functionEquationsSynchronous: (i32, i32) -> ()
     functions.function(eqfn_type); // functionRemovedInitialEquations: (i32) -> ()
-    if let Some(ti) = dae_fn_type {
-        functions.function(ti); // evaluateDAEResiduals: (i32, i32) -> ()
-    }
+    functions.function(dae_fn_type); // evaluateDAEResiduals: (i32, i32) -> ()
     functions.function(eqfn_type); // symbolicInlineSystem: (i32) -> ()
     if recon_dae_idx.is_some() {
         functions.function(eqfn_type); // functionDAE: (i32) -> ()
@@ -6227,9 +6223,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     exports.export("functionInitSynchronous", we::ExportKind::Func, sync_init);
     exports.export("functionUpdateSynchronous", we::ExportKind::Func, sync_update);
     exports.export("functionEquationsSynchronous", we::ExportKind::Func, sync_eqs);
-    if let Some(idx) = dae_residuals_idx {
-        exports.export("evaluateDAEResiduals", we::ExportKind::Func, idx);
-    }
+    exports.export("evaluateDAEResiduals", we::ExportKind::Func, dae_residuals_idx);
     exports.export("symbolicInlineSystem", we::ExportKind::Func, sym_inline_idx);
     if error_tag_type.is_some() {
         for (k, (name, _)) in guarded.iter().enumerate() {
@@ -6308,9 +6302,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     names.push((sync_init, "functionInitSynchronous".to_string()));
     names.push((sync_update, "functionUpdateSynchronous".to_string()));
     names.push((sync_eqs, "functionEquationsSynchronous".to_string()));
-    if let Some(idx) = dae_residuals_idx {
-        names.push((idx, "evaluateDAEResiduals".to_string()));
-    }
+    names.push((dae_residuals_idx, "evaluateDAEResiduals".to_string()));
     names.push((sym_inline_idx, "symbolicInlineSystem".to_string()));
     for s in &splits {
         for k in 0..s.count {
@@ -10772,22 +10764,17 @@ mod link_tests {
         // emitter always exports them, so the stub must too or the merge leaves
         // unresolved `model.*` imports. Taken from the canonical list rather than
         // copied, so adding an entry point cannot leave this stub behind.
-        // `evaluateDAEResiduals` is left out with `simulate`: the standalone runtime
-        // imports neither with this shape (the DAE residual takes two arguments and
-        // only a `--daeMode` model has one).
+        // `simulate` aside, the entry points that are not `fn(SimData*)`.
         let two_arg = [
             openmodelica_sim_meta::driver::MODEL_FN_UPDATE_SYNC,
             openmodelica_sim_meta::driver::MODEL_FN_EQS_SYNC,
             openmodelica_sim_meta::driver::MODEL_FN_ZC,
+            openmodelica_sim_meta::driver::MODEL_FN_DAE,
         ];
         let one_arg: Vec<&str> = openmodelica_sim_meta::driver::MODEL_FNS
             .iter()
             .copied()
-            .filter(|n| {
-                *n != "simulate"
-                    && *n != openmodelica_sim_meta::driver::MODEL_FN_DAE
-                    && !two_arg.contains(n)
-            })
+            .filter(|n| *n != "simulate" && !two_arg.contains(n))
             .collect();
 
         let mut funcs = we::FunctionSection::new();
