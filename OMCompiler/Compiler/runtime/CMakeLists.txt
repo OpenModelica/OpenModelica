@@ -101,11 +101,6 @@ if(UNIX AND NOT APPLE)
   target_link_libraries(omcruntime PUBLIC ${UUID_LIB})
 endif()
 
-# The CORBA interface of the omc server loop was removed; the clients speak
-# ZeroMQ. Corba.mo is still part of the compiler (and of the checked-in bomc
-# bootstrap sources), so keep the stub that makes its externals fail cleanly.
-target_sources(omcruntime PRIVATE corbaimpl_stub_omc.c)
-
 # Install omcruntime. It is needed by bootstrapping tests.
 install(TARGETS omcruntime)
 

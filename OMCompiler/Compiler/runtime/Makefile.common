@@ -31,16 +31,10 @@ OMC_OBJ_SHARED = Error_omc$(OBJEXT) \
   ColPackBicoloring_omc.o \
   OMGraphics.o OMGraphics_omc.o \
 
-# Corba.mo is still part of the compiler (and of the checked-in bomc bootstrap
-# sources) although the corba server loop is gone, so keep building the stub
-# that makes its externals fail cleanly.
-OMC_OBJ_STUBS = corbaimpl_stub_omc.o
-
-OMC_OBJ_BOOT = $(OMC_OBJ_SHARED) $(OMC_OBJ_STUBS)
+OMC_OBJ_BOOT = $(OMC_OBJ_SHARED)
 
 OMC_OBJ = $(OMC_OBJ_SHARED) \
-  ptolemyio_omc.o SimulationResults_omc.o \
-  $(OMC_OBJ_STUBS)
+  ptolemyio_omc.o SimulationResults_omc.o
 
 # serializer.o # Disabled 2018-02-19; doesn't work to read back data
 # Database_omc.o

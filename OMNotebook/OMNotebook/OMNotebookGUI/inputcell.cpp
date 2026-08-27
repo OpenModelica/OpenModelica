@@ -275,7 +275,7 @@ namespace IAEX
   * throw an exception if it cant find OMC. Start OMC with
   * following commandline:
   *
-  * # omc +d=interactiveCorba
+  * # omc --interactive=zmq
   *
   *
   * \todo Make it possiblee to add and change syntax coloring of code.(Ingemar Axelsson)
