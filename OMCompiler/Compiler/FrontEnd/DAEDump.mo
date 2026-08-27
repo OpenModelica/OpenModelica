@@ -541,7 +541,8 @@ algorithm
   outString := matchcontinue inVariableAttributesOption
     local
       String quantity,unit_str,displayUnit_str,stateSel_str,min_str,max_str,nominal_str,initial_str,fixed_str,uncertainty_str,dist_str,res_1,res,startOriginStr;
-      Option<DAE.Exp> quant,unit,displayUnit,min,max,initialExp,nominal,fixed,startOrigin;
+      Option<DAE.Exp> quant,unit,displayUnit,min,max,initialExp,nominal,fixed;
+      Option<DAE.StartOrigin> startOrigin;
       Option<DAE.StateSelect> stateSel;
       Option<DAE.Uncertainty> uncertainty;
       Option<DAE.Distribution> dist;
@@ -634,28 +635,32 @@ algorithm
 end dumpVariableAttributesStr;
 
 protected function getStartOrigin
-  input Option<DAE.Exp> inStartOrigin;
+  input Option<DAE.StartOrigin> inStartOrigin;
   output String outStartOrigin;
 algorithm
   outStartOrigin := match inStartOrigin
     local
-      String str;
+      DAE.StartOrigin so;
 
-    case NONE() then "";
+    case SOME(so) guard Flags.isSet(Flags.SHOW_START_ORIGIN)
+      then "startOrigin = " + startOriginStr(so);
 
-    case _
-      algorithm
-        if (Flags.isSet(Flags.SHOW_START_ORIGIN))
-        then
-          str := getOptionWithConcatStr(inStartOrigin, ExpressionBasics.printExpStr , "startOrigin = ");
-        else
-          str := "";
-        end if;
-      then
-        str;
-
+    else "";
   end match;
 end getStartOrigin;
+
+public function startOriginStr
+  input DAE.StartOrigin so;
+  output String str;
+algorithm
+  str := match so
+    case DAE.StartOrigin.UNDEFINED_ORIGIN() then "undefined";
+    case DAE.StartOrigin.TYPE_ORIGIN() then "type";
+    case DAE.StartOrigin.BINDING_ORIGIN() then "binding";
+    case DAE.StartOrigin.CONFIDENCE()
+      then "confidence(" + intString(so.actual) + ", " + intString(so.raw) + ")";
+  end match;
+end startOriginStr;
 
 protected function dumpVarVisibilityStr "Prints 'protected' to a string for protected variables"
   input DAE.VarVisibility prot;

@@ -1409,7 +1409,8 @@ algorithm
   attr :=
   match attr
     local
-      Option<DAE.Exp> q,u,du,i,f,n,so,min,max;
+      Option<DAE.Exp> q,u,du,i,f,n,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;

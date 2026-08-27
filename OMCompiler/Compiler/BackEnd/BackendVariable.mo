@@ -168,7 +168,7 @@ end setVarStartValueOption;
 public function setVarStartOrigin "author: Frenkel TUD
   Sets the startOrigin attribute of a variable."
   input BackendDAE.Var inVar;
-  input Option<DAE.Exp> startOrigin;
+  input Option<DAE.StartOrigin> startOrigin;
   output BackendDAE.Var outVar = inVar;
 protected
   Option<DAE.VariableAttributes> oattr;
@@ -316,7 +316,7 @@ end varHasNoStartValue;
 public function varStartOrigin "author: Frenkel TUD
   Returns the StartOrigin of a variable."
   input BackendDAE.Var v;
-  output Option<DAE.Exp> so;
+  output Option<DAE.StartOrigin> so;
 protected
    Option<DAE.VariableAttributes> attr;
 algorithm
@@ -3980,7 +3980,8 @@ public function mergeAliasVars "author: Frenkel TUD 2011-04"
 protected
   BackendDAE.Var v1,v2;
   Boolean fixed,fixeda;
-  Option<DAE.Exp> sv,sva,so,soa;
+  Option<DAE.Exp> sv,sva;
+  Option<DAE.StartOrigin> so,soa;
 algorithm
   // get attributes
   // fixed
@@ -4003,11 +4004,11 @@ protected function mergeStartFixed
   input BackendDAE.Var inVar;
   input Boolean fixed;
   input Option<DAE.Exp> sv;
-  input Option<DAE.Exp> so;
+  input Option<DAE.StartOrigin> so;
   input BackendDAE.Var inAVar;
   input Boolean fixeda;
   input Option<DAE.Exp> sva;
-  input Option<DAE.Exp> soa;
+  input Option<DAE.StartOrigin> soa;
   input Boolean negate;
   input BackendDAE.Variables globalKnownVars "the globalKnownVars, need to report Warnings";
   output BackendDAE.Var outVar;
@@ -4019,7 +4020,7 @@ algorithm
       DAE.ComponentRef cr,cra;
       DAE.Exp sa,sb,e;
       Integer i,ia;
-      Option<DAE.Exp> origin;
+      Option<DAE.StartOrigin> origin;
       DAE.Type ty,tya;
     // legal cases one fixed the other one not fixed, use the fixed one
     case (v, true, _, _, false, _)
@@ -4133,7 +4134,7 @@ protected function mergeStartFixed1 "author: Frenkel TUD 2011-04"
   input DAE.Exp sv;
   input DAE.ComponentRef cra;
   input DAE.Exp sva;
-  input Option<DAE.Exp> soa;
+  input Option<DAE.StartOrigin> soa;
   input Boolean negate;
   input String s4;
   output BackendDAE.Var outVar;
@@ -4203,35 +4204,29 @@ protected function getNonZeroStart
 "author: Frenkel TUD 2011-04"
   input Boolean mustBeEqual;
   input DAE.Exp exp1;
-  input Option<DAE.Exp> so "StartOrigin";
+  input Option<DAE.StartOrigin> so;
   input DAE.Exp exp2;
-  input Option<DAE.Exp> sao "StartOrigin";
+  input Option<DAE.StartOrigin> sao;
   input BackendDAE.Variables globalKnownVars "the globalKnownVars, need to report Warnings";
   output DAE.Exp outExp;
-  output Option<DAE.Exp> outStartOrigin;
+  output Option<DAE.StartOrigin> outStartOrigin;
 algorithm
   (outExp,outStartOrigin) :=
   matchcontinue mustBeEqual
     local
       DAE.Exp exp2_1,exp1_1;
-      Integer i,ia;
       Boolean b1,b2;
-      Option<DAE.Exp> origin;
+      Option<DAE.StartOrigin> origin;
     case _
       algorithm
         true := ExpressionBasics.expEqual(exp1,exp2);
-        // use highest origin
-        i := startOriginToValue(so);
-        ia := startOriginToValue(sao);
-        origin := if intGt(ia,i) then sao else so;
+        origin := if startOriginCompare(sao,so) < 0 then sao else so;
       then (exp1,origin);
     case false
       algorithm
-        // if one is bound and the other not use the bound one
-        i := startOriginToValue(so);
-        ia := startOriginToValue(sao);
-        false := intEq(i,ia);
-        (exp1_1,origin) := if intGt(ia,i) then (exp2,sao) else (exp1,so);
+        // strongest origin wins
+        false := startOriginCompare(so,sao) == 0;
+        (exp1_1,origin) := if startOriginCompare(sao,so) < 0 then (exp2,sao) else (exp1,so);
       then
         (exp1_1,origin);
     case _
@@ -4243,26 +4238,47 @@ algorithm
         (exp2_1,_) := ExpressionSimplify.condsimplify(b2,exp2_1);
         true := ExpressionBasics.expEqual(exp1_1, exp2_1);
         exp1_1 := if b1 then exp1 else exp2;
-        // use highest origin
-        i := startOriginToValue(so);
-        ia := startOriginToValue(sao);
-        origin := if intGt(ia,i) then sao else so;
+        origin := if startOriginCompare(sao,so) < 0 then sao else so;
       then
         (exp1_1,origin);
   end matchcontinue;
 end getNonZeroStart;
 
-public function startOriginToValue
-  input Option<DAE.Exp> startOrigin;
-  output Integer i;
+public function startOriginCompare
+  "Compares two start origins by MLS 8.6.2 priority:
+   negative if so1 is stronger, 0 if equal, positive if so2 is stronger."
+  input Option<DAE.StartOrigin> so1;
+  input Option<DAE.StartOrigin> so2;
+  output Integer cmp;
+protected
+  Integer a1,r1,a2,r2;
 algorithm
-  i := match startOrigin
-    case NONE() then 0;
-    case SOME(DAE.SCONST("undefined")) then 1;
-    case SOME(DAE.SCONST("type")) then 2;
-    case SOME(DAE.SCONST("binding")) then 3;
+  (a1,r1) := startOriginRank(so1);
+  (a2,r2) := startOriginRank(so2);
+  cmp := if a1 <> a2 then a1 - a2 else r1 - r2;
+end startOriginCompare;
+
+protected function startOriginRank
+  "Rank pair for a start origin, lexicographic, lower = stronger.
+   CONFIDENCE holds instance-tree depths from the frontend (< NFBinding.NO_CONFIDENCE = 99999);
+   the legacy old-frontend origins keep their old relative order below any confidence."
+  input Option<DAE.StartOrigin> so;
+  output Integer actual;
+  output Integer raw = 0;
+algorithm
+  actual := match so
+    local
+      DAE.StartOrigin origin;
+    case SOME(origin as DAE.StartOrigin.CONFIDENCE())
+      algorithm
+        raw := origin.raw;
+      then origin.actual;
+    case SOME(DAE.StartOrigin.BINDING_ORIGIN()) then 1000000;
+    case SOME(DAE.StartOrigin.TYPE_ORIGIN()) then 1000001;
+    case SOME(DAE.StartOrigin.UNDEFINED_ORIGIN()) then 1000002;
+    case NONE() then 1000003;
   end match;
-end startOriginToValue;
+end startOriginRank;
 
 public function mergeNominalAttribute
   input BackendDAE.Var inAVar;

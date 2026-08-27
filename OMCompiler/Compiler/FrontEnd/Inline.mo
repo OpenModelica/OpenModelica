@@ -93,7 +93,8 @@ algorithm
     local
       DAE.ElementSource source;
       DAE.Exp r;
-      Option<DAE.Exp> quantity,unit,displayUnit,fixed,nominal,so,min,max;
+      Option<DAE.Exp> quantity,unit,displayUnit,fixed,nominal,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> stateSelectOption;
       Option<DAE.Uncertainty> uncertainOption;
       Option<DAE.Distribution> distributionOption;

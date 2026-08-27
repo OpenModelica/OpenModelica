@@ -7295,7 +7295,8 @@ author: Peter Aronsson (paronsson@wolfram.com)
 algorithm
  (outAttr,outExtraArg) := match attr
    local
-     Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound,startOrigin;
+     Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound;
+     Option<DAE.StartOrigin> startOrigin;
      Option<DAE.Exp> q_,u_,du_,min_,max_,i_,f_,n_,eqbound_;
      Option<DAE.StateSelect> ss;
      Option<DAE.Uncertainty> unc;

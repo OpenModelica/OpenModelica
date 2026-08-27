@@ -50,6 +50,8 @@ protected
   import Binding = NFBinding;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
+  import Pointer;
+  import Variable = NFVariable;
   import DAE;
   import Dump;
   import Error;
@@ -1050,6 +1052,7 @@ public
     ComponentRef cref;
     InstNode node;
     Component comp;
+    Variable var;
   algorithm
     while hasExp(b) loop
       conf := min(conf, confidence(b));
@@ -1062,13 +1065,30 @@ public
           algorithm
             node := InstNode.resolveInner(ComponentRef.node(exp.cref));
 
-            if InstNode.isComponent(node) then
-              comp := InstNode.component(node);
+            () := match node
+              // crefs lowered by the new backend point to variables, not components
+              case InstNode.VAR_NODE()
+                algorithm
+                  var := Pointer.access(node.varPointer);
 
-              if Component.variability(comp) < Variability.DISCRETE then
-                b := Component.getBinding(comp);
-              end if;
-            end if;
+                  if Variable.variability(var) < Variability.DISCRETE then
+                    b := var.binding;
+                  end if;
+                then
+                  ();
+
+              else
+                algorithm
+                  if InstNode.isComponent(node) then
+                    comp := InstNode.component(node);
+
+                    if Component.variability(comp) < Variability.DISCRETE then
+                      b := Component.getBinding(comp);
+                    end if;
+                  end if;
+                then
+                  ();
+            end match;
           then
             ();
 

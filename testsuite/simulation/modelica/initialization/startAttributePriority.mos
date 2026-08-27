@@ -1,0 +1,91 @@
+// name:     startAttributePriority
+// keywords: initialization alias start confidence
+// status: correct
+//
+// Selection of start values in alias sets by frontend confidence
+// numbers per MLS 8.6.2 (ticket #5813).
+
+loadString("
+model StartPriority1 \"outer modifier beats inner start value\"
+  model M
+    Real x(start = 4.0);
+    Real y(start = 5.0);
+  equation
+    x = y;
+    der(x) = -x;
+  end M;
+  M m(x(start = 3.0));
+end StartPriority1;
+
+model StartPriority2 \"start = parameter follows the parameter's binding\"
+  model M
+    parameter Real p = 4.0;
+    Real x(start = p);
+    Real y(start = 5.0);
+  equation
+    x = y;
+    der(x) = -x;
+  end M;
+  M m(p = 6.0);
+end StartPriority2;
+
+model StartPriority3 \"equal actual confidence: raw confidence breaks the tie\"
+  model M
+    parameter Real q = 1.0;
+    Real x(start = q);
+    Real y;
+  equation
+    x = y;
+    der(x) = -x;
+  end M;
+  M m(q = 7.0, y(start = 3.0));
+end StartPriority3;
+"); getErrorString();
+
+// StartPriority1: m.x start set at top level (confidence 1) beats m.y's
+// declaration-level start (confidence 2).
+simulate(StartPriority1, stopTime=0.0, simflags="-output m.x,m.y"); getErrorString();
+
+// StartPriority2: m.x's start = p where p is bound at top level, so its
+// actual confidence (1) beats m.y's (2).
+simulate(StartPriority2, stopTime=0.0, simflags="-output m.x,m.y"); getErrorString();
+
+// StartPriority3: both starts have actual confidence 1 (q is bound at the
+// top), but m.y's start attribute itself is set at the top (raw confidence
+// 1 vs 2), so it wins the tie-break.
+simulate(StartPriority3, stopTime=0.0, simflags="-output m.x,m.y"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "StartPriority1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StartPriority1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output m.x,m.y'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=0,m.x=3,m.y=3
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// record SimulationResult
+//     resultFile = "StartPriority2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StartPriority2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output m.x,m.y'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=0,m.x=6,m.y=6
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// record SimulationResult
+//     resultFile = "StartPriority3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StartPriority3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output m.x,m.y'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=0,m.x=3,m.y=3
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// endResult
