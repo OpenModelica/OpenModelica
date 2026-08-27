@@ -5,7 +5,7 @@ extern "C" {
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef SimCodeVar_SimVars_SIMVARS__desc_added
 #define SimCodeVar_SimVars_SIMVARS__desc_added
-ADD_METARECORD_DEFINITIONS const char* SimCodeVar_SimVars_SIMVARS__desc__fields[30] = {"stateVars","derivativeVars","algVars","discreteAlgVars","intAlgVars","boolAlgVars","inputVars","outputVars","aliasVars","intAliasVars","boolAliasVars","paramVars","intParamVars","boolParamVars","stringAlgVars","stringParamVars","stringAliasVars","extObjVars","constVars","intConstVars","boolConstVars","stringConstVars","jacobianVars","seedVars","realOptimizeConstraintsVars","realOptimizeFinalConstraintsVars","sensitivityVars","dataReconSetcVars","dataReconinputVars","dataReconSetBVars"};
+ADD_METARECORD_DEFINITIONS const char* SimCodeVar_SimVars_SIMVARS__desc__fields[29] = {"stateVars","derivativeVars","algVars","discreteAlgVars","intAlgVars","boolAlgVars","inputVars","outputVars","aliasVars","intAliasVars","boolAliasVars","paramVars","intParamVars","boolParamVars","stringAlgVars","stringParamVars","stringAliasVars","extObjVars","constVars","intConstVars","boolConstVars","stringConstVars","jacobianVars","seedVars","realOptimizeConstraintsVars","realOptimizeFinalConstraintsVars","sensitivityVars","dataReconSetcVars","dataReconinputVars"};
 ADD_METARECORD_DEFINITIONS struct record_description SimCodeVar_SimVars_SIMVARS__desc = {
 "SimCodeVar_SimVars_SIMVARS",
 "SimCodeVar.SimVars.SIMVARS",
@@ -18,7 +18,7 @@ extern struct record_description SimCodeVar_SimVars_SIMVARS__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef SimCodeVar_SimVars_SIMVARS__desc_added
 #define SimCodeVar_SimVars_SIMVARS__desc_added
-ADD_METARECORD_DEFINITIONS const char* SimCodeVar_SimVars_SIMVARS__desc__fields[30] = {"stateVars","derivativeVars","algVars","discreteAlgVars","intAlgVars","boolAlgVars","inputVars","outputVars","aliasVars","intAliasVars","boolAliasVars","paramVars","intParamVars","boolParamVars","stringAlgVars","stringParamVars","stringAliasVars","extObjVars","constVars","intConstVars","boolConstVars","stringConstVars","jacobianVars","seedVars","realOptimizeConstraintsVars","realOptimizeFinalConstraintsVars","sensitivityVars","dataReconSetcVars","dataReconinputVars","dataReconSetBVars"};
+ADD_METARECORD_DEFINITIONS const char* SimCodeVar_SimVars_SIMVARS__desc__fields[29] = {"stateVars","derivativeVars","algVars","discreteAlgVars","intAlgVars","boolAlgVars","inputVars","outputVars","aliasVars","intAliasVars","boolAliasVars","paramVars","intParamVars","boolParamVars","stringAlgVars","stringParamVars","stringAliasVars","extObjVars","constVars","intConstVars","boolConstVars","stringConstVars","jacobianVars","seedVars","realOptimizeConstraintsVars","realOptimizeFinalConstraintsVars","sensitivityVars","dataReconSetcVars","dataReconinputVars"};
 ADD_METARECORD_DEFINITIONS struct record_description SimCodeVar_SimVars_SIMVARS__desc = {
 "SimCodeVar_SimVars_SIMVARS",
 "SimCodeVar.SimVars.SIMVARS",
@@ -31,7 +31,7 @@ extern struct record_description SimCodeVar_SimVars_SIMVARS__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef SimCodeVar_SimVar_SIMVAR__desc_added
 #define SimCodeVar_SimVar_SIMVAR__desc_added
-ADD_METARECORD_DEFINITIONS const char* SimCodeVar_SimVar_SIMVAR__desc__fields[32] = {"name","varKind","comment","unit","displayUnit","index","minValue","maxValue","initialValue","nominalValue","isFixed","type_","isDiscrete","arrayCref","aliasvar","source","causality","variable_index","fmi_index","numArrayElement","isValueChangeable","isProtected","hideResult","isEncrypted","inputIndex","initNonlinear","matrixName","variability","initial_","exportVar","relativeQuantity","isConnectorFlow"};
+ADD_METARECORD_DEFINITIONS const char* SimCodeVar_SimVar_SIMVAR__desc__fields[28] = {"name","varKind","comment","unit","displayUnit","index","minValue","maxValue","initialValue","nominalValue","isFixed","type_","isDiscrete","arrayCref","aliasvar","source","causality","variable_index","fmi_index","numArrayElement","isValueChangeable","isProtected","hideResult","inputIndex","matrixName","variability","initial_","exportVar"};
 ADD_METARECORD_DEFINITIONS struct record_description SimCodeVar_SimVar_SIMVAR__desc = {
 "SimCodeVar_SimVar_SIMVAR",
 "SimCodeVar.SimVar.SIMVAR",
@@ -44,7 +44,7 @@ extern struct record_description SimCodeVar_SimVar_SIMVAR__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef SimCodeVar_SimVar_SIMVAR__desc_added
 #define SimCodeVar_SimVar_SIMVAR__desc_added
-ADD_METARECORD_DEFINITIONS const char* SimCodeVar_SimVar_SIMVAR__desc__fields[32] = {"name","varKind","comment","unit","displayUnit","index","minValue","maxValue","initialValue","nominalValue","isFixed","type_","isDiscrete","arrayCref","aliasvar","source","causality","variable_index","fmi_index","numArrayElement","isValueChangeable","isProtected","hideResult","isEncrypted","inputIndex","initNonlinear","matrixName","variability","initial_","exportVar","relativeQuantity","isConnectorFlow"};
+ADD_METARECORD_DEFINITIONS const char* SimCodeVar_SimVar_SIMVAR__desc__fields[28] = {"name","varKind","comment","unit","displayUnit","index","minValue","maxValue","initialValue","nominalValue","isFixed","type_","isDiscrete","arrayCref","aliasvar","source","causality","variable_index","fmi_index","numArrayElement","isValueChangeable","isProtected","hideResult","inputIndex","matrixName","variability","initial_","exportVar"};
 ADD_METARECORD_DEFINITIONS struct record_description SimCodeVar_SimVar_SIMVAR__desc = {
 "SimCodeVar_SimVar_SIMVAR",
 "SimCodeVar.SimVar.SIMVAR",

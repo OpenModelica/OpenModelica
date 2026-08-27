@@ -19,7 +19,7 @@ extern struct record_description Graphviz_Attribute_ATTR__desc;
 #define boxptr_Graphviz_makeLabelReq omc_Graphviz_makeLabelReq
 #define boxptr_Graphviz_makeLabel omc_Graphviz_makeLabel
 #define boxptr_Graphviz_dumpNode omc_Graphviz_dumpNode
-DLLDirection
+DLLExport
 void omc_Graphviz_dump(threadData_t *threadData, modelica_metatype _node);
 #define boxptr_Graphviz_dump omc_Graphviz_dump
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Graphviz_dump,2,0) {(void*) boxptr_Graphviz_dump,0}};

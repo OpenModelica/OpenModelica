@@ -39,6 +39,7 @@ extern struct record_description FCore_Data_ND__desc;
 extern struct record_description FCore_ScopeType_FUNCTION__SCOPE__desc;
 extern struct record_description FCore_Status_VAR__TYPED__desc;
 extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
 extern struct record_description SCode_Attributes_ATTR__desc;
 extern struct record_description SCode_Comment_COMMENT__desc;
 extern struct record_description SCode_ConnectorType_POTENTIAL__desc;
@@ -88,7 +89,7 @@ extern struct record_description Values_Value_TUPLE__desc;
 #define boxptr_CevalFunction_updateRecordBinding omc_CevalFunction_updateRecordBinding
 #define boxptr_CevalFunction_updateVariableBinding omc_CevalFunction_updateVariableBinding
 #define boxptr_CevalFunction_assignWholeDim omc_CevalFunction_assignWholeDim
-DLLDirection
+DLLExport
 modelica_metatype omc_CevalFunction_assignVector(threadData_t *threadData, modelica_metatype _inNewValue, modelica_metatype _inOldValue, modelica_metatype _inSubscripts, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype *out_outResult);
 #define boxptr_CevalFunction_assignVector omc_CevalFunction_assignVector
 static const MMC_DEFSTRUCTLIT(boxvar_lit_CevalFunction_assignVector,2,0) {(void*) boxptr_CevalFunction_assignVector,0}};
@@ -137,7 +138,7 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_CevalFunction_assignVector,2,0) {(void*
 #define boxptr_CevalFunction_removeSelfReferentialDims omc_CevalFunction_removeSelfReferentialDims
 #define boxptr_CevalFunction_pairFuncParamsWithArgs omc_CevalFunction_pairFuncParamsWithArgs
 #define boxptr_CevalFunction_evaluateFunctionDefinition omc_CevalFunction_evaluateFunctionDefinition
-DLLDirection
+DLLExport
 modelica_metatype omc_CevalFunction_evaluate(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inFunction, modelica_metatype _inFunctionArguments, modelica_metatype *out_outResult);
 #define boxptr_CevalFunction_evaluate omc_CevalFunction_evaluate
 static const MMC_DEFSTRUCTLIT(boxvar_lit_CevalFunction_evaluate,2,0) {(void*) boxptr_CevalFunction_evaluate,0}};

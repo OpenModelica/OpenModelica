@@ -8,7 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-DLLDirection
+DLLExport
 modelica_metatype omc_BackendDAECreate_lower(threadData_t *threadData, modelica_metatype _a, modelica_metatype _b, modelica_metatype _c, modelica_metatype _d);
 #define boxptr_BackendDAECreate_lower omc_BackendDAECreate_lower
 static const MMC_DEFSTRUCTLIT(boxvar_lit_BackendDAECreate_lower,2,0) {(void*) boxptr_BackendDAECreate_lower,0}};

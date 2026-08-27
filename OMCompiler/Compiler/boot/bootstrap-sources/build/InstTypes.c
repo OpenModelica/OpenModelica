@@ -1,3 +1,8 @@
+#ifdef OMC_BASE_FILE
+#define OMC_FILE OMC_BASE_FILE
+#else
+#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/InstTypes.c"
+#endif
 #include "omc_simulation_settings.h"
 #include "InstTypes.h"
 #define _OMC_LIT0_data "topCall"
@@ -11,7 +16,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT2,8,_OMC_LIT2_data);
 #define _OMC_LIT2 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT2)
 #include "util/modelica.h"
 #include "InstTypes_includes.h"
-DLLDirection
+DLLExport
 modelica_string omc_InstTypes_callingScopeStr(threadData_t *threadData, modelica_metatype _inCallingScope)
 {
 modelica_string _str = NULL;

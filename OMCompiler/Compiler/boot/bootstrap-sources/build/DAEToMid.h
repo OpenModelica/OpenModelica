@@ -8,7 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-DLLDirection
+DLLExport
 modelica_metatype omc_DAEToMid_DAEFunctionsToMid(threadData_t *threadData, modelica_metatype _simfuncs);
 #define boxptr_DAEToMid_DAEFunctionsToMid omc_DAEToMid_DAEFunctionsToMid
 static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEToMid_DAEFunctionsToMid,2,0) {(void*) boxptr_DAEToMid_DAEFunctionsToMid,0}};

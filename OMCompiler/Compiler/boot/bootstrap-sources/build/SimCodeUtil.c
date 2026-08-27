@@ -1,3 +1,8 @@
+#ifdef OMC_BASE_FILE
+#define OMC_FILE OMC_BASE_FILE
+#else
+#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/SimCodeUtil.c"
+#endif
 #include "omc_simulation_settings.h"
 #include "SimCodeUtil.h"
 #define _OMC_LIT0_data "SimCodeUtil.hashEqSystemMod"
@@ -26,14 +31,11 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT7,25,_OMC_LIT7_data);
 #define _OMC_LIT7 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT7)
 #include "util/modelica.h"
 #include "SimCodeUtil_includes.h"
-DLLDirection
+DLLExport
 modelica_integer omc_SimCodeUtil_hashEqSystemMod(threadData_t *threadData, modelica_integer _eq, modelica_integer _mod)
 {
 modelica_integer _hash;
 static int tmp1 = 0;
-#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
-MemPoolState omc_pool_state = omc_util_get_pool_state();
-#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _hash = ((modelica_integer) 0);
@@ -41,15 +43,12 @@ _hash = ((modelica_integer) 0);
 if(!0)
 {
 {
-FILE_INFO info = {"SimCodeUtil.mo",131,3,131,35,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",90,3,90,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT0));
 }
 }
 }
 _return: OMC_LABEL_UNUSED
-#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
-omc_util_restore_pool_state(omc_pool_state);
-#endif
 return _hash;
 }
 modelica_metatype boxptr_SimCodeUtil_hashEqSystemMod(threadData_t *threadData, modelica_metatype _eq, modelica_metatype _mod)
@@ -64,7 +63,7 @@ _hash = omc_SimCodeUtil_hashEqSystemMod(threadData, tmp1, tmp2);
 out_hash = mmc_mk_icon(_hash);
 return out_hash;
 }
-DLLDirection
+DLLExport
 modelica_string omc_SimCodeUtil_getLocalValueReference(threadData_t *threadData, modelica_metatype _inSimVar, modelica_integer _inSimCode, modelica_metatype _inCrefToSimVarHT, modelica_boolean _inElimNegAliases)
 {
 modelica_string _outValueReference = NULL;
@@ -83,7 +82,7 @@ tmp2 = mmc_unbox_integer(_inElimNegAliases);
 _outValueReference = omc_SimCodeUtil_getLocalValueReference(threadData, _inSimVar, tmp1, _inCrefToSimVarHT, tmp2);
 return _outValueReference;
 }
-DLLDirection
+DLLExport
 modelica_string omc_SimCodeUtil_getValueReference(threadData_t *threadData, modelica_metatype _inSimVar, modelica_integer _inSimCode, modelica_boolean _inElimNegAliases)
 {
 modelica_string _outValueReference = NULL;
@@ -102,17 +101,7 @@ tmp2 = mmc_unbox_integer(_inElimNegAliases);
 _outValueReference = omc_SimCodeUtil_getValueReference(threadData, _inSimVar, tmp1, tmp2);
 return _outValueReference;
 }
-DLLDirection
-modelica_metatype omc_SimCodeUtil_getExpNominal(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fe)
-{
-modelica_metatype _e = NULL;
-MMC_SO();
-_tailrecursive: OMC_LABEL_UNUSED
-_e = __omcQ_24in_5Fe;
-_return: OMC_LABEL_UNUSED
-return _e;
-}
-DLLDirection
+DLLExport
 modelica_metatype omc_SimCodeUtil_codegenExpSanityCheck(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fe, modelica_metatype _context)
 {
 modelica_metatype _e = NULL;
@@ -122,7 +111,7 @@ _e = __omcQ_24in_5Fe;
 _return: OMC_LABEL_UNUSED
 return _e;
 }
-DLLDirection
+DLLExport
 modelica_string omc_SimCodeUtil_localCref2Index(threadData_t *threadData, modelica_metatype _inCref, modelica_metatype _inOMSIFunction)
 {
 modelica_string _outIndex = NULL;
@@ -133,7 +122,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"SimCodeUtil.mo",91,3,91,35,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",56,3,56,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT1));
 }
 }
@@ -141,7 +130,7 @@ omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT1));
 _return: OMC_LABEL_UNUSED
 return _outIndex;
 }
-DLLDirection
+DLLExport
 modelica_metatype omc_SimCodeUtil_localCref2SimVar(threadData_t *threadData, modelica_metatype _inCref, modelica_metatype _inCrefToSimVarHT)
 {
 modelica_metatype _outSimVar = NULL;
@@ -152,7 +141,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"SimCodeUtil.mo",83,3,83,35,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",48,3,48,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT2));
 }
 }
@@ -160,7 +149,7 @@ omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT2));
 _return: OMC_LABEL_UNUSED
 return _outSimVar;
 }
-DLLDirection
+DLLExport
 modelica_metatype omc_SimCodeUtil_simVarFromHT(threadData_t *threadData, modelica_metatype _inCref, modelica_metatype _simCode)
 {
 modelica_metatype _outSimVar = NULL;
@@ -171,7 +160,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"SimCodeUtil.mo",75,3,75,35,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",40,3,40,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT3));
 }
 }
@@ -179,7 +168,7 @@ omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT3));
 _return: OMC_LABEL_UNUSED
 return _outSimVar;
 }
-DLLDirection
+DLLExport
 modelica_metatype omc_SimCodeUtil_cref2simvar(threadData_t *threadData, modelica_metatype _inCref, modelica_metatype _inCrefToSimVarHT)
 {
 modelica_metatype _outSimVar = NULL;
@@ -190,7 +179,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"SimCodeUtil.mo",67,3,67,35,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",32,3,32,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT4));
 }
 }
@@ -198,29 +187,23 @@ omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT4));
 _return: OMC_LABEL_UNUSED
 return _outSimVar;
 }
-DLLDirection
+DLLExport
 modelica_integer omc_SimCodeUtil_getSimCode(threadData_t *threadData)
 {
 modelica_integer _code;
 static int tmp1 = 0;
-#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
-MemPoolState omc_pool_state = omc_util_get_pool_state();
-#endif
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
 if(!0)
 {
 {
-FILE_INFO info = {"SimCodeUtil.mo",59,3,59,35,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",24,3,24,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT5));
 }
 }
 }
 _return: OMC_LABEL_UNUSED
-#if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
-omc_util_restore_pool_state(omc_pool_state);
-#endif
 return _code;
 }
 modelica_metatype boxptr_SimCodeUtil_getSimCode(threadData_t *threadData)
@@ -231,7 +214,7 @@ _code = omc_SimCodeUtil_getSimCode(threadData);
 out_code = mmc_mk_icon(_code);
 return out_code;
 }
-DLLDirection
+DLLExport
 modelica_metatype omc_SimCodeUtil_eqInfo(threadData_t *threadData, modelica_metatype _eq)
 {
 modelica_metatype _info = NULL;
@@ -242,7 +225,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"SimCodeUtil.mo",53,3,53,35,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",18,3,18,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT6));
 }
 }
@@ -250,7 +233,7 @@ omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT6));
 _return: OMC_LABEL_UNUSED
 return _info;
 }
-DLLDirection
+DLLExport
 modelica_metatype omc_SimCodeUtil_sortEqSystems(threadData_t *threadData, modelica_metatype _eqs)
 {
 modelica_metatype _outEqs = NULL;
@@ -261,7 +244,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"SimCodeUtil.mo",46,3,46,35,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/SimCodeUtil.mo",11,3,11,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT7));
 }
 }

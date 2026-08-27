@@ -132,32 +132,6 @@ Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc__fields
 #else
 extern struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc;
 #endif
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Interactive_ComponentProperties_PROPERTIES__desc_added
-#define Interactive_ComponentProperties_PROPERTIES__desc_added
-ADD_METARECORD_DEFINITIONS const char* Interactive_ComponentProperties_PROPERTIES__desc__fields[8] = {"isFinal","isFlow","isStream","isProtected","isReplaceable","variability","innerOuter","direction"};
-ADD_METARECORD_DEFINITIONS struct record_description Interactive_ComponentProperties_PROPERTIES__desc = {
-"Interactive_ComponentProperties_PROPERTIES",
-"Interactive.ComponentProperties.PROPERTIES",
-Interactive_ComponentProperties_PROPERTIES__desc__fields
-};
-#endif
-#else
-extern struct record_description Interactive_ComponentProperties_PROPERTIES__desc;
-#endif
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Interactive_ComponentProperties_PROPERTIES__desc_added
-#define Interactive_ComponentProperties_PROPERTIES__desc_added
-ADD_METARECORD_DEFINITIONS const char* Interactive_ComponentProperties_PROPERTIES__desc__fields[8] = {"isFinal","isFlow","isStream","isProtected","isReplaceable","variability","innerOuter","direction"};
-ADD_METARECORD_DEFINITIONS struct record_description Interactive_ComponentProperties_PROPERTIES__desc = {
-"Interactive_ComponentProperties_PROPERTIES",
-"Interactive.ComponentProperties.PROPERTIES",
-Interactive_ComponentProperties_PROPERTIES__desc__fields
-};
-#endif
-#else
-extern struct record_description Interactive_ComponentProperties_PROPERTIES__desc;
-#endif
 #ifdef __cplusplus
 }
 #endif
