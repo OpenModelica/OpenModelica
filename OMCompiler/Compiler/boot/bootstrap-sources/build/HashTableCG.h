@@ -8,13 +8,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-DLLDirection
+DLLExport
 modelica_metatype omc_HashTableCG_emptyHashTableSized(threadData_t *threadData, modelica_integer _size);
-DLLDirection
+DLLExport
 modelica_metatype boxptr_HashTableCG_emptyHashTableSized(threadData_t *threadData, modelica_metatype _size);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_HashTableCG_emptyHashTableSized,2,0) {(void*) boxptr_HashTableCG_emptyHashTableSized,0}};
 #define boxvar_HashTableCG_emptyHashTableSized MMC_REFSTRUCTLIT(boxvar_lit_HashTableCG_emptyHashTableSized)
-DLLDirection
+DLLExport
 modelica_metatype omc_HashTableCG_emptyHashTable(threadData_t *threadData);
 #define boxptr_HashTableCG_emptyHashTable omc_HashTableCG_emptyHashTable
 static const MMC_DEFSTRUCTLIT(boxvar_lit_HashTableCG_emptyHashTable,2,0) {(void*) boxptr_HashTableCG_emptyHashTable,0}};

@@ -8,70 +8,59 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-DLLDirection
+DLLExport
 modelica_integer omc_Flags_getConfigEnum(threadData_t *threadData, modelica_metatype _inFlag);
-DLLDirection
+DLLExport
 modelica_metatype boxptr_Flags_getConfigEnum(threadData_t *threadData, modelica_metatype _inFlag);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_getConfigEnum,2,0) {(void*) boxptr_Flags_getConfigEnum,0}};
 #define boxvar_Flags_getConfigEnum MMC_REFSTRUCTLIT(boxvar_lit_Flags_getConfigEnum)
-DLLDirection
+DLLExport
 modelica_metatype omc_Flags_getConfigStringList(threadData_t *threadData, modelica_metatype _inFlag);
 #define boxptr_Flags_getConfigStringList omc_Flags_getConfigStringList
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_getConfigStringList,2,0) {(void*) boxptr_Flags_getConfigStringList,0}};
 #define boxvar_Flags_getConfigStringList MMC_REFSTRUCTLIT(boxvar_lit_Flags_getConfigStringList)
-DLLDirection
+DLLExport
 modelica_string omc_Flags_getConfigString(threadData_t *threadData, modelica_metatype _inFlag);
 #define boxptr_Flags_getConfigString omc_Flags_getConfigString
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_getConfigString,2,0) {(void*) boxptr_Flags_getConfigString,0}};
 #define boxvar_Flags_getConfigString MMC_REFSTRUCTLIT(boxvar_lit_Flags_getConfigString)
-DLLDirection
+DLLExport
 modelica_real omc_Flags_getConfigReal(threadData_t *threadData, modelica_metatype _inFlag);
-DLLDirection
+DLLExport
 modelica_metatype boxptr_Flags_getConfigReal(threadData_t *threadData, modelica_metatype _inFlag);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_getConfigReal,2,0) {(void*) boxptr_Flags_getConfigReal,0}};
 #define boxvar_Flags_getConfigReal MMC_REFSTRUCTLIT(boxvar_lit_Flags_getConfigReal)
-DLLDirection
+DLLExport
 modelica_metatype omc_Flags_getConfigIntList(threadData_t *threadData, modelica_metatype _inFlag);
 #define boxptr_Flags_getConfigIntList omc_Flags_getConfigIntList
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_getConfigIntList,2,0) {(void*) boxptr_Flags_getConfigIntList,0}};
 #define boxvar_Flags_getConfigIntList MMC_REFSTRUCTLIT(boxvar_lit_Flags_getConfigIntList)
-DLLDirection
+DLLExport
 modelica_integer omc_Flags_getConfigInt(threadData_t *threadData, modelica_metatype _inFlag);
-DLLDirection
+DLLExport
 modelica_metatype boxptr_Flags_getConfigInt(threadData_t *threadData, modelica_metatype _inFlag);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_getConfigInt,2,0) {(void*) boxptr_Flags_getConfigInt,0}};
 #define boxvar_Flags_getConfigInt MMC_REFSTRUCTLIT(boxvar_lit_Flags_getConfigInt)
-DLLDirection
+DLLExport
 modelica_boolean omc_Flags_getConfigBool(threadData_t *threadData, modelica_metatype _inFlag);
-DLLDirection
+DLLExport
 modelica_metatype boxptr_Flags_getConfigBool(threadData_t *threadData, modelica_metatype _inFlag);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_getConfigBool,2,0) {(void*) boxptr_Flags_getConfigBool,0}};
 #define boxvar_Flags_getConfigBool MMC_REFSTRUCTLIT(boxvar_lit_Flags_getConfigBool)
-DLLDirection
+DLLExport
 modelica_metatype omc_Flags_getConfigValue(threadData_t *threadData, modelica_metatype _inFlag);
 #define boxptr_Flags_getConfigValue omc_Flags_getConfigValue
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_getConfigValue,2,0) {(void*) boxptr_Flags_getConfigValue,0}};
 #define boxvar_Flags_getConfigValue MMC_REFSTRUCTLIT(boxvar_lit_Flags_getConfigValue)
-DLLDirection
-modelica_string omc_Flags_getConfigName(threadData_t *threadData, modelica_metatype _inFlag);
-#define boxptr_Flags_getConfigName omc_Flags_getConfigName
-static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_getConfigName,2,0) {(void*) boxptr_Flags_getConfigName,0}};
-#define boxvar_Flags_getConfigName MMC_REFSTRUCTLIT(boxvar_lit_Flags_getConfigName)
-DLLDirection
-modelica_boolean omc_Flags_isConfigFlagSet(threadData_t *threadData, modelica_metatype _inFlag, modelica_string _hasMember);
-DLLDirection
-modelica_metatype boxptr_Flags_isConfigFlagSet(threadData_t *threadData, modelica_metatype _inFlag, modelica_metatype _hasMember);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_isConfigFlagSet,2,0) {(void*) boxptr_Flags_isConfigFlagSet,0}};
-#define boxvar_Flags_isConfigFlagSet MMC_REFSTRUCTLIT(boxvar_lit_Flags_isConfigFlagSet)
-DLLDirection
+DLLExport
 modelica_boolean omc_Flags_isSet(threadData_t *threadData, modelica_metatype _inFlag);
-DLLDirection
+DLLExport
 modelica_metatype boxptr_Flags_isSet(threadData_t *threadData, modelica_metatype _inFlag);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_isSet,2,0) {(void*) boxptr_Flags_isSet,0}};
 #define boxvar_Flags_isSet MMC_REFSTRUCTLIT(boxvar_lit_Flags_isSet)
-DLLDirection
+DLLExport
 modelica_metatype omc_Flags_getFlags(threadData_t *threadData, modelica_boolean _initialize);
-DLLDirection
+DLLExport
 modelica_metatype boxptr_Flags_getFlags(threadData_t *threadData, modelica_metatype _initialize);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Flags_getFlags,2,0) {(void*) boxptr_Flags_getFlags,0}};
 #define boxvar_Flags_getFlags MMC_REFSTRUCTLIT(boxvar_lit_Flags_getFlags)

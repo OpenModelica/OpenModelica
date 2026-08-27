@@ -1,3 +1,8 @@
+#ifdef OMC_BASE_FILE
+#define OMC_FILE OMC_BASE_FILE
+#else
+#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Print.c"
+#endif
 #include "omc_simulation_settings.h"
 #include "Print.h"
 #include "util/modelica.h"
@@ -26,7 +31,7 @@ return;
 void omc_Print_printBufSpace(threadData_t *threadData, modelica_integer _inNumOfSpaces)
 {
 int _inNumOfSpaces_ext;
-_inNumOfSpaces_ext = (int) _inNumOfSpaces;
+_inNumOfSpaces_ext = (int)_inNumOfSpaces;
 Print_printBufSpace(threadData, _inNumOfSpaces_ext);
 return;
 }
@@ -78,7 +83,7 @@ return;
 }
 void omc_Print_printBuf(threadData_t *threadData, modelica_string _inString)
 {
-Print_printBufLen(threadData, MMC_STRINGDATA(_inString), stringLength(_inString));
+Print_printBuf(threadData, MMC_STRINGDATA(_inString));
 return;
 }
 modelica_string omc_Print_getErrorString(threadData_t *threadData)
@@ -102,7 +107,7 @@ return;
 void omc_Print_restoreBuf(threadData_t *threadData, modelica_integer _handle)
 {
 int _handle_ext;
-_handle_ext = (int) _handle;
+_handle_ext = (int)_handle;
 Print_restoreBuf(threadData, _handle_ext);
 return;
 }

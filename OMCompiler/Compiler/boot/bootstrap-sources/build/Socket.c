@@ -1,3 +1,8 @@
+#ifdef OMC_BASE_FILE
+#define OMC_FILE OMC_BASE_FILE
+#else
+#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Socket.c"
+#endif
 #include "omc_simulation_settings.h"
 #include "Socket.h"
 #include "util/modelica.h"
@@ -10,7 +15,7 @@ return;
 void omc_Socket_close(threadData_t *threadData, modelica_integer _inInteger)
 {
 int _inInteger_ext;
-_inInteger_ext = (int) _inInteger;
+_inInteger_ext = (int)_inInteger;
 Socket_close(_inInteger_ext);
 return;
 }
@@ -24,7 +29,7 @@ return;
 void omc_Socket_sendreply(threadData_t *threadData, modelica_integer _inInteger, modelica_string _inString)
 {
 int _inInteger_ext;
-_inInteger_ext = (int) _inInteger;
+_inInteger_ext = (int)_inInteger;
 Socket_sendreply(_inInteger_ext, MMC_STRINGDATA(_inString));
 return;
 }
@@ -40,7 +45,7 @@ modelica_string omc_Socket_handlerequest(threadData_t *threadData, modelica_inte
 int _inInteger_ext;
 const char* _outString_ext;
 modelica_string _outString = NULL;
-_inInteger_ext = (int) _inInteger;
+_inInteger_ext = (int)_inInteger;
 _outString_ext = Socket_handlerequest(_inInteger_ext);
 _outString = (modelica_string)mmc_mk_scon(_outString_ext);
 return _outString;
@@ -58,7 +63,7 @@ modelica_integer omc_Socket_waitforconnect(threadData_t *threadData, modelica_in
 int _inInteger_ext;
 int _outInteger_ext;
 modelica_integer _outInteger;
-_inInteger_ext = (int) _inInteger;
+_inInteger_ext = (int)_inInteger;
 _outInteger_ext = Socket_waitforconnect(_inInteger_ext);
 _outInteger = (modelica_integer)_outInteger_ext;
 return _outInteger;

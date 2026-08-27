@@ -8,7 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-DLLDirection
+DLLExport
 modelica_metatype omc_CodegenMidToC_genProgram(threadData_t *threadData, modelica_metatype _in_txt, modelica_metatype _in_a_p);
 #define boxptr_CodegenMidToC_genProgram omc_CodegenMidToC_genProgram
 static const MMC_DEFSTRUCTLIT(boxvar_lit_CodegenMidToC_genProgram,2,0) {(void*) boxptr_CodegenMidToC_genProgram,0}};

@@ -1,16 +1,21 @@
+#ifdef OMC_BASE_FILE
+#define OMC_FILE OMC_BASE_FILE
+#else
+#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/HashTableExpToIndex.c"
+#endif
 #include "omc_simulation_settings.h"
 #include "HashTableExpToIndex.h"
 #include "util/modelica.h"
 #include "HashTableExpToIndex_includes.h"
-DLLDirection
+DLLExport
 modelica_metatype omc_HashTableExpToIndex_emptyHashTableSized(threadData_t *threadData, modelica_integer _size)
 {
 modelica_metatype _hashTable = NULL;
-modelica_metatype tmpMeta1;
+modelica_metatype tmpMeta[1] __attribute__((unused)) = {0};
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
-tmpMeta1 = mmc_mk_box4(0, boxvar_ExpressionBasics_hashExp, boxvar_ExpressionBasics_expEqual, boxvar_ExpressionBasics_printExpStr, boxvar_intString);
-_hashTable = omc_BaseHashTable_emptyHashTableWork(threadData, _size, tmpMeta1);
+tmpMeta[0] = mmc_mk_box4(0, boxvar_Expression_hashExpMod, boxvar_Expression_expEqual, boxvar_ExpressionDump_printExpStr, boxvar_intString);
+_hashTable = omc_BaseHashTable_emptyHashTableWork(threadData, _size, tmpMeta[0]);
 _return: OMC_LABEL_UNUSED
 return _hashTable;
 }
@@ -22,7 +27,7 @@ tmp1 = mmc_unbox_integer(_size);
 _hashTable = omc_HashTableExpToIndex_emptyHashTableSized(threadData, tmp1);
 return _hashTable;
 }
-DLLDirection
+DLLExport
 modelica_metatype omc_HashTableExpToIndex_emptyHashTable(threadData_t *threadData)
 {
 modelica_metatype _hashTable = NULL;

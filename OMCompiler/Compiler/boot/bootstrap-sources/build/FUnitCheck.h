@@ -8,7 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-DLLDirection
+DLLExport
 modelica_metatype omc_FUnitCheck_checkUnits(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fa, modelica_metatype _b);
 #define boxptr_FUnitCheck_checkUnits omc_FUnitCheck_checkUnits
 static const MMC_DEFSTRUCTLIT(boxvar_lit_FUnitCheck_checkUnits,2,0) {(void*) boxptr_FUnitCheck_checkUnits,0}};

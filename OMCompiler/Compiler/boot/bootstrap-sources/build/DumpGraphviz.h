@@ -8,7 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-DLLDirection
+DLLExport
 void omc_DumpGraphviz_dump(threadData_t *threadData, modelica_metatype _p);
 #define boxptr_DumpGraphviz_dump omc_DumpGraphviz_dump
 static const MMC_DEFSTRUCTLIT(boxvar_lit_DumpGraphviz_dump,2,0) {(void*) boxptr_DumpGraphviz_dump,0}};
