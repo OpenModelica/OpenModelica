@@ -183,11 +183,13 @@ pub struct SimFlags {
     /// an anomaly, read through [`jac_test_tolerances`].
     pub nls_jac_test_atol: Option<f64>,
     pub nls_jac_test_rtol: Option<f64>,
-    /// `-svdCount` / `-svdSigma`: how many of the smallest singular triplets
-    /// `LOG_NLS_SVD` computes (0 = the dense decomposition) and the regularization
-    /// the sparse solver's Jacobi preconditioner adds.
+    /// `-svdCount` / `-svdSigma` / `-svdTol`: how many of the smallest singular
+    /// triplets `LOG_NLS_SVD` computes (0 = the dense decomposition), the
+    /// regularization the Jacobi preconditioner adds, and where PRIMME stops
+    /// (`||r|| <= tol * ||A||`).
     pub svd_count: Option<i32>,
     pub svd_sigma: Option<f64>,
+    pub svd_tol: Option<f64>,
     /// `-saveInitialGuess_system=<file.mat>,<nls index>`: write the state as the
     /// nonlinear system with that index is about to be solved, then stop.
     pub save_initial_guess: Option<(String, i32)>,
@@ -637,6 +639,7 @@ const C_FLAGS: &[(&str, bool)] = &[
     ("stopTime", true),
     ("svdCount", true),
     ("svdSigma", true),
+    ("svdTol", true),
     ("sx", true),
     ("tolerance", true),
     ("keepHessian", true),
@@ -811,6 +814,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             }
             "svdCount" => f.svd_count = Some(int(name, &value(name)?)?),
             "svdSigma" => f.svd_sigma = Some(real(name, &value(name)?)?),
+            "svdTol" => f.svd_tol = Some(real(name, &value(name)?)?),
             "nlsJacTestATol" => f.nls_jac_test_atol = Some(real(name, &value(name)?)?),
             "nlsJacTestRTol" => f.nls_jac_test_rtol = Some(real(name, &value(name)?)?),
             "steadyState" => f.steady_state = true,
@@ -1220,9 +1224,14 @@ pub fn jac_test_tolerances(f: &SimFlags) -> (f64, f64) {
     )
 }
 
-/// C's `FLAG_SVD_SPARSE_COUNT` / `FLAG_SVD_SPARSE_SIGMA`, with C's defaults.
-pub fn svd_params(f: &SimFlags) -> (i32, f64) {
-    (f.svd_count.unwrap_or(0), libm::fabs(f.svd_sigma.unwrap_or(1e-8)))
+/// C's `FLAG_SVD_SPARSE_COUNT` / `FLAG_SVD_SPARSE_SIGMA` / `FLAG_SVD_SPARSE_TOL`,
+/// with C's defaults.
+pub fn svd_params(f: &SimFlags) -> (i32, f64, f64) {
+    (
+        f.svd_count.unwrap_or(0),
+        libm::fabs(f.svd_sigma.unwrap_or(1e-8)),
+        libm::fabs(f.svd_tol.unwrap_or(1e-8)),
+    )
 }
 
 /// `-ils` and the tri-state `-homotopyOnFirstTry` for the wasm runtime's

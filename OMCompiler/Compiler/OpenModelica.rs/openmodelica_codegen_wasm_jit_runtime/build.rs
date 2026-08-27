@@ -58,12 +58,16 @@ fn main() {
     println!("cargo:rustc-link-search=native={}", lib.display());
     for l in LIBS {
         println!("cargo:rustc-link-lib=static={l}");
+        // Cargo tracks this crate's sources, not what `wasm-ld` takes from the
+        // archives; without this a rebuilt archive is silently not linked.
+        println!("cargo:rerun-if-changed={}", lib.join(format!("lib{l}.a")).display());
     }
     if std::env::var("CARGO_FEATURE_PRIMME").is_ok() {
         if !lib.join(format!("lib{PRIMME}.a")).exists() {
             panic!("--features primme, but {}/lib{PRIMME}.a is missing", lib.display());
         }
         println!("cargo:rustc-link-lib=static={PRIMME}");
+        println!("cargo:rerun-if-changed={}", lib.join(format!("lib{PRIMME}.a")).display());
     }
     println!("cargo:rustc-cfg=sundials");
 }

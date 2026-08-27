@@ -65,7 +65,9 @@ fn dense_fd_jacobian(n: usize, x: &mut [f64], fx: &[f64], out: &mut [f64], eval:
 }
 
 /// C's `nlsKinsolDenseDerivativeTest`: the symbolic Jacobian `sym` (CSC over
-/// `colptr`/`rowidx`) against forward differences at the same point.
+/// `colptr`/`rowidx`) against forward differences at the same point. `x` and `eval`
+/// are unscaled and `scale` is `(fScale, xScale)` applied to the reference
+/// afterwards, as C's `B_nlsDenseJac` differences with scaling off.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn derivative_test(
     eq_index: u32,
@@ -75,7 +77,7 @@ pub(crate) fn derivative_test(
     colptr: &[i32],
     rowidx: &[i32],
     sym: &[f64],
-    scaled: bool,
+    scale: Option<(&[f64], &[f64])>,
     caller: Caller,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) {
@@ -85,6 +87,14 @@ pub(crate) fn derivative_test(
     eval(x, &mut fx);
     let mut num = vec![0.0f64; n * n];
     dense_fd_jacobian(n, x, &fx, &mut num, eval);
+    let scaled = scale.is_some();
+    if let Some((fscale, xscale)) = scale {
+        for c in 0..n {
+            for r in 0..n {
+                num[c * n + r] *= fscale[r] / xscale[c];
+            }
+        }
+    }
 
     omclog::info(
         stream,
@@ -213,11 +223,11 @@ pub(crate) fn svd_analysis(
     if !(omclog::active(omclog::NLS_SVD) || omclog::active(omclog::NLS_SVD_V)) {
         return;
     }
-    let (count, sigma) = crate::solvers::svd_params();
+    let (count, sigma, tol) = crate::solvers::svd_params();
     if count == 0 {
         return dense_svd(eq_index, time, n, colptr, rowidx, vals, scaled, caller);
     }
-    sparse_svd(eq_index, time, n, colptr, rowidx, vals, scaled, caller, count as usize, sigma);
+    sparse_svd(eq_index, time, n, colptr, rowidx, vals, scaled, caller, count as usize, sigma, tol);
 }
 
 fn dense(n: usize, colptr: &[i32], rowidx: &[i32], vals: &[f64]) -> vec::Vec<f64> {
@@ -266,6 +276,10 @@ fn print_cond(cond: f64) {
     omclog::close(s);
 }
 
+fn scaled_by(sign: f64, v: &[f64]) -> vec::Vec<f64> {
+    v.iter().map(|x| sign * x).collect()
+}
+
 /// C's `cmp_fabs_desc`. `sort_by` is stable, so equal magnitudes keep their index
 /// order, as `qsort` leaves them for vectors this short.
 fn by_magnitude(v: &[f64]) -> vec::Vec<(usize, f64)> {
@@ -276,9 +290,23 @@ fn by_magnitude(v: &[f64]) -> vec::Vec<(usize, f64)> {
     e
 }
 
+/// C's `svd_sparse_vector_sign`: a triplet is defined up to a common sign, so fix
+/// the gauge -- largest entry of `v` positive, `u` follows it.
+fn vector_sign(v: &[f64]) -> f64 {
+    // C keeps the *first* of equal magnitudes (`>`), which `max_by` would not.
+    let mut lead = 0usize;
+    for i in 1..v.len() {
+        if libm::fabs(v[i]) > libm::fabs(v[lead]) {
+            lead = i;
+        }
+    }
+    if v.get(lead).copied().unwrap_or(0.0) < 0.0 { -1.0 } else { 1.0 }
+}
+
 /// C's `svd_sparse_print_vectors`, for one singular triplet.
 fn print_vectors(eq_index: u32, n: usize, idx: usize, sigma: f64, v: &[f64], u: &[f64]) {
     let s = omclog::NLS_SVD;
+    let sign = vector_sign(v);
     let names = crate::nls::var_names(eq_index);
     let eqns = crate::model_ctx::with_model(|m| {
         m.nls_vars.iter().find(|s| s.eq_index == eq_index).map(|s| s.eqns.clone()).unwrap_or_default()
@@ -288,7 +316,7 @@ fn print_vectors(eq_index: u32, n: usize, idx: usize, sigma: f64, v: &[f64], u: 
     omclog::info(s, true, "Smallest right singular vectors (variable space)");
     omclog::info(s, false, "Found 1 singular vectors.");
     omclog::info(s, true, &format!("V[:,{idx}] (singular value {})", omclog::e(sigma, 0, 8)));
-    for (i, val) in by_magnitude(v) {
+    for (i, val) in by_magnitude(&scaled_by(sign, v)) {
         let name = names.get(i).map(String::as_str).unwrap_or_default();
         let line = format!(
             "V[{}][{idx}] = {} for NLS Var: {} with Name: {name}",
@@ -304,7 +332,7 @@ fn print_vectors(eq_index: u32, n: usize, idx: usize, sigma: f64, v: &[f64], u: 
     omclog::info(s, true, "Smallest left singular vectors (function space)");
     omclog::info(s, false, "Found 1 singular vectors.");
     omclog::info(s, true, &format!("U[:,{idx}] (singular value {})", omclog::e(sigma, 0, 8)));
-    for (i, val) in by_magnitude(u) {
+    for (i, val) in by_magnitude(&scaled_by(sign, u)) {
         let eq = eqns.get(i).copied().unwrap_or(0);
         let line = format!(
             "U[{}][{idx}] = {} for NLS Eqn: {} with transformational debugger Idx: {eq}",
@@ -323,12 +351,12 @@ fn print_vectors(eq_index: u32, n: usize, idx: usize, sigma: f64, v: &[f64], u: 
 #[allow(clippy::too_many_arguments)]
 fn sparse_svd(
     eq_index: u32, time: f64, n: usize, colptr: &[i32], rowidx: &[i32], vals: &[f64],
-    scaled: bool, caller: Caller, count: usize, sigma: f64,
+    scaled: bool, caller: Caller, count: usize, sigma: f64, tol: f64,
 ) {
     let s = omclog::NLS_SVD;
     #[cfg(not(feature = "primme"))]
     {
-        let _ = (eq_index, time, n, colptr, rowidx, vals, scaled, caller, count, sigma);
+        let _ = (eq_index, time, n, colptr, rowidx, vals, scaled, caller, count, sigma, tol);
         omclog::error(
             omclog::STDOUT,
             false,
@@ -343,7 +371,7 @@ fn sparse_svd(
             #[allow(clippy::too_many_arguments)]
             fn omc_primme_svds(
                 n: i32, colptr: *const i32, rowidx: *const i32, vals: *const f64, count: i32,
-                sigma: f64, print_level: i32, sval_top: *mut f64, rnorm_top: *mut f64,
+                sigma: f64, tol: f64, print_level: i32, sval_top: *mut f64, rnorm_top: *mut f64,
                 svals: *mut f64, rnorms: *mut f64, svecs: *mut f64,
             ) -> i32;
         }
@@ -356,7 +384,7 @@ fn sparse_svd(
         let found = unsafe {
             omc_primme_svds(
                 n as i32, colptr.as_ptr(), rowidx.as_ptr(), vals.as_ptr(), want as i32, sigma,
-                level, &mut sval_top, &mut rnorm_top, svals.as_mut_ptr(), rnorms.as_mut_ptr(),
+                tol, level, &mut sval_top, &mut rnorm_top, svals.as_mut_ptr(), rnorms.as_mut_ptr(),
                 svecs.as_mut_ptr(),
             )
         };

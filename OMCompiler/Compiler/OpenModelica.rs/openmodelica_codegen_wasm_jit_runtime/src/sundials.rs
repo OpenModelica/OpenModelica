@@ -608,7 +608,7 @@ pub(crate) mod kinsol {
             return;
         }
         crate::jacobian_analysis::derivative_test(
-            ud.eq_index, ud.time, ud.n, x, ud.colptr, ud.rowidx, vals, false,
+            ud.eq_index, ud.time, ud.n, x, ud.colptr, ud.rowidx, vals, None,
             crate::jacobian_analysis::Caller::KinsolJacEval, ud.eval,
         );
     }
@@ -1050,33 +1050,25 @@ pub(crate) mod kinsol {
             self.derivative_test(x, vals);
         }
 
-        /// C's `nlsKinsolDenseDerivativeTest`, its reference differences going
-        /// through this solver's scaling as C's do.
-        fn derivative_test(&mut self, x: &mut [f64], vals: &[f64]) {
+        /// C's `nlsKinsolDenseDerivativeTest`: a copy of the iterate, differenced
+        /// unscaled by `B_nlsDenseJac`, and only the finished matrix scaled.
+        fn derivative_test(&mut self, x: &[f64], vals: &[f64]) {
             if !crate::omclog::active(crate::omclog::NLS_DERIVATIVE_TEST) {
                 return;
             }
+            let Some((colptr, rowidx)) = self.pattern else { return };
             let (n, scaling) = (self.n, self.scaling);
             let (xscale, fscale) = (self.xscale.to_vec(), self.fscale.to_vec());
-            let eval = &mut *self.eval;
-            let mut scaled_eval = |xs: &[f64], f: &mut [f64]| {
-                let mut xu = xs.to_vec();
-                if scaling {
-                    for (v, s) in xu.iter_mut().zip(&xscale) {
-                        *v /= *s;
-                    }
+            let mut xu = x.to_vec();
+            if scaling {
+                for (v, s) in xu.iter_mut().zip(&xscale) {
+                    *v /= *s;
                 }
-                eval(&xu, f);
-                if scaling {
-                    for (v, s) in f.iter_mut().zip(&fscale) {
-                        *v *= *s;
-                    }
-                }
-            };
-            let Some((colptr, rowidx)) = self.pattern else { return };
+            }
+            let scale = scaling.then(|| (&fscale[..], &xscale[..]));
             crate::jacobian_analysis::derivative_test(
-                self.eq_index, self.time, n, x, colptr, rowidx, vals, scaling,
-                crate::jacobian_analysis::Caller::KinsolBJacEval, &mut scaled_eval,
+                self.eq_index, self.time, n, &mut xu, colptr, rowidx, vals, scale,
+                crate::jacobian_analysis::Caller::KinsolBJacEval, self.eval,
             );
         }
     }

@@ -804,15 +804,34 @@ pub fn clear_runtime_error() {
     THROW_PAST_STEP.store(false, Ordering::Relaxed);
 }
 
+/// Cleared per run by [`init_model`].
+static INIT_NOTICE_LOGGED: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+/// C's notice after an `assert()` violation at initialization. Both the throw site
+/// (`sync::init_assert`) and the trap carrying its error out report the failure,
+/// and C prints the line once, so the first caller wins.
+pub fn log_init_assert_notice() {
+    if !INIT_NOTICE_LOGGED.swap(true, Ordering::Relaxed) {
+        omclog::info(omclog::ASSERT, false, "simulation terminated by an assertion at initialization");
+    }
+}
+
 fn enrich_trap_impl(e: &mut dyn SimEngine, err: &'static str, init_time: Option<f64>) -> &'static str {
     THROW_PAST_STEP.store(false, Ordering::Relaxed);
     if RUNTIME_ERROR.swap(false, Ordering::Relaxed) {
         if init_time.is_some() {
-            omclog::info(omclog::ASSERT, false, "simulation terminated by an assertion at initialization");
+            log_init_assert_notice();
         }
         return ASSERT_ERR;
     }
-    let Some(pa) = e.take_pending_assert() else { return err };
+    let Some(pa) = e.take_pending_assert() else {
+        // C's `initializeModel` reports every `longjmp` reaching it, including the
+        // generated `functionDAE`'s throw for a non-converged system.
+        if init_time.is_some() && err == ASSERT_ERR {
+            log_init_assert_notice();
+        }
+        return err;
+    };
     let cond = read_rt_string(e, pa[7]).unwrap_or_default();
     let info = AssertInfo {
         msg: read_rt_string(e, pa[0]).unwrap_or_default(),
@@ -825,7 +844,7 @@ fn enrich_trap_impl(e: &mut dyn SimEngine, err: &'static str, init_time: Option<
     };
     if let Some(t) = init_time {
         log_assert_block(&info, &cond, t, pa[8] != 0);
-        omclog::info(omclog::ASSERT, false, "simulation terminated by an assertion at initialization");
+        log_init_assert_notice();
     }
     let p = ASSERT_REPORTER.load(Ordering::Relaxed);
     if p != 0 {
@@ -1979,6 +1998,7 @@ fn init_model(
     start_time: f64,
     model: Option<&SimMeta>,
 ) -> Result<()> {
+    INIT_NOTICE_LOGGED.store(false, Ordering::Relaxed);
     // C's `initializeNonlinearSystems`, which reports its dropped patterns here.
     if let Some(m) = model {
         for w in &m.nls_warnings {

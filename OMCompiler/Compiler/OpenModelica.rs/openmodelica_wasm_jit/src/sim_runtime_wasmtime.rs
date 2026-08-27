@@ -1348,12 +1348,12 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         });
         wts(set.call(&mut store, t))?;
     }
-    // `-svdCount` / `-svdSigma`: `LOG_NLS_SVD` runs inside the nonlinear solver.
-    if let Ok(set) = rt_inst.get_typed_func::<(u32, f64), ()>(&mut store, "rt_set_svd") {
-        let (c, sigma) = openmodelica_sim_meta::simflags::with_flags(|f| {
+    // `-svdCount` / `-svdSigma` / `-svdTol`: `LOG_NLS_SVD` runs inside the nonlinear solver.
+    if let Ok(set) = rt_inst.get_typed_func::<(u32, f64, f64), ()>(&mut store, "rt_set_svd") {
+        let (c, sigma, tol) = openmodelica_sim_meta::simflags::with_flags(|f| {
             openmodelica_sim_meta::simflags::svd_params(f)
         });
-        wts(set.call(&mut store, (c.max(0) as u32, sigma)))?;
+        wts(set.call(&mut store, (c.max(0) as u32, sigma, tol)))?;
     }
     // `-saveInitialGuess_system`: the nonlinear solver writes the file itself.
     if let Ok(set) = rt_inst.get_typed_func::<(i32, u32, u32), ()>(&mut store, "rt_set_save_initial_guess") {

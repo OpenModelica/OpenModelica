@@ -1012,11 +1012,11 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         wts(set.call(&mut store, t.0, t.1))?;
     }
     // See the wasmtime counterpart.
-    if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, f64), ()>(&store, "rt_set_svd") {
-        let (c, sigma) = openmodelica_sim_meta::simflags::with_flags(|f| {
+    if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, f64, f64), ()>(&store, "rt_set_svd") {
+        let (c, sigma, tol) = openmodelica_sim_meta::simflags::with_flags(|f| {
             openmodelica_sim_meta::simflags::svd_params(f)
         });
-        wts(set.call(&mut store, c.max(0) as u32, sigma))?;
+        wts(set.call(&mut store, c.max(0) as u32, sigma, tol))?;
     }
     // See the wasmtime counterpart.
     if let Ok(set) =
