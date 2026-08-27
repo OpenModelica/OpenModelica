@@ -118,11 +118,12 @@ fn define_external_imports(
     memory: wasmtime::Memory,
     sig: &Sig,
 ) -> Result<()> {
+    use openmodelica_wasm_jit::simmem::SimMem;
     use openmodelica_wasm_jit::dylink_engine as dl;
     if sig.ext_imports.is_empty() {
         return Ok(());
     }
-    openmodelica_wasm_jit::host::set_sim_memory(memory);
+    openmodelica_wasm_jit::host::set_sim_memory(SimMem::Plain(memory));
     let ext_rt = dl::ExtRt {
         str_new: wt(rt_inst.get_typed_func(&mut *store, "rt_str_new"))?,
         str_data: wt(rt_inst.get_typed_func(&mut *store, "rt_str_data"))?,
@@ -149,7 +150,7 @@ fn define_external_imports(
         .ok_or_else(|| "CodegenWasmJit: runtime has no __indirect_function_table export")?;
     let host = dl::modelica_utilities_imports(&mut *store, &ext_rt);
     let engine = linker.engine().clone();
-    let loaded = dl::load(&mut *store, &engine, memory, table, &ext_rt.alloc, &libs, &host)
+    let loaded = dl::load(&mut *store, &engine, SimMem::Plain(memory), table, &ext_rt.alloc, &libs, &host)
         .map_err(|e| record_dylink_error(e))?;
     // A dlopen each, so only once a symbol needs one.
     let mut native: Option<NativeExternals> = None;
@@ -176,7 +177,7 @@ fn define_external_imports(
                 sig.notes.iter().chain(native.errors.iter()).map(|n| format!("\n  {n}")).collect::<String>()
             )));
         };
-        openmodelica_wasm_jit::sim_runtime::define_native_external(linker, s, functype, addr, memory, &ext_rt)?;
+        openmodelica_wasm_jit::sim_runtime::define_native_external(linker, s, functype, addr, SimMem::Plain(memory), &ext_rt)?;
     }
     Ok(())
 }
@@ -300,7 +301,7 @@ pub(super) fn load_and_execute(
     define_print_import(&mut linker, memory)?;
     openmodelica_wasm_jit::host::define_uri_import(
         &mut linker,
-        memory,
+        openmodelica_wasm_jit::simmem::SimMem::Plain(memory),
         wt(rt_inst.get_typed_func(&mut store, "rt_str_new"))?,
         wt(rt_inst.get_typed_func(&mut store, "rt_str_data"))?,
     )?;

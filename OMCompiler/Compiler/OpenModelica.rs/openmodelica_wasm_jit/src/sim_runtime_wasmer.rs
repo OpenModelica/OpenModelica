@@ -115,7 +115,8 @@ pub fn sim_engine() -> &'static wasmer::Engine {
 /// microseconds. `deserialize` validates the artifact against the current
 /// wasmer version / engine config / target, so a stale or incompatible cache
 /// is rejected and we transparently fall back to JIT (then refresh the cache).
-pub fn runtime_module() -> std::result::Result<&'static wasmer::Module, String> {
+/// `shared`: the wasmtime backend's threads runtime, which this one does not build.
+pub fn runtime_module(_shared: bool) -> std::result::Result<&'static wasmer::Module, String> {
     static MODULE: OnceLock<std::result::Result<wasmer::Module, String>> = OnceLock::new();
     MODULE
         .get_or_init(|| load_or_compile_runtime())
@@ -216,7 +217,7 @@ pub fn start_runtime_compile() {
         static STARTED: std::sync::Once = std::sync::Once::new();
         STARTED.call_once(|| {
             std::thread::spawn(|| {
-                let _ = runtime_module(); // populates the OnceLock cache
+                let _ = runtime_module(false); // populates the OnceLock cache
             });
         });
     }
@@ -911,7 +912,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     // pipeline) — here we just join it. If no background job is present (e.g. a
     // direct call), compile inline as a fallback.
     let t_compile = Instant::now();
-    let runtime_module = runtime_module()?;
+    let runtime_module = runtime_module(false)?;
     let rt_compile = t_compile.elapsed();
     // Prefer the module already prepared by `finishCompile` (buildModel's
     // compile phase, counted as `timeCompile`); otherwise join/compile here.

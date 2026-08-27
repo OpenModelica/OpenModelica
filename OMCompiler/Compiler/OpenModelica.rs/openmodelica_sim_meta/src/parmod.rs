@@ -1,8 +1,10 @@
 //! C's `ParModelica/auto` runtime (`--parmodauto`): the ODE task graph, its
 //! clustering passes, the two schedulers and the JSON export/import, ported from
 //! `SimulationRuntime/ParModelica/auto/pm_*.hpp`. The graph, costs, clusters and
-//! files are the C ones; the clusters are evaluated in dependency order on the
-//! runtime's single thread, where C hands them to a TBB thread pool.
+//! files are the C ones. Where C hands the clusters to a TBB thread pool, the
+//! scheduler hands a [`Plan`] to the engine's [`Exec::parallel`]; an engine without
+//! worker threads evaluates the sequential `functionODE` instead, the natural
+//! order being a valid schedule.
 
 use alloc::collections::BTreeSet;
 use alloc::format;
@@ -276,7 +278,7 @@ impl TaskSystem {
         for i in 0..n {
             let id = self.cluster(v).tasks[i].task_id;
             let t0 = now_ms_host();
-            call(Op::Task(id))?;
+            call.op(Op::Task(id))?;
             let elapsed = now_ms_host() - t0;
             self.cluster_mut(v).tasks[i].cost = elapsed;
             total += elapsed;
@@ -289,11 +291,44 @@ impl TaskSystem {
     /// (every edge points forward), and with one thread nothing is gained from the
     /// clustered order, so this is the sequential entry point in one call.
     fn execute_all(&self, call: Call) -> Result<()> {
-        call(Op::All)
+        call.op(Op::All)
+    }
+
+    /// One evaluation through the engine's worker threads when it has them
+    /// (`functionLocalKnownVars` first, as the sequential entry point runs it), else
+    /// [`TaskSystem::execute_all`].
+    fn execute_plan(&self, plan: &Plan, call: Call) -> Result<()> {
+        if !call.can_parallel() {
+            return self.execute_all(call);
+        }
+        call.op(Op::LocalKnown)?;
+        call.parallel(plan)
+    }
+
+    /// The clustered graph as the engine evaluates it: clusters in topological
+    /// order, each with the clusters it waits for; `levels` too when asked (the
+    /// level scheduler's barrier-synchronous order).
+    fn plan(&mut self, with_levels: bool) -> Plan {
+        self.ensure_levels();
+        let order: Vec<usize> = self.topological_order().into_iter().filter(|&v| v != ROOT).collect();
+        let mut index = vec![u32::MAX; self.nodes.len()];
+        for (i, &v) in order.iter().enumerate() {
+            index[v] = i as u32;
+        }
+        let clusters = order.iter().map(|&v| self.cluster(v).tasks.iter().map(|t| t.task_id).collect()).collect();
+        let parents = order
+            .iter()
+            .map(|&v| self.parents[v].iter().filter(|&&p| p != ROOT).map(|&p| index[p]).collect())
+            .collect();
+        let levels = match with_levels {
+            true => self.levels[1..].iter().map(|l| l.iter().map(|&v| index[v]).collect()).collect(),
+            false => Vec::new(),
+        };
+        Plan { id: PLAN_IDS.fetch_add(1, Ordering::Relaxed) as u64, clusters, parents, levels }
     }
 
     fn profile_all(&mut self, call: Call) -> Result<()> {
-        call(Op::LocalKnown)?;
+        call.op(Op::LocalKnown)?;
         let vs: Vec<usize> = self.vertices().collect();
         for v in vs {
             self.profile_execute(v, call)?;
@@ -1004,13 +1039,42 @@ pub enum Op {
     Task(u32),
 }
 
-type Call<'a> = &'a mut dyn FnMut(Op) -> Result<()>;
+/// One evaluation's clusters: `clusters[i]` is its tasks in order, `parents[i]` the
+/// clusters it waits for (indices into `clusters`, all smaller), and `levels` —
+/// filled by the level scheduler only — the level-synchronous order, every cluster
+/// of a level independent of the others.
+pub struct Plan {
+    /// Distinct per plan built, so an executor can cache what it derives from one.
+    pub id: u64,
+    pub clusters: Vec<Vec<u32>>,
+    pub parents: Vec<Vec<u32>>,
+    pub levels: Vec<Vec<u32>>,
+}
+
+static PLAN_IDS: AtomicUsize = AtomicUsize::new(1);
+
+/// What the scheduler drives: the model's entry points one at a time, and the
+/// engine's worker threads when it has them.
+pub trait Exec {
+    fn op(&mut self, op: Op) -> Result<()>;
+    fn can_parallel(&self) -> bool {
+        false
+    }
+    /// Evaluate every cluster of `plan`, respecting `parents` (or, level by level,
+    /// `levels` when present), on the worker threads plus the calling one.
+    fn parallel(&mut self, _plan: &Plan) -> Result<()> {
+        Err("parmodauto: this engine has no worker threads")
+    }
+}
+
+type Call<'a> = &'a mut dyn Exec;
 
 /// `StepLevels`: level-synchronous; re-profiles and re-clusters when the
 /// evaluation time drifts by more than half.
 struct LevelScheduler {
     org: TaskSystem,
     sys: TaskSystem,
+    plan: Option<Plan>,
     schedule_available: bool,
     total_evaluations: u32,
     parallel_evaluations: u32,
@@ -1028,6 +1092,7 @@ impl LevelScheduler {
         LevelScheduler {
             org: sys.clone(),
             sys,
+            plan: None,
             schedule_available: false,
             total_evaluations: 0,
             parallel_evaluations: 0,
@@ -1059,7 +1124,10 @@ impl LevelScheduler {
             return Ok(());
         }
         let t0 = now_ms_host();
-        self.sys.execute_all(call)?;
+        match &self.plan {
+            Some(plan) => self.sys.execute_plan(plan, call)?,
+            None => self.sys.execute_all(call)?,
+        }
         let step_cost = now_ms_host() - t0;
         self.execution_time += step_cost;
         self.total_evaluations += 1;
@@ -1108,6 +1176,7 @@ impl LevelScheduler {
             self.sys.sort_decreasing(&mut level);
             self.sys.levels[l] = level;
         }
+        self.plan = Some(self.sys.plan(true));
         self.clustering_time += now_ms_host() - t0;
         Ok(())
     }
@@ -1116,6 +1185,7 @@ impl LevelScheduler {
 /// `ClusterDynamicScheduler`: clusters as a dependency graph, scheduled once.
 struct FlowScheduler {
     sys: TaskSystem,
+    plan: Option<Plan>,
     flow_graph_created: bool,
     total_evaluations: u32,
     parallel_evaluations: u32,
@@ -1128,6 +1198,7 @@ impl FlowScheduler {
     fn new(sys: TaskSystem) -> FlowScheduler {
         FlowScheduler {
             sys,
+            plan: None,
             flow_graph_created: false,
             total_evaluations: 0,
             parallel_evaluations: 0,
@@ -1142,7 +1213,10 @@ impl FlowScheduler {
             self.schedule(cfg, call)?;
         }
         let t0 = now_ms_host();
-        self.sys.execute_all(call)?;
+        match &self.plan {
+            Some(plan) => self.sys.execute_plan(plan, call)?,
+            None => self.sys.execute_all(call)?,
+        }
         self.execution_time += now_ms_host() - t0;
         self.total_evaluations += 1;
         self.parallel_evaluations += 1;
@@ -1183,6 +1257,7 @@ impl FlowScheduler {
             collect_clusters_json(&self.sys, &mut graph_dump);
             write_json_file(path, &graph_dump, "task graph")?;
         }
+        self.plan = Some(self.sys.plan(false));
         self.flow_graph_created = true;
         self.clustering_time += now_ms_host() - t0;
         Ok(())
@@ -1207,6 +1282,12 @@ static STATE: Store = Store(UnsafeCell::new(None));
 // The driver is single-threaded per run (as is the in-wasm session).
 fn state() -> &'static mut Option<State> {
     unsafe { &mut *STATE.0.get() }
+}
+
+/// The run's `-parmodNumThreads` (C's `max_num_threads`), which an engine's worker
+/// pool is sized from before the task system exists.
+pub fn num_threads() -> usize {
+    Config::from_flags().num_threads
 }
 
 /// `PM_Model_create` + `PM_Model_load_ODE_system`, for a model translated with

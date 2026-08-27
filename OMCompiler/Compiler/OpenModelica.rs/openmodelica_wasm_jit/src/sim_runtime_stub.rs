@@ -18,7 +18,7 @@ pub struct RunResult {
     pub stats: openmodelica_sim_meta::SolveStats,
 }
 
-pub fn runtime_module() -> std::result::Result<&'static Module, String> {
+pub fn runtime_module(_shared: bool) -> std::result::Result<&'static Module, String> {
     return Err(NO_ENGINE.to_string())
 }
 

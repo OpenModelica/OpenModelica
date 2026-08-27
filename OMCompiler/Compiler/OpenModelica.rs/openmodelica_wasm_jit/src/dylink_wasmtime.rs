@@ -8,7 +8,8 @@
 
 use std::collections::HashMap;
 
-use wasmtime::{Caller, Extern, Func, FuncType, Global, GlobalType, Memory, Mutability, Ref, Table, Val, ValType};
+use crate::simmem::SimMem;
+use wasmtime::{Caller, Extern, Func, FuncType, Global, GlobalType, Mutability, Ref, Table, Val, ValType};
 
 use crate::dylink::{self, Dylink, SIDE_STACK_SIZE};
 use openmodelica_wasi::wasi::WasiCtx;
@@ -99,7 +100,7 @@ fn alloc_aligned(
 pub fn load(
     store: &mut wasmtime::Store<WasiCtx>,
     engine: &wasmtime::Engine,
-    memory: Memory,
+    memory: SimMem,
     table: Table,
     rt_alloc: &wasmtime::TypedFunc<u32, u32>,
     libs: &[Library],
@@ -117,7 +118,7 @@ pub fn load(
     }
     // A library imports the memory rather than exporting one, so the WASI shim
     // cannot find it through the caller.
-    crate::host::set_sim_memory(memory);
+    crate::host::set_sim_memory(memory.clone());
 
     // `libc.so` asks for the stack bounds by name (weak `GOT.mem` imports a main
     // module would define), so they are seeded as data symbols.
@@ -151,7 +152,11 @@ pub fn load(
     let mut modules = Vec::with_capacity(libs.len());
     let mut defined: std::collections::HashSet<String> = std::collections::HashSet::new();
     for lib in libs {
-        let module = crate::sim_runtime::library_module(engine, &lib.name, &lib.bytes, lib.fixed)
+        let bytes = match memory.is_shared() {
+            true => std::borrow::Cow::Owned(crate::simmem::retype_memory_shared(&lib.bytes)?),
+            false => std::borrow::Cow::Borrowed(&lib.bytes),
+        };
+        let module = crate::sim_runtime::library_module(engine, &lib.name, &bytes, lib.fixed)
             .map_err(|e| format!("external \"C\" library `{}` is not valid wasm: {e}", lib.name))?;
         defined.extend(module.exports().filter(|e| e.ty().func().is_some()).map(|e| e.name().to_string()));
         modules.push(module);
@@ -173,7 +178,7 @@ pub fn load(
             module,
             &lib.name,
             &dl,
-            memory,
+            memory.clone(),
             table,
             rt_alloc,
             &stack_pointer,
@@ -228,7 +233,7 @@ pub fn load(
                 .map_err(|e| format!("external \"C\" library `{}` failed to initialise: {e}", lib.name))?;
         }
     }
-    set_guest_cwd(store, rt_alloc, memory, &loaded)?;
+    set_guest_cwd(store, rt_alloc, memory.clone(), &loaded)?;
     unbuffer_stdout(store, &loaded)?;
     Ok(loaded)
 }
@@ -239,7 +244,7 @@ pub fn load(
 fn set_guest_cwd(
     store: &mut wasmtime::Store<WasiCtx>,
     rt_alloc: &wasmtime::TypedFunc<u32, u32>,
-    memory: Memory,
+    memory: SimMem,
     loaded: &Loaded,
 ) -> Result<()> {
     let (Some(&slot), Ok(cwd)) = (loaded.data.get("__wasilibc_cwd"), openmodelica_wasi::fs::cwd()) else {
@@ -322,7 +327,7 @@ fn place(
     module: &wasmtime::Module,
     lib_name: &str,
     dl: &Dylink,
-    memory: Memory,
+    memory: SimMem,
     table: Table,
     rt_alloc: &wasmtime::TypedFunc<u32, u32>,
     stack_pointer: &Global,
@@ -346,7 +351,7 @@ fn place(
     let mut imports: Vec<Extern> = Vec::new();
     for imp in module.imports() {
         let ext = match (imp.module(), imp.name()) {
-            ("env", "memory") => Extern::Memory(memory),
+            ("env", "memory") => memory.to_extern(),
             ("env", "__indirect_function_table") => Extern::Table(table),
             ("env", "__stack_pointer") => Extern::Global(*stack_pointer),
             ("env", "__memory_base") => Extern::Global(const_i32(store, memory_base)?),
@@ -542,12 +547,12 @@ mod tests {
             return;
         };
         let (mut store, engine, rt_inst) = runtime();
-        let memory = rt_inst.get_memory(&mut store, "memory").unwrap();
+        let memory = SimMem::Plain(rt_inst.get_memory(&mut store, "memory").unwrap());
         let table = rt_inst.get_table(&mut store, "__indirect_function_table").unwrap();
         let alloc = rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc").unwrap();
 
         let Some(libs) = with_libc("scalar.wasm", bytes) else { return };
-        let loaded = load(&mut store, &engine, memory, table, &alloc, &libs, &HashMap::new()).unwrap();
+        let loaded = load(&mut store, &engine, memory.clone(), table, &alloc, &libs, &HashMap::new()).unwrap();
         let f = loaded.func("triple").expect("the library exports `triple`").clone();
         let f = f.typed::<f64, f64>(&store).unwrap();
         assert_eq!(f.call(&mut store, 5.0).unwrap(), 15.0);
@@ -566,12 +571,12 @@ mod tests {
             return;
         };
         let (mut store, engine, rt_inst) = runtime();
-        let memory = rt_inst.get_memory(&mut store, "memory").unwrap();
+        let memory = SimMem::Plain(rt_inst.get_memory(&mut store, "memory").unwrap());
         let table = rt_inst.get_table(&mut store, "__indirect_function_table").unwrap();
         let alloc = rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc").unwrap();
 
         let Some(libs) = with_libc("data.wasm", bytes) else { return };
-        let loaded = load(&mut store, &engine, memory, table, &alloc, &libs, &HashMap::new()).unwrap();
+        let loaded = load(&mut store, &engine, memory.clone(), table, &alloc, &libs, &HashMap::new()).unwrap();
         let pick = loaded.func("pick").unwrap().clone().typed::<i32, f64>(&store).unwrap();
         assert_eq!(pick.call(&mut store, 1).unwrap(), 2.5);
 
@@ -594,12 +599,12 @@ mod tests {
             return;
         };
         let (mut store, engine, rt_inst) = runtime();
-        let memory = rt_inst.get_memory(&mut store, "memory").unwrap();
+        let memory = SimMem::Plain(rt_inst.get_memory(&mut store, "memory").unwrap());
         let table = rt_inst.get_table(&mut store, "__indirect_function_table").unwrap();
         let alloc = rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc").unwrap();
 
         let Some(libs) = with_libc("uselibc.wasm", bytes) else { return };
-        let loaded = load(&mut store, &engine, memory, table, &alloc, &libs, &HashMap::new()).unwrap();
+        let loaded = load(&mut store, &engine, memory.clone(), table, &alloc, &libs, &HashMap::new()).unwrap();
 
         // A NUL-terminated string in the shared memory, as `Str` marshalling does.
         let cell = alloc.call(&mut store, 6).unwrap();
@@ -617,10 +622,10 @@ mod tests {
         };
         let Some(libs) = with_libc("bind.wasm", bytes) else { return };
         let (mut store, engine, rt_inst) = runtime();
-        let memory = rt_inst.get_memory(&mut store, "memory").unwrap();
+        let memory = SimMem::Plain(rt_inst.get_memory(&mut store, "memory").unwrap());
         let table = rt_inst.get_table(&mut store, "__indirect_function_table").unwrap();
         let alloc = rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc").unwrap();
-        let loaded = load(&mut store, &engine, memory, table, &alloc, &libs, &HashMap::new()).unwrap();
+        let loaded = load(&mut store, &engine, memory.clone(), table, &alloc, &libs, &HashMap::new()).unwrap();
 
         let rt = ExtRt {
             str_new: rt_inst.get_typed_func(&mut store, "rt_str_new").unwrap(),
@@ -686,10 +691,10 @@ mod tests {
         };
         let Some(libs) = with_libc("outptr.wasm", bytes) else { return };
         let (mut store, engine, rt_inst) = runtime();
-        let memory = rt_inst.get_memory(&mut store, "memory").unwrap();
+        let memory = SimMem::Plain(rt_inst.get_memory(&mut store, "memory").unwrap());
         let table = rt_inst.get_table(&mut store, "__indirect_function_table").unwrap();
         let alloc = rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc").unwrap();
-        let loaded = load(&mut store, &engine, memory, table, &alloc, &libs, &HashMap::new()).unwrap();
+        let loaded = load(&mut store, &engine, memory.clone(), table, &alloc, &libs, &HashMap::new()).unwrap();
 
         let ints = SigTy::Array { elem: std::sync::Arc::new(SigTy::Int), rank: 1 };
         let xorshift = ExtCallSig {
@@ -764,11 +769,11 @@ mod tests {
             return;
         }
         let (mut store, engine, rt_inst) = runtime();
-        let memory = rt_inst.get_memory(&mut store, "memory").unwrap();
+        let memory = SimMem::Plain(rt_inst.get_memory(&mut store, "memory").unwrap());
         let table = rt_inst.get_table(&mut store, "__indirect_function_table").unwrap();
         let alloc = rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_alloc").unwrap();
         let libs = [Library::model("obj.o", std::fs::read(&o).unwrap())];
-        let err = match load(&mut store, &engine, memory, table, &alloc, &libs, &HashMap::new()) {
+        let err = match load(&mut store, &engine, memory.clone(), table, &alloc, &libs, &HashMap::new()) {
             Err(e) => e,
             Ok(_) => panic!("an object file was accepted as a library"),
         };
@@ -783,7 +788,7 @@ pub fn load_ext_libraries(
     store: &mut wasmtime::Store<WasiCtx>,
     engine: &wasmtime::Engine,
     rt_inst: wasmtime::Instance,
-    memory: wasmtime::Memory,
+    memory: SimMem,
     model: &SimModel,
     rt: &ExtRt,
 ) -> std::result::Result<Loaded, String> {
@@ -792,7 +797,7 @@ pub fn load_ext_libraries(
         .get_table(&mut *store, "__indirect_function_table")
         .ok_or_else(|| "CodegenWasmJit: runtime has no __indirect_function_table export".to_string())?;
     if model.ext_libs.is_empty() && !model.ext_builtin {
-        return load(store, engine, memory, table, &rt.alloc, &[], &HashMap::new());
+        return load(store, engine, memory.clone(), table, &rt.alloc, &[], &HashMap::new());
     }
     let libc = openmodelica_wasi_libc::LIBC_PIC;
     if libc.is_empty() {
@@ -817,7 +822,7 @@ pub fn load_ext_libraries(
         }
     }
     let host = modelica_utilities_imports(store, rt);
-    load(store, engine, memory, table, &rt.alloc, &libs, &host)
+    load(store, engine, memory.clone(), table, &rt.alloc, &libs, &host)
 }
 
 fn shared_cstr(caller: &mut wasmtime::Caller<'_, WasiCtx>, ptr: i32) -> String {
@@ -1123,8 +1128,8 @@ fn call_external_in_wasm(
                     let handle = v.map(|v| v.unwrap_i32()).unwrap_or(0) as u32;
                     let (off, leaf) = record_leaf(fields);
                     call_args.push(match leaf {
-                        SigTy::Real => Val::F64(read_u64(memory, caller, handle + off)),
-                        _ => Val::I32(read_u32(memory, caller, handle + off) as i32),
+                        SigTy::Real => Val::F64(read_u64(memory.clone(), caller, handle + off)),
+                        _ => Val::I32(read_u32(memory.clone(), caller, handle + off) as i32),
                     });
                     let _ = s;
                 }
@@ -1133,7 +1138,7 @@ fn call_external_in_wasm(
                     let cell = alloc(caller, c.size.max(1))?;
                     memory.data_mut(&mut *caller)[cell as usize..cell as usize + c.size as usize].fill(0);
                     if let Some(v) = v {
-                        record_to_c(caller, memory, rt, fields, v.unwrap_i32() as u32, cell, &mut temps)?;
+                        record_to_c(caller, memory.clone(), rt, fields, v.unwrap_i32() as u32, cell, &mut temps)?;
                     }
                     temps.push(cell);
                     if *is_out {
@@ -1202,8 +1207,8 @@ fn call_external_in_wasm(
                     let vec_cell = alloc(caller, (n * 4).max(1) as u32)?;
                     temps.push(vec_cell);
                     for k in 0..n {
-                        let h = read_u32(memory, caller, base + (k * 4) as u32);
-                        let len = if h == 0 { 0 } else { read_u32(memory, caller, h + 4) as usize };
+                        let h = read_u32(memory.clone(), caller, base + (k * 4) as u32);
+                        let len = if h == 0 { 0 } else { read_u32(memory.clone(), caller, h + 4) as usize };
                         let cell = alloc(caller, (len + 1) as u32)?;
                         temps.push(cell);
                         let mem = memory.data_mut(&mut *caller);
@@ -1272,8 +1277,8 @@ fn call_external_in_wasm(
     // at our own input copy.
     for (vec_cell, base, n) in &str_out_arrays {
         for k in 0..*n {
-            let ptr = read_u32(memory, caller, vec_cell + (k * 4) as u32) as usize;
-            let len = str_len(memory, caller, ptr)?;
+            let ptr = read_u32(memory.clone(), caller, vec_cell + (k * 4) as u32) as usize;
+            let len = str_len(memory.clone(), caller, ptr)?;
             let handle = rt.str_new.call(&mut *caller, len as u32).map_err(|e| format!("{e}"))?;
             let dst = rt.str_data.call(&mut *caller, handle).map_err(|e| format!("{e}"))? as usize;
             let slot = *base as usize + k * 4;
@@ -1295,13 +1300,13 @@ fn call_external_in_wasm(
         match (ret_ty, abi_of(ret_ty)) {
 
             (SigTy::Record { fields, .. }, Abi::Indirect | Abi::Dropped) => {
-                let handle = record_from_c(caller, memory, rt, fields, sret.unwrap_or(0))?;
+                let handle = record_from_c(caller, memory.clone(), rt, fields, sret.unwrap_or(0))?;
                 result.push(Val::I32(handle as i32));
             }
 
             (SigTy::Record { fields, .. }, Abi::Scalar(leaf)) => {
                 let (off, _) = record_leaf(fields);
-                let handle = record_from_scalar(caller, memory, rt, fields, off, &leaf, &raw_ret[0])?;
+                let handle = record_from_scalar(caller, memory.clone(), rt, fields, off, &leaf, &raw_ret[0])?;
                 result.push(Val::I32(handle as i32));
             }
             _ => {
@@ -1313,19 +1318,19 @@ fn call_external_in_wasm(
                         b
                     }
                 };
-                result.push(ext_result(ret_ty, raw, rt, caller, memory)?);
+                result.push(ext_result(ret_ty, raw, rt, caller, memory.clone())?);
             }
         }
     }
     for (ty, cell) in &out_cells {
         if let SigTy::Record { fields, .. } = ty {
-            let handle = record_from_c(caller, memory, rt, fields, *cell)?;
+            let handle = record_from_c(caller, memory.clone(), rt, fields, *cell)?;
             result.push(Val::I32(handle as i32));
             continue;
         }
         let mut raw = [0u8; 8];
         raw.copy_from_slice(&memory.data(&*caller)[*cell as usize..*cell as usize + 8]);
-        result.push(ext_result(ty, raw, rt, caller, memory)?);
+        result.push(ext_result(ty, raw, rt, caller, memory.clone())?);
     }
     for (slot, v) in rets.iter_mut().zip(result) {
         *slot = v;
@@ -1344,7 +1349,7 @@ fn ext_result(
     raw: [u8; 8],
     rt: &ExtRt,
     caller: &mut wasmtime::Caller<'_, WasiCtx>,
-    memory: wasmtime::Memory,
+    memory: SimMem,
 ) -> Result<wasmtime::Val> {
     use crate::sig::SigTy;
     use wasmtime::Val;
@@ -1353,7 +1358,7 @@ fn ext_result(
         SigTy::Int | SigTy::Bool | SigTy::Ptr => Val::I32(i32::from_le_bytes(raw[..4].try_into().unwrap())),
         SigTy::Str => {
             let ptr = u32::from_le_bytes(raw[..4].try_into().unwrap()) as usize;
-            let len = str_len(memory, caller, ptr)?;
+            let len = str_len(memory.clone(), caller, ptr)?;
             let handle = rt.str_new.call(&mut *caller, len as u32).map_err(|e| format!("{e}"))?;
             let dst = rt.str_data.call(&mut *caller, handle).map_err(|e| format!("{e}"))? as usize;
             memory.data_mut(&mut *caller).copy_within(ptr..ptr + len, dst);
@@ -1415,7 +1420,7 @@ fn record_leaf(fields: &[(arcstr::ArcStr, crate::sig::SigTy)]) -> (u32, crate::s
 /// Rebuild a single-member record from the scalar the ABI returned in place of it.
 fn record_from_scalar(
     caller: &mut wasmtime::Caller<'_, WasiCtx>,
-    memory: wasmtime::Memory,
+    memory: SimMem,
     rt: &ExtRt,
     fields: &[(arcstr::ArcStr, crate::sig::SigTy)],
     leaf_off: u32,
@@ -1429,25 +1434,25 @@ fn record_from_scalar(
         .call(&mut *caller, (layout.heap.len() as u32, layout.size))
         .map_err(|e| format!("rt_record_new: {e}"))?;
     for (k, (kind, off)) in layout.heap.iter().enumerate() {
-        write_u32(memory, caller, handle + 8 + k as u32 * 8, *kind);
-        write_u32(memory, caller, handle + 8 + k as u32 * 8 + 4, *off);
+        write_u32(memory.clone(), caller, handle + 8 + k as u32 * 8, *kind);
+        write_u32(memory.clone(), caller, handle + 8 + k as u32 * 8 + 4, *off);
     }
     // A nested one needs its own object before the value can go in.
     if let Some((_, SigTy::Record { fields: inner, .. })) = fields.first()
         && inner.len() == 1
     {
-        let nested = record_from_scalar(caller, memory, rt, inner, leaf_off, leaf, value)?;
-        write_u32(memory, caller, handle + layout.data_off + layout.field_off[0], nested);
+        let nested = record_from_scalar(caller, memory.clone(), rt, inner, leaf_off, leaf, value)?;
+        write_u32(memory.clone(), caller, handle + layout.data_off + layout.field_off[0], nested);
         return Ok(handle);
     }
     let at = handle + layout.data_off + layout.field_off.first().copied().unwrap_or(0);
     match leaf {
-        SigTy::Real => write_u64(memory, caller, at, value.unwrap_f64().to_bits()),
+        SigTy::Real => write_u64(memory.clone(), caller, at, value.unwrap_f64().to_bits()),
         SigTy::Str => {
-            let s = wasm_string(caller, memory, rt, value.unwrap_i32() as u32)?;
-            write_u32(memory, caller, at, s);
+            let s = wasm_string(caller, memory.clone(), rt, value.unwrap_i32() as u32)?;
+            write_u32(memory.clone(), caller, at, s);
         }
-        _ => write_u32(memory, caller, at, value.unwrap_i32() as u32),
+        _ => write_u32(memory.clone(), caller, at, value.unwrap_i32() as u32),
     }
     Ok(handle)
 }
@@ -1456,7 +1461,7 @@ fn record_from_scalar(
 /// scratch to release after.
 fn record_to_c(
     caller: &mut wasmtime::Caller<'_, WasiCtx>,
-    memory: wasmtime::Memory,
+    memory: SimMem,
     rt: &ExtRt,
     fields: &[(arcstr::ArcStr, crate::sig::SigTy)],
     handle: u32,
@@ -1471,28 +1476,28 @@ fn record_to_c(
         let at = dst + c.offsets[i];
         match ty {
             SigTy::Real => {
-                let v = read_u64(memory, caller, src);
-                write_u64(memory, caller, at, v);
+                let v = read_u64(memory.clone(), caller, src);
+                write_u64(memory.clone(), caller, at, v);
             }
             SigTy::Int | SigTy::Bool | SigTy::Ptr => {
-                let v = read_u32(memory, caller, src);
-                write_u32(memory, caller, at, v);
+                let v = read_u32(memory.clone(), caller, src);
+                write_u32(memory.clone(), caller, at, v);
             }
             SigTy::Str => {
-                let s = read_u32(memory, caller, src);
-                let p = c_string(caller, memory, rt, s, temps)?;
-                write_u32(memory, caller, at, p);
+                let s = read_u32(memory.clone(), caller, src);
+                let p = c_string(caller, memory.clone(), rt, s, temps)?;
+                write_u32(memory.clone(), caller, at, p);
             }
             SigTy::Array { .. } => {
                 // The elements themselves, so the callee writes the model's array.
-                let h = read_u32(memory, caller, src) as usize;
+                let h = read_u32(memory.clone(), caller, src) as usize;
                 let (_, data_off) = crate::host::array_abi::dims_and_data(memory.data(&*caller), h)
                     .ok_or_else(|| "external \"C\": malformed array field".to_string())?;
-                write_u32(memory, caller, at, h as u32 + data_off as u32);
+                write_u32(memory.clone(), caller, at, h as u32 + data_off as u32);
             }
             SigTy::Record { fields: inner, .. } => {
-                let h = read_u32(memory, caller, src);
-                record_to_c(caller, memory, rt, inner, h, at, temps)?;
+                let h = read_u32(memory.clone(), caller, src);
+                record_to_c(caller, memory.clone(), rt, inner, h, at, temps)?;
             }
             _ => return Err("external \"C\": record field type not marshalled".to_string()),
         }
@@ -1503,7 +1508,7 @@ fn record_to_c(
 /// The inverse of [`record_to_c`], for an `_Out_` record or a returned struct.
 fn record_from_c(
     caller: &mut wasmtime::Caller<'_, WasiCtx>,
-    memory: wasmtime::Memory,
+    memory: SimMem,
     rt: &ExtRt,
     fields: &[(arcstr::ArcStr, crate::sig::SigTy)],
     src: u32,
@@ -1517,29 +1522,29 @@ fn record_from_c(
         .map_err(|e| format!("rt_record_new: {e}"))?;
     // The inline table the runtime releases the record's heap fields by.
     for (k, (kind, off)) in layout.heap.iter().enumerate() {
-        write_u32(memory, caller, handle + 8 + k as u32 * 8, *kind);
-        write_u32(memory, caller, handle + 8 + k as u32 * 8 + 4, *off);
+        write_u32(memory.clone(), caller, handle + 8 + k as u32 * 8, *kind);
+        write_u32(memory.clone(), caller, handle + 8 + k as u32 * 8 + 4, *off);
     }
     for (i, (_, ty)) in fields.iter().enumerate() {
         let at = src + c.offsets[i];
         let dst = handle + layout.data_off + layout.field_off[i];
         match ty {
             SigTy::Real => {
-                let v = read_u64(memory, caller, at);
-                write_u64(memory, caller, dst, v);
+                let v = read_u64(memory.clone(), caller, at);
+                write_u64(memory.clone(), caller, dst, v);
             }
             SigTy::Int | SigTy::Bool | SigTy::Ptr => {
-                let v = read_u32(memory, caller, at);
-                write_u32(memory, caller, dst, v);
+                let v = read_u32(memory.clone(), caller, at);
+                write_u32(memory.clone(), caller, dst, v);
             }
             SigTy::Str => {
-                let p = read_u32(memory, caller, at);
-                let s = wasm_string(caller, memory, rt, p)?;
-                write_u32(memory, caller, dst, s);
+                let p = read_u32(memory.clone(), caller, at);
+                let s = wasm_string(caller, memory.clone(), rt, p)?;
+                write_u32(memory.clone(), caller, dst, s);
             }
             SigTy::Record { fields: inner, .. } => {
-                let h = record_from_c(caller, memory, rt, inner, at)?;
-                write_u32(memory, caller, dst, h);
+                let h = record_from_c(caller, memory.clone(), rt, inner, at)?;
+                write_u32(memory.clone(), caller, dst, h);
             }
             _ => return Err("external \"C\": record field type not marshalled".to_string()),
         }
@@ -1550,7 +1555,7 @@ fn record_from_c(
 /// A NUL-terminated copy of `handle`, as a `char*`.
 fn c_string(
     caller: &mut wasmtime::Caller<'_, WasiCtx>,
-    memory: wasmtime::Memory,
+    memory: SimMem,
     rt: &ExtRt,
     handle: u32,
     temps: &mut Vec<u32>,
@@ -1558,7 +1563,7 @@ fn c_string(
     if handle == 0 {
         return Ok(0);
     }
-    let len = read_u32(memory, caller, handle + 4) as usize;
+    let len = read_u32(memory.clone(), caller, handle + 4) as usize;
     let cell = rt
         .alloc
         .call(&mut *caller, (len + 1) as u32)
@@ -1573,7 +1578,7 @@ fn c_string(
 /// A fresh String with the bytes of the `char*` at `ptr`.
 fn wasm_string(
     caller: &mut wasmtime::Caller<'_, WasiCtx>,
-    memory: wasmtime::Memory,
+    memory: SimMem,
     rt: &ExtRt,
     ptr: u32,
 ) -> Result<u32> {
@@ -1600,7 +1605,7 @@ fn wasm_string(
 }
 
 /// `strlen` of the NUL-terminated `char*` at `ptr` in the shared memory.
-fn str_len(memory: wasmtime::Memory, caller: &mut wasmtime::Caller<'_, WasiCtx>, ptr: usize) -> Result<usize> {
+fn str_len(memory: SimMem, caller: &mut wasmtime::Caller<'_, WasiCtx>, ptr: usize) -> Result<usize> {
     if ptr == 0 {
         return Ok(0);
     }
@@ -1610,28 +1615,28 @@ fn str_len(memory: wasmtime::Memory, caller: &mut wasmtime::Caller<'_, WasiCtx>,
         .ok_or_else(|| "external \"C\": unterminated `char*`".to_string())
 }
 
-fn read_u32(memory: wasmtime::Memory, caller: &mut wasmtime::Caller<'_, WasiCtx>, at: u32) -> u32 {
+fn read_u32(memory: SimMem, caller: &mut wasmtime::Caller<'_, WasiCtx>, at: u32) -> u32 {
     let d = memory.data(&*caller);
     d.get(at as usize..at as usize + 4)
         .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
         .unwrap_or(0)
 }
 
-fn read_u64(memory: wasmtime::Memory, caller: &mut wasmtime::Caller<'_, WasiCtx>, at: u32) -> u64 {
+fn read_u64(memory: SimMem, caller: &mut wasmtime::Caller<'_, WasiCtx>, at: u32) -> u64 {
     let d = memory.data(&*caller);
     d.get(at as usize..at as usize + 8)
         .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
         .unwrap_or(0)
 }
 
-fn write_u32(memory: wasmtime::Memory, caller: &mut wasmtime::Caller<'_, WasiCtx>, at: u32, v: u32) {
+fn write_u32(memory: SimMem, caller: &mut wasmtime::Caller<'_, WasiCtx>, at: u32, v: u32) {
     let d = memory.data_mut(&mut *caller);
     if let Some(s) = d.get_mut(at as usize..at as usize + 4) {
         s.copy_from_slice(&v.to_le_bytes());
     }
 }
 
-fn write_u64(memory: wasmtime::Memory, caller: &mut wasmtime::Caller<'_, WasiCtx>, at: u32, v: u64) {
+fn write_u64(memory: SimMem, caller: &mut wasmtime::Caller<'_, WasiCtx>, at: u32, v: u64) {
     let d = memory.data_mut(&mut *caller);
     if let Some(s) = d.get_mut(at as usize..at as usize + 8) {
         s.copy_from_slice(&v.to_le_bytes());

@@ -31,6 +31,15 @@ fn address_space_limit() -> Option<u64> {
     None
 }
 
+/// A shared memory cannot move, so it is capped at the reservation it starts with:
+/// wasm32's 4 GiB, or the constrained one under a small `RLIMIT_AS`.
+pub fn shared_max_pages() -> u64 {
+    match reservation_bytes() {
+        Some(bytes) => (bytes / 65536).max(1),
+        None => 65536,
+    }
+}
+
 /// `memory_may_move` (default on) lets a memory outgrow the reservation.
 pub fn tune_memory(cfg: &mut wasmtime::Config) {
     if let Some(bytes) = reservation_bytes() {

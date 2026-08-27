@@ -331,6 +331,7 @@ pub(crate) fn env_extra_index(name: &str) -> Result<u32> {
 pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_retain", &[WTy::I32], &[]),
     ("rt_release", &[WTy::I32], &[]),
+    ("rt_pin", &[WTy::I32], &[]),
     ("rt_str_new", &[WTy::I32], &[WTy::I32]),
     ("rt_str_len", &[WTy::I32], &[WTy::I32]),
     ("rt_str_data", &[WTy::I32], &[WTy::I32]),

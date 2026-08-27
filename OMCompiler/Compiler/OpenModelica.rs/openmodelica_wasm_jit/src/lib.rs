@@ -10,6 +10,14 @@ pub static RUNTIME_WASIP1: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/run
 /// wasip1 target was unavailable at build time (host then uses `RUNTIME_WASM`).
 pub static RUNTIME_WASM_INTERACTIVE_WASIP1: &[u8] =
     include_bytes!(concat!(env!("OUT_DIR"), "/runtime_wasip1_interactive.wasm"));
+/// The interactive runtime over a shared memory (`wasm32-wasip1-threads`), which
+/// the parallel `--parmodauto` path instantiates once per worker thread. Empty
+/// unless [`THREADS_RUNTIME`].
+pub static RUNTIME_WASM_INTERACTIVE_WASIP1_THREADS: &[u8] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/runtime_wasip1_threads.wasm"));
+/// Whether a `--parmodauto` model pairs with [`RUNTIME_WASM_INTERACTIVE_WASIP1_THREADS`]
+/// and so imports a shared memory. Native wasmtime only.
+pub const THREADS_RUNTIME: bool = cfg!(sim_threads_runtime);
 pub static EXTERNAL_C_WASM: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/modelicaexternalc.wasm"));
 pub static FMI3_ME_ADAPTER: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/fmi3_me_adapter.wasm"));
 /// Both interfaces in one component, and what a Co-Simulation FMU carries too: its
@@ -60,6 +68,10 @@ pub fn take_engine_error_detail() -> Option<String> {
 #[cfg(feature = "jit")]
 pub mod host;
 
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+pub mod simmem;
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+pub mod parmod_pool;
 #[cfg(all(feature = "jit", not(target_arch = "wasm32")))]
 mod engine_config;
 #[cfg(all(feature = "jit", not(target_arch = "wasm32")))]
