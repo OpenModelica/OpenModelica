@@ -27,9 +27,8 @@ pipeline {
     booleanParam(name: 'BUILD_ENTERPRISE_LINUX', defaultValue: false, description: 'Build with Enterprise Linux')
     booleanParam(name: 'BUILD_FEDORA', defaultValue: false, description: 'Build with Fedora 44')
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MacOS')
-    booleanParam(name: 'ENABLE_RUST_PARTEST', defaultValue: false, description: 'Enable running partest on the Rust target')
-    string(name: 'RUST_PARTEST_SIMCODETARGET', defaultValue: 'wasm-jit', description: 'Override simCodeTarget for the Rust partest, e.g. wasm-jit (empty = compiler default)')
-    booleanParam(name: 'RUST_PARTEST_JUNIT', defaultValue: false, description: 'Register the Rust partest result.xml as JUnit results (per-test view; makes the build unstable on failures)')
+    booleanParam(name: 'ENABLE_RUST_PARTEST', defaultValue: false, description: 'Enable the extra partest run on the Rust omc with RUST_PARTEST_SIMCODETARGET (the wasm-jit partest always runs)')
+    string(name: 'RUST_PARTEST_SIMCODETARGET', defaultValue: 'C+Rust', description: 'simCodeTarget for the ENABLE_RUST_PARTEST run (empty = compiler default)')
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
@@ -315,7 +314,8 @@ pipeline {
     stage('tests + extras') {
       parallel {
         // partest against the Rust-built omc; dedicated runtest cache. See
-        // common.partestRust().
+        // common.partestRust(). Opt-in, on RUST_PARTEST_SIMCODETARGET; the
+        // wasm-jit run is stages 23/24.
         stage('01 testsuite-rust 1/2') {
           agent {
             label 'linux'
@@ -332,7 +332,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust(1)
+                common.partestRust(params.RUST_PARTEST_SIMCODETARGET, 1, 2)
               }
             }
           }
@@ -353,7 +353,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust(2)
+                common.partestRust(params.RUST_PARTEST_SIMCODETARGET, 2, 2)
               }
             }
           }
@@ -841,6 +841,58 @@ pipeline {
           post {
             always {
               junit testResults: 'build_cmake/junit.xml', skipPublishingChecks: true
+            }
+          }
+        }
+
+        // The wasm-jit partest, same setup as stages 01/02. Last in the block
+        // (against the ordering rule above): the fastest of the testsuite runs,
+        // so it loses the least by starting after the others.
+        stage('23 testsuite-wasm-jit 1/2') {
+          agent {
+            label 'linux'
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
+                                     common.testCacheMounts('runtest-rust-cache')) {
+                common.partestRust('wasm-jit', 1, 2)
+              }
+            }
+          }
+        }
+        stage('24 testsuite-wasm-jit 2/2') {
+          agent {
+            label 'linux'
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
+                                     common.testCacheMounts('runtest-rust-cache')) {
+                common.partestRust('wasm-jit', 2, 2)
+              }
             }
           }
         }
