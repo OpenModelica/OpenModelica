@@ -375,6 +375,10 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     openmodelica_sim_meta::profiling::start(&mut InWasmEngine { fn_base, present_mask }, &model);
     driver::set_cancel_hook(cancel_hook);
     driver::set_init_done_hook(init_done_hook);
+    openmodelica_sim_meta::files::set_writer(|path, bytes| {
+        crate::files::write_file(path, &alloc::string::String::from_utf8_lossy(bytes));
+        true
+    });
     driver::set_no_throw_hook(|v| unsafe { rt_host_set_no_throw(v as i32) });
 
     let mut engine = InWasmEngine { fn_base, present_mask };
@@ -467,6 +471,7 @@ fn finish(s: &mut Session) {
     }
     s.params = driver::finalize_run(&mut s.engine, &s.model, s.sim_data).unwrap_or_default();
     use openmodelica_sim_meta::rtclock;
+    openmodelica_sim_meta::parmod::finish();
     rtclock::accumulate(rtclock::TOTAL);
     openmodelica_sim_meta::profiling::end_of_run(&mut s.engine);
     s.prof = openmodelica_sim_meta::profiling::snapshot();

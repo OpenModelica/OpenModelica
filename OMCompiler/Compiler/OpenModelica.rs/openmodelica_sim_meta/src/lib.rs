@@ -43,6 +43,7 @@ pub mod profiling;
 /// The writer every file a run leaves beside its result goes through.
 pub mod files;
 pub mod optimization;
+pub mod parmod;
 pub(crate) mod qss;
 pub mod rtclock;
 pub mod sync;
@@ -992,6 +993,20 @@ pub struct FmiVr {
     pub der_off: u32,
 }
 
+/// The `--parmodauto` ODE task graph C reads from `<model>_ode.json`: one task per
+/// ODE equation, with the tasks it reads a variable from.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ParmodInfo {
+    pub tasks: Vec<ParmodTask>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ParmodTask {
+    pub eq_index: i32,
+    /// Task ids (positions in [`ParmodInfo::tasks`]) this one depends on.
+    pub parents: Vec<u32>,
+}
+
 /// Everything the driver and the `.mat` writer need about one model: its layout,
 /// the run scalars, the ordered result variables, and the solver metadata.
 #[derive(Clone, PartialEq, Debug, Default)]
@@ -1060,6 +1075,8 @@ pub struct SimMeta {
     pub clocks: Vec<BaseClockMeta>,
     /// What `-l` needs; `None` for a target that emits no linearization support.
     pub lin: Option<LinInfo>,
+    /// The `--parmodauto` ODE task graph; `None` for a model translated without it.
+    pub parmod: Option<ParmodInfo>,
     /// What `method="optimization"` needs; `None` for a model without an
     /// optimization problem.
     pub opt: Option<OptInfo>,
@@ -1792,6 +1809,17 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
             put_u32s(&mut o, &p.blocks);
         }
     }
+    match &m.parmod {
+        None => o.push(0),
+        Some(p) => {
+            o.push(1);
+            put_u32(&mut o, p.tasks.len() as u32);
+            for t in &p.tasks {
+                put_u32(&mut o, t.eq_index as u32);
+                put_u32s(&mut o, &t.parents);
+            }
+        }
+    }
     o
 }
 
@@ -2294,10 +2322,21 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             Some(ProfInfo { level, functions, vars, equations, blocks: r.u32s()? })
         }
     };
+    let parmod = match r.u8()? {
+        0 => None,
+        _ => {
+            let mut tasks = Vec::new();
+            for _ in 0..r.u32()? {
+                tasks.push(ParmodTask { eq_index: r.u32()? as i32, parents: r.u32s()? });
+            }
+            Some(ParmodInfo { tasks })
+        }
+    };
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, cs_method, tolerance, output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, params, attr_log,
         removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon, prof,
+        parmod,
     })
 }
 
@@ -2464,6 +2503,9 @@ mod tests {
                 model_file: "MyModel.mo".to_string(),
                 model_dir: "/tmp".to_string(),
                 version: "v1.25.0".to_string(),
+            }),
+            parmod: Some(ParmodInfo {
+                tasks: vec![ParmodTask { eq_index: 3, parents: vec![] }, ParmodTask { eq_index: 5, parents: vec![0] }],
             }),
             prof: Some(ProfInfo {
                 level: 5,

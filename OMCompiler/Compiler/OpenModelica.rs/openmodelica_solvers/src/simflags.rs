@@ -345,6 +345,19 @@ pub struct SimFlags {
     pub linearize_datarec: bool,
     /// `-deltaXLinearize`: C's `numericalDifferentiationDeltaXlinearize`.
     pub delta_x_linearize: Option<f64>,
+    /// `-parmodNumThreads`: C's `PM_Model_create` thread count (0 = the default).
+    pub parmod_num_threads: Option<i32>,
+    /// `-parmodScheduler`: `flow` (default) or `level`.
+    pub parmod_scheduler: Option<String>,
+    /// `-parmodClustering`: `default`, `fixed_width_min_height` or `none`.
+    pub parmod_clustering: Option<String>,
+    /// `-parmodClustersPerLevel`: the default clustering's per-level cluster cap.
+    pub parmod_clusters_per_level: Option<i32>,
+    /// `-parmodExportTaskGraph=<file>`, `-parmodImportClustering=<file>`,
+    /// `-parmodDumpStages=<prefix>`.
+    pub parmod_export_taskgraph: Option<String>,
+    pub parmod_import_clustering: Option<String>,
+    pub parmod_dump_stages: Option<String>,
     /// The `-gb*` flags, `(name, value)`; a value-less one is stored as `""`.
     /// gbode reads these by name the way C reads `omc_flagValue`, so the whole
     /// family does not have to be mirrored as struct fields.
@@ -912,6 +925,13 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "l" => f.linearize = Some(real(name, &value(name)?)?),
             "l_datarec" => f.linearize_datarec = true,
             "deltaXLinearize" => f.delta_x_linearize = Some(real(name, &value(name)?)?),
+            "parmodNumThreads" => f.parmod_num_threads = Some(int(name, &value(name)?)?),
+            "parmodScheduler" => f.parmod_scheduler = Some(value(name)?),
+            "parmodClustering" => f.parmod_clustering = Some(value(name)?),
+            "parmodClustersPerLevel" => f.parmod_clusters_per_level = Some(int(name, &value(name)?)?),
+            "parmodExportTaskGraph" => f.parmod_export_taskgraph = Some(value(name)?),
+            "parmodImportClustering" => f.parmod_import_clustering = Some(value(name)?),
+            "parmodDumpStages" => f.parmod_dump_stages = Some(value(name)?),
             // The `-gb*` family is stored by name; gbode validates the values when
             // it is built, so an unused one is still rejected (C ignores it).
             _ if name.starts_with("gb") && C_FLAGS.iter().any(|(n, _)| *n == name) => {

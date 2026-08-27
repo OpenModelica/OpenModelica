@@ -5164,6 +5164,12 @@ fn build_sim_model(
     let lambda0_eqs = flatten_eqs(&sim_code.initialEquations_lambda0);
     let assert_eqs = flatten_eqs(&sim_code.algorithmAndEquationAsserts);
     let ode_eqs = with_local_known(flatten_eqs_ll(&sim_code.odeEquations));
+    let parmod = openmodelica_util::Flags::getConfigBool(openmodelica_util::Flags::PARMODAUTO.clone())?;
+    let ode_task_eqs = flatten_eqs_ll(&sim_code.odeEquations);
+    let parmod_info = match parmod && !ode_task_eqs.is_empty() {
+        true => Some(parmod_info(&ode_task_eqs)?),
+        false => None,
+    };
     let zc_eqs = flatten_eqs(&sim_code.equationsForZeroCrossings);
     let inline_eqs = flatten_eqs(&sim_code.inlineEquations);
     // Register every nonlinear system with the runtime solver `rt_solve_nls`
@@ -5374,7 +5380,7 @@ fn build_sim_model(
     let mut splits: Vec<SplitFn> = Vec::new();
     let param_units: Vec<EqUnit> =
         param_bindings.iter().map(|(cref, exp)| EqUnit::Binding(cref, exp)).collect();
-    splits.push(build_split_fn("functionParameters", &param_units, 1, eqfn_type, &stateset_diag, &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+    splits.push(build_split_fn("functionParameters", &param_units, 1, eqfn_type, &stateset_diag, &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
     // Seed `relationsPre := relations` at the end of init (the in-wasm `simulate`
     // path skips the host `run_initialization`).
     let init_save: Vec<(u32, u32, u32)> = if layout.n_rel > 0 {
@@ -5382,9 +5388,15 @@ fn build_sim_model(
     } else {
         Vec::new()
     };
-    splits.push(build_split_fn("functionInitialEquations", &eq_units(&initial_eqs), 1, eqfn_type, &[], &init_save, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
-    splits.push(build_split_fn("functionODE", &eq_units(&ode_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
-    splits.push(build_split_fn("functionAlgebraics", &eq_units(&algebraic_eqs), 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+    splits.push(build_split_fn("functionInitialEquations", &eq_units(&initial_eqs), 1, eqfn_type, &[], &init_save, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+    // `--parmodauto`: one chunk per ODE equation, each a schedulable task.
+    let ode_split = splits.len();
+    if parmod_info.is_some() {
+        splits.push(build_split_fn("functionODE", &eq_units(&ode_task_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, true)?);
+    } else {
+        splits.push(build_split_fn("functionODE", &eq_units(&ode_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+    }
+    splits.push(build_split_fn("functionAlgebraics", &eq_units(&algebraic_eqs), 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
     // eq_base + 4, before `simulate` so the in-wasm integrator can call it.
     let all_reals: Vec<&SimCodeVar::SimVar> = states
         .iter()
@@ -5602,6 +5614,7 @@ fn build_sim_model(
             mi.varInfo.numRelatedBoundaryConditions.max(0) as u32,
         )?,
         prof_info,
+        parmod_info.clone(),
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
     let meta_len = meta_bytes.len() as u32;
@@ -5765,7 +5778,7 @@ fn build_sim_model(
     // first step; a stub for models that do not use `homotopy()`.
     let init_lambda0_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn("functionInitialEquations_lambda0", &eq_units(&lambda0_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+        splits.push(build_split_fn("functionInitialEquations_lambda0", &eq_units(&lambda0_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
         idx
     };
     // Min/max variable-attribute (and equation) assertion checks: C's
@@ -5774,14 +5787,14 @@ fn build_sim_model(
     let has_asserts = !assert_eqs.is_empty();
     let check_asserts_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn("functionCheckAsserts", &eq_units(&assert_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+        splits.push(build_split_fn("functionCheckAsserts", &eq_units(&assert_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
         idx
     };
     // C's `function_ZeroCrossingsEquations`: what the crossings read, which is
     // neither `functionODE` nor all of `functionAlgebraics`.
     let zc_equations_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn("functionZeroCrossingsEquations", &eq_units(&zc_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+        splits.push(build_split_fn("functionZeroCrossingsEquations", &eq_units(&zc_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
         idx
     };
     // C's `functionAlgebraics` + `storePreValues`. Only a `has_when` model needs its
@@ -5789,7 +5802,7 @@ fn build_sim_model(
     let outputs_idx = {
         let idx = import_base + bodies.len() as u32;
         if has_when {
-            splits.push(build_split_fn("functionOutputs", &eq_units(&output_eqs), 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+            splits.push(build_split_fn("functionOutputs", &eq_units(&output_eqs), 1, eqfn_type, &[], &save_pre, &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
         } else {
             use we::Instruction as I;
             let mut f = we::Function::new([]);
@@ -5856,7 +5869,7 @@ fn build_sim_model(
     // perturbation IDAS made to a sensitivity parameter.
     let update_bound_params_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn("functionUpdateBoundParameters", &eq_units(&param_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+        splits.push(build_split_fn("functionUpdateBoundParameters", &eq_units(&param_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
         idx
     };
     // The optimizer's per-real-variable attributes (C reads them out of the
@@ -5931,14 +5944,14 @@ fn build_sim_model(
     // which form the model is in.
     let dae_residuals_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn("evaluateDAEResiduals", &dae_units(&dae_eqs), 2, dae_fn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+        splits.push(build_split_fn("evaluateDAEResiduals", &dae_units(&dae_eqs), 2, dae_fn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
         idx
     };
     // C's `symbolicInlineSystem`. Emitted (empty without `--symSolver`) either way,
     // so every module's entry points sit at the same indices.
     let sym_inline_idx = {
         let idx = import_base + bodies.len() as u32;
-        splits.push(build_split_fn("symbolicInlineSystem", &eq_units(&inline_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+        splits.push(build_split_fn("symbolicInlineSystem", &eq_units(&inline_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
         idx
     };
 
@@ -5950,8 +5963,26 @@ fn build_sim_model(
             let idx = import_base + bodies.len() as u32;
             let mut units = eq_units(&local_known_eqs);
             units.extend(eq_units(&all_eqs_for_dae));
-            splits.push(build_split_fn("functionDAE", &units, 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks)?);
+            splits.push(build_split_fn("functionDAE", &units, 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
             Some(idx)
+        }
+    };
+
+    // `parmodTask(sim_data, k)` `call_indirect`s task `k` out of the module's own table 1.
+    let parmod_fns = match parmod_info.is_some() {
+        false => None,
+        true => {
+            let lk_idx = import_base + bodies.len() as u32;
+            splits.push(build_split_fn("functionLocalKnownVars", &eq_units(&local_known_eqs), 1, eqfn_type, &[], &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut chunks, false)?);
+            splits[ode_split].pre_calls.push(lk_idx);
+            let task_idx = import_base + bodies.len() as u32;
+            let mut f = we::Function::new([]);
+            f.instruction(&we::Instruction::LocalGet(0));
+            f.instruction(&we::Instruction::LocalGet(1));
+            f.instruction(&we::Instruction::CallIndirect { type_index: eqfn_type as u32, table_index: 1 });
+            f.instruction(&we::Instruction::End);
+            bodies.push(f);
+            Some((lk_idx, task_idx))
         }
     };
 
@@ -5962,6 +5993,10 @@ fn build_sim_model(
     for s in &splits {
         bodies[s.slot] = s.thunk(chunk_base);
     }
+    let parmod_tasks: Option<Vec<u32>> = parmod_fns.map(|_| {
+        let s = &splits[ode_split];
+        (0..s.count).map(|k| chunk_base + (s.first + k) as u32).collect()
+    });
 
     // --- Function section (type index per body, in body order). ---
     crate::CodegenWasmJitFunctions::set_ext_error_catch(None);
@@ -6033,6 +6068,10 @@ fn build_sim_model(
     functions.function(eqfn_type); // symbolicInlineSystem: (i32) -> ()
     if recon_dae_idx.is_some() {
         functions.function(eqfn_type); // functionDAE: (i32) -> ()
+    }
+    if parmod_fns.is_some() {
+        functions.function(eqfn_type); // functionLocalKnownVars: (i32) -> ()
+        functions.function(dae_fn_type); // parmodTask: (i32 SimData, i32 task) -> ()
     }
     for s in &splits {
         for _ in 0..s.count {
@@ -6107,7 +6146,7 @@ fn build_sim_model(
         functions.function(throw_fn_type);
         bodies.push(f);
     }
-    if nls_wiring.is_some() || !thunk_indices.is_empty() {
+    if nls_wiring.is_some() || !thunk_indices.is_empty() || parmod_fns.is_some() {
         imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
             element_type: we::RefType::FUNCREF,
             table64: false,
@@ -6178,6 +6217,10 @@ fn build_sim_model(
     exports.export("functionODE", we::ExportKind::Func, eqfn.ode);
     exports.export("functionAlgebraics", we::ExportKind::Func, eqfn.algebraics);
     exports.export("functionOutputs", we::ExportKind::Func, outputs_idx);
+    if let Some((lk_idx, task_idx)) = parmod_fns {
+        exports.export("functionLocalKnownVars", we::ExportKind::Func, lk_idx);
+        exports.export("parmodTask", we::ExportKind::Func, task_idx);
+    }
     exports.export("simulate", we::ExportKind::Func, simulate_idx);
     exports.export("om_meta_ptr", we::ExportKind::Func, om_meta_ptr_idx);
     exports.export("om_meta_len", we::ExportKind::Func, om_meta_len_idx);
@@ -6299,6 +6342,10 @@ fn build_sim_model(
     names.push((sync_eqs, "functionEquationsSynchronous".to_string()));
     names.push((dae_residuals_idx, "evaluateDAEResiduals".to_string()));
     names.push((sym_inline_idx, "symbolicInlineSystem".to_string()));
+    if let Some((lk_idx, task_idx)) = parmod_fns {
+        names.push((lk_idx, "functionLocalKnownVars".to_string()));
+        names.push((task_idx, "parmodTask".to_string()));
+    }
     for s in &splits {
         for k in 0..s.count {
             names.push((chunk_base + (s.first + k) as u32, format!("{}${k}", s.name)));
@@ -6316,6 +6363,17 @@ fn build_sim_model(
     module.section(&types);
     module.section(&imports);
     module.section(&functions);
+    if let Some(tasks) = &parmod_tasks {
+        let mut tables = we::TableSection::new();
+        tables.table(we::TableType {
+            element_type: we::RefType::FUNCREF,
+            table64: false,
+            minimum: tasks.len() as u64,
+            maximum: Some(tasks.len() as u64),
+            shared: false,
+        });
+        module.section(&tables);
+    }
     if let Some(ti) = error_tag_type {
         let mut tags = we::TagSection::new();
         tags.tag(we::TagType { kind: we::TagKind::Exception, func_type_idx: ti });
@@ -6341,13 +6399,21 @@ fn build_sim_model(
         module.section(&globals);
     }
     module.section(&exports);
+    let mut elements = we::ElementSection::new();
+    let mut have_elements = false;
     if let Some((start_idx, declared)) = &start_wiring {
         module.section(&we::StartSection { function_index: *start_idx });
         if !declared.is_empty() {
-            let mut elements = we::ElementSection::new();
             elements.declared(we::Elements::Functions(declared.as_slice().into()));
-            module.section(&elements);
+            have_elements = true;
         }
+    }
+    if let Some(tasks) = &parmod_tasks {
+        elements.active(Some(1), &we::ConstExpr::i32_const(0), we::Elements::Functions(tasks.as_slice().into()));
+        have_elements = true;
+    }
+    if have_elements {
+        module.section(&elements);
     }
     if !literals.is_empty() {
         module.section(&we::DataCountSection { count: 1 });
@@ -6961,6 +7027,7 @@ fn build_sim_meta(
     inputs: Vec<openmodelica_sim_meta::InputVar>,
     recon: Option<openmodelica_sim_meta::ReconInfo>,
     prof: Option<openmodelica_sim_meta::ProfInfo>,
+    parmod: Option<openmodelica_sim_meta::ParmodInfo>,
 ) -> openmodelica_sim_meta::SimMeta {
     openmodelica_sim_meta::SimMeta {
         layout: *layout,
@@ -6995,6 +7062,7 @@ fn build_sim_meta(
         inputs,
         recon,
         prof,
+        parmod,
     }
 }
 
@@ -7662,12 +7730,20 @@ struct SplitFn {
     /// `(SimData*)`, plus DAE mode's `stage`.
     n_params: u32,
     ty: u32,
+    /// Entry points called (with the same arguments) ahead of the chunks.
+    pre_calls: Vec<u32>,
 }
 
 impl SplitFn {
     fn thunk(&self, chunk_base: u32) -> we::Function {
         use we::Instruction as I;
         let mut f = we::Function::new([]);
+        for c in &self.pre_calls {
+            for p in 0..self.n_params {
+                f.instruction(&I::LocalGet(p));
+            }
+            f.instruction(&I::Call(*c));
+        }
         for k in 0..self.count {
             for p in 0..self.n_params {
                 f.instruction(&I::LocalGet(p));
@@ -7698,6 +7774,7 @@ fn build_split_fn(
     literals: &mut Literals,
     bodies: &mut Vec<we::Function>,
     chunks: &mut Vec<we::Function>,
+    per_unit: bool,
 ) -> Result<SplitFn> {
     let slot = bodies.len();
     bodies.push(empty_eqfn());
@@ -7719,7 +7796,7 @@ fn build_split_fn(
             }
             lower_unit(&mut ctx, &units[i], eq_index, &mut pending)?;
             i += 1;
-            if pending.is_empty() && ctx.instr_len() >= chunk_instrs() {
+            if per_unit || (pending.is_empty() && ctx.instr_len() >= chunk_instrs()) {
                 break;
             }
         }
@@ -7729,7 +7806,7 @@ fn build_split_fn(
         }
         chunks.push(finish_fn(ctx));
     }
-    Ok(SplitFn { name, slot, first, count: chunks.len() - first, n_params, ty })
+    Ok(SplitFn { name, slot, first, count: chunks.len() - first, n_params, ty, pre_calls: Vec::new() })
 }
 
 /// Lower `units` into one function, for entry points whose size is bounded by the
@@ -10310,6 +10387,122 @@ fn index_eq_recursive(e: &Arc<SimCode::SimEqSystem>, idx: &mut HashMap<i32, Arc<
 
 /// The `index` of a `SimEqSystem` (best-effort; systems without a top-level
 /// index report -1).
+/// The `--parmodauto` task graph C's `SerializeTaskSystemInfo` writes to
+/// `<model>_ode.json` and `om_pm_model.cpp` loads: one task per ODE equation with
+/// what it defines and uses, and an edge from every earlier task defining
+/// something a later one uses (`TaskSystem_v2::add_node`). Reads of a dense
+/// linear system's `A`/`b` count as uses too; C's loader only sees a torn system's
+/// inner equations.
+fn parmod_info(ode_eqs: &[Arc<SimCode::SimEqSystem>]) -> Result<openmodelica_sim_meta::ParmodInfo> {
+    use SimCode::SimEqSystem as E;
+    use openmodelica_frontend_base::{ComponentReference, Expression};
+    fn name(cref: &Arc<DAE::ComponentRef>) -> Result<String> {
+        Ok(ComponentReference::crefStr(cref.clone())?.to_string())
+    }
+    fn uses(exp: &Arc<DAE::Exp>) -> Result<Vec<String>> {
+        lst(&Expression::extractUniqueCrefsFromExpDerPreStart(exp.clone(), true)?).map(name).collect()
+    }
+    fn unsupported(index: i32, what: &str) -> &'static str {
+        Box::leak(format!("parmodauto: equation {index}: {what}").into_boxed_str())
+    }
+    // C's `load_simple_assign_check_local_define` / `load_simple_residual`.
+    fn inner(eq: &E, lhs: &mut HashSet<String>, rhs: &mut HashSet<String>) -> Result<()> {
+        let (define, exp) = match eq {
+            E::SES_SIMPLE_ASSIGN { cref, exp, .. }
+            | E::SES_SIMPLE_ASSIGN_CONSTRAINTS { cref, exp, .. }
+            | E::SES_FOR_LOOP { cref, exp, .. } => (Some(name(cref)?), exp),
+            E::SES_ARRAY_CALL_ASSIGN { lhs, exp, .. } => (Some(name(&Expression::expCref(lhs.clone())?)?), exp),
+            E::SES_RESIDUAL { exp, .. } => (None, exp),
+            other => return Err(unsupported(eq_index_of(other), "internal equation type not yet handled")),
+        };
+        match define {
+            Some(d) => {
+                lhs.insert(d);
+                for u in uses(exp)? {
+                    if !lhs.contains(&u) {
+                        rhs.insert(u);
+                    }
+                }
+            }
+            None => rhs.extend(uses(exp)?),
+        }
+        Ok(())
+    }
+    let sorted = |eqs: &Arc<List<Arc<E>>>| -> Vec<Arc<E>> {
+        let mut v: Vec<Arc<E>> = lst(eqs).cloned().collect();
+        v.sort_by_key(|e| eq_index_of(e));
+        v
+    };
+    let mut nodes: Vec<(i32, HashSet<String>, HashSet<String>)> = Vec::new();
+    for eq in ode_eqs {
+        let index = eq_index_of(eq);
+        let mut lhs = HashSet::new();
+        let mut rhs = HashSet::new();
+        match &**eq {
+            E::SES_RESIDUAL { exp, .. } => rhs.extend(uses(exp)?),
+            E::SES_SIMPLE_ASSIGN { cref, exp, .. }
+            | E::SES_SIMPLE_ASSIGN_CONSTRAINTS { cref, exp, .. }
+            | E::SES_FOR_LOOP { cref, exp, .. } => {
+                lhs.insert(name(cref)?);
+                rhs.extend(uses(exp)?);
+            }
+            E::SES_ARRAY_CALL_ASSIGN { lhs: l, exp, .. } => {
+                lhs.insert(name(&Expression::expCref(l.clone())?)?);
+                rhs.extend(uses(exp)?);
+            }
+            E::SES_ALGORITHM { statements, .. } | E::SES_INVERSE_ALGORITHM { statements, .. } => {
+                let (defs, used) = Expression::extractUniqueCrefsFromStatmentS(statements.clone())?;
+                lhs.extend(lst(&defs).map(name).collect::<Result<Vec<_>>>()?);
+                rhs.extend(lst(&used).map(name).collect::<Result<Vec<_>>>()?);
+            }
+            E::SES_LINEAR { lSystem, alternativeTearing: None, .. } => {
+                for v in lst(&lSystem.vars) {
+                    lhs.insert(name(&v.name)?);
+                }
+                for e in sorted(&lSystem.residual) {
+                    inner(&e, &mut lhs, &mut rhs)?;
+                }
+                for b in lst(&lSystem.beqs) {
+                    rhs.extend(uses(b)?.into_iter().filter(|u| !lhs.contains(u)));
+                }
+                for (_, _, cell) in lst(&lSystem.simJac) {
+                    if let E::SES_RESIDUAL { exp, .. } = &**cell {
+                        rhs.extend(uses(exp)?.into_iter().filter(|u| !lhs.contains(u)));
+                    }
+                }
+            }
+            E::SES_NONLINEAR { nlSystem, alternativeTearing: None, .. } => {
+                for c in lst(&nlSystem.crefs) {
+                    lhs.insert(name(c)?);
+                }
+                for e in sorted(&nlSystem.eqs) {
+                    inner(&e, &mut lhs, &mut rhs)?;
+                }
+            }
+            E::SES_LINEAR { .. } | E::SES_NONLINEAR { .. } => {
+                return Err(unsupported(index, "dynamic tearing is not supported"));
+            }
+            E::SES_WHEN { .. } => return Err(unsupported(index, "equation type not yet handled: when")),
+            E::SES_IFEQUATION { .. } => return Err(unsupported(index, "equation type not yet handled: if-equation")),
+            E::SES_MIXED { .. } => return Err(unsupported(index, "equation type not yet handled: container")),
+            E::SES_ALIAS { .. } => return Err(unsupported(index, "equation type not yet handled: alias")),
+            _ => return Err(unsupported(index, "equation type not yet handled")),
+        }
+        nodes.push((index, lhs, rhs));
+    }
+    let mut tasks = Vec::with_capacity(nodes.len());
+    for (j, (index, _, rhs)) in nodes.iter().enumerate() {
+        let parents: Vec<u32> = nodes[..j]
+            .iter()
+            .enumerate()
+            .filter(|(_, (_, lhs, _))| rhs.iter().any(|u| lhs.contains(u)))
+            .map(|(i, _)| i as u32)
+            .collect();
+        tasks.push(openmodelica_sim_meta::ParmodTask { eq_index: *index, parents });
+    }
+    Ok(openmodelica_sim_meta::ParmodInfo { tasks })
+}
+
 fn eq_index_of(eq: &SimCode::SimEqSystem) -> i32 {
     use SimCode::SimEqSystem as E;
     match eq {
