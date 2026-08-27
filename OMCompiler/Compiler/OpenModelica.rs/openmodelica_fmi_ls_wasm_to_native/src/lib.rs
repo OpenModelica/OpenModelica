@@ -353,17 +353,26 @@ fn engine() -> wasmtime::Result<Engine> {
     Engine::new(&cfg)
 }
 
-/// The component wasm the `jit` feature can compile, if this FMU ships one:
-/// `resources/` in an FMI 2.0 FMU, fmi-ls-wasm's `binaries/` in a 3.0 one.
-fn component_source(res: &Path) -> Option<PathBuf> {
-    let wasm = |dir: PathBuf| -> Option<PathBuf> {
-        std::fs::read_dir(dir)
+/// `<modelIdentifier>.<ext>` in `dir`, named after this library; a directory
+/// scan only when the library cannot tell its own path.
+fn model_file(dir: &Path, ext: &str) -> Option<PathBuf> {
+    match openmodelica_ext_native::this_library_path().and_then(|p| Some(p.file_stem()?.to_os_string())) {
+        Some(stem) => {
+            let p = dir.join(Path::new(&stem).with_extension(ext));
+            p.is_file().then_some(p)
+        }
+        None => std::fs::read_dir(dir)
             .ok()?
             .flatten()
             .map(|e| e.path())
-            .find(|p| p.extension().is_some_and(|e| e == "wasm"))
-    };
-    wasm(res.to_path_buf()).or_else(|| wasm(res.parent()?.join("binaries/wasm32-wasip2")))
+            .find(|p| p.extension().is_some_and(|e| e == ext)),
+    }
+}
+
+/// The component wasm the `jit` feature can compile, if this FMU ships one:
+/// `resources/` in an FMI 2.0 FMU, fmi-ls-wasm's `binaries/` in a 3.0 one.
+fn component_source(res: &Path) -> Option<PathBuf> {
+    model_file(res, "wasm").or_else(|| model_file(&res.parent()?.join("binaries/wasm32-wasip2"), "wasm"))
 }
 
 /// `binaries/<platform>/`, where this library was unpacked with the `.cwasm` and
@@ -376,10 +385,7 @@ fn platform_dir(res: &Path) -> PathBuf {
 
 fn load_component(engine: &Engine, res: &Path) -> wasmtime::Result<Component> {
     // Beside this library; `resources/<platform>.cwasm` is where older exports put it.
-    let beside = std::fs::read_dir(platform_dir(res))
-        .ok()
-        .and_then(|d| d.flatten().map(|e| e.path()).find(|p| p.extension().is_some_and(|e| e == "cwasm")));
-    let cwasm = beside.unwrap_or_else(|| res.join(format!("{PLATFORM}.cwasm")));
+    let cwasm = model_file(&platform_dir(res), "cwasm").unwrap_or_else(|| res.join(format!("{PLATFORM}.cwasm")));
     if cwasm.is_file() {
         let bytes = std::fs::read(&cwasm)?;
         // Safety: the artifact is part of the FMU this library was packaged into.

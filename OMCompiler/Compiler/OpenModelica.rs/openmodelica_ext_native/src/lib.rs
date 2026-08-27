@@ -55,21 +55,28 @@ pub fn binaries_dir(fmu: &Path) -> Option<std::path::PathBuf> {
         .find(|d| d.is_dir())
 }
 
-/// The directory of the shared library this code is linked into: for the FMU
-/// loader, the platform folder it was unpacked to.
+/// The shared library this code is linked into: for the FMU loader,
+/// `binaries/<platform>/<modelIdentifier>.<ext>`, whose stem names the model's
+/// files beside it.
 #[cfg(unix)]
-pub fn this_library_dir() -> Option<std::path::PathBuf> {
+pub fn this_library_path() -> Option<std::path::PathBuf> {
     let mut info: libc::Dl_info = unsafe { std::mem::zeroed() };
-    if unsafe { libc::dladdr(this_library_dir as *const std::ffi::c_void, &mut info) } == 0 || info.dli_fname.is_null() {
+    if unsafe { libc::dladdr(this_library_path as *const std::ffi::c_void, &mut info) } == 0 || info.dli_fname.is_null() {
         return None;
     }
     let path = unsafe { CStr::from_ptr(info.dli_fname) }.to_string_lossy().into_owned();
-    Path::new(&path).parent().map(Path::to_path_buf)
+    Some(std::path::PathBuf::from(path))
 }
 
 #[cfg(not(unix))]
-pub fn this_library_dir() -> Option<std::path::PathBuf> {
+pub fn this_library_path() -> Option<std::path::PathBuf> {
     None
+}
+
+/// The directory of the shared library this code is linked into: for the FMU
+/// loader, the platform folder it was unpacked to.
+pub fn this_library_dir() -> Option<std::path::PathBuf> {
+    this_library_path()?.parent().map(Path::to_path_buf)
 }
 
 #[cfg(not(unix))]
