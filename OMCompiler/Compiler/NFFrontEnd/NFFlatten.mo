@@ -2597,8 +2597,9 @@ protected
   ComponentRef fc;
 algorithm
   // crefs of all flow connector members (to tell a generated zero-flow equation
-  // apart from a genuine `x = 0` model equation)
-  flowCrefs := list(v.name for v guard Variable.isFlow(v) in flatModel.variables);
+  // apart from a genuine `x = 0` model equation). Only public ones: a protected
+  // connector is an internal wiring node, not an FMU boundary.
+  flowCrefs := list(v.name for v guard Variable.isFlow(v) and Variable.isPublic(v) in flatModel.variables);
   if listEmpty(flowCrefs) then return; end if;
 
   // collect and drop the `flow = 0` equations of unconnected flows.
