@@ -424,8 +424,9 @@ pub fn run(
         Err(e) => return (Err(e), log),
     };
     log.push_str(&format!(
-        "LOG_STDOUT        | info    | wasm artifact loaded in {:.1} ms ({})\n",
-        loaded.load_ms, loaded.how
+        "LOG_STDOUT        | info    | wasm artifact loaded{} ({})\n",
+        took(loaded.load_ms),
+        loaded.how
     ));
     let flags = match super::install_sim_flags(simflags) {
         Ok(f) => f,
@@ -472,8 +473,10 @@ fn run_simulation(
     };
     let elapsed = ms(t);
     log.push_str(&format!(
-        "LOG_STDOUT        | info    | in-wasm simulation ({}) wrote {} rows in {:.1} ms\n",
-        run.solver, run.rows, elapsed
+        "LOG_STDOUT        | info    | in-wasm simulation ({}) wrote {} rows{}\n",
+        run.solver,
+        run.rows,
+        took(elapsed)
     ));
     if let Some((name, content)) = &run.linear_file {
         let path = match &flags.output_path {
@@ -608,9 +611,9 @@ fn run_fmi(
             }
             .map_err(|e| e.to_string())?;
             log.push_str(&format!(
-                "LOG_STDOUT        | info    | {} instantiated in {:.1} ms\n",
+                "LOG_STDOUT        | info    | {} instantiated{}\n",
                 kind.as_str(),
-                ms(t)
+                took(ms(t))
             ));
             let t = Instant::now();
             let (r, s) = drive(&mut inst, kind, md, &opts)?;
@@ -635,18 +638,18 @@ fn run_fmi(
                 Ok((r, s, ms(t)))
             })?;
             log.push_str(&format!(
-                "LOG_STDOUT        | info    | {} instantiated in {:.1} ms\n",
+                "LOG_STDOUT        | info    | {} instantiated{}\n",
                 kind.as_str(),
-                linked_ms
+                took(linked_ms)
             ));
             (r, s, e)
         }
     };
     log.push_str(&format!(
-        "LOG_STDOUT        | info    | {} run: {summary}, {} samples in {:.1} ms\n",
+        "LOG_STDOUT        | info    | {} run: {summary}, {} samples{}\n",
         kind.as_str(),
         recorder.len(),
-        elapsed
+        took(elapsed)
     ));
     if flags.noemit || flags.output_format.as_deref() == Some("empty") {
         return Ok(());
@@ -683,6 +686,15 @@ where
             );
             Ok((run.recorder, s))
         }
+    }
+}
+
+/// ` in 4.2 ms`, or nothing under the testsuite: these lines reach a `simulate()`
+/// record, where a timing would make the baseline depend on the clock.
+fn took(ms: f64) -> String {
+    match openmodelica_util::Testsuite::isRunning() {
+        Ok(true) => String::new(),
+        _ => format!(" in {ms:.1} ms"),
     }
 }
 

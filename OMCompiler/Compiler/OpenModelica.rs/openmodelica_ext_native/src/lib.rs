@@ -131,7 +131,7 @@ fn ffi_ty(ty: &Ty, out: bool) -> libffi::middle::Type {
         Ty::Scalar(Scalar::Real) => Type::f64(),
         // Every integer argument fills a 64-bit slot, correct for `int` and `long` alike.
         Ty::Scalar(_) => Type::i64(),
-        Ty::Str | Ty::Ptr | Ty::Array(_) => Type::pointer(),
+        Ty::Str | Ty::Ptr | Ty::Array(_) | Ty::Record(_) => Type::pointer(),
     }
 }
 
@@ -191,7 +191,9 @@ impl Natives {
                 Some(Ty::Scalar(Scalar::Real)) => (libffi::middle::Type::f64(), 8),
                 Some(Ty::Scalar(_)) => (libffi::middle::Type::i32(), 8),
                 Some(Ty::Str | Ty::Ptr) => (libffi::middle::Type::pointer(), 8),
-                Some(Ty::Array(_)) => return Err(format!("`{}` returns an array, which C cannot", sig.name)),
+                Some(Ty::Array(_) | Ty::Record(_)) => {
+                    return Err(format!("`{}` returns an array or record, which C cannot", sig.name))
+                }
             };
             fns.push(Resolved { sig: sig.clone(), addr, cif: libffi::middle::Cif::new(args, ret), ret_bytes });
         }
@@ -216,7 +218,7 @@ impl Natives {
         let mut cells: Vec<(usize, Box<Cell>)> = Vec::new();
         let mut next = args.iter();
         for (j, a) in sig.args.iter().enumerate() {
-            if a.out && !matches!(a.ty, Ty::Array(_)) {
+            if marshal::is_cell(a) {
                 let mut cell = Box::new(Cell(0));
                 slots.push(Cell(&mut *cell as *mut Cell as u64));
                 cells.push((j, cell));
@@ -233,7 +235,8 @@ impl Natives {
                     cstrings.push(c);
                     Cell(p)
                 }
-                (Ty::Array(_), Value::Bytes(b)) => {
+                // A record crosses the same way, as a pointer to the bytes.
+                (Ty::Array(_) | Ty::Record(_), Value::Bytes(b)) => {
                     let mut buf = b.clone();
                     // An empty array still needs an address.
                     buf.reserve(8);
@@ -279,6 +282,7 @@ impl Natives {
                     Value::Str(if p.is_null() { String::new() } else { unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned() })
                 }
                 Ty::Array(_) => return Err("an array cannot be a C result".into()),
+                Ty::Record(_) => return Err("a record cannot be a C result".into()),
             })
         };
         if let Some(ret) = &sig.ret {
