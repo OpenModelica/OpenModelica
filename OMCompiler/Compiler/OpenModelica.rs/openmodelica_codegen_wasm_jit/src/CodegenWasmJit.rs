@@ -1980,6 +1980,53 @@ pub(crate) fn missing_ext_symbols(ext_imports: &[ExtCallSig], libs: &[ExtLibrary
     ext_imports.iter().filter(|s| !defined.contains(s.name.as_str())).cloned().collect()
 }
 
+/// What a dylink library needs from outside: the functions it calls (`env`) and
+/// the ones whose address it takes (`GOT.func`).
+fn dylink_needs(bytes: &[u8]) -> Vec<String> {
+    use wasmparser::{Imports, TypeRef};
+    let mut out = Vec::new();
+    let mut add = |module: &str, name: &str, is_func: bool| {
+        if (module == "env" && is_func) || module == "GOT.func" {
+            out.push(name.to_string());
+        }
+    };
+    for payload in wasmparser::Parser::new(0).parse_all(bytes).flatten() {
+        let wasmparser::Payload::ImportSection(reader) = payload else { continue };
+        for group in reader.into_iter().flatten() {
+            match group {
+                Imports::Single(_, imp) => add(imp.module, imp.name, matches!(imp.ty, TypeRef::Func(_))),
+                Imports::Compact1 { module, items } => {
+                    for it in items.into_iter().flatten() {
+                        add(module, it.name, matches!(it.ty, TypeRef::Func(_)));
+                    }
+                }
+                Imports::Compact2 { module, names, ty } => {
+                    for n in names.into_iter().flatten() {
+                        add(module, n, matches!(ty, TypeRef::Func(_)));
+                    }
+                }
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// Which of `needs` nothing in the wasm world defines; `--allow-undefined` lets a
+/// library link without them.
+fn unresolved_dylink_needs(needs: &[String], lib: &ExtLibrary, others: &[ExtLibrary]) -> Vec<String> {
+    let mut defined: HashSet<&str> = HashSet::new();
+    for bytes in others
+        .iter()
+        .map(|l| &l.bytes[..])
+        .chain([&lib.bytes[..], LIBC_PIC, EXTERNAL_C_DYLINK, LAPACK_DYLINK, openmodelica_wasm_jit::RUNTIME_WASM])
+    {
+        defined.extend(wasm_exports(bytes));
+    }
+    needs.iter().filter(|n| !defined.contains(n.as_str())).cloned().collect()
+}
+
 /// The `-L` directories of a linker flag string (`-Ldir`, `-L"dir"`, `-L dir`).
 /// It is a shell command line, so quotes group rather than belong to the path.
 fn ld_search_dirs(flags: &str) -> Vec<String> {
@@ -2386,6 +2433,15 @@ fn xml_escape(s: &str) -> String {
 /// parameters in a frame of 8-byte slots, calls the adapter's
 /// `om_ext_native_call(index, frame, table, table_len)` and loads the return value
 /// from the slot after them. The table text rides in the module's data.
+/// One 8-byte frame slot; wasm rejects an alignment hint larger than the access.
+fn slot_mem(offset: u32, wty: openmodelica_wasm_jit::sig::WTy) -> we::MemArg {
+    let align = match wty {
+        openmodelica_wasm_jit::sig::WTy::F64 => 3,
+        openmodelica_wasm_jit::sig::WTy::I32 => 2,
+    };
+    we::MemArg { offset: offset as u64, align, memory_index: 0 }
+}
+
 fn native_ext_stub(sigs: &[ExtCallSig], table: &str) -> Result<Vec<u8>> {
     let table_bytes = table.as_bytes();
     let frame_off = (table_bytes.len() as u32 + 7) & !7;
@@ -2415,7 +2471,7 @@ fn native_ext_stub(sigs: &[ExtCallSig], table: &str) -> Result<Vec<u8>> {
         exports.export(&sig.name, we::ExportKind::Func, i as u32 + 1);
         let mut f = we::Function::new(Vec::<(u32, we::ValType)>::new());
         for (p, t) in fs.params.iter().enumerate() {
-            let mem = we::MemArg { offset: (frame_off + 8 * p as u32) as u64, align: 3, memory_index: 0 };
+            let mem = slot_mem(frame_off + 8 * p as u32, t.wty());
             f.instruction(&we::Instruction::GlobalGet(0));
             f.instruction(&we::Instruction::LocalGet(p as u32));
             f.instruction(&match t.wty() {
@@ -2431,7 +2487,7 @@ fn native_ext_stub(sigs: &[ExtCallSig], table: &str) -> Result<Vec<u8>> {
         f.instruction(&we::Instruction::I32Const(table_bytes.len() as i32));
         f.instruction(&we::Instruction::Call(0));
         if let Some(r) = fs.results.first() {
-            let mem = we::MemArg { offset: (frame_off + 8 * fs.params.len() as u32) as u64, align: 3, memory_index: 0 };
+            let mem = slot_mem(frame_off + 8 * fs.params.len() as u32, r.wty());
             f.instruction(&we::Instruction::GlobalGet(0));
             f.instruction(&match r.wty() {
                 openmodelica_wasm_jit::sig::WTy::F64 => we::Instruction::F64Load(mem),
@@ -5062,7 +5118,19 @@ fn build_sim_model(
                 let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
                 if hook || !missing.is_empty() {
                     if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &mp.cflags, &missing, &mut ext_lib_notes)? {
-                        ext_libs.wasm.push(l);
+                        // Sources that only wrap a platform library still compile,
+                        // and keeping the result would hide the functions from the
+                        // host fallback that can serve them.
+                        let unresolved = unresolved_dylink_needs(&dylink_needs(&l.bytes), &l, &ext_libs.wasm);
+                        if unresolved.is_empty() {
+                            ext_libs.wasm.push(l);
+                        } else {
+                            ext_lib_notes.push(format!(
+                                "the `Include` C sources compiled for wasm but need `{}`, which no \
+                                 wasm library defines; serving them from the host instead",
+                                unresolved.join("`, `")
+                            ));
+                        }
                     }
                 }
             }

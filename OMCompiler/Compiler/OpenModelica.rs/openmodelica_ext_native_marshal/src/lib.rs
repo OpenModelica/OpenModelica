@@ -28,6 +28,9 @@ pub enum Ty {
     /// An external object.
     Ptr,
     Array(Scalar),
+    /// A pointer to C's `<record>_external` (the members' C types from offset 0);
+    /// the bytes are copied whole in both directions, so only the size is needed.
+    Record(u32),
 }
 
 impl Ty {
@@ -85,8 +88,35 @@ fn parse_ty(code: &str) -> Result<Ty, String> {
         "S" => Ok(Ty::Str),
         "P" => Ok(Ty::Ptr),
         c if c.starts_with('[') => Ok(Ty::Array(scalar(c.trim_start_matches('['))?)),
+        c if c.starts_with('{') => Ok(Ty::Record(record_size(c)?)),
         c => Ok(Ty::Scalar(scalar(c)?)),
     }
+}
+
+/// The size of C's `<record>_external` for `{path;name:code;…}`: each member at its
+/// natural alignment, the struct padded to the widest. A non-scalar member has no
+/// size both sides agree on (a pointer is 4 bytes in the kernel, 8 here).
+fn record_size(code: &str) -> Result<u32, String> {
+    let body = code.trim_start_matches('{').trim_end_matches('}');
+    let (mut off, mut align) = (0u32, 1u32);
+    for member in body.split(';').skip(1) {
+        let (name, ty) = member.split_once(':').ok_or_else(|| {
+            format!("native externals: record member `{member}` has no type in `{code}`")
+        })?;
+        let size = match ty {
+            "R" => 8,
+            "I" | "B" => 4,
+            _ => {
+                return Err(format!(
+                    "native externals: record member `{name}` of type `{ty}` cannot be copied to C \
+                     - only Real, Integer and Boolean members can"
+                ))
+            }
+        };
+        off = off.next_multiple_of(size) + size;
+        align = align.max(size);
+    }
+    Ok(off.next_multiple_of(align.max(1)))
 }
 
 /// The table's text form (see [`Table`]):
@@ -153,10 +183,11 @@ pub trait Guest {
     fn free(&mut self, addr: u32);
 }
 
-/// Whether the argument is passed as a cell the callee writes, and so is neither
-/// an input value nor a wasm result.
-fn is_cell(a: &Arg) -> bool {
-    a.out && !matches!(a.ty, Ty::Array(_))
+/// Whether the callee writes this argument through a scalar cell the caller
+/// allocates, and so is neither an input value nor a wasm result. An array or
+/// record crosses as a pointer, which *is* the value.
+pub fn is_cell(a: &Arg) -> bool {
+    a.out && !matches!(a.ty, Ty::Array(_) | Ty::Record(_))
 }
 
 /// The host's argument list, read out of the frame.
@@ -183,6 +214,11 @@ pub fn gather(sig: &Sig, frame: u32, g: &dyn Guest) -> Result<Vec<Value>, String
                 let h = g.load_i32(slot) as u32;
                 let bytes = if h == 0 { Vec::new() } else { g.read(g.array_data(h), g.array_total(h) * Ty::elem_size(*elem)) };
                 Value::Bytes(bytes)
+            }
+            // The slot holds the address of the kernel's scratch struct.
+            Ty::Record(size) => {
+                let p = g.load_i32(slot) as u32;
+                Value::Bytes(if p == 0 { Vec::new() } else { g.read(p, *size) })
             }
         });
     }
@@ -226,20 +262,30 @@ pub fn scatter(sig: &Sig, frame: u32, results: &[Value], g: &mut dyn Guest, scra
             store(g, cell, &a.ty, v, scratch)?;
         }
     }
+    // In argument order: that is the order the host returns them in.
     for (j, a) in sig.args.iter().enumerate() {
-        let Ty::Array(elem) = &a.ty else { continue };
         if !a.out {
             continue;
         }
-        let Value::Bytes(bytes) = next("output array")? else {
-            return Err(format!("native externals: `{}` returned a non-array for an output array", sig.name));
+        let (what, len, at) = match &a.ty {
+            Ty::Array(elem) => {
+                let h = g.load_i32(frame + 8 * j as u32) as u32;
+                ("array", g.array_total(h) * Ty::elem_size(*elem), g.array_data(h))
+            }
+            Ty::Record(size) => ("record", *size, g.load_i32(frame + 8 * j as u32) as u32),
+            _ => continue,
         };
-        let h = g.load_i32(frame + 8 * j as u32) as u32;
-        let len = g.array_total(h) * Ty::elem_size(*elem);
+        let Value::Bytes(bytes) = next(&format!("output {what}"))? else {
+            return Err(format!("native externals: `{}` returned a non-{what} for an output {what}", sig.name));
+        };
         if bytes.len() as u32 != len {
-            return Err(format!("native externals: `{}` returned {} bytes for an output array of {len}", sig.name, bytes.len()));
+            return Err(format!(
+                "native externals: `{}` returned {} bytes for an output {what} of {len}",
+                sig.name,
+                bytes.len()
+            ));
         }
-        g.write(g.array_data(h), bytes);
+        g.write(at, bytes);
     }
     Ok(())
 }

@@ -377,14 +377,27 @@ fn ext_c_type(ty: &crate::sig::SigTy) -> Option<&'static str> {
 /// it carries the argument conversions ([`EXT_CALL_PREFIX`]).
 #[cfg(not(target_arch = "wasm32"))]
 pub fn external_symbol_or_wrapper(handles: &[usize], name: &str) -> Option<usize> {
-    use openmodelica_util::dynload::external_symbol_in;
-    if let Some(addr) = external_symbol_in(handles, &format!("{EXT_CALL_PREFIX}{name}")) {
+    external_symbol_or_wrapper_impl(handles, name, false)
+}
+
+/// [`external_symbol_or_wrapper`] restricted to `handles`: an export has to name
+/// the files it ships, and what the omc process happens to hold is not one.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn external_symbol_or_wrapper_shippable(handles: &[usize], name: &str) -> Option<usize> {
+    external_symbol_or_wrapper_impl(handles, name, true)
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn external_symbol_or_wrapper_impl(handles: &[usize], name: &str, shippable: bool) -> Option<usize> {
+    use openmodelica_util::dynload::{external_symbol_in, symbol_in};
+    let find = |n: &str| if shippable { symbol_in(handles, n) } else { external_symbol_in(handles, n) };
+    if let Some(addr) = find(&format!("{EXT_CALL_PREFIX}{name}")) {
         return Some(addr);
     }
-    if let Some(addr) = external_symbol_in(handles, name) {
+    if let Some(addr) = find(name) {
         return Some(addr);
     }
-    let wrapper = external_symbol_in(handles, &format!("{EXT_ADDR_PREFIX}{name}"))?;
+    let wrapper = find(&format!("{EXT_ADDR_PREFIX}{name}"))?;
     // Safety: the generated wrapper is `void (*w(void))(void)`.
     let w: extern "C" fn() -> usize = unsafe { std::mem::transmute(wrapper) };
     Some(w()).filter(|a| *a != 0)

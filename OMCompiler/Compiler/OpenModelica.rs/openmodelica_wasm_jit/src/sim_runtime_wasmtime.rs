@@ -393,6 +393,8 @@ pub fn prepare_native_externals(model: &SimModel, sigs: &[crate::sig::ExtCallSig
 /// `Include` C source.
 #[derive(Default)]
 struct NativeExternals {
+    /// Only a symbol in `handles` counts: see `external_symbol_or_wrapper_shippable`.
+    shippable_only: bool,
     handles: Vec<usize>,
     /// The files behind `handles`, in load order.
     paths: Vec<String>,
@@ -405,7 +407,7 @@ struct NativeExternals {
 /// (`ext_native`), for an export to ship: the `Library` shared objects, the
 /// archives linked into one, the `Include` sources compiled into one.
 pub fn native_external_library_files(model: &SimModel) -> std::result::Result<Vec<String>, String> {
-    let mut native = NativeExternals::default();
+    let mut native = NativeExternals { shippable_only: true, ..Default::default() };
     for sig in &model.ext_native {
         if native.resolve(&sig.name, model).is_none() {
             return Err(unresolved_external_detail(&sig.name, model, &native.errors));
@@ -490,7 +492,10 @@ impl NativeExternals {
     }
 
     fn symbol(&self, name: &str) -> Option<usize> {
-        model::external_symbol_or_wrapper(&self.handles, name)
+        match self.shippable_only {
+            true => model::external_symbol_or_wrapper_shippable(&self.handles, name),
+            false => model::external_symbol_or_wrapper(&self.handles, name),
+        }
     }
 
     /// The model's own `usertab`: no `external "C"`, so never among `ext_imports`.

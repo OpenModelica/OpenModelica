@@ -37,6 +37,11 @@ rtest special directives added to help creating testcases:
   at another toolchain. The wasm values are used when the target under test is
   wasm-jit (`OPENMODELICA_TEST_SIMCODETARGET` or `--simCodeTarget=` in
   `RTEST_OMCFLAGS`).
+
+  The same six are also exported as `OMC_NATIVE_CC`, `OMC_NATIVE_CFLAGS`, … with
+  the host values whatever the target under test is, for a test whose `Library`
+  exists for the platform alone — an `external "C"` the wasm side can only wrap
+  and has to reach through the host.
 * teardown_command: rm -f ...  
   Will execute the provided command after running omc.
 * suite: metamodelica, 63bit  
