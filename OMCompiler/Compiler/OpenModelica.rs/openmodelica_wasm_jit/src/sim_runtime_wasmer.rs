@@ -1062,9 +1062,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     }
     // See the wasmtime counterpart.
     let diag_on = openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::NLS_NEWTON_DIAGNOSTICS);
-    if openmodelica_sim_meta::omclog::wants_nls_var_names(log_mask)
-        && let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32, u32), ()>(&store, "rt_nls_set_names")
-    {
+    if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32, u32), ()>(&store, "rt_nls_set_names") {
         let free = rt_inst.exports.get_typed_function::<u32, ()>(&store, "rt_free").ok();
         wts(set.call(&mut store, u32::MAX, 0, 0))?;
         for sys in &meta.nls_vars {

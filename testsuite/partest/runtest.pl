@@ -316,7 +316,15 @@ if ( $osname eq 'MSWin32' ) {
 # Run the testscript and redirect output to a logfile.
 my $cmd = "$rtest $test > $test.test_log 2>&1";
 # print ("CMD: ", $cmd, "\n");
-system("$cmd");
+if (-e $test_suit_path_rel . "rtest") {
+  system("$cmd");
+} else {
+  open(my $out, ">", "$test.test_log");
+  print $out "No rtest at ${test_suit_path_rel}rtest (cwd " . cwd() . ").\n"
+           . "Give the test as ./path/to/$test relative to the testsuite root,\n"
+           . "and run runtest.pl from there (runtests.pl from partest/).\n";
+  close($out);
+}
 
 # Read the logfile and see if the test succeeded or failed.
 open(my $test_log, "<", "$test.test_log") or die "Couldn't open test log $test.log: $!\n";
