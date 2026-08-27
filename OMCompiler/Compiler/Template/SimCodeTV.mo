@@ -3966,6 +3966,12 @@ package ComponentReference
     output DAE.ComponentRef outComponentRef;
   end crefStripSubs;
 
+  function crefRenameSeedRoot
+    input DAE.ComponentRef inComponentRef;
+    input String newJacName;
+    output DAE.ComponentRef outComponentRef;
+  end crefRenameSeedRoot;
+
   function crefTypeFull
     input DAE.ComponentRef inRef;
     output DAE.Type res;
