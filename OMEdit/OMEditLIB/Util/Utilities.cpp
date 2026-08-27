@@ -52,6 +52,7 @@
 #include <QPainter>
 #include <QColorDialog>
 #include <QDir>
+#include <QRegularExpression>
 #include <QRegExp>
 
 extern "C" {
@@ -259,9 +260,9 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   syntaxDescriptions << tr("A rich Perl-like pattern matching syntax.")
                       << tr("A simple pattern matching syntax similar to that used by shells (command interpreters) for \"file globbing\".")
                       << tr("Fixed string matching.");
-  mpSyntaxComboBox->addItem(tr("Regular Expression"), QRegExp::RegExp);
-  mpSyntaxComboBox->addItem(tr("Wildcard"), QRegExp::Wildcard);
-  mpSyntaxComboBox->addItem(tr("Fixed String"), QRegExp::FixedString);
+  mpSyntaxComboBox->addItem(tr("Regular Expression"), TreeSearchFilters::Regexp);
+  mpSyntaxComboBox->addItem(tr("Wildcard"), TreeSearchFilters::Wildcard);
+  mpSyntaxComboBox->addItem(tr("Fixed String"), TreeSearchFilters::FixedString);
   Utilities::setToolTip(mpSyntaxComboBox, "Filters", syntaxDescriptions);
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
@@ -293,6 +294,42 @@ void TreeSearchFilters::showHideFilters(bool On)
     mpFiltersWidget->hide();
   }
 }
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+/*!
+ * \brief TreeSearchFilters::getFilterRegExp
+ * Returns the QRegExp for the given filter text, case sensitivity and syntax.
+ * \param filterText
+ * \param caseSensitivity
+ * \param syntax
+ * \return
+ */
+QRegExp TreeSearchFilters::getFilterRegExp(const QString &filterText, Qt::CaseSensitivity caseSensitivity, TreeSearchFilters::FilterSyntax syntax)
+{
+  return QRegExp(filterText, caseSensitivity, QRegExp::PatternSyntax(syntax));
+}
+#else
+/*!
+ * \brief TreeSearchFilters::getFilterRegularExpression
+ * Returns the QRegularExpression for the given filter text, case sensitivity and syntax.
+ * \param filterText
+ * \param caseSensitivity
+ * \param syntax
+ * \return
+ */
+QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &filterText, Qt::CaseSensitivity caseSensitivity, TreeSearchFilters::FilterSyntax syntax)
+{
+  const QRegularExpression::PatternOptions options = (caseSensitivity == Qt::CaseSensitive) ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
+  switch (syntax) {
+    case TreeSearchFilters::Wildcard:
+      return QRegularExpression::fromWildcard(filterText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion);
+    case TreeSearchFilters::FixedString:
+      return QRegularExpression(QRegularExpression::escape(filterText), options);
+    default:
+      return QRegularExpression(filterText, options);
+  }
+}
+#endif
 
 /*!
  * \class FileDataNotifier
