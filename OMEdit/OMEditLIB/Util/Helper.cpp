@@ -190,6 +190,7 @@ QString Helper::removeItem;
 QString Helper::general;
 QString Helper::output;
 QString Helper::parameters;
+QString Helper::parametersTip;
 QString Helper::inputs;
 QString Helper::name;
 QString Helper::startScript;
@@ -524,6 +525,7 @@ void Helper::initHelperVariables()
   Helper::general = tr("General");
   Helper::output = tr("Output");
   Helper::parameters = tr("Parameters");
+  Helper::parametersTip = tr("Shows the component parameters");
   Helper::inputs = tr("Inputs");
   Helper::name = tr("Name:");
   Helper::startScript = tr("Start Script:");

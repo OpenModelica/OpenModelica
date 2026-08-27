@@ -3203,7 +3203,7 @@ bool GraphicsView::updateElementConnectorSizingParameter(GraphicsView *pGraphics
       } else {
         QString modifierKey = QString("%1.%2").arg(pElement->getRootParentElement()->getName()).arg(parameter);
         if (pElement->isInheritedElement() && pElement->getModelComponent()) {
-          MainWindow::instance()->getOMCProxy()->setExtendsModifierValueOld(className, pElement->getModelComponent()->getTopLevelExtendName(),
+          MainWindow::instance()->getOMCProxy()->setExtendsModifierValueOld(className, pElement->getModelComponent()->getTopLevelParentElementName(),
                                                                             modifierKey, QString::number(numberOfElementConnections));
         } else {
           MainWindow::instance()->getOMCProxy()->setElementModifierValueOld(className, modifierKey, QString::number(numberOfElementConnections));
@@ -4196,9 +4196,9 @@ void GraphicsView::showParameters()
       if (mpModelWidget->getModelInstance()->getRootParentElement()) {
         inherited = mpModelWidget->getModelInstance()->getRootParentElement()->isExtend();
       }
-      pElementParameters = new ElementParameters(mpModelWidget->getModelInstance()->getParentElement(), this, inherited, false, 0, 0, 0, MainWindow::instance());
+      pElementParameters = new ElementParameters(mpModelWidget->getModelInstance()->getParentElement(), this, inherited, false, false, 0, 0, 0, MainWindow::instance());
     } else {
-      pElementParameters = new ElementParameters(0, this, false, false, 0, 0, 0, MainWindow::instance());
+      pElementParameters = new ElementParameters(0, this, false, false, false, 0, 0, 0, MainWindow::instance());
     }
     MainWindow::instance()->hideProgressBar();
     MainWindow::instance()->getStatusBar()->clearMessage();
