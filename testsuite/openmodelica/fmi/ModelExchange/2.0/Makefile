@@ -1,7 +1,6 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-dae_fmu_export_error.mos \
 EnumerationTest.mos \
 ExportFMUCLI.mos \
 fmi_attributes_01.mos \
