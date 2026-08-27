@@ -188,7 +188,7 @@ parameter value in the initial parameter file, CalledbyPython\_init.txt
 instead of using the command setComponentModifierValue. Then the file
 CalledbyPython.exe is just executed.
 
-The third option is to use the Corba interface for invoking the compiler
+The third option is to use the ZeroMQ interface for invoking the compiler
 and then just use the scripting interface to send commands to the
 compiler via this interface.
 
