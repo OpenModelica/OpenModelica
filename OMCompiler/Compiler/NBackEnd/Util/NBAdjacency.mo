@@ -501,6 +501,7 @@ public
           list<Pointer<Equation>> eqns;
           list<ComponentRef> var_crefs, pder_crefs, tmp_crefs;
           ComponentRef eqn_name, dep_cref, seed_cref, pder_cref;
+          Option<ComponentRef> oseed_cref;
           Integer eqn_index;
           Iterator iter;
           Dependency dep;
@@ -578,21 +579,24 @@ public
                     if filterSet(dep_cref, seed_set) then
                       // Try subscripted key first (NLS with per-element scalar seeds), then
                       // base key with subscript copy (ODE/DAE with full-array base seeds).
-                      seed_cref := match UnorderedMap.get(dep_cref, diff_map)
-                        case SOME(seed_cref) then seed_cref;
+                      // Not found in either: not one of this Jacobian's own unknowns, so its
+                      // partial derivative here is zero -- skip instead of erroring.
+                      oseed_cref := match UnorderedMap.get(dep_cref, diff_map)
+                        case SOME(seed_cref) then SOME(seed_cref);
                         else match UnorderedMap.get(ComponentRef.stripSubscriptsAll(dep_cref), diff_map)
                           // Strip subscripts from the base seed before copying so that
                           // origin subscripts (iterator or literal) merge onto an empty
                           // template rather than clashing with existing literal subscripts.
-                          case SOME(seed_cref) then ComponentRef.copySubscripts(dep_cref, ComponentRef.stripSubscriptsAll(seed_cref));
-                          else algorithm
-                            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because no seed was found for " + ComponentRef.toString(dep_cref) + " in diff_map."});
-                          then fail();
+                          case SOME(seed_cref) then SOME(ComponentRef.copySubscripts(dep_cref, ComponentRef.stripSubscriptsAll(seed_cref)));
+                          else NONE();
                         end match;
                       end match;
-                      UnorderedMap.add(seed_cref, dep, dep_map);
-                      if repeated then
-                        UnorderedSet.add(seed_cref, rep_set);
+                      if isSome(oseed_cref) then
+                        seed_cref := Util.getOption(oseed_cref);
+                        UnorderedMap.add(seed_cref, dep, dep_map);
+                        if repeated then
+                          UnorderedSet.add(seed_cref, rep_set);
+                        end if;
                       end if;
                     end if;
                   end for;

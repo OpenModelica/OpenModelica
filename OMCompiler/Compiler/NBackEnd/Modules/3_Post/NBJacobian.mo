@@ -58,6 +58,8 @@ protected
   import Expression = NFExpression;
   import NFFunction.Function;
   import Statement = NFStatement;
+  import Subscript = NFSubscript;
+  import List;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
@@ -1671,11 +1673,10 @@ protected
       Pointer.update(vars_ptr, diff_ptr :: Pointer.access(vars_ptr));
       // add x -> $<new>.x to the map for later lookup
       UnorderedMap.add(var.name, diff, map);
-      // For subscripted element crefs (partial-slice NLS iter vars), also add the
-      // base cref mapped to the first element seed (added only once so that
-      // later elements do not overwrite it). This allows iterator-subscripted
-      // deps from for-loop equations to find their seed via base fallback in Part D.
-      if ComponentRef.hasSubscripts(var.name) and not UnorderedMap.contains(ComponentRef.stripSubscriptsAll(var.name), map) then
+      // Base-cref fallback for iterator-subscripted deps (x[$i1]) to find their seed in Part D.
+      // Literal subscripts (x[1] vs x[2]) are independent unknowns, so exclude those.
+      if ComponentRef.hasSubscripts(var.name) and not List.all(ComponentRef.subscriptsAllFlat(var.name), Subscript.isLiteral)
+          and not UnorderedMap.contains(ComponentRef.stripSubscriptsAll(var.name), map) then
         UnorderedMap.add(ComponentRef.stripSubscriptsAll(var.name), diff, map);
       end if;
 
