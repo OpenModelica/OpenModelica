@@ -4942,7 +4942,7 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
   "Generates code for jacobian variables."
 ::=
  match context
-   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+   case JACOBIAN_CONTEXT(name=jacName, jacHT=SOME(jacHT)) then
      match simVarFromHT(cr, jacHT)
      case v as SIMVAR(varKind=BackendDAE.JAC_VAR()) then
        if stringEq(sub, "") then 'jacobian->resultVars[<%index%>]<%crefCCommentWithVariability(v)%>'
@@ -4964,7 +4964,13 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
        case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
          if stringEq(sub, "") then 'jacobian->seedVars[<%v.index%>]<%crefCCommentWithVariability(v)%>'
          else '(&(jacobian->seedVars[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
-       else crefOld(cr, ix)
+       else
+         // Still not found: seed cached under a different Jacobian's name. Retry with the root renamed to this Jacobian.
+         match simVarFromHT(crefRenameSeedRoot(crefStripSubs(cr), jacName), jacHT)
+         case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
+           if stringEq(sub, "") then 'jacobian->seedVars[<%v.index%>]<%crefCCommentWithVariability(v)%>'
+           else '(&(jacobian->seedVars[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+         else crefOld(cr, ix)
 end jacCrefs;
 
 template jacSparsityIndex(ComponentRef cr, Context context)
