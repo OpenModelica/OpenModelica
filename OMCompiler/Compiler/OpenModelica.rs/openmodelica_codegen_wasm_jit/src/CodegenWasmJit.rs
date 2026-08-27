@@ -57,7 +57,7 @@ use openmodelica_frontend_dump::ComponentReferenceBasics;
 
 use crate::CodegenWasmJitFunctions::{
     ArrayGroup, Attr, AttrTargets, BUILTINS, ConstGroup, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, Literals, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
-    ScatterGroup, SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
+    ProfPlan, ScatterGroup, SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     ClockInit, ClockUpdate,
     NlsResidual, NlsResiduals, backup_known_outputs, restore_known_outputs,
@@ -1213,7 +1213,10 @@ fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std
         }
         let keep = output_selection(&model);
         capture_last_sim(&model, &run, &keep);
-        write_result(&model, &meta, &result_path(&flags, &meta, result_file), &run, &keep)?;
+        let path = result_path(&flags, &meta, result_file);
+        write_result(&model, &meta, &path, &run, &keep)?;
+        // C's `printModelInfo`, after the result file is closed.
+        openmodelica_sim_meta::profiling::finish(&meta, &path);
         post = write_lin_file(&meta, &run, &flags);
         Ok(())
     })();
@@ -1375,6 +1378,7 @@ mod session {
         let keep = output_selection(model);
         capture_last_sim(model, run, &keep);
         write_result(model, meta, result_file, run, &keep)?;
+        openmodelica_sim_meta::profiling::finish(meta, result_file);
         Ok(write_lin_file(meta, run, &simflags::flags()))
     }
 
@@ -3440,6 +3444,8 @@ pub(crate) struct SimVarMap {
     n_delays: u32,
     /// Number of `spatialDistribution(...)` operators (`spatialInfo.maxIndex + 1`).
     n_spatial: u32,
+    /// `+profiling`'s clock plan (`SimCtx::prof`).
+    prof: Option<Arc<ProfPlan>>,
 }
 
 /// Display name of a model variable's component reference (OMC `.`-separated
@@ -3824,6 +3830,7 @@ fn build_var_map(
         clock_fire_off: layout.clock_fire_off,
         n_delays: 0,
         n_spatial: 0,
+        prof: None,
     };
     let mut result_vars: Vec<ResultVar> = Vec::new();
     // User-settable parameters (isValueChangeable), collected as they are laid out.
@@ -4839,6 +4846,8 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     );
 
     let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &layout)?;
+    let (prof_plan, prof_info) = prof_plan(sim_code, mi)?;
+    var_map.prof = prof_plan;
     // DAE-mode residual/auxiliary variables: their own `SimData` regions, indexed by
     // the SimVar's `index` as C's `crefToCStr` does. Solver workspace, not results.
     for (svs, base) in [(&dae_res_vars, layout.dae_res_off), (&dae_aux_vars, layout.dae_aux_off)] {
@@ -5354,6 +5363,17 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
     let fmi_vrs = if fmi_vrs { build_fmi_vrs(sim_code, &var_map, &layout)? } else { Vec::new() };
     // C labels its `-lv=LOG_NLS` unknowns from the `_info.json` `defines` array,
     // which `SerializeModelInfo` writes from these same `crefs`.
+    // C diagnoses (`newtonDiagnostics`) the systems of `initialEquations_lambda0`,
+    // or of `initialEquations` when there is no lambda0 section.
+    let nls_in = |eqs: &[Arc<SimCode::SimEqSystem>]| -> HashSet<i32> {
+        eqs.iter()
+            .filter_map(|e| match &**e {
+                SimCode::SimEqSystem::SES_NONLINEAR { nlSystem, .. } => Some(nlSystem.index),
+                _ => None,
+            })
+            .collect()
+    };
+    let diag_nls = if lambda0_eqs.is_empty() { nls_in(&initial_eqs) } else { nls_in(&lambda0_eqs) };
     let nls_vars = nls_systems
         .iter()
         .map(|sys| {
@@ -5362,10 +5382,20 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
             // the `size` residual ones at the end are read back.
             let eqns: Vec<i32> = lst(&sys.eqs).map(|e| eq_index_of(e)).collect();
             let tail = eqns.len().saturating_sub(names.len());
+            let pattern = match &sys.jacobianMatrix {
+                Some(jm) => [
+                    lst(&jm.nonlinear).count() as u32,
+                    lst(&jm.nonlinearT).count() as u32,
+                    lst(&jm.nonlinear).map(|(_, cols)| lst(cols).count() as u32).sum(),
+                ],
+                None => [0; 3],
+            };
             Ok(openmodelica_sim_meta::NlsVars {
                 eq_index: sys.index as u32,
                 names,
                 eqns: eqns[tail..].to_vec(),
+                pattern,
+                init_diag: diag_nls.contains(&sys.index),
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -5499,6 +5529,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
             sim_code, vars, &recon, &recon_jac_infos, &var_map,
             mi.varInfo.numRelatedBoundaryConditions.max(0) as u32,
         )?,
+        prof_info,
     );
     let meta_bytes = openmodelica_sim_meta::encode(&meta);
     let meta_len = meta_bytes.len() as u32;
@@ -5981,6 +6012,10 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         if let Some((fn_indices, _)) = &nls_wiring {
             let sizes: Vec<u32> = nls_systems.iter().map(|s| lst(&s.crefs).count() as u32).collect();
             emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &sizes, &nls_nominals, &nls_bounds, &nls_patterns);
+            if let Some(p) = &var_map.prof {
+                f.instruction(&we::Instruction::I32Const((p.n_functions + p.n_blocks) as i32));
+                f.instruction(&we::Instruction::Call(rt_index("rt_prof_init").expect("rt_prof_init is a runtime builtin")));
+            }
         }
         if !thunk_indices.is_empty() {
             crate::CodegenWasmJitFunctions::closures::emit_start(&mut f, &thunk_indices, closure_global);
@@ -6872,6 +6907,7 @@ fn build_sim_meta(
     opt: Option<openmodelica_sim_meta::OptInfo>,
     inputs: Vec<openmodelica_sim_meta::InputVar>,
     recon: Option<openmodelica_sim_meta::ReconInfo>,
+    prof: Option<openmodelica_sim_meta::ProfInfo>,
 ) -> openmodelica_sim_meta::SimMeta {
     openmodelica_sim_meta::SimMeta {
         layout: *layout,
@@ -6904,6 +6940,7 @@ fn build_sim_meta(
         opt,
         inputs,
         recon,
+        prof,
     }
 }
 
@@ -7071,6 +7108,130 @@ fn flatten_eqs_ll(
         }
     }
     out
+}
+
+/// `+profiling`: the clock plan the instrumented code ticks and the report's
+/// metadata. C reads both out of `_info.json` (`simulation_info_json.c`): every
+/// equation in position order — which is index order — with a profile block for
+/// each linear/nonlinear system under `blocks`, for every equation under `all`.
+fn prof_plan(
+    sim_code: &SimCode::SimCode,
+    mi: &SimCode::ModelInfo,
+) -> Result<(Option<Arc<ProfPlan>>, Option<openmodelica_sim_meta::ProfInfo>)> {
+    use openmodelica_sim_meta::{ProfEq, ProfFn, ProfInfo, ProfVar, SrcInfo};
+    use openmodelica_util::Config;
+    // C's `measure_time_flag` initializer, in `CodegenC`'s order.
+    let level: u8 = if Config::profileHtml()? {
+        5
+    } else if Config::profileSome()? {
+        1
+    } else if Config::profileAll()? {
+        2
+    } else {
+        return Ok((None, None));
+    };
+    let src_info = |i: &metamodelica::SourceInfo| SrcInfo {
+        file: i.fileName.to_string(),
+        line_start: i.lineNumberStart,
+        col_start: i.columnNumberStart,
+        line_end: i.lineNumberEnd,
+        col_end: i.columnNumberEnd,
+        read_only: i.isReadOnly,
+    };
+    let mut fn_index = HashMap::new();
+    let mut functions = Vec::new();
+    for (i, f) in lst(&mi.functions).enumerate() {
+        use SimCodeFunction::Function::Function as F;
+        let (name, info) = match &**f {
+            F::FUNCTION { name, info, .. }
+            | F::PARALLEL_FUNCTION { name, info, .. }
+            | F::KERNEL_FUNCTION { name, info, .. }
+            | F::EXTERNAL_FUNCTION { name, info, .. }
+            | F::RECORD_CONSTRUCTOR { name, info, .. } => (name, info),
+        };
+        fn_index.insert(crate::CodegenWasmJitFunctions::mangle(name)?, i as u32);
+        functions.push(ProfFn {
+            name: openmodelica_frontend_dump::AbsynUtil::pathString(name.clone(), arcstr::literal!("."), true, false)?.to_string(),
+            info: src_info(info),
+        });
+    }
+    // C's `modelData` variable arrays, in `printModelInfo` order.
+    let mut vars = Vec::new();
+    for list in [
+        &mi.vars.stateVars, &mi.vars.derivativeVars, &mi.vars.algVars, &mi.vars.discreteAlgVars, &mi.vars.paramVars,
+        &mi.vars.intAlgVars, &mi.vars.intParamVars, &mi.vars.boolAlgVars, &mi.vars.boolParamVars,
+        &mi.vars.stringAlgVars, &mi.vars.stringParamVars,
+    ] {
+        for sv in lst(list) {
+            vars.push(ProfVar {
+                id: vars.len() as u32,
+                name: cref_display(&sv.name)?,
+                comment: sv.comment.to_string(),
+                info: src_info(&sv.source.info),
+            });
+        }
+    }
+    // Every equation the `_info.json` lists, by index; a system's defines are its
+    // unknowns, an assignment's its left-hand side.
+    let mut table: HashMap<i32, (bool, Vec<String>)> = HashMap::new();
+    let mut err = None;
+    let mut note = |e: &Arc<SimCode::SimEqSystem>| {
+        use SimCode::SimEqSystem as E;
+        let entry = match &**e {
+            E::SES_LINEAR { lSystem, .. } => {
+                lst(&lSystem.vars).map(|v| cref_display(&v.name)).collect::<Result<Vec<_>>>().map(|d| (true, d))
+            }
+            E::SES_NONLINEAR { nlSystem, .. } => {
+                lst(&nlSystem.crefs).map(cref_display).collect::<Result<Vec<_>>>().map(|d| (true, d))
+            }
+            E::SES_SIMPLE_ASSIGN { cref, .. } | E::SES_SIMPLE_ASSIGN_CONSTRAINTS { cref, .. } => {
+                cref_display(cref).map(|d| (false, vec![d]))
+            }
+            E::SES_ARRAY_CALL_ASSIGN { lhs, .. } => match &**lhs {
+                DAE::Exp::CREF { componentRef, .. } => cref_display(componentRef).map(|d| (false, vec![d])),
+                _ => Ok((false, Vec::new())),
+            },
+            _ => Ok((false, Vec::new())),
+        };
+        match entry {
+            Ok(v) => {
+                table.insert(eq_index_of(e), v);
+            }
+            Err(x) => err = Some(x),
+        }
+    };
+    for list in [
+        &sim_code.initialEquations, &sim_code.initialEquations_lambda0, &sim_code.removedInitialEquations,
+        &sim_code.allEquations, &sim_code.startValueEquations, &sim_code.nominalValueEquations,
+        &sim_code.minValueEquations, &sim_code.maxValueEquations, &sim_code.parameterEquations,
+        &sim_code.algorithmAndEquationAsserts, &sim_code.inlineEquations, &sim_code.jacobianEquations,
+    ] {
+        for e in lst(list) {
+            visit_nested_eqs(e, &mut note);
+        }
+    }
+    drop(note);
+    if let Some(x) = err {
+        return Err(x);
+    }
+    let n = table.keys().max().map_or(1, |m| (*m).max(0) + 1) as usize;
+    let mut equations = Vec::with_capacity(n);
+    let mut blocks = HashMap::new();
+    // Under `all` C's block 0 exists but belongs to no equation.
+    let all = level & 2 != 0;
+    let mut block_eqs: Vec<u32> = if all { vec![0] } else { Vec::new() };
+    for i in 0..n {
+        let (system, defines) = table.get(&(i as i32)).cloned().unwrap_or_default();
+        equations.push(ProfEq { id: i as u32, defines });
+        // `readEquations`: a block for each system under `blocks`, for every
+        // equation but the dummy under `all`.
+        if i > 0 && (all || (level & 1 != 0 && system)) {
+            blocks.insert(i as i32, block_eqs.len() as u32);
+            block_eqs.push(i as u32);
+        }
+    }
+    let plan = ProfPlan { level, n_functions: functions.len() as u32, n_blocks: block_eqs.len() as u32, fn_index, blocks };
+    Ok((Some(Arc::new(plan)), Some(ProfInfo { level, functions, vars, equations, blocks: block_eqs })))
 }
 
 /// Visit `e` and every equation nested inside it, along the paths
@@ -7241,6 +7402,7 @@ pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         zc_context: false,
         clock_fire_off: var_map.clock_fire_off,
         sub_clock_off: None,
+        prof: var_map.prof.clone(),
     }
 }
 
@@ -7922,6 +8084,35 @@ pub(crate) fn lower_equation(
     eq: &SimCode::SimEqSystem,
     eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
 ) -> Result<()> {
+    // C's `SIM_PROF_TICK_EQ` / `SIM_PROF_ACC_EQ` around a profiled block: every
+    // equation under `all`, the linear and nonlinear systems under `blocks` — where
+    // C's tick counts one call, its nonlinear block takes it back (the residual
+    // calls count) and its linear one adds the setup call.
+    let prof = ctx.sim.as_ref().and_then(|s| s.prof.clone());
+    let clock = prof.as_ref().and_then(|p| p.block_clock(eq_index_of(eq)));
+    if let Some(c) = clock {
+        crate::CodegenWasmJitFunctions::emit_prof(ctx, clock, "rt_prof_tick")?;
+        let all = prof.as_ref().is_some_and(|p| p.all());
+        let ncall = match eq {
+            SimCode::SimEqSystem::SES_NONLINEAR { .. } if !all => -1,
+            SimCode::SimEqSystem::SES_LINEAR { .. } if !all => 1,
+            _ => 0,
+        };
+        if ncall != 0 {
+            ctx.emit(we::Instruction::I32Const(c as i32));
+            ctx.emit(we::Instruction::I32Const(ncall));
+            ctx.emit(we::Instruction::Call(rt_index("rt_prof_add_ncall")?));
+        }
+    }
+    lower_equation_inner(ctx, eq, eq_index)?;
+    crate::CodegenWasmJitFunctions::emit_prof(ctx, clock, "rt_prof_acc")
+}
+
+fn lower_equation_inner(
+    ctx: &mut FnCtx,
+    eq: &SimCode::SimEqSystem,
+    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+) -> Result<()> {
     use SimCode::SimEqSystem as E;
     if let Some(info) = eq_info(eq) {
         ctx.set_src_loc(info);
@@ -8471,6 +8662,10 @@ fn nls_parts(
                 return Ok((inner, NlsResiduals::InverseAlgorithm(known), iter_vars));
             }
         }
+        // No unknowns either: the system is its inner equations, evaluated once.
+        if iter_vars.is_empty() {
+            return Ok((inner, NlsResiduals::Explicit(residuals), iter_vars));
+        }
         return Err("CodegenWasmJit: SES_NONLINEAR has no residual equations");
     }
     // Only checkable when every residual's row count is static. An adaptive
@@ -8683,6 +8878,11 @@ fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, (f64, f6
 struct NlsJacInfo {
     seed_offs: Vec<u32>,
     result_offs: Vec<u32>,
+    /// This system's own seed/column slots. The new backend names every system's
+    /// Jacobian variables after the *same* matrix (`$SEED_ALG_LS_JAC_1.u`,
+    /// `$pDER_ALG_LS_JAC_1.$RES_SIM_0`, ...), so the shared cref map only keeps the
+    /// last system that registered them; lowering a Jacobian body binds these back.
+    slots: Vec<(String, SimSlot)>,
 }
 
 /// The residual row a Jacobian result var maps to: its `SimVar.index`, which is
@@ -9094,7 +9294,7 @@ fn build_nls_jac_infos(
         // A homotopy system's Jacobian is `n×(n+1)`: a `__HOM_LAMBDA` column, no row.
         let n_cols = count(&jm.seedVars);
         let n_rows = n_cols - nls_lambda_extra(sys) as usize;
-        let (info, _) = register_jac_slots(jm, n_rows, n_cols, &mut cursor, var_map)
+        let (info, _, slots) = register_jac_slots(jm, n_rows, n_cols, &mut cursor, var_map)
             .map_err(|_| "CodegenWasmJit: nonlinear-system Jacobian seed columns are not a permutation")?;
         let result_offs: Vec<u32> = info
             .result_offs
@@ -9102,7 +9302,7 @@ fn build_nls_jac_infos(
             .map(|o| o.ok_or("CodegenWasmJit: nonlinear-system Jacobian is missing a residual row"))
             .collect::<Result<_>>()?;
         let seed_offs = info.seed_offs;
-        infos.insert(sys.index, NlsJacInfo { seed_offs, result_offs });
+        infos.insert(sys.index, NlsJacInfo { seed_offs, result_offs, slots });
     }
     finalize_array_groups(var_map)?;
     Ok(infos)
@@ -9217,7 +9417,7 @@ fn build_linz_jac_infos(
         // the output region, so cover both shapes.
         let rows = plan.real_rows[k].max(plan.rows[k]) as usize;
         let cols = plan.real_cols[k] as usize;
-        let (info, _) = register_jac_slots(jm, rows, cols, &mut cursor, var_map)?;
+        let (info, _, _) = register_jac_slots(jm, rows, cols, &mut cursor, var_map)?;
         infos.push(Some(info));
     }
     // The new backend's column code reads seed/result arrays whole.
@@ -9227,7 +9427,7 @@ fn build_linz_jac_infos(
         Some(jm) => {
             let n = plan.real_rows[0] as usize;
             let mut map = var_map.clone();
-            let (info, zero_offs) = register_jac_slots(jm, n, n, &mut cursor, &mut map)?;
+            let (info, zero_offs, _) = register_jac_slots(jm, n, n, &mut cursor, &mut map)?;
             finalize_array_groups(&mut map)?;
             Some(AdjJacInfo { info, zero_offs, map })
         }
@@ -9250,9 +9450,13 @@ fn register_jac_slots(
     cols: usize,
     cursor: &mut u32,
     var_map: &mut SimVarMap,
-) -> Result<(LinzJacInfo, Vec<u32>)> {
+) -> Result<(LinzJacInfo, Vec<u32>, Vec<(String, SimSlot)>)> {
     use openmodelica_backend_types::BackendDAE::VarKind;
     let column_vars = jac_column_vars(jm);
+    // The pairs this matrix registered. Two matrices can name their variables alike
+    // (the new backend names every system's after the same one), and then the shared
+    // map only keeps the last; lowering a body binds these back over it.
+    let mut registered: Vec<(String, SimSlot)> = Vec::new();
     // The new backend lists an array's base beside its elements.
     let mut bases: HashSet<String> = HashSet::new();
     for sv in lst(&jm.seedVars).chain(column_vars.iter()) {
@@ -9266,7 +9470,9 @@ fn register_jac_slots(
             return Ok(None);
         }
         let off = *cursor;
-        Arc::make_mut(&mut var_map.vars).insert(key, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
+        let slot = SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false };
+        registered.push((key.clone(), slot));
+        Arc::make_mut(&mut var_map.vars).insert(key, slot);
         for g in array_element_keys(&sv.name)? {
             var_map.array_acc.entry(g.base).or_default().push(AccElem {
                 subs: g.subs,
@@ -9297,7 +9503,7 @@ fn register_jac_slots(
     }
     let seed_offs = jac_seed_offs_by_column(jm, &listed, cols)
         .ok_or("CodegenWasmJit: linearization Jacobian seed columns are not a permutation")?;
-    Ok((LinzJacInfo { seed_offs, result_offs }, others))
+    Ok((LinzJacInfo { seed_offs, result_offs }, others, registered))
 }
 
 /// One matrix's seed slots (column order) and result slots (row order; `None` is
@@ -9730,7 +9936,7 @@ fn build_nls_fns(
             }
             Ok(())
         };
-        emit_nls_residual_body(&mut ctx, &slots, &residuals, &mut lower_inner)?;
+        emit_nls_residual_body(&mut ctx, nlsystem.index, &slots, &residuals, &mut lower_inner)?;
         finish(ctx)
     };
     // load(sim_data, x): 2 params.
@@ -9748,7 +9954,15 @@ fn build_nls_fns(
                 .ok_or_else(|| "CodegenWasmJit: nonlinear-system Jacobian has no column")?;
             let constant_eqns: Vec<Arc<SimCode::SimEqSystem>> = lst(&col.constantEqns).cloned().collect();
             let column_eqns: Vec<Arc<SimCode::SimEqSystem>> = lst(&col.columnEqns).cloned().collect();
-            let mut ctx = FnCtx::new_sim_params(mk_sim(), by_name, literals, 3);
+            // Bind this matrix's own seed/column slots over the shared map, which
+            // holds whichever system registered the shared names last.
+            let mut sim = mk_sim();
+            let mut vars = (*sim.vars).clone();
+            for (key, slot) in &info.slots {
+                vars.insert(key.clone(), *slot);
+            }
+            sim.vars = Arc::new(vars);
+            let mut ctx = FnCtx::new_sim_params(sim, by_name, literals, 3);
             let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
                 for eq in &inner {
                     lower_equation(c, eq, eq_index)?;

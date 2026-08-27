@@ -83,11 +83,25 @@ pub(crate) enum NlsResiduals {
 /// by `call_indirect`.
 pub(crate) fn emit_nls_residual_body(
     ctx: &mut FnCtx,
+    eq_index: i32,
     slots: &[u32],
     residuals: &NlsResiduals,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
+    // C's `residualFunc`: `SIM_PROF_ADD_NCALL_EQ(block, 1)` under `blocks`, the
+    // block's own tick/acc under `all`.
+    let prof = ctx.sim.as_ref().and_then(|s| s.prof.clone());
+    let clock = prof.as_ref().and_then(|p| p.block_clock(eq_index));
+    if let Some(c) = clock {
+        if prof.as_ref().is_some_and(|p| p.all()) {
+            super::emit_prof(ctx, clock, "rt_prof_tick")?;
+        } else {
+            ctx.emit(I::I32Const(c as i32));
+            ctx.emit(I::I32Const(1));
+            ctx.emit(I::Call(rt_index("rt_prof_add_ncall")?));
+        }
+    }
     for (j, &off) in slots.iter().enumerate() {
         ctx.emit(I::LocalGet(0)); // SimData
         ctx.emit(I::LocalGet(1)); // x
@@ -138,6 +152,9 @@ pub(crate) fn emit_nls_residual_body(
                 emit_generic_residual(ctx, iterators, scal_indices, exp, *res_index)?;
             }
         }
+    }
+    if prof.as_ref().is_some_and(|p| p.all()) {
+        super::emit_prof(ctx, clock, "rt_prof_acc")?;
     }
     Ok(())
 }

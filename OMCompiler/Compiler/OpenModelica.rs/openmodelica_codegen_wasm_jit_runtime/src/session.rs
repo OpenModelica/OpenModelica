@@ -175,6 +175,12 @@ impl SimEngine for InWasmEngine {
     fn context_addr(&mut self) -> u32 {
         crate::nls::rt_context_addr()
     }
+    fn prof_row(&mut self) -> u32 {
+        crate::prof::rt_prof_row()
+    }
+    fn prof_dump(&mut self) -> u32 {
+        crate::prof::rt_prof_dump()
+    }
     fn error_stage_addr(&mut self) -> u32 {
         crate::nls::rt_error_stage_addr()
     }
@@ -328,7 +334,11 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     driver::set_log_sink(crate::omclog::sink);
 
     crate::nls::rt_set_step_size(model.step_size());
+    crate::files::set_prefix(&model.prefix);
     // `-lv=LOG_NLS` names the iteration variables; only the metadata has them.
+    if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::NLS_NEWTON_DIAGNOSTICS) {
+        crate::nls::set_diag(&model.nls_vars);
+    }
     crate::nls::set_var_names(if openmodelica_sim_meta::omclog::wants_nls_var_names(openmodelica_sim_meta::omclog::mask()) {
         model.nls_vars.iter().map(|s| (s.eq_index, s.names.clone())).collect()
     } else {

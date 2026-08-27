@@ -171,6 +171,12 @@ impl SimEngine for StandaloneEngine {
     fn context_addr(&mut self) -> u32 {
         crate::nls::rt_context_addr()
     }
+    fn prof_row(&mut self) -> u32 {
+        crate::prof::rt_prof_row()
+    }
+    fn prof_dump(&mut self) -> u32 {
+        crate::prof::rt_prof_dump()
+    }
     fn error_stage_addr(&mut self) -> u32 {
         crate::nls::rt_error_stage_addr()
     }
@@ -197,6 +203,7 @@ fn run() {
     let sim_data = crate::rt_alloc(m.layout.total);
     let mut engine = StandaloneEngine;
     crate::nls::rt_set_step_size(m.step_size());
+    crate::files::set_prefix(&m.prefix);
 
     // wasip1 has a monotonic clock, so `-alarm` works; nothing cancels a command.
     driver::set_clock(now_ms);

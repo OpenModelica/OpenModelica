@@ -161,6 +161,8 @@ pub struct SimFlags {
     pub single_precision: bool,
     /// `-outputPath=<dir>`: holds `<prefix>_res.<format>` unless `-r` names a file.
     pub output_path: Option<String>,
+    /// `-measureTimePlotFormat=<fmt>`: the `+profiling` plots' gnuplot terminal.
+    pub measure_time_plot_format: Option<String>,
     /// `-iit=<t>`: where `-iif`'s result file is read (C's `init_time`, default the
     /// start time).
     pub init_time: Option<f64>,
@@ -754,6 +756,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "noemit" => f.noemit = true,
             "single" => f.single_precision = true,
             "outputPath" => f.output_path = Some(value(name)?),
+            "measureTimePlotFormat" => f.measure_time_plot_format = Some(value(name)?),
             "iit" => f.init_time = Some(real(name, &value(name)?)?),
             "mei" => f.max_event_iter = Some(int(name, &value(name)?)?.max(0) as u32),
             "mbi" => f.max_bisection_iter = Some(int(name, &value(name)?)?.max(0) as u32),

@@ -454,6 +454,14 @@ pub trait SimEngine {
     fn context_addr(&mut self) -> u32 {
         0
     }
+    /// The runtime's `rt_prof_row` / `rt_prof_dump` (see `profiling`): the address
+    /// of the profiling clocks' step row and run totals, 0 without the export.
+    fn prof_row(&mut self) -> u32 {
+        0
+    }
+    fn prof_dump(&mut self) -> u32 {
+        0
+    }
     /// Address of the runtime's error stage / absorbed-error pair, or 0 when the
     /// backend has no such export.
     fn error_stage_addr(&mut self) -> u32 {
@@ -576,6 +584,7 @@ impl StepRetry {
         self.rows_mark = rows;
         self.in_step = true;
         self.threw = false;
+        THROW_PAST_STEP.store(false, Ordering::Relaxed);
         self.save = set_error_stage(e, addr, ERROR_SIMULATION_STEP);
     }
 
@@ -624,7 +633,7 @@ impl StepRetry {
         // Only a model error the region absorbed reaches C's catch; a rethrown
         // `assert()` is `MMC_THROW_INTERNAL`, which jumps past it.
         let caught = self.end(e) || self.threw || RUNTIME_ERROR.load(Ordering::Relaxed);
-        if !caught || !self.stored {
+        if !caught || THROW_PAST_STEP.load(Ordering::Relaxed) || !self.stored {
             return Ok(None);
         }
         if self.armed {
@@ -723,6 +732,15 @@ pub fn enrich_trap_init(e: &mut dyn SimEngine, err: &'static str, start_time: f6
 /// Set by [`note_runtime_error`]; consumed by the trap it precedes.
 static RUNTIME_ERROR: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
 
+/// C's `getBestJumpBuffer`: a model error raised under `ERROR_EVENTHANDLING` goes to
+/// `globalJumpBuffer`, past `performSimulation`'s per-step catch, so the step is not
+/// retaken.
+static THROW_PAST_STEP: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+fn note_throw_past_step() {
+    THROW_PAST_STEP.store(true, Ordering::Relaxed);
+}
+
 /// C's `va_throwStreamPrint(NULL, …)`, which an external function's `ModelicaError`
 /// reaches: log the message on `LOG_ASSERT` and unwind. It has no condition and no
 /// source position, so the trap that follows must not go looking for the assertion
@@ -743,9 +761,11 @@ pub fn note_runtime_error_flag() {
 /// Drop one a previous run left behind (only a trap consumes it).
 pub fn clear_runtime_error() {
     RUNTIME_ERROR.store(false, Ordering::Relaxed);
+    THROW_PAST_STEP.store(false, Ordering::Relaxed);
 }
 
 fn enrich_trap_impl(e: &mut dyn SimEngine, err: &'static str, init_time: Option<f64>) -> &'static str {
+    THROW_PAST_STEP.store(false, Ordering::Relaxed);
     if RUNTIME_ERROR.swap(false, Ordering::Relaxed) {
         if init_time.is_some() {
             omclog::info(omclog::ASSERT, false, "simulation terminated by an assertion at initialization");
@@ -1970,8 +1990,11 @@ fn init_model(
     // Seed the delay buffers / transported profiles and snapshot `zeroCrossingsPre`
     // for step 1.
     store_operators(e, sim_data, layout)?;
+    // C's `functionInitialEquations` clears `discreteCall` on the way out. A model
+    // that neither integrates (no states) nor crosses (no zero crossings) reaches no
+    // other writer, and would spend the whole run in initialization mode.
+    write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
     if layout.n_zc > 0 {
-        write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
         save_zc_pre(e, sim_data, layout)?;
         e.call2(MODEL_FN_ZC, sim_data, sim_data + layout.zc_off)?;
     }
@@ -2701,9 +2724,27 @@ fn emit_row(
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_time(e, sim_data, time)?;
     eval_continuous(e, sim_data, layout)?;
+    emit_row_evaluated(e, rows, sim_data, layout, time, stop)
+}
+
+/// [`emit_row`] for a point C's `updateContinuousSystem` has already run at. A second
+/// pass is not idempotent: `delayImpl` interpolates toward the *current* expression
+/// value, so it walks a `delay()` chain one propagation step further than C.
+fn emit_row_evaluated(
+    e: &mut dyn SimEngine,
+    rows: &mut Vec<f64>,
+    sim_data: u32,
+    layout: &SimLayout,
+    time: f64,
+    stop: f64,
+) -> Result<()> {
     check_nls(e, sim_data, layout)?;
     capture_row(e, rows, sim_data, layout)?;
-    check_asserts(e, sim_data, layout, if time >= stop { omclog::WARNING } else { omclog::INFO })
+    let checked = check_asserts(e, sim_data, layout, if time >= stop { omclog::WARNING } else { omclog::INFO });
+    // C's `fmtEmitStep`, once per global step.
+    #[cfg(feature = "std")]
+    crate::profiling::on_row(e, time);
+    checked
 }
 
 /// C's `finishSimulation`: a discrete update with `terminal()` true and one more
@@ -3378,17 +3419,33 @@ fn probe_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout
     read_zero_crossings(e, sim_data, layout, out)
 }
 
+/// Drop the violations [`update_zero_crossings`] kept for a row evaluated again since.
+fn supersede(e: &mut dyn SimEngine, evaluated: &mut bool) {
+    if core::mem::take(evaluated) {
+        let _ = e.take_pending_warnings();
+    }
+}
+
 /// C's `updateContinuousSystem` + `saveZeroCrossings`, what `checkForStateEvent`
-/// compares against: detection runs off a full evaluation.
-fn update_zero_crossings(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout, time: f64, out: &mut [f64]) -> Result<()> {
-    // The row re-evaluates this point and reports what it raises; flush anything
-    // older so only this pass's violations are dropped below.
+/// compares against: detection runs off a full evaluation. `keep` holds this pass's
+/// violations for a row emitted from it.
+fn update_zero_crossings(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    time: f64,
+    out: &mut [f64],
+    keep: bool,
+) -> Result<()> {
+    // Flush older ones, so only this pass's are in hand below.
     drain_asserts(e, sim_data, omclog::INFO)?;
     write_i32(e, sim_data + layout.nls_fail_off, 0)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
     write_time(e, sim_data, time)?;
     eval_continuous(e, sim_data, layout)?;
-    let _ = e.take_pending_warnings();
+    if !keep {
+        let _ = e.take_pending_warnings();
+    }
     read_zero_crossings(e, sim_data, layout, out)
 }
 
@@ -3633,6 +3690,9 @@ fn fire_time_event(
     let save = set_error_stage(e, addr, ERROR_EVENTHANDLING);
     let r = fire_time_event_inner(e, samples, sim_data, layout, te);
     took_error_stage(e, addr, save);
+    if r.is_err() {
+        note_throw_past_step();
+    }
     r
 }
 
@@ -3753,6 +3813,9 @@ pub fn event_update(
     let save = set_error_stage(e, addr, ERROR_EVENTHANDLING);
     let r = event_update_inner(e, sim_data, layout, samples, time);
     took_error_stage(e, addr, save);
+    if r.is_err() {
+        note_throw_past_step();
+    }
     r
 }
 
@@ -4138,9 +4201,12 @@ pub fn drive(
 
     // C's `measure_time_flag`: the clocks run only when the block that renders
     // them will be printed.
-    rtclock::reset(omclog::active(omclog::STATS) || omclog::active(omclog::STATS_V));
+    // `+profiling` is C's other `measure_time_flag` source.
+    rtclock::reset(omclog::active(omclog::STATS) || omclog::active(omclog::STATS_V) || model.prof.is_some());
     rtclock::tick(rtclock::TOTAL);
     rtclock::tick(rtclock::PREINIT);
+    #[cfg(feature = "std")]
+    crate::profiling::start(model);
 
     let mut stats = SolveStats::default();
     let use_events = layout.n_samples > 0 || layout.n_zc > 0 || !model.clocks.is_empty();
@@ -4195,8 +4261,9 @@ pub fn drive(
         // do: it never returns until it is done. Nor can it retry a step a model
         // error threw in (C's `retrySimulationStep`), which is why a model that only
         // reached `euler` for want of states -- where the loop saves nothing anyway,
-        // there being no integration -- keeps the host driver.
-        if !use_events && method == "euler" && layout.n_states > 0 && !host_driven && !csv_input_given() {
+        // there being no integration -- keeps the host driver. `+profiling` also
+        // needs the row-emitting loop (`fmtEmitStep`), so it stays off this path.
+        if !use_events && method == "euler" && layout.n_states > 0 && !host_driven && !csv_input_given() && model.prof.is_none() {
             // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
             label = "euler-wasm";
             solver_setup(e, model, sim_data)?;
@@ -4305,6 +4372,8 @@ pub fn drive(
     }
     recon_res?;
     rtclock::accumulate(rtclock::TOTAL);
+    #[cfg(feature = "std")]
+    crate::profiling::end_of_run(e);
     (stats.timers, stats.tcalls) = rtclock::snapshot();
     stats.systems = e.sys_stats();
     Ok((RunResult { rows, n_reals, params, stats, lin }, label))
@@ -7985,6 +8054,9 @@ impl Driver for EventsDriver {
                 // C's `MMC_TRY_INTERNAL(simulationJumpBuffer)` around the whole step.
                 self.retry.open(e, self.rows.len());
                 open_assert_window();
+                // C's `updateContinuousSystem` landed on the grid point and nothing
+                // has moved the state since: the row is emitted from it, as C's is.
+                let mut evaluated = false;
                 // Handle every event (state or sample) up to `tout`, earliest first.
                 loop {
                     save_old_real(e, sim_data, layout)?; // C's `rotateRingBuffer`
@@ -8000,7 +8072,8 @@ impl Driver for EventsDriver {
                     // A state event bracketed in (t, subtarget]?
                     let mut troot = None;
                     if layout.n_zc > 0 && subtarget - self.core.t > eps {
-                        update_zero_crossings(e, sim_data, layout, subtarget, &mut scratch)?;
+                        evaluated = subtarget >= tout - eps;
+                        update_zero_crossings(e, sim_data, layout, subtarget, &mut scratch, evaluated)?;
                         if zc_crossed(&zc0, &scratch) {
                             troot = Some(locate_zc_root(
                                 e, sim_data, layout, self.core.t, subtarget, &zc0, &scratch,
@@ -8008,8 +8081,9 @@ impl Driver for EventsDriver {
                         }
                     }
                     if let Some(tr) = troot {
+                        supersede(e, &mut evaluated);
                         // The bisection left `SimData` at its last trial point.
-                        update_zero_crossings(e, sim_data, layout, tr, &mut scratch)?;
+                        update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
                         log_state_event(tr, &zc_crossed_idx(&zc0, &scratch), model);
                         if !no_event_emit() {
                             capture_pre(e, &mut self.rows, sim_data, layout, tr)?; // pre-event row
@@ -8050,6 +8124,7 @@ impl Driver for EventsDriver {
                     // it is due at or before this grid point; otherwise the interval
                     // is clean up to `tout`.
                     if te <= subtarget + SAMPLE_EPS {
+                        supersede(e, &mut evaluated);
                         event_step = true;
                         log_time_event(te, &self.samp, model);
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?; // held pre row
@@ -8084,6 +8159,7 @@ impl Driver for EventsDriver {
                         self.sync.take_fired(e, subtarget)?;
                     }
                     if self.sync.next_time() <= subtarget + SYNC_EPS {
+                        supersede(e, &mut evaluated);
                         event_step = true;
                         self.core.t = subtarget;
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
@@ -8108,7 +8184,11 @@ impl Driver for EventsDriver {
                 }
                 if !grid_covered {
                     write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
-                    let emitted = emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time);
+                    let emitted = if evaluated {
+                        emit_row_evaluated(e, &mut self.rows, sim_data, layout, tout, model.stop_time)
+                    } else {
+                        emit_row(e, &mut self.rows, sim_data, layout, tout, model.stop_time)
+                    };
                     close_assert_window(e, sim_data).and(emitted)?;
                     if terminated(e, sim_data, layout)? {
                         self.retry.end(e);

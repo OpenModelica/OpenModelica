@@ -105,6 +105,7 @@ pub const NLS_V: Stream = 33;
 pub const NLS_HOMOTOPY: Stream = 34;
 pub const NLS_JAC: Stream = 35;
 pub const NLS_JAC_SUMS: Stream = 37;
+pub const NLS_NEWTON_DIAGNOSTICS: Stream = 38;
 pub const NLS_DERIVATIVE_TEST: Stream = 39;
 pub const NLS_SVD: Stream = 40;
 pub const NLS_SVD_V: Stream = 41;
@@ -149,7 +150,9 @@ pub const SHOW_ALL_WARNINGS: Mask = 1 << 63;
 /// Which streams name a nonlinear system's iteration variables, and so need the
 /// roster the model metadata carries (C reads it out of `modelDataXml` instead).
 pub fn wants_nls_var_names(m: Mask) -> bool {
-    [NLS, NLS_DERIVATIVE_TEST, NLS_SVD, NLS_SVD_V].iter().any(|s| mask_has(m, *s))
+    [NLS, NLS_DERIVATIVE_TEST, NLS_SVD, NLS_SVD_V, INIT_HOMOTOPY, NLS_NEWTON_DIAGNOSTICS]
+        .iter()
+        .any(|s| mask_has(m, *s))
 }
 
 pub fn mask_has(m: Mask, s: Stream) -> bool {
@@ -538,15 +541,7 @@ fn exp_str(v: f64, prec: usize) -> String {
         return alloc::format!("{v}");
     }
     // Round in the mantissa's own scale, and carry when it rounds up to 10.
-    let mut exp = if v == 0.0 { 0 } else { libm::floor(libm::log10(libm::fabs(v))) as i32 };
-    let mut m = if v == 0.0 { 0.0 } else { v / libm::pow(10.0, exp as f64) };
-    if libm::fabs(m) >= 10.0 {
-        m /= 10.0;
-        exp += 1;
-    } else if v != 0.0 && libm::fabs(m) < 1.0 {
-        m *= 10.0;
-        exp -= 1;
-    }
+    let (mut exp, m) = if v == 0.0 { (0, 0.0) } else { crate::decimal_exp(v) };
     let mut s = alloc::format!("{m:.prec$}");
     if s.trim_start_matches('-').starts_with("10") {
         exp += 1;
@@ -694,6 +689,24 @@ pub fn debug_vector_double(stream: Stream, name: &str, v: &[f64]) {
         line.push_str(&cell);
     }
     info(stream, false, &line);
+    close(stream);
+}
+
+/// C's `debugMatrixDouble`: a `name [nxm-dim]` block holding one `%16.8g` line per
+/// row of the column-major `n`x`m` `a` (whose row stride is `m - 1`, as C's is).
+pub fn debug_matrix_double(stream: Stream, name: &str, a: &[f64], n: usize, m: usize) {
+    if !active(stream) {
+        return;
+    }
+    info(stream, true, &format!("{name} [{n}x{m}-dim]"));
+    for i in 0..n {
+        let mut line = String::new();
+        for j in 0..m {
+            line.push(' ');
+            line.push_str(&g(a[i + j * (m - 1)], 16, 8));
+        }
+        info(stream, false, &line);
+    }
     close(stream);
 }
 

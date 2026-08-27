@@ -431,11 +431,13 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     jacobian = NULL;
   }
 
-  /* allocate system data */
-  nonlinsys->nlsx = (double*) malloc(size*sizeof(double));
-  nonlinsys->nlsxExtrapolation = (double*) malloc(size*sizeof(double));
-  nonlinsys->nlsxOld = (double*) malloc(size*sizeof(double));
-  nonlinsys->resValues = (double*) malloc(size*sizeof(double));
+  /* allocate system data; zeroed because the "last solving is too long ago" branch
+   * of solve_nonlinear_system leaves nlsxExtrapolation -- which solveHomotopy and
+   * solveHybrd start a non-discrete call from -- unwritten. */
+  nonlinsys->nlsx = (double*) calloc(size, sizeof(double));
+  nonlinsys->nlsxExtrapolation = (double*) calloc(size, sizeof(double));
+  nonlinsys->nlsxOld = (double*) calloc(size, sizeof(double));
+  nonlinsys->resValues = (double*) calloc(size, sizeof(double));
 
   /* allocate value list*/
   nonlinsys->oldValueList = allocValueList(1, nonlinsys->size);

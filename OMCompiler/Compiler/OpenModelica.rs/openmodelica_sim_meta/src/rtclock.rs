@@ -40,9 +40,14 @@ struct Clocks {
     tick: [f64; N],
     acc: [f64; N],
     ncall: [u64; N],
+    /// C's `total_tp` / `max_tp` / `rt_clock_ncall_total`, fed by [`clear`].
+    total: [f64; N],
+    max: [f64; N],
+    ncall_total: [u64; N],
 }
 
-const EMPTY: Clocks = Clocks { on: false, tick: [0.0; N], acc: [0.0; N], ncall: [0; N] };
+const EMPTY: Clocks =
+    Clocks { on: false, tick: [0.0; N], acc: [0.0; N], ncall: [0; N], total: [0.0; N], max: [0.0; N], ncall_total: [0; N] };
 
 // The driver is single-threaded per run (as is the in-wasm session), so a plain
 // cell is enough and keeps `tick` off the atomics.
@@ -86,8 +91,41 @@ pub fn accumulate(ix: usize) {
 }
 
 /// C's `rt_ncall`.
-fn ncall(ix: usize) -> u64 {
+pub fn ncall(ix: usize) -> u64 {
     clocks().ncall[ix]
+}
+
+/// C's `rt_clear`: the clock's share since the last clear joins the run's total
+/// and maximum, and it starts over.
+pub fn clear(ix: usize) {
+    let c = clocks();
+    c.total[ix] += c.acc[ix];
+    c.ncall_total[ix] += c.ncall[ix];
+    if c.acc[ix] > c.max[ix] {
+        c.max[ix] = c.acc[ix];
+    }
+    c.acc[ix] = 0.0;
+    c.ncall[ix] = 0;
+}
+
+/// C's `rt_accumulated`, in seconds.
+pub fn accumulated(ix: usize) -> f64 {
+    clocks().acc[ix] / 1000.0
+}
+
+/// C's `rt_total`, in seconds.
+pub fn total(ix: usize) -> f64 {
+    clocks().total[ix] / 1000.0
+}
+
+/// C's `rt_max_accumulated`, in seconds.
+pub fn max_accumulated(ix: usize) -> f64 {
+    clocks().max[ix] / 1000.0
+}
+
+/// C's `rt_ncall_total`.
+pub fn ncall_total(ix: usize) -> u64 {
+    clocks().ncall_total[ix]
 }
 
 /// C's `solver_main` head: pre-initialization ends where initialization begins.
