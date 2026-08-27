@@ -949,11 +949,24 @@ namespace ModelInstance
     }
   }
 
-  Modifier *Modifier::getModifier(const QString &modifier) const
+  /*!
+   * \brief Modifier::getModifier
+   * Returns the Modifier with the given name.\n
+   * \param modifier - the name of the modifier to search for.
+   * \param recursive - if true then search recursively in sub modifiers.
+   * \return
+   */
+  Modifier *Modifier::getModifier(const QString &modifier, bool recursive) const
   {
     foreach (auto *pModifier, mModifiers) {
       if (pModifier->getName().compare(modifier) == 0) {
         return pModifier;
+      }
+      if (recursive) {
+        Modifier *pSubModifier = pModifier->getModifier(modifier, recursive);
+        if (pSubModifier) {
+          return pSubModifier;
+        }
       }
     }
     return 0;
@@ -2079,7 +2092,6 @@ namespace ModelInstance
       mDymolaCheckBox.deserialize(jsonObject.value("__Dymola_checkBox"));
     }
 
-
     if (jsonObject.contains("choice")) {
       const auto& choicesArray = jsonObject.value("choice").toArray();
       mChoices.reserve(choicesArray.size());
@@ -2154,7 +2166,12 @@ namespace ModelInstance
     deserialize_impl(jsonObject);
   }
 
-  Element *Element::getTopLevelExtendElement() const
+  /*!
+   * \brief Element::getTopLevelParentElement
+   * Returns the top level parent element of the model where this element is located.
+   * \return
+   */
+  Element *Element::getTopLevelParentElement() const
   {
     Element *pElement = mpParentModel->getParentElement();
     while (pElement && pElement->getParentModel() && pElement->getParentModel()->getParentElement()) {
@@ -2195,13 +2212,13 @@ namespace ModelInstance
   }
 
   /*!
-   * \brief Element::getTopLevelExtendName
-   * Returns the top level extend name where the element is located.
+   * \brief Element::getTopLevelParentElementName
+   * Returns the name of the top level parent element of the model where this element is located.
    * \return
    */
-  QString Element::getTopLevelExtendName() const
+  QString Element::getTopLevelParentElementName() const
   {
-    Element *pElement = getTopLevelExtendElement();
+    Element *pElement = getTopLevelParentElement();
 
     if (pElement && pElement->getModel()) {
       return pElement->getModel()->getName();
@@ -2306,13 +2323,7 @@ namespace ModelInstance
 
   Replaceable *Element::getReplaceable() const
   {
-    if (mpPrefixes) {
-      return mpPrefixes.get()->getReplaceable();
-    } else if (mpModel) {
-      return mpModel->getReplaceable();
-    } else {
-      return nullptr;
-    }
+    return mpPrefixes ? mpPrefixes.get()->getReplaceable() : nullptr;
   }
 
   bool Element::isRedeclare() const

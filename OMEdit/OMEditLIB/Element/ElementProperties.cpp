@@ -149,7 +149,7 @@ void FinalEachToolButton::showParameterMenu()
 Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, ElementParameters *pElementParameters)
 {
   mpModelInstanceElement = pElement;
-  mExtendName = mpModelInstanceElement->getTopLevelExtendName();
+  mExtendName = mpModelInstanceElement->getTopLevelParentElementName();
   mInherited = defaultValue;
   mpElementParameters = pElementParameters;
   auto &dialogAnnotation = mpModelInstanceElement->getAnnotation()->getDialogAnnotation();
@@ -913,13 +913,13 @@ void Parameter::editClassButtonClicked()
   if (mpElementParameters && mpElementParameters->hasElement()) {
     // if we fail to find the type
     if ((mpModelInstanceElement == NULL) ||
-        (mpModelInstanceElement->getTopLevelExtendElement() == NULL) ||
-        (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel() == NULL) ||
-        (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName() == QString())) {
+        (mpModelInstanceElement->getTopLevelParentElement() == NULL) ||
+        (mpModelInstanceElement->getTopLevelParentElement()->getParentModel() == NULL) ||
+        (mpModelInstanceElement->getTopLevelParentElement()->getParentModel()->getName() == QString())) {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the redeclare class."), QMessageBox::Ok);
       return;
     }
-    classPath = mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName();
+    classPath = mpModelInstanceElement->getTopLevelParentElement()->getParentModel()->getName();
   } else {
     classPath = mpElementParameters->getElementParentClassName();
   }
@@ -958,7 +958,7 @@ void Parameter::editClassButtonClicked()
     mpModelInstanceElement->setModel(pNewModel);
     MainWindow::instance()->getProgressBar()->setRange(0, 0);
     MainWindow::instance()->showProgressBar();
-    ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(),
+    ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(), true,
                                                                   true, pDefaultElementModifier, pReplaceableConstrainedByModifier, pElementModifier, mpElementParameters);
     MainWindow::instance()->hideProgressBar();
     MainWindow::instance()->getStatusBar()->clearMessage();
@@ -1321,9 +1321,9 @@ QVBoxLayout *ParametersScrollArea::getLayout()
  * \param pElementModifier
  * \param pParent
  */
-ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested,
-                                     ModelInstance::Modifier *pDefaultElementModifier,
-                                     ModelInstance::Modifier *pReplaceableConstrainedByModifier, ModelInstance::Modifier *pElementModifier, QWidget *pParent)
+ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, bool subDialog,
+                                     ModelInstance::Modifier *pDefaultElementModifier, ModelInstance::Modifier *pReplaceableConstrainedByModifier,
+                                     ModelInstance::Modifier *pElementModifier, QWidget *pParent)
   : QDialog(pParent)
 {
   mpElement = pElement;
@@ -1336,6 +1336,7 @@ ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsV
   }
   mInherited = inherited;
   mNested = nested;
+  mSubDialog = subDialog;
   mpDefaultElementModifier = pDefaultElementModifier;
   mpReplaceableConstrainedByModifier = pReplaceableConstrainedByModifier;
   mpElementModifier = pElementModifier;
@@ -2306,7 +2307,7 @@ void ElementParameters::updateElementParameters()
       }
     }
 
-    if (mNested) {
+    if (mSubDialog) {
       if (modifiersList.isEmpty()) {
         mModification.clear();
       } else {
@@ -2334,9 +2335,9 @@ void ElementParameters::updateElementParameters()
                 }
                 pParentElement = pParentElement->getParentModel() ? pParentElement->getParentModel()->getParentElement() : nullptr;
               }
-              pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelExtendName(), "_", modifiers);
+              pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelParentElementName(), "_", modifiers);
             } else {
-              pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelExtendName(), mpElement->getQualifiedName(), modifiers);
+              pOMCProxy->setExtendsModifierValue(className, mpElement->getTopLevelParentElementName(), mpElement->getQualifiedName(), modifiers);
             }
           } else {
             pOMCProxy->setElementModifierValue(className, mpElement->getQualifiedName(), modifiers);
