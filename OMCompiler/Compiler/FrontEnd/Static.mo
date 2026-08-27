@@ -3633,7 +3633,14 @@ algorithm
            DAE.ICONST(info.columnNumberStart),
            DAE.ICONST(info.lineNumberEnd),
            DAE.ICONST(info.columnNumberEnd),
-           DAE.RCONST(info.lastModification)
+           // Deliberately not info.lastModification. This record is constant folded
+           // into the generated C, so the mtime of the source file would be baked in
+           // as a literal and the output would depend on when the file happened to be
+           // checked out. Nothing ever reads the field back off a sourceInfo() value
+           // (the mtime of a *class* is read from its Absyn.CLASS instead, see
+           // reloadClass and getTimeStamp in CevalScript), so pin it to 0.0.
+           // See OpenModelica#14399.
+           DAE.RCONST(0.0)
         };
         outExp := DAE.METARECORDCALL(Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO")),args,{"fileName","isReadOnly","lineNumberStart","columnNumberStart","lineNumberEnd","columnNumberEnd","lastEditTime"},0,{});
       then (inCache,outExp,DAE.PROP(DAE.T_SOURCEINFO_DEFAULT,DAE.C_CONST()));

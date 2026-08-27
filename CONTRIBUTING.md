@@ -57,4 +57,36 @@ After Jenkins checks that all is OK a developer will:
 
 ## Bootstrapping sources
 
-Sometimes one would need to update the bootstrapping sources to add new features to the MetaModelica compiler. The bootstrapping sources are stored at: [OMBootstrapping](https://github.com/OpenModelica/OMBootstrapping.git), just make a PR for it with the contents of OMCompiler/Compiler/boot/build.
+`bomc`, the compiler used to translate the MetaModelica sources of `omc`, is built from
+pre-translated C sources instead of from the `.mo` files themselves. Those sources live in
+the [OMBootstrapping](https://github.com/OpenModelica/OMBootstrapping.git) repository,
+checked out as the submodule `OMCompiler/Compiler/boot/bomc`. They have to be refreshed
+whenever `bomc` becomes too old to translate the current `OMCompiler/Compiler/*.mo`, for
+example after adding MetaModelica syntax or new builtin functions.
+
+From a configured CMake build directory:
+
+```bash
+cmake --build build_cmake --target update-bootstrap-sources
+```
+
+This builds `omc`, translates the compiler a second time with `OPENMODELICA_BACKEND_STUBS=1`
+(so that the source file names baked into the generated C are basenames rather than the
+absolute paths of the tree it was built in) and copies the result into the submodule working
+tree. The result is reproducible: regenerating it from a different checkout, or at a
+different time, produces the same bytes. Use the `generate-bootstrap-sources` target instead
+to produce the sources under `<build_dir>/OMCompiler/Compiler/bootstrap-sources/` without
+touching the submodule.
+
+Afterwards:
+
+* commit the changes in `OMCompiler/Compiler/boot/bomc` and make a PR against OMBootstrapping
+* re-run `cmake` and rebuild to verify that `bomc` builds from the new sources
+* once merged, make a PR against OpenModelica moving the submodule to the new commit
+
+`bootstrap-sources/build/FakeBoostrappingExternals.c` is hand written and is left alone by
+the update. If the refreshed sources reference external C functions that `bomc` does not
+link, add stubs for them there.
+
+`bootstrap-sources/Makefile.sources` is not regenerated. It is only read by the autotools
+`bootstrap-from-tarball`; the CMake build of `bomc` globs `bootstrap-sources/build/*.c`.
