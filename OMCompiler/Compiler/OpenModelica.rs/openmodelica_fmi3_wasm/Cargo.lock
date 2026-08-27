@@ -561,6 +561,7 @@ dependencies = [
  "libm",
  "minpack",
  "openmodelica_lapack",
+ "openmodelica_mat_writer",
  "openmodelica_sim_meta",
 ]
 

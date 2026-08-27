@@ -1341,10 +1341,14 @@ public constant ErrorTypes.Message DUPLICATE_VARIABLE_ERROR = ErrorTypes.MESSAGE
   "Duplicate elements:\n %s.");
 public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE(7026, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "File not Found: %s. Compile OpenModelica with Encryption support.");
-public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_NOT_SUPPORTED = ErrorTypes.MESSAGE(7027, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  "DAE mode (--daeMode) is not supported for FMU export. Please remove the --daeMode flag.");
+public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_ME = ErrorTypes.MESSAGE(7027, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "DAE mode (--daeMode) is not supported for FMI Model Exchange export (fmuType=\"%s\"), which requires the state derivatives a DAE-mode model does not have. Export a Co-Simulation FMU instead, or remove the --daeMode flag.");
 public constant ErrorTypes.Message USER_CANCELLED = ErrorTypes.MESSAGE(7028, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Operation cancelled by user.");
+public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_ME_DROPPED = ErrorTypes.MESSAGE(7031, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  "DAE mode (--daeMode) has no Model Exchange interface, which would require the state derivatives a DAE-mode model does not have. Exporting Co-Simulation only.");
+public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_C_CS = ErrorTypes.MESSAGE(7030, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "DAE mode (--daeMode) is not supported by the C simulation runtime, so it cannot build a Co-Simulation FMU either. Export with platforms={\"wasm\"}, whose runtime does support it, or remove the --daeMode flag.");
 public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI1 = ErrorTypes.MESSAGE(7029, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "The wasm FMU export does not serve the deprecated FMI 1.0. Ask for version=\"2.0\" or version=\"3.0\", or drop \"wasm\" from platforms to export a C FMU.");
 

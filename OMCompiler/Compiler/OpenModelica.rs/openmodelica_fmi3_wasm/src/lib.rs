@@ -44,6 +44,8 @@ unsafe extern "C" {
     fn functionZeroCrossings(sim_data: u32, gout: u32);
     fn functionUpdateSynchronous(sim_data: u32, base_idx: u32);
     fn functionEquationsSynchronous(sim_data: u32, idx: u32);
+    // `--daeMode`'s residual, exported (empty) by every model so this resolves.
+    fn evaluateDAEResiduals(sim_data: u32, eval_stage: u32);
     fn om_meta_ptr() -> u32;
     fn om_meta_len() -> u32;
 }
@@ -426,9 +428,8 @@ impl SimEngine for Engine {
                 driver::MODEL_FN_ZC => functionZeroCrossings(a, b),
                 driver::MODEL_FN_UPDATE_SYNC => functionUpdateSynchronous(a, b),
                 driver::MODEL_FN_EQS_SYNC => functionEquationsSynchronous(a, b),
-                // Importing `evaluateDAEResiduals` would leave every non-DAE model
-                // with an unresolved `model.*` import.
-                _ => return Err("fmi3-me: --daeMode models cannot be exported as an FMU"),
+                driver::MODEL_FN_DAE => evaluateDAEResiduals(a, b),
+                _ => return Err(UNKNOWN_MODEL_FN),
             }
         }
         Ok(())
