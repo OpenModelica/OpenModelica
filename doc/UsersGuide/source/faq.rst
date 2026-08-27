@@ -4,6 +4,8 @@ Frequently Asked Questions (FAQ)
 Below are some frequently asked questions in three areas, with
 associated answers.
 
+.. _faq-openmodelica-general :
+
 OpenModelica General
 --------------------
 
@@ -11,11 +13,17 @@ OpenModelica General
        even though this is part of the Modelica Language Specification.
 
 -  A: Use the OPENMODELICALIBRARY environment variable instead. We have
-       temporarily switched to this variable, in order not to interfere
-       with other Modelica tools which might be installed on the same
-       system. In the future, we might switch to a solution with a
-       settings file, that also allows the user to turn on the
-       MODELICAPATH functionality if desired.
+       switched to this variable, in order not to interfere with other
+       Modelica tools which might be installed on the same system.
+       MODELICAPATH is not read at all: OPENMODELICALIBRARY does not
+       extend or override it. Like MODELICAPATH, it is a list of
+       directories, separated by colon (:) on all operating systems
+       except Windows, which uses semicolon (;). If it is not set,
+       OpenModelica defaults to OPENMODELICAHOME/lib/omlibrary/ and
+       ~/.openmodelica/libraries/ (on Windows '~' is %APPDATA%).
+       In the future, we might switch to a solution with a settings
+       file, that also allows the user to turn on the MODELICAPATH
+       functionality if desired.
 
 -  Q: How do I enter multi-line models into OMShell since it evaluates
        when typing the Enter/Return key?

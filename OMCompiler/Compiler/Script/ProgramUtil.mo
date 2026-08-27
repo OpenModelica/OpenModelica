@@ -1288,7 +1288,7 @@ algorithm
     case ("modelica://", name, mp, true)
       algorithm
         name::_ := System.strtok(name,".");
-        str := "Could not resolve modelica://" + name + " with MODELICAPATH: " + mp;
+        str := "Could not resolve modelica://" + name + " with OPENMODELICALIBRARY (MODELICAPATH in the language specification): " + mp;
         Error.addMessage(Error.COMPILER_ERROR,{str});
       then fail();
   end matchcontinue;
