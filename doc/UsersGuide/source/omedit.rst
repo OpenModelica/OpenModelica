@@ -1471,7 +1471,9 @@ Libraries Options
 
 -  General
 
-  -  *OPENMODELICALIBRARY* - Sets the OPENMODELICALIBRARY. OPENMODELICALIBRARY is used to load libraries.
+  -  *OPENMODELICALIBRARY* - The list of paths searched while loading a library, i.e. the
+     OPENMODELICALIBRARY environment variable (MODELICAPATH in the language specification).
+     Paths are separated by ``;`` on Windows and ``:`` on Linux and macOS.
 
 -  System libraries loaded automatically on startup - The list of system libraries that are loaded on startup.
 
