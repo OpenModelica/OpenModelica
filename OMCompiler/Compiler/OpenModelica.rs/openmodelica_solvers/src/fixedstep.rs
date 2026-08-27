@@ -69,6 +69,11 @@ impl FixedStep {
         self.br.root_index()
     }
 
+    /// C's `time_left`/`states_left` for the root just located.
+    pub fn event_left(&self) -> (f64, &[f64]) {
+        self.br.left_end()
+    }
+
     /// One step from `t` to `target`. `yp` is the derivative at `(t, y)`, which the
     /// caller already has (C reads it out of the previous step's `localData[1]`);
     /// on return it holds the derivative at the point reported.

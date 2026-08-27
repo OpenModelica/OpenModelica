@@ -2215,6 +2215,8 @@ impl Gbode {
         let found = !self.event_ids.is_empty();
         let event_time = if found {
             if crate::simflags::with_flags(|f| f.no_root_finding) {
+                // C skips `findRoot_gb`: the pre-event history stays at the root.
+                self.latch_event_left(t_right, true);
                 Some(t_right)
             } else {
                 let (l, r) = {
@@ -2254,6 +2256,7 @@ impl Gbode {
                 self.zc.copy_from_slice(&backup);
             }
         }
+        self.latch_event_left(a, true);
         Ok(b)
     }
 }

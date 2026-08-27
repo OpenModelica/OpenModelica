@@ -129,6 +129,11 @@ impl SymSolver {
         self.br.root_index()
     }
 
+    /// C's `time_left`/`states_left` for the root just located.
+    pub fn event_left(&self) -> (f64, &[f64]) {
+        self.br.left_end()
+    }
+
     /// One output step from `t` to `target`. `yp` holds the derivative at `(t, y)`
     /// going in (C's `localData[1]` derivative slots) and at the reported point
     /// coming out.

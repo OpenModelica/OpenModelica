@@ -18,6 +18,7 @@ pub enum StepEnd {
 
 /// One step's event bracket: the states at both ends and the crossing values there.
 pub struct Bracket {
+    t_left: f64,
     y_left: Vec<f64>,
     y_right: Vec<f64>,
     zc: Vec<f64>,
@@ -29,6 +30,7 @@ pub struct Bracket {
 impl Bracket {
     pub fn new(n_states: usize, n_zc: usize) -> Self {
         Bracket {
+            t_left: 0.0,
             y_left: vec![0.0; n_states],
             y_right: vec![0.0; n_states],
             zc: vec![0.0; n_zc],
@@ -41,6 +43,7 @@ impl Bracket {
     /// The step's left end: the states it starts from and the crossing values
     /// there, which are the comparison base for [`Bracket::close`].
     pub fn open(&mut self, ode: &mut dyn Ode, t: f64, y: &[f64]) -> Result<()> {
+        self.t_left = t;
         self.y_left.copy_from_slice(y);
         if !self.zc.is_empty() {
             ode.eval_zc(t, &self.y_left, &mut self.zc)?;
@@ -75,6 +78,9 @@ impl Bracket {
             return Ok(None);
         }
         if no_root_finding() {
+            // No bracket: the pre-event history belongs at the root itself.
+            self.t_left = t_right;
+            self.y_left.copy_from_slice(&self.y_right);
             return Ok(Some(t_right));
         }
         Ok(Some(self.find_root(ode, t_left, t_right)?))
@@ -82,6 +88,11 @@ impl Bracket {
 
     pub fn right(&self) -> &[f64] {
         &self.y_right
+    }
+
+    /// The final bracket's left end, C's `time_left`/`states_left`.
+    pub fn left_end(&self) -> (f64, &[f64]) {
+        (self.t_left, &self.y_left)
     }
 
     pub fn root_index(&self) -> usize {
@@ -113,6 +124,7 @@ impl Bracket {
             } else {
                 self.y_left.copy_from_slice(&mid);
                 a = c;
+                self.t_left = c;
                 self.zc_pre.copy_from_slice(&self.zc);
                 self.zc.copy_from_slice(&self.zc_backup);
             }

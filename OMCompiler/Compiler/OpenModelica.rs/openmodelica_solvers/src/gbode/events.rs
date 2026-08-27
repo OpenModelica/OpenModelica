@@ -58,7 +58,25 @@ impl Gbode {
                 self.zc.copy_from_slice(&self.zc_backup);
             }
         }
+        self.latch_event_left(a, false);
         Ok(b)
+    }
+
+    /// Record the converged bracket's lower end.
+    pub(super) fn latch_event_left(&mut self, a: f64, inner: bool) {
+        self.ev_left_time = a;
+        let mut y = core::mem::take(&mut self.ev_left_y);
+        if inner {
+            self.interpolate_gbf_all(a, &mut y);
+        } else {
+            self.interpolate_step(a, &mut y);
+        }
+        self.ev_left_y = y;
+    }
+
+    /// C's `time_left`/`states_left` for the root just located.
+    pub fn event_left(&self) -> (f64, &[f64]) {
+        (self.ev_left_time, &self.ev_left_y)
     }
 
     /// C's `checkForEvents`: evaluate the crossings at the right end of the
@@ -77,6 +95,8 @@ impl Gbode {
         let found = !self.event_ids.is_empty();
         let event_time = if found {
             if no_root_finding() {
+                // C skips `findRoot_gb`: the pre-event history stays at the root.
+                self.latch_event_left(self.time_right, false);
                 Some(self.time_right)
             } else {
                 let (l, r) = (self.time_left, self.time_right);

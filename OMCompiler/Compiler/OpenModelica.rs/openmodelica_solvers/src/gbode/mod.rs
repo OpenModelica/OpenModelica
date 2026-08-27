@@ -123,6 +123,9 @@ pub struct Gbode {
     zc_backup: Vec<f64>,
     /// The crossings that changed sign over the accepted step (C's `eventLst`).
     event_ids: Vec<usize>,
+    /// C's `findRoot_gb` `time_left`/`states_left`, which the driver evaluates at.
+    ev_left_time: f64,
+    ev_left_y: Vec<f64>,
 
     start_time: f64,
     stop_time: f64,
@@ -385,6 +388,8 @@ impl Gbode {
             zc_pre: vec![0.0; n_zc],
             zc_backup: vec![0.0; n_zc],
             event_ids: Vec::new(),
+            ev_left_time: 0.0,
+            ev_left_y: vec![0.0; n_states],
             start_time: 0.0,
             stop_time: f64::MAX,
             desired_step_size: 0.0,
