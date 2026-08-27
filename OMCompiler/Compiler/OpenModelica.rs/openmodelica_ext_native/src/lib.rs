@@ -142,16 +142,22 @@ impl Natives {
         utilities::publish();
         let mut handles: Vec<*mut c_void> = Vec::new();
         // A library may need one loaded after it; keep trying until a pass loads none.
-        let mut pending: Vec<String> = table.libs.clone();
+        // A shipped library is opened from the FMU, a system one (`extlib`) by the
+        // soname alone, so the platform's loader searches its own path for it.
+        let mut pending: Vec<(String, bool)> = table
+            .libs
+            .iter()
+            .map(|l| (lib_dir.join(l).to_string_lossy().into_owned(), false))
+            .chain(table.system_libs.iter().map(|l| (l.clone(), true)))
+            .collect();
         loop {
             let before = pending.len();
-            let mut failed: Vec<(String, String)> = Vec::new();
-            for lib in std::mem::take(&mut pending) {
-                let path = lib_dir.join(&lib);
-                let c = CString::new(path.to_string_lossy().into_owned()).map_err(|_| "NUL in a library path")?;
+            let mut failed: Vec<(String, bool, String)> = Vec::new();
+            for (lib, system) in std::mem::take(&mut pending) {
+                let c = CString::new(lib.clone()).map_err(|_| "NUL in a library path")?;
                 let h = unsafe { libc::dlopen(c.as_ptr(), libc::RTLD_GLOBAL | libc::RTLD_LAZY) };
                 if h.is_null() {
-                    failed.push((lib, dl_error()));
+                    failed.push((lib, system, dl_error()));
                 } else {
                     handles.push(h);
                 }
@@ -162,11 +168,18 @@ impl Natives {
             if failed.len() == before {
                 return Err(failed
                     .into_iter()
-                    .map(|(l, e)| format!("cannot load `{l}`: {e}"))
+                    .map(|(l, system, e)| match system {
+                        true => format!(
+                            "cannot load `{l}`: {e}\n  The FMU does not ship it: \
+                             sources/buildDescription.xml declares it external, so it has to be \
+                             installed on this machine."
+                        ),
+                        false => format!("cannot load `{l}`: {e}"),
+                    })
                     .collect::<Vec<_>>()
                     .join("\n"));
             }
-            pending = failed.into_iter().map(|(l, _)| l).collect();
+            pending = failed.into_iter().map(|(l, system, _)| (l, system)).collect();
         }
         let mut fns = Vec::with_capacity(table.fns.len());
         for sig in &table.fns {

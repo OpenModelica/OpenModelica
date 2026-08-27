@@ -38,6 +38,9 @@ pub struct SimModel {
     /// library defines: a native host dlopens them and calls in through libffi.
     /// Empty in the browser.
     pub ext_native_libs: Vec<String>,
+    /// The system libraries among `ext_native_libs`: an export declares these
+    /// rather than shipping them.
+    pub ext_native_system: Vec<String>,
     /// The archives and object files among them ([`ExtArchives`]).
     pub ext_archives: Option<ExtArchives>,
     pub ext_includes: Option<ExtIncludes>,

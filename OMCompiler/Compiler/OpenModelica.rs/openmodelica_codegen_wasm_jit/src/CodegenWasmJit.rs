@@ -1734,6 +1734,9 @@ pub(crate) struct ExtLibraries {
     pub wasm: Vec<ExtLibrary>,
     /// In link order, for a native host to fall back to.
     pub native: Vec<String>,
+    /// The system libraries among them: named by soname, with no file behind them
+    /// that an export could ship. Also in `native`, which only ever dlopens.
+    pub native_system: Vec<String>,
     /// The static archives and object files among them, likewise in link order.
     pub archives: Vec<String>,
     /// `#include` lines for the C sources a `Library` named, which the C target
@@ -1790,6 +1793,10 @@ pub(crate) fn resolve_ext_libraries(
                 match find_native_library(&lib, &dirs) {
                     Some(NativeLib::Shared(path)) => out.native.push(path),
                     Some(NativeLib::Archive(path)) => out.archives.push(path),
+                    Some(NativeLib::System(soname)) => {
+                        out.native.push(soname.clone());
+                        out.native_system.push(soname);
+                    }
                     None => (),
                 }
             }
@@ -2015,6 +2022,9 @@ enum NativeLib {
     Shared(String),
     /// A static archive or an object file, which [`ExtArchives`] has to link first.
     Archive(String),
+    /// A soname no search directory held a file for, so only the platform's own
+    /// loader can find it: a system dependency, not a file an export can ship.
+    System(String),
 }
 
 fn is_link_input(name: &str) -> bool {
@@ -2058,7 +2068,7 @@ fn find_native_library(spec: &str, dirs: &[String]) -> Option<NativeLib> {
             return found(p);
         }
     }
-    (spec != name).then(|| NativeLib::Shared(format!("{prefix}{name}{suffix}")))
+    (spec != name).then(|| NativeLib::System(format!("{prefix}{name}{suffix}")))
 }
 
 /// `<dir><name>` or `<dir>lib<name>`, the two spellings a `Library="foo"`
@@ -2301,12 +2311,16 @@ fn wasm_exports(bytes: &[u8]) -> impl Iterator<Item = &str> {
 
 /// `resources/native_externals.txt`: the platform libraries to load and the
 /// functions to serve from them, in the form `openmodelica_ext_native_marshal`
-/// parses. `libs` are file names under `binaries/<platform>/`.
-fn native_externals_table(sigs: &[ExtCallSig], libs: &[String]) -> String {
+/// parses. `libs` are file names under `binaries/<platform>/`; `system` are the
+/// sonames the FMU does not ship, which its loader opens through the platform's.
+fn native_externals_table(sigs: &[ExtCallSig], libs: &[String], system: &[String]) -> String {
     use openmodelica_wasm_jit::sig::ExtLang;
     let mut out = String::new();
     for l in libs {
         out.push_str(&format!("lib {l}\n"));
+    }
+    for l in system {
+        out.push_str(&format!("extlib {l}\n"));
     }
     for sig in sigs {
         let mut code = String::new();
@@ -2328,6 +2342,38 @@ fn native_externals_table(sigs: &[ExtCallSig], libs: &[String]) -> String {
         out.push('\n');
     }
     out
+}
+
+/// `sources/buildDescription.xml` declaring the libraries the FMU does not ship
+/// (FMI 3.0 `<Library external="true"/>`). `system` are sonames; `name` carries the
+/// linker name, as the schema's examples spell it.
+fn external_build_description(model_id: &str, system: &[String]) -> String {
+    let platform = native_fmu::host_platform().map(|p| format!(" platform=\"{}\"", p.fmi)).unwrap_or_default();
+    let mut out = String::from(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
+         <fmiBuildDescription fmiVersion=\"3.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \
+         xsi:noNamespaceSchemaLocation=\"https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3BuildDescription.xsd\">\n",
+    );
+    out.push_str(&format!("  <BuildConfiguration modelIdentifier=\"{}\"{platform}>\n", xml_escape(model_id)));
+    for soname in system {
+        let name = soname
+            .strip_prefix(std::env::consts::DLL_PREFIX)
+            .unwrap_or(soname)
+            .strip_suffix(std::env::consts::DLL_SUFFIX)
+            .unwrap_or(soname);
+        out.push_str(&format!(
+            "    <Library name=\"{}\" external=\"true\" description=\"a Library annotation named it; \
+             resolved as {} by the loader of the platform running the FMU\"/>\n",
+            xml_escape(name),
+            xml_escape(soname),
+        ));
+    }
+    out.push_str("  </BuildConfiguration>\n</fmiBuildDescription>\n");
+    out
+}
+
+fn xml_escape(s: &str) -> String {
+    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
 }
 
 /// The dylink stub module defining the host-served externals: each stores its
@@ -2403,6 +2449,8 @@ struct NativeExternals {
     stub: Vec<u8>,
     /// (file name under `binaries/<platform>/`, contents)
     libs: Vec<(String, Vec<u8>)>,
+    /// Sonames declared but not shipped, for `sources/buildDescription.xml`.
+    system: Vec<String>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -2428,7 +2476,13 @@ fn native_externals(model: &SimModel, kind: &str) -> Result<Option<NativeExterna
         "CodegenWasmJit: unresolved host-served externals"
     })?;
     let mut libs = Vec::new();
+    let mut system = Vec::new();
     for path in &files {
+        // Declared, not shipped: no file behind the soname to pack.
+        if model.ext_native_system.iter().any(|s| s == path) {
+            system.push(path.clone());
+            continue;
+        }
         let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
         let bytes = std::fs::read(path).map_err(|e| {
             record_error(format!("CodegenWasmJit: cannot read `{path}`: {e}"));
@@ -2436,9 +2490,10 @@ fn native_externals(model: &SimModel, kind: &str) -> Result<Option<NativeExterna
         })?;
         libs.push((name, bytes));
     }
-    let table = native_externals_table(&model.ext_native, &libs.iter().map(|(n, _)| n.clone()).collect::<Vec<_>>());
+    let table =
+        native_externals_table(&model.ext_native, &libs.iter().map(|(n, _)| n.clone()).collect::<Vec<_>>(), &system);
     let stub = native_ext_stub(&model.ext_native, &table)?;
-    Ok(Some(NativeExternals { table, stub, libs }))
+    Ok(Some(NativeExternals { table, stub, libs, system }))
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -3314,6 +3369,9 @@ fn emit_fmu(
         }
         if let Some(n) = &natives {
             entries.push((NATIVE_TABLE.to_string(), n.table.clone().into_bytes()));
+            if version == "3.0" && !n.system.is_empty() {
+                entries.push(("sources/buildDescription.xml".to_string(), external_build_description(&model_id, &n.system).into_bytes()));
+            }
         }
         // What `Modelica.Utilities.Files.loadResource` named; C's `SimCodeMain`
         // copies the same set.
@@ -6334,6 +6392,7 @@ fn build_sim_model(sim_code: &SimCode::SimCode, fmi_vrs: bool, ext_host: ExtHost
         ext_native,
         ext_builtin,
         ext_native_libs: ext_libs.native,
+        ext_native_system: ext_libs.native_system,
         ext_archives,
         ext_includes,
         ext_lib_notes,
