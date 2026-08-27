@@ -1767,10 +1767,10 @@ fn assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) -> Stri
     // An equation `assert()` always names its condition, and C prints it with the
     // message as one message's second line — including for a backend-generated
     // variable, whose `FILE_INFO` is empty (`$finalCon$…`'s min/max guard). Without
-    // a condition it is C's `FUNCTION_CONTEXT` `omc_assert` (position and message
-    // only) or `assertCommonVar` (the math-domain guards, neither).
+    // a condition it is C's `FUNCTION_CONTEXT` `omc_assert`: the message, under the
+    // position where there is one (`omc_dummyFileInfo` has none).
     if cond.is_empty() {
-        return if info.file.is_empty() { head } else { format!("{pos}\n{}", info.msg) };
+        return if info.file.is_empty() { info.msg.clone() } else { format!("{pos}\n{}", info.msg) };
     }
     let body = format!("(({cond})) --> \"{}\"", info.msg);
     if info.file.is_empty() {
@@ -1781,16 +1781,9 @@ fn assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) -> Stri
 
 pub fn log_assert_block(info: &AssertInfo, cond: &str, time: f64, initial: bool) {
     let block = assert_block(info, cond, time, initial);
-    // C's `assertCommonVar` (the math-domain guards, no condition and no source
-    // position): the warning names the time, a debug line carries the message.
-    if cond.is_empty() && info.file.is_empty() {
-        omclog::warning(omclog::ASSERT, false, &block);
-        omclog::debug(omclog::ASSERT, false, &info.msg);
-        return;
-    }
-    // C's generated guard for a backend variable warns (`omc_assert_warning`); one
-    // with a source position is a model `assert()`, which is an error.
-    if info.file.is_empty() {
+    // C's generated guard for a backend variable warns (`omc_assert_warning`); a
+    // model `assert()` and `omc_assert`'s conditionless message are both errors.
+    if info.file.is_empty() && !cond.is_empty() {
         omclog::warning(omclog::ASSERT, false, &block);
         return;
     }
