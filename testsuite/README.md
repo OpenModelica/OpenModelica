@@ -44,6 +44,11 @@ rtest special directives added to help creating testcases:
   them can deselect it: `partest/runtests.pl -suites=-metamodelica,-63bit`.
   Run `runtests.pl -h` for the suites and their defaults. The directive must be
   in the test's header, i.e. before the first line of code.
+* suite: wasm — says that the test selects the `wasm-jit` or `wasm` simCodeTarget
+  itself (rather than running under whatever target the run was given). Only the
+  Rust omc implements those targets, so the suite is off by default and the Rust
+  partest turns it on with `-suites=+wasm`. `rtest test.mos` runs such a test
+  regardless, as it does for the other tag suites.
 * suite: disabled — says that the test is not part of the testsuite, i.e. that it
   is listed in its makefile as a failing, not compiling, not simulating or manual
   test rather than in `TESTFILES`. Such a test is expected to fail, and some of

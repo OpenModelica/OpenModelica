@@ -3427,7 +3427,11 @@ fn emit_fmu(
     })();
     if let Err(e) = &outcome {
         if openmodelica_util::Error::getNumErrorMessages() == errs_before {
-            record_error(format!("CodegenWasmJit: cannot build FMI {} {kind} FMU: {e:#}", fmi_version()));
+            record_error(format!(
+                "CodegenWasmJit: cannot build FMI {} {kind} FMU: {}",
+                fmi_version(),
+                with_engine_detail(e)
+            ));
         }
     }
     outcome
