@@ -106,6 +106,52 @@ void csvEscapedString(const char* original, char* replaced, size_t n, threadData
 }
 
 /**
+ * @brief Write the (escaped, quoted) flattened name(s) of a result variable.
+ *
+ * For scalar variables a single name is written. For array variables (used when
+ * sim code scalarization is disabled) one name per scalar element is written in
+ * the form `"<name>[i,j,...]"`, using the same Modelica structured naming as the
+ * .mat result files and val(). Without this an array variable would only emit a
+ * single header entry while the data row emits one value per scalar element.
+ *
+ * @param fout        Output file.
+ * @param format      printf format with a single `%s`, e.g. `",\"%s\""`.
+ * @param name        Variable name.
+ * @param dimension   Dimension of the variable. `NULL` or 0 dimensions for scalars.
+ * @param threadData  Thread data for error handling.
+ */
+static void csvWriteArrayNames(FILE* fout, const char* format, const char* name,
+                               const DIMENSION_INFO* dimension, threadData_t* threadData)
+{
+  char escaped[MAX_IDENT_LENGTH];
+
+  if (dimension == NULL || dimension->numberOfDimensions == 0) {
+    csvEscapedString(name, escaped, MAX_IDENT_LENGTH, threadData);
+    fprintf(fout, format, escaped);
+    return;
+  }
+
+  char nameBuffer[MAX_IDENT_LENGTH];
+  for (size_t linear = 0; linear < dimension->scalar_length; linear++) {
+    /* compute multi-dimensional 1-based indices for this linear index (row-major) */
+    size_t rem = linear;
+    size_t written = snprintf(nameBuffer, MAX_IDENT_LENGTH, "%s", name);
+    for (size_t k = 0; k < dimension->numberOfDimensions; k++) {
+      size_t stride = 1;
+      for (size_t j = k + 1; j < dimension->numberOfDimensions; j++) {
+        stride *= (size_t)dimension->dimensions[j].start;
+      }
+      size_t idx = rem / stride + 1;
+      rem = rem % stride;
+      written += snprintf(nameBuffer + written, MAX_IDENT_LENGTH - written, (k == 0) ? "[%zu" : ",%zu", idx);
+    }
+    snprintf(nameBuffer + written, MAX_IDENT_LENGTH - written, "]");
+    csvEscapedString(nameBuffer, escaped, MAX_IDENT_LENGTH, threadData);
+    fprintf(fout, format, escaped);
+  }
+}
+
+/**
  * @brief Write CSV data row.
  *
  * @param self        Simulation result.
@@ -131,39 +177,44 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
   fprintf(fout, "%.16g", data->localData[0]->timeValue);
   if(self->cpuTime)
     fprintf(fout, format, cpuTimeValue);
-  for(i = 0; i < data->modelData->nVariablesReal; i++) if(!data->modelData->realVarsData[i].filterOutput)
-    fprintf(fout, format, (data->localData[0])->realVars[i]);
-  for(i = 0; i < data->modelData->nVariablesInteger; i++) if(!data->modelData->integerVarsData[i].filterOutput)
-    fprintf(fout, formatint, (data->localData[0])->integerVars[i]);
-  for(i = 0; i < data->modelData->nVariablesBoolean; i++) if(!data->modelData->booleanVarsData[i].filterOutput)
-    fprintf(fout, formatbool, (data->localData[0])->booleanVars[i]);
+  for(i = 0; i < data->modelData->nVariablesRealArray; i++) if(!data->modelData->realVarsData[i].filterOutput)
+    for(size_t k = 0; k < data->modelData->realVarsData[i].dimension.scalar_length; k++)
+      fprintf(fout, format, (data->localData[0])->realVars[data->simulationInfo->realVarsIndex[i] + k]);
+  for(i = 0; i < data->modelData->nVariablesIntegerArray; i++) if(!data->modelData->integerVarsData[i].filterOutput)
+    for(size_t k = 0; k < data->modelData->integerVarsData[i].dimension.scalar_length; k++)
+      fprintf(fout, formatint, (data->localData[0])->integerVars[data->simulationInfo->integerVarsIndex[i] + k]);
+  for(i = 0; i < data->modelData->nVariablesBooleanArray; i++) if(!data->modelData->booleanVarsData[i].filterOutput)
+    for(size_t k = 0; k < data->modelData->booleanVarsData[i].dimension.scalar_length; k++)
+      fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->simulationInfo->booleanVarsIndex[i] + k]);
   //for(i = 0; i < data->modelData->nVariablesString; i++) if(!data->modelData->stringVarsData[i].filterOutput)
   //  fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[i]));
 
-  for(i = 0; i < data->modelData->nAliasReal; i++) if(!data->modelData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
+  for(i = 0; i < data->modelData->nAliasRealArray; i++) if(!data->modelData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
     if (data->modelData->realAlias[i].aliasType == ALIAS_TYPE_TIME) {
-      value = (data->localData[0])->timeValue;
+      fprintf(fout, format, (data->localData[0])->timeValue);
     } else {
-      value = (data->localData[0])->realVars[data->modelData->realAlias[i].nameID];
-    }
-    if (data->modelData->realAlias[i].negate) {
-      fprintf(fout, format, -value);
-    } else {
-      fprintf(fout, format, value);
-    }
-  }
-  for(i = 0; i < data->modelData->nAliasInteger; i++) if(!data->modelData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
-    if (data->modelData->integerAlias[i].negate) {
-      fprintf(fout, formatint, -(data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
-    } else {
-      fprintf(fout, formatint, (data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
+      const int nameID = data->modelData->realAlias[i].nameID;
+      const modelica_boolean negate = data->modelData->realAlias[i].negate;
+      for(size_t k = 0; k < data->modelData->realVarsData[nameID].dimension.scalar_length; k++) {
+        value = (data->localData[0])->realVars[data->simulationInfo->realVarsIndex[nameID] + k];
+        fprintf(fout, format, negate ? -value : value);
+      }
     }
   }
-  for(i = 0; i < data->modelData->nAliasBoolean; i++) if(!data->modelData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
-    if (data->modelData->booleanAlias[i].negate) {
-      fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData->booleanAlias[i].nameID]==1?0:1);
-    } else {
-      fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData->booleanAlias[i].nameID]);
+  for(i = 0; i < data->modelData->nAliasIntegerArray; i++) if(!data->modelData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
+    const int nameID = data->modelData->integerAlias[i].nameID;
+    const modelica_boolean negate = data->modelData->integerAlias[i].negate;
+    for(size_t k = 0; k < data->modelData->integerVarsData[nameID].dimension.scalar_length; k++) {
+      modelica_integer ivalue = (data->localData[0])->integerVars[data->simulationInfo->integerVarsIndex[nameID] + k];
+      fprintf(fout, formatint, negate ? -ivalue : ivalue);
+    }
+  }
+  for(i = 0; i < data->modelData->nAliasBooleanArray; i++) if(!data->modelData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
+    const int nameID = data->modelData->booleanAlias[i].nameID;
+    const modelica_boolean negate = data->modelData->booleanAlias[i].negate;
+    for(size_t k = 0; k < data->modelData->booleanVarsData[nameID].dimension.scalar_length; k++) {
+      modelica_boolean bvalue = (data->localData[0])->booleanVars[data->simulationInfo->booleanVarsIndex[nameID] + k];
+      fprintf(fout, formatbool, negate ? (bvalue==1?0:1) : bvalue);
     }
   }
   //for(i = 0; i < data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
@@ -188,7 +239,6 @@ void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
 
   const char* format = ",\"%s\"";
   FILE *fout = omc_fopen(self->filename, "w");
-  char escapedNameBuffer[MAX_IDENT_LENGTH];
 
   assertStreamPrint(threadData, 0!=fout, "Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
 
@@ -196,39 +246,35 @@ void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
   if(self->cpuTime) {
     fprintf(fout, format, "$cpuTime");
   }
-  for(i = 0; i < mData->nVariablesReal; i++) if(!mData->realVarsData[i].filterOutput) {
-    csvEscapedString(mData->realVarsData[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
-    fprintf(fout, format, escapedNameBuffer);
+  for(i = 0; i < mData->nVariablesRealArray; i++) if(!mData->realVarsData[i].filterOutput) {
+    csvWriteArrayNames(fout, format, mData->realVarsData[i].info.name, &mData->realVarsData[i].dimension, threadData);
   }
-  for(i = 0; i < mData->nVariablesInteger; i++) {
+  for(i = 0; i < mData->nVariablesIntegerArray; i++) {
     if(!mData->integerVarsData[i].filterOutput) {
-      csvEscapedString(mData->integerVarsData[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
-      fprintf(fout, format, escapedNameBuffer);
+      csvWriteArrayNames(fout, format, mData->integerVarsData[i].info.name, &mData->integerVarsData[i].dimension, threadData);
     }
   }
-  for(i = 0; i < mData->nVariablesBoolean; i++) {
+  for(i = 0; i < mData->nVariablesBooleanArray; i++) {
     if(!mData->booleanVarsData[i].filterOutput) {
-      csvEscapedString(mData->booleanVarsData[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
-      fprintf(fout, format, escapedNameBuffer);
+      csvWriteArrayNames(fout, format, mData->booleanVarsData[i].info.name, &mData->booleanVarsData[i].dimension, threadData);
     }
   }
 
-  for(i = 0; i < mData->nAliasReal; i++) {
+  for(i = 0; i < mData->nAliasRealArray; i++) {
     if(!mData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
-      csvEscapedString(mData->realAlias[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
-      fprintf(fout, format, escapedNameBuffer);
+      /* time aliases are scalar, other aliases inherit the dimension of the aliased variable */
+      const DIMENSION_INFO *aliasDim = (mData->realAlias[i].aliasType == ALIAS_TYPE_TIME) ? NULL : &mData->realVarsData[mData->realAlias[i].nameID].dimension;
+      csvWriteArrayNames(fout, format, mData->realAlias[i].info.name, aliasDim, threadData);
     }
   }
-  for(i = 0; i < mData->nAliasInteger; i++) {
+  for(i = 0; i < mData->nAliasIntegerArray; i++) {
     if(!mData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
-      csvEscapedString(mData->integerAlias[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
-      fprintf(fout, format, escapedNameBuffer);
+      csvWriteArrayNames(fout, format, mData->integerAlias[i].info.name, &mData->integerVarsData[mData->integerAlias[i].nameID].dimension, threadData);
     }
   }
-  for(i = 0; i < mData->nAliasBoolean; i++) {
+  for(i = 0; i < mData->nAliasBooleanArray; i++) {
     if(!mData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
-      csvEscapedString(mData->booleanAlias[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
-      fprintf(fout, format, escapedNameBuffer);
+      csvWriteArrayNames(fout, format, mData->booleanAlias[i].info.name, &mData->booleanVarsData[mData->booleanAlias[i].nameID].dimension, threadData);
     }
   }
   fprintf(fout, "\n");
