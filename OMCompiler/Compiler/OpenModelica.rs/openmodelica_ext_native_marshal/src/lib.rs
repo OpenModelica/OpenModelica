@@ -56,7 +56,11 @@ pub struct Sig {
 /// `resources/native_externals.txt`: the libraries to load, then the functions.
 #[derive(Clone, Debug, Default)]
 pub struct Table {
+    /// Shipped inside the FMU, opened from its `binaries/<platform>/`.
     pub libs: Vec<String>,
+    /// Named but not shipped (FMI 3.0 `<Library external="true"/>`): a system
+    /// library, opened by soname so the platform's loader finds it.
+    pub system_libs: Vec<String>,
     pub fns: Vec<Sig>,
 }
 
@@ -89,9 +93,11 @@ fn parse_ty(code: &str) -> Result<Ty, String> {
 ///
 /// ```text
 /// lib libfoo.so
+/// extlib libpython3.8.so
 /// fn wa_split C - R *R *I
 /// ```
 ///
+/// An `extlib` line names a library the FMU does not ship, opened by soname.
 /// A `fn` line is the name, the language (`C`/`F`), the return type or `-`, then
 /// each argument, `*` marking an `_Out_`. Types are the wasm-jit `SigTy` codes.
 pub fn parse(text: &str) -> Result<Table, String> {
@@ -100,6 +106,7 @@ pub fn parse(text: &str) -> Result<Table, String> {
         let mut words = line.split_whitespace();
         match words.next() {
             Some("lib") => t.libs.push(words.collect::<Vec<_>>().join(" ")),
+            Some("extlib") => t.system_libs.push(words.collect::<Vec<_>>().join(" ")),
             Some("fn") => {
                 let name = words.next().ok_or("native externals: `fn` without a name")?.to_string();
                 let fortran = words.next() == Some("F");
@@ -314,7 +321,8 @@ mod tests {
 
     #[test]
     fn table_round_trip() {
-        let t = parse("# libs\nlib libfoo.so\nfn wa_split C - R *R *I\nfn greet C S S I [R\n").unwrap();
+        let t = parse("# libs\nlib libfoo.so\nextlib libpython3.8.so\nfn wa_split C - R *R *I\nfn greet C S S I [R\n").unwrap();
+        assert_eq!(t.system_libs, ["libpython3.8.so"]);
         assert_eq!(t.libs, vec!["libfoo.so".to_string()]);
         assert_eq!(t.fns.len(), 2);
         let f = &t.fns[0];
