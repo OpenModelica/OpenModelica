@@ -9727,7 +9727,10 @@ end transformFlatElseIfAlgorithm;
 
 public function getDefinitions
 "This function dumps the defined packages, classes and functions to a string.
- The function is used by org.openmodelica.corba.parser.DefinitionsCreator."
+ The function is used by org.openmodelica.corba.parser.DefinitionsCreator in the
+ Java interface, which parses the string returned here. The corba in that package
+ name is historical and does not imply a CORBA connection; OpenModelica no longer
+ has a CORBA interface."
   input  Absyn.Program ast "The AST to dump";
   input  Boolean addFunctions;
   output Values.Value res "An easily parsed string containing all definitions";

@@ -5851,7 +5851,10 @@ function getDefinitions
   output String result;
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
-<p>Used by org.openmodelica.corba.parser.DefinitionsCreator.</p>
+<p>Used by org.openmodelica.corba.parser.DefinitionsCreator in the Java
+interface, which parses the string returned here. The corba in that package
+name is historical and does not imply a CORBA connection; OpenModelica no
+longer has a CORBA interface.</p>
 </html>"));
 end getDefinitions;
 
