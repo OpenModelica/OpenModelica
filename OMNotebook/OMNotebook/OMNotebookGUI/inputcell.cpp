@@ -272,11 +272,9 @@ namespace IAEX
   *
   * Input cells is places where the user can do input. To evaluate
   * the content of an inputcell just press shift+enter. It will
-  * throw an exception if it cant find OMC. Start OMC with
-  * following commandline:
-  *
-  * # omc --interactive=zmq
-  *
+  * throw an exception if it cant find OMC. OMC is linked in through
+  * libOpenModelicaCompiler and evaluated in-process; no separate omc
+  * process is started.
   *
   * \todo Make it possiblee to add and change syntax coloring of code.(Ingemar Axelsson)
   */

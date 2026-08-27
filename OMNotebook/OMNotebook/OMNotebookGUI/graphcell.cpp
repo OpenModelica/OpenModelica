@@ -667,11 +667,9 @@ namespace IAEX {
   *
   * Input cells is placed where the user can do input. To evaluate
   * the content of an GraphCell just press shift+enter. It will
-  * throw an exception if it cant find OMC. Start OMC with
-  * following commandline:
-  *
-  * # omc --interactive=zmq
-  *
+  * throw an exception if it cant find OMC. OMC is linked in through
+  * libOpenModelicaCompiler and evaluated in-process; no separate omc
+  * process is started.
   *
   * \todo Make it possible to add and change syntax coloring of code.(Ingemar Axelsson)
   */

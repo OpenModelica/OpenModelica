@@ -70,8 +70,10 @@ client. The Debian package of the \%OpenModelica Project includes the clients
 \fBOMNotebook\fP, \fBOMShell\fP and \fBOMShell\-terminal\fP. The clients
 \%\fBOMNotebook\fP and \fBOMShell\fP are Qt\-Windows applications. The client
 \%\fBOMShell-terminal\fP is a console application and runs in most terminal 
-like gnome\-terminal. The communication between the clients
-and the server can be based on \fBZeroMQ\fP or on \fBBSD\-sockets\fP.
+like gnome\-terminal. These clients link the compiler in through
+\fBlibOpenModelicaCompiler\fP and run it in\-process; they do not connect to a
+separate \fBomc\fP server. The server modes described below exist for other
+tools, such as OMPython.
 .P
 More documentation will be found in the enclosed \%OpenModelica System
 Documentation or the \%OpenModelica Users Guide. The documentation
@@ -130,7 +132,7 @@ Will start \fBomc\fP as a server listening on the socket interface.
 .BI +interactive=< "value">
 Will start \fBomc\fP as a server. Accepted values are \fBnone\fP, \fBtcp\fP
 and \fBzmq\fP. With \fBtcp\fP the server listens on the BSD socket interface,
-with \fBzmq\fP on the ZeroMQ interface used by the graphical clients.
+with \fBzmq\fP on the ZeroMQ interface used by OMPython and similar tools.
 .RS
 .IP "Default interactive value:" 26
 none
@@ -566,68 +568,37 @@ omc sim_dcmotor.mos
 .RE
 .
 .IP "5." 3
-The next examples will show how to start \fBomc\fP in the server mode. In the
-server mode \fBomc\fP runs as independent process and will act upon inquiries
-from a client. The communication between \fBomc\fP and the client can use
-two different communication interfaces: the BSD socket interface and ZeroMQ.
-The graphical clients \fBOMShell\fP, \fBOMNotebook\fP and \fBOMEdit\fP use
-ZeroMQ. Launch \fBomc\fP as a ZeroMQ server with:
+The last examples show how to start \fBomc\fP in the server mode. In the server
+mode \fBomc\fP runs as an independent process and acts upon inquiries from a
+client over one of two communication interfaces: ZeroMQ and the BSD socket
+interface. This is meant for tools that drive the compiler from another process
+or another language, such as OMPython. The clients shipped with
+\%OpenModelica \- \fBOMShell\fP, \fBOMShell\-terminal\fP, \fBOMNotebook\fP
+and \fBOMEdit\fP \- do not use it; they link the compiler in and run it
+in\-process.
 .
 .RS
 .P
-First console
+Start \fBomc\fP as a ZeroMQ server with:
 .PD 0
 .IP "\fBuser\fP@\fBhost\fP$>" 13
 omc +interactive=zmq
 .PD
 .P
-The server writes the port it listens on to a file in the temporary directory,
-which the clients pick up. Start a client in a second console:
-.P
-Second console
-.PD 0
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-OMShell
-.PD
+It writes the port it listens on to a file in the temporary directory, which
+the client reads to find the server.
 .P
 The BSD socket interface is selected with \fB+interactive=tcp\fP instead. The
 server then listens on port 29500:
-.P
-First console
 .PD 0
 .IP "\fBuser\fP@\fBhost\fP$>" 13
 omc +interactive=tcp
 .PD
 .
 .IP "NOTE:" 7
-In the above and in the following examples the compiler \fBomc\fP can't be put
-in the background. A command like \*[lq]omc \%+interactive=zmq &\*[rq]
-will not do the expected job. Only in a script the compiler can run in the
-background.
-.
-.P
-The compiler \fBomc\fP needs a special treatment to. Running \fBomc\fP in an
-independent server mode and with one of the clients \fBOMShell\fP or
-\fBOMNotebook\fP, the current working directory shouldn't be the user's home
-directory. The start of \fBomc\fP should be happened in a sub directory. The
-next example uses the directory \fI/home/\fP\fB${USER}\fP\fI/OMWorkspace/\fP
-as start and working directory.
-.P
-First console
-.PD 0
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-cd /home/${USER}/OMWorkspace/
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-omc +interactive=zmq
-.PD
-.P
-Second console
-.PD 0
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-cd /home/${USER}/OMWorkspace/
-.IP "\fBuser\fP@\fBhost\fP$>" 13
-OMNotebook
-.PD
+The compiler \fBomc\fP produces C source code and auxiliary files in the
+current working directory, so start it from a scratch directory rather than
+from the user's home directory.
 .P
 .RE
 .
