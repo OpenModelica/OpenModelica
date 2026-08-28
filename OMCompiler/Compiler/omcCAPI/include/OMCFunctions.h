@@ -27,14 +27,22 @@
 
 #pragma once
 
+/**
+ * \file OMCFunctions.h
+ * \brief Internal declarations of the libOpenModelicaCompiler entry points that
+ *        OMC.cpp calls. Not part of the public libOMCDLL API.
+ */
 
-#ifdef _WIN32
-#ifdef BUILDING_OMC_DLL
-    #define OMC_DLL __declspec(dllexport)
-#else
-#define OMC_DLL __declspec(dllimport)
-#endif
-#else
-  #define OMC_DLL
+#include "meta/meta_modelica.h"
+#include "OpenModelicaScriptingAPI.h"
+
+extern "C" {
+
+int   omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
+void *omc_Main_init(void *threadData, void *args);
+void  omc_Main_readSettings(void *threadData, void *args);
+#if defined(_WIN32)
+void  omc_Main_setWindowsPaths(threadData_t *threadData, void *_inOMHome);
 #endif
 
+}
