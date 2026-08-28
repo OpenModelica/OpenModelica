@@ -663,6 +663,17 @@ void assembleWeb() {
   sh "rm -f ${webZip} && (cd install_web/share/omc/web && zip -r -9 ${env.WORKSPACE}/${webZip} .)"
   archiveArtifacts artifacts: webZip, fingerprint: true
   stash name: 'web', includes: webZip
+
+  // The testsuite-rust shards, merged and archived. Here since the web
+  // deliverable is already assembled.
+  sh 'rm -f testsuite/partest-failed-*.txt partest-rust-failed.txt'
+  if (shouldWeRunRustTests()) {
+    for (p in [1,2]) {
+      unstash "partest-failed-${p}"
+    }
+    sh 'cat testsuite/partest-failed-*.txt | sort -u > partest-rust-failed.txt && wc -l partest-rust-failed.txt'
+    archiveArtifacts artifacts: 'partest-rust-failed.txt', allowEmptyArchive: true, fingerprint: true
+  }
 }
 
 void buildRustGUI() {
@@ -693,7 +704,8 @@ void buildRustGUI() {
 // Builds the test libraries with that omc (cmake's libs-for-testing == omc
 // index.mos); the repo's index.json is copied into place first so omc uses it
 // instead of downloading. An empty simCodeTarget leaves the compiler default.
-void partestRust(String simCodeTarget, partition, partitionmodulo) {
+// Without registerJUnit the results are archived artifacts instead.
+void partestRust(String simCodeTarget, partition, partitionmodulo, boolean registerJUnit) {
   standardSetup()
   unstash 'omc-cmake-rust'
   // OMSimulator + libomcruntime aren't produced by the Rust omc build; pull the
@@ -731,25 +743,39 @@ void partestRust(String simCodeTarget, partition, partitionmodulo) {
   String asLimit = isWasmTarget
                    ? '# wasm: address space is not limited, only the cgroup is'
                    : 'ulimit -v 6291456 # Max 6GB per process'
+  // The 'Failed tests:' block (the only tab-indented lines); stdout rather than
+  // failed.<branch>, which dies on branch names with '/'.
+  String failureList = registerJUnit ? '' : """
+      grep -E '^[[:space:]]+[^[:space:]].*[.]mo[fs]?\$' runtests-${partition}.log | sed -E 's/^[[:space:]]+//' | sort -u > ../partest-failed-${partition}.txt || true
+      wc -l ../partest-failed-${partition}.txt"""
   try {
     sh """#!/bin/bash
+      set -o pipefail
       ulimit -t 1500
       ${asLimit}
       .CI/scripts/cgroup-memory.sh check
+      rm -f testsuite/partest-failed-${partition}.txt
       cd testsuite/partest
       set -x
-      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml -suites=${suites}${simCodeTargetArg}
-      CODE=\$?
+      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml -suites=${suites}${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
+      CODE=\${PIPESTATUS[0]}
       set +x
       ../../.CI/scripts/cgroup-memory.sh report
       # 0/7 == the run completed (7 means some tests failed); only fail the step on
-      # anything else, so junit below still publishes the per-test results.
-      test \$CODE = 0 -o \$CODE = 7 || exit 1
+      # anything else, so the results below are still published.
+      test \$CODE = 0 -o \$CODE = 7 || exit 1${failureList}
     """
+    if (!registerJUnit) {
+      stash name: "partest-failed-${partition}", includes: "testsuite/partest-failed-${partition}.txt"
+    }
   } finally {
-    // Per-partition result.xml; disjoint shards merge into one per-test view in
-    // Jenkins. In finally so a hard shard failure still publishes what ran.
-    junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
+    // In finally so a hard shard failure still publishes what ran.
+    if (registerJUnit) {
+      junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
+    } else {
+      sh "cp testsuite/partest/result.xml partest-rust-partest-junit-${partition}.xml || true"
+      archiveArtifacts artifacts: "partest-rust-partest-junit-${partition}.xml", allowEmptyArchive: true, fingerprint: true
+    }
   }
 }
 

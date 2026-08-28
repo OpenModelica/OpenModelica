@@ -7348,6 +7348,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_simulation_runtime"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "libc",
+ "openmodelica_lapack",
+ "openmodelica_mat_writer",
+ "openmodelica_plt_writer",
+ "openmodelica_sim_meta",
+ "openmodelica_solvers",
+ "roxmltree",
+]
+
+[[package]]
 name = "openmodelica_solvers"
 version = "0.1.0"
 dependencies = [

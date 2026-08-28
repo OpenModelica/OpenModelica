@@ -2771,7 +2771,10 @@ algorithm
   if Flags.getConfigBool(Flags.PARMODAUTO) then
     ldflags := " " + Autoconf.parModelicaAutoLibs + " " + ldflags;
   end if;
-  rtlibs := if isFunction then Autoconf.ldflags_runtime else (if isFMU then Autoconf.ldflags_runtime_fmu else Autoconf.ldflags_runtime_sim);
+  rtlibs := if isFunction then Autoconf.ldflags_runtime
+            elseif isFMU then Autoconf.ldflags_runtime_fmu
+            elseif Config.simCodeRustRuntime() then Autoconf.ldflags_runtime_sim_rust
+            else Autoconf.ldflags_runtime_sim;
   platform := System.modelicaPlatform();
   compileDir :=  System.pwd() + Autoconf.pathDelimiter;
   makefileParams := SimCodeFunction.MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext,

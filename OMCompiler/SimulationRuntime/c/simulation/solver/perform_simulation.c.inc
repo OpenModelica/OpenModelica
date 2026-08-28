@@ -55,6 +55,26 @@
 #include "real_time_sync.h"
 #endif
 
+/* The Rust simulation runtime (`--simCodeTarget=C+Rust`) drives the model from
+ * its own loop, so nothing below is ever entered -- and every runtime function
+ * it names would otherwise have to exist twice. Compile it away instead; the
+ * two callbacks stay valid function pointers that report if anything calls them.
+ */
+#if defined(OMC_RUST_SIMULATION_RUNTIME)
+
+void prefixedName_updateContinuousSystem(DATA *data, threadData_t *threadData)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "updateContinuousSystem: the Rust simulation runtime drives the model itself");
+}
+
+int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "performSimulation: the Rust simulation runtime drives the model itself");
+  return -1;
+}
+
+#else
+
 /*! \fn updateContinuousSystem
  *
  *  Function to update the whole system with EventIteration.
@@ -610,3 +630,5 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
   return retValue;
 }
+
+#endif /* OMC_RUST_SIMULATION_RUNTIME */

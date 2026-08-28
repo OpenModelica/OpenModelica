@@ -111,6 +111,14 @@ if(NOT OM_OMC_ENABLE_RUST)
   omc_add_subdirectory(Parser)
 endif()
 omc_add_subdirectory(Compiler)
+# libSimulationRuntimeRust, what `--simCodeTarget=C+Rust` links instead of
+# libSimulationRuntimeC. After Compiler, which is where the Rust working copy and
+# cargo target directory are set up (rust_omc.cmake) when omc is the Rust port.
+# Skipped where the rest of the simulation runtime is: the wasm bundle does not
+# use it, and the GUI-only stage builds against a prebuilt cdylib.
+if(NOT OM_OMC_WASM AND NOT RUST_OMC_PREBUILT_CDYLIB)
+  omc_add_subdirectory(SimulationRuntime/rust)
+endif()
 if(NOT OM_OMC_ENABLE_RUST)
   omc_add_subdirectory(Examples)
 endif()
