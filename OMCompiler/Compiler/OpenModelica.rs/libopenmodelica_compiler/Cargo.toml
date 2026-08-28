@@ -35,6 +35,10 @@ libc.workspace = true
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 mimalloc = { version = "0.1", optional = true }
 tikv-jemallocator = { version = "0.6", optional = true }
+# The wasm-jit engine, for `OMC_WASM_PRECOMPILE_CACHE`: the build compiles the
+# model-independent blobs once so no run has to. The wasm build keeps no on-disk
+# artifact cache, hence native only.
+openmodelica_wasm_jit.workspace = true
 
 # wasm build: the JS bindings (src/wasm_api.rs). Pinned to match the
 # wasm-bindgen the wasmer `js` backend targets (see the workspace Cargo.lock);

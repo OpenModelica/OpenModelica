@@ -20,6 +20,11 @@ use std::io::{Read, Seek, SeekFrom};
 // `std::fs::File` natively, an in-memory `Cursor` on the web target.
 type Src = openmodelica_wasi::fs::Reader;
 
+/// How much of data_2 is worth holding in memory. Under it the whole matrix is
+/// read once and every lookup is an index; over it only what the caller asks for
+/// is read, as the C reader always has.
+const MAX_CACHED_DATA2: u64 = 64 * 1024 * 1024;
+
 /// One entry from the `name`/`description`/`dataInfo` metadata tables.
 #[derive(Clone)]
 pub struct MatVariable {
@@ -417,12 +422,37 @@ impl MatReader {
         Ok(reader)
     }
 
-    /// Load and transpose data_2 into time-major order on first access.
+    /// Bytes one element of data_2 occupies on disk.
+    fn elem_size(&self) -> u64 {
+        if self.doublePrecision { 8 } else { 4 }
+    }
+
+    /// One element straight off the disk, without holding the matrix.
+    fn disk_val(&mut self, row: usize, col: usize) -> Option<f64> {
+        let elem = self.elem_size();
+        let at = match self.binTrans {
+            // Time-major on disk: row `row` is `nvar` elements, `col` into it.
+            true => row as u64 * self.nvar as u64 + col as u64,
+            // Variable-major: column `col` is `nrows` elements.
+            false => col as u64 * self.nrows as u64 + row as u64,
+        };
+        self.file.seek(SeekFrom::Start(self.var_offset + at * elem)).ok()?;
+        let ty = if self.doublePrecision { 0 } else { 10 };
+        read_doubles(ty, 1, &mut self.file).ok()?.first().copied()
+    }
+
+    /// How large data_2 is.
+    fn data2_bytes(&self) -> u64 {
+        self.nrows as u64 * self.nvar as u64 * self.elem_size()
+    }
+
+    /// Load and transpose data_2 into time-major order on first access. Only for
+    /// a matrix that fits in memory; past that the callers read off the disk.
     fn ensure_data2(&mut self) -> bool {
         if self.data2.is_some() {
             return true;
         }
-        if self.nrows == 0 || self.nvar == 0 {
+        if self.nrows == 0 || self.nvar == 0 || self.data2_bytes() > MAX_CACHED_DATA2 {
             return false;
         }
         let n = self.nrows * self.nvar;
@@ -456,32 +486,56 @@ impl MatReader {
     /// Single value of `varIndex` (1-based, sign for negative alias) at row
     /// `timeIndex`. Returns None on read error.
     fn single_val(&mut self, varIndex: i32, timeIndex: usize) -> Option<f64> {
-        if !self.ensure_data2() {
+        let absv = varIndex.unsigned_abs() as usize;
+        if absv == 0 || absv > self.nvar || timeIndex >= self.nrows {
             return None;
         }
-        let absv = varIndex.unsigned_abs() as usize;
-        let data2 = self.data2.as_ref()?;
-        let v = *data2.get(timeIndex * self.nvar + (absv - 1))?;
+        let v = if self.ensure_data2() {
+            *self.data2.as_ref()?.get(timeIndex * self.nvar + (absv - 1))?
+        } else {
+            self.disk_val(timeIndex, absv - 1)?
+        };
         Some(if varIndex < 0 { -v } else { v })
     }
 
     /// Full trajectory of a variable column (1-based index, sign for alias).
     pub fn read_vals(&mut self, varIndex: i32) -> Option<Vec<f64>> {
-        if !self.ensure_data2() {
+        let absv = varIndex.unsigned_abs() as usize;
+        if absv == 0 || absv > self.nvar || self.nrows == 0 {
             return None;
         }
-        let absv = varIndex.unsigned_abs() as usize;
-        let nvar = self.nvar;
-        let nrows = self.nrows;
-        let data2 = self.data2.as_ref()?;
-        Some(
-            (0..nrows)
-                .map(|i| {
-                    let v = data2[i * nvar + (absv - 1)];
-                    if varIndex < 0 { -v } else { v }
-                })
-                .collect(),
-        )
+        let (nvar, nrows) = (self.nvar, self.nrows);
+        let negate = varIndex < 0;
+        if self.ensure_data2() {
+            let data2 = self.data2.as_ref()?;
+            return Some(
+                (0..nrows)
+                    .map(|i| {
+                        let v = data2[i * nvar + (absv - 1)];
+                        if negate { -v } else { v }
+                    })
+                    .collect(),
+            );
+        }
+        let elem = self.elem_size();
+        let ty = if self.doublePrecision { 0 } else { 10 };
+        // Variable-major on disk: the column is one contiguous run.
+        if !self.binTrans {
+            let at = self.var_offset + (absv - 1) as u64 * nrows as u64 * elem;
+            self.file.seek(SeekFrom::Start(at)).ok()?;
+            let mut v = read_doubles(ty, nrows, &mut self.file).ok()?;
+            if negate {
+                v.iter_mut().for_each(|x| *x = -*x);
+            }
+            return Some(v);
+        }
+        // Time-major: the column is `nrows` elements `nvar` apart.
+        let mut out = Vec::with_capacity(nrows);
+        for i in 0..nrows {
+            let v = self.disk_val(i, absv - 1)?;
+            out.push(if negate { -v } else { v });
+        }
+        Some(out)
     }
 
     pub fn start_time(&mut self) -> f64 {

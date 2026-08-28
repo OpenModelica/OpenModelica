@@ -353,7 +353,7 @@ fn describe(fmu: &Fmu) -> Value {
     })
 }
 
-fn options_from(md: &ModelDescription, o: &Value) -> Result<Options, Error> {
+fn options_from(md: &ModelDescription, o: &Value) -> Result<Options<'static>, Error> {
     let mut opts = Options::from_model_description(md);
     let num = |key: &str| o.get(key).and_then(Value::as_f64);
     opts.start_time = num("startTime").unwrap_or(opts.start_time);

@@ -122,11 +122,13 @@ fn element_names(name: &str, dimensions: &[usize]) -> Vec<String> {
 }
 
 impl Recorder {
-    pub fn new(md: &ModelDescription) -> Recorder {
+    pub fn new(md: &ModelDescription, keep: Option<&dyn Fn(&str) -> bool>) -> Recorder {
+        // Dropped here, not at write time: the sampling is the cost.
+        let wanted = |v: &Variable| is_recorded(v) && keep.is_none_or(|k| k(&v.name));
         let states: Vec<u32> = md.continuous_states();
         let mut columns = Vec::new();
         let mut recorded = Vec::new();
-        for v in md.variables.iter().filter(|v| is_recorded(v)) {
+        for v in md.variables.iter().filter(|v| wanted(v)) {
             let first = columns.len() + 1; // column 0 is time
             for name in element_names(&v.name, &extents(md, v)) {
                 columns.push(Column {

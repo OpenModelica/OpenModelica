@@ -472,25 +472,26 @@ match simCode
 case SIMCODE(modelInfo=modelInfo) then
 match modelInfo
 case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
+  let numScalarStates = SimCodeUtil.numScalarElems(stateVars)
   <<
   <ModelVariables>
     <%TimeVariable3(simCode)%>
-    <%vars.stateVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.derivativeVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.algVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.discreteAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.paramVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.aliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.intAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.intParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.intAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.boolAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.boolParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.boolAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.stringAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.stringParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.stringAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-    <%vars.extObjVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.stateVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.derivativeVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.algVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.discreteAlgVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.paramVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.aliasVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.intAlgVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.intParamVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.intAliasVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.boolAlgVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.boolParamVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.boolAliasVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.stringAlgVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.stringParamVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.stringAliasVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
+    <%vars.extObjVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
     <%SimCodeUtil.getFMI3Clocks(simCode) |> clk => Clock3(clk, FMUType) ;separator="\n"%>
     <%EventIndicatorVariables3(simCode)%>
   </ModelVariables>
@@ -521,7 +522,7 @@ template TimeVariable3(SimCode simCode)
   >>
 end TimeVariable3;
 
-template Variable3(SimVar simVar, SimCode simCode, list<SimVar> stateVars)
+template Variable3(SimVar simVar, SimCode simCode, String numScalarStates)
  "Generates a typed variable element for FMI 3.0."
 ::=
 match simVar
@@ -538,7 +539,7 @@ case SIMVAR(name = name, exportVar = exportVar, type_ = T_ARRAY(ty = arrayElemen
   else
   match arrayElementType
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Float64>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Float64>'
     case T_INTEGER(__) then
       '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Int32>'
     case T_BOOL(__) then
@@ -562,7 +563,7 @@ case SIMVAR(__) then
   else
   match type_
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, numScalarStates)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
     case T_INTEGER(__) then
       '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
     case T_BOOL(__) then
@@ -699,21 +700,17 @@ case SIMVAR(__) then
   >>
 end BinaryVariableAttributes3;
 
-template DerivativeAttribute3(SimVar simVar, SimCode simCode, list<SimVar> stateVars)
+template DerivativeAttribute3(SimVar simVar, SimCode simCode, String numScalarStates)
  "Generates the derivative attribute (FMI 3.0 references the *valueReference* of
   the state variable). For the C runtime the state value references precede the
   state derivative value references contiguously in the real block, hence the
   state value reference is the derivative value reference minus the number of
-  states."
+  states. Scalar elements, not list entries: the new backend leaves a
+  non-scalarized array state as one entry (and one `varInfo.numStateVars`)."
 ::=
 match simVar
 case SIMVAR(varKind = STATE_DER(__)) then
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(vars = SIMVARS(stateVars = stateVarsList))) then
-    // per-scalar state count, so the derivative VR minus it yields the state VR
-    // (works for non-scalarized array states too).
-    ' derivative="<%intSub(stringInt(SimCodeUtil.getFMI3ValueReference(simVar, simCode)), SimCodeUtil.numScalarElems(stateVarsList))%>"'
-  else ''
+  ' derivative="<%intSub(stringInt(SimCodeUtil.getFMI3ValueReference(simVar, simCode)), stringInt(numScalarStates))%>"'
 else ''
 end DerivativeAttribute3;
 

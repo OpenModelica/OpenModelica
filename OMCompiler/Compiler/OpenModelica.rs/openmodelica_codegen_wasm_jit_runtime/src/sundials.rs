@@ -13,9 +13,12 @@ pub extern "C" fn rt_sundials_available() -> i32 {
 /// What this build can serve, for `simflags::check`.
 pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
     openmodelica_sim_meta::simflags::Capabilities {
-        klu: cfg!(sundials),
-        ida: openmodelica_sim_meta::IDA,
-        cvode: openmodelica_sim_meta::CVODE,
+        klu: groups::klu(),
+        kinsol: groups::kinsol(),
+        umfpack: groups::umfpack(),
+        lis: groups::lis(),
+        ida: openmodelica_sim_meta::IDA && groups::driver(),
+        cvode: openmodelica_sim_meta::CVODE && groups::driver(),
         // Served by the driver's per-step deadline; both runtimes install a clock.
         alarm: true,
         // No regex engine in wasm; the model's own filter is resolved at codegen.
@@ -26,6 +29,49 @@ pub fn capabilities() -> openmodelica_sim_meta::simflags::Capabilities {
         // Both runtimes drive a whole trajectory, which is all QSS can do.
         qss: true,
     }
+}
+
+/// Which solver libraries this build has. An FMU links one PIC side module per
+/// library, chosen at export, so the answer is a run-time one: the stub standing in
+/// for what was left out answers 0 where a real module answers 1. Every other build
+/// links the archives statically and has all of them or none.
+#[cfg(sundials_dylink)]
+mod groups {
+    unsafe extern "C" {
+        fn om_have_klu() -> i32;
+        fn om_have_kinsol() -> i32;
+        fn om_have_umfpack() -> i32;
+        fn om_have_lis() -> i32;
+        fn om_have_sundials_driver() -> i32;
+    }
+    macro_rules! ask {
+        ($name:ident, $sym:ident) => {
+            pub fn $name() -> bool {
+                unsafe { $sym() != 0 }
+            }
+        };
+    }
+    ask!(klu, om_have_klu);
+    ask!(kinsol, om_have_kinsol);
+    ask!(umfpack, om_have_umfpack);
+    ask!(lis, om_have_lis);
+    ask!(driver, om_have_sundials_driver);
+}
+
+#[cfg(not(sundials_dylink))]
+mod groups {
+    macro_rules! ask {
+        ($name:ident) => {
+            pub fn $name() -> bool {
+                cfg!(sundials)
+            }
+        };
+    }
+    ask!(klu);
+    ask!(kinsol);
+    ask!(umfpack);
+    ask!(lis);
+    ask!(driver);
 }
 
 /// Smoke test that the archives are linked and callable: `klu_defaults` reports

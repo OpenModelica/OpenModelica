@@ -329,7 +329,12 @@ if(RUST_OMC_ENABLE_SUNDIALS)
 
   # SuiteSparse toolchain: base wasi toolchain + include dirs for KLU headers.
   # CMAKE_C_FLAGS_INIT is a STRING (not list) so no semicolon issues.
-  set(_sundials_cflags "-O2 -I${_suitesparse_sources}/AMD/Include -I${_suitesparse_sources}/COLAMD/Include -I${_suitesparse_sources}/BTF/Include -I${_suitesparse_sources}/SuiteSparse_config")
+  #
+  # `-fPIC`: one archive set serves both users. wasm-ld relaxes the GOT/`__memory_base`
+  # relocations away in a non-PIC link, so the wasip1 runtime that links these
+  # statically gets a byte-identical module -- while an FMU's `--experimental-pic
+  # --shared` SUNDIALS side module can only be linked from PIC objects at all.
+  set(_sundials_cflags "-O2 -fPIC -I${_suitesparse_sources}/AMD/Include -I${_suitesparse_sources}/COLAMD/Include -I${_suitesparse_sources}/BTF/Include -I${_suitesparse_sources}/SuiteSparse_config")
   # UMFPACK adds its own headers and `NBLAS`, its no-BLAS build, there being no
   # BLAS for wasm. Passed as CMAKE_C_FLAGS, not through the toolchain's
   # CMAKE_C_FLAGS_INIT, which an already-configured build directory ignores.
@@ -430,6 +435,7 @@ target_include_directories(lis PRIVATE
     BINARY_DIR ${_lis_ep_build}
     CMAKE_ARGS
       -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
+      -DCMAKE_C_FLAGS=${_sundials_cflags}
       -DBUILD_SHARED_LIBS=OFF
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_lis_ep_build} --parallel
     INSTALL_COMMAND ""
@@ -476,6 +482,7 @@ target_include_directories(primme PRIVATE
     BINARY_DIR ${_primme_ep_build}
     CMAKE_ARGS
       -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
+      -DCMAKE_C_FLAGS=${_sundials_cflags}
       -DBUILD_SHARED_LIBS=OFF
     BUILD_COMMAND ${CMAKE_COMMAND} --build ${_primme_ep_build} --parallel
     INSTALL_COMMAND ""
@@ -492,6 +499,7 @@ target_include_directories(primme PRIVATE
     BINARY_DIR ${_sundials_ep_build}
     CMAKE_ARGS
       -DCMAKE_TOOLCHAIN_FILE=${_sundials_toolchain}
+      -DCMAKE_C_FLAGS=${_sundials_cflags}
       # Keep in sync with 3rdParty/CMakeLists.txt.
       -DBUILD_STATIC_LIBS=ON
       -DBUILD_SHARED_LIBS=OFF
@@ -530,14 +538,23 @@ target_include_directories(primme PRIVATE
       sundials_nvecserial_static sundials_sunmatrixdense_static
       sundials_sunmatrixsparse_static sundials_sunlinsoldense_static
       sundials_sunlinsolklu_static
+      # The Krylov `-idaLS` solvers and the SUNNonlinearSolver implementations.
+      # SUNDIALS bundles a copy of each into every integrator archive, so the
+      # wasip1 runtime resolves them either way; an FMU links one side module per
+      # solver library, and a symbol with no archive of its own has no group to
+      # belong to.
+      sundials_sunlinsolspgmr_static sundials_sunlinsolspbcgs_static
+      sundials_sunlinsolsptfqmr_static
+      sundials_sunnonlinsolnewton_static sundials_sunnonlinsolfixedpoint_static
     INSTALL_COMMAND ""
     BUILD_ALWAYS ON
     EXCLUDE_FROM_ALL ON)
   add_dependencies(rust_sundials_wasm rust_suitesparse_wasm)
 
-  # RUST_SUNDIALS_WASM_DIR is the whole wasm SUNDIALS hand-off: lib/ for the wasip1
-  # runtime to link, include/ for the PIC dylink build to compile against. A CI
-  # stage with only this directory, not the ExternalProject tree, can do both.
+  # RUST_SUNDIALS_WASM_DIR is the whole wasm solver hand-off: the archives the
+  # wasip1 runtimes link statically and an FMU's PIC side module is linked from,
+  # plus the generated headers. A CI stage with only this directory, not the
+  # ExternalProject tree, can build every wasm artifact that needs them.
   add_custom_target(rust_sundials_collect
     COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_SUNDIALS_WASM_DIR}/lib
     COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -559,6 +576,11 @@ target_include_directories(primme PRIVATE
       ${_sundials_ep_build}/src/sunmatrix/sparse/libsundials_sunmatrixsparse.a
       ${_sundials_ep_build}/src/sunlinsol/dense/libsundials_sunlinsoldense.a
       ${_sundials_ep_build}/src/sunlinsol/klu/libsundials_sunlinsolklu.a
+      ${_sundials_ep_build}/src/sunlinsol/spgmr/libsundials_sunlinsolspgmr.a
+      ${_sundials_ep_build}/src/sunlinsol/spbcgs/libsundials_sunlinsolspbcgs.a
+      ${_sundials_ep_build}/src/sunlinsol/sptfqmr/libsundials_sunlinsolsptfqmr.a
+      ${_sundials_ep_build}/src/sunnonlinsol/newton/libsundials_sunnonlinsolnewton.a
+      ${_sundials_ep_build}/src/sunnonlinsol/fixedpoint/libsundials_sunnonlinsolfixedpoint.a
       ${_lis_ep_build}/liblis.a
       ${_primme_ep_build}/libprimme.a
       ${RUST_SUNDIALS_WASM_DIR}/lib/
@@ -714,14 +736,45 @@ endif()
 if(EXISTS ${_wasi_libc_src}/CMakeLists.txt)
   list(APPEND CARGO_ENV "OMC_WASI_LIBC_SRC=${_wasi_libc_src}")
 endif()
-if(RUST_OMC_ENABLE_SUNDIALS)
-  list(APPEND CARGO_ENV
-       "OMC_SUNDIALS_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/sundials"
-       "OMC_SUITESPARSE_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/SuiteSparse"
-       # The PIC dylink side module compiles the sources again, so it needs the
-       # generated `sundials_config.h` rust_sundials_collect puts here.
-       "OMC_SUNDIALS_WASM_INCLUDE=${RUST_SUNDIALS_WASM_DIR}/include")
+
+# ---------------------------------------------------------------------------
+# wasm-opt, found once and used by the web target, the wasm-jit runtime and --
+# through the cargo environment below -- openmodelica_wasm_jit's build script.
+# ---------------------------------------------------------------------------
+find_program(WASM_OPT_EXECUTABLE wasm-opt
+             HINTS $ENV{CARGO_HOME}/bin $ENV{HOME}/.cargo/bin)
+# wasm-opt -Oz on the 130+ MB debug/omc wasm takes many minutes and only shrinks
+# the shipped bundle — skip it for dev iteration. Clearing the executable var makes
+# every `if(WASM_OPT_EXECUTABLE)` site below fall through to the no-op branch.
+option(RUST_OMC_WASM_OPT "Run wasm-opt -Oz on the produced wasm (slow; OFF for faster dev builds)" ON)
+if(NOT RUST_OMC_WASM_OPT)
+  set(WASM_OPT_EXECUTABLE "")
+  message(STATUS "rust_omc: wasm-opt disabled (RUST_OMC_WASM_OPT=OFF)")
 endif()
+
+# wasm-opt feature flags, shared by every wasm-opt invocation below. rustc/LLVM
+# emit wasm32-unknown-unknown with these post-MVP features on, but the release
+# `strip` drops the target_features custom section binaryen would auto-detect
+# from — so it defaults to MVP and rejects the bulk-memory/sign-ext/etc. ops.
+# Enable exactly the set rustc reports (`rustc --print cfg --target
+# wasm32-unknown-unknown`), plus `simd`: faer's kernels are
+# `#[target_feature(enable = "simd128")]`, so every module linking them carries
+# v128 ops. Blindly enabling the rest could let wasm-opt emit instructions the
+# JIT/browser consumers don't support.
+set(WASM_OPT_FEATURES
+    --enable-bulk-memory --enable-multivalue --enable-mutable-globals
+    --enable-nontrapping-float-to-int --enable-reference-types --enable-sign-ext
+    --enable-simd)
+
+# The FMI3 adapters and the solver side modules are produced inside
+# openmodelica_wasm_jit's build script rather than by a CMake command, so it runs
+# wasm-opt itself. Every exported FMU links those modules and they are built once per
+# omc build and stamped, so this is paid here instead of per export. Empty when
+# binaryen is missing or RUST_OMC_WASM_OPT is OFF.
+string(JOIN " " _wasm_opt_features ${WASM_OPT_FEATURES})
+list(APPEND CARGO_ENV
+     "OMC_WASM_OPT=${WASM_OPT_EXECUTABLE}"
+     "OMC_WASM_OPT_FEATURES=${_wasm_opt_features}")
 
 # Always via ${CARGO_BUILD} so target/ is never the in-source default.
 set(CARGO_BUILD ${CARGO_ENV} ${CARGO_EXECUTABLE} build --target-dir ${RUST_TARGET_DIR})
@@ -778,18 +831,7 @@ add_test(NAME rust_cargo_test
 #     instead of rebuilding. Stage 2 (the web build) sets it to stage 1's
 #     artifact; it is forwarded as OMC_WASM_RUNTIME to the cargo build, which the
 #     build.rs honours (skipping the rebuild). Empty = build it normally.
-# wasm-opt is found here (optional) and reused by the web target below.
 # ---------------------------------------------------------------------------
-find_program(WASM_OPT_EXECUTABLE wasm-opt
-             HINTS $ENV{CARGO_HOME}/bin $ENV{HOME}/.cargo/bin)
-# wasm-opt -Oz on the 130+ MB debug/omc wasm takes many minutes and only shrinks
-# the shipped bundle — skip it for dev iteration. Clearing the executable var makes
-# every `if(WASM_OPT_EXECUTABLE)` site below fall through to the no-op branch.
-option(RUST_OMC_WASM_OPT "Run wasm-opt -Oz on the produced wasm (slow; OFF for faster dev builds)" ON)
-if(NOT RUST_OMC_WASM_OPT)
-  set(WASM_OPT_EXECUTABLE "")
-  message(STATUS "rust_omc: wasm-opt disabled (RUST_OMC_WASM_OPT=OFF)")
-endif()
 
 # Independent of RUST_OMC_WASM_OPT (which only gates omc.wasm -Oz): an -O0 OMEdit
 # link does not run in the browser, so keep it ON even for PR builds.
@@ -804,19 +846,6 @@ if(RUST_OMC_WEB_QT_STANDALONE)
 else()
   set(_qt_web_all ALL)
 endif()
-# wasm-opt feature flags, shared by every wasm-opt invocation below. rustc/LLVM
-# emit wasm32-unknown-unknown with these post-MVP features on, but the release
-# `strip` drops the target_features custom section binaryen would auto-detect
-# from — so it defaults to MVP and rejects the bulk-memory/sign-ext/etc. ops.
-# Enable exactly the set rustc reports (`rustc --print cfg --target
-# wasm32-unknown-unknown`), plus `simd`: faer's kernels are
-# `#[target_feature(enable = "simd128")]`, so every module linking them carries
-# v128 ops. Blindly enabling the rest could let wasm-opt emit instructions the
-# JIT/browser consumers don't support.
-set(WASM_OPT_FEATURES
-    --enable-bulk-memory --enable-multivalue --enable-mutable-globals
-    --enable-nontrapping-float-to-int --enable-reference-types --enable-sign-ext
-    --enable-simd)
 set(RUST_OMC_WASM_RUNTIME "" CACHE FILEPATH
     "Prebuilt wasm-jit runtime.wasm to embed (empty = build it). In CI stage 2, point at the rust_wasm_runtime artifact from stage 1.")
 set(RUST_OMC_WASM_RUNTIME_OUT ${RUST_OMC_TARGET_DIR}/runtime.wasm CACHE PATH
@@ -1136,6 +1165,28 @@ function(omc_rust_setup_codegen)
   # platform. Read at export time, not linked into omc.
   install(DIRECTORY ${RUST_FMU_LOADERS_DIR}/
           DESTINATION lib/omc/fmu-loaders COMPONENT omc)
+
+  # The wasm-jit runtime, the FMI adapter and the external "C" side libraries,
+  # compiled here rather than by whoever runs omc first: the per-user cache is
+  # filled lazily, so parallel omc processes each compile them before any writes
+  # one. `aot_module` reads this directory before `$HOME/.openmodelica/cache`.
+  # No OUTPUT to go stale on: the artifacts are keyed by a hash of the blobs, so
+  # one left behind by an earlier omc is never looked up again and the run it was
+  # meant to spare compiles instead. omc skips a blob whose artifact is current,
+  # so a build that changed none of them costs the process start.
+  set(RUST_WASMJIT_CACHE_DIR ${CMAKE_CURRENT_BINARY_DIR}/wasmjit-cache)
+  add_custom_target(rust_wasmjit_cache ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${RUST_WASMJIT_CACHE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E env
+            OMC_WASM_PRECOMPILE_CACHE=${RUST_WASMJIT_CACHE_DIR}
+            ${RUST_OMC_ARTIFACT_DIR}/openmodelica${RUST_OMC_EXE_SUFFIX}
+    DEPENDS rust_libopenmodelica
+    COMMENT "Precompiling the wasm-jit artifacts"
+    VERBATIM)
+  add_dependencies(rust_wasmjit_cache rust_omc)
+  install(DIRECTORY ${RUST_WASMJIT_CACHE_DIR}/
+          DESTINATION lib/omc/cache COMPONENT omc
+          FILES_MATCHING PATTERN "*.cwasm")
 
   # The PIC wasi-libc sysroot an external "C" library for wasm-jit is compiled
   # against. Under the wasm triple with an `omc` subdirectory so it cannot be

@@ -304,8 +304,8 @@ fn load(path: &Path) -> std::result::Result<Loaded, String> {
             dir,
             form: Form::Dylink { model, ext, external_c: flag("externalC"), lapack: flag("lapack") },
             how: format!(
-                "model kernel {:.1} MB linked against the cached adapter{}",
-                size as f64 / 1.0e6,
+                "model kernel linked against the cached adapter{}{}",
+                mb(size as u64),
                 if unpacked { ", unpacked here" } else { "" }
             ),
             load_ms: ms(t),
@@ -330,9 +330,9 @@ fn load(path: &Path) -> std::result::Result<Loaded, String> {
             return Ok(Loaded {
                 form: Form::Component(Arc::new(artifact)),
                 how: format!(
-                    "{}.cwasm, {:.1} MB, mapped{}",
+                    "{}.cwasm{}, mapped{}",
                     platform().unwrap_or("?"),
-                    size as f64 / 1.0e6,
+                    mb(size),
                     if unpacked { ", unpacked here" } else { "" }
                 ),
                 load_ms: ms(t),
@@ -353,7 +353,7 @@ fn load(path: &Path) -> std::result::Result<Loaded, String> {
         .map_err(|e| format!("wasm artifact {}: {e}", path.display()))?;
     Ok(Loaded {
         form: Form::Component(Arc::new(artifact)),
-        how: format!("compiled from the component, {:.1} MB", component.len() as f64 / 1.0e6),
+        how: format!("compiled from the component{}", mb(component.len() as u64)),
         load_ms: ms(t),
         dir,
     })
@@ -432,6 +432,11 @@ pub fn run(
         Ok(f) => f,
         Err(e) => return (Err(e), log),
     };
+    // Neither the in-wasm runtime nor the FMI driver has a regex engine, so the
+    // pattern is compiled here: the runtime asks per name through
+    // `rt_host_name_matches`, the masters filter their columns. `Regex` is not
+    // `Clone`, hence one compile per consumer.
+    openmodelica_wasm_jit::host::set_output_filter(compile_output_filter(&flags, &mut log));
     let out = result_path(&flags, result_file);
     let res = match face {
         Face::Simulation => run_simulation(&loaded, &flags, &out, simflags, &mut log),
@@ -439,6 +444,25 @@ pub fn run(
         Face::CoSimulation => run_fmi(&loaded, &flags, &out, None, &mut log),
     };
     (res, log)
+}
+
+/// The run's `-variableFilter`, compiled. `None` keeps everything: an absent,
+/// empty or `.*` pattern, or C's "Defaulting to outputting all variables".
+fn compile_output_filter(
+    flags: &openmodelica_sim_meta::simflags::SimFlags,
+    log: &mut String,
+) -> Option<openmodelica_util::System::Regex> {
+    let pattern = flags.variable_filter.as_deref().filter(|p| !p.is_empty() && *p != ".*")?;
+    match openmodelica_util::System::Regex::new(&format!("^({pattern})$")) {
+        Ok(re) => Some(re),
+        Err(e) => {
+            log.push_str(&format!(
+                "LOG_STDOUT        | warning | Failed to compile regular expression: {pattern} \
+                 with error: {e}. Defaulting to outputting all variables.\n"
+            ));
+            None
+        }
+    }
 }
 
 /// The artifact's own simulation runtime.
@@ -468,7 +492,12 @@ fn run_simulation(
             }
         }
         Form::Dylink { .. } => {
-            loaded.with_dylink(|i| i.run_simulation(&args).map_err(|e| e.to_string()))?
+            // The model's `LOG_*`/asserts/`Streams.print` go to the artifact's
+            // WASI stdout; fold them into the run's log as the other forms do.
+            openmodelica_wasi::wasi::start_stdout_capture();
+            let r = loaded.with_dylink(|i| i.run_simulation(&args).map_err(|e| e.to_string()));
+            log.push_str(&openmodelica_wasi::wasi::take_stdout_capture());
+            r?
         }
     };
     let elapsed = ms(t);
@@ -580,6 +609,10 @@ fn run_fmi(
     // `-lv=LOG_STATS` asks the *runtime* for a block, not the FMU for a trace of
     // every event, so it alone leaves the FMI logger off.
     opts.logging_on = flags.has_log("LOG_EVENTS") || flags.has_log("LOG_NLS") || flags.has_log("LOG_DSS");
+    opts.alarm = flags.alarm;
+    // A run wedged inside one call into wasm never reaches the master's deadline;
+    // the epoch alarm interrupts that (`OMC_WASM_HARD_ALARM`).
+    openmodelica_wasm_jit::sim_runtime::set_alarm(flags.alarm);
     if let Some(s) = me_solver {
         opts.solver = s;
     }
@@ -602,6 +635,12 @@ fn run_fmi(
         });
     }
 
+    // The masters record here, so the columns the filter rejects are never sampled.
+    let re = compile_output_filter(flags, &mut String::new());
+    let keep = |name: &str| re.as_ref().is_none_or(|r| r.is_match(name));
+    if re.is_some() {
+        opts.keep = Some(&keep);
+    }
     let t = Instant::now();
     let (recorder, summary, elapsed) = match &loaded.form {
         Form::Component(a) => {
@@ -616,17 +655,21 @@ fn run_fmi(
                 took(ms(t))
             ));
             let t = Instant::now();
-            let (r, s) = drive(&mut inst, kind, md, &opts)?;
+            // Drained before the failure propagates: what the FMU printed on the
+            // way to it is the only account of why.
+            let driven = drive(&mut inst, kind, md, &opts);
             let elapsed = ms(t);
             log.push_str(&inst.output());
             for (_, category, message) in inst.take_log() {
                 log.push_str(&format!("LOG_STDOUT        | info    | {category}: {message}\n"));
             }
+            let (r, s) = driven?;
             (r, s, elapsed)
         }
         Form::Dylink { .. } => {
             let mut linked_ms = 0.0;
-            let (r, s, e) = loaded.with_dylink(|inst| {
+            openmodelica_wasi::wasi::start_stdout_capture();
+            let driven = loaded.with_dylink(|inst| {
                 match kind {
                     InterfaceKind::ModelExchange => inst.instantiate_me(&instance_name(md), opts.logging_on),
                     _ => inst.instantiate_cs(&instance_name(md), opts.logging_on, opts.event_mode),
@@ -636,7 +679,9 @@ fn run_fmi(
                 let t = Instant::now();
                 let (r, s) = drive(inst, kind, md, &opts)?;
                 Ok((r, s, ms(t)))
-            })?;
+            });
+            log.push_str(&openmodelica_wasi::wasi::take_stdout_capture());
+            let (r, s, e) = driven?;
             log.push_str(&format!(
                 "LOG_STDOUT        | info    | {} instantiated{}\n",
                 kind.as_str(),
@@ -695,6 +740,16 @@ fn took(ms: f64) -> String {
     match openmodelica_util::Testsuite::isRunning() {
         Ok(true) => String::new(),
         _ => format!(" in {ms:.1} ms"),
+    }
+}
+
+/// How big the artifact was, left out of a testsuite run for the same reason the
+/// timing is: it moves whenever the adapter or the model kernel is rebuilt, and a
+/// baseline that records it fails on changes that are not about this test.
+fn mb(bytes: u64) -> String {
+    match openmodelica_util::Testsuite::isRunning() {
+        Ok(true) => String::new(),
+        _ => format!(", {:.1} MB", bytes as f64 / 1.0e6),
     }
 }
 

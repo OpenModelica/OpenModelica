@@ -240,6 +240,19 @@ pub extern "C" fn rt_set_homotopy_tuning(
     }
 }
 
+/// Whether the host serves `env.rt_host_lin_solve`. Off unless it says so: a
+/// module instantiated by something without a native solver must not call out.
+static HOST_LIN_SOLVE: AtomicU32 = AtomicU32::new(0);
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_host_lin_solve(on: u32) {
+    HOST_LIN_SOLVE.store(on, Ordering::Relaxed);
+}
+
+pub(crate) fn host_lin_solve() -> bool {
+    HOST_LIN_SOLVE.load(Ordering::Relaxed) != 0
+}
+
 /// Set the four selectors for the next run. Host-driven builds call this through
 /// the export; the in-wasm session calls [`apply_flags`] instead.
 #[unsafe(no_mangle)]

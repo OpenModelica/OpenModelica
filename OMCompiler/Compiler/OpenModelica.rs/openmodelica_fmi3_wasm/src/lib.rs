@@ -32,7 +32,7 @@ use openmodelica_sim_meta::driver::{
 };
 #[cfg(feature = "cs")]
 use openmodelica_sim_meta::driver::{CsDefer, CsDriver, CsStep};
-use openmodelica_sim_meta::{decode, omclog, FmiVr, Layout, Neg, WTy, REAL_OFF, TIME_OFF};
+use openmodelica_sim_meta::{decode, omclog, simflags, FmiVr, Layout, Neg, WTy, REAL_OFF, TIME_OFF};
 
 // ── Model kernel imports ─────────────────────────────────────────────────────
 // `env` is the dylink convention: the Linker resolves these against the model
@@ -735,6 +735,34 @@ pub struct Instance {
 
 /// Allocate and zero the model's `SimData` and build the instance state. Shared by
 /// both worlds' instantiate.
+/// The nonlinear/linear solver selection the export hard-coded into the metadata.
+/// An importer has no channel to pass simulation flags, so this is the only one there
+/// is; the export linked exactly the libraries these reach, so a rejection here means
+/// the two disagree and the instance must not come up quietly using another solver.
+fn apply_baked_solver_flags(flags: &str) -> Option<()> {
+    if flags.is_empty() {
+        return Some(());
+    }
+    let argv: Vec<String> = core::iter::once("model".to_string())
+        .chain(flags.split_whitespace().map(str::to_string))
+        .collect();
+    let parsed = simflags::parse(&argv)
+        .and_then(|f| {
+            simflags::check(&f, openmodelica_codegen_wasm_jit_runtime::sim_capabilities())?;
+            Ok(f)
+        })
+        .map_err(|e| {
+            omclog::error(
+                omclog::ASSERT,
+                false,
+                &alloc::format!("this FMU was exported with `{flags}`: {e}"),
+            )
+        })
+        .ok()?;
+    openmodelica_codegen_wasm_jit_runtime::apply_sim_flags(&parsed);
+    Some(())
+}
+
 fn new_state() -> Option<MeState> {
     #[allow(unused_mut)]
     let mut meta = read_meta();
@@ -744,6 +772,7 @@ fn new_state() -> Option<MeState> {
     }
     // From the model's own DefaultExperiment, as in C's FMU.
     openmodelica_codegen_wasm_jit_runtime::rt_set_step_size(meta.step_size());
+    apply_baked_solver_flags(&meta.fmi_solver_flags)?;
     let sim_data = openmodelica_codegen_wasm_jit_runtime::rt_alloc(layout.total);
     // rt_alloc leaves the block uninitialised; zero it so unset slots read 0.
     unsafe {

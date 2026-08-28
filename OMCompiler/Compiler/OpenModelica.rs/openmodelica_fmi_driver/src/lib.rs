@@ -48,6 +48,8 @@ pub enum Error {
     Simulation(String),
     /// The FMU asked for termination during initialization.
     TerminatedAtInit,
+    /// `-alarm=N` expired.
+    Alarm,
     Cancelled,
 }
 
@@ -70,6 +72,7 @@ impl std::fmt::Display for Error {
             Error::TerminatedAtInit => {
                 write!(f, "the FMU requested termination during initialization")
             }
+            Error::Alarm => write!(f, "simulation aborted (-alarm)"),
             Error::Cancelled => write!(f, "cancelled"),
         }
     }
@@ -141,7 +144,7 @@ pub struct Parameter {
     pub value: f64,
 }
 
-pub struct Options {
+pub struct Options<'a> {
     pub start_time: f64,
     pub stop_time: f64,
     /// The output interval, and for Co-Simulation the communication step size.
@@ -164,13 +167,19 @@ pub struct Options {
     /// Asked at each output point: `true` ends the run where it stands, with
     /// the samples taken so far kept.
     pub cancelled: Option<fn() -> bool>,
+    /// `-alarm=N`: seconds of wall clock the run may take. C raises `SIGALRM`;
+    /// here omc is the process, so the masters report [`Error::Alarm`] instead.
+    pub alarm: Option<u32>,
+    /// `-variableFilter`: which variables the result file keeps; `None` keeps all.
+    /// Borrowed, since the caller owns the compiled regex; this crate has none.
+    pub keep: Option<&'a dyn Fn(&str) -> bool>,
 }
 
-impl Options {
+impl Options<'_> {
     /// The options an FMU is simulated with when the caller says nothing: its
     /// own `<DefaultExperiment>`, and 500 output points where it gives no step
     /// size.
-    pub fn from_model_description(md: &ModelDescription) -> Options {
+    pub fn from_model_description(md: &ModelDescription) -> Options<'static> {
         let e = md.default_experiment.unwrap_or_default();
         let start_time = e.start_time.unwrap_or(0.0);
         let stop_time = e.stop_time.unwrap_or(start_time + 1.0);
@@ -191,6 +200,8 @@ impl Options {
             inputs: Vec::new(),
             progress: None,
             cancelled: None,
+            alarm: None,
+            keep: None,
         }
     }
 
@@ -209,6 +220,37 @@ impl Options {
             // not divide the span still ends exactly at the stop time.
             if k == n { self.stop_time } else { self.start_time + k as f64 * step }
         })
+    }
+}
+
+/// The wall clock a run may take, from [`Options::alarm`]. The browser has no
+/// clock here and cancels through [`Options::cancelled`], so it never expires.
+pub(crate) struct Deadline {
+    #[cfg(not(target_arch = "wasm32"))]
+    until: Option<std::time::Instant>,
+}
+
+impl Deadline {
+    pub(crate) fn arm(opts: &Options<'_>) -> Deadline {
+        #[cfg(not(target_arch = "wasm32"))]
+        return Deadline {
+            until: opts
+                .alarm
+                .filter(|s| *s > 0)
+                .map(|s| std::time::Instant::now() + std::time::Duration::from_secs(s as u64)),
+        };
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = opts;
+            Deadline {}
+        }
+    }
+
+    pub(crate) fn expired(&self) -> bool {
+        #[cfg(not(target_arch = "wasm32"))]
+        return self.until.is_some_and(|t| std::time::Instant::now() >= t);
+        #[cfg(target_arch = "wasm32")]
+        false
     }
 }
 

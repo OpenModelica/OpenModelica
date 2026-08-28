@@ -12,7 +12,7 @@
 use crate::api::{Fmi3, Fmi3ModelExchange};
 use crate::common::{Inputs, event_iteration, initialize};
 use crate::record::Recorder;
-use crate::{Error, Options, Result, Solver};
+use crate::{Deadline, Error, Options, Result, Solver};
 use openmodelica_fmi::ModelDescription;
 use openmodelica_solvers::dassl::{Dassl, DasslStep};
 use openmodelica_solvers::events::StepEnd;
@@ -42,7 +42,7 @@ pub struct Run {
 struct FmuOde<'a> {
     inst: &'a mut dyn Fmi3ModelExchange,
     inputs: &'a mut Inputs,
-    opts: &'a Options,
+    opts: &'a Options<'a>,
     nominals: Vec<f64>,
     /// The ODE Jacobian's sparsity, out of `<ModelStructure>`: which states each
     /// state derivative depends on, coloured so one evaluation differences a
@@ -62,6 +62,12 @@ struct FmuOde<'a> {
     committed: Option<(f64, Vec<f64>)>,
     /// What the FMU actually said, behind the static message the solvers carry.
     failure: Option<Error>,
+    /// `-alarm`, polled here rather than only at the output points: a solver that
+    /// stops converging never reaches them.
+    deadline: Deadline,
+    /// Calls into the FMU since the deadline was last read — every one, not just
+    /// the derivatives: event indicators can cost what derivatives do.
+    polls: u64,
 }
 
 impl FmuOde<'_> {
@@ -93,11 +99,21 @@ impl FmuOde<'_> {
         self.failure.get_or_insert(e);
         "the FMU reported an error while being integrated"
     }
+
+    /// `-alarm`, checked every 64th call: reading the clock on each would be most
+    /// of a cheap model's evaluation.
+    fn past_deadline(&mut self) -> bool {
+        self.polls += 1;
+        self.polls % 64 == 0 && self.deadline.expired()
+    }
 }
 
 impl Ode for FmuOde<'_> {
     fn eval(&mut self, t: f64, y: &[f64], f: &mut [f64]) -> openmodelica_solvers::Result<()> {
         self.calls += 1;
+        if self.past_deadline() {
+            return Err(self.note(Error::Alarm));
+        }
         self.commit(t, y).map_err(|e| self.note(e))?;
         self.inst.get_continuous_state_derivatives(f).map_err(|e| self.note(e))
     }
@@ -105,6 +121,9 @@ impl Ode for FmuOde<'_> {
     fn eval_zc(&mut self, t: f64, y: &[f64], zc: &mut [f64]) -> openmodelica_solvers::Result<()> {
         if zc.is_empty() {
             return Ok(());
+        }
+        if self.past_deadline() {
+            return Err(self.note(Error::Alarm));
         }
         self.commit(t, y).map_err(|e| self.note(e))?;
         self.inst.get_event_indicators(zc).map_err(|e| self.note(e))
@@ -127,6 +146,10 @@ impl Ode for FmuOde<'_> {
     }
 
     fn jacobian_vector(&mut self, t: f64, y: &[f64], seed: &[f64], out: &mut [f64]) -> bool {
+        if self.past_deadline() {
+            self.failure.get_or_insert(Error::Alarm);
+            return false;
+        }
         if self.commit(t, y).is_err() {
             return false;
         }
@@ -234,7 +257,7 @@ impl Integrator {
         })
     }
 
-    fn set_experiment(&mut self, opts: &Options) {
+    fn set_experiment(&mut self, opts: &Options<'_>) {
         if let Integrator::Gbode(gb) = self {
             gb.set_experiment(opts.start_time, opts.stop_time, opts.step_size);
         }
@@ -306,10 +329,10 @@ impl Integrator {
 pub fn simulate(
     inst: &mut dyn Fmi3ModelExchange,
     md: &ModelDescription,
-    opts: &Options,
+    opts: &Options<'_>,
 ) -> Result<Run> {
     let mut inputs = Inputs::new(opts);
-    let mut rec = Recorder::new(md);
+    let mut rec = Recorder::new(md, opts.keep);
     {
         let common: &mut dyn Fmi3 = inst;
         initialize(common, &mut inputs, opts)?;
@@ -386,6 +409,8 @@ pub fn simulate(
         calls: 0,
         committed: None,
         failure: None,
+        deadline: Deadline::arm(opts),
+        polls: 0,
     };
     let mut t = opts.start_time;
     let mut next_event = info.next_event_time.unwrap_or(f64::INFINITY);
@@ -467,6 +492,9 @@ pub fn simulate(
             cancelled = true;
             break 'grid;
         }
+        if ode.deadline.expired() {
+            return Err(Error::Alarm);
+        }
     }
 
     let calls = ode.calls;
@@ -487,6 +515,6 @@ pub fn simulate(
 }
 
 /// Times this close to an output point count as having reached it.
-fn grid_epsilon(opts: &Options) -> f64 {
+fn grid_epsilon(opts: &Options<'_>) -> f64 {
     (opts.stop_time - opts.start_time).abs() * 1e-12
 }
