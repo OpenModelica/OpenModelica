@@ -54,13 +54,6 @@ else
   else
     AC_MSG_ERROR(failed)
   fi
-
-  AC_MSG_CHECKING([for $OPENMODELICAHOME/share/omc/omc_communication.idl])
-  if test -f "$OPENMODELICAHOME/share/omc/omc_communication.idl"; then
-    AC_MSG_RESULT(ok)
-  else
-    AC_MSG_ERROR(failed)
-  fi
 fi
 if echo $host | grep -iq darwin; then
   true
