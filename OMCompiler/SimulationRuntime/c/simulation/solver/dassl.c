@@ -326,9 +326,11 @@ int dassl_initial(DATA* data, threadData_t *threadData,
    * the forward / adjoint / bidirectional Jacobian is shared with IDA and GBODE. */
   dasslData->dasslJacobian = getRequestedJacobianMethod(threadData);
   if (dasslData->dasslJacobian == JAC_UNKNOWN) {
+    printf("jacobian method is unknown, using default case colored numerical jacobian\n");
     /* default case colored numerical jacobian */
     dasslData->dasslJacobian = COLOREDNUMJAC;
   }
+  printf("calling initSymbolicOdeJacobian in dassl_initial() with jacobianMethod=%d\n", dasslData->dasslJacobian);
   JACOBIAN* jacobian = initSymbolicOdeJacobian(data, threadData, &dasslData->dasslJacobian, FALSE);
 
   /* default use a user sub-routine for JAC */
