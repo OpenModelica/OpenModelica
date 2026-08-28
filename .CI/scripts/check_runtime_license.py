@@ -681,6 +681,7 @@ def main() -> int:
     skipped = 0
     runtime_roots = [
         Path(root) / "OMCompiler" / "SimulationRuntime",
+        Path(root) / "OMCompiler" / "Compiler" / "omcCAPI",
         Path(root) / "OMCompiler" / "3rdParty" / "ryu",
     ] + [Path(root) / "OMCompiler" / "Compiler" / "OpenModelica.rs" / subdir for subdir in [
         "openmodelica_sim_meta",
