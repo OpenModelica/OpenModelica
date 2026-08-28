@@ -57,7 +57,6 @@ protected
 
 import AbsynDumpTpl;
 import Config;
-import Error;
 import Flags;
 import FlagsUtil;
 import List;
