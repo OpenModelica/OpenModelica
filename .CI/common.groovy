@@ -663,20 +663,6 @@ void assembleWeb() {
   sh "rm -f ${webZip} && (cd install_web/share/omc/web && zip -r -9 ${env.WORKSPACE}/${webZip} .)"
   archiveArtifacts artifacts: webZip, fingerprint: true
   stash name: 'web', includes: webZip
-
-  // Merge the Rust-partest partition shards into one sorted failure list,
-  // archived so regressions are easy to diff between runs. Here (not a dedicated
-  // agent) since the web deliverable is already assembled. Same guard as the
-  // testsuite-rust stages, so a missing shard is a hard error rather than the
-  // normal case of those stages not having run.
-  sh 'rm -f testsuite/partest-failed-*.txt partest-rust-failed.txt'
-  if (shouldWeRunRustTests()) {
-    for (p in [1,2]) {
-      unstash "partest-failed-${p}"
-    }
-    sh 'cat testsuite/partest-failed-*.txt | sort -u > partest-rust-failed.txt && wc -l partest-rust-failed.txt'
-    archiveArtifacts artifacts: 'partest-rust-failed.txt', allowEmptyArchive: true, fingerprint: true
-  }
 }
 
 void buildRustGUI() {
@@ -703,10 +689,11 @@ void buildRustGUI() {
   }
 }
 
-// One partest shard against the Rust-built omc (unstashed). Builds the test
-// libraries with that omc (cmake's libs-for-testing == omc index.mos); the repo's
-// index.json is copied into place first so omc uses it instead of downloading.
-void partestRust(partition) {
+// One partest shard against the Rust-built omc (unstashed) for one simCodeTarget.
+// Builds the test libraries with that omc (cmake's libs-for-testing == omc
+// index.mos); the repo's index.json is copied into place first so omc uses it
+// instead of downloading. An empty simCodeTarget leaves the compiler default.
+void partestRust(String simCodeTarget, partition, partitionmodulo) {
   standardSetup()
   unstash 'omc-cmake-rust'
   // OMSimulator + libomcruntime aren't produced by the Rust omc build; pull the
@@ -725,51 +712,44 @@ void partestRust(partition) {
     ( cd libraries && "\$PWD/../build/bin/omc" index.mos )
     build/bin/omc-diff -v1.4
   """
-  String simCodeTargetArg = params.RUST_PARTEST_SIMCODETARGET ? " -simCodeTarget=${params.RUST_PARTEST_SIMCODETARGET}" : ''
+  boolean isWasmTarget = ['wasm-jit', 'wasm'].contains(simCodeTarget)
+  String simCodeTargetArg = simCodeTarget ? " -simCodeTarget=${simCodeTarget}" : ''
+  // Properties of the Rust omc itself, so excluded for every target.
   // cpp/hpcom: the Rust omc is built without the C++ runtime. metamodelica:
   // MetaModelica code generation only works against the C runtime.
-  // cSources/fmuCSources check generated C files or FMU sources - wasm-jit does not use C
   // 63bit/antlr: the port's Integer is i32 and its parser is winnow, not ANTLR
   // stackoverflow: Rust aborts on stack overflow, MMC unwinds out of the SEGV handler
   // wasm: off everywhere else - these tests select the wasm-jit/wasm target
   // themselves, which only this build has.
-  String suitesArg = ' -suites=-cpp,-hpcom,-metamodelica,-63bit,-antlr,-cSources,-fmuCSources,-stackoverflow,+wasm'
+  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm'
+  // cSources/fmuCSources inspect generated C, which a wasm target does not write.
+  if (isWasmTarget) {
+    suites += ',-cSources,-fmuCSources'
+  }
   // wasmtime reserves ~4 GiB of address space per wasm memory, and shrinking that
   // reservation to fit an RLIMIT_AS costs the bounds-check-free fast path.
-  String asLimit = params.RUST_PARTEST_SIMCODETARGET == 'wasm-jit'
-                   ? '# wasm-jit: address space is not limited, only the cgroup is'
+  String asLimit = isWasmTarget
+                   ? '# wasm: address space is not limited, only the cgroup is'
                    : 'ulimit -v 6291456 # Max 6GB per process'
   try {
     sh """#!/bin/bash
-      set -o pipefail
       ulimit -t 1500
       ${asLimit}
       .CI/scripts/cgroup-memory.sh check
-      rm -f testsuite/partest-failed-${partition}.txt
       cd testsuite/partest
       set -x
-      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/2 -nocolour -with-xml${suitesArg}${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
-      CODE=\${PIPESTATUS[0]}
+      ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml -suites=${suites}${simCodeTargetArg}
+      CODE=\$?
       set +x
       ../../.CI/scripts/cgroup-memory.sh report
       # 0/7 == the run completed (7 means some tests failed); only fail the step on
       # anything else, so junit below still publishes the per-test results.
       test \$CODE = 0 -o \$CODE = 7 || exit 1
-      # This partition's failures, from the 'Failed tests:' block (the only
-      # tab-indented lines). Parsing stdout rather than failed.<branch> avoids the
-      # die on branch names with '/'. Stashed and merged in assemble-web.
-      grep -E '^[[:space:]]+[^[:space:]].*[.]mo[fs]?\$' runtests-${partition}.log | sed -E 's/^[[:space:]]+//' | sort -u > ../partest-failed-${partition}.txt || true
-      wc -l ../partest-failed-${partition}.txt
     """
-    stash name: "partest-failed-${partition}", includes: "testsuite/partest-failed-${partition}.txt"
   } finally {
     // Per-partition result.xml; disjoint shards merge into one per-test view in
     // Jenkins. In finally so a hard shard failure still publishes what ran.
-    if (params.RUST_PARTEST_JUNIT) {
-      junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
-    }
-    sh "cp testsuite/partest/result.xml partest-rust-partest-junit-${partition}.xml || true"
-    archiveArtifacts artifacts: "partest-rust-partest-junit-${partition}.xml", allowEmptyArchive: true, fingerprint: true
+    junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
   }
 }
 
@@ -1026,6 +1006,7 @@ private def shouldWeEnableMacOSCMakeBuild() {
   return params.ENABLE_MACOS_CMAKE_BUILD
 }
 
+// The extra Rust-omc partest on RUST_PARTEST_SIMCODETARGET; wasm-jit always runs.
 private def shouldWeRunRustTests() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Enable Rust Tests")) {
