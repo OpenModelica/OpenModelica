@@ -306,7 +306,13 @@ void TreeSearchFilters::showHideFilters(bool On)
  */
 QRegExp TreeSearchFilters::getFilterRegExp(const QString &filterText, Qt::CaseSensitivity caseSensitivity, TreeSearchFilters::FilterSyntax syntax)
 {
-  return QRegExp(filterText, caseSensitivity, QRegExp::PatternSyntax(syntax));
+  QRegExp regExp(filterText, caseSensitivity, QRegExp::PatternSyntax(syntax));
+  // An invalid pattern (e.g. typing 'mass[') is treated as a literal string so that
+  // it matches something instead of silently matching nothing.
+  if (!regExp.isValid()) {
+    regExp.setPattern(QRegExp::escape(filterText));
+  }
+  return regExp;
 }
 #else
 /*!
@@ -320,14 +326,24 @@ QRegExp TreeSearchFilters::getFilterRegExp(const QString &filterText, Qt::CaseSe
 QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &filterText, Qt::CaseSensitivity caseSensitivity, TreeSearchFilters::FilterSyntax syntax)
 {
   const QRegularExpression::PatternOptions options = (caseSensitivity == Qt::CaseSensitive) ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
+  QRegularExpression regExp;
   switch (syntax) {
     case TreeSearchFilters::Wildcard:
-      return QRegularExpression::fromWildcard(filterText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion);
+      regExp = QRegularExpression::fromWildcard(filterText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion);
+      break;
     case TreeSearchFilters::FixedString:
-      return QRegularExpression(QRegularExpression::escape(filterText), options);
+      regExp = QRegularExpression(QRegularExpression::escape(filterText), options);
+      break;
     default:
-      return QRegularExpression(filterText, options);
+      regExp = QRegularExpression(filterText, options);
+      break;
   }
+  // An invalid pattern (e.g. typing 'mass[') is treated as a literal string so that
+  // QString::contains()/QSortFilterProxyModel do not warn about an invalid regex.
+  if (!regExp.isValid()) {
+    regExp = QRegularExpression(QRegularExpression::escape(filterText), options);
+  }
+  return regExp;
 }
 #endif
 
