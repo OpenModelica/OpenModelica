@@ -5226,12 +5226,10 @@ void LibraryWidget::searchClasses()
 {
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+  TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // TODO: handle PatternSyntax: https://doc.qt.io/qt-6/qregularexpression.html
-  mpLibraryTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
+  mpLibraryTreeProxyModel->setFilterRegularExpression(TreeSearchFilters::getFilterRegularExpression(searchText, caseSensitivity, syntax));
 #else
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
-  QRegExp regExp(searchText, caseSensitivity, syntax);
-  mpLibraryTreeProxyModel->setFilterRegExp(regExp);
+  mpLibraryTreeProxyModel->setFilterRegExp(TreeSearchFilters::getFilterRegExp(searchText, caseSensitivity, syntax));
 #endif
 }

@@ -52,6 +52,7 @@
 #include <QPainter>
 #include <QColorDialog>
 #include <QDir>
+#include <QRegularExpression>
 #include <QRegExp>
 
 extern "C" {
@@ -115,9 +116,9 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   syntaxDescriptions << tr("A rich Perl-like pattern matching syntax.")
                       << tr("A simple pattern matching syntax similar to that used by shells (command interpreters) for \"file globbing\".")
                       << tr("Fixed string matching.");
-  mpSyntaxComboBox->addItem(tr("Regular Expression"), QRegExp::RegExp);
-  mpSyntaxComboBox->addItem(tr("Wildcard"), QRegExp::Wildcard);
-  mpSyntaxComboBox->addItem(tr("Fixed String"), QRegExp::FixedString);
+  mpSyntaxComboBox->addItem(tr("Regular Expression"), TreeSearchFilters::Regexp);
+  mpSyntaxComboBox->addItem(tr("Wildcard"), TreeSearchFilters::Wildcard);
+  mpSyntaxComboBox->addItem(tr("Fixed String"), TreeSearchFilters::FixedString);
   Utilities::setToolTip(mpSyntaxComboBox, "Filters", syntaxDescriptions);
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
@@ -149,6 +150,58 @@ void TreeSearchFilters::showHideFilters(bool On)
     mpFiltersWidget->hide();
   }
 }
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+/*!
+ * \brief TreeSearchFilters::getFilterRegExp
+ * Returns the QRegExp for the given filter text, case sensitivity and syntax.
+ * \param filterText
+ * \param caseSensitivity
+ * \param syntax
+ * \return
+ */
+QRegExp TreeSearchFilters::getFilterRegExp(const QString &filterText, Qt::CaseSensitivity caseSensitivity, TreeSearchFilters::FilterSyntax syntax)
+{
+  QRegExp regExp(filterText, caseSensitivity, QRegExp::PatternSyntax(syntax));
+  // An invalid pattern (e.g. typing 'mass[') is treated as a literal string so that
+  // it matches something instead of silently matching nothing.
+  if (!regExp.isValid()) {
+    regExp.setPattern(QRegExp::escape(filterText));
+  }
+  return regExp;
+}
+#else
+/*!
+ * \brief TreeSearchFilters::getFilterRegularExpression
+ * Returns the QRegularExpression for the given filter text, case sensitivity and syntax.
+ * \param filterText
+ * \param caseSensitivity
+ * \param syntax
+ * \return
+ */
+QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &filterText, Qt::CaseSensitivity caseSensitivity, TreeSearchFilters::FilterSyntax syntax)
+{
+  const QRegularExpression::PatternOptions options = (caseSensitivity == Qt::CaseSensitive) ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
+  QRegularExpression regExp;
+  switch (syntax) {
+    case TreeSearchFilters::Wildcard:
+      regExp = QRegularExpression::fromWildcard(filterText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion);
+      break;
+    case TreeSearchFilters::FixedString:
+      regExp = QRegularExpression(QRegularExpression::escape(filterText), options);
+      break;
+    default:
+      regExp = QRegularExpression(filterText, options);
+      break;
+  }
+  // An invalid pattern (e.g. typing 'mass[') is treated as a literal string so that
+  // QString::contains()/QSortFilterProxyModel do not warn about an invalid regex.
+  if (!regExp.isValid()) {
+    regExp = QRegularExpression(QRegularExpression::escape(filterText), options);
+  }
+  return regExp;
+}
+#endif
 
 /*!
  * \class FileDataNotifier

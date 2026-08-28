@@ -159,15 +159,14 @@ void LibraryBrowseDialog::searchClasses()
   mpLibraryTreeView->selectionModel()->clearSelection();
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+  TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // TODO: handle PatternSyntax: https://doc.qt.io/qt-6/qregularexpression.html
-  QRegularExpression regExp(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
-  mpLibraryTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
+  QRegularExpression regExp = TreeSearchFilters::getFilterRegularExpression(searchText, caseSensitivity, syntax);
+  mpLibraryTreeProxyModel->setFilterRegularExpression(regExp);
 #else
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
-  QRegExp regExp(searchText, caseSensitivity, syntax);
+  QRegExp regExp = TreeSearchFilters::getFilterRegExp(searchText, caseSensitivity, syntax);
   mpLibraryTreeProxyModel->setFilterRegExp(regExp);
- #endif
+#endif
   // if we have really searched something
   if (!searchText.isEmpty()) {
     findAndSelectLibraryTreeItem(regExp);
