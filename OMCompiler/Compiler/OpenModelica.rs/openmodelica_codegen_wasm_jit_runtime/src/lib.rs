@@ -2630,6 +2630,13 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
+    if omclog::active(omclog::LS_V) {
+        if x_ptr != 0 {
+            ls_print_vector("Vector old x", unsafe { core::slice::from_raw_parts(x_ptr as *const f64, n) });
+        }
+        ls_print_matrix("Matrix A", a, n);
+        ls_print_vector("Vector b", b);
+    }
     // `-ls=totalpivot` skips straight to the total-pivot search; LAPACK (C's
     // `dgesv`, and the default) is partial-pivot LU with that as its singular
     // fallback. `-ls=umfpack` only gets here having found the matrix singular.
@@ -2688,6 +2695,29 @@ fn lis_initial_guess(x_ptr: u32, n: usize) -> alloc::vec::Vec<f64> {
         0 => alloc::vec![0.0f64; n],
         p => unsafe { core::slice::from_raw_parts(p as *const f64, n) }.to_vec(),
     }
+}
+
+/// C's `_omc_printVector`.
+fn ls_print_vector(name: &str, v: &[f64]) {
+    omclog::info(omclog::LS_V, true, name);
+    for (i, x) in v.iter().enumerate() {
+        omclog::info(omclog::LS_V, false, &alloc::format!("[{:2}] {}", i + 1, omclog::g(*x, 20, 12)));
+    }
+    omclog::close(omclog::LS_V);
+}
+
+/// C's `_omc_printMatrix`, a column-major `n`×`n` printed by rows.
+fn ls_print_matrix(name: &str, a: &[f64], n: usize) {
+    omclog::info(omclog::LS_V, true, name);
+    for i in 0..n {
+        let mut row = alloc::string::String::new();
+        for j in 0..n {
+            row.push_str(&omclog::g(a[j * n + i], 10, 6));
+            row.push(' ');
+        }
+        omclog::info(omclog::LS_V, false, &row);
+    }
+    omclog::close(omclog::LS_V);
 }
 
 /// C's per-solver `Start solving Linear System …` line.

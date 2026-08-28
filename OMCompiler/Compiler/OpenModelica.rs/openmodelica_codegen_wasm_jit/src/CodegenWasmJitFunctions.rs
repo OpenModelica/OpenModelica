@@ -7455,7 +7455,7 @@ pub(crate) use generic_calls::{
 mod sim_systems;
 pub(crate) use sim_systems::{
     LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, NlsResidual, NlsResiduals,
-    backup_known_outputs, restore_known_outputs,
+    backup_known_outputs, residual_rows, restore_known_outputs,
     compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
     compile_linear_system_symbolic, emit_linz_jac_body, emit_nls_jac_body, emit_nls_jac_csc_body,
     emit_ls_bracket, emit_nls_load_body, emit_nls_residual_body, emit_solve_nls_call, lin_jac_coloring,

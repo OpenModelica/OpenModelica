@@ -1,6 +1,7 @@
 // name: 02_int_param_array_var
 // keywords: NewBackend
 // status: correct
+// suite: cSources
 // teardown_command: rm -f *ParameterArrayVariable*
 //
 // Check if init XML has array variable for integer parameter array

@@ -12,11 +12,8 @@ res := OpenModelica.Scripting.compareSimulationResults("ScalableTestSuite.Electr
   "ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10_diff.csv",0.01,0.0001,
   {"secondary_2_2.LossPower"});
 
-// #16458: NB must select the sparse solver for this system's nonlinear block
-// (density well below the 0.1 nonlinear threshold), same as OB does -- not
-// silently fall back to dense LAPACK.
-system("grep -c 'matrixFormat = OMC_MATRIX_SPARSE' ScalableTestSuite.Electrical.DistributionSystemDC.ScaledExperiments.DistributionSystemModelicaIndividual_N_10_M_10_02nls.c > sparse_count.txt");
-readFile("sparse_count.txt");
+// The solver NB picks for this system's torn loop is checked in
+// DistributionSystemModelicaIndividualSparse.mos, which reads the generated C.
 
 // Result:
 // true
@@ -30,7 +27,4 @@ readFile("sparse_count.txt");
 // end SimulationResult;
 // ""
 // {"Files Equal!"}
-// 1
-// "0
-// "
 // endResult

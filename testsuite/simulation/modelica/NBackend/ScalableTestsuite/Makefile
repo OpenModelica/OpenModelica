@@ -5,6 +5,7 @@ ManyEvents.mos \
 ManyEventsManyConditions.mos \
 TransmissionLineModelica.mos \
 DistributionSystemModelicaIndividual.mos \
+DistributionSystemModelicaIndividualSparse.mos \
 Table.mos \
 TimeTable.mos \
 Verification_Table.mos \

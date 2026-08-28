@@ -96,7 +96,8 @@ my %suite_enabled = (
   metamodelica => 1,  # Needs MetaModelica code generation, i.e. the C runtime.
   '63bit'      => 1,  # Needs a 63/64-bit Modelica Integer.
   antlr        => 1,  # Expects ANTLR's syntax error positions and wording.
-  cSources     => 1,  # Inspects the generated C files, which only the C target writes.
+  cSources     => 1,  # Inspects the generated C files and the init XML beside them,
+                      # which only the C target writes.
   fmuCSources  => 1,  # Inspects sources/ inside an FMU, which only the C export has.
   stackoverflow => 1, # Recurses until the stack runs out; needs MMC's SEGV-handler
                       # recovery, which the Rust port has no equivalent of.
