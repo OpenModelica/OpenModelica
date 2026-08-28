@@ -1,6 +1,16 @@
 // name:     BenchmarksForResizeableArrays.ArrayEquationsWithIndexReduction.SlidingMass3D
 // keywords: vectorized components, array equations, for loops
 // status: correct
+//
+// Currently in FAILINGTESTFILES (see #16458 fix): NBackend's tearing keeps
+// this system's algebraic loop untorn (7 unknowns solved simultaneously),
+// where OB tears it down to a single unknown (der(sd)) with the rest as
+// explicit inner equations. Since #16458 made NBackend route genuinely-linear
+// torn loops through a direct one-shot linear solve instead of Newton
+// iteration, the untorn 7x7 Jacobian's pre-existing defect (previously
+// masked by Newton's iterative tolerance) now surfaces as an outright solve
+// failure at time 0. This is a separate, pre-existing NBackend
+// tearing-quality/correctness bug -- not something introduced by that fix.
 
 loadFile("BenchmarksForResizeableArrays.mo"); getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();

@@ -2518,7 +2518,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
               ;separator="\n")
             end match)
           let body = (ls.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, i0)
+            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, res_index)
             case SES_FOR_RESIDUAL(__) then "case 1"
           ;separator="\n")
           let eqnbody =
@@ -2601,7 +2601,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
                functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
           ;separator="\n")
          let body = (ls.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, i0)
+            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, res_index)
             case SES_FOR_RESIDUAL(__) then "case 3"
            ;separator="\n")
          // for casual tearing set
@@ -2613,7 +2613,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
                functionExtraResidualsPreBody(eq2, &tmp2, modelNamePrefix)
           ;separator="\n")
          let body2 = (at.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes2, auxFunction2, index, i0)
+            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes2, auxFunction2, index, res_index)
             case SES_FOR_RESIDUAL(__) then "case 4"
            ;separator="\n")
        <<

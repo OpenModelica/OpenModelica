@@ -54,8 +54,7 @@ simulate(init_if_eq); getErrorString();
 //
 // Algebraic Partition 1
 // -----------------------
-//   (11) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
-//   --Iteration Vars:{y, u}
+//   (11) Linear System (size = 2, jacobian = false, mixed = false, torn = true)
 //   --(7) 0 = (u ^ 3.0 + u) - y
 //   --(8) 0 = 1.0 - u
 //
@@ -181,13 +180,18 @@ simulate(init_if_eq); getErrorString();
 // allEquations:
 // ========================================
 //
-// 11:  (NONLINEAR) index:2 jacobian: true
-// crefs: y , u
+// 11:  (LINEAR) index:0 jacobian: true
+// 	variables:
+// index:1: y (no alias)  initial: 	no arrCref index:(2) []
+// index:0: u (no alias)  initial: 	no arrCref index:(1) []
+// 	b-vector:
 // 	7: u ^ 3.0 + u - y (RESIDUAL)
 // 	8: 1.0 - u (RESIDUAL)
 // 	Jacobian idx: 2
 // 	10: $pDER_ALG_LS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.y [Real]
 // 	9: $pDER_ALG_LS_JAC_1.$RES_SIM_3=-$SEED_ALG_LS_JAC_1.u [Real]
+//
+// 	simJac:
 //
 //
 // ========================================
@@ -202,13 +206,18 @@ simulate(init_if_eq); getErrorString();
 //
 // algebraicEquations (1 systems):
 // ========================================
-// 11:  (NONLINEAR) index:2 jacobian: true
-// crefs: y , u
+// 11:  (LINEAR) index:0 jacobian: true
+// 	variables:
+// index:1: y (no alias)  initial: 	no arrCref index:(2) []
+// index:0: u (no alias)  initial: 	no arrCref index:(1) []
+// 	b-vector:
 // 	7: u ^ 3.0 + u - y (RESIDUAL)
 // 	8: 1.0 - u (RESIDUAL)
 // 	Jacobian idx: 2
 // 	10: $pDER_ALG_LS_JAC_1.$RES_SIM_0=3.0 * u ^ 2.0 * $SEED_ALG_LS_JAC_1.u + $SEED_ALG_LS_JAC_1.u - $SEED_ALG_LS_JAC_1.y [Real]
 // 	9: $pDER_ALG_LS_JAC_1.$RES_SIM_3=-$SEED_ALG_LS_JAC_1.u [Real]
+//
+// 	simJac:
 //
 //
 // ========================================
@@ -321,7 +330,8 @@ simulate(init_if_eq); getErrorString();
 // record SimulationResult
 //     resultFile = "init_if_eq_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'init_if_eq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

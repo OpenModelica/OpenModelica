@@ -17005,15 +17005,12 @@ public function linearSystemMatrixFormat
 protected
   Option<Integer> nnz;
 algorithm
-  format := match ls
-    case SimCode.LINEARSYSTEM() algorithm
-      nnz := match ls.jacobianMatrix
-        case SOME(SimCode.JAC_MATRIX(sparsity = {})) then simJacNonzeros(ls.simJac);
-        case SOME(SimCode.JAC_MATRIX()) then sparsityNonzeros(ls.jacobianMatrix);
-        else simJacNonzeros(ls.simJac);
-      end match;
-    then matrixFormatC(listLength(ls.vars), nnz, true);
-  end match;
+  nnz := sparsityNonzeros(ls.jacobianMatrix);
+  if isNone(nnz) then
+    // No sparsity info at all -- fall back to the simJac entry count.
+    nnz := simJacNonzeros(ls.simJac);
+  end if;
+  format := matrixFormatC(listLength(ls.vars), nnz, true);
 end linearSystemMatrixFormat;
 
 public function nonlinearSystemMatrixFormat
@@ -17043,9 +17040,15 @@ algorithm
   nnz := match ojac
     local
       SimCode.SparsityPattern sparsity;
+      list<SimCode.SparsityRow> rows;
     case SOME(SimCode.JAC_MATRIX(sparsity = sparsity)) guard not listEmpty(sparsity) algorithm
       for col in sparsity loop
         entries := entries + listLength(Util.tuple22(col));
+      end for;
+    then SOME(entries);
+    case SOME(SimCode.JAC_MATRIX(sparsityMatrix = SimCode.Sparsity.SPARSITY(rows = rows))) algorithm
+      for row in rows loop
+        entries := entries + listLength(row.dependencies);
       end for;
     then SOME(entries);
     else NONE();
