@@ -3090,13 +3090,12 @@ void VariablesWidget::findVariables()
 {
   QString findText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+  TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // TODO: handle PatternSyntax
-  QRegularExpression regExp(QRegularExpression::fromWildcard(findText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
+  QRegularExpression regExp = TreeSearchFilters::getFilterRegularExpression(findText, caseSensitivity, syntax);
   mpVariableTreeProxyModel->setFilterRegularExpression(regExp);
 #else
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
-  QRegExp regExp(findText, caseSensitivity, syntax);
+  QRegExp regExp = TreeSearchFilters::getFilterRegExp(findText, caseSensitivity, syntax);
   mpVariableTreeProxyModel->setFilterRegExp(regExp);
 #endif
   /* expand all so that the filtered items can be seen. */
