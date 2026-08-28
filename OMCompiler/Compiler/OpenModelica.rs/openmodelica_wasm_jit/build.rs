@@ -99,6 +99,7 @@ fn main() {
         s.spawn(|| {
             build_wasip1_interactive_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir)
         });
+        s.spawn(|| build_wasip1_threads_runtime(&runtime_dir, &out_dir, &hash, sundials_dir));
         s.spawn(|| build_external_c_wasm(&crate_dir, &out_dir));
         s.spawn(|| build_fmi3_me_adapter(&crate_dir, &out_dir));
         s.spawn(|| build_native_fmu_loaders(&crate_dir, &out_dir));
@@ -1057,6 +1058,73 @@ fn build_wasip1_interactive_runtime(
     }
 }
 
+/// The `wasm32-wasip1-threads` interactive runtime: the same crate over a *shared*
+/// linear memory, which the parallel `--parmodauto` path instantiates once per
+/// worker thread (one wasmtime store each, one memory). Native wasmtime only: the
+/// wasmer and web hosts keep the plain runtime, and a model translated with
+/// `--parmodauto` there imports an unshared memory.
+fn build_wasip1_threads_runtime(runtime_dir: &Path, out_dir: &Path, hash: &str, sundials_dir: Option<&Path>) {
+    let dest = out_dir.join("runtime_wasip1_threads.wasm");
+    let stamp = out_dir.join("runtime_wasip1_threads.wasm.hash");
+    println!("cargo::rustc-check-cfg=cfg(sim_threads_runtime)");
+    let native = std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() != Ok("wasm32");
+    let wasmer = std::env::var("CARGO_FEATURE_ENGINE_WASMER").is_ok();
+    if !native || wasmer {
+        std::fs::write(&dest, []).ok();
+        return;
+    }
+    println!("cargo:rustc-cfg=sim_threads_runtime");
+    println!("cargo:rerun-if-env-changed=OMC_WASM_RUNTIME_WASIP1_THREADS");
+    if let Ok(path) = std::env::var("OMC_WASM_RUNTIME_WASIP1_THREADS") {
+        copy(Path::new(&path), &dest);
+        std::fs::write(&stamp, format!("override:{path}")).ok();
+        return;
+    }
+    let mut features = "host_lin_solve,host_log".to_string();
+    if has_primme(sundials_dir) {
+        features.push_str(",primme");
+    }
+    let stamp_val = format!("{hash}:{features}:{}", THREADS_LINK_ARGS.join(" "));
+    if dest.exists() && std::fs::read_to_string(&stamp).ok().as_deref() == Some(stamp_val.as_str()) {
+        return;
+    }
+    match build_runtime_wasm_flags(
+        runtime_dir,
+        out_dir,
+        "wasm32-wasip1-threads",
+        "openmodelica_codegen_wasm_jit_runtime",
+        "runtime-threads-target",
+        &["--no-default-features", "--features", &features],
+        sundials_dir,
+        THREADS_LINK_ARGS,
+    ) {
+        Ok(produced) => {
+            copy(&produced, &dest);
+            std::fs::write(&stamp, &stamp_val).expect("write runtime_wasip1_threads.wasm.hash");
+        }
+        Err(e) => panic!(
+            "failed to build the wasip1-threads interactive runtime: {e}\n\
+             Install the target with `rustup target add wasm32-wasip1-threads`, or set \
+             OMC_WASM_RUNTIME_WASIP1_THREADS=/path/to/runtime_wasip1_threads.wasm."
+        ),
+    }
+}
+
+/// Beyond the target's own `--import-memory --shared-memory`: the table the model
+/// shares, what a worker instance needs to get its own stack and TLS block, and a
+/// stack matching the workers' `STACK_BYTES` (a deep solve overran the 1 MiB default).
+const THREADS_LINK_ARGS: &[&str] = &[
+    "-Clink-arg=--max-memory=4294967296",
+    "-Clink-arg=-zstack-size=8388608",
+    "-Clink-arg=--export-table",
+    "-Clink-arg=--growable-table",
+    "-Clink-arg=--export=__stack_pointer",
+    "-Clink-arg=--export=__tls_base",
+    "-Clink-arg=--export=__tls_size",
+    "-Clink-arg=--export=__tls_align",
+    "-Clink-arg=--export=__wasm_init_tls",
+];
+
 fn build_runtime_wasm(runtime_dir: &Path, out_dir: &Path, target: &str) -> Result<PathBuf, String> {
     build_runtime_wasm_named(
         runtime_dir,
@@ -1084,6 +1152,21 @@ fn build_runtime_wasm_named(
     extra_args: &[&str],
     sundials_dir: Option<&Path>,
 ) -> Result<PathBuf, String> {
+    build_runtime_wasm_flags(crate_dir, out_dir, target, artifact, target_dir_prefix, extra_args, sundials_dir, &[])
+}
+
+/// [`build_runtime_wasm_named`] with `rustflags` replacing the scrubbed host ones.
+#[allow(clippy::too_many_arguments)]
+fn build_runtime_wasm_flags(
+    crate_dir: &Path,
+    out_dir: &Path,
+    target: &str,
+    artifact: &str,
+    target_dir_prefix: &str,
+    extra_args: &[&str],
+    sundials_dir: Option<&Path>,
+    rustflags: &[&str],
+) -> Result<PathBuf, String> {
     let target_dir = out_dir.join(format!("{target_dir_prefix}-{target}"));
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
     let mut cmd = Command::new(cargo);
@@ -1097,6 +1180,9 @@ fn build_runtime_wasm_named(
         .env_remove("CARGO_ENCODED_RUSTFLAGS")
         .env_remove("CARGO_BUILD_RUSTFLAGS")
         .env_remove("RUSTC_WORKSPACE_WRAPPER");
+    if !rustflags.is_empty() {
+        cmd.env("CARGO_ENCODED_RUSTFLAGS", rustflags.join("\x1f"));
+    }
     match sundials_dir {
         Some(d) => { cmd.env("OMC_SUNDIALS_WASM_DIR", d); }
         // Cargo's env is inherited; clear a stale outer setting so the nested build

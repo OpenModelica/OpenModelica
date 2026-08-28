@@ -36,6 +36,10 @@ wasmtime = { workspace = true, optional = true }
 wasmer = { workspace = true, features = ["sys", "cranelift"], optional = true }
 # getrlimit(RLIMIT_AS) for engine_config.
 libc.workspace = true
+# Re-typing a dylink library's memory import as shared for the parmodauto runtime;
+# the `wasmparser` feature is what gives wasm-encoder its `reencode` module.
+wasmparser = "0.252"
+wasm-encoder = { workspace = true, features = ["wasmparser"] }
 # Native external "C" calls from the wasmtime sim host (libffi trampolines) and
 # our arena-backed ModelicaAllocateString.
 libffi.workspace = true

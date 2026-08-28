@@ -406,14 +406,36 @@ pub trait SimEngine {
         out
     }
     /// C's `functionODE` under `--parmodauto`: the scheduler decides between the
-    /// sequential entry point and the per-task `parmodTask(sim_data, task)`.
+    /// sequential entry point, the per-task `parmodTask(sim_data, task)` and the
+    /// engine's worker threads.
     fn call_parmod_ode(&mut self, sim_data: u32) -> Result<()> {
-        use crate::parmod::Op;
-        crate::parmod::evaluate_ode(&mut |op| match op {
-            Op::All => self.call1_raw("functionODE", sim_data),
-            Op::LocalKnown => self.call1_if_present_raw("functionLocalKnownVars", sim_data),
-            Op::Task(k) => self.call2_raw("parmodTask", sim_data, k),
-        })
+        use crate::parmod::{Exec, Op, Plan};
+        struct E<'a, S: SimEngine + ?Sized>(&'a mut S, u32);
+        impl<S: SimEngine + ?Sized> Exec for E<'_, S> {
+            fn op(&mut self, op: Op) -> Result<()> {
+                match op {
+                    Op::All => self.0.call1_raw("functionODE", self.1),
+                    Op::LocalKnown => self.0.call1_if_present_raw("functionLocalKnownVars", self.1),
+                    Op::Task(k) => self.0.call2_raw("parmodTask", self.1, k),
+                }
+            }
+            fn can_parallel(&self) -> bool {
+                self.0.parmod_can_parallel()
+            }
+            fn parallel(&mut self, plan: &Plan) -> Result<()> {
+                self.0.parmod_parallel(plan, self.1)
+            }
+        }
+        crate::parmod::evaluate_ode(&mut E(self, sim_data))
+    }
+    /// Whether [`SimEngine::parmod_parallel`] has worker threads to run a plan on.
+    fn parmod_can_parallel(&self) -> bool {
+        false
+    }
+    /// Evaluate a `--parmodauto` plan's clusters on the worker threads (the calling
+    /// thread among them), each task via `parmodTask(sim_data, task)`.
+    fn parmod_parallel(&mut self, _plan: &crate::parmod::Plan, _sim_data: u32) -> Result<()> {
+        Err("parmodauto: this engine has no worker threads")
     }
     fn call1_if_present(&mut self, name: &str, arg: u32) -> Result<()> {
         let Some(ix) = model_fn_clock(name) else { return self.call1_if_present_raw(name, arg) };
@@ -706,13 +728,13 @@ impl StepRetry {
 }
 
 /// Must match the runtime's `N_STATS`.
-pub const RT_STATS: usize = 25;
+pub const RT_STATS: usize = 26;
 
 pub const RT_STAT_NAMES: [&str; RT_STATS] = [
     "alloc", "array_new", "record_new", "str_new", "nls_solve", "nls_res", "nls_jac", "nls_fail", "nls_retry",
     "elem_ptr", "nls_iter", "nls_newton_fail", "nls_guess_hit", "nls_accept", "nls_store_back",
     "nls_vary_start", "nls_stale", "newton_irregular", "newton_lambda", "newton_negstep",
-    "newton_maxiter", "newton_stuck", "newton_jac", "newton_singular", "homotopy_steps",
+    "newton_maxiter", "newton_stuck", "newton_jac", "newton_singular", "homotopy_steps", "rust_alloc",
 ];
 
 /// Lambda steps the runtime's locally-continued systems took, part of the same
@@ -2153,9 +2175,8 @@ fn solve_initial_system(
     }
     if !homotopy_on_first_try() {
         omclog::info(omclog::INIT_HOMOTOPY, false, "Try to solve the initialization problem without homotopy first.");
-        if direct_initial_solve(e, sim_data, layout).is_ok() {
-            solve_with_global = false;
-        } else {
+        if let Err(err) = direct_initial_solve(e, sim_data, layout) {
+            omclog::debug(omclog::INIT, false, &format!("initialization without homotopy failed: {err}"));
             omclog::warning(
                 omclog::ASSERT,
                 false,
@@ -2166,6 +2187,8 @@ fn solve_initial_system(
             init_report::reset();
             let _ = rethrow_store::take();
             seed_start_values(e, sim_data, layout, inputs, model)?;
+        } else {
+            solve_with_global = false;
         }
     }
     if !solve_with_global {

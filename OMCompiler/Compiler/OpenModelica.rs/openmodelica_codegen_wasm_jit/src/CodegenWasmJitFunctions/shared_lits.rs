@@ -111,6 +111,8 @@ pub(crate) fn build_init_fn(
             return Err("CodegenWasmJit: shared literal is not a heap value");
         }
         ctx.emit(we::Instruction::GlobalSet(base_global + i as u32));
+        ctx.emit(we::Instruction::GlobalGet(base_global + i as u32));
+        ctx.emit(we::Instruction::Call(rt_index("rt_pin")?));
     }
     ctx.emit(we::Instruction::End);
     HOISTING.with(|h| h.set(true));

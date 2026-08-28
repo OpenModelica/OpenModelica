@@ -477,11 +477,13 @@ openmodelica_wasm_jit/src/engine_config.rs
 openmodelica_wasm_jit/src/host.rs
 openmodelica_wasm_jit/src/lib.rs
 openmodelica_wasm_jit/src/model.rs
+openmodelica_wasm_jit/src/parmod_pool.rs
 openmodelica_wasm_jit/src/sig.rs
 openmodelica_wasm_jit/src/sim_driver.rs
 openmodelica_wasm_jit/src/sim_runtime_stub.rs
 openmodelica_wasm_jit/src/sim_runtime_wasmer.rs
 openmodelica_wasm_jit/src/sim_runtime_wasmtime.rs
+openmodelica_wasm_jit/src/simmem.rs
 openmodelica_wasm_jit/src/wasi_shim.rs
 rust-toolchain.toml
 susanSources.txt

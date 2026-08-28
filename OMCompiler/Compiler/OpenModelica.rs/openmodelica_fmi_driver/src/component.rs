@@ -164,6 +164,10 @@ pub fn engine() -> Result<Engine> {
     cfg.wasm_component_model(true);
     // A model with external "C" carries the `model_error` tag its call sites catch.
     cfg.wasm_exceptions(true);
+    // An exported component has a plain memory (see `RtToEnv`), and the loader's
+    // wasmtime is built without the `threads` feature — which this workspace's has
+    // on for the parmodauto pool, so it must be turned off explicitly here.
+    cfg.wasm_threads(false);
     Engine::new(&cfg).map_err(|e| trap("wasmtime engine", e))
 }
 

@@ -37,6 +37,8 @@
 // share `openmodelica_lapack` with the compiler instead of a second dense solver.
 // `global_asm!` on wasm32, for the two shadow-stack accessors below.
 #![feature(asm_experimental_arch)]
+// `#[thread_local]` statics: the shared-memory build keeps per-solve state per thread.
+#![feature(thread_local)]
 
 extern crate alloc;
 
@@ -90,13 +92,119 @@ pub fn set_nls_var_names(set: alloc::vec::Vec<(u32, alloc::vec::Vec<String>)>) {
 
 use alloc::format;
 use alloc::string::String;
-use core::alloc::{GlobalAlloc, Layout};
+use core::alloc::Layout;
 
 // dlmalloc is the global allocator on both targets so every allocation in the
 // merged module — runtime `rt_alloc`, and on wasip1 the driver's `Vec`s — shares
-// one heap. (It builds for wasip1 too.)
+// one heap. (It builds for wasip1 too.) The shared-memory (threads) build wraps
+// it in [`LockedDlmalloc`] instead: the crate's `global` feature does not lock.
+#[cfg(not(target_feature = "atomics"))]
 #[global_allocator]
 static GLOBAL: dlmalloc::GlobalDlmalloc = dlmalloc::GlobalDlmalloc;
+#[cfg(target_feature = "atomics")]
+#[global_allocator]
+static GLOBAL: LockedDlmalloc = LockedDlmalloc(core::cell::UnsafeCell::new(dlmalloc::Dlmalloc::new()), SpinLock::new());
+
+/// The dlmalloc crate's instance API under a spinlock (its `global` feature has no
+/// wasm locking, and wasi-libc's malloc only locks once `pthread_create` has run),
+/// behind a per-thread size-class cache like `rt_alloc`'s: the runtime's helpers
+/// allocate a `Vec` or two per call, and with every thread taking one lock for
+/// each, a parallel evaluation ran no faster than a serial one.
+#[cfg(target_feature = "atomics")]
+struct LockedDlmalloc(core::cell::UnsafeCell<dlmalloc::Dlmalloc>, SpinLock);
+#[cfg(target_feature = "atomics")]
+unsafe impl Sync for LockedDlmalloc {}
+
+#[cfg(target_feature = "atomics")]
+mod rust_cache {
+    use core::alloc::Layout;
+
+    pub const MAX: usize = 16 * 1024;
+    const CLASSES: usize = MAX / 8 + 1;
+
+    struct Lists(core::cell::UnsafeCell<[usize; CLASSES]>);
+    unsafe impl Sync for Lists {}
+    #[thread_local]
+    static FREE: Lists = Lists(core::cell::UnsafeCell::new([0; CLASSES]));
+
+    /// The class of a layout the cache serves: small, 8-aligned at most, and big
+    /// enough for the link word.
+    #[inline]
+    pub fn class(layout: Layout) -> Option<usize> {
+        (layout.size() <= MAX && layout.size() >= 8 && layout.align() <= 8).then(|| (layout.size() + 7) / 8)
+    }
+    #[inline]
+    pub fn pop(class: usize) -> *mut u8 {
+        let lists = unsafe { &mut *FREE.0.get() };
+        let head = lists[class];
+        if head != 0 {
+            lists[class] = unsafe { *(head as *const usize) };
+        }
+        head as *mut u8
+    }
+    #[inline]
+    pub fn push(class: usize, ptr: *mut u8) {
+        let lists = unsafe { &mut *FREE.0.get() };
+        unsafe { *(ptr as *mut usize) = lists[class] };
+        lists[class] = ptr as usize;
+    }
+}
+
+#[cfg(target_feature = "atomics")]
+unsafe impl core::alloc::GlobalAlloc for LockedDlmalloc {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        stat_inc(STAT_RUST_ALLOC);
+        if let Some(class) = rust_cache::class(layout) {
+            let p = rust_cache::pop(class);
+            if !p.is_null() {
+                return p;
+            }
+            let _g = self.1.lock();
+            return unsafe { (*self.0.get()).malloc(class * 8, 8) };
+        }
+        let _g = self.1.lock();
+        unsafe { (*self.0.get()).malloc(layout.size(), layout.align()) }
+    }
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        if let Some(class) = rust_cache::class(layout) {
+            return rust_cache::push(class, ptr);
+        }
+        let _g = self.1.lock();
+        unsafe { (*self.0.get()).free(ptr, layout.size(), layout.align()) }
+    }
+}
+
+/// A spinlock that is a no-op without `atomics`, where the runtime is single-threaded.
+pub(crate) struct SpinLock(#[cfg(target_feature = "atomics")] core::sync::atomic::AtomicBool);
+
+impl SpinLock {
+    pub(crate) const fn new() -> SpinLock {
+        SpinLock(#[cfg(target_feature = "atomics")] core::sync::atomic::AtomicBool::new(false))
+    }
+    #[inline]
+    pub(crate) fn lock(&self) -> SpinGuard<'_> {
+        #[cfg(target_feature = "atomics")]
+        loop {
+            if !self.0.swap(true, core::sync::atomic::Ordering::Acquire) {
+                break;
+            }
+            while self.0.load(core::sync::atomic::Ordering::Relaxed) {
+                core::hint::spin_loop();
+            }
+        }
+        SpinGuard(self)
+    }
+}
+
+pub(crate) struct SpinGuard<'a>(&'a SpinLock);
+
+impl Drop for SpinGuard<'_> {
+    #[inline]
+    fn drop(&mut self) {
+        #[cfg(target_feature = "atomics")]
+        self.0.0.store(false, core::sync::atomic::Ordering::Release);
+    }
+}
 
 /// Abort into a wasm trap; on the host `cargo test` build (no wasm intrinsics)
 /// this is an ordinary unreachable — the numeric paths under test never hit it.
@@ -286,6 +394,7 @@ mod ext_report_hosted {
 
     /// The model's thrower; 0 (wasm-lld's null slot) is unset, as in the `-d=gen`
     /// function JIT, which instantiates no model.
+    #[cfg_attr(target_feature = "atomics", thread_local)]
     static THROW_SLOT: AtomicU32 = AtomicU32::new(0);
 
     #[unsafe(no_mangle)]
@@ -387,10 +496,25 @@ pub const STAT_NEWTON_SINGULAR: u32 = 23;
 /// Not a diagnostic: C's `homotopySteps`, which the driver folds into the
 /// initialization success line.
 pub const STAT_HOMOTOPY_STEPS: u32 = 24;
-pub const N_STATS: usize = 25;
+/// Allocations through the Rust global allocator (the runtime's own `Vec`s etc.).
+pub const STAT_RUST_ALLOC: u32 = 25;
+pub const N_STATS: usize = 26;
 
+// Per thread in the shared-memory build (a contended line otherwise: every
+// `rt_alloc` counts); a worker adds its counts into `STATS_TOTAL` after each round.
+#[cfg_attr(target_feature = "atomics", thread_local)]
 static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
     [const { core::sync::atomic::AtomicU64::new(0) }; N_STATS];
+static STATS_TOTAL: [core::sync::atomic::AtomicU64; N_STATS] =
+    [const { core::sync::atomic::AtomicU64::new(0) }; N_STATS];
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_stats_flush() {
+    for (local, total) in STATS.iter().zip(STATS_TOTAL.iter()) {
+        let n = local.swap(0, core::sync::atomic::Ordering::Relaxed);
+        total.fetch_add(n, core::sync::atomic::Ordering::Relaxed);
+    }
+}
 
 #[inline]
 pub(crate) fn stat_inc(kind: u32) {
@@ -403,9 +527,9 @@ pub(crate) fn stat_add(kind: u32, n: u64) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_stat(kind: u32) -> u64 {
-    match STATS.get(kind as usize) {
-        Some(c) => c.load(core::sync::atomic::Ordering::Relaxed),
-        None => 0,
+    match (STATS.get(kind as usize), STATS_TOTAL.get(kind as usize)) {
+        (Some(c), Some(t)) => c.load(core::sync::atomic::Ordering::Relaxed) + t.load(core::sync::atomic::Ordering::Relaxed),
+        _ => 0,
     }
 }
 
@@ -432,13 +556,84 @@ const ALIGN: usize = 8;
 /// available and bucketing by 8-byte size class turns both into a push/pop.
 /// `rt_alloc` writes the *rounded* total into the size word, so `rt_free` finds the
 /// same class and `dlmalloc` gets the layout it was handed.
-const CACHE_MAX: usize = 1024;
+const CACHE_MAX: usize = 16 * 1024;
 const CACHE_CLASSES: usize = CACHE_MAX / ALIGN + 1;
 
 struct FreeLists(core::cell::UnsafeCell<[u32; CACHE_CLASSES]>);
-// The runtime is single-threaded (as is the in-wasm session driver).
+// Single-threaded, or per thread in the shared-memory build (a block freed on
+// another thread than it was allocated on simply changes lists).
 unsafe impl Sync for FreeLists {}
+#[cfg_attr(target_feature = "atomics", thread_local)]
 static FREE: FreeLists = FreeLists(core::cell::UnsafeCell::new([0; CACHE_CLASSES]));
+
+/// The parallel `--parmodauto` path instantiates the model module once per worker
+/// thread, over this runtime's memory. Its `start` function must run in each (it
+/// sets the instance's globals and fills its table) but may not repeat its side
+/// effects on the shared heap, so the main instantiation records every `rt_alloc`
+/// result and a worker's replays them: the same pointers land in the same globals,
+/// the bytes written are the same bytes, and `rt_nls_register` re-registers the
+/// same block. `rt_start_mode`: 0 off, 1 record, 2 replay. Only the threads build
+/// replays, and `rt_alloc` there must not pay for a mode it can never be in.
+#[cfg(target_feature = "atomics")]
+mod start_replay {
+    use core::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
+
+    struct Log(core::cell::UnsafeCell<alloc::vec::Vec<u32>>);
+    unsafe impl Sync for Log {}
+    static LOG: Log = Log(core::cell::UnsafeCell::new(alloc::vec::Vec::new()));
+    static MODE: AtomicU32 = AtomicU32::new(0);
+    static CURSOR: AtomicUsize = AtomicUsize::new(0);
+
+    pub fn set_mode(mode: u32) {
+        let log = unsafe { &mut *LOG.0.get() };
+        if mode == 1 {
+            log.clear();
+        }
+        CURSOR.store(0, Ordering::Relaxed);
+        MODE.store(mode, Ordering::Relaxed);
+    }
+
+    /// The recorded pointer while replaying, else the real allocation's, recorded.
+    #[inline]
+    pub fn alloc(real: impl FnOnce() -> u32) -> u32 {
+        match MODE.load(Ordering::Relaxed) {
+            0 => real(),
+            1 => {
+                let p = real();
+                unsafe { &mut *LOG.0.get() }.push(p);
+                p
+            }
+            _ => {
+                let log = unsafe { &*LOG.0.get() };
+                let i = CURSOR.fetch_add(1, Ordering::Relaxed);
+                match log.get(i) {
+                    Some(p) => *p,
+                    None => super::trap(),
+                }
+            }
+        }
+    }
+}
+
+/// wasi-libc's thread pointer for this instance's thread, which a reactor's `_start`
+/// would have set: std's `thread_local!` reaches the pthread struct through it.
+/// Called on every instance of the threads runtime, once its TLS block exists.
+#[cfg(all(target_os = "wasi", target_feature = "atomics"))]
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_thread_init() {
+    unsafe extern "C" {
+        fn __wasi_init_tp();
+    }
+    unsafe { __wasi_init_tp() }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_start_mode(mode: u32) {
+    #[cfg(target_feature = "atomics")]
+    start_replay::set_mode(mode);
+    #[cfg(not(target_feature = "atomics"))]
+    let _ = mode;
+}
 
 /// `None` when `total` is not cached: too big, or no room for the link word.
 #[inline]
@@ -449,8 +644,19 @@ fn cache_class(total: usize) -> Option<usize> {
 /// Allocate an object of `size` payload bytes (including its 4-byte refcount),
 /// returning its pointer. The reference count is left zero — the typed
 /// constructors below set it to 1.
+#[cfg(target_feature = "atomics")]
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_alloc(size: u32) -> u32 {
+    start_replay::alloc(|| rt_alloc_real(size))
+}
+
+#[cfg(not(target_feature = "atomics"))]
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_alloc(size: u32) -> u32 {
+    rt_alloc_real(size)
+}
+
+fn rt_alloc_real(size: u32) -> u32 {
     stat_inc(STAT_ALLOC);
     let mut total = HEADER + size as usize;
     if total <= CACHE_MAX {
@@ -466,7 +672,7 @@ pub extern "C" fn rt_alloc(size: u32) -> u32 {
         }
     }
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
-    let raw = unsafe { GLOBAL.alloc(layout) } as u32;
+    let raw = unsafe { alloc::alloc::alloc(layout) } as u32;
     if raw == 0 {
         // Out of memory: trap.
         trap();
@@ -490,7 +696,57 @@ pub extern "C" fn rt_free(obj: u32) {
         return;
     }
     let layout = Layout::from_size_align(total, ALIGN).expect("bad layout");
-    unsafe { GLOBAL.dealloc(raw as *mut u8, layout) };
+    unsafe { alloc::alloc::dealloc(raw as *mut u8, layout) };
+}
+
+/// A pinned object (a module's shared literal, `rt_pin`) lives as long as the
+/// module: its count is never touched again, which also keeps every thread's use
+/// of it off one contended cache line.
+const RC_PINNED: u32 = 0x8000_0000;
+
+/// The count is an atomic in the shared-memory build: an object handed to every
+/// worker thread is retained and released concurrently.
+#[cfg(target_feature = "atomics")]
+#[inline]
+fn rc_inc(obj: u32) {
+    if unsafe { load_u32(obj) } & RC_PINNED != 0 {
+        return;
+    }
+    unsafe { &*(obj as usize as *const core::sync::atomic::AtomicU32) }.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+}
+/// The count after the decrement.
+#[cfg(target_feature = "atomics")]
+#[inline]
+fn rc_dec(obj: u32) -> u32 {
+    if unsafe { load_u32(obj) } & RC_PINNED != 0 {
+        return RC_PINNED;
+    }
+    unsafe { &*(obj as usize as *const core::sync::atomic::AtomicU32) }.fetch_sub(1, core::sync::atomic::Ordering::AcqRel) - 1
+}
+#[cfg(not(target_feature = "atomics"))]
+#[inline]
+fn rc_inc(obj: u32) {
+    let rc = unsafe { load_u32(obj) };
+    if rc & RC_PINNED == 0 {
+        unsafe { store_u32(obj, rc + 1) };
+    }
+}
+#[cfg(not(target_feature = "atomics"))]
+#[inline]
+fn rc_dec(obj: u32) -> u32 {
+    let rc = unsafe { load_u32(obj) };
+    if rc & RC_PINNED != 0 {
+        return RC_PINNED;
+    }
+    unsafe { store_u32(obj, rc - 1) };
+    rc - 1
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_pin(obj: u32) {
+    if obj != 0 {
+        unsafe { store_u32(obj, load_u32(obj) | RC_PINNED) };
+    }
 }
 
 /// Increment an object's reference count (no-op on the null handle).
@@ -499,7 +755,7 @@ pub extern "C" fn rt_retain(obj: u32) {
     if obj == 0 {
         return;
     }
-    unsafe { store_u32(obj, load_u32(obj) + 1) };
+    rc_inc(obj);
 }
 
 /// Decrement an object's reference count, freeing it at zero (no-op on null).
@@ -512,8 +768,7 @@ pub extern "C" fn rt_release(obj: u32) {
     if obj == 0 {
         return;
     }
-    let rc = unsafe { load_u32(obj) } - 1;
-    unsafe { store_u32(obj, rc) };
+    let rc = rc_dec(obj);
     if rc == 0 {
         rt_free(obj);
     }
@@ -657,6 +912,7 @@ pub extern "C" fn rt_array_dim(obj: u32, axis: i32) -> u32 {
 /// caller's load/store lands somewhere harmless.
 #[repr(align(8))]
 struct ElemDiscard([u8; 8]);
+#[cfg_attr(target_feature = "atomics", thread_local)]
 static mut ELEM_DISCARD: ElemDiscard = ElemDiscard([0; 8]);
 
 /// Byte address of the element at row-major linear position `index` (1-based).
@@ -773,8 +1029,7 @@ pub extern "C" fn rt_array_release(obj: u32) {
     if obj == 0 {
         return;
     }
-    let rc = unsafe { load_u32(obj) } - 1;
-    unsafe { store_u32(obj, rc) };
+    let rc = rc_dec(obj);
     if rc != 0 {
         return;
     }
@@ -1517,8 +1772,7 @@ pub extern "C" fn rt_record_release(obj: u32) {
     if obj == 0 {
         return;
     }
-    let rc = unsafe { load_u32(obj) } - 1;
-    unsafe { store_u32(obj, rc) };
+    let rc = rc_dec(obj);
     if rc != 0 {
         return;
     }
@@ -2795,6 +3049,7 @@ struct LsFailure {
 }
 struct LsFailures(core::cell::UnsafeCell<alloc::vec::Vec<LsFailure>>);
 unsafe impl Sync for LsFailures {}
+#[cfg_attr(target_feature = "atomics", thread_local)]
 static LS_FAILURES: LsFailures = LsFailures(core::cell::UnsafeCell::new(alloc::vec::Vec::new()));
 
 fn ls_failure_entry(eq_index: i32) -> &'static mut LsFailure {

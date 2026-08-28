@@ -667,8 +667,9 @@ fn run_artifact(path: &std::path::Path, prefix: &str, result_file: &str, simflag
 pub fn finishCompile(fileNamePrefix: ArcStr) -> Result<()> {
     let model = sim_models().lock().unwrap_or_else(|e| e.into_inner()).get(&fileNamePrefix.to_string()).cloned();
     let Some(model) = model else { return Ok(()) };
-    // Force the runtime module (so its compile/cache-load is in `timeCompile`).
-    let _ = sim_runtime::runtime_module();
+    // Force the runtime module (so its compile/cache-load is in `timeCompile`); a
+    // `--parmodauto` run pairs with the threads one instead.
+    let _ = sim_runtime::runtime_module(openmodelica_wasm_jit::THREADS_RUNTIME && model.meta.parmod.is_some());
     // Join the background model-module compile and stash the result.
     match sim_runtime::take_compiled_model(&model) {
         Ok(m) => *model.prepared.lock().unwrap_or_else(|e| e.into_inner()) = Some(m),
@@ -2180,6 +2181,17 @@ impl RtToEnv {
 }
 impl wasm_encoder::reencode::Reencode for RtToEnv {
     type Error = core::convert::Infallible;
+    /// The kernel links against the adapter's plain memory, whatever memory the
+    /// JIT host gave the model (a `--parmodauto` model imports a shared one).
+    fn memory_type(
+        &mut self,
+        ty: wasmparser::MemoryType,
+    ) -> core::result::Result<wasm_encoder::MemoryType, wasm_encoder::reencode::Error<Self::Error>> {
+        let mut t = wasm_encoder::reencode::utils::memory_type(self, ty);
+        t.shared = false;
+        t.maximum = None;
+        Ok(t)
+    }
     /// `parse_imports`, not `parse_import`: only this one is on the section's
     /// dispatch path (`parse_import` is a convenience wrapper nothing calls).
     fn parse_imports(
@@ -5400,10 +5412,12 @@ fn build_sim_model(
 
     // --- Import section. ---
     let mut imports = we::ImportSection::new();
+    // A `--parmodauto` model runs over the threads runtime's shared memory.
+    let shared = parmod_info.is_some() && openmodelica_wasm_jit::THREADS_RUNTIME;
     imports.import(
         "rt",
         "memory",
-        we::MemoryType { minimum: 0, maximum: None, memory64: false, shared: false, page_size_log2: None },
+        we::MemoryType { minimum: 0, maximum: shared.then_some(65536), memory64: false, shared, page_size_log2: None },
     );
     for (i, (name, _, _)) in BUILTINS.iter().enumerate() {
         // Math builtins are provided in-wasm by the runtime module (via libm),

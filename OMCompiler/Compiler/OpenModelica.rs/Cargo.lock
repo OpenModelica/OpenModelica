@@ -7448,6 +7448,7 @@ dependencies = [
  "rsparse",
  "wasm-encoder 0.252.0",
  "wasmer",
+ "wasmparser 0.252.0",
  "wasmtime",
 ]
 

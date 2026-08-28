@@ -93,18 +93,25 @@ pub extern "C" fn rt_error_stage_addr() -> u32 {
 /// Recoverable-assert state (C's `ERROR_NONLINEARSOLVER`). While `NLS_DEPTH` > 0 a
 /// failed model `assert()` records itself in `NLS_ASSERT_HIT` and returns instead of
 /// trapping; `eval` then turns that trial into a huge residual so the solver backs off.
+// The per-solve flags below are C's `threadData` state: per thread in the shared-memory build.
+#[cfg_attr(target_feature = "atomics", thread_local)]
 static NLS_DEPTH: AtomicU32 = AtomicU32::new(0);
+#[cfg_attr(target_feature = "atomics", thread_local)]
 static NLS_ASSERT_HIT: AtomicU32 = AtomicU32::new(0);
 /// Outcome of the last *completed* evaluation, read after `eval` returns.
+#[cfg_attr(target_feature = "atomics", thread_local)]
 static NLS_EVAL_HIT: AtomicU32 = AtomicU32::new(0);
 /// C's `assertCalled`, sticky over one solver attempt.
+#[cfg_attr(target_feature = "atomics", thread_local)]
 static NLS_ASSERT_SEEN: AtomicU32 = AtomicU32::new(0);
 /// The same two, narrowed to a rejection the *model* caused. C's `residualFunc`
 /// throws on a non-finite iteration variable as the guard below rejects one, but
 /// only this target's linear algebra reaches that state (a rank-deficient Jacobian
 /// steps to inf where C's does not), so reporting the guard as a model throw prints
 /// C's assert block for solver states C never enters.
+#[cfg_attr(target_feature = "atomics", thread_local)]
 static NLS_EVAL_THREW: AtomicU32 = AtomicU32::new(0);
+#[cfg_attr(target_feature = "atomics", thread_local)]
 static NLS_THROW_SEEN: AtomicU32 = AtomicU32::new(0);
 
 /// The residual a rejected trial reports; [`newton_c`] damps its step on it.
@@ -115,6 +122,7 @@ const ASSERT_RESIDUAL: f64 = 1e60;
 /// which C's `f_con` reports by returning 1 — the emitted residual is a `void`
 /// callback, so this flag stands in for that return. [`rt_solve_nls`] clears it
 /// before each evaluation and the sites C checks the return at read it back.
+#[cfg_attr(target_feature = "atomics", thread_local)]
 static DT_VIOLATED: AtomicU32 = AtomicU32::new(0);
 
 /// Whether the last residual evaluation violated a local constraint of a casual
@@ -272,7 +280,7 @@ fn error_caught() -> bool {
 /// Model side: flag that a recoverable assert fired at the current trial point.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_note_assert() {
-    note_slot().store(1, Ordering::Relaxed);
+    with_note_slot(|s| s.store(1, Ordering::Relaxed));
 }
 
 /// Model side (emitted by `emit_assert`): a failed `assert()` the solver absorbs.
@@ -296,7 +304,7 @@ pub extern "C" fn rt_nls_assert_failed(
     // after it never run. Here every frame returns and the rest carries on, so
     // report only what C's jump would have reached -- as [`throw_stream`] does.
     let report = throw_reports() && assert_logged();
-    note_slot().store(1, Ordering::Relaxed);
+    with_note_slot(|s| s.store(1, Ordering::Relaxed));
     if report {
         use openmodelica_sim_meta::TIME_OFF;
         use openmodelica_sim_meta::driver::{AssertInfo, log_assert_block};
@@ -381,8 +389,8 @@ fn rt_string(h: i32) -> alloc::string::String {
 
 /// Where [`rt_nls_note_assert`] records: the residual's own flag, or the
 /// integrator region's when the model error is not inside a residual.
-fn note_slot() -> &'static AtomicU32 {
-    if NLS_DEPTH.load(Ordering::Relaxed) > 0 { &NLS_ASSERT_HIT } else { &ERROR_STAGE[1] }
+fn with_note_slot<R>(f: impl FnOnce(&AtomicU32) -> R) -> R {
+    if NLS_DEPTH.load(Ordering::Relaxed) > 0 { f(&NLS_ASSERT_HIT) } else { f(&ERROR_STAGE[1]) }
 }
 
 /// A model error where C's generated code calls `throwStreamPrint` — an invalid
@@ -407,7 +415,7 @@ pub extern "C" fn rt_throw_stream(msg: u32) {
 
 /// Whether the next [`throw_stream`] reports, for a caller with its own message.
 pub(crate) fn throw_reports() -> bool {
-    !(error_caught() && note_slot().load(Ordering::Relaxed) != 0)
+    !(error_caught() && with_note_slot(|s| s.load(Ordering::Relaxed)) != 0)
 }
 
 pub(crate) fn throw_stream(s: &str) {
@@ -2321,6 +2329,8 @@ pub extern "C" fn rt_nls_register(k: u32, hist_addr: u32, n: u32) {
     let roster = unsafe { &mut *ROSTER.0.get() };
     roster.truncate(k as usize);
     roster.push((hist_addr, n as usize));
+    let _g = COUNTERS_LOCK.lock();
+    unsafe { &mut *COUNTERS.0.get() }.reserve(roster.len());
 }
 
 /// C's `sysNumber`: the index in `nonlinearSystemData` the homotopy messages quote
@@ -2332,12 +2342,14 @@ fn nls_sys_number(hist_addr: u32) -> u32 {
 
 /// C's `NONLINEAR_SYSTEM_DATA::numberOf{Iterations,FEval,JEval}`: per system,
 /// cumulative over the run, keyed by equation index.
-struct CountersCell(UnsafeCell<alloc::vec::Vec<(u32, [u64; 3])>>);
+struct CountersCell(UnsafeCell<alloc::vec::Vec<(u32, [core::sync::atomic::AtomicU64; 3])>>);
 unsafe impl Sync for CountersCell {}
 static COUNTERS: CountersCell = CountersCell(UnsafeCell::new(alloc::vec::Vec::new()));
+static COUNTERS_LOCK: crate::SpinLock = crate::SpinLock::new();
 
 /// Nonzero while a Jacobian is being formed: C counts `numberOfFEval` in
 /// `wrapper_fvec`, which the FD Jacobian does not go through.
+#[cfg_attr(target_feature = "atomics", thread_local)]
 static JAC_DEPTH: AtomicU32 = AtomicU32::new(0);
 
 /// C's `numberOfJEval`: `wrapper_fvec_der` counts an analytic and an FD Jacobian
@@ -2358,16 +2370,19 @@ fn sys_counts() -> [u64; 3] {
     ]
 }
 
-fn counters_of(eq_index: u32) -> &'static mut [u64; 3] {
+/// Entries never move: `rt_nls_register` reserves one per system, so a reference
+/// stays valid while another thread adds its own.
+fn counters_of(eq_index: u32) -> &'static [core::sync::atomic::AtomicU64; 3] {
+    let _g = COUNTERS_LOCK.lock();
     let v = unsafe { &mut *COUNTERS.0.get() };
     let pos = match v.iter().position(|(i, _)| *i == eq_index) {
         Some(p) => p,
         None => {
-            v.push((eq_index, [0; 3]));
+            v.push((eq_index, [const { core::sync::atomic::AtomicU64::new(0) }; 3]));
             v.len() - 1
         }
     };
-    &mut v[pos].1
+    unsafe { &*(&v[pos].1 as *const _) }
 }
 
 /// C's `modelInfoGetEquation(...).vars[i]`, keyed by `equationIndex`. Pushed in
@@ -2496,9 +2511,9 @@ fn log_nls_leave(eq_index: u32, solved: bool, x: &[f64]) {
         true,
         if solved { "Solution status: SOLVED" } else { "Solution status: FAILED" },
     );
-    omclog::info(omclog::NLS, false, &alloc::format!(" number of iterations           : {}", c[0]));
-    omclog::info(omclog::NLS, false, &alloc::format!(" number of function evaluations : {}", c[1]));
-    omclog::info(omclog::NLS, false, &alloc::format!(" number of jacobian evaluations : {}", c[2]));
+    omclog::info(omclog::NLS, false, &alloc::format!(" number of iterations           : {}", c[0].load(Ordering::Relaxed)));
+    omclog::info(omclog::NLS, false, &alloc::format!(" number of function evaluations : {}", c[1].load(Ordering::Relaxed)));
+    omclog::info(omclog::NLS, false, &alloc::format!(" number of jacobian evaluations : {}", c[2].load(Ordering::Relaxed)));
     omclog::info(omclog::NLS, false, "solution values:");
     let names = var_names(eq_index);
     for i in 0..x.len() {
@@ -4492,9 +4507,9 @@ pub extern "C" fn rt_solve_nls(
 
     if log_nls {
         let c = counters_of(eq_index);
-        c[0] += crate::rt_stat(STAT_NLS_ITER) - iter0;
-        c[1] += n_feval.get();
-        c[2] += JAC_EVALS.load(Ordering::Relaxed) - jac0;
+        c[0].fetch_add(crate::rt_stat(STAT_NLS_ITER) - iter0, Ordering::Relaxed);
+        c[1].fetch_add(n_feval.get(), Ordering::Relaxed);
+        c[2].fetch_add(JAC_EVALS.load(Ordering::Relaxed) - jac0, Ordering::Relaxed);
         log_nls_leave(eq_index, converged || strict_used, &x);
     }
 

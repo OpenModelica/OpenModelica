@@ -30,19 +30,17 @@ mod wasmtime_impl {
     /// memory. A shared library imports the memory rather than exporting one, so
     /// fall back to the one the engine registered for the run.
     macro_rules! mem_ctx {
-        ($caller:expr) => {{
-            let mem = $caller
+        ($caller:expr, $mem:ident, $ctx:ident) => {
+            let Some(m) = $caller
                 .get_export("memory")
-                .and_then(|e| e.into_memory())
-                .or_else(crate::host::get_sim_memory);
-            match mem {
-                Some(m) => {
-                    let (data, ctx) = m.data_and_store_mut(&mut $caller);
-                    (SliceMem(data), ctx)
-                }
-                None => return ERRNO_FAULT,
-            }
-        }};
+                .and_then(crate::simmem::SimMem::from_extern)
+                .or_else(crate::host::get_sim_memory)
+            else {
+                return ERRNO_FAULT;
+            };
+            let (data, $ctx) = m.data_and_store_mut(&mut $caller);
+            let mut $mem = SliceMem(data);
+        };
     }
 
     /// Register the `wasi_snapshot_preview1` imports into `linker`.
@@ -51,51 +49,51 @@ mod wasmtime_impl {
         let wt = |r: std::result::Result<&mut Linker, wasmtime::Error>| r.map(|_| ()).map_err(|_| "CodegenWasmJit: wasm engine error");
 
         wt(linker.func_wrap(m, "fd_write", |mut c: Caller<'_, WasiCtx>, fd: i32, iovs: i32, n: i32, nw: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.fd_write(&mut mem, fd as u32, iovs as u32, n as u32, nw as u32)
         }))?;
         wt(linker.func_wrap(m, "fd_read", |mut c: Caller<'_, WasiCtx>, fd: i32, iovs: i32, n: i32, nr: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.fd_read(&mut mem, fd as u32, iovs as u32, n as u32, nr as u32)
         }))?;
         wt(linker.func_wrap(m, "fd_seek", |mut c: Caller<'_, WasiCtx>, fd: i32, off: i64, whence: i32, no: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.fd_seek(&mut mem, fd as u32, off, whence, no as u32)
         }))?;
         wt(linker.func_wrap(m, "path_open", |mut c: Caller<'_, WasiCtx>, dirfd: i32, dirflags: i32, path: i32, plen: i32, oflags: i32, rb: i64, ri: i64, fdflags: i32, ofd: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.path_open(&mut mem, dirfd as u32, dirflags as u32, path as u32, plen as u32, oflags, rb as u64, ri as u64, fdflags, ofd as u32)
         }))?;
         wt(linker.func_wrap(m, "path_filestat_get", |mut c: Caller<'_, WasiCtx>, dirfd: i32, flags: i32, path: i32, plen: i32, buf: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.path_filestat_get(&mut mem, dirfd as u32, flags as u32, path as u32, plen as u32, buf as u32)
         }))?;
         wt(linker.func_wrap(m, "fd_filestat_get", |mut c: Caller<'_, WasiCtx>, fd: i32, buf: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.fd_filestat_get(&mut mem, fd as u32, buf as u32)
         }))?;
         wt(linker.func_wrap(m, "path_create_directory", |mut c: Caller<'_, WasiCtx>, dirfd: i32, path: i32, plen: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.path_create_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
         }))?;
         wt(linker.func_wrap(m, "path_unlink_file", |mut c: Caller<'_, WasiCtx>, dirfd: i32, path: i32, plen: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.path_unlink_file(&mut mem, dirfd as u32, path as u32, plen as u32)
         }))?;
         wt(linker.func_wrap(m, "path_remove_directory", |mut c: Caller<'_, WasiCtx>, dirfd: i32, path: i32, plen: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.path_remove_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
         }))?;
         wt(linker.func_wrap(m, "path_rename", |mut c: Caller<'_, WasiCtx>, ofd: i32, op: i32, ol: i32, nfd: i32, np: i32, nl: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.path_rename(&mut mem, ofd as u32, op as u32, ol as u32, nfd as u32, np as u32, nl as u32)
         }))?;
         wt(linker.func_wrap(m, "fd_readdir", |mut c: Caller<'_, WasiCtx>, fd: i32, buf: i32, buf_len: i32, cookie: i64, bufused: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.fd_readdir(&mut mem, fd as u32, buf as u32, buf_len as u32, cookie as u64, bufused as u32)
         }))?;
         wt(linker.func_wrap(m, "fd_fdstat_get", |mut c: Caller<'_, WasiCtx>, fd: i32, buf: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.fd_fdstat_get(&mut mem, fd as u32, buf as u32)
         }))?;
         wt(linker.func_wrap(m, "fd_fdstat_set_flags", |_c: Caller<'_, WasiCtx>, _fd: i32, _flags: i32| -> i32 {
@@ -105,35 +103,35 @@ mod wasmtime_impl {
             c.data_mut().fd_close(fd as u32)
         }))?;
         wt(linker.func_wrap(m, "fd_prestat_get", |mut c: Caller<'_, WasiCtx>, fd: i32, buf: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.fd_prestat_get(&mut mem, fd as u32, buf as u32)
         }))?;
         wt(linker.func_wrap(m, "fd_prestat_dir_name", |mut c: Caller<'_, WasiCtx>, fd: i32, path: i32, plen: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.fd_prestat_dir_name(&mut mem, fd as u32, path as u32, plen as u32)
         }))?;
         wt(linker.func_wrap(m, "args_sizes_get", |mut c: Caller<'_, WasiCtx>, argc: i32, bs: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.args_sizes_get(&mut mem, argc as u32, bs as u32)
         }))?;
         wt(linker.func_wrap(m, "args_get", |mut c: Caller<'_, WasiCtx>, argv: i32, buf: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.args_get(&mut mem, argv as u32, buf as u32)
         }))?;
         wt(linker.func_wrap(m, "environ_sizes_get", |mut c: Caller<'_, WasiCtx>, count: i32, bs: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.environ_sizes_get(&mut mem, count as u32, bs as u32)
         }))?;
         wt(linker.func_wrap(m, "environ_get", |mut c: Caller<'_, WasiCtx>, env: i32, buf: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.environ_get(&mut mem, env as u32, buf as u32)
         }))?;
         wt(linker.func_wrap(m, "clock_time_get", |mut c: Caller<'_, WasiCtx>, id: i32, prec: i64, time: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.clock_time_get(&mut mem, id as u32, prec as u64, time as u32)
         }))?;
         wt(linker.func_wrap(m, "random_get", |mut c: Caller<'_, WasiCtx>, buf: i32, len: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
+            mem_ctx!(c, mem, ctx);
             ctx.random_get(&mut mem, buf as u32, len as u32)
         }))?;
         // `proc_exit` is a normal termination: record the code and unwind via a
@@ -147,10 +145,10 @@ mod wasmtime_impl {
         // ops. EINVAL: pread/pwrite / links / poll / sockets — all off the file-read
         // path but must exist for the module to instantiate.
         wt(linker.func_wrap(m, "clock_res_get", |mut c: Caller<'_, WasiCtx>, id: i32, out: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c); ctx.clock_res_get(&mut mem, id as u32, out as u32)
+            mem_ctx!(c, mem, ctx); ctx.clock_res_get(&mut mem, id as u32, out as u32)
         }))?;
         wt(linker.func_wrap(m, "fd_tell", |mut c: Caller<'_, WasiCtx>, fd: i32, out: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c); ctx.fd_tell(&mut mem, fd as u32, out as u32)
+            mem_ctx!(c, mem, ctx); ctx.fd_tell(&mut mem, fd as u32, out as u32)
         }))?;
         wt(linker.func_wrap(m, "sched_yield", |_c: Caller<'_, WasiCtx>| -> i32 { ERRNO_SUCCESS }))?;
         wt(linker.func_wrap(m, "fd_sync", |_c: Caller<'_, WasiCtx>, _fd: i32| -> i32 { ERRNO_SUCCESS }))?;

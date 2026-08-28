@@ -69,6 +69,19 @@ pub fn set_no_throw_asserts(v: bool) {
     NO_THROW.with(|n| n.set(v));
 }
 
+pub fn no_throw_asserts() -> bool {
+    NO_THROW.with(|n| n.get())
+}
+
+/// Re-record on this thread what a parmodauto worker thread's `rt_assert` left.
+pub fn set_pending_assert_raw(pa: PendingAssert) {
+    PENDING_ASSERT.with(|p| *p.borrow_mut() = Some(pa));
+}
+
+pub fn record_warnings(recs: Vec<[i32; 10]>) {
+    PENDING_WARNINGS.with(|p| p.borrow_mut().extend(recs));
+}
+
 /// Clear any stale pending assertion before a call.
 pub fn clear_pending_assert() {
     PENDING_ASSERT.with(|p| *p.borrow_mut() = None);
@@ -191,15 +204,15 @@ fn row_asserts(read: &dyn Fn(u32, &mut [u8]) -> bool, sim_data: u32, warn: i32) 
 /// cannot find it; the engine sets it here instead (wasmer has [`HostMem`]).
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 mod sim_memory {
-    use std::cell::Cell;
+    use std::cell::RefCell;
     thread_local! {
-        static MEMORY: Cell<Option<wasmtime::Memory>> = const { Cell::new(None) };
+        static MEMORY: RefCell<Option<crate::simmem::SimMem>> = const { RefCell::new(None) };
     }
-    pub fn set(m: wasmtime::Memory) {
-        MEMORY.with(|c| c.set(Some(m)));
+    pub fn set(m: crate::simmem::SimMem) {
+        MEMORY.with(|c| *c.borrow_mut() = Some(m));
     }
-    pub fn get() -> Option<wasmtime::Memory> {
-        MEMORY.with(|c| c.get())
+    pub fn get() -> Option<crate::simmem::SimMem> {
+        MEMORY.with(|c| c.borrow().clone())
     }
 }
 
@@ -489,7 +502,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
         "env",
         "rt_host_log",
         |mut caller: wasmtime::Caller<'_, T>, ptr: u32, len: u32| {
-            let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return };
+            let Some(mem) = caller.get_export("memory").and_then(crate::simmem::SimMem::from_extern) else { return };
             let off = ptr as usize;
             if let Some(b) = mem.data(&caller).get(off..off + len as usize) {
                 openmodelica_wasi::wasi::stdout_write(b);
@@ -526,7 +539,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
         "env",
         "rt_host_take_warnings",
         |mut caller: wasmtime::Caller<'_, T>, ptr: u32, max: u32| -> u32 {
-            let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return 0 };
+            let Some(mem) = caller.get_export("memory").and_then(crate::simmem::SimMem::from_extern) else { return 0 };
             let recs = take_pending_warnings_upto(max as usize);
             let off = ptr as usize;
             let data = mem.data_mut(&mut caller);
@@ -540,7 +553,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
         "env",
         "rt_host_take_reinits",
         |mut caller: wasmtime::Caller<'_, T>, ptr: u32, max: u32| -> u32 {
-            let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return 0 };
+            let Some(mem) = caller.get_export("memory").and_then(crate::simmem::SimMem::from_extern) else { return 0 };
             let off = ptr as usize;
             let end = off + max as usize * REINIT_BYTES;
             let data = mem.data_mut(&mut caller);
@@ -556,7 +569,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
         "env",
         "rt_host_lin_solve",
         |mut caller: wasmtime::Caller<'_, T>, handle: u32, colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: u32, nnz: u32| -> i32 {
-            let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return 1 };
+            let Some(mem) = caller.get_export("memory").and_then(crate::simmem::SimMem::from_extern) else { return 1 };
             let x = lin_solve::solve(handle, colptr, rowidx, values, b_ptr, n as usize, nnz as usize, mem.data(&caller));
             match x {
                 Some(x) => {
@@ -579,7 +592,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 pub fn define_uri_import<T: 'static>(
     linker: &mut wasmtime::Linker<T>,
-    memory: wasmtime::Memory,
+    memory: crate::simmem::SimMem,
     str_new: wasmtime::TypedFunc<u32, u32>,
     str_data: wasmtime::TypedFunc<u32, u32>,
 ) -> Result<()> {
@@ -588,7 +601,7 @@ pub fn define_uri_import<T: 'static>(
             "rt",
             "rt_uri_to_filename",
             move |mut caller: wasmtime::Caller<'_, T>, handle: u32, _fmu: i32| -> std::result::Result<u32, wasmtime::Error> {
-                let uri = read_wasm_string(memory, &caller, handle);
+                let uri = read_wasm_string(&memory, &caller, handle);
                 let path = uri_to_filename(&uri).map_err(wasmtime::Error::msg)?;
                 let out = str_new.call(&mut caller, path.len() as u32)?;
                 let at = str_data.call(&mut caller, out)? as usize;
@@ -602,7 +615,7 @@ pub fn define_uri_import<T: 'static>(
 
 /// The bytes of the String at `handle` (`[refcount:u32][len:u32][utf8…]`).
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
-fn read_wasm_string<T>(memory: wasmtime::Memory, caller: &wasmtime::Caller<'_, T>, handle: u32) -> String {
+fn read_wasm_string<T>(memory: &crate::simmem::SimMem, caller: &wasmtime::Caller<'_, T>, handle: u32) -> String {
     if handle == 0 {
         return String::new();
     }

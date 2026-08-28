@@ -99,6 +99,8 @@ pub fn precompile(component: &[u8], p: &Platform) -> Result<Vec<u8>> {
     cfg.wasm_component_model(true);
     // A model with external "C" carries the `model_error` tag its call sites catch.
     cfg.wasm_exceptions(true);
+    // Off in the loader's wasmtime, on in this workspace's; see `component::engine`.
+    cfg.wasm_threads(false);
     cfg.target(p.triple).map_err(|_| "CodegenWasmJit: unknown target for the FMU platform")?;
     let engine = wasmtime::Engine::new(&cfg)
         .map_err(|_| "CodegenWasmJit: cannot configure the FMU cross-compiler")?;

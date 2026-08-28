@@ -6,7 +6,9 @@
 # (rustc-codegen-cranelift-preview). wasm32-unknown-unknown is for the web /
 # wasm-jit builds; wasm32-wasip1 is for the standalone-export runtime that
 # openmodelica_codegen_wasm_jit/build.rs embeds (its unit tests need it, so it
-# must be present in the CI test container too, not just the cmake build).
+# must be present in the CI test container too, not just the cmake build);
+# wasm32-wasip1-threads is the shared-memory runtime the parallel --parmodauto
+# path instantiates per worker thread.
 #
 # rust-src: the FMI3 wasm adapters build.rs compiles need `-Z build-std`, which
 # builds the std sources; without this component the adapter silently falls back
@@ -15,4 +17,4 @@
 channel = "nightly-2026-05-31"
 profile = "minimal"
 components = ["rustc-codegen-cranelift-preview", "clippy", "rustfmt", "rust-src"]
-targets = ["wasm32-unknown-unknown", "wasm32-wasip1"]
+targets = ["wasm32-unknown-unknown", "wasm32-wasip1", "wasm32-wasip1-threads"]
