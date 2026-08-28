@@ -551,11 +551,20 @@ protected
         var_elem := Pointer.access(Slice.getT(var_slice));
         slice_first_1based := listHead(var_slice.indices) + 1;
         if (for_start == 0 or for_start >= slice_first_1based) and
-           Type.isReal(Type.arrayElementType(var_elem.ty)) then
+           (Type.isReal(Type.arrayElementType(var_elem.ty)) or Type.isComplex(Type.arrayElementType(var_elem.ty))) then
           // Safe to use per-element seeds: the loop never reaches below the slice start
-          // (for_start >= slice_first_1based, or no FOR_EQUATION residual at all), and the
-          // element type is scalar Real (record types use struct access and must keep
-          // whole-array seeds to avoid breaking _omcQ_24SEED_xxx struct declarations).
+          // (for_start >= slice_first_1based, or no FOR_EQUATION residual at all).
+          // Record (Complex) element types are included here too: scalarizeBackendVariable
+          // only splits the ARRAY dimension (still record-typed per-element results), and
+          // the later general VariablePointers.scalarize pass (already used for every other
+          // Jacobian's seedVars, e.g. NSimJacobian.mo) recurses into scalarizeComplexVariable
+          // to flatten those into scalar leaf fields - the same path record-typed FULL-slice
+          // seed candidates already go through above. Restricting to Real here (as before)
+          // meant a record-element partial slice fell back to the WHOLE parent array/record
+          // as a single seed candidate, which the general scalarize pass then expands to far
+          // more scalar columns than this Jacobian's true torn-unknown count (sizeCols ended
+          // up way bigger than the NLS's own size), silently degrading every such Jacobian to
+          // a numeric one at runtime (see nonlinearSystem.c's sizeCols-vs-size safety check).
           // NOTE: for_start was computed above but previously never consulted here (only
           // "slice_first_1based > 1" was checked) -- a dead-code bug that silently defeated
           // exactly the case this function's own docstring describes (slice_for.mos: the
@@ -567,7 +576,7 @@ protected
             seed_candidates := Pointer.create(v) :: seed_candidates;
           end for;
         else
-          // Unsafe, no phantom, or record element type: fall back to whole-array seed pointer.
+          // Unsafe or no phantom risk avoidance possible: fall back to whole-array seed pointer.
           seed_candidates := Slice.getT(var_slice) :: seed_candidates;
         end if;
       end if;
