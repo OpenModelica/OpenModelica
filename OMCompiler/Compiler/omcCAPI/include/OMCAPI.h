@@ -25,18 +25,20 @@
  *
  */
 
-#include "zhelpers.hpp"
-#include <string>
-#include <vector>
-#include <thread>
-#include <memory>
-#include <functional>
-#include <iostream>
-#include <string>
-#include "OMC.h"
-#define GC_THREADS
-#include "gc.h"
+#pragma once
 
-using std::string;
-static std::exception_ptr globalSimulationExceptionPtr = nullptr;
-static std::exception_ptr globalZeroMQTaskExceptionPtr = nullptr;
+/**
+ * \file OMCAPI.h
+ * \brief Export/import decoration for the libOMCDLL public symbols.
+ */
+
+#if defined(_WIN32)
+#  if defined(BUILDING_OMC_DLL)
+#    define OMC_DLL __declspec(dllexport)
+#  else
+#    define OMC_DLL __declspec(dllimport)
+#  endif
+#else
+#  define OMC_DLL
+#endif
+
