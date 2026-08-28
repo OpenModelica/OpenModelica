@@ -103,7 +103,6 @@ deleteClass(Debug);getErrorString();
 // deleteClass(Flags);getErrorString();
 
 
-loadFile("Compiler/Util/Corba.mo");getErrorString();
 writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Corba.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
 deleteClass(Corba);getErrorString();
 
