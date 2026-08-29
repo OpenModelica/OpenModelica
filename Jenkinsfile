@@ -17,6 +17,8 @@ pipeline {
     // the nodes busy for hours.
     parallelsAlwaysFailFast()
     buildDiscarder(logRotator(daysToKeepStr: "14", artifactNumToKeepStr: "2"))
+    // This group's Jenkins config takes the priority from BUILD_PRIORITY.
+    jobGroup jobGroupName: 'OpenModelica', useJobGroup: true
   }
   environment {
     LC_ALL = 'C.UTF-8'
@@ -29,6 +31,10 @@ pipeline {
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MacOS')
     booleanParam(name: 'ENABLE_RUST_PARTEST', defaultValue: false, description: 'Enable the extra partest run on the Rust omc with RUST_PARTEST_SIMCODETARGET (the wasm-jit partest always runs)')
     string(name: 'RUST_PARTEST_SIMCODETARGET', defaultValue: 'C+Rust', description: 'simCodeTarget for the ENABLE_RUST_PARTEST run (empty = compiler default)')
+    // Read at queue time, before common.groovy is loaded.
+    string(name: 'BUILD_PRIORITY',
+           defaultValue: env.CHANGE_ID ? '3' : '5',
+           description: 'Queue priority, 1 (scheduled first) to 5 (last). Defaults to 3 for pull requests and 5 for branch builds.')
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
