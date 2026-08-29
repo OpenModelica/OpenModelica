@@ -267,6 +267,7 @@ openmodelica_fmi3_wasm/wit/fmi3-scheduled-execution.wit
 openmodelica_fmi3_wasm/wit/fmi3-types.wit
 openmodelica_fmi3_wasm/wit/world.wit
 openmodelica_fmi_driver/Cargo.toml
+openmodelica_fmi_driver/build.rs
 openmodelica_fmi_driver/examples/fmuprobe.rs
 openmodelica_fmi_driver/examples/fmusim.rs
 openmodelica_fmi_driver/src/api.rs
@@ -289,6 +290,7 @@ openmodelica_fmi_ls_wasm_to_native/src/fmi2.rs
 openmodelica_fmi_ls_wasm_to_native/src/lib.rs
 openmodelica_fmi_web/Cargo.lock
 openmodelica_fmi_web/Cargo.toml
+openmodelica_fmi_web/build.rs
 openmodelica_fmi_web/src/lib.rs
 openmodelica_frontend/Cargo.toml
 openmodelica_frontend/src/Globals.rs
@@ -427,6 +429,7 @@ openmodelica_solvers/src/lib.rs
 openmodelica_solvers/src/omclog.rs
 openmodelica_solvers/src/simflags.rs
 openmodelica_solvers/src/sundials.rs
+openmodelica_solvers/src/sundials_ode.rs
 openmodelica_solvers/src/symsolver.rs
 openmodelica_susan/Cargo.toml
 openmodelica_susan/src/main.rs

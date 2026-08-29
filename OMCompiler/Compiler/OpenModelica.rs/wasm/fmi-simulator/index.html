@@ -114,12 +114,7 @@
       <label for="step" id="stepLabel">Step size</label><input id="step" value="0.1" />
       <label for="tol">Tolerance</label><input id="tol" value="1e-6" />
       <label for="solver" id="solverLabel" title="The integrator the master runs the FMU with (Model Exchange only; a Co-Simulation FMU brings its own)" hidden>Solver</label>
-      <select id="solver" class="wide" hidden>
-        <option value="dassl">dassl — BDF, the default for a model too</option>
-        <option value="gbode">gbode — Runge-Kutta, under the -gb* flags</option>
-        <option value="euler">euler — fixed step</option>
-        <option value="rungekutta">rungekutta — fixed step, RK4</option>
-      </select>
+      <select id="solver" class="wide" hidden></select>
       <label for="eventMode" id="eventModeLabel" title="Report events to the master algorithm (Event Mode) instead of handling them inside the FMU" hidden>Event mode</label>
       <label class="chk wide" id="eventModeCell" title="Report events to the master algorithm (Event Mode) instead of handling them inside the FMU" hidden><input type="checkbox" id="eventMode" checked /></label>
     </div>
@@ -303,6 +298,8 @@ function renderInfo(fileName, probe) {
     <dt>Variables</dt><dd>${md.variables.length}${md.nStates ? ` · ${md.nStates} continuous states` : ''}${md.nEventIndicators ? ` · ${md.nEventIndicators} event indicators` : ''}</dd>
   </dl>`;
 
+  renderSolvers(probe.solvers);
+
   const avail = kinds(probe);
   if (!avail.length) throw new Error('the component exports neither a Co-Simulation nor a Model Exchange interface');
   ifaceEl.replaceChildren();
@@ -310,6 +307,15 @@ function renderInfo(fileName, probe) {
   ifaceEl.disabled = avail.length < 2;
   ifaceEl.value = avail[0].id;
   onIfaceChange();
+}
+
+// What the driver was built with, so the page never offers a solver the master
+// would refuse.
+function renderSolvers(solvers) {
+  const keep = solverEl.value;
+  solverEl.replaceChildren();
+  for (const s of solvers || []) solverEl.append(new Option(`${s.name} — ${s.description}`, s.name));
+  if ([...solverEl.options].some((o) => o.value === keep)) solverEl.value = keep;
 }
 
 ifaceEl.onchange = onIfaceChange;

@@ -178,7 +178,8 @@ pub extern "C" fn om_fmi_info() -> i32 {
 
 /// Simulate, with the options the page passes as JSON:
 /// `{"interface":"me"|"cs", "startTime":…, "stopTime":…, "stepSize":…,
-///   "tolerance":…, "solver":"gbode"|"euler"|"rungekutta", "eventMode":bool,
+///   "tolerance":…, "solver": one of the `solvers` [`om_fmi_info`] lists,
+///   "eventMode":bool,
 ///   "loggingOn":bool, "parameters":[{"vr":…,"value":…}],
 ///   "inputs":[{"vr":…,"expr":"sin(t)"}], "resultFile":"…"}`.
 #[unsafe(no_mangle)]
@@ -347,6 +348,10 @@ fn describe(fmu: &Fmu) -> Value {
         "numberOfContinuousStates": md.number_of_continuous_states(),
         "numberOfEventIndicators": md.number_of_event_indicators,
         "variables": variables,
+        // Not the FMU's: what a run of it can be given, for the page's chooser.
+        "solvers": Solver::all().iter()
+            .map(|s| json!({"name": s.as_str(), "description": s.description()}))
+            .collect::<Vec<_>>(),
         "toolAnnotations": md.tool_annotations.iter()
             .map(|a| json!({"name": a.name, "xml": a.xml}))
             .collect::<Vec<_>>(),

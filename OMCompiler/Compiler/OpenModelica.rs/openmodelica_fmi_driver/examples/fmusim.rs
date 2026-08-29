@@ -2,7 +2,7 @@
 //! the masters, natively.
 //!
 //! Options: `--me`/`--cs`, `--start`, `--stop`, `--step`, `--tolerance`,
-//! `--solver dassl|gbode|euler|rungekutta`, `--input vr=expr`, `--parameter vr=value`,
+//! `--solver <name>` (`Solver::all`), `--input vr=expr`, `--parameter vr=value`,
 //! `--output file.mat`, `--csv` (the trajectory on stdout), `--log`,
 //! `--difference-jacobian` (ignore what the FMU offers).
 
@@ -66,8 +66,10 @@ fn parse_args() -> Result<Args, String> {
             "--output" => a.output = Some(PathBuf::from(value()?)),
             "--solver" => {
                 let name = value()?;
-                a.solver = Solver::parse(&name)
-                    .ok_or_else(|| format!("unknown solver `{name}`"))?;
+                a.solver = Solver::parse(&name).ok_or_else(|| {
+                    let have: Vec<&str> = Solver::all().iter().map(|s| s.as_str()).collect();
+                    format!("unknown solver `{name}`; this build has {}", have.join(", "))
+                })?;
             }
             "--input" | "--parameter" => {
                 let v = value()?;

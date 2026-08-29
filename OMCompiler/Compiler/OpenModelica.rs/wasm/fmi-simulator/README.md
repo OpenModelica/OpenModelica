@@ -11,10 +11,14 @@ server is involved — the FMU is unpacked, compiled and run inside the page.
 The masters are OpenModelica's own, in Rust: `openmodelica_fmi_driver`, built for
 `wasm32-wasip1` as `openmodelica_fmi_web.wasm`. Model Exchange integrates with
 the same solvers a compiled Modelica model runs under (`openmodelica_solvers`:
-gbode and the fixed-step ones), so an FMU is stepped, error-controlled and
-root-searched exactly like a model; Co-Simulation drives `fmi3DoStep` and takes
-the FMU up on early return, handling each event at the time the FMU stopped at
-rather than at the next communication point.
+DASSL, gbode, the fixed-step ones, and CVODE/IDA where the module was linked
+against SUNDIALS), so an FMU is stepped, error-controlled and root-searched
+exactly like a model; Co-Simulation drives `fmi3DoStep` and takes the FMU up on
+early return, handling each event at the time the FMU stopped at rather than at
+the next communication point.
+
+The page's solver chooser is built from the list the module reports, so it can
+never offer one that build does not have.
 
 A run is one call into that module and cannot be interrupted, so it happens in a
 worker (`fmi-worker.js`); the Cancel button drops the worker, after which the
@@ -48,7 +52,7 @@ out of jco's own wrappers, so the two cannot drift.
 | `fmu-core.js` | jco transpilation, and the core exports past its glue |
 | `fmu.js` | the ZIP and `modelDescription.xml`, for what the page displays |
 | `wasi.js` | a WASI preview1 host, so the result file is written like any other |
-| `selftest.html` | `?fmu=<url>&interface=me|cs` — the whole path, headless |
+| `selftest.html` | `?fmu=<url>&interface=me|cs&solver=<name>` — the whole path, headless |
 
 `vendor/` holds the transpiler and the WASI preview2 shim. It is not in git: the
 CMake web target downloads both pinned npm tarballs (see

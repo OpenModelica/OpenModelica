@@ -28,6 +28,8 @@ pub mod simflags;
 pub mod symsolver;
 #[cfg(sundials)]
 pub mod sundials;
+#[cfg(sundials)]
+pub mod sundials_ode;
 
 /// Whether this build has the real CVODE and IDA linked in (`build.rs`).
 pub const CVODE: bool = cfg!(sundials);
