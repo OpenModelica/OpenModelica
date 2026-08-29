@@ -1410,7 +1410,6 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     let log_mask = push_runtime_flags(&mut store, rt_inst, memory, &rt_alloc)?;
     // The iteration-variable names, which only the metadata has: the per-model
     // roster is cleared, then pushed per system.
-    let diag_on = openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::NLS_NEWTON_DIAGNOSTICS);
     if let Ok(set) = rt_inst.get_typed_func::<(u32, u32, u32), ()>(&mut store, "rt_nls_set_names") {
         let free = rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free").ok();
         wts(set.call(&mut store, (u32::MAX, 0, 0)))?;
@@ -1428,9 +1427,9 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
             }
         }
     }
-    // `-lv=LOG_NLS_NEWTON_DIAGNOSTICS` also wants each system's equation indices
-    // and nonlinear-pattern counts.
-    if diag_on && let Ok(set) = rt_inst.get_typed_func::<(u32, u32, u32, u32, u32, u32, u32), ()>(&mut store, "rt_nls_set_diag") {
+    // Each system's equation indices and pattern counts, which the newton
+    // diagnostics and the SVD dump both label their rows by.
+    if let Ok(set) = rt_inst.get_typed_func::<(u32, u32, u32, u32, u32, u32, u32), ()>(&mut store, "rt_nls_set_diag") {
         let free = rt_inst.get_typed_func::<u32, ()>(&mut store, "rt_free").ok();
         wts(set.call(&mut store, (u32::MAX, 0, 0, 0, 0, 0, 0)))?;
         for sys in &meta.nls_vars {
@@ -1605,6 +1604,11 @@ impl sim_driver::SimEngine for WasmtimeEngine {
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32> {
         let f = wt(self.instance.get_typed_func::<(u32, f64, f64, u32), u32>(&mut self.store, "simulate"))?;
         wt(f.call(&mut self.store, (sim_data, start, stop, n_steps)))
+    }
+    fn has_simulate_entry(&mut self) -> bool {
+        self.instance
+            .get_typed_func::<(u32, f64, f64, u32), u32>(&mut self.store, "simulate")
+            .is_ok()
     }
     fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         crate::host::take_pending_assert()

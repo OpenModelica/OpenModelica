@@ -137,6 +137,9 @@ impl SimEngine for InWasmEngine {
         let f: extern "C" fn(u32, f64, f64, u32) -> u32 = unsafe { core::mem::transmute(idx as usize) };
         Ok(f(sim_data, start, stop, n_steps))
     }
+    fn has_simulate_entry(&mut self) -> bool {
+        slot_of("simulate").is_some_and(|s| self.present(s))
+    }
     fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
         let mut out = Vec::new();
         loop {
@@ -244,7 +247,7 @@ pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
         simflags::check(&f, cap).map(|()| f)
     }) {
         Ok(f) => {
-            crate::solvers::apply_flags(&f);
+            openmodelica_solvers::solverflags::apply_flags(&f);
             simflags::set_flags(f);
             0
         }
@@ -344,10 +347,8 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
 
     crate::nls::rt_set_step_size(model.step_size());
     crate::files::set_prefix(&model.prefix);
+    crate::nls::set_diag(&model.nls_vars);
     // `-lv=LOG_NLS` names the iteration variables; only the metadata has them.
-    if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::NLS_NEWTON_DIAGNOSTICS) {
-        crate::nls::set_diag(&model.nls_vars);
-    }
     crate::nls::set_var_names(model.nls_vars.iter().map(|s| (s.eq_index, s.names.clone())).collect());
 
     driver::set_clock(now_ms_hook);
@@ -362,7 +363,7 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
     );
     rtclock::tick(rtclock::TOTAL);
     rtclock::tick(rtclock::PREINIT);
-    crate::sysstats::enable(openmodelica_sim_meta::omclog::active(
+    openmodelica_solvers::sysstat::enable(openmodelica_sim_meta::omclog::active(
         openmodelica_sim_meta::omclog::STATS_V,
     ));
     // `+profiling`: the traces are collected here and rendered by the host, which

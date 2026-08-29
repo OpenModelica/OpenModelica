@@ -18,6 +18,8 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
+pub mod clock;
+pub mod counters;
 pub mod dassl;
 pub mod events;
 pub mod fixedstep;
@@ -25,7 +27,9 @@ pub mod delay;
 pub mod gbode;
 pub mod omclog;
 pub mod simflags;
+pub mod solverflags;
 pub mod symsolver;
+pub mod sysstat;
 #[cfg(sundials)]
 pub mod sundials;
 

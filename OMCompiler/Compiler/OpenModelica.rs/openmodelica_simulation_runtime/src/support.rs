@@ -119,8 +119,35 @@ fn with_position(info: &FILE_INFO, msg: &str) -> String {
     )
 }
 
+/// Run `f` under `threadData`'s simulation jump buffer, at error stage `stage`.
+/// `false` = the model left through the jump.
+///
+/// Every model callback called from inside a Rust frame goes through this: a
+/// `longjmp` past those frames would skip the solver's own bookkeeping and land at
+/// whatever catch is open further out -- not where C's would land, since C's frames
+/// there are the ones being skipped.
+pub(crate) fn protected<F: FnMut()>(
+    thread_data: *mut threadData_t,
+    stage: c_int,
+    mut f: F,
+) -> bool {
+    unsafe extern "C" fn trampoline<F: FnMut()>(p: *mut c_void) {
+        unsafe { (*(p as *mut F))() }
+    }
+    let rc = unsafe {
+        omr_protected(trampoline::<F>, &mut f as *mut F as *mut c_void, thread_data, stage)
+    };
+    rc != -1
+}
+
 /// src/shim.c, which owns the two things Rust cannot express.
 unsafe extern "C" {
+    fn omr_protected(
+        thunk: unsafe extern "C" fn(*mut c_void),
+        ctx: *mut c_void,
+        thread_data: *mut threadData_t,
+        stage: c_int,
+    ) -> c_int;
     fn omr_vformat(msg: *const c_char, ap: VaList) -> *mut c_char;
     fn omr_free(p: *mut c_void);
     /// Leave through one of `threadData`'s jump buffers; does not return.

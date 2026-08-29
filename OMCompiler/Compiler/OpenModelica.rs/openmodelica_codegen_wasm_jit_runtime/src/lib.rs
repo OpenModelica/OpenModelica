@@ -42,23 +42,14 @@ extern crate alloc;
 
 mod delay;
 mod files;
-// C's `jacobian_analysis.c` plus the derivative test `kinsolSolver.c` keeps: only
-// the SUNDIALS solvers call them.
-#[cfg(sundials)]
-mod jacobian_analysis;
 /// The run's model and `SimData`, for the analyses the nonlinear solver runs from
 /// inside a solve.
 #[cfg(sundials)]
 mod model_ctx;
-mod newton_diagnostics;
 mod nls;
 pub mod prof;
 mod omclog;
 pub use nls::{rt_nls_clean_history, rt_set_step_size};
-#[cfg(test)]
-mod nls_c_trace;
-mod solvers;
-mod sysstats;
 mod spatial;
 // SUNDIALS/KLU. The archives are wasip1-only (they need a libc) and only linked
 // when the build script found them, so `cfg(sundials)` gates the calls; the module
@@ -68,14 +59,109 @@ mod sundials;
 #[cfg(sundials)]
 mod lis;
 
-pub use sysstats::enable as enable_sys_stats;
+pub use openmodelica_solvers::sysstat::enable as enable_sys_stats;
+
+/// The per-system statistics table, flattened for the host; valid until the next
+/// call. Paired with [`rt_sys_stats_len`].
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sys_stats_ptr() -> u32 {
+    openmodelica_solvers::sysstat::publish_words().as_ptr() as u32
+}
+
+/// Number of `f64` words [`rt_sys_stats_ptr`] published.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_sys_stats_len() -> u32 {
+    (openmodelica_solvers::sysstat::systems().len() * openmodelica_solvers::sysstat::WORDS) as u32
+}
 
 /// Install a run's solver selectors, Newton tuning and homotopy settings from
 /// parsed simulation flags. The `rt_set_*` exports are how a *host* driver says
 /// this; a caller that drives the model from inside the module (the FMI3
 /// adapter's simulation interface) has the parsed flags instead.
 pub fn apply_sim_flags(f: &openmodelica_sim_meta::simflags::SimFlags) {
-    solvers::apply_flags(f);
+    openmodelica_solvers::solverflags::apply_flags(f);
+    #[cfg(sundials)]
+    model_ctx::set_request(f.save_initial_guess.clone());
+}
+
+// ---------------------------------------------------------------------------
+// The flag store's wasm ABI
+// ---------------------------------------------------------------------------
+
+// `openmodelica_solvers::solverflags` holds the run's solver selections and
+// tunables, and is shared with the runtime `openmodelica_simulation_runtime`
+// links. A host-driven wasm run links no flag store of its own, so it pushes them
+// in through these; the in-wasm session calls `apply_sim_flags` instead. The names
+// and signatures are what `push_runtime_flags` looks up -- and it *skips* an export
+// it cannot find, so a missing one here is a silent loss of every `-nls`,
+// `-newton*`, `-hom*` and `-svd*` flag, not a link error.
+
+/// `-nls` / `-nlsLS` / `-ls` / `-lss`, as `SimFlags::solver_codes`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_solvers(nls: u32, nls_ls: u32, ls: u32, lss: u32) {
+    openmodelica_solvers::solverflags::set_solvers(nls, nls_ls, ls, lss);
+}
+
+/// `-newtonFTol` / `-newtonXTol` / `-newtonMaxStepFactor`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_newton_tuning(ftol: f64, xtol: f64, max_step_factor: f64) {
+    openmodelica_solvers::solverflags::set_newton_tuning(ftol, xtol, max_step_factor);
+}
+
+/// `-lvMaxWarn`, which caps warnings printed in-wasm.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_max_warn(n: u32) {
+    openmodelica_solvers::solverflags::set_max_warn(n);
+}
+
+/// `-nlsJacTestATol` / `-nlsJacTestRTol`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_jac_test_tolerances(atol: f64, rtol: f64) {
+    openmodelica_solvers::solverflags::set_jac_test_tolerances(atol, rtol);
+}
+
+/// `-svdCount` / `-svdSigma` / `-svdTol`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_svd(count: u32, sigma: f64, tol: f64) {
+    openmodelica_solvers::solverflags::set_svd(count, sigma, tol);
+}
+
+/// `-ils` and the `-homotopyOnFirstTry` tri-state.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_homotopy(init_lambda_steps: u32, on_first_try: u32) {
+    openmodelica_solvers::solverflags::set_homotopy(init_lambda_steps, on_first_try);
+}
+
+/// The arc-length solver's `-hom*` constants.
+#[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)]
+pub extern "C" fn rt_set_homotopy_tuning(
+    adapt_bend: f64,
+    h_eps: f64,
+    tau_dec: f64,
+    tau_dec_pred: f64,
+    tau_inc: f64,
+    tau_inc_threshold: f64,
+    tau_max: f64,
+    tau_min: f64,
+    tau_start: f64,
+    max_lambda_steps: u32,
+    max_newton_steps: u32,
+    max_tries: u32,
+    orthogonal_backtrace: u32,
+    neg_start_dir: u32,
+) {
+    openmodelica_solvers::solverflags::set_homotopy_tuning(
+        adapt_bend, h_eps, tau_dec, tau_dec_pred, tau_inc, tau_inc_threshold, tau_max, tau_min,
+        tau_start, max_lambda_steps, max_newton_steps, max_tries, orthogonal_backtrace,
+        neg_start_dir,
+    );
+}
+
+/// Whether the host serves `env.rt_host_lin_solve`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_set_host_lin_solve(on: u32) {
+    openmodelica_solvers::solverflags::set_host_lin_solve(on);
 }
 
 /// What this runtime build can serve, for `simflags::check`.
@@ -357,63 +443,19 @@ unsafe fn store_f64(addr: u32, v: f64) {
 // ---------------------------------------------------------------------------
 
 /// `rt_stat` slots, read by the host bench line (`OMC_WASM_SIM_BENCH`) — the
-/// wasm-jit analogue of C's `-lv=LOG_STATS`.
-pub const STAT_ALLOC: u32 = 0;
-pub const STAT_ARRAY_NEW: u32 = 1;
-pub const STAT_RECORD_NEW: u32 = 2;
-pub const STAT_STR_NEW: u32 = 3;
-pub const STAT_NLS_SOLVE: u32 = 4;
-pub const STAT_NLS_RES: u32 = 5;
-pub const STAT_NLS_JAC: u32 = 6;
-pub const STAT_NLS_FAIL: u32 = 7;
-pub const STAT_NLS_RETRY: u32 = 8;
-pub const STAT_ELEM_PTR: u32 = 9;
-pub const STAT_NLS_ITER: u32 = 10;
-pub const STAT_NLS_NEWTON_FAIL: u32 = 11;
-pub const STAT_NLS_GUESS_HIT: u32 = 12;
-pub const STAT_NLS_ACCEPT: u32 = 13;
-pub const STAT_NLS_STORE_BACK: u32 = 14;
-pub const STAT_NLS_VARY_START: u32 = 15;
-pub const STAT_NLS_STALE: u32 = 16;
-/// Why `newton_c` (C's `newtonAlgorithm`) gave up, so a run can be compared against
-/// C's own fallback count without a rebuild.
-pub const STAT_NEWTON_IRREGULAR: u32 = 17;
-pub const STAT_NEWTON_LAMBDA: u32 = 18;
-pub const STAT_NEWTON_NEGSTEP: u32 = 19;
-pub const STAT_NEWTON_MAXITER: u32 = 20;
-pub const STAT_NEWTON_STUCK: u32 = 21;
-pub const STAT_NEWTON_JAC: u32 = 22;
-pub const STAT_NEWTON_SINGULAR: u32 = 23;
-/// Not a diagnostic: C's `homotopySteps`, which the driver folds into the
-/// initialization success line.
-pub const STAT_HOMOTOPY_STEPS: u32 = 24;
-pub const N_STATS: usize = 25;
-
-static STATS: [core::sync::atomic::AtomicU64; N_STATS] =
-    [const { core::sync::atomic::AtomicU64::new(0) }; N_STATS];
-
-#[inline]
-pub(crate) fn stat_inc(kind: u32) {
-    STATS[kind as usize].fetch_add(1, core::sync::atomic::Ordering::Relaxed);
-}
-
-pub(crate) fn stat_add(kind: u32, n: u64) {
-    STATS[kind as usize].fetch_add(n, core::sync::atomic::Ordering::Relaxed);
-}
+/// wasm-jit analogue of C's `-lv=LOG_STATS`. The counters themselves live with the
+/// nonlinear solver, which keeps most of them, so both runtimes over it count the
+/// same way; the four allocator ones plus [`STAT_ELEM_PTR`] are this module's.
+pub use openmodelica_solvers::counters::*;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_stat(kind: u32) -> u64 {
-    match STATS.get(kind as usize) {
-        Some(c) => c.load(core::sync::atomic::Ordering::Relaxed),
-        None => 0,
-    }
+    openmodelica_solvers::counters::stat(kind)
 }
 
 /// Called per run (`rt_sim_start`), so the counters are per-run.
 pub fn reset_stats() {
-    for c in STATS.iter() {
-        c.store(0, core::sync::atomic::Ordering::Relaxed);
-    }
+    openmodelica_solvers::counters::reset();
 }
 
 // ---------------------------------------------------------------------------
@@ -2546,7 +2588,7 @@ pub extern "C" fn rt_lin_solves() -> u64 {
 /// `A` and `b`, so the bracket starts there. [`rt_ls_end`] closes it.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_ls_begin(eq_index: i32, size: u32, nnz: u32) {
-    sysstats::begin(eq_index, false, size, nnz);
+    openmodelica_solvers::sysstat::begin(eq_index, false, size, nnz);
     nls::set_no_throw_div_zero(true);
 }
 
@@ -2554,7 +2596,7 @@ pub extern "C" fn rt_ls_begin(eq_index: i32, size: u32, nnz: u32) {
 /// a nonlinear system's statistics; C leaves them at zero here too.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_ls_end() {
-    sysstats::end([0; 3]);
+    openmodelica_solvers::sysstat::end([0; 3]);
 }
 
 /// The host's wall clock. Same rule as `rt_reinit_note`: the `env` import only
@@ -2577,7 +2619,7 @@ mod host_clock {
 pub extern "C" fn rt_stats_start(on: u32) {
     #[cfg(all(target_arch = "wasm32", feature = "host_log", not(feature = "standalone")))]
     openmodelica_sim_meta::driver::set_clock(host_clock::now_ms);
-    sysstats::enable(on != 0);
+    openmodelica_solvers::sysstat::enable(on != 0);
 }
 
 /// Solve the dense `n`×`n` system `A x = b` in place: `A` is `a_ptr` as `n*n`
@@ -2596,18 +2638,18 @@ pub extern "C" fn rt_stats_start(on: u32) {
 #[allow(clippy::too_many_arguments)]
 pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_index: i32, time: f64, method1: i32, casual: i32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
-    sysstats::mark_assembly_done();
+    openmodelica_solvers::sysstat::mark_assembly_done();
     let n = n as usize;
     // C prints this from the solver it dispatched to; `solveTotalPivot` prints its own.
-    match solvers::ls() {
-        solvers::Ls::TotalPivot => {}
-        solvers::Ls::Klu => ls_start_log(eq_index, n, time, "Klu"),
-        solvers::Ls::Umfpack => ls_start_log(eq_index, n, time, "UMFPACK"),
-        solvers::Ls::Lis => ls_start_log(eq_index, n, time, "Lis"),
-        solvers::Ls::Default | solvers::Ls::Lapack => ls_start_log(eq_index, n, time, "Lapack"),
+    match openmodelica_solvers::solverflags::ls() {
+        openmodelica_solvers::solverflags::Ls::TotalPivot => {}
+        openmodelica_solvers::solverflags::Ls::Klu => ls_start_log(eq_index, n, time, "Klu"),
+        openmodelica_solvers::solverflags::Ls::Umfpack => ls_start_log(eq_index, n, time, "UMFPACK"),
+        openmodelica_solvers::solverflags::Ls::Lis => ls_start_log(eq_index, n, time, "Lis"),
+        openmodelica_solvers::solverflags::Ls::Default | openmodelica_solvers::solverflags::Ls::Lapack => ls_start_log(eq_index, n, time, "Lapack"),
     }
     #[cfg(sundials)]
-    if matches!(solvers::ls(), solvers::Ls::Lis) {
+    if matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::Lis) {
         let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
         let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
         let x0 = lis_initial_guess(x_ptr, n);
@@ -2618,10 +2660,10 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
         return ret;
     }
     #[cfg(sundials)]
-    match solvers::ls() {
-        solvers::Ls::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
+    match openmodelica_solvers::solverflags::ls() {
+        openmodelica_solvers::solverflags::Ls::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
         // Singular: fall through to the total-pivot search, C's own fallback.
-        solvers::Ls::Umfpack => match sundials::umfpack_solve_dense(a_ptr, b_ptr, n) {
+        openmodelica_solvers::solverflags::Ls::Umfpack => match sundials::umfpack_solve_dense(a_ptr, b_ptr, n) {
             0 => return 0,
             2 => return 1,
             _ => {}
@@ -2640,7 +2682,7 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
     // `-ls=totalpivot` skips straight to the total-pivot search; LAPACK (C's
     // `dgesv`, and the default) is partial-pivot LU with that as its singular
     // fallback. `-ls=umfpack` only gets here having found the matrix singular.
-    let lu_first = !matches!(solvers::ls(), solvers::Ls::TotalPivot | solvers::Ls::Umfpack);
+    let lu_first = !matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::TotalPivot | openmodelica_solvers::solverflags::Ls::Umfpack);
     if lu_first {
         match nls::lu_solve_singular_pivot(a, b, n) {
             None => {
@@ -2655,7 +2697,7 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
                 omclog::warning_with_limit(
                     omclog::LS,
                     count,
-                    solvers::max_warn_displays(),
+                    openmodelica_solvers::solverflags::max_warn_displays(),
                     &alloc::format!(
                         "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}, system is singular for U[{p}, {p}].",
                         p = k + 2
@@ -2665,7 +2707,7 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
                 // system unsolved, which is what `tearingStrictness` relies on to
                 // report a torn system that divided by a zero parameter. A casual
                 // tearing set has the strict set instead.
-                if casual != 0 || matches!(solvers::ls(), solvers::Ls::Lapack) {
+                if casual != 0 || matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::Lapack) {
                     return 1;
                 }
                 ls_report_fallback(eq_index, time, count);
@@ -2780,7 +2822,7 @@ pub extern "C" fn rt_ls_failed(eq_index: i32, time: f64) {
 #[allow(clippy::too_many_arguments)]
 pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64, dense: i32, casual: i32) -> i32 {
     // `-ls=totalpivot` has no check, and a fallback solve's step already is one.
-    if dense != 0 && matches!(solvers::ls(), solvers::Ls::TotalPivot) {
+    if dense != 0 && matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::TotalPivot) {
         return 0;
     }
     if core::mem::replace(&mut ls_failure_entry(eq_index).fell_back, false) {
@@ -2797,13 +2839,13 @@ pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i
     omclog::warning_with_limit(
         omclog::LS,
         count,
-        solvers::max_warn_displays(),
+        openmodelica_solvers::solverflags::max_warn_displays(),
         &alloc::format!(
             "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}. Residual norm is {}.",
             openmodelica_sim_meta::driver::format_g(norm, 15)
         ),
     );
-    if casual == 0 && dense != 0 && matches!(solvers::ls(), solvers::Ls::Default) {
+    if casual == 0 && dense != 0 && matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::Default) {
         ls_report_fallback(eq_index, time, count);
         let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
         for (bi, &ri) in b.iter_mut().zip(res) {
@@ -2855,7 +2897,7 @@ fn ls_report_fallback(eq_index: i32, time: f64, count: u64) {
     omclog::warning_with_limit(
         stream,
         count,
-        solvers::max_warn_displays(),
+        openmodelica_solvers::solverflags::max_warn_displays(),
         &alloc::format!(
             "The default linear solver fails, the fallback solver with total pivoting is started at time {time:.6}. That might raise performance issues, for more information use -lv LOG_LS."
         ),
@@ -2875,7 +2917,7 @@ pub fn reset_ls_failures() {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: u32, nnz: u32) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
-    sysstats::mark_assembly_done();
+    openmodelica_solvers::sysstat::mark_assembly_done();
     let n = n as usize;
     let nnz = nnz as usize;
     let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
@@ -2923,10 +2965,10 @@ pub extern "C" fn rt_solve_lin_sparse(colptr: u32, rowidx: u32, values: u32, b_p
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_index: i32, time: f64) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
-    sysstats::mark_assembly_done();
+    openmodelica_solvers::sysstat::mark_assembly_done();
     let n = n as usize;
     #[cfg(sundials)]
-    if matches!(solvers::lss(), solvers::Lss::Lis) {
+    if matches!(openmodelica_solvers::solverflags::lss(), openmodelica_solvers::solverflags::Lss::Lis) {
         let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
         let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
         let x0 = lis_initial_guess(x_ptr, n);
@@ -2934,9 +2976,9 @@ pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, x_ptr: u32, 
     }
     let _ = (eq_index, time);
     #[cfg(sundials)]
-    match solvers::lss() {
-        solvers::Lss::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
-        solvers::Lss::Umfpack => return (sundials::umfpack_solve_dense(a_ptr, b_ptr, n) != 0) as i32,
+    match openmodelica_solvers::solverflags::lss() {
+        openmodelica_solvers::solverflags::Lss::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
+        openmodelica_solvers::solverflags::Lss::Umfpack => return (sundials::umfpack_solve_dense(a_ptr, b_ptr, n) != 0) as i32,
         _ => {} // rsparse below; Lis returned above
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
@@ -3013,9 +3055,9 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
     time: f64,
 ) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
-    sysstats::mark_assembly_done();
+    openmodelica_solvers::sysstat::mark_assembly_done();
     #[cfg(sundials)]
-    if matches!(solvers::lss(), solvers::Lss::Lis) {
+    if matches!(openmodelica_solvers::solverflags::lss(), openmodelica_solvers::solverflags::Lss::Lis) {
         ls_start_log(handle as i32, n as usize, time, "Lis");
         let n = n as usize;
         let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
@@ -3025,11 +3067,11 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
         let x0 = lis_initial_guess(x_ptr, n);
         return lis::solve_csc(handle, colp, rowi, vals, b, &x0, n, handle as i32, time);
     }
-    let (backend, name) = match solvers::lss() {
-        solvers::Lss::Umfpack => (solvers::Sparse::Umfpack, "UMFPACK"),
+    let (backend, name) = match openmodelica_solvers::solverflags::lss() {
+        openmodelica_solvers::solverflags::Lss::Umfpack => (openmodelica_solvers::solverflags::Sparse::Umfpack, "UMFPACK"),
         // rsparse stands in for KLU where SuiteSparse is absent; C's name for it.
-        solvers::Lss::Rsparse => (solvers::Sparse::Rsparse, "Klu"),
-        _ => (solvers::Sparse::Klu, "Klu"), // Lis returned above
+        openmodelica_solvers::solverflags::Lss::Rsparse => (openmodelica_solvers::solverflags::Sparse::Rsparse, "Klu"),
+        _ => (openmodelica_solvers::solverflags::Sparse::Klu, "Klu"), // Lis returned above
     };
     ls_start_log(handle as i32, n as usize, time, name);
     lin_sparse_cached(handle, colptr, rowidx, values, b_ptr, n, nnz, backend)
@@ -3047,16 +3089,16 @@ pub(crate) fn lin_sparse_cached(
     b_ptr: u32,
     n: u32,
     nnz: u32,
-    backend: solvers::Sparse,
+    backend: openmodelica_solvers::solverflags::Sparse,
 ) -> i32 {
     let n = n as usize;
     let nnz = nnz as usize;
 
     #[cfg(sundials)]
     match backend {
-        solvers::Sparse::Klu => return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
-        solvers::Sparse::Umfpack => return sundials::umfpack_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
-        solvers::Sparse::Rsparse => {}
+        openmodelica_solvers::solverflags::Sparse::Klu => return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
+        openmodelica_solvers::solverflags::Sparse::Umfpack => return sundials::umfpack_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
+        openmodelica_solvers::solverflags::Sparse::Rsparse => {}
     }
     #[cfg(not(sundials))]
     let _ = backend;
@@ -3065,7 +3107,7 @@ pub(crate) fn lin_sparse_cached(
     // one module serves a host with a native solver and one without.
     #[cfg(all(target_os = "wasi", feature = "host_lin_solve", feature = "inwasm_solve"))]
     {
-        if solvers::host_lin_solve() {
+        if openmodelica_solvers::solverflags::host_lin_solve() {
             return unsafe { rt_host_lin_solve(handle, colptr, rowidx, values, b_ptr, n as u32, nnz as u32) };
         }
         return solve_lin_sparse_cached_inwasm(handle, colptr, rowidx, values, b_ptr, n, nnz);

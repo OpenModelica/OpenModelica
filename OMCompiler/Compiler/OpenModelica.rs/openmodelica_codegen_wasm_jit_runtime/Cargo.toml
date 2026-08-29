@@ -36,21 +36,25 @@ host_lin_solve = []
 # `cfg(sundials)` without linking anything: the FMI3 adapter's PIC build leaves the
 # CVODE/IDA/KINSOL/KLU/UMFPACK/Lis calls undefined, as imports the FMU's SUNDIALS
 # side module resolves.
-sundials_extern = ["openmodelica_sim_meta/sundials_extern"]
+sundials_extern = ["openmodelica_sim_meta/sundials_extern", "openmodelica_nls/sundials_extern"]
 # PRIMME's partial SVD, which `-lv=LOG_NLS_SVD` with `-svdCount` runs. Its archive
 # rides with the SUNDIALS hand-off, and its BLAS/LAPACK calls bind to
 # openmodelica_lapack's Fortran ABI -- which is why the feature turns that on, and
 # why it is not a default: enabling it host-side would shadow the system LAPACK.
-primme = ["openmodelica_lapack/fortran-abi"]
+primme = ["openmodelica_lapack/fortran-abi", "openmodelica_nls/primme"]
 
 [dependencies]
 # The shared `-lv` stream table + `omc_error.c` message layout the NLS solver logs
 # through. `no_std` here; the wasi build below adds `std` back.
 openmodelica_sim_meta = { path = "../openmodelica_sim_meta", default-features = false }
+# The per-system statistics, the flag-derived solver selections and the
+# diagnostic counters.
+openmodelica_solvers = { path = "../openmodelica_solvers", default-features = false }
+# The nonlinear solver, shared with `openmodelica_simulation_runtime`, which
+# drives the same code over `NONLINEAR_SYSTEM_DATA`. src/nls.rs keeps only the
+# wasm ABI over it.
+openmodelica_nls = { path = "../openmodelica_nls", default-features = false }
 dlmalloc = { version = "0.2.14", features = ["global"] }
-# MINPACK hybrd for the in-wasm nonlinear solver (`nls.rs`): converges to `xtol`
-# like C's default solver, unlike the crude Newton it replaces. no_std + libm.
-minpack = { path = "../minpack", default-features = false }
 # Self-contained (in-wasm) `pow` for element-wise array power, so the JIT loop
 # never crosses the wasm↔host boundary per element.
 libm = "0.2"

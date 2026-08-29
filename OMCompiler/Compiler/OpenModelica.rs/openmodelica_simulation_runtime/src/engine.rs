@@ -38,7 +38,8 @@ unsafe extern "C" {
 pub struct CEngine {
     pub rt: RtData,
     /// Which error stage a model call runs under, so an assertion reports the way
-    /// C's `omc_assert_simulation` does for that phase.
+    /// C's `omc_assert_simulation` does for that phase. Republished from the
+    /// driver's own stage word on every call (see [`CEngine::publish`]).
     pub stage: c_int,
 }
 
@@ -47,16 +48,62 @@ impl CEngine {
         CEngine { rt, stage: error_stage::SIMULATION }
     }
 
-    /// Publish the flags the generated equations read but the layout keeps
-    /// elsewhere: C's `discreteCall`/`solveContinuous` pair, which
-    /// `relationhysteresis` branches on, stands for the driver's relation mode.
+    /// Flat address of the driver's `[stage, hit]` pair.
+    fn err_off(&self) -> u32 {
+        self.rt.layout.total + crate::data::ERR_STAGE_OFF
+    }
+
+    /// The region the driver currently has open.
+    fn driver_stage(&self) -> i32 {
+        let mut b = [0u8; 4];
+        let _ = self.rt.read(self.err_off(), &mut b);
+        i32::from_ne_bytes(b)
+    }
+
+    /// Raise the pair's `hit` word: a model error the open region absorbed, which
+    /// is what the driver reads when it closes the region.
+    fn mark_hit(&mut self) {
+        let _ = self.rt.write(self.err_off() + 4, &1i32.to_ne_bytes());
+    }
+
+    /// Whether a model error raised now is one of the open region's to absorb.
+    /// Outside every region it is what C's outermost `MMC_TRY_INTERNAL` would not
+    /// catch either, and ends the run.
+    fn error_absorbed(stage: i32) -> bool {
+        use openmodelica_nls as nls;
+        [
+            nls::ERROR_INTEGRATOR,
+            nls::ERROR_NONLINEARSOLVER,
+            nls::ERROR_SIMULATION_STEP,
+            nls::ERROR_EVENTHANDLING,
+        ]
+        .contains(&(stage as u32))
+    }
+
+    /// Publish what the generated code reads but the layout keeps elsewhere, before
+    /// every model call: the driver's relation mode as C's
+    /// `discreteCall`/`solveContinuous` pair (what `relationhysteresis` branches
+    /// on), and its open region as `threadData->currentErrorStage` plus
+    /// `noThrowAsserts`.
     fn publish(&mut self) {
         let mode = {
             let mut b = [0u8; 4];
             let _ = self.rt.read(self.rt.layout.rel_fresh_off, &mut b);
             i32::from_ne_bytes(b)
         };
+        // The driver's region, as the two things C keeps it in: the stage decides
+        // which jump buffer an assertion takes and how loudly it reports, and
+        // `noThrowAsserts` is C's `simulationUpdate` region, where the generated
+        // assert only notes itself in `needToReThrow` and carries on.
+        let ds = self.driver_stage() as u32;
+        self.stage = match ds {
+            openmodelica_nls::ERROR_INTEGRATOR => error_stage::INTEGRATOR,
+            openmodelica_nls::ERROR_NONLINEARSOLVER => error_stage::NONLINEARSOLVER,
+            openmodelica_nls::ERROR_EVENTHANDLING => error_stage::EVENTHANDLING,
+            _ => error_stage::SIMULATION,
+        };
         let si = self.rt.info();
+        si.noThrowAsserts = (ds == openmodelica_nls::ERROR_EVENTHANDLING) as modelica_boolean;
         // 0 held, 1 event, 2 initialization -- C reaches the held branch through
         // `discreteCall == 0 || solveContinuous`, and the fresh one through neither.
         si.discreteCall = if mode == 0 { 0 } else { 1 };
@@ -76,14 +123,34 @@ impl CEngine {
         let Some(f) = f else { return Ok(()) };
         self.publish();
         let rc = unsafe { omr_protected_call(f, self.rt.data, self.rt.thread_data, self.stage) };
-        if rc == -1 { Err(MODEL_ERROR) } else { Ok(()) }
+        self.absorb(rc)
+    }
+
+    /// What a model call's return means for the region the driver has open: a
+    /// violated assertion the model only noted (`needToReThrow`), or a jump it
+    /// took, both raise the pair's `hit` word rather than ending the run -- as long
+    /// as a region is open to absorb it.
+    fn absorb(&mut self, rc: c_int) -> Result<()> {
+        let si = self.rt.info();
+        let noted = si.needToReThrow != 0;
+        si.needToReThrow = 0;
+        if noted {
+            self.mark_hit();
+        }
+        if rc != -1 {
+            return Ok(());
+        }
+        if Self::error_absorbed(self.driver_stage()) {
+            self.mark_hit();
+            return Ok(());
+        }
+        Err(MODEL_ERROR)
     }
 }
 
-/// What a call that left through its jump buffer reports back; the reason itself
-/// is already on the log, from `omr_assert_report`. C would first re-run the step
-/// with the assertion absorbed and look for an event around it — this runtime
-/// does not (see `error_stage_addr` in the handoff), so the error ends the run.
+/// What a call that left through its jump buffer reports back when no region was
+/// open to absorb it; the reason itself is already on the log, from
+/// `omr_assert_report`.
 const MODEL_ERROR: &str = "a model assertion was violated and could not be absorbed";
 
 impl SimEngine for CEngine {
@@ -93,6 +160,27 @@ impl SimEngine for CEngine {
 
     fn write_bytes(&mut self, addr: u32, buf: &[u8]) -> Result<()> {
         self.rt.write(addr, buf)
+    }
+
+    /// C's `currentContext`, mapped past the layout's end (`data::CONTEXT_OFF`).
+    fn context_addr(&mut self) -> u32 {
+        self.rt.layout.total + crate::data::CONTEXT_OFF
+    }
+
+    /// The `[stage, hit]` pair, in the driver's own memory past the layout's end.
+    fn error_stage_addr(&mut self) -> u32 {
+        self.err_off()
+    }
+
+    /// The per-system statistics `LOG_STATS_V` renders, measured where the systems
+    /// are solved: `openmodelica_solvers::sysstat`, which both runtimes bracket.
+    fn sys_stats(&mut self) -> Vec<openmodelica_solvers::sysstat::SysStat> {
+        openmodelica_solvers::sysstat::systems().to_vec()
+    }
+
+    /// C's `cleanUpOldValueListAfterEvent`.
+    fn clean_nls_history(&mut self, time: f64) {
+        crate::nls::clean_history_after_event(self.rt.data, time);
     }
 
     fn has_discrete_entry(&self) -> bool {
@@ -166,7 +254,7 @@ impl SimEngine for CEngine {
                         self.stage,
                     )
                 };
-                if rc == -1 { Err(MODEL_ERROR) } else { Ok(()) }
+                self.absorb(rc)
             }
             // A C model has no generated function for either: the start values
             // come from the init XML, which this runtime read into `modelData`.
@@ -181,10 +269,9 @@ impl SimEngine for CEngine {
                 crate::operators::init(md.nDelayExpressions as usize, start);
                 Ok(())
             }
-            // Reached only for a model with `$STATESET`s, which the metadata
-            // builder does not describe yet, so the driver never asks.
             "functionStateSetJacobians" => {
-                Err("dynamic state selection is not served by this runtime yet")
+                self.publish();
+                crate::stateset::eval_jacobians(self.rt.data, self.rt.thread_data)
             }
             _ => Err("the C model has no such entry point"),
         }
@@ -209,7 +296,7 @@ impl SimEngine for CEngine {
                 let rc = unsafe {
                     omr_protected_call_zc(f, self.rt.data, self.rt.thread_data, gout, self.stage)
                 };
-                if rc == -1 { Err(MODEL_ERROR) } else { Ok(()) }
+                self.absorb(rc)
             }
             driver::MODEL_FN_DAE => Err("--daeMode is not served by this runtime yet"),
             driver::MODEL_FN_UPDATE_SYNC | driver::MODEL_FN_EQS_SYNC => {

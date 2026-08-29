@@ -27,12 +27,19 @@ crate-type = ["cdylib", "rlib"]
 openmodelica_sim_meta.workspace = true
 # The integrators and the `-lv` log formatting they share with the wasm-jit runtime.
 openmodelica_solvers = { path = "../openmodelica_solvers" }
+# The nonlinear solver they share too: `solve_nonlinear_system` and the ladder
+# under it, driven here over `NONLINEAR_SYSTEM_DATA` (src/nls.rs).
+openmodelica_nls = { path = "../openmodelica_nls" }
 # The result file.
 openmodelica_mat_writer.workspace = true
 openmodelica_plt_writer.workspace = true
 # `_init.xml`: the variable names, attributes and start values the generated C
 # does not carry (C reads the same file with expat in `simulation_input_xml.c`).
 roxmltree.workspace = true
+# `<Model>_info.json`: the equation and variable names the generated residuals
+# name their iteration variables through (`simulation_info_json.c` reads the same
+# file with a hand-rolled scanner).
+serde_json.workspace = true
 libc.workspace = true
 # `dgesv` for the dense linear systems -- the same LAPACK the wasm-jit runtime
 # factors with, so a system gets the same pivot order and `INFO` either way.

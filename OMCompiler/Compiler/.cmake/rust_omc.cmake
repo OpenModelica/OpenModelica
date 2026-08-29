@@ -593,8 +593,8 @@ target_include_directories(primme PRIVATE
     VERBATIM)
   add_dependencies(rust_sundials_collect rust_sundials_wasm rust_lis_wasm rust_primme_wasm)
 
-  # The host CVODE/IDAS the host-driven wasm-jit driver links are the C runtime's
-  # own archives (3rdParty), not a second build: they are already
+  # The host KINSOL/CVODE/IDAS the Rust runtimes link are the C runtime's own
+  # archives (3rdParty), not a second build: they are already
   # position-independent (`libSimulationRuntimeC.so` links them), and reusing them
   # leaves the two copies identical should both end up in one process. Collected
   # into a fixed directory because the cargo env cannot carry a generator
@@ -603,6 +603,7 @@ target_include_directories(primme PRIVATE
     set(RUST_SUNDIALS_NATIVE_DIR ${CMAKE_BINARY_DIR}/rust-sundials-native
         CACHE PATH "Directory the host SUNDIALS archives are collected into.")
     set(_native_sundials_libs
+      sundials_kinsol_static
       sundials_cvode_static sundials_idas_static sundials_sunlinsolklu_static
       sundials_sunlinsoldense_static sundials_sunmatrixsparse_static
       sundials_sunmatrixdense_static sundials_nvecserial_static

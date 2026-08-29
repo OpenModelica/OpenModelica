@@ -15,10 +15,14 @@
 pub mod abi;
 mod data;
 mod engine;
+mod info_json;
 mod meta;
+mod mixed;
 mod model_data;
 mod operators;
 mod run;
+mod nls;
+mod stateset;
 mod support;
 mod systems;
 

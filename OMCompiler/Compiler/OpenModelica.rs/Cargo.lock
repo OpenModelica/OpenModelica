@@ -7222,6 +7222,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_nls"
+version = "0.1.0"
+dependencies = [
+ "libm",
+ "minpack",
+ "openmodelica_lapack",
+ "openmodelica_solvers",
+]
+
+[[package]]
 name = "openmodelica_omgraphics"
 version = "0.1.0"
 dependencies = [
@@ -7355,10 +7365,12 @@ dependencies = [
  "libc",
  "openmodelica_lapack",
  "openmodelica_mat_writer",
+ "openmodelica_nls",
  "openmodelica_plt_writer",
  "openmodelica_sim_meta",
  "openmodelica_solvers",
  "roxmltree",
+ "serde_json",
 ]
 
 [[package]]

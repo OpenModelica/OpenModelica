@@ -6,11 +6,11 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec;
 
-use crate::omclog;
+use openmodelica_solvers::omclog;
 
 /// C's `SolverCaller`.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Caller {
+pub enum Caller {
     KinsolJacEval,
     #[allow(dead_code)]
     KinsolEntry,
@@ -69,7 +69,7 @@ fn dense_fd_jacobian(n: usize, x: &mut [f64], fx: &[f64], out: &mut [f64], eval:
 /// are unscaled and `scale` is `(fScale, xScale)` applied to the reference
 /// afterwards, as C's `B_nlsDenseJac` differences with scaling off.
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn derivative_test(
+pub fn derivative_test(
     eq_index: u32,
     time: f64,
     n: usize,
@@ -82,7 +82,7 @@ pub(crate) fn derivative_test(
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) {
     let stream = omclog::NLS_DERIVATIVE_TEST;
-    let (atol, rtol) = crate::solvers::jac_test_tolerances();
+    let (atol, rtol) = openmodelica_solvers::solverflags::jac_test_tolerances();
     let mut fx = vec![0.0f64; n];
     eval(x, &mut fx);
     let mut num = vec![0.0f64; n * n];
@@ -117,7 +117,7 @@ pub(crate) fn derivative_test(
     omclog::close(stream);
 
     omclog::info(stream, true, "Anomalies");
-    let names = crate::nls::var_names(eq_index);
+    let names = crate::var_names(eq_index);
     let (mut numerical, mut structural, mut max_error) = (0u32, 0u32, 0.0f64);
     let mut nz = 0usize;
     for col in 0..n {
@@ -210,7 +210,7 @@ pub(crate) fn derivative_test(
 
 /// C's `svd_compute`, over the CSC Jacobian the solver is about to use.
 /// `-svdCount` picks the sparse (PRIMME) path; 0 is the dense decomposition.
-pub(crate) fn svd_analysis(
+pub fn svd_analysis(
     eq_index: u32,
     time: f64,
     n: usize,
@@ -223,7 +223,7 @@ pub(crate) fn svd_analysis(
     if !(omclog::active(omclog::NLS_SVD) || omclog::active(omclog::NLS_SVD_V)) {
         return;
     }
-    let (count, sigma, tol) = crate::solvers::svd_params();
+    let (count, sigma, tol) = openmodelica_solvers::solverflags::svd_params();
     if count == 0 {
         return dense_svd(eq_index, time, n, colptr, rowidx, vals, scaled, caller);
     }
@@ -307,11 +307,10 @@ fn vector_sign(v: &[f64]) -> f64 {
 fn print_vectors(eq_index: u32, n: usize, idx: usize, sigma: f64, v: &[f64], u: &[f64]) {
     let s = omclog::NLS_SVD;
     let sign = vector_sign(v);
-    let names = crate::nls::var_names(eq_index);
-    let eqns = crate::model_ctx::with_model(|m| {
-        m.nls_vars.iter().find(|s| s.eq_index == eq_index).map(|s| s.eqns.clone()).unwrap_or_default()
-    })
-    .unwrap_or_default();
+    let names = crate::var_names(eq_index);
+    // C names each row by its SimCode equation index; the same list the Newton
+    // diagnostics report uses, which the host ships in with the variable names.
+    let eqns = crate::diag_eqns(eq_index);
 
     omclog::info(s, true, "Smallest right singular vectors (variable space)");
     omclog::info(s, false, "Found 1 singular vectors.");

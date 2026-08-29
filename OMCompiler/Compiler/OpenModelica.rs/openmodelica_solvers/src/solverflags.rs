@@ -1,19 +1,24 @@
 //! Which solver each `-nls` / `-nlsLS` / `-ls` / `-lss` selects.
 //!
-//! Set once per run and read on every solve, so it is four plain atomics rather
+//! Set once per run and read on every solve, so these are plain atomics rather
 //! than the parsed `SimFlags` — reading that clones its `-override=` list, one
-//! `String` per parameter. Both ways in end here: a host-driven run pushes the
-//! codes through [`rt_set_solvers`] (that build links no flag store of its own),
-//! and the in-wasm session sets them from the flags it parsed.
+//! `String` per parameter. Both ways in end here: a host-driven wasm run pushes
+//! the codes in through the runtime's `rt_set_*` exports (that build links no flag
+//! store of its own), which are thin wrappers over the setters below; a run that
+//! parsed its own flags calls [`apply_flags`].
+//!
+//! Shared by every runtime, so a setter must not be renamed without the wasm
+//! export that wraps it: the host *skips* an export it cannot find, and every flag
+//! it carries is then silently lost.
 //!
 //! The codes are `SimFlags::solver_codes`; 0 means unset, and the enums below
-//! mirror `openmodelica_sim_meta::simflags`, so neither may be renumbered alone.
+//! mirror `crate::simflags`, so neither may be renumbered alone.
 
 use core::sync::atomic::{AtomicU32, Ordering};
 
 /// `-nls`
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Nls {
+pub enum Nls {
     /// Unset: the codegen's density-based choice, then the full retry ladder.
     Default,
     Hybrid,
@@ -28,7 +33,7 @@ pub(crate) enum Nls {
 
 /// `-nlsLS`, the linear solver inside the nonlinear one.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum NlsLs {
+pub enum NlsLs {
     Klu,
     Rsparse,
     TotalPivot,
@@ -37,7 +42,7 @@ pub(crate) enum NlsLs {
 
 /// `-ls`, for a dense-stored linear system.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Ls {
+pub enum Ls {
     /// C's `LS_DEFAULT`: LAPACK, with the total-pivot search as its fallback.
     Default,
     /// C's `LS_LAPACK`, which has no fallback — a singular matrix fails the system.
@@ -50,7 +55,7 @@ pub(crate) enum Ls {
 
 /// `-lss`, for a sparse (torn) linear system.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Lss {
+pub enum Lss {
     Klu,
     Umfpack,
     Rsparse,
@@ -60,7 +65,7 @@ pub(crate) enum Lss {
 /// The backend a *direct* sparse solve runs on, once a selector has been matched
 /// to it. Iterative Lis needs an initial guess, so `-lss lis` is served earlier.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Sparse {
+pub enum Sparse {
     Klu,
     Umfpack,
     Rsparse,
@@ -83,23 +88,22 @@ static NEWTON_FTOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU6
 static NEWTON_XTOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3D719799812DEA11);
 static MAX_STEP_FACTOR: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x426D1A94A2000000); // 1e12
 
-#[unsafe(no_mangle)]
-pub extern "C" fn rt_set_newton_tuning(ftol: f64, xtol: f64, max_step_factor: f64) {
+pub fn set_newton_tuning(ftol: f64, xtol: f64, max_step_factor: f64) {
     NEWTON_FTOL.store(ftol.to_bits(), Ordering::Relaxed);
     NEWTON_XTOL.store(xtol.to_bits(), Ordering::Relaxed);
     MAX_STEP_FACTOR.store(max_step_factor.to_bits(), Ordering::Relaxed);
 }
 
-pub(crate) fn newton_ftol() -> f64 {
+pub fn newton_ftol() -> f64 {
     f64::from_bits(NEWTON_FTOL.load(Ordering::Relaxed))
 }
 
-pub(crate) fn newton_xtol() -> f64 {
+pub fn newton_xtol() -> f64 {
     f64::from_bits(NEWTON_XTOL.load(Ordering::Relaxed))
 }
 
 #[cfg(sundials)]
-pub(crate) fn max_step_factor() -> f64 {
+pub fn max_step_factor() -> f64 {
     f64::from_bits(MAX_STEP_FACTOR.load(Ordering::Relaxed))
 }
 
@@ -107,14 +111,13 @@ pub(crate) fn max_step_factor() -> f64 {
 static JAC_TEST_ATOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3D19000000000000); // 100 * DBL_EPSILON
 static JAC_TEST_RTOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3F1A36E2EB1C432D); // 1e-4
 
-#[unsafe(no_mangle)]
-pub extern "C" fn rt_set_jac_test_tolerances(atol: f64, rtol: f64) {
+pub fn set_jac_test_tolerances(atol: f64, rtol: f64) {
     JAC_TEST_ATOL.store(atol.to_bits(), Ordering::Relaxed);
     JAC_TEST_RTOL.store(rtol.to_bits(), Ordering::Relaxed);
 }
 
 #[cfg(sundials)]
-pub(crate) fn jac_test_tolerances() -> (f64, f64) {
+pub fn jac_test_tolerances() -> (f64, f64) {
     (
         f64::from_bits(JAC_TEST_ATOL.load(Ordering::Relaxed)),
         f64::from_bits(JAC_TEST_RTOL.load(Ordering::Relaxed)),
@@ -126,15 +129,14 @@ static SVD_COUNT: AtomicU32 = AtomicU32::new(0);
 static SVD_SIGMA: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3E45798EE2308C3A); // 1e-8
 static SVD_TOL: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0x3E45798EE2308C3A); // 1e-8
 
-#[unsafe(no_mangle)]
-pub extern "C" fn rt_set_svd(count: u32, sigma: f64, tol: f64) {
+pub fn set_svd(count: u32, sigma: f64, tol: f64) {
     SVD_COUNT.store(count, Ordering::Relaxed);
     SVD_SIGMA.store(sigma.to_bits(), Ordering::Relaxed);
     SVD_TOL.store(tol.to_bits(), Ordering::Relaxed);
 }
 
 #[cfg(sundials)]
-pub(crate) fn svd_params() -> (u32, f64, f64) {
+pub fn svd_params() -> (u32, f64, f64) {
     (
         SVD_COUNT.load(Ordering::Relaxed),
         f64::from_bits(SVD_SIGMA.load(Ordering::Relaxed)),
@@ -145,12 +147,11 @@ pub(crate) fn svd_params() -> (u32, f64, f64) {
 /// `-lvMaxWarn`, C's `maxWarnDisplays` (`DEFAULT_FLAG_LV_MAX_WARN`).
 static MAX_WARN_DISPLAYS: AtomicU32 = AtomicU32::new(3);
 
-#[unsafe(no_mangle)]
-pub extern "C" fn rt_set_max_warn(n: u32) {
+pub fn set_max_warn(n: u32) {
     MAX_WARN_DISPLAYS.store(n, Ordering::Relaxed);
 }
 
-pub(crate) fn max_warn_displays() -> u64 {
+pub fn max_warn_displays() -> u64 {
     MAX_WARN_DISPLAYS.load(Ordering::Relaxed) as u64
 }
 
@@ -159,28 +160,27 @@ pub(crate) fn max_warn_displays() -> u64 {
 static INIT_LAMBDA_STEPS: AtomicU32 = AtomicU32::new(3);
 static HOMOTOPY_ON_FIRST_TRY: AtomicU32 = AtomicU32::new(0);
 
-#[unsafe(no_mangle)]
-pub extern "C" fn rt_set_homotopy(init_lambda_steps: u32, on_first_try: u32) {
+pub fn set_homotopy(init_lambda_steps: u32, on_first_try: u32) {
     INIT_LAMBDA_STEPS.store(init_lambda_steps, Ordering::Relaxed);
     HOMOTOPY_ON_FIRST_TRY.store(on_first_try, Ordering::Relaxed);
 }
 
-pub(crate) fn init_lambda_steps() -> i32 {
+pub fn init_lambda_steps() -> i32 {
     INIT_LAMBDA_STEPS.load(Ordering::Relaxed) as i32
 }
 
 /// C sets the flag itself for a model with homotopy support, so an unset flag
 /// reads as set here (only `-noHomotopyOnFirstTry` turns it off).
-pub(crate) fn homotopy_on_first_try() -> bool {
+pub fn homotopy_on_first_try() -> bool {
     HOMOTOPY_ON_FIRST_TRY.load(Ordering::Relaxed) != 2
 }
 
 /// C's `model_help.c` homotopy constants. A cell rather than atomics: read once
-/// per run, and the runtime is single-threaded (as `nls::RosterCell`).
-struct HomCell(core::cell::UnsafeCell<openmodelica_sim_meta::simflags::HomTuning>);
+/// per run, and the runtime is single-threaded (as `nls`'s own roster).
+struct HomCell(core::cell::UnsafeCell<crate::simflags::HomTuning>);
 unsafe impl Sync for HomCell {}
 static HOM: HomCell = HomCell(core::cell::UnsafeCell::new(
-    openmodelica_sim_meta::simflags::HomTuning {
+    crate::simflags::HomTuning {
         adapt_bend: 0.5,
         h_eps: 1e-5,
         tau_dec: 10.0,
@@ -198,13 +198,12 @@ static HOM: HomCell = HomCell(core::cell::UnsafeCell::new(
     },
 ));
 
-pub(crate) fn hom_tuning() -> openmodelica_sim_meta::simflags::HomTuning {
+pub fn hom_tuning() -> crate::simflags::HomTuning {
     unsafe { *HOM.0.get() }
 }
 
-#[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
-pub extern "C" fn rt_set_homotopy_tuning(
+pub fn set_homotopy_tuning(
     adapt_bend: f64,
     h_eps: f64,
     tau_dec: f64,
@@ -221,7 +220,7 @@ pub extern "C" fn rt_set_homotopy_tuning(
     neg_start_dir: u32,
 ) {
     unsafe {
-        *HOM.0.get() = openmodelica_sim_meta::simflags::HomTuning {
+        *HOM.0.get() = crate::simflags::HomTuning {
             adapt_bend,
             h_eps,
             tau_dec,
@@ -244,19 +243,18 @@ pub extern "C" fn rt_set_homotopy_tuning(
 /// module instantiated by something without a native solver must not call out.
 static HOST_LIN_SOLVE: AtomicU32 = AtomicU32::new(0);
 
-#[unsafe(no_mangle)]
-pub extern "C" fn rt_set_host_lin_solve(on: u32) {
+pub fn set_host_lin_solve(on: u32) {
     HOST_LIN_SOLVE.store(on, Ordering::Relaxed);
 }
 
-pub(crate) fn host_lin_solve() -> bool {
+pub fn host_lin_solve() -> bool {
     HOST_LIN_SOLVE.load(Ordering::Relaxed) != 0
 }
 
-/// Set the four selectors for the next run. Host-driven builds call this through
-/// the export; the in-wasm session calls [`apply_flags`] instead.
-#[unsafe(no_mangle)]
-pub extern "C" fn rt_set_solvers(nls: u32, nls_ls: u32, ls: u32, lss: u32) {
+/// Set the four selectors for the next run. A wasm host pushes them through the
+/// runtime's `rt_set_solvers` export; a run that parsed its own flags calls
+/// [`apply_flags`] instead.
+pub fn set_solvers(nls: u32, nls_ls: u32, ls: u32, lss: u32) {
     NLS.store(nls, Ordering::Relaxed);
     NLS_LS.store(nls_ls, Ordering::Relaxed);
     LS.store(ls, Ordering::Relaxed);
@@ -264,35 +262,33 @@ pub extern "C" fn rt_set_solvers(nls: u32, nls_ls: u32, ls: u32, lss: u32) {
 }
 
 /// Mirrors `BackendDAEUtil.useSparseSolver`, which chose this system's format.
-pub(crate) fn nls_use_sparse(size: usize, nnz: usize) -> bool {
+pub fn nls_use_sparse(size: usize, nnz: usize) -> bool {
     let density = nnz as f64 / (size * size) as f64;
     density < f64::from_bits(NLSS_MAX_DENSITY.load(Ordering::Relaxed))
         || size > NLSS_MIN_SIZE.load(Ordering::Relaxed) as usize
 }
 
-pub(crate) fn apply_flags(f: &openmodelica_sim_meta::simflags::SimFlags) {
+pub fn apply_flags(f: &crate::simflags::SimFlags) {
     let (nls, nls_ls, ls, lss) = f.solver_codes();
-    rt_set_solvers(nls, nls_ls, ls, lss);
-    let (ftol, xtol, msf) = openmodelica_sim_meta::simflags::newton_tuning(f);
-    rt_set_newton_tuning(ftol, xtol, msf);
-    rt_set_max_warn(f.max_warn.unwrap_or(3));
-    let (atol, rtol) = openmodelica_sim_meta::simflags::jac_test_tolerances(f);
-    rt_set_jac_test_tolerances(atol, rtol);
-    let (svd_count, svd_sigma, svd_tol) = openmodelica_sim_meta::simflags::svd_params(f);
-    rt_set_svd(svd_count.max(0) as u32, svd_sigma, svd_tol);
-    #[cfg(sundials)]
-    crate::model_ctx::set_request(f.save_initial_guess.clone());
-    let (steps, first) = openmodelica_sim_meta::simflags::homotopy_codes(f);
-    rt_set_homotopy(steps, first);
-    let h = openmodelica_sim_meta::simflags::hom_tuning(f);
-    rt_set_homotopy_tuning(
+    set_solvers(nls, nls_ls, ls, lss);
+    let (ftol, xtol, msf) = crate::simflags::newton_tuning(f);
+    set_newton_tuning(ftol, xtol, msf);
+    set_max_warn(f.max_warn.unwrap_or(3));
+    let (atol, rtol) = crate::simflags::jac_test_tolerances(f);
+    set_jac_test_tolerances(atol, rtol);
+    let (svd_count, svd_sigma, svd_tol) = crate::simflags::svd_params(f);
+    set_svd(svd_count.max(0) as u32, svd_sigma, svd_tol);
+    let (steps, first) = crate::simflags::homotopy_codes(f);
+    set_homotopy(steps, first);
+    let h = crate::simflags::hom_tuning(f);
+    set_homotopy_tuning(
         h.adapt_bend, h.h_eps, h.tau_dec, h.tau_dec_pred, h.tau_inc, h.tau_inc_threshold,
         h.tau_max, h.tau_min, h.tau_start, h.max_lambda_steps, h.max_newton_steps, h.max_tries,
         h.orthogonal_backtrace as u32, h.neg_start_dir as u32,
     );
 }
 
-pub(crate) fn nls() -> Nls {
+pub fn nls() -> Nls {
     match NLS.load(Ordering::Relaxed) {
         1 => Nls::Hybrid,
         2 => Nls::Kinsol,
@@ -306,7 +302,7 @@ pub(crate) fn nls() -> Nls {
 
 /// KLU needs the SUNDIALS archives; without them every request falls to `rsparse`,
 /// which is also where C's unimplemented-here values (`totalpivot`, `lapack`) go.
-pub(crate) fn nls_ls() -> NlsLs {
+pub fn nls_ls() -> NlsLs {
     match NLS_LS.load(Ordering::Relaxed) {
         _ if !cfg!(sundials) => NlsLs::Rsparse,
         2 => NlsLs::TotalPivot,
@@ -316,7 +312,7 @@ pub(crate) fn nls_ls() -> NlsLs {
     }
 }
 
-pub(crate) fn ls() -> Ls {
+pub fn ls() -> Ls {
     match LS.load(Ordering::Relaxed) {
         2 => Ls::Lapack,
         3 => Ls::TotalPivot,
@@ -327,7 +323,7 @@ pub(crate) fn ls() -> Ls {
     }
 }
 
-pub(crate) fn lss() -> Lss {
+pub fn lss() -> Lss {
     match LSS.load(Ordering::Relaxed) {
         5 if cfg!(sundials) => Lss::Lis,
         _ if !cfg!(sundials) => Lss::Rsparse,
@@ -345,7 +341,7 @@ mod tests {
     // the same numbers on the other side.
     #[test]
     fn unset_codes_give_c_defaults() {
-        rt_set_solvers(0, 0, 0, 0);
+        set_solvers(0, 0, 0, 0);
         assert!(nls() == Nls::Default);
         assert!(ls() == Ls::Default);
         // KLU is the sparse default only where the archives are linked.
@@ -354,11 +350,11 @@ mod tests {
 
     #[test]
     fn codes_select_their_solver() {
-        rt_set_solvers(2, 2, 3, 3);
+        set_solvers(2, 2, 3, 3);
         assert!(nls() == Nls::Kinsol);
         assert!(ls() == Ls::TotalPivot);
         assert!(lss() == Lss::Rsparse);
         assert!(nls_ls() == if cfg!(sundials) { NlsLs::TotalPivot } else { NlsLs::Rsparse });
-        rt_set_solvers(0, 0, 0, 0);
+        set_solvers(0, 0, 0, 0);
     }
 }
