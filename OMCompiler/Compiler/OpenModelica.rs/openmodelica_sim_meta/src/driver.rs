@@ -496,6 +496,13 @@ pub trait SimEngine {
     fn no_throw_div_zero_addr(&mut self) -> u32 {
         0
     }
+    /// Whether the model has its own discrete-pass entry point (C's generated
+    /// `functionDAE`, which evaluates `allEquations` with `discreteCall` raised).
+    /// A wasm-jit module has none -- there the pass is `functionAlgebraics` --
+    /// so the default keeps [`eval_discrete`]'s split.
+    fn has_discrete_entry(&self) -> bool {
+        false
+    }
     /// C's `cleanUpOldValueListAfterEvent`. Default: none (an engine that never
     /// integrates).
     fn clean_nls_history(&mut self, _time: f64) {}
@@ -2773,6 +2780,9 @@ fn eval_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
     if layout.dae_mode() {
         return e.call2(MODEL_FN_DAE, sim_data, eval_stage::DISCRETE);
     }
+    if e.has_discrete_entry() {
+        return e.call1("functionDAE", sim_data);
+    }
     if !layout.has_when {
         e.call1("functionODE", sim_data)?;
     }
@@ -3678,8 +3688,6 @@ pub struct Samples {
     interval: Vec<f64>,
     /// Absolute address of the `active` flag array (`sim_data + sample_active_off`).
     active_off: u32,
-    /// Which model call a firing evaluates (see [`eval_discrete`]).
-    dae: bool,
 }
 
 impl Samples {
@@ -3711,7 +3719,6 @@ impl Samples {
             next,
             interval,
             active_off: sim_data + layout.sample_active_off,
-            dae: layout.dae_mode(),
         })
     }
 
@@ -3729,11 +3736,17 @@ impl Samples {
     }
 
     /// Fire every sample due at `t`: raise its `active` flag, run the discrete
-    /// update (`functionAlgebraics` — evaluates the sample conditions, the
+    /// update ([`eval_discrete`] — evaluates the sample conditions, the
     /// when-bodies on their rising edge, and saves pre-values), then clear the
     /// flags and advance the fired samples by their interval. `t` is written as
     /// the current simulation time first.
-    pub fn fire(&mut self, e: &mut dyn SimEngine, sim_data: u32, t: f64) -> Result<()> {
+    pub fn fire(
+        &mut self,
+        e: &mut dyn SimEngine,
+        sim_data: u32,
+        layout: &SimLayout,
+        t: f64,
+    ) -> Result<()> {
         rethrow_store::note_event();
         let mut fired = vec![false; self.next.len()];
         for k in 0..self.next.len() {
@@ -3743,11 +3756,7 @@ impl Samples {
             }
         }
         write_time(e, sim_data, t)?;
-        if self.dae {
-            e.call2(MODEL_FN_DAE, sim_data, eval_stage::DISCRETE)?;
-        } else {
-            e.call1("functionAlgebraics", sim_data)?;
-        }
+        eval_discrete(e, sim_data, layout)?;
         for k in 0..self.next.len() {
             if fired[k] {
                 write_i32(e, self.active_off + k as u32 * 4, 0)?;
@@ -3793,7 +3802,7 @@ fn fire_time_event_inner(
     write_time(e, sim_data, te)?;
     write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
     refresh_relations(e, sim_data, layout)?;
-    samples.fire(e, sim_data, te)?;
+    samples.fire(e, sim_data, layout, te)?;
     iterate_discrete(e, sim_data, layout)?;
     store_relations(e, sim_data, layout)
 }

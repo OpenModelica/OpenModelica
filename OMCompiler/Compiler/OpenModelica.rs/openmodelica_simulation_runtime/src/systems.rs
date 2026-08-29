@@ -1,0 +1,419 @@
+//! Linear systems: `initializeLinearSystems`, `solve_linear_system` and the
+//! generic dense Jacobian evaluation a torn one needs.
+//!
+//! Port of `simulation/solver/linearSystem.c` + `linearSolverLapack.c` +
+//! `jacobian_util.c`'s `evalJacobian`, over the same `LINEAR_SYSTEM_DATA` the
+//! generated code fills. The factorization is `openmodelica_lapack`'s `dgesv`,
+//! which is the LAPACK the wasm-jit runtime factors with too, so a system gets
+//! the same pivot order and `INFO` on either target.
+
+use core::ffi::{c_int, c_void};
+
+use openmodelica_sim_meta::omclog;
+
+use crate::abi::*;
+use crate::model_data::calloc;
+
+/// `enum LINEAR_SOLVER` (util/simulation_options.h): what `-ls` selects.
+pub const LS_LAPACK: c_int = 1;
+pub const LS_TOTALPIVOT: c_int = 5;
+pub const LS_DEFAULT: c_int = 6;
+/// `enum EVAL_CONTEXT` (util/context.h).
+pub const CONTEXT_ALGEBRAIC: c_int = 2;
+pub const CONTEXT_SYM_JACOBIAN: c_int = 5;
+
+/// The scratch one dense system needs between calls, kept where C keeps its
+/// solver data.
+struct LapackData {
+    ipiv: Vec<i32>,
+    /// The factored copy of `A`, so the solve can reuse it across the columns of
+    /// a symbolic Jacobian evaluation (C's `reuseMatrixJac`).
+    lu: Vec<f64>,
+    /// The previous iterate, for a `method == 1` (torn) system.
+    work: Vec<f64>,
+    b: Vec<f64>,
+}
+
+/// A raw pointer, not a borrow of `ls`: the scratch and the system's own arrays
+/// are used side by side throughout a solve.
+fn solver_data(ls: &LINEAR_SYSTEM_DATA) -> *mut LapackData {
+    ls.solverData[0] as *mut LapackData
+}
+
+/// C's `initializeLinearSystems`: allocate each system's `A`/`b`/attribute
+/// arrays, install the element setters the generated `setA`/`setb` call, and let
+/// the model fill in its static data.
+pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t) {
+    let md = unsafe { &*(*data).modelData };
+    let si = unsafe { &mut *(*data).simulationInfo };
+    if md.nLinearSystems == 0 {
+        return;
+    }
+    omclog::info(omclog::LS, true, "initialize linear system solvers");
+    omclog::info(omclog::LS, false, &format!("{} linear systems", md.nLinearSystems));
+    for i in 0..md.nLinearSystems as usize {
+        let ls = unsafe { &mut *si.linearSystemData.add(i) };
+        let size = ls.size.max(0) as usize;
+        ls.totalTime = 0.0;
+        ls.failed = 0;
+        ls.b = calloc(size.max(1));
+        ls.nominal = calloc(size.max(1));
+        ls.min = calloc(size.max(1));
+        ls.max = calloc(size.max(1));
+
+        if ls.method == 1 {
+            let jacobian = unsafe { si.analyticJacobians.add(ls.jacobianIndex.max(0) as usize) };
+            let failed = match ls.initialAnalyticalJacobian {
+                Some(f) => (unsafe { f(data, thread_data, jacobian) }) != 0,
+                None => true,
+            };
+            if failed {
+                ls.jacobianIndex = -1;
+                crate::throw(
+                    thread_data,
+                    &format!(
+                        "Failed to initialize the jacobian for torn linear system {}.",
+                        ls.equationIndex
+                    ),
+                );
+            }
+            let j = unsafe { &*jacobian };
+            if j.sizeRows != size || j.sizeCols != size {
+                ls.jacobianIndex = -1;
+                crate::throw(
+                    thread_data,
+                    &format!(
+                        "Jacobian of torn linear system {} is {}x{}, but the system has size {size}.",
+                        ls.equationIndex, j.sizeRows, j.sizeCols
+                    ),
+                );
+            }
+            ls.nnz = unsafe { (*j.sparsePattern).nnz } as modelica_integer;
+            ls.jacobian = jacobian;
+        }
+
+        // The Rust runtime has no sparse direct solver bound to these systems yet,
+        // so every system is factored densely, as C does without SuiteSparse.
+        ls.useSparseSolver = 0;
+        ls.setAElement = Some(set_a_element);
+        ls.setBElement = Some(set_b_element);
+        ls.A = calloc((size * size).max(1));
+        let scratch = Box::new(LapackData {
+            ipiv: vec![0; size.max(1)],
+            lu: vec![0.0; (size * size).max(1)],
+            work: vec![0.0; size.max(1)],
+            b: vec![0.0; size.max(1)],
+        });
+        ls.solverData[0] = Box::into_raw(scratch) as *mut c_void;
+
+        if let Some(f) = ls.initializeStaticLSData {
+            unsafe { f(data, thread_data, ls, 1) };
+        }
+    }
+    omclog::close(omclog::LS);
+}
+
+/// `linearSystemData->A[row + col*size] = value`.
+unsafe extern "C" fn set_a_element(
+    row: c_int,
+    col: c_int,
+    value: f64,
+    _nth: c_int,
+    ls: *mut LINEAR_SYSTEM_DATA,
+    _td: *mut threadData_t,
+) {
+    unsafe {
+        let size = (*ls).size as usize;
+        *(*ls).A.add(row as usize + col as usize * size) = value;
+    }
+}
+
+unsafe extern "C" fn set_b_element(
+    row: c_int,
+    value: f64,
+    ls: *mut LINEAR_SYSTEM_DATA,
+    _td: *mut threadData_t,
+) {
+    unsafe { *(*ls).b.add(row as usize) = value };
+}
+
+/// C's `evalJacobian` (column evaluation): one model call per colour, each
+/// filling the columns that colour seeds. `out` is column-major with
+/// `min(sizeRows, sizeCols)` rows when `dense`, else the sparse value array.
+pub fn eval_jacobian(
+    data: *mut DATA,
+    thread_data: *mut threadData_t,
+    jacobian: *mut JACOBIAN,
+    parent: *mut JACOBIAN,
+    out: &mut [f64],
+    dense: bool,
+) -> Result<(), &'static str> {
+    let j = unsafe { &mut *jacobian };
+    if j.isBidirectional != 0 && !j.adjointJacobian.is_null() {
+        return Err("a bidirectionally evaluated Jacobian is not served by this runtime yet");
+    }
+    if j.isRowEval != 0 {
+        return Err("a row-evaluated Jacobian is not served by this runtime yet");
+    }
+    if let Some(f) = j.constantEqns {
+        unsafe { f(data, thread_data, jacobian, parent) };
+    }
+    let dense_rows = j.sizeRows.min(j.sizeCols);
+    if dense {
+        out[..dense_rows * j.sizeCols].fill(0.0);
+    }
+    if j.sparsePattern.is_null() {
+        return Ok(());
+    }
+    let sp = unsafe { &*j.sparsePattern };
+    for color in 0..sp.maxColors {
+        for column in 0..j.sizeCols {
+            if unsafe { *sp.colorCols.add(column) } == color + 1 {
+                unsafe { *j.seedVars.add(column) = 1.0 };
+            }
+        }
+        match j.evalColumn {
+            Some(f) => unsafe { f(data, thread_data, jacobian, parent) },
+            None => return Err("the Jacobian has no column evaluation"),
+        };
+        for column in 0..j.sizeCols {
+            if unsafe { *sp.colorCols.add(column) } != color + 1 {
+                continue;
+            }
+            let (from, to) = unsafe {
+                (*sp.leadindex.add(column) as usize, *sp.leadindex.add(column + 1) as usize)
+            };
+            for nz in from..to {
+                let row = unsafe { *sp.index.add(nz) } as usize;
+                let v = unsafe { *j.resultVars.add(row) };
+                if !dense {
+                    out[nz] = v;
+                } else if row < dense_rows {
+                    out[column * dense_rows + row] = v;
+                }
+            }
+            unsafe { *j.seedVars.add(column) = 0.0 };
+        }
+    }
+    Ok(())
+}
+
+/// C's `solve_linear_system`. Only the dense LAPACK path exists here: another
+/// `-ls` is warned about once and factored densely anyway, and the total-pivot
+/// fallback C runs when LAPACK reports a singular matrix is not ported, so such
+/// a system fails the step.
+#[unsafe(no_mangle)]
+pub extern "C" fn solve_linear_system(
+    data: *mut DATA,
+    thread_data: *mut threadData_t,
+    sys_number: c_int,
+    aux_x: *mut f64,
+) -> c_int {
+    let si = unsafe { &mut *(*data).simulationInfo };
+    let ls = unsafe { &mut *si.linearSystemData.add(sys_number as usize) };
+    if si.lsMethod != LS_DEFAULT && si.lsMethod != LS_LAPACK {
+        warn_once_unsupported_ls(si.lsMethod);
+    }
+    si.noThrowDivZero = 1;
+    let success = solve_lapack(data, thread_data, ls, sys_number, aux_x);
+    ls.solved = success as c_int;
+    ls.numberOfCall += 1;
+    if !success {
+        ls.failed = 1;
+    } else {
+        ls.failed = 0;
+    }
+    check_linear_solution(data, 1, sys_number)
+}
+
+/// `-ls=<other>` reaches a solver this runtime does not have; say so once rather
+/// than silently factoring densely anyway.
+fn warn_once_unsupported_ls(method: c_int) {
+    use core::sync::atomic::{AtomicBool, Ordering};
+    static WARNED: AtomicBool = AtomicBool::new(false);
+    if WARNED.swap(true, Ordering::Relaxed) {
+        return;
+    }
+    let name = if method == LS_TOTALPIVOT { "totalpivot" } else { "the requested" };
+    omclog::warning(
+        omclog::STDOUT,
+        false,
+        &format!("-ls: {name} linear solver is not served by this runtime; using lapack."),
+    );
+}
+
+fn solve_lapack(
+    data: *mut DATA,
+    thread_data: *mut threadData_t,
+    ls: &mut LINEAR_SYSTEM_DATA,
+    sys_number: c_int,
+    aux_x: *mut f64,
+) -> bool {
+    let si = unsafe { &mut *(*data).simulationInfo };
+    let size = ls.size.max(0) as usize;
+    let time = unsafe { (**(*data).localData).timeValue };
+    let eq = ls.equationIndex;
+    if omclog::active(omclog::LS) {
+        omclog::info(
+            omclog::LS,
+            false,
+            &format!(
+                "Start solving Linear System {eq} (size {size}) at time {} with Lapack Solver",
+                openmodelica_sim_meta::driver::format_g(time, 6)
+            ),
+        );
+    }
+    // C's `reuseMatrixJac`: inside a symbolic Jacobian's later columns the matrix
+    // is unchanged, so the previous factorization is reused.
+    let reuse = si.currentContext == CONTEXT_SYM_JACOBIAN && si.currentJacobianEval > 0;
+    let mut lapack_err = None;
+
+    let sd: &mut LapackData = unsafe { &mut *solver_data(ls) };
+    sd.b.resize(size.max(1), 0.0);
+    sd.work.resize(size.max(1), 0.0);
+    sd.lu.resize((size * size).max(1), 0.0);
+    sd.ipiv.resize(size.max(1), 0);
+
+    if ls.method == 0 {
+        if !reuse {
+            unsafe { core::ptr::write_bytes(ls.A, 0, size * size) };
+            if let Some(f) = ls.setA {
+                unsafe { f(data, thread_data, ls) };
+            }
+        }
+        if let Some(f) = ls.setb {
+            unsafe { f(data, thread_data, ls) };
+        }
+        sd.b.copy_from_slice(unsafe { core::slice::from_raw_parts(ls.b, size) });
+        if !reuse {
+            sd.lu.copy_from_slice(unsafe { core::slice::from_raw_parts(ls.A, size * size) });
+        }
+    } else {
+        if !reuse {
+            if ls.jacobianIndex == -1 {
+                crate::throw(thread_data, "jacobian function pointer is invalid");
+            }
+            let mut jac = vec![0.0f64; size * size];
+            if let Err(e) =
+                eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut jac, true)
+            {
+                lapack_err = Some(e);
+            }
+            // C negates the Jacobian into A (`getAnalyticalJacobianLapack`).
+            for (dst, src) in sd.lu.iter_mut().zip(&jac) {
+                *dst = -*src;
+            }
+        }
+        // The residual at the current iterate is the right-hand side.
+        sd.work.copy_from_slice(unsafe { core::slice::from_raw_parts(aux_x, size) });
+        sd.b.fill(0.0);
+        let flag: c_int = 1;
+        let mut user =
+            RESIDUAL_USERDATA { data, threadData: thread_data, solverData: core::ptr::null_mut() };
+        let residual = ls.residualFunc;
+        match residual {
+            Some(f) => unsafe { f(&mut user, sd.work.as_ptr(), sd.b.as_mut_ptr(), &flag) },
+            None => lapack_err = Some("the torn linear system has no residual function"),
+        }
+    }
+    if let Some(e) = lapack_err {
+        omclog::warning(omclog::STDOUT, false, e);
+        return false;
+    }
+
+    let info = if reuse {
+        openmodelica_lapack::lu::dgetrs("N", size, 1, &sd.lu, size, &sd.ipiv, &mut sd.b, size);
+        0
+    } else {
+        let mut lu = sd.lu.clone();
+        let info = openmodelica_lapack::lu::dgesv(size, 1, &mut lu, size, &mut sd.ipiv, &mut sd.b, size);
+        sd.lu = lu;
+        info
+    };
+    if info != 0 {
+        ls.numberOfFailures += 1;
+        omclog::warning_with_limit(
+            omclog::LS,
+            ls.numberOfFailures,
+            unsafe { (*(*data).simulationInfo).maxWarnDisplays },
+            &format!(
+                "Failed to solve linear system of equations (no. {eq}) at time {}, system is singular for U[{}, {}].",
+                openmodelica_sim_meta::driver::format_g(time, 6),
+                info + 1,
+                info + 1
+            ),
+        );
+        return false;
+    }
+
+    if ls.method == 1 {
+        // x = xold + xnew, then re-run the inner equations at the new point.
+        for i in 0..size {
+            unsafe { *aux_x.add(i) = sd.work[i] + sd.b[i] };
+        }
+        let x = unsafe { core::slice::from_raw_parts(aux_x, size) }.to_vec();
+        sd.work.fill(0.0);
+        let flag: c_int = 1;
+        let mut user =
+            RESIDUAL_USERDATA { data, threadData: thread_data, solverData: core::ptr::null_mut() };
+        let residual = ls.residualFunc;
+        if let Some(f) = residual {
+            unsafe { f(&mut user, x.as_ptr(), sd.work.as_mut_ptr(), &flag) };
+        }
+        let norm = sd.work.iter().map(|v| v * v).sum::<f64>().sqrt();
+        if norm.is_nan() || norm > 1e-4 {
+            ls.numberOfFailures += 1;
+            omclog::warning_with_limit(
+                omclog::LS,
+                ls.numberOfFailures,
+                unsafe { (*(*data).simulationInfo).maxWarnDisplays },
+                &format!(
+                    "Failed to solve linear system of equations (no. {eq}) at time {}. Residual norm is {norm:.15}.",
+                    openmodelica_sim_meta::driver::format_g(time, 6)
+                ),
+            );
+            return false;
+        }
+    } else {
+        for i in 0..size {
+            unsafe { *aux_x.add(i) = sd.b[i] };
+        }
+    }
+    let _ = sys_number;
+    true
+}
+
+/// C's `check_linear_solution` for one system: report and fail the step if it
+/// did not solve.
+fn check_linear_solution(data: *mut DATA, print: c_int, sys_number: c_int) -> c_int {
+    let si = unsafe { &*(*data).simulationInfo };
+    let ls = unsafe { &*si.linearSystemData.add(sys_number as usize) };
+    if ls.solved != 0 {
+        return 0;
+    }
+    if print != 0 {
+        let time = unsafe { (**(*data).localData).timeValue };
+        omclog::warning(
+            omclog::STDOUT,
+            false,
+            &format!(
+                "Solving linear system {} fails at time {}. For more information use -lv LOG_LS.",
+                ls.equationIndex,
+                openmodelica_sim_meta::driver::format_g(time, 6)
+            ),
+        );
+    }
+    1
+}
+
+/// C's `check_linear_solutions`: whether any linear system failed in this step.
+#[unsafe(no_mangle)]
+pub extern "C" fn check_linear_solutions(data: *mut DATA, print: c_int) -> c_int {
+    let md = unsafe { &*(*data).modelData };
+    for i in 0..md.nLinearSystems as c_int {
+        if check_linear_solution(data, print, i) != 0 {
+            return 1;
+        }
+    }
+    0
+}

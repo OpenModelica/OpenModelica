@@ -21,6 +21,7 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 pub mod dassl;
 pub mod events;
 pub mod fixedstep;
+pub mod delay;
 pub mod gbode;
 pub mod omclog;
 pub mod simflags;

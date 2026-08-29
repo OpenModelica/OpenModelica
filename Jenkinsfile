@@ -332,7 +332,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust(params.RUST_PARTEST_SIMCODETARGET, 1, 2)
+                common.partestRust(params.RUST_PARTEST_SIMCODETARGET, 1, 2, false)
               }
             }
           }
@@ -353,7 +353,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust(params.RUST_PARTEST_SIMCODETARGET, 2, 2)
+                common.partestRust(params.RUST_PARTEST_SIMCODETARGET, 2, 2, false)
               }
             }
           }
@@ -867,7 +867,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust('wasm-jit', 1, 2)
+                common.partestRust('wasm-jit', 1, 2, true)
               }
             }
           }
@@ -891,7 +891,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust('wasm-jit', 2, 2)
+                common.partestRust('wasm-jit', 2, 2, true)
               }
             }
           }

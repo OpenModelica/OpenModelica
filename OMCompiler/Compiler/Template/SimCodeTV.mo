@@ -4294,6 +4294,10 @@ package Config
     output String target;
   end simCodeTarget;
 
+  function simCodeRustRuntime
+    output Boolean rust;
+  end simCodeRustRuntime;
+
   function simulationCodeTarget
   "@author: adrpo
    returns: 'gcc' or 'msvc'

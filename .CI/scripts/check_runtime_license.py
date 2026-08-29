@@ -692,6 +692,7 @@ def main() -> int:
         "openmodelica_mat_writer",
         "openmodelica_fmi3_wasm",
         "openmodelica_modelica_utilities",
+        "openmodelica_simulation_runtime",
     ]]
 
     for abspath in iter_source_files(root, dirs):

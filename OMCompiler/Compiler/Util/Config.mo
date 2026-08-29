@@ -400,11 +400,22 @@ algorithm
   FlagsUtil.setConfigString(Flags.TEARING_HEURISTIC, inString);
 end setTearingHeuristic;
 
-public function simCodeTarget "Default is set by +simCodeTarget=C"
+public function simCodeTarget "Default is set by +simCodeTarget=C.
+  \"C+Rust\" generates the same sources as \"C\" and differs only in what the
+  makefile links and defines, so every code generator sees \"C\"."
   output String target;
 algorithm
   target := Flags.getConfigString(Flags.SIMCODE_TARGET);
+  if target == "C+Rust" then
+    target := "C";
+  end if;
 end simCodeTarget;
+
+public function simCodeRustRuntime "+simCodeTarget=C+Rust: link libSimulationRuntimeRust instead of libSimulationRuntimeC."
+  output Boolean rust;
+algorithm
+  rust := Flags.getConfigString(Flags.SIMCODE_TARGET) == "C+Rust";
+end simCodeRustRuntime;
 
 public function setsimCodeTarget
   input String inString;

@@ -1004,10 +1004,10 @@ pub(crate) mod kinsol {
         assemble: Option<&'a mut dyn FnMut(&[f64], &mut [f64])>,
         eq_index: u32,
         time: f64,
-        /// The model's iteration-variable buffer, which the residual last wrote.
+        /// The model's iteration variables, where the residual last left them.
         /// C's `evalJacobian` reads the model where it stands rather than at a
         /// point handed to it, so the scaling Jacobian is taken there too.
-        x_ptr: u32,
+        load_guess: &'a mut dyn FnMut(&mut [f64]),
         scaling: bool,
         xscale: vec::Vec<f64>,
         fscale: vec::Vec<f64>,
@@ -1310,8 +1310,8 @@ pub(crate) mod kinsol {
                 // C's `B_nlsSparseSymJac` passes `initialGuess` but `evalJacobian`
                 // ignores it: after a failed `KINSol` the matrix is the one at that
                 // solve's last iterate, not at the start point just restored.
-                let mut x: vec::Vec<f64> =
-                    (0..self.n).map(|i| unsafe { crate::load_f64(ud.x_ptr + (i * 8) as u32) }).collect();
+                let mut x: vec::Vec<f64> = vec![0.0; self.n];
+                (ud.load_guess)(&mut x);
                 let vals = self.jvals();
                 ud.jacobian(&mut x, vals);
                 self.write_pattern(ud);
@@ -1445,7 +1445,7 @@ pub(crate) mod kinsol {
             x: &mut [f64],
             eq_index: u32,
             time: f64,
-            x_ptr: u32,
+            load_guess: &'a mut dyn FnMut(&mut [f64]),
             eval: &'a mut dyn FnMut(&[f64], &mut [f64]),
             assemble: Option<&'a mut dyn FnMut(&[f64], &mut [f64])>,
         ) -> bool {
@@ -1457,7 +1457,7 @@ pub(crate) mod kinsol {
                 assemble: if self.numeric_jac { None } else { assemble },
                 eq_index,
                 time,
-                x_ptr,
+                load_guess,
                 scaling: false,
                 xscale: vec![1.0f64; self.n],
                 fscale: vec![1.0f64; self.n],
@@ -1622,7 +1622,7 @@ pub(crate) fn kinsol_b_solve<'a>(
     x: &mut [f64],
     eq_index: u32,
     time: f64,
-    x_ptr: u32,
+    load_guess: &'a mut dyn FnMut(&mut [f64]),
     eval: &'a mut dyn FnMut(&[f64], &mut [f64]),
     assemble: Option<&'a mut dyn FnMut(&[f64], &mut [f64])>,
 ) -> bool {
@@ -1634,7 +1634,8 @@ pub(crate) fn kinsol_b_solve<'a>(
                 None => return false,
             },
         };
-        let ok = solver.solve(start, old, nominal, pattern, x, eq_index, time, x_ptr, eval, assemble);
+        let ok =
+            solver.solve(start, old, nominal, pattern, x, eq_index, time, load_guess, eval, assemble);
         cell.borrow_mut().insert(handle, solver);
         ok
     })

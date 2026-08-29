@@ -169,6 +169,11 @@ option(RUST_OMC_OMSHELL_CLIENTS
 set(RUST_OMC_TARGET_DIR ${CMAKE_CURRENT_BINARY_DIR}/rust-target
     CACHE PATH "Directory for cargo's target/ output of the Rust omc build.")
 set(RUST_TARGET_DIR ${RUST_OMC_TARGET_DIR})
+# Published so the sibling libSimulationRuntimeRust build (SimulationRuntime/rust)
+# can share this working copy and target directory instead of building the same
+# crates a second time from the canonical tree.
+set_property(GLOBAL PROPERTY OMC_RUST_WORKSPACE_DIR ${RUST_OMC_DIR})
+set_property(GLOBAL PROPERTY OMC_RUST_TARGET_DIR ${RUST_TARGET_DIR})
 # Env prefix for every cargo invocation. When incremental compilation is off we
 # export CARGO_INCREMENTAL=0, which covers all profiles (including the
 # always-debug `cargo test` build) without editing per-profile Cargo.toml keys.
@@ -671,8 +676,12 @@ file(GENERATE OUTPUT ${RUST_OMC_REVISION_FILE} CONTENT "${SOURCE_REVISION_BASE}-
 list(APPEND CARGO_ENV
      "OMC_RT_LDFLAGS_GENERATED_CODE=${RT_LDFLAGS_GENERATED_CODE}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SIM=${RT_LDFLAGS_GENERATED_CODE_SIM}"
+     "OMC_RT_LDFLAGS_GENERATED_CODE_SIM_RUST=${RT_LDFLAGS_GENERATED_CODE_SIM_RUST}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU}"
      "OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=${RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC}"
+     # The runtime headers openmodelica_simulation_runtime's ABI test compiles;
+     # `|`-separated, since a `;` would split the assignment into arguments.
+     "OMC_SIMRT_INCLUDE_DIRS=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/c|${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/gc/include"
      # ModelicaExternalC C-Sources dir (the crate builds from a synced copy whose
      # relative path can't reach the real location).
      "OMC_EXTERNAL_C_SOURCES=${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/ModelicaExternalC/C-Sources"
@@ -725,6 +734,9 @@ if(RUST_OMC_ENABLE_SUNDIALS)
     list(APPEND CARGO_ENV
          "OMC_SUNDIALS_NATIVE_DIR=${RUST_SUNDIALS_NATIVE_DIR}"
          "OMC_SUNDIALS_NATIVE_INDEX_SIZE=${SUNDIALS_INDEX_SIZE}")
+    # The sibling libSimulationRuntimeRust build needs the same hand-off.
+    set_property(GLOBAL PROPERTY OMC_RUST_SUNDIALS_NATIVE_DIR ${RUST_SUNDIALS_NATIVE_DIR})
+    set_property(GLOBAL PROPERTY OMC_RUST_SUNDIALS_INDEX_SIZE ${SUNDIALS_INDEX_SIZE})
   endif()
 endif()
 
