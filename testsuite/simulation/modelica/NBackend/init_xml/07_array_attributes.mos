@@ -1,6 +1,7 @@
 // name: 07_array_attributes
 // keywords: NewBackend
 // status: correct
+// suite: cSources
 // teardown_command: rm -f *ArrayAttributes_*
 //
 // Check if init XML generates correct attributes for array variables

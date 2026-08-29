@@ -60,7 +60,7 @@ use crate::CodegenWasmJitFunctions::{
     ProfPlan, ScatterGroup, SimCtx, SimSlot, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     ClockInit, ClockUpdate,
-    NlsResidual, NlsResiduals, backup_known_outputs, restore_known_outputs,
+    NlsResidual, NlsResiduals, backup_known_outputs, residual_rows, restore_known_outputs,
     emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
     emit_entwined_assign, emit_generic_assign, emit_resizable_assign,
     emit_nls_residual_body, emit_solve_nls_call, external_import_sig, external_known,
@@ -8536,14 +8536,8 @@ fn lower_linear_system_body(
 ) -> Result<()> {
     use SimCode::SimEqSystem as E;
     let mut inner: Vec<Arc<SimCode::SimEqSystem>> = Vec::new();
-    let mut res_exps: Vec<&Arc<DAE::Exp>> = Vec::new();
-    for e in lst(&lsystem.residual) {
-        match &**e {
-            E::SES_RESIDUAL { exp, .. } => res_exps.push(exp),
-            _ => inner.push(e.clone()),
-        }
-    }
-    let torn = !res_exps.is_empty();
+    let residuals = lin_residuals(lsystem, &mut inner);
+    let torn = !residuals.is_empty();
     let vars: Vec<Arc<DAE::ComponentRef>> = lst(&lsystem.vars).map(|v| v.name.clone()).collect();
     let n = vars.len();
 
@@ -8591,7 +8585,7 @@ fn lower_linear_system_body(
 
     // Prefer analytic-Jacobian assembly (C's method 1); probe only when there is no
     // usable Jacobian (its slots were registered by `build_lin_jac_infos`).
-    if lin_jac_usable(lsystem, res_exps.len()) {
+    if lin_jac_usable(lsystem, residual_rows(&residuals)) {
         let (seed_offs, result_offs) = {
             let vars = &ctx.sim()?.vars;
             lin_jac_offsets(lsystem, vars, n)?
@@ -8613,20 +8607,20 @@ fn lower_linear_system_body(
         if use_sparse {
             if let Some((colptr, rowidx)) = lin_jac_csc_pattern(lsystem, n) {
                 return compile_linear_system_analytic_csc(
-                    ctx, lsystem.index, &vars, &res_exps, &seed_offs, &result_offs, &colptr, &rowidx,
+                    ctx, lsystem.index, &vars, &residuals, &seed_offs, &result_offs, &colptr, &rowidx,
                     &mut lower_inner, &mut lower_constant, &mut lower_column,
                 );
             }
         }
         return compile_linear_system_analytic(
-            ctx, &vars, &res_exps, &seed_offs, &result_offs,
+            ctx, &vars, &residuals, &seed_offs, &result_offs,
             &mut lower_inner, &mut lower_constant, &mut lower_column, use_sparse, lsystem.index,
         );
     }
 
     // C keys `method` off `ls.jacobianMatrix` alone, not off whether it assembles
     // `A` from one.
-    compile_linear_system(ctx, &vars, &res_exps, &mut lower_inner, use_sparse, lsystem.jacobianMatrix.is_some(), lsystem.index)
+    compile_linear_system(ctx, &vars, &residuals, &mut lower_inner, use_sparse, lsystem.jacobianMatrix.is_some(), lsystem.index)
 }
 
 /// Whether a torn linear system uses the sparse solver (C's density/size
@@ -9430,10 +9424,45 @@ fn nls_lambda_extra(nlsystem: &SimCode::NonlinearSystem) -> u32 {
     u32::from(is_homotopy_lambda(lst(&nlsystem.crefs).last()))
 }
 
+/// `nls_parts` for a linear system: the residuals, which may be array-valued and so
+/// carry their `res_index`, and the inner (torn) equations, into `inner`.
+fn lin_residuals(
+    lsystem: &SimCode::LinearSystem,
+    inner: &mut Vec<Arc<SimCode::SimEqSystem>>,
+) -> Vec<NlsResidual> {
+    use SimCode::SimEqSystem as E;
+    let mut residuals = Vec::new();
+    for e in lst(&lsystem.residual) {
+        match &**e {
+            E::SES_RESIDUAL { exp, res_index, .. } => residuals.push(match exp_array_rows(exp) {
+                Some(rows) => NlsResidual::Array { exp: exp.clone(), res_index: *res_index, rows },
+                None => NlsResidual::Scalar { exp: exp.clone(), res_index: *res_index },
+            }),
+            E::SES_FOR_RESIDUAL { iterators, exp, res_index, .. } => residuals.push(NlsResidual::For {
+                iterators: lst(iterators).cloned().collect(),
+                exp: exp.clone(),
+                res_index: *res_index,
+            }),
+            E::SES_GENERIC_RESIDUAL { iterators, scal_indices, exp, res_index, .. } => {
+                residuals.push(NlsResidual::Generic {
+                    iterators: lst(iterators).cloned().collect(),
+                    scal_indices: lst(scal_indices).copied().collect(),
+                    exp: exp.clone(),
+                    res_index: *res_index,
+                })
+            }
+            _ => inner.push(e.clone()),
+        }
+    }
+    residuals
+}
+
 /// Torn linear system usable for analytic assembly: square Jacobian with one seed
 /// per iteration variable and `JAC_VAR` results covering every residual row
-/// (`n_res` = number of `SES_RESIDUAL`). The `nls_jac_usable` analogue for linear.
-fn lin_jac_usable(lsystem: &SimCode::LinearSystem, n_res: usize) -> bool {
+/// (`n_res` = the residual vector's row count). The `nls_jac_usable` analogue for
+/// linear.
+fn lin_jac_usable(lsystem: &SimCode::LinearSystem, n_res: Option<usize>) -> bool {
+    let Some(n_res) = n_res else { return false };
     let Some(jm) = &lsystem.jacobianMatrix else { return false };
     if lst(&jm.columns).next().is_none_or(|c| lst(&c.columnEqns).next().is_none()) || !jac_lowerable(jm) {
         return false;
@@ -9914,10 +9943,9 @@ fn build_linz_jac_fn(
     Ok(func)
 }
 
-/// Number of scalar `SES_RESIDUAL` in a linear system (its `A x = b` row count).
-fn lin_n_res(lsystem: &SimCode::LinearSystem) -> usize {
-    use SimCode::SimEqSystem as E;
-    lst(&lsystem.residual).filter(|e| matches!(&***e, E::SES_RESIDUAL { .. })).count()
+/// A linear system's `A x = b` row count, `None` if it is not static.
+fn lin_n_res(lsystem: &SimCode::LinearSystem) -> Option<usize> {
+    residual_rows(&lin_residuals(lsystem, &mut Vec::new()))
 }
 
 /// Usable torn linear systems, deduped by index. `lin_jac_scratch_f64` (reserve)
@@ -9989,8 +10017,32 @@ fn build_lin_jac_infos(
     let mut cursor = layout.nls_jac_off + nls_jac_scratch_f64(sim_code) * 8;
     for sys in lin_jac_systems(sim_code) {
         let jm = sys.jacobianMatrix.as_ref().unwrap();
-        for sv in lst(&jm.seedVars).chain(jac_column_vars(jm).iter()) {
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false });
+        let column_vars = jac_column_vars(jm);
+        // As in `register_jac_slots`: an array base listed beside its elements gets
+        // no slot, an access to it reaches the elements' through `array_acc`.
+        let mut bases: HashSet<String> = HashSet::new();
+        for sv in lst(&jm.seedVars).chain(column_vars.iter()) {
+            if let Some((base, _)) = array_element_of(&sv.name)? {
+                bases.insert(base);
+            }
+        }
+        for sv in lst(&jm.seedVars).chain(column_vars.iter()) {
+            let key = sim_cref_key(&sv.name)?;
+            if bases.contains(&key) {
+                continue;
+            }
+            let off = cursor;
+            Arc::make_mut(&mut var_map.vars).insert(key, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
+            for g in array_element_keys(&sv.name)? {
+                var_map.array_acc.entry(g.base).or_default().push(AccElem {
+                    subs: g.subs,
+                    pieces: g.pieces,
+                    off,
+                    wty: WTy::F64,
+                    neg: Neg::None,
+                    heap: false,
+                });
+            }
             cursor += 8;
         }
     }

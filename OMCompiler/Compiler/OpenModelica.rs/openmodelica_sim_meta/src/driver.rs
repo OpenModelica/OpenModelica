@@ -2972,8 +2972,18 @@ fn save_pre_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
     e.write_bytes(sim_data + layout.pre_real_off, &buf)
 }
 
-/// C's `rotateRingBuffer` + `overwriteOldSimulationData`: the live reals become
-/// `localData[1]`. Only a method-1 linear system reads them (its `aux_x`).
+/// C's per-step `rotateRingBuffer` + `continueSimulationData`
+/// (`perform_simulation.c.inc`), which every driver's step opens with; `--daeMode`
+/// with states skips it, as C does.
+fn rotate_old_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if layout.dae_mode() && layout.n_states > 0 {
+        return Ok(());
+    }
+    save_old_real(e, sim_data, layout)
+}
+
+/// C's `overwriteOldSimulationData`: the live reals become `localData[1]`. Only a
+/// method-1 linear system reads them (its `aux_x`).
 fn save_old_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     if !layout.has_old_real {
         return Ok(());
@@ -4550,6 +4560,7 @@ impl Driver for EulerDriver {
                 return Ok(Advance::Cancelled);
             }
             did_step = true;
+            rotate_old_real(e, sim_data, layout)?;
             // The last row lands exactly on `stop`: the terminal step.
             let time =
                 self.pending_time.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
@@ -5824,6 +5835,7 @@ impl Driver for DasslDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
+                rotate_old_real(e, sim_data, layout)?;
                 let time =
                     self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
                 self.retry.open(e, self.rows.len());
@@ -5911,6 +5923,7 @@ impl Driver for DasslDriver {
                 break Advance::Cancelled;
             }
             did_step = true;
+            rotate_old_real(e, sim_data, layout)?;
             self.retry.open(e, self.rows.len());
             // IDID=-1: DASKR hit its per-call work quota before TOUT — resume with
             // INFO(1)=1, up to a cap. INFO(3)=1 keeps a call to one step, so this is
@@ -7511,7 +7524,7 @@ impl SolverCore {
                 self.nfe = ctx.nfe;
                 return Ok(Step::Cancelled);
             }
-            save_old_real(e, sim_data, layout)?; // C's `rotateRingBuffer`
+            rotate_old_real(e, sim_data, layout)?;
             // Mode 0: hold relations across the DASKR solve so its residual/Jacobian
             // probes are smooth (C's `solveContinuous`); events/outputs refresh them.
             write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
@@ -8200,7 +8213,7 @@ impl Driver for EventsDriver {
                 let mut evaluated = false;
                 // Handle every event (state or sample) up to `tout`, earliest first.
                 loop {
-                    save_old_real(e, sim_data, layout)?; // C's `rotateRingBuffer`
+                    rotate_old_real(e, sim_data, layout)?;
                     let te = self.samp.next_time();
                     let tc = self.sync.next_time();
                     let mut subtarget = tout;
@@ -8705,6 +8718,7 @@ impl Driver for CvodeDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
+                rotate_old_real(e, sim_data, layout)?;
                 let time =
                     self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
                 self.retry.open(e, self.rows.len());
@@ -8775,6 +8789,7 @@ impl Driver for CvodeDriver {
                 break Advance::Cancelled;
             }
             did_step = true;
+            rotate_old_real(e, sim_data, layout)?;
             self.retry.open(e, self.rows.len());
             let tout =
                 self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
@@ -9651,6 +9666,7 @@ impl Driver for IdaDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
+                rotate_old_real(e, sim_data, layout)?;
                 let time =
                     self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
                 self.retry.open(e, self.rows.len());
@@ -9720,6 +9736,7 @@ impl Driver for IdaDriver {
                 break Advance::Cancelled;
             }
             did_step = true;
+            rotate_old_real(e, sim_data, layout)?;
             self.retry.open(e, self.rows.len());
             let tout = self
                 .pending_tout

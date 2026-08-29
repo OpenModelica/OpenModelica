@@ -4970,7 +4970,7 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
          case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
            if stringEq(sub, "") then 'jacobian->seedVars[<%v.index%>]<%crefCCommentWithVariability(v)%>'
            else '(&(jacobian->seedVars[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
-         else crefOld(cr, ix)
+         else crefOldSub(cr, ix, &sub)
 end jacCrefs;
 
 template jacSparsityIndex(ComponentRef cr, Context context)
@@ -5018,6 +5018,12 @@ end cref;
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
 let &sub = buffer ""
+  crefOldSub(cr, ix, &sub)
+end crefOld;
+
+template crefOldSub(ComponentRef cr, Integer ix, Text &sub)
+ "crefOld for a cref whose subscripts the caller already peeled off into &sub."
+::=
   match cr
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
   case CREF_IDENT(ident = "time") then 'data->localData[<%ix%>]->timeValue'
@@ -5025,7 +5031,7 @@ let &sub = buffer ""
   case CREF_IDENT(ident = "__HOM_LAMBDA") then "data->simulationInfo->lambda"
   case WILD(__) then ''
   else crefToCStr(cr, ix, false, false, &sub)
-end crefOld;
+end crefOldSub;
 
 /* public */ template crefPre(ComponentRef cr)
  "Generates C equivalent name for component reference.
