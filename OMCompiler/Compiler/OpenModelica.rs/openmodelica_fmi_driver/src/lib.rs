@@ -100,6 +100,10 @@ pub enum Solver {
     /// model wants.
     #[default]
     Dassl,
+    /// SUNDIALS CVODE, in the BDF/Newton configuration `cvode_solver.c` builds.
+    Cvode,
+    /// SUNDIALS IDA, given the ODE as the residual `y' - f(t, y)`.
+    Ida,
     /// The generic Runge-Kutta solver, under the `-gb*` flags.
     Gbode,
     Euler,
@@ -107,24 +111,45 @@ pub enum Solver {
 }
 
 impl Solver {
+    /// Every solver this build can run, in the order to offer them: CVODE and
+    /// IDA only where SUNDIALS was linked in.
+    pub fn all() -> &'static [Solver] {
+        const SUNDIALS: &[Solver] = &[
+            Solver::Dassl, Solver::Cvode, Solver::Ida, Solver::Gbode, Solver::Euler,
+            Solver::RungeKutta,
+        ];
+        const PLAIN: &[Solver] =
+            &[Solver::Dassl, Solver::Gbode, Solver::Euler, Solver::RungeKutta];
+        if cfg!(sundials) { SUNDIALS } else { PLAIN }
+    }
+
     pub fn as_str(self) -> &'static str {
         match self {
             Solver::Dassl => "dassl",
+            Solver::Cvode => "cvode",
+            Solver::Ida => "ida",
             Solver::Gbode => "gbode",
             Solver::Euler => "euler",
             Solver::RungeKutta => "rungekutta",
         }
     }
 
-    /// The name as a `-s=` flag or the page's selector spells it.
+    /// What a chooser puts next to the name.
+    pub fn description(self) -> &'static str {
+        match self {
+            Solver::Dassl => "BDF with root finding, the default for a model too",
+            Solver::Cvode => "SUNDIALS BDF, Newton over a dense Jacobian",
+            Solver::Ida => "SUNDIALS BDF over the residual y' - f(t, y)",
+            Solver::Gbode => "Runge-Kutta, under the -gb* flags",
+            Solver::Euler => "fixed step",
+            Solver::RungeKutta => "fixed step, RK4",
+        }
+    }
+
+    /// The name as a `-s=` flag or the page's selector spells it, out of
+    /// [`all`](Solver::all).
     pub fn parse(name: &str) -> Option<Solver> {
-        Some(match name {
-            "dassl" => Solver::Dassl,
-            "gbode" => Solver::Gbode,
-            "euler" => Solver::Euler,
-            "rungekutta" => Solver::RungeKutta,
-            _ => return None,
-        })
+        Solver::all().iter().copied().find(|s| s.as_str() == name)
     }
 }
 

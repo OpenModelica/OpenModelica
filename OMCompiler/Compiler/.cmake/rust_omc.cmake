@@ -1441,6 +1441,10 @@ function(omc_rust_fmi_driver_module)
     VERBATIM)
   # rust_wasm recreates ${_web_dir}, so the copy has to follow it.
   add_dependencies(rust_fmi_driver rust_wasm)
+  # `openmodelica_fmi_web/build.rs` links the wasm SUNDIALS itself, for cvode/ida.
+  if(TARGET rust_sundials_collect)
+    add_dependencies(rust_fmi_driver rust_sundials_collect)
+  endif()
 endfunction()
 
 # Assemble the Qt OMShell web page. Unlike the egui/dioxus pages (Rust crates the

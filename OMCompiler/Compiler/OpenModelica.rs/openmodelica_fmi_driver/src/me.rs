@@ -18,6 +18,8 @@ use openmodelica_solvers::dassl::{Dassl, DasslStep};
 use openmodelica_solvers::events::StepEnd;
 use openmodelica_solvers::fixedstep::{FixedKind, FixedStep};
 use openmodelica_solvers::gbode::{GbStep, Gbode};
+#[cfg(sundials)]
+use openmodelica_solvers::sundials_ode::{CvodeOde, IdaOde, SunStep};
 use openmodelica_solvers::Ode;
 
 pub struct Run {
@@ -220,13 +222,17 @@ pub fn jacobian_sparsity(md: &ModelDescription, states: &[u32]) -> (Vec<Vec<u32>
     (colors, rows_by_col)
 }
 
-/// The solvers a Model Exchange run can use. `gbode` brings its own step-size
-/// control and root search; the fixed-step ones step the output grid and bisect
-/// afterwards.
+/// The solvers a Model Exchange run can use. `gbode`, CVODE and IDA bring their
+/// own step-size control and root search; the fixed-step ones step the output
+/// grid and bisect afterwards.
 enum Integrator {
     Dassl(Box<Dassl>),
     Gbode(Box<Gbode>),
     Fixed(FixedStep),
+    #[cfg(sundials)]
+    Cvode(Box<CvodeOde>),
+    #[cfg(sundials)]
+    Ida(Box<IdaOde>),
 }
 
 impl Integrator {
@@ -254,6 +260,20 @@ impl Integrator {
             Solver::RungeKutta => {
                 Integrator::Fixed(FixedStep::new(FixedKind::RungeKutta, nx, nz))
             }
+            #[cfg(sundials)]
+            Solver::Cvode => {
+                Integrator::Cvode(Box::new(CvodeOde::new(nx, nz, tolerance, nominals)))
+            }
+            #[cfg(sundials)]
+            Solver::Ida => Integrator::Ida(Box::new(IdaOde::new(nx, nz, tolerance, nominals))),
+            // Unreachable through `Solver::all`, which does not offer them here.
+            #[cfg(not(sundials))]
+            Solver::Cvode | Solver::Ida => {
+                return Err(Error::Unsupported(format!(
+                    "`{}`: this build has no SUNDIALS",
+                    solver.as_str()
+                )));
+            }
         })
     }
 
@@ -266,8 +286,13 @@ impl Integrator {
     /// DASKR carries its own history, which an event invalidates.
 
     fn set_nominals(&mut self, nominals: &[f64]) {
-        if let Integrator::Gbode(gb) = self {
-            gb.set_nominals(nominals);
+        match self {
+            Integrator::Gbode(gb) => gb.set_nominals(nominals),
+            #[cfg(sundials)]
+            Integrator::Cvode(cv) => cv.set_nominals(nominals),
+            #[cfg(sundials)]
+            Integrator::Ida(ida) => ida.set_nominals(nominals),
+            _ => {}
         }
     }
 
@@ -295,6 +320,16 @@ impl Integrator {
                 StepEnd::Root(te) => Ok(Some(te)),
                 StepEnd::Reached => Ok(None),
             },
+            #[cfg(sundials)]
+            Integrator::Cvode(cv) => match cv.step(ode, target.min(limit), t, y)? {
+                SunStep::Root(te) => Ok(Some(te)),
+                SunStep::Reached => Ok(None),
+            },
+            #[cfg(sundials)]
+            Integrator::Ida(ida) => match ida.step(ode, target.min(limit), t, y)? {
+                SunStep::Root(te) => Ok(Some(te)),
+                SunStep::Reached => Ok(None),
+            },
         }
     }
 
@@ -304,6 +339,10 @@ impl Integrator {
             Integrator::Dassl(d) => d.restart(),
             Integrator::Gbode(gb) => gb.restart(),
             Integrator::Fixed(_) => {}
+            #[cfg(sundials)]
+            Integrator::Cvode(cv) => cv.restart(),
+            #[cfg(sundials)]
+            Integrator::Ida(ida) => ida.restart(),
         }
     }
 
@@ -313,6 +352,10 @@ impl Integrator {
             Integrator::Dassl(d) => d.jacobians,
             Integrator::Gbode(gb) => gb.stats().calls_jacobian,
             Integrator::Fixed(_) => 0,
+            #[cfg(sundials)]
+            Integrator::Cvode(cv) => cv.counters().jac_evals,
+            #[cfg(sundials)]
+            Integrator::Ida(ida) => ida.counters().jac_evals,
         }
     }
 
@@ -321,6 +364,10 @@ impl Integrator {
             Integrator::Dassl(d) => d.steps,
             Integrator::Gbode(gb) => gb.stats().steps,
             Integrator::Fixed(fs) => fs.steps,
+            #[cfg(sundials)]
+            Integrator::Cvode(cv) => cv.counters().steps,
+            #[cfg(sundials)]
+            Integrator::Ida(ida) => ida.counters().steps,
         }
     }
 }
