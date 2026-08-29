@@ -20,6 +20,23 @@ use crate::model_data::calloc;
 /// C's `SIZERINGBUFFER`.
 const RING: usize = 3;
 
+/// Bytes past `Layout::total` this runtime adds to the flat address space, for the
+/// slots the shared driver addresses as memory but the wasm layout keeps in the
+/// runtime module rather than in `SimData`: the evaluation context
+/// ([`CONTEXT_OFF`]) and the error-stage pair ([`ERR_STAGE_OFF`]).
+pub const RT_EXTRA: u32 = 16;
+
+/// Offset of C's `simulationInfo->currentContext` in that space, relative to
+/// `Layout::total`. `setContext` is one store, so the driver marks a Jacobian
+/// assembly without a call.
+pub const CONTEXT_OFF: u32 = 0;
+
+/// The driver's `[stage, hit]` i32 pair (`SimEngine::error_stage_addr`), which has
+/// no C counterpart: `CEngine::publish` projects the stage onto
+/// `threadData->currentErrorStage` and `simulationInfo->noThrowAsserts`, and a model
+/// error absorbed under it raises `hit`. Driver-owned memory, so no region maps it.
+pub const ERR_STAGE_OFF: u32 = 8;
+
 /// How a stretch of the flat address space is stored on the C side.
 #[derive(Clone, Copy)]
 enum Backing {
@@ -403,13 +420,16 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     // The systems' own allocation, once `analyticJacobians` exists for a torn
     // system's Jacobian to be initialized into.
     crate::systems::initialize_linear_systems(data, thread_data);
+    crate::nls::initialize_nonlinear_systems(data, thread_data);
+    crate::stateset::initialize_state_sets(data, thread_data);
+    crate::mixed::initialize_mixed_systems(data, thread_data);
 
-    let layout = layout_for(md, si, cb);
+    let layout = layout_for(data, md, si, cb);
     let mut rt = RtData {
         data,
         thread_data,
         layout,
-        owned: vec![0u8; layout.total as usize],
+        owned: vec![0u8; (layout.total + RT_EXTRA) as usize],
         regions: Vec::new(),
         reals: (0, 0, core::ptr::null_mut()),
     };
@@ -420,6 +440,7 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
 /// The layout the driver addresses this model through. Regions C stores itself
 /// are mapped onto it; the rest is the driver's own and lives in `RtData::owned`.
 fn layout_for(
+    data: *mut DATA,
     md: &MODEL_DATA,
     _si: &SIMULATION_INFO,
     cb: &OpenModelicaGeneratedFunctionCallbacks,
@@ -452,7 +473,10 @@ fn layout_for(
         md.nSamples as u32,
         md.nZeroCrossings as u32,
         md.nRelations as u32,
-        0, // state-set scratch: the C model uses its own STATE_SET_DATA
+        // Each `$STATESET`'s Jacobian seeds and result rows, which the driver
+        // addresses as memory. They are C's `JACOBIAN`'s own arrays; the region map
+        // below points at them rather than copying.
+        crate::stateset::scratch_words(data),
         0, // nonlinear-system Jacobian scratch: likewise, JACOBIAN
         md.nMathEvents as u32,
         0, // sensitivities
@@ -466,7 +490,11 @@ fn layout_for(
         0, // bound-attribute log
         0, // removed initial equations
         unsafe { crate::support::compiledWithSymSolver } as u8,
-        md.nZeroCrossings > 0 || md.nSamples > 0 || md.nBaseClocks > 0,
+        // `has_when` asks whether `functionAlgebraics` doubles as the discrete
+        // update, which is a property of the wasm-jit codegen's split. A C model
+        // keeps the `when`-equations in `functionDAE`, so its `functionAlgebraics`
+        // is the plain algebraic pass a pre-event row wants evaluated.
+        false,
         has_homotopy,
         openmodelica_sim_meta::HomotopyMethod::from_code(cb.homotopyMethod as u8),
         cb.functionInitialEquations_lambda0.is_some(),
@@ -514,6 +542,13 @@ fn build_regions(rt: &mut RtData) {
     direct(l.relations_pre_off, l.n_rel * 4, si.relationsPre as *mut c_void);
     direct(l.mathevents_off, l.n_math * 8, si.mathEventsValuePre as *mut c_void);
     direct(l.zctol_off, 8, &raw mut crate::support::tolZC as *mut c_void);
+    // Past the layout: C's `currentContext`, which the driver's `setContext`
+    // writes and both `solve_linear_system` (`reuseMatrixJac`) and the nonlinear
+    // solver's `updateInitialGuessDB` read.
+    direct(l.total + CONTEXT_OFF, 4, &mut si.currentContext as *mut c_int as *mut c_void);
+    for (off, bytes, base) in crate::stateset::regions(rt.data, &l) {
+        direct(off, bytes, base);
+    }
     if l.sym_solver > 0 {
         direct(l.inline_dt_off, 8, unsafe { &mut (*si.inlineData).dt } as *mut f64 as *mut c_void);
         direct(l.alg_old_off, l.n_states * 8, unsafe { (*si.inlineData).algOldVars } as *mut c_void);

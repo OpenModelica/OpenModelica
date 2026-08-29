@@ -9,7 +9,7 @@
 
 use core::ffi::{c_int, c_void};
 
-use openmodelica_sim_meta::omclog;
+use openmodelica_solvers::{omclog, sysstat};
 
 use crate::abi::*;
 use crate::model_data::calloc;
@@ -18,9 +18,9 @@ use crate::model_data::calloc;
 pub const LS_LAPACK: c_int = 1;
 pub const LS_TOTALPIVOT: c_int = 5;
 pub const LS_DEFAULT: c_int = 6;
-/// `enum EVAL_CONTEXT` (util/context.h).
-pub const CONTEXT_ALGEBRAIC: c_int = 2;
-pub const CONTEXT_SYM_JACOBIAN: c_int = 5;
+/// `enum EVAL_CONTEXT` (util/context.h), as `openmodelica_nls` numbers them.
+pub const CONTEXT_ALGEBRAIC: c_int = openmodelica_nls::CONTEXT_ALGEBRAIC as c_int;
+pub const CONTEXT_SYM_JACOBIAN: c_int = openmodelica_nls::CONTEXT_SYM_JACOBIAN as c_int;
 
 /// The scratch one dense system needs between calls, kept where C keeps its
 /// solver data.
@@ -92,8 +92,9 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
             ls.jacobian = jacobian;
         }
 
-        // The Rust runtime has no sparse direct solver bound to these systems yet,
-        // so every system is factored densely, as C does without SuiteSparse.
+        // KLU is linked (the nonlinear solver's), but nothing binds it to a linear
+        // system yet, so every one is factored densely -- as C does without
+        // SuiteSparse.
         ls.useSparseSolver = 0;
         ls.setAElement = Some(set_a_element);
         ls.setBElement = Some(set_b_element);
@@ -137,6 +138,10 @@ unsafe extern "C" fn set_b_element(
     unsafe { *(*ls).b.add(row as usize) = value };
 }
 
+/// What [`eval_jacobian`] reports when the model left through its jump buffer, so
+/// the caller can treat the assembly as a voided trial rather than a hard error.
+pub const MODEL_THREW: &str = "the model raised an error while evaluating a Jacobian";
+
 /// C's `evalJacobian` (column evaluation): one model call per colour, each
 /// filling the columns that colour seeds. `out` is column-major with
 /// `min(sizeRows, sizeCols)` rows when `dense`, else the sparse value array.
@@ -155,8 +160,13 @@ pub fn eval_jacobian(
     if j.isRowEval != 0 {
         return Err("a row-evaluated Jacobian is not served by this runtime yet");
     }
-    if let Some(f) = j.constantEqns {
-        unsafe { f(data, thread_data, jacobian, parent) };
+    let stage = crate::support::error_stage::NONLINEARSOLVER;
+    if let Some(f) = j.constantEqns
+        && !crate::support::protected(thread_data, stage, || {
+            unsafe { f(data, thread_data, jacobian, parent) };
+        })
+    {
+        return Err(MODEL_THREW);
     }
     let dense_rows = j.sizeRows.min(j.sizeCols);
     if dense {
@@ -173,7 +183,13 @@ pub fn eval_jacobian(
             }
         }
         match j.evalColumn {
-            Some(f) => unsafe { f(data, thread_data, jacobian, parent) },
+            Some(f) => {
+                if !crate::support::protected(thread_data, stage, || {
+                    unsafe { f(data, thread_data, jacobian, parent) };
+                }) {
+                    return Err(MODEL_THREW);
+                }
+            }
             None => return Err("the Jacobian has no column evaluation"),
         };
         for column in 0..j.sizeCols {
@@ -214,8 +230,12 @@ pub extern "C" fn solve_linear_system(
     if si.lsMethod != LS_DEFAULT && si.lsMethod != LS_LAPACK {
         warn_once_unsupported_ls(si.lsMethod);
     }
+    // C's `rt_ext_tp_tick(&linsys->totalTimeClock)`; `A` and `b` are assembled
+    // inside, so the assembly mark is taken there.
+    sysstat::begin(ls.equationIndex as i32, false, ls.size.max(0) as u32, ls.nnz.max(0) as u32);
     si.noThrowDivZero = 1;
     let success = solve_lapack(data, thread_data, ls, sys_number, aux_x);
+    sysstat::end([0; 3]);
     ls.solved = success as c_int;
     ls.numberOfCall += 1;
     if !success {
@@ -268,6 +288,8 @@ fn solve_lapack(
     let reuse = si.currentContext == CONTEXT_SYM_JACOBIAN && si.currentJacobianEval > 0;
     let mut lapack_err = None;
 
+    // C ends `jacobianTime` where the generated `setA`/`setb` are done.
+    sysstat::mark_assembly_done();
     let sd: &mut LapackData = unsafe { &mut *solver_data(ls) };
     sd.b.resize(size.max(1), 0.0);
     sd.work.resize(size.max(1), 0.0);

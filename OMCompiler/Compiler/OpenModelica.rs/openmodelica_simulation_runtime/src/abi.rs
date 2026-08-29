@@ -438,6 +438,24 @@ pub struct INLINE_DATA {
     pub algOldVars: *mut modelica_real,
 }
 
+/// `EQUATION_SECTION`: which generated section an equation belongs to.
+pub const EQUATION_SECTION_UNKNOWN: c_int = 0;
+pub const EQUATION_SECTION_INIT_LAMBDA0: c_int = 1;
+pub const EQUATION_SECTION_INITIAL: c_int = 2;
+pub const EQUATION_SECTION_REGULAR: c_int = 3;
+
+#[repr(C)]
+pub struct EQUATION_INFO {
+    pub id: c_int,
+    pub section: c_int,
+    pub profileBlockIndex: c_int,
+    pub parent: c_int,
+    pub numVar: c_int,
+    pub vars: *const *const c_char,
+    pub numVarUsed: c_int,
+    pub varsUsed: *const *const c_char,
+}
+
 #[repr(C)]
 pub struct FUNCTION_INFO {
     pub id: c_int,
@@ -454,7 +472,7 @@ pub struct MODEL_DATA_XML {
     pub nEquations: c_long,
     pub nProfileBlocks: c_long,
     pub functionNames: *mut FUNCTION_INFO,
-    pub equationInfo: *mut c_void,
+    pub equationInfo: *mut EQUATION_INFO,
 }
 
 #[repr(C)]

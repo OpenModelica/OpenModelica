@@ -485,11 +485,12 @@ dependencies = [
  "daskr",
  "dlmalloc",
  "libm",
- "minpack",
  "openmodelica_lapack",
  "openmodelica_mat_writer",
+ "openmodelica_nls",
  "openmodelica_plt_writer",
  "openmodelica_sim_meta",
+ "openmodelica_solvers",
  "rsparse",
 ]
 
@@ -504,6 +505,16 @@ dependencies = [
 [[package]]
 name = "openmodelica_mat_writer"
 version = "0.1.0"
+
+[[package]]
+name = "openmodelica_nls"
+version = "0.1.0"
+dependencies = [
+ "libm",
+ "minpack",
+ "openmodelica_lapack",
+ "openmodelica_solvers",
+]
 
 [[package]]
 name = "openmodelica_plt_writer"

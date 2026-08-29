@@ -174,6 +174,11 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     si.OPENMODELICAHOME = model_data::strdup(xml.md("OPENMODELICAHOME"));
     model_data::read_variables(&xml, md);
 
+    crate::nls::install_hooks(data, thread_data, &prefix);
+    // The per-system clocks cost two clock reads per solve, so they are only armed
+    // where `LOG_STATS_V` will print them (C's `measure_time_flag` equivalent).
+    openmodelica_solvers::sysstat::enable(omclog::active(omclog::STATS_V));
+    crate::nls::warn_once_unsupported_nls();
     let rt = crate::data::initialize(data, thread_data);
     // `samplesInfo[i].index` names the sample in the `LOG_EVENTS` time-event line,
     // and the metadata is built before the driver's own `initSample` call. The

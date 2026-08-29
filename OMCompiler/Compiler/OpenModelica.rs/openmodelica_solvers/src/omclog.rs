@@ -100,6 +100,7 @@ pub const IPOPT_ERROR: Stream = 26;
 pub const JAC: Stream = 27;
 pub const LS: Stream = 28;
 pub const LS_V: Stream = 29;
+pub const MIXED: Stream = 30;
 pub const NLS: Stream = 32;
 pub const NLS_V: Stream = 33;
 pub const NLS_HOMOTOPY: Stream = 34;

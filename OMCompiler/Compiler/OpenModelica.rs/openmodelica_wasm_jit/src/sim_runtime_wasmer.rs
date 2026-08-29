@@ -1060,8 +1060,6 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         let on = openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::STATS_V);
         wts(set.call(&mut store, on as u32))?;
     }
-    // See the wasmtime counterpart.
-    let diag_on = openmodelica_sim_meta::omclog::mask_has(log_mask, openmodelica_sim_meta::omclog::NLS_NEWTON_DIAGNOSTICS);
     if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32, u32), ()>(&store, "rt_nls_set_names") {
         let free = rt_inst.exports.get_typed_function::<u32, ()>(&store, "rt_free").ok();
         wts(set.call(&mut store, u32::MAX, 0, 0))?;
@@ -1080,9 +1078,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
         }
     }
     // See the wasmtime counterpart.
-    if diag_on
-        && let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32, u32, u32, u32, u32, u32), ()>(&store, "rt_nls_set_diag")
-    {
+    if let Ok(set) = rt_inst.exports.get_typed_function::<(u32, u32, u32, u32, u32, u32, u32), ()>(&store, "rt_nls_set_diag") {
         let free = rt_inst.exports.get_typed_function::<u32, ()>(&store, "rt_free").ok();
         wts(set.call(&mut store, u32::MAX, 0, 0, 0, 0, 0, 0))?;
         for sys in &meta.nls_vars {
@@ -1196,6 +1192,12 @@ impl sim_driver::SimEngine for WasmerEngine {
         let f: wasmer::TypedFunction<(u32, f64, f64, u32), u32> =
             wt(self.instance.exports.get_typed_function(&self.store, "simulate"))?;
         wt(f.call(&mut self.store, sim_data, start, stop, n_steps))
+    }
+    fn has_simulate_entry(&mut self) -> bool {
+        self.instance
+            .exports
+            .get_typed_function::<(u32, f64, f64, u32), u32>(&self.store, "simulate")
+            .is_ok()
     }
     fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         crate::host::take_pending_assert()

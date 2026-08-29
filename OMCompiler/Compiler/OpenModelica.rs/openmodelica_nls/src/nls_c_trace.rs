@@ -8,9 +8,9 @@
 //! order and every pick here, and the trace stops before the first call where two
 //! distinct stored times print alike.
 
-pub(crate) type COp = (f64, &'static [f64], Option<(f64, f64)>);
+pub type COp = (f64, &'static [f64], Option<(f64, f64)>);
 
-pub(crate) const TRACE: &[COp] = &[
+pub const TRACE: &[COp] = &[
     (f64::NAN, &[], Some((0.0, 1600.0))),
     (0.0, &[0.0], Some((0.0, 1600.0))),
     (0.0, &[0.0], Some((0.0, 1600.0))),

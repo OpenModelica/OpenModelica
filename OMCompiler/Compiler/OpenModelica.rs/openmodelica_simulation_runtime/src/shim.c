@@ -155,3 +155,93 @@ int omr_protected_call_zc(int (*f)(void *, void *, double *), void *data, void *
   TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
   return rc;
 }
+
+/* `residualFunc` under `threadData`'s simulation jump buffer. The generated
+ * residual reports a violated assertion by longjmp; the nonlinear solver needs it
+ * back as a rejected trial, and the jump has to land in a C frame.
+ */
+int omr_protected_residual(void (*f)(void *, const double *, double *, const int *), void *user,
+                           const double *x, double *r, const int *flag, void *threadData,
+                           int stage) {
+  jmp_buf buf;
+  void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
+  int rc = 0;
+  if (setjmp(buf) == 0) {
+    TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    TD_INT(threadData, omr_td_off_error_stage) = stage;
+    f(user, x, r, flag);
+  } else {
+    rc = -1;
+  }
+  TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
+  return rc;
+}
+
+/* `solveContinuousPart` / `updateIterationExps` under `threadData`'s simulation
+ * jump buffer: the mixed solver's search has to survive a failed equation set the
+ * way C's does, and the jump has to land in a C frame.
+ */
+int omr_protected_call_data(void (*f)(void *), void *data, void *threadData, int stage) {
+  jmp_buf buf;
+  void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
+  int rc = 0;
+  if (setjmp(buf) == 0) {
+    TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    TD_INT(threadData, omr_td_off_error_stage) = stage;
+    f(data);
+  } else {
+    rc = -1;
+  }
+  TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
+  return rc;
+}
+
+/* `residualFuncConstraints` -- a casual tearing set's residual, which returns 1
+ * for a violated local constraint. `-1` still means the jump was taken. */
+int omr_protected_residual_con(int (*f)(void *, const double *, double *, const int *), void *user,
+                               const double *x, double *r, const int *flag, void *threadData,
+                               int stage) {
+  jmp_buf buf;
+  void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
+  int rc = 0;
+  if (setjmp(buf) == 0) {
+    TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    TD_INT(threadData, omr_td_off_error_stage) = stage;
+    rc = f(user, x, r, flag);
+    if (rc == -1) {
+      rc = 1; /* keep -1 for "the jump was taken" */
+    }
+  } else {
+    rc = -1;
+  }
+  TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
+  return rc;
+}
+
+/* Run `thunk(ctx)` under `threadData`'s simulation jump buffer. Every model call
+ * made from inside a Rust frame needs one: a `longjmp` past those frames would
+ * skip the solver's own bookkeeping and land at whatever catch is open further
+ * out, which is not where C's would land. Returns 0, or -1 if the jump was taken.
+ */
+int omr_protected(void (*thunk)(void *), void *ctx, void *threadData, int stage) {
+  jmp_buf buf;
+  void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
+  int rc = 0;
+  if (setjmp(buf) == 0) {
+    TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    TD_INT(threadData, omr_td_off_error_stage) = stage;
+    thunk(ctx);
+  } else {
+    rc = -1;
+  }
+  TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
+  return rc;
+}

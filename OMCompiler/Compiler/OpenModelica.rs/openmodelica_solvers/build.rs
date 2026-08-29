@@ -20,6 +20,7 @@ use std::path::Path;
 /// implementations and the SUNContext/SUNErrCode core are their own -- so each
 /// has to be listed, mirroring `LIBS` in openmodelica_codegen_wasm_jit_runtime.
 const NATIVE_LIBS: &[&str] = &[
+    "sundials_kinsol",
     "sundials_cvode",
     "sundials_idas",
     "sundials_sunlinsolklu",

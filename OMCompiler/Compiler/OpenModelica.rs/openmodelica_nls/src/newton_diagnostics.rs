@@ -12,12 +12,12 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 
-use crate::omclog;
+use openmodelica_solvers::omclog;
 
 const STREAM: omclog::Stream = omclog::NLS_NEWTON_DIAGNOSTICS;
 
 /// What the metadata knows about one system, beyond its variable names.
-pub(crate) struct DiagInfo {
+pub struct DiagInfo {
     /// `numberOfEqns`, `numberOfVars`, `numberOfNonlinear` of C's `NONLINEAR_PATTERN`.
     pub pattern: [u32; 3],
     /// The system is in the section C diagnoses: `initialEquations_lambda0`, or
@@ -28,7 +28,7 @@ pub(crate) struct DiagInfo {
 }
 
 /// The model callbacks the report needs.
-pub(crate) struct Callbacks<'a> {
+pub struct Callbacks<'a> {
     /// Residual `f(x)`; returns whether the evaluation hit a model error.
     pub residual: &'a mut dyn FnMut(&[f64], &mut [f64]) -> bool,
     /// Column-major `n×n` symbolic Jacobian at `x`, `fj[c*n + r] = ∂f_r/∂x_c`.
@@ -103,7 +103,7 @@ fn mat_mult(a: &[Vec<f64>], b: &[Vec<f64>]) -> Vec<Vec<f64>> {
 
 /// C's `newtonDiagnostics`. `x0` is the start point, `f` the residual there,
 /// `names` the unknowns' names.
-pub(crate) fn newton_diagnostics(
+pub fn newton_diagnostics(
     eq_index: u32,
     x0: &[f64],
     f: &[f64],

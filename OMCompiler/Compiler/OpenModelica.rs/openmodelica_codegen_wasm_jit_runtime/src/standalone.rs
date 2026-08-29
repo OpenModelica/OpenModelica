@@ -161,6 +161,9 @@ impl SimEngine for StandaloneEngine {
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> driver::Result<u32> {
         Ok(unsafe { simulate(sim_data, start, stop, n_steps) })
     }
+    fn has_simulate_entry(&mut self) -> bool {
+        true
+    }
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
         crate::take_reinit_notes()
     }
@@ -338,7 +341,7 @@ pub extern "C" fn _start() {
         simflags::check(&f, crate::sundials::capabilities()).map(|()| f)
     }) {
         Ok(f) => {
-            crate::solvers::apply_flags(&f);
+            openmodelica_solvers::solverflags::apply_flags(&f);
             simflags::set_flags(f);
         }
         Err(e) => {

@@ -300,7 +300,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         model_name: cstr(md.modelName),
         vars,
         jac_a: None,
-        state_sets: Vec::new(),
+        state_sets: crate::stateset::describe(data, layout),
         fmi_vrs: Vec::new(),
         zc_desc,
         rel_desc,

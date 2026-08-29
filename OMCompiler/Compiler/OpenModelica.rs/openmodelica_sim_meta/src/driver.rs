@@ -282,6 +282,25 @@ fn run_state_selection_initial(
     Ok(true)
 }
 
+/// C's `initialization()` tail: pivot once on the resolved initial point, before
+/// the first result row is emitted. C runs `stateSelection` there and `solver_main`
+/// emits row 0 afterwards, so a model whose initial selection differs from the
+/// identity has the *selected* states in that row. A switch reinits the state
+/// variables from their candidates, so the derivatives are refreshed after it.
+fn initial_state_selection(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    model: &SimModel,
+) -> Result<Vec<StateSetPivot>> {
+    let mut pivots = init_state_pivots(&model.state_sets);
+    if !model.state_sets.is_empty()
+        && run_state_selection_initial(e, sim_data, &model.state_sets, &mut pivots)?
+    {
+        e.call1("functionODE", sim_data)?;
+    }
+    Ok(pivots)
+}
+
 fn state_selection(
     e: &mut dyn SimEngine,
     sim_data: u32,
@@ -434,6 +453,13 @@ pub trait SimEngine {
     /// Call the exported `simulate(sim_data, start, stop, n_steps) -> buf`, the
     /// in-wasm Euler driver; returns the result-buffer pointer.
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32>;
+    /// Whether [`SimEngine::call_simulate`] is a model export rather than an error:
+    /// the emitted module's own fixed-step loop, which saves a host call per step.
+    /// A backend whose model is not a wasm module has none, and takes the ordinary
+    /// driver instead.
+    fn has_simulate_entry(&mut self) -> bool {
+        false
+    }
     /// If the last wasm call trapped on a failed `assert()`, take the recorded
     /// assertion as `[msg, file, sline, scol, eline, ecol, read_only, cond, initial]`
     /// (handles into shared memory), else `None`. Backed by the engine's `rt_assert`
@@ -911,39 +937,15 @@ pub trait Driver {
     }
 }
 
-// Wall-clock (ms) for the chunk budget. wasm has no `Instant`, so the host injects
-// a `performance.now` clock via `set_clock`; unset reads 0 (any finite deadline
-// then fires at once — safe, chatty).
-// Wall-clock (ms) for the chunk budget. A host may inject a clock (wasm
-// `performance.now`, or the in-wasm runtime's own timer) via `set_clock`; the
-// native/std build otherwise falls back to `Instant`. wasm has no usable
-// `Instant`, so there the hook is required — unset reads 0, and any finite
-// deadline then fires at once (safe but chatty).
+// The run's wall clock (ms), which the driver's chunk budget and the per-system
+// statistics share, so a host injects it once. It lives in `openmodelica_solvers`
+// because `sysstat` -- measured inside the solvers -- needs it too.
+pub use openmodelica_solvers::clock::{now_ms as now_ms_host, set_clock};
+
 use core::sync::atomic::{AtomicUsize, Ordering};
-static CLOCK: AtomicUsize = AtomicUsize::new(0);
-pub fn set_clock(f: fn() -> f64) {
-    CLOCK.store(f as usize, Ordering::Relaxed);
-}
-/// The driver's wall-clock reading (ms). Public so a host driving the in-wasm
-/// session can feed the runtime the *same* clock via `rt_host_now_ms`.
-pub fn now_ms_host() -> f64 {
-    now_ms()
-}
 
 fn now_ms() -> f64 {
-    let p = CLOCK.load(Ordering::Relaxed);
-    if p != 0 {
-        let f: fn() -> f64 = unsafe { core::mem::transmute(p) };
-        return f();
-    }
-    #[cfg(all(feature = "std", not(target_arch = "wasm32")))]
-    {
-        use std::time::Instant;
-        static START: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
-        return START.get_or_init(Instant::now).elapsed().as_secs_f64() * 1000.0;
-    }
-    #[cfg(not(all(feature = "std", not(target_arch = "wasm32"))))]
-    0.0
+    now_ms_host()
 }
 
 /// Read an env var (host/std only; the in-wasm runtime has no environment, so the
@@ -4359,7 +4361,15 @@ pub fn drive(
         // reached `euler` for want of states -- where the loop saves nothing anyway,
         // there being no integration -- keeps the host driver. `+profiling` also
         // needs the row-emitting loop (`fmtEmitStep`), so it stays off this path.
-        if !use_events && method == "euler" && layout.n_states > 0 && !host_driven && !csv_input_given() && model.prof.is_none() && model.parmod.is_none() {
+        if !use_events
+            && method == "euler"
+            && layout.n_states > 0
+            && e.has_simulate_entry()
+            && !host_driven
+            && !csv_input_given()
+            && model.prof.is_none()
+            && model.parmod.is_none()
+        {
             // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
             label = "euler-wasm";
             solver_setup(e, model, sim_data)?;
@@ -4534,11 +4544,14 @@ impl EulerDriver {
         let n_reals = model.layout.n_row_total();
         let mut retry = StepRetry::default();
         retry.store(e, sim_data, &model.layout)?;
+        // The initial selection belongs to initialization, before row 0 (see
+        // `initial_state_selection`); only the per-step ones are in `advance`.
+        let pivots = initial_state_selection(e, sim_data, model)?;
         Ok(EulerDriver {
             sim_data,
             row: 0,
             pending_time: None,
-            pivots: init_state_pivots(&model.state_sets),
+            pivots,
             rows: Vec::with_capacity((n_rows * n_reals) as usize),
             retry,
         })
@@ -4598,16 +4611,10 @@ impl Driver for EulerDriver {
             }
             // Re-select states before the Euler update; a switch reinits the states,
             // so refresh the derivatives it uses (see `DasslDriver`).
-            if !model.state_sets.is_empty() {
-                let sets = &model.state_sets;
-                let changed = if self.row == 0 {
-                    run_state_selection_initial(e, sim_data, sets, &mut self.pivots)?
-                } else {
-                    run_state_selection(e, sim_data, sets, &mut self.pivots)?
-                };
-                if changed {
-                    e.call1("functionODE", sim_data)?;
-                }
+            if !model.state_sets.is_empty()
+                && run_state_selection(e, sim_data, &model.state_sets, &mut self.pivots)?
+            {
+                e.call1("functionODE", sim_data)?;
             }
             // Forward-Euler update of the states, over this row's own step.
             let h = grid(self.row + 1) - time;
@@ -5695,23 +5702,15 @@ impl DasslDriver {
         let start = model.start_time;
 
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
-        // Row 0 at the start time.
+        // Dynamic state selection, then row 0 at the start time. For an explicit ODE
+        // the consistent initial derivative is exactly f(t0, y0), which `functionODE`
+        // (called by `emit_initial_row`) leaves in the derivative slots — so INFO(11)=0.
+        let mut pivots = initial_state_selection(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?; // terminate() at the initial point
 
-        // Dynamic state selection: seed the identity pivots (matching the wasm-side
-        // `A[n,n]=1`), then re-pivot once at the initial point on the resolved states
-        // — C re-selects immediately after initialisation. A switch reinits the state
-        // variables from their candidates, so refresh the derivatives before reading
-        // the initial `y`/`yp`. For an explicit ODE the consistent initial derivative
-        // is exactly f(t0, y0), which `functionODE` (already called by `emit_row`) has
-        // written into the derivative slots — so INFO(11)=0.
-        let mut pivots = init_state_pivots(&model.state_sets);
         let (mut y, mut yp) = (Vec::new(), Vec::new());
         if n_states > 0 && !pending_terminate {
-            if !model.state_sets.is_empty() && run_state_selection_initial(e, sim_data, &model.state_sets, &mut pivots)? {
-                e.call1("functionODE", sim_data)?;
-            }
             y = (0..n_states).map(|i| read_f64(e, states_base + (i as u32) * 8)).collect::<Result<_>>()?;
             yp = (0..n_states).map(|i| read_f64(e, ders_base + (i as u32) * 8)).collect::<Result<_>>()?;
         }
@@ -8109,16 +8108,11 @@ impl EventsDriver {
         core.prime(e, layout)?;
         // A sample due at the start time is left to the first step, which C shortens
         // to zero length and handles as an ordinary time event.
+        let mut pivots = initial_state_selection(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
 
-        // Dynamic state selection: identity pivots, then re-pivot at the initial
-        // point (see `DasslDriver`). A switch reinits states, so refresh derivatives.
-        let mut pivots = init_state_pivots(&model.state_sets);
         if n_states > 0 && !pending_terminate {
-            if !model.state_sets.is_empty() && run_state_selection_initial(e, sim_data, &model.state_sets, &mut pivots)? {
-                e.call1("functionODE", sim_data)?;
-            }
             core.read_states(e)?;
         }
         let _ = states_base;
@@ -8642,16 +8636,12 @@ impl CvodeDriver {
         let start = model.start_time;
 
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+        let mut pivots = initial_state_selection(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
 
-        // Dynamic state selection at the initial point, as in `DasslDriver::new`.
-        let mut pivots = init_state_pivots(&model.state_sets);
         let mut y = Vec::new();
         if n_states > 0 && !pending_terminate {
-            if !model.state_sets.is_empty() && run_state_selection_initial(e, sim_data, &model.state_sets, &mut pivots)? {
-                e.call1("functionODE", sim_data)?;
-            }
             y = (0..n_states).map(|i| read_f64(e, states_base + (i as u32) * 8)).collect::<Result<_>>()?;
         }
 
@@ -9582,18 +9572,14 @@ impl IdaDriver {
         let start = model.start_time;
 
         let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+        // For an explicit ODE the consistent `y'` is f(t0, y0), which the initial
+        // row leaves in the derivative slots.
+        let mut pivots = initial_state_selection(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
 
-        // Dynamic state selection at the initial point, as in `DasslDriver::new`.
-        // For an explicit ODE the consistent `y'` is f(t0, y0), which the row above
-        // has already left in the derivative slots.
-        let mut pivots = init_state_pivots(&model.state_sets);
         let (mut y, mut yp) = (Vec::new(), Vec::new());
         if n_states > 0 && !pending_terminate {
-            if !model.state_sets.is_empty() && run_state_selection_initial(e, sim_data, &model.state_sets, &mut pivots)? {
-                e.call1("functionODE", sim_data)?;
-            }
             y = (0..n_states).map(|i| read_f64(e, states_base + (i as u32) * 8)).collect::<Result<_>>()?;
             yp = (0..n_states).map(|i| read_f64(e, ders_base + (i as u32) * 8)).collect::<Result<_>>()?;
         }
