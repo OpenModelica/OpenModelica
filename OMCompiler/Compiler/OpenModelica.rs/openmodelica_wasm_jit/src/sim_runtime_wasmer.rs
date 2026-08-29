@@ -1512,3 +1512,7 @@ impl Drop for InWasmSession {
     }
 }
 
+/// Only the wasmtime backend keeps an on-disk artifact cache.
+pub fn precompile_fixed_blobs(_dir: &std::path::Path) -> std::result::Result<Vec<String>, String> {
+    Ok(Vec::new())
+}

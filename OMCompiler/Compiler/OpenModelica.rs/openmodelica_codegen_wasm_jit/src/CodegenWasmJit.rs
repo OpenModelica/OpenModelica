@@ -302,6 +302,7 @@ struct FmuKernel {
     model: Arc<SimModel>,
     /// Reaches the kernel's embedded metadata, so a different one cannot reuse it.
     cs_method: String,
+    fmi_solver_flags: String,
 }
 
 /// Kept by [`translateFmu`] so the export that follows links this kernel rather
@@ -535,7 +536,7 @@ pub fn translateModel(simCode: SimCode::SimCode) -> Result<()> {
     let prefix = simCode.fileNamePrefix.to_string();
     let _ = std::fs::remove_file(format!("{prefix}.wasm"));
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
-    let outcome = build_sim_model(&simCode, false, ExtHost::SIM, "").and_then(|model| {
+    let outcome = build_sim_model(&simCode, false, ExtHost::SIM, "", "").and_then(|model| {
         write_output(&format!("{prefix}.wasm"), &model.wasm).map_err(|_| "CodegenWasmJit: write failed")?;
         sim_models().lock().unwrap_or_else(|e| e.into_inner()).insert(prefix.clone(), Arc::new(model));
         Ok(())
@@ -791,6 +792,9 @@ const SUNDIALS_DRIVER: bool =
 /// parse, where a rejection still has a message channel to report on.
 const CAPABILITIES: simflags::Capabilities = simflags::Capabilities {
     klu: openmodelica_wasm_jit::SUNDIALS,
+    kinsol: openmodelica_wasm_jit::SUNDIALS,
+    umfpack: openmodelica_wasm_jit::SUNDIALS,
+    lis: openmodelica_wasm_jit::SUNDIALS,
     ida: SUNDIALS_DRIVER,
     cvode: SUNDIALS_DRIVER,
     // Served by the driver's per-step deadline, so every engine has it.
@@ -809,13 +813,15 @@ pub fn solver_options() -> Vec<(&'static str, Vec<&'static str>)> {
     simflags::supported(CAPABILITIES)
 }
 
-/// What an exported wasm FMU can serve, which is not what this omc can: CVODE and IDA
-/// ride in as a side module the FMU linker adds only for a method that asks for them.
-/// `klu` is the *nonlinear* solver's, which the FMU's runtime has no build of; IDA's
-/// own `SUNLinSol_KLU` is in the side module regardless.
+/// What an exported wasm FMU *could* serve: every solver, each a PIC side module the
+/// FMU linker adds beside the model. What a given FMU carries is narrower —
+/// [`fmu_solver_libraries`] picks from the flags it was exported with.
 fn fmu_capabilities() -> simflags::Capabilities {
     simflags::Capabilities {
-        klu: false,
+        klu: sundials_available(),
+        kinsol: sundials_available(),
+        umfpack: sundials_available(),
+        lis: sundials_available(),
         ida: sundials_available(),
         cvode: sundials_available(),
         // The driver's per-step deadline comes along; a regex engine does not.
@@ -831,6 +837,49 @@ fn fmu_capabilities() -> simflags::Capabilities {
 /// Whether an FMU exported with `method` needs the SUNDIALS side module.
 fn fmu_needs_sundials(method: &str) -> bool {
     matches!(method, "cvode" | "ida")
+}
+
+/// The nonlinear/linear solver selection to hard-code into an FMU's metadata. An
+/// importer has no channel to pass simulation flags, so `--fmiFlags` is consumed here
+/// and the FMU applies these when it instantiates. `-s` is not among them: it is the
+/// Co-Simulation integrator, and [`SimMeta::cs_method`] already carries it.
+fn fmu_solver_flags(flags_json: &str) -> String {
+    ["nls", "nlsLS", "ls", "lss"]
+        .iter()
+        .filter_map(|f| fmi_flag(flags_json, f).map(|v| format!("-{f}={v}")))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Which solver libraries an FMU exported with these `--fmiFlags` can reach; the rest
+/// are linked as stubs. The flags are fixed at export, so this is the whole set the
+/// FMU will ever select from. `klu` comes along with any of the others: the shared
+/// SUNDIALS core they call into, and IDA's default linear solver.
+///
+/// `cs` gates only the integrator: Model Exchange never integrates, but its
+/// initialisation and residuals run the same nonlinear and linear solvers.
+fn fmu_solver_libraries(flags_json: &str, cs: bool) -> Vec<&'static str> {
+    let flag = |name: &str| fmi_flag(flags_json, name).unwrap_or_default();
+    let (nls, ls, lss) = (flag("nls"), flag("ls"), flag("lss"));
+    let named = |v: &str| ls == v || lss == v;
+    let mut wanted = Vec::new();
+    if cs && fmu_needs_sundials(&flag("s")) {
+        wanted.push("sundials_driver");
+    }
+    if matches!(nls.as_str(), "kinsol" | "experimental-kinsol") {
+        wanted.push("kinsol");
+    }
+    if named("umfpack") {
+        wanted.push("umfpack");
+    }
+    if named("lis") {
+        wanted.push("lis");
+    }
+    if !wanted.is_empty() || named("klu") || flag("nlsLS") == "klu" || (cs && flag("idaLS") == "klu")
+    {
+        wanted.push("klu");
+    }
+    wanted
 }
 
 /// The `method=` values `buildModelFMU` accepts for a `cs`/`me_cs` wasm FMU.
@@ -1657,7 +1706,7 @@ use openmodelica_wasm_jit::RUNTIME_WASIP1;
 /// `wasm-merge` is an external tool, absent in the omc wasm build.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn emit_standalone_module(sim_code: &SimCode::SimCode) -> Result<Vec<u8>> {
-    let model = build_sim_model(sim_code, false, ExtHost::Wasm, "")?;
+    let model = build_sim_model(sim_code, false, ExtHost::Wasm, "", "")?;
     merge_standalone(&model.wasm)
 }
 
@@ -1715,18 +1764,17 @@ fn merge_standalone(model_wasm: &[u8]) -> Result<Vec<u8>> {
 use openmodelica_wasm_jit::FMI3_ME_ADAPTER;
 /// The combined me_cs component (both interfaces, one binary, one modelIdentifier).
 use openmodelica_wasm_jit::FMI3_MECS_ADAPTER;
-/// The me_cs world with CVODE/IDA in the embedded driver; its SUNDIALS calls are
-/// resolved by [`SUNDIALS_DYLINK`].
-use openmodelica_wasm_jit::FMI3_MECS_SUNDIALS_ADAPTER;
 /// LAPACK for the `external "FORTRAN 77"` calls of `Modelica.Math.Matrices`, which
 /// a host-free FMU has no system library to resolve.
 use openmodelica_wasm_jit::LAPACK_DYLINK;
+/// The solvers the me_cs adapter's embedded driver calls, one side module each.
+use openmodelica_wasm_jit::{sundials_dylink_available as sundials_available, SOLVER_LIBRARIES};
 
 /// The external-"C" FMU artifacts, linked in only when the model uses `external
 /// "C"`. Any is empty when that omc was built without the toolchain.
 use openmodelica_wasi_libc::{
-    available as external_c_available, sundials_available, EXTERNAL_C_DYLINK, LIBC_PIC,
-    SUNDIALS_DYLINK, USERTAB_DYLINK, WASI_P1_ADAPTER,
+    available as external_c_available, EXTERNAL_C_DYLINK, LIBC_PIC, USERTAB_DYLINK,
+    WASI_P1_ADAPTER,
 };
 
 // ===========================================================================
@@ -2250,6 +2298,85 @@ fn add_dylink0_sized(module: &[u8], mem_size: u32, mem_align: u32) -> Vec<u8> {
     out
 }
 
+const NATIVE_EXT_ABSENT: &str = "om_ext_native_absent";
+
+/// The me_cs adapter always imports `om:ext/native@0.1.0`, but only an export whose
+/// `external "C"` a host must serve reaches it, and a component importing it is one
+/// no fmi-ls-wasm host will instantiate. Point it at [`native_ext_absent`] instead.
+fn drop_native_ext_import(adapter: &[u8]) -> Option<Vec<u8>> {
+    const MODULE: &str = "om:ext/native@0.1.0";
+    struct Redirect;
+    impl wasm_encoder::reencode::Reencode for Redirect {
+        type Error = core::convert::Infallible;
+        fn parse_imports(
+            &mut self,
+            imports: &mut we::ImportSection,
+            group: wasmparser::Imports<'_>,
+        ) -> core::result::Result<(), wasm_encoder::reencode::Error<Self::Error>> {
+            use wasmparser::Imports;
+            let single = |ty| wasmparser::Import { module: "env", name: NATIVE_EXT_ABSENT, ty };
+            match group {
+                Imports::Single(n, import) if import.module == MODULE => {
+                    let group = Imports::Single(n, single(import.ty));
+                    wasm_encoder::reencode::utils::parse_imports(self, imports, group)
+                }
+                Imports::Compact1 { module: MODULE, items } => {
+                    for item in items {
+                        let group = Imports::Single(0, single(item?.ty));
+                        wasm_encoder::reencode::utils::parse_imports(self, imports, group)?;
+                    }
+                    Ok(())
+                }
+                Imports::Compact2 { module: MODULE, ty, names } => {
+                    for _ in names {
+                        let group = Imports::Single(0, single(ty));
+                        wasm_encoder::reencode::utils::parse_imports(self, imports, group)?;
+                    }
+                    Ok(())
+                }
+                group => wasm_encoder::reencode::utils::parse_imports(self, imports, group),
+            }
+        }
+    }
+    if !wasm_imports_module(adapter, MODULE) {
+        return None;
+    }
+    use wasm_encoder::reencode::Reencode;
+    let mut m = we::Module::new();
+    Redirect.parse_core_module(&mut m, wasmparser::Parser::new(0), adapter).ok()?;
+    Some(m.finish())
+}
+
+/// Defines [`NATIVE_EXT_ABSENT`] as a trap: its only caller is the stub of a
+/// host-served `external "C"`, which such an export has none of.
+fn native_ext_absent() -> Vec<u8> {
+    let mut types = we::TypeSection::new();
+    types.ty().function([we::ValType::I32; 4], []);
+    let mut functions = we::FunctionSection::new();
+    functions.function(0);
+    let mut exports = we::ExportSection::new();
+    exports.export(NATIVE_EXT_ABSENT, we::ExportKind::Func, 0);
+    let mut code = we::CodeSection::new();
+    let mut f = we::Function::new(Vec::<(u32, we::ValType)>::new());
+    f.instruction(&we::Instruction::Unreachable);
+    f.instruction(&we::Instruction::End);
+    code.function(&f);
+    let mut m = we::Module::new();
+    m.section(&types).section(&functions).section(&exports).section(&code);
+    add_dylink0(&m.finish())
+}
+
+fn wasm_imports_module(wasm: &[u8], module: &str) -> bool {
+    use wasmparser::Imports;
+    wasmparser::Parser::new(0).parse_all(wasm).flatten().any(|payload| {
+        let wasmparser::Payload::ImportSection(reader) = payload else { return false };
+        reader.into_iter().flatten().any(|group| match group {
+            Imports::Single(_, imp) => imp.module == module,
+            Imports::Compact1 { module: m, .. } | Imports::Compact2 { module: m, .. } => m == module,
+        })
+    })
+}
+
 /// Turn an emitted model kernel module into a dylink side module.
 fn model_to_dylink(model_wasm: &[u8]) -> Result<Vec<u8>> {
     use wasm_encoder::reencode::Reencode;
@@ -2579,10 +2706,11 @@ fn native_externals(model: &SimModel, _kind: &str) -> Result<Option<NativeExtern
 fn link_fmu_component(
     model_wasm: &[u8],
     adapter: &[u8],
-    sundials: bool,
+    solvers: Option<&[&str]>,
     ext_libs: &[ExtLibrary],
     native_stub: Option<&[u8]>,
 ) -> Result<Vec<u8>> {
+    let sundials = solvers.is_some();
     if adapter.is_empty() {
         // The plain adapter is always built; the SUNDIALS one only where the
         // wasm SUNDIALS archives were, so name which is missing.
@@ -2597,21 +2725,32 @@ fn link_fmu_component(
     }
     let has_ext = first_external_import(model_wasm).is_some();
     let model = model_to_dylink(model_wasm)?;
+    let plain_adapter = native_stub.is_none().then(|| drop_native_ext_import(adapter)).flatten();
     let mut l = wit_component::Linker::default().validate(true);
-    l = l.library("adapter", adapter, false).map_err(link_err)?;
+    l = l.library("adapter", plain_adapter.as_deref().unwrap_or(adapter), false).map_err(link_err)?;
+    if plain_adapter.is_some() {
+        l = l.library("native_absent", &native_ext_absent(), false).map_err(link_err)?;
+    }
     l = l.library("model", &model, false).map_err(link_err)?;
-    if sundials {
-        // CVODE reaches the residual through a C function pointer, which works because
-        // every library here imports the one `env.__indirect_function_table`.
-        l = l.library("sundials", SUNDIALS_DYLINK, false).map_err(link_err)?;
+    // The adapter imports every solver whatever the flags say, so each is resolved
+    // either way; what changes is whether the real library or its stub answers. CVODE
+    // reaches the residual through a C function pointer, which works because every
+    // library here imports the one `env.__indirect_function_table`.
+    if let Some(wanted) = solvers {
+        for lib in SOLVER_LIBRARIES {
+            let bytes =
+                if wanted.contains(&lib.name) { lib.module } else { lib.stub };
+            l = l.library(lib.name, bytes, false).map_err(link_err)?;
+        }
     }
     if needs_lapack(model_wasm, ext_libs) {
         l = l.library("lapack", LAPACK_DYLINK, false).map_err(link_err)?;
     }
-    if has_ext || sundials {
+    let real_solvers = solvers.is_some_and(|w| !w.is_empty());
+    if has_ext || real_solvers {
         // modelicaexternalc before libc; the coexisting allocator (libc dlmalloc +
-        // runtime rt_alloc over one shared heap) is intentional. SUNDIALS needs libc
-        // too, so it brings the same libraries along.
+        // runtime rt_alloc over one shared heap) is intentional. A solver library
+        // needs libc too, so it brings the same libraries along; the stubs do not.
         if has_ext {
             // First, so a symbol they define wins over ModelicaExternalC's.
             let ext_bytes: Vec<Vec<u8>> =
@@ -2903,7 +3042,7 @@ pub fn emitMeFmu(
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, extra_files, terminals_dir, simulation_flags_json, (FMI3_ME_ADAPTER, &[]), "ME")
+    emit_fmu(sim_code, fmu_path, model_description, extra_files, terminals_dir, simulation_flags_json, FMI3_ME_ADAPTER, "ME")
 }
 
 /// Co-Simulation: the FMU integrates itself, so the adapter embeds the driver.
@@ -2921,7 +3060,7 @@ pub fn emitCsFmu(
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, extra_files, terminals_dir, simulation_flags_json, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "CS")
+    emit_fmu(sim_code, fmu_path, model_description, extra_files, terminals_dir, simulation_flags_json, FMI3_MECS_ADAPTER, "CS")
 }
 
 /// me_cs: one component exporting both interfaces (the wasm equivalent of a
@@ -2935,7 +3074,7 @@ pub fn emitMeCsFmu(
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, extra_files, terminals_dir, simulation_flags_json, (FMI3_MECS_ADAPTER, FMI3_MECS_SUNDIALS_ADAPTER), "me_cs")
+    emit_fmu(sim_code, fmu_path, model_description, extra_files, terminals_dir, simulation_flags_json, FMI3_MECS_ADAPTER, "me_cs")
 }
 
 /// Say that the FMU answers `fmi3GetDirectionalDerivative` when the model was
@@ -2974,6 +3113,8 @@ pub(crate) const NATIVE_TABLE: &str = "resources/native_externals.txt";
 /// What the host has to load beside the model kernel, decided here because this
 /// is where the model's `external "C"` libraries were resolved. A tiny JSON, read
 /// by `CodegenWasmJit::artifact`.
+/// `sundials` is the *fused* runtime's, which this form binds the model to: it links
+/// the archives statically, so it has every solver whatever the flags say.
 fn artifact_manifest(model: &SimModel, sundials: bool) -> String {
     let ext = first_external_import(&model.wasm).is_some();
     let mut out = String::from("{\n");
@@ -3026,6 +3167,7 @@ fn compile_for_host(
     component: &[u8],
     fmu_path: &str,
     linked: bool,
+    bare: bool,
 ) -> Option<std::sync::Arc<openmodelica_fmi_driver::component::WasmArtifact>> {
     // The unzipped form is not a component at all — the host links the model
     // kernel against the adapter it has already compiled — so there is nothing
@@ -3034,7 +3176,11 @@ fn compile_for_host(
         return None;
     }
     let host = native_fmu::host_platform()?;
-    if !requested_native_platforms().iter().any(|n| native_fmu::lookup(n).is_some_and(|p| p.fmi == host.fmi)) {
+    // An unzipped export is for this omc: compiling here means the runs that
+    // follow take the live component rather than each compiling it again.
+    if !bare
+        && !requested_native_platforms().iter().any(|n| native_fmu::lookup(n).is_some_and(|p| p.fmi == host.fmi))
+    {
         return None;
     }
     // The resources it reads through are written after this, so the caller points
@@ -3046,7 +3192,7 @@ fn compile_for_host(
 }
 
 #[cfg(not(all(feature = "artifact", not(target_arch = "wasm32"))))]
-fn compile_for_host(_component: &[u8], _fmu_path: &str, _linked: bool) -> Option<()> {
+fn compile_for_host(_component: &[u8], _fmu_path: &str, _linked: bool, _bare: bool) -> Option<()> {
     None
 }
 
@@ -3186,9 +3332,14 @@ fn fmu_cs_method(simulation_flags_json: &str, kind: &str) -> String {
 /// this `kind` can serve it. Shared linear memory across model + runtime +
 /// ModelicaExternalC, so `external "C"` calls pass real pointers rather than
 /// runtime handles — which is also why the simulation path cannot bind it.
-fn lower_fmu_kernel(sim_code: &SimCode::SimCode, kind: &str, cs_method: &str) -> Result<SimModel> {
+fn lower_fmu_kernel(
+    sim_code: &SimCode::SimCode,
+    kind: &str,
+    cs_method: &str,
+    fmi_solver_flags: &str,
+) -> Result<SimModel> {
     let model = crate::CodegenWasmJitFunctions::with_shared_externals(|| {
-        build_sim_model(sim_code, true, ExtHost::Wasm, cs_method)
+        build_sim_model(sim_code, true, ExtHost::Wasm, cs_method, fmi_solver_flags)
     })?;
     if let Some(func) = first_external_import(&model.wasm) {
         if !external_c_available() {
@@ -3221,14 +3372,23 @@ fn check_fmu_method(model: &SimModel, kind: &str) -> Result<()> {
 
 /// The kernel to build this FMU around: the one [`translateFmu`] left behind if it
 /// was lowered the way this export needs, and a fresh lowering otherwise.
-fn fmu_kernel(sim_code: &SimCode::SimCode, kind: &str, cs_method: &str) -> Result<Arc<SimModel>> {
+fn fmu_kernel(
+    sim_code: &SimCode::SimCode,
+    kind: &str,
+    cs_method: &str,
+    fmi_solver_flags: &str,
+) -> Result<Arc<SimModel>> {
     let prefix = sim_code.fileNamePrefix.to_string();
     let cached = fmu_kernels().lock().unwrap_or_else(|e| e.into_inner()).get(&prefix).cloned();
-    if let Some(k) = cached.filter(|k| k.cs_method == cs_method) {
+    // Both are baked into the kernel's metadata, so a re-export that changed either
+    // has to lower again rather than reuse what the last one left behind.
+    if let Some(k) = cached
+        .filter(|k| k.cs_method == cs_method && k.fmi_solver_flags == fmi_solver_flags)
+    {
         check_fmu_method(&k.model, kind)?;
         return Ok(k.model.clone());
     }
-    let model = Arc::new(lower_fmu_kernel(sim_code, kind, cs_method)?);
+    let model = Arc::new(lower_fmu_kernel(sim_code, kind, cs_method, fmi_solver_flags)?);
     keep_fmu_kernel(&prefix, &model);
     Ok(model)
 }
@@ -3236,7 +3396,11 @@ fn fmu_kernel(sim_code: &SimCode::SimCode, kind: &str, cs_method: &str) -> Resul
 fn keep_fmu_kernel(prefix: &str, model: &Arc<SimModel>) {
     fmu_kernels().lock().unwrap_or_else(|e| e.into_inner()).insert(
         prefix.to_string(),
-        Arc::new(FmuKernel { model: model.clone(), cs_method: model.meta.cs_method.clone() }),
+        Arc::new(FmuKernel {
+            model: model.clone(),
+            cs_method: model.meta.cs_method.clone(),
+            fmi_solver_flags: model.meta.fmi_solver_flags.clone(),
+        }),
     );
 }
 
@@ -3249,6 +3413,7 @@ pub fn translateFmu(sim_code: SimCode::SimCode, fmu_type: ArcStr, simulation_fla
     sim_runtime::start_runtime_compile();
     let kind = fmu_kind(&fmu_type);
     let cs_method = fmu_cs_method(&simulation_flags_json, kind);
+    let fmi_solver_flags = fmu_solver_flags(&simulation_flags_json);
     let prefix = sim_code.fileNamePrefix.to_string();
     let _ = openmodelica_wasi::fs::remove_file(&format!("{prefix}.wasm"));
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
@@ -3256,7 +3421,7 @@ pub fn translateFmu(sim_code: SimCode::SimCode, fmu_type: ArcStr, simulation_fla
         // Lowered the way the simulation path binds it, since that is what runs it.
         // With no `external "C"` this is the FMU kernel too: shared externals
         // change the lowering only where there are `ext` imports.
-        let model = Arc::new(build_sim_model(&sim_code, true, ExtHost::SIM, &cs_method)?);
+        let model = Arc::new(build_sim_model(&sim_code, true, ExtHost::SIM, &cs_method, &fmi_solver_flags)?);
         check_fmu_method(&model, kind)?;
         write_output(&format!("{prefix}.wasm"), &model.wasm).map_err(|_| "CodegenWasmJit: write failed")?;
         sim_models().lock().unwrap_or_else(|e| e.into_inner()).insert(prefix.clone(), model.clone());
@@ -3286,7 +3451,7 @@ fn keep_translated_model(sim_code: &SimCode::SimCode, kernel: &Arc<SimModel>) ->
     let model = match kept {
         Some(m) => m,
         None if first_external_import(&kernel.wasm).is_none() => kernel.clone(),
-        None => Arc::new(build_sim_model(sim_code, true, ExtHost::SIM, &kernel.meta.cs_method)?),
+        None => Arc::new(build_sim_model(sim_code, true, ExtHost::SIM, &kernel.meta.cs_method, &kernel.meta.fmi_solver_flags)?),
     };
     if model.prepared.lock().unwrap_or_else(|e| e.into_inner()).is_none()
         && let Ok(compiled) = sim_runtime::take_compiled_model(&model)
@@ -3315,12 +3480,13 @@ fn emit_fmu(
     extra_files: Arc<List<(ArcStr, ArcStr)>>,
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
-    adapter: (&[u8], &[u8]),
+    adapter: &[u8],
     kind: &str,
 ) -> Result<()> {
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
     let cs_method = fmu_cs_method(&simulation_flags_json, kind);
+    let fmi_solver_flags = fmu_solver_flags(&simulation_flags_json);
     // Emitting the model takes seconds; a host that compiles the native platforms
     // out of process can spend them loading its compiler.
     if !requested_native_platforms().is_empty() {
@@ -3328,7 +3494,7 @@ fn emit_fmu(
     }
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
     let outcome = (|| -> Result<()> {
-        let model = fmu_kernel(&sim_code, kind, &cs_method)?;
+        let model = fmu_kernel(&sim_code, kind, &cs_method, &fmi_solver_flags)?;
         export_phase("FMU model kernel");
         let natives = native_externals(&model, kind)?;
         let bare = fmu_directory();
@@ -3337,7 +3503,10 @@ fn emit_fmu(
             export_phase("FMU translated model");
         }
         let cs = kind != "ME";
-        let sundials = cs && (fmu_needs_sundials(&model.meta.cs_method) || fmu_needs_sundials(&model.method));
+        // Both adapters import every solver, real or stubbed; only the integrator is
+        // Co-Simulation's alone.
+        let solvers =
+            sundials_available().then(|| fmu_solver_libraries(&simulation_flags_json, cs));
         // An unzipped export is for an OpenModelica importer: it holds the model
         // description and the model kernel and nothing else, and the host links
         // that kernel against an adapter it compiled once into
@@ -3355,8 +3524,8 @@ fn emit_fmu(
         } else {
             link_fmu_component(
                 &model.wasm,
-                if sundials { adapter.1 } else { adapter.0 },
-                sundials,
+                adapter,
+                solvers.as_deref(),
                 &model.ext_libs,
                 natives.as_ref().map(|n| &n.stub[..]),
             )?
@@ -3384,7 +3553,7 @@ fn emit_fmu(
         let version = fmi_version();
         // This machine's artifact, compiled once: the runs that follow in this
         // session get the live component and never read a `.cwasm` back.
-        let host = compile_for_host(&component, &fmu_path, linked);
+        let host = compile_for_host(&component, &fmu_path, linked, bare);
         add_native_platforms(&mut entries, &component, &model_id, &version, linked, natives.as_ref(), host.as_ref())?;
         export_phase("FMU precompile");
         if version == "2.0" {
@@ -3405,13 +3574,25 @@ fn emit_fmu(
             // Not a component: the model kernel as a dylink library, which the host
             // links against the adapter and libc it has already compiled.
             entries.push((format!("{DYLINK_DIR}/{model_id}.wasm"), component));
-            entries.push(("resources/artifact.json".to_string(), artifact_manifest(&model, sundials).into_bytes()));
+            entries.push(("resources/artifact.json".to_string(), artifact_manifest(&model, sundials_available()).into_bytes()));
             for (i, lib) in model.ext_libs.iter().enumerate() {
                 entries.push((format!("resources/ext/{i:02}.wasm"), lib.bytes.clone()));
             }
             if let Some(n) = &natives {
                 entries.push((format!("resources/ext/{NATIVE_STUB}.wasm"), n.stub.clone()));
             }
+        } else if natives.is_some() {
+            // Imports `om:ext/native`, so no fmi-ls-wasm host can instantiate it:
+            // out of `binaries/`, as an FMI 2.0 export is for the same reason.
+            let names: Vec<&str> = model.ext_native.iter().map(|s| s.name.as_str()).collect();
+            let _ = openmodelica_util::Error::addCompilerNotification(ArcStr::from(format!(
+                "`external \"C\"` {} is served from a platform library, so this FMU's wasm binary \
+                 imports `om:ext/native`, which fmi-ls-wasm does not define. It is at \
+                 `resources/{model_id}.wasm` rather than `binaries/wasm32-wasip2/`, and runs only \
+                 in an OpenModelica host or through one of the FMU's native platform binaries.",
+                names.join(", ")
+            ).as_str()));
+            entries.push((format!("resources/{model_id}.wasm"), component));
         } else {
             entries.push((format!("binaries/wasm32-wasip2/{model_id}.wasm"), component));
         }
@@ -4868,6 +5049,7 @@ fn build_sim_model(
     fmi_vrs: bool,
     ext_host: ExtHost,
     cs_method: &str,
+    fmi_solver_flags: &str,
 ) -> Result<SimModel> {
     crate::CodegenWasmJitFunctions::set_record_decls(&sim_code.recordDecls)?;
     let mi = &sim_code.modelInfo;
@@ -5667,7 +5849,8 @@ fn build_sim_model(
         }
     }
     let meta = build_sim_meta(
-        &layout, &result_vars, settings, cs_method, &model_name, &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
+        &layout, &result_vars, settings, cs_method, fmi_solver_flags, &model_name,
+        &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
         fmi_vrs, zc_descriptions(&zero_crossings), rel_descriptions(&sim_code.relations),
         param_vars(vars)?, attr_log_entries(sim_code)?,
         removed_init_residuals(sim_code).iter().map(|e| dump_exp(e)).collect(),
@@ -7072,6 +7255,7 @@ fn build_sim_meta(
     result_vars: &[ResultVar],
     settings: &SimCode::SimulationSettings,
     cs_method: &str,
+    fmi_solver_flags: &str,
     model_name: &str,
     prefix: &str,
     jac_a: Option<JacAInfo>,
@@ -7104,6 +7288,7 @@ fn build_sim_meta(
         n_intervals: settings.numberOfIntervals.max(0) as u32,
         method: settings.method.to_string(),
         cs_method: cs_method.to_string(),
+        fmi_solver_flags: fmi_solver_flags.to_string(),
         tolerance: settings.tolerance.into_inner(),
         output_format: settings.outputFormat.to_string(),
         prefix: prefix.to_string(),
@@ -11177,19 +11362,94 @@ mod link_tests {
     /// unresolved symbol here.
     #[test]
     fn fmu_component_links_without_a_host() {
-        for (label, adapter, sundials) in [
-            ("ME", FMI3_ME_ADAPTER, false),
-            ("me_cs", FMI3_MECS_ADAPTER, false),
-            ("me_cs+SUNDIALS", FMI3_MECS_SUNDIALS_ADAPTER, true),
-        ] {
-            if adapter.is_empty() || (sundials && !sundials_available()) {
-                continue; // omc built without the wasm32 toolchain or without sundials
+        // Both ends of the selection have to resolve, for both adapters: each imports
+        // every solver whatever its flags named.
+        let all: Vec<&str> = SOLVER_LIBRARIES.iter().map(|l| l.name).collect();
+        let mut cases: Vec<(&str, &[u8], Option<&[&str]>)> = Vec::new();
+        if sundials_available() {
+            for (label, adapter) in [("ME", FMI3_ME_ADAPTER), ("me_cs", FMI3_MECS_ADAPTER)] {
+                cases.push((label, adapter, Some(&all)));
+                cases.push((label, adapter, Some(&[])));
+            }
+        } else {
+            cases.push(("ME", FMI3_ME_ADAPTER, None));
+        }
+        for (label, adapter, solvers) in cases {
+            if adapter.is_empty() {
+                continue; // omc built without the wasm32 toolchain
             }
             assert!(
-                link_fmu_component(&build_stub_model(), adapter, sundials, &[], None).is_ok(),
-                "{label} adapter does not link into a component: {}",
+                link_fmu_component(&build_stub_model(), adapter, solvers, &[], None).is_ok(),
+                "{label} does not link into a component: {}",
                 openmodelica_util::Error::printMessagesStr(false)
             );
+        }
+    }
+
+    /// The mapping has to name `klu`, the shared core, whenever anything else is named.
+    /// Only the integrator is Co-Simulation's alone: a Model Exchange FMU runs the same
+    /// nonlinear and linear solvers during initialisation.
+    #[test]
+    fn solver_libraries_follow_the_fmi_flags() {
+        for (json, cs, want) in [
+            ("{}", true, vec![]),
+            (r#"{"s":"euler"}"#, true, vec![]),
+            (r#"{"s":"cvode"}"#, true, vec!["sundials_driver", "klu"]),
+            (r#"{"s":"ida"}"#, true, vec!["sundials_driver", "klu"]),
+            (r#"{"nls":"kinsol"}"#, true, vec!["kinsol", "klu"]),
+            (r#"{"lss":"lis"}"#, true, vec!["lis", "klu"]),
+            (r#"{"ls":"umfpack"}"#, true, vec!["umfpack", "klu"]),
+            (r#"{"nlsLS":"klu"}"#, true, vec!["klu"]),
+            (r#"{"ls":"lapack"}"#, true, vec![]),
+            // ME: the same solvers, never the integrator.
+            (r#"{"nls":"kinsol"}"#, false, vec!["kinsol", "klu"]),
+            (r#"{"lss":"lis"}"#, false, vec!["lis", "klu"]),
+            (r#"{"s":"cvode"}"#, false, vec![]),
+        ] {
+            assert_eq!(fmu_solver_libraries(json, cs), want, "{json} cs={cs}");
+        }
+        // Every name the mapping can produce must be a library that exists.
+        let known: Vec<&str> = SOLVER_LIBRARIES.iter().map(|l| l.name).collect();
+        let all = r#"{"s":"ida","nls":"kinsol","ls":"lis","lss":"umfpack"}"#;
+        for name in fmu_solver_libraries(all, true) {
+            assert!(known.contains(&name), "{name} is not a solver library");
+        }
+    }
+
+    /// What the FMU applies when it instantiates, since an importer cannot pass flags.
+    /// `-s` is not among them: it is the integrator, carried by `SimMeta::cs_method`.
+    #[test]
+    fn baked_solver_flags_come_from_the_fmi_flags() {
+        assert_eq!(fmu_solver_flags("{}"), "");
+        assert_eq!(fmu_solver_flags(r#"{"s":"cvode"}"#), "");
+        assert_eq!(fmu_solver_flags(r#"{"nls":"kinsol"}"#), "-nls=kinsol");
+        assert_eq!(
+            fmu_solver_flags(r#"{"s":"ida","nls":"kinsol","lss":"klu"}"#),
+            "-nls=kinsol -lss=klu"
+        );
+        // Whatever is baked has to parse, and be servable by the libraries the same
+        // flags select.
+        for json in [r#"{"nls":"kinsol"}"#, r#"{"ls":"lis"}"#, r#"{"lss":"umfpack"}"#,
+                     r#"{"nlsLS":"klu"}"#] {
+            let baked = fmu_solver_flags(json);
+            let argv: Vec<String> = core::iter::once("model".to_string())
+                .chain(baked.split_whitespace().map(str::to_string))
+                .collect();
+            let f = simflags::parse(&argv).expect(&baked);
+            let libs = fmu_solver_libraries(json, true);
+            let cap = simflags::Capabilities {
+                klu: libs.contains(&"klu"),
+                kinsol: libs.contains(&"kinsol"),
+                umfpack: libs.contains(&"umfpack"),
+                lis: libs.contains(&"lis"),
+                ida: false,
+                cvode: false,
+                alarm: true,
+                variable_filter: false,
+                optimization: false,
+                qss: true,
+            };
+            assert!(simflags::check(&f, cap).is_ok(), "{json}: {baked}");
         }
     }
 

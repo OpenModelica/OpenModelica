@@ -103,19 +103,30 @@ mod clock {
 }
 
 pub(crate) fn run(args: Vec<String>) -> Result<RunResult, String> {
-    // `parse` takes an argv, program name first, as a simulation executable's.
-    let mut argv: Vec<String> = vec!["model".to_string()];
-    argv.extend(args);
-    let flags = simflags::parse(&argv)?;
-    simflags::check(&flags, openmodelica_codegen_wasm_jit_runtime::sim_capabilities())?;
-    openmodelica_codegen_wasm_jit_runtime::apply_sim_flags(&flags);
-    // Installs the `-lv` log mask too, so the notices below are already filtered.
-    simflags::set_flags(flags);
-
     let mut m = read_meta();
     if m.layout.total == 0 {
         return Err("wasm-jit: the artifact carries no model metadata".to_string());
     }
+    // `parse` takes an argv, program name first, as a simulation executable's. The
+    // solver selection the export hard-coded goes in ahead of the caller's, so a
+    // later `-nls`/`-ls`/`-lss` overrides it and one the caller omits is kept --
+    // `apply_sim_flags` sets the whole selection at once, defaults included, so
+    // parsing them together is what merges them.
+    let mut argv: Vec<String> = vec!["model".to_string()];
+    argv.extend(m.fmi_solver_flags.split_whitespace().map(str::to_string));
+    argv.extend(args);
+    let flags = simflags::parse(&argv)?;
+    // `-variableFilter` is served by the host's matcher, so this runtime takes it
+    // despite having no regex engine. A component has no host and so cannot.
+    let cap = simflags::Capabilities {
+        variable_filter: cfg!(feature = "capi"),
+        ..openmodelica_codegen_wasm_jit_runtime::sim_capabilities()
+    };
+    simflags::check(&flags, cap)?;
+    openmodelica_codegen_wasm_jit_runtime::apply_sim_flags(&flags);
+    // Installs the `-lv` log mask too, so the notices below are already filtered.
+    simflags::set_flags(flags);
+
     driver::set_log_sink(log_sink);
     // What `OpenModelica_fmuLoadResource` resolves against, as at instantiation:
     // the host preopens the artifact's resources as this component's root.
@@ -164,10 +175,29 @@ pub(crate) fn run(args: Vec<String>) -> Result<RunResult, String> {
 /// The `.mat` / `.plt` bytes, exactly as the standalone export serializes them
 /// (one writer, so the two cannot drift). `"empty"` writes nothing: the run was
 /// only asked for its integration.
+/// `capi` only: a component has no host to ask, and an `env` import it cannot
+/// resolve would stop it linking at all.
+#[cfg(feature = "capi")]
+#[link(wasm_import_module = "env")]
+unsafe extern "C" {
+    /// Whether the run's `-variableFilter` keeps this name; non-zero to keep.
+    fn rt_host_name_matches(ptr: *const u8, len: usize) -> i32;
+}
+
+#[cfg(feature = "capi")]
+fn host_keeps(name: &str) -> bool {
+    unsafe { rt_host_name_matches(name.as_ptr(), name.len()) != 0 }
+}
+
 fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
     if m.output_format != "mat" && m.output_format != "plt" {
         return Vec::new();
     }
+    // No regex engine here, so the host answers per name; with no filter
+    // installed it keeps everything.
+    #[cfg(feature = "capi")]
+    let keep = m.output_keep(Some(&host_keeps));
+    #[cfg(not(feature = "capi"))]
     let keep = m.output_keep(None);
     // `params` is positional over the unfiltered `Param` signals; only the kept
     // ones are collected, in signal order, for the writer.

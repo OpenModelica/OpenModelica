@@ -52,7 +52,7 @@ diffSimulationResults("art_cs.mat", "plain_res.mat", "d_cs", 1e-9, 1e-9);
 // record SimulationResult
 //     resultFile = "art_cs.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ExtNativeRecord', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:cs -r=art_cs.mat'",
-//     messages = "LOG_STDOUT        | info    | wasm artifact loaded (model kernel 0.0 MB linked against the cached adapter)
+//     messages = "LOG_STDOUT        | info    | wasm artifact loaded (model kernel linked against the cached adapter)
 // LOG_STDOUT        | info    | CoSimulation instantiated
 // LOG_STDOUT        | info    | CoSimulation run: 500 communication steps, 0 events, 0 early returns, 501 samples
 // LOG_SUCCESS       | info    | The simulation finished successfully.

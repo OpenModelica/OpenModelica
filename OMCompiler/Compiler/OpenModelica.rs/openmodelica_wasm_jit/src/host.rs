@@ -353,6 +353,25 @@ pub mod array_abi {
     }
 }
 
+/// The run's `-variableFilter`, compiled. Set for a run whose result file is
+/// written inside wasm (an artifact), where the pattern cannot be applied.
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+thread_local! {
+    static OUTPUT_FILTER: std::cell::RefCell<Option<openmodelica_util::System::Regex>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Install (or clear) the filter `rt_host_name_matches` answers from.
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+pub fn set_output_filter(re: Option<openmodelica_util::System::Regex>) {
+    OUTPUT_FILTER.with(|f| *f.borrow_mut() = re);
+}
+
+#[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
+fn output_filter_keeps(name: &str) -> bool {
+    OUTPUT_FILTER.with(|f| f.borrow().as_ref().is_none_or(|re| re.is_match(name)))
+}
+
 // Native rsparse solve behind the `env.rt_host_lin_solve` import, which the native
 // interactive runtime calls from `rt_solve_lin_sparse_cached`. Symbolic analysis
 // cached per system `handle`; `count()` feeds `stats.lin_solves`.
@@ -548,6 +567,22 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
                 Some(dst) => take_reinits_into(dst, max as usize),
                 None => 0,
             }
+        },
+    ))?;
+    // `-variableFilter` for a runtime that serializes its own result file: it has
+    // no regex engine, so it asks here, once per variable as the file is laid out.
+    // No filter installed keeps everything, so the import is always answerable.
+    wt(linker.func_wrap(
+        "env",
+        "rt_host_name_matches",
+        |mut caller: wasmtime::Caller<'_, T>, ptr: u32, len: u32| -> i32 {
+            let Some(wasmtime::Extern::Memory(mem)) = caller.get_export("memory") else { return 1 };
+            let data = mem.data(&caller);
+            let name = data
+                .get(ptr as usize..(ptr + len) as usize)
+                .map(|b| String::from_utf8_lossy(b).into_owned())
+                .unwrap_or_default();
+            output_filter_keeps(&name) as i32
         },
     ))?;
     // Solve the CSC system in the caller's (the runtime's) shared memory; the

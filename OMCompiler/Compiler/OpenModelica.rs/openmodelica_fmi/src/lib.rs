@@ -66,7 +66,8 @@ pub enum Preference {
 pub enum BinaryKind {
     /// A shared library implementing the FMI C API.
     Native,
-    /// `binaries/wasm32-wasip2/*.wasm`, an fmi-ls-wasm component.
+    /// `binaries/wasm32-wasip2/*.wasm`, an fmi-ls-wasm component; `resources/*.wasm`
+    /// where it imports the OpenModelica extension.
     Wasm,
 }
 
@@ -186,6 +187,17 @@ impl Fmu {
                 })
             })
             .collect();
+        // A component importing `om:ext/native` is kept out of `binaries/`, being no
+        // fmi-ls-wasm binary. It is still the FMU's wasm binary to us.
+        let extended = format!("resources/{id}.wasm");
+        if !out.iter().any(|b| b.kind == BinaryKind::Wasm) && self.names.iter().any(|n| *n == extended) {
+            out.push(Binary {
+                kind: BinaryKind::Wasm,
+                platform_dir: platform::WASM_DIR.to_string(),
+                path: extended,
+                is_host: false,
+            });
+        }
         out.sort_by_key(|b| (!b.is_host, b.kind == BinaryKind::Wasm));
         out
     }

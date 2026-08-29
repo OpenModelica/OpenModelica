@@ -112,6 +112,23 @@ fn set_revision() {
 pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int {
     use std::io::Write;
     set_revision();
+    // `OMC_WASM_PRECOMPILE_CACHE=<dir>`: compile the fixed wasm blobs into <dir>
+    // and stop. For the build; not a user-facing flag.
+    #[cfg(not(target_arch = "wasm32"))]
+    if let Some(dir) = std::env::var_os("OMC_WASM_PRECOMPILE_CACHE") {
+        return match openmodelica_wasm_jit::sim_runtime::precompile_fixed_blobs(
+            std::path::Path::new(&dir),
+        ) {
+            Ok(names) => {
+                println!("precompiled {} wasm artifacts into {}", names.len(), std::path::Path::new(&dir).display());
+                0
+            }
+            Err(e) => {
+                eprintln!("omc: precompiling the wasm cache failed: {e}");
+                1
+            }
+        };
+    }
     let args: Vec<ArcStr> = if argv.is_null() || argc <= 0 {
         Vec::new()
     } else {

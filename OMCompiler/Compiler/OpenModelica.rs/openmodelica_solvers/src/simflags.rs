@@ -417,8 +417,14 @@ impl SimFlags {
 /// rather than running a different solver.
 #[derive(Clone, Copy, Debug)]
 pub struct Capabilities {
-    /// The runtime's SUNDIALS archives, which hold KINSOL as well as KLU.
+    /// SuiteSparse KLU, which is also IDA's default linear solver.
     pub klu: bool,
+    /// SUNDIALS KINSOL, the `-nls=kinsol` nonlinear solver.
+    pub kinsol: bool,
+    /// SuiteSparse UMFPACK.
+    pub umfpack: bool,
+    /// Lis, the iterative `-ls=lis`/`-lss=lis`.
+    pub lis: bool,
     pub ida: bool,
     pub cvode: bool,
     /// This runtime has a wall clock, so `-alarm` can be honoured.
@@ -435,16 +441,24 @@ pub struct Capabilities {
 
 /// Reject flag values this runtime cannot honour.
 pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
-    // KLU and UMFPACK ride on the same SuiteSparse archives.
-    if !cap.klu {
-        for (flag, name) in [
-            ("lss", (f.lss == Some(Lss::Klu)).then_some("klu").or((f.lss == Some(Lss::Umfpack)).then_some("umfpack"))),
-            ("ls", (f.ls == Some(Ls::Klu)).then_some("klu").or((f.ls == Some(Ls::Umfpack)).then_some("umfpack"))),
-            ("nlsLS", (f.nls_ls == Some(NlsLs::Klu)).then_some("klu")),
-        ] {
-            if let Some(name) = name {
-                return Err(format!("-{flag}={name}: this runtime has no SuiteSparse linear solver"));
-            }
+    // Each solver library is linked on its own, so each is its own question --
+    // the same one `Offer::With*` asks in the tables below.
+    for (flag, name, have) in [
+        ("nls", match f.nls {
+            Some(Nls::Kinsol) => Some("kinsol"),
+            Some(Nls::KinsolB) => Some("experimental-kinsol"),
+            _ => None,
+        }, cap.kinsol),
+        ("nlsLS", (f.nls_ls == Some(NlsLs::Klu)).then_some("klu"), cap.klu),
+        ("ls", (f.ls == Some(Ls::Klu)).then_some("klu"), cap.klu),
+        ("ls", (f.ls == Some(Ls::Umfpack)).then_some("umfpack"), cap.umfpack),
+        ("ls", (f.ls == Some(Ls::Lis)).then_some("lis"), cap.lis),
+        ("lss", (f.lss == Some(Lss::Klu)).then_some("klu"), cap.klu),
+        ("lss", (f.lss == Some(Lss::Umfpack)).then_some("umfpack"), cap.umfpack),
+        ("lss", (f.lss == Some(Lss::Lis)).then_some("lis"), cap.lis),
+    ] {
+        if let (Some(name), false) = (name, have) {
+            return Err(format!("-{flag}={name}: this runtime has no {name}"));
         }
     }
     if f.alarm.is_some() && !cap.alarm {
@@ -1290,7 +1304,10 @@ type Value<T> = (&'static str, T, Offer);
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Offer {
     Always,
-    WithSundials,
+    WithKlu,
+    WithKinsol,
+    WithUmfpack,
+    WithLis,
     WithIda,
     WithCvode,
     WithIpopt,
@@ -1303,7 +1320,10 @@ impl Offer {
     fn available(self, cap: Capabilities) -> bool {
         match self {
             Offer::Always => true,
-            Offer::WithSundials => cap.klu,
+            Offer::WithKlu => cap.klu,
+            Offer::WithKinsol => cap.kinsol,
+            Offer::WithUmfpack => cap.umfpack,
+            Offer::WithLis => cap.lis,
             Offer::WithIda => cap.ida,
             Offer::WithCvode => cap.cvode,
             Offer::WithIpopt => cap.optimization,
@@ -1332,8 +1352,8 @@ const SOLVERS: &[Value<Solver>] = &[
 /// `-nls`. Without the archives `kinsol` runs the runtime's own sparse Newton.
 const NLS_VALUES: &[Value<Nls>] = &[
     ("hybrid", Nls::Hybrid, Offer::Always),
-    ("kinsol", Nls::Kinsol, Offer::WithSundials),
-    ("experimental-kinsol", Nls::KinsolB, Offer::WithSundials),
+    ("kinsol", Nls::Kinsol, Offer::WithKinsol),
+    ("experimental-kinsol", Nls::KinsolB, Offer::WithKinsol),
     ("newton", Nls::Newton, Offer::Always),
     ("mixed", Nls::Mixed, Offer::Always),
     ("homotopy", Nls::Homotopy, Offer::Always),
@@ -1345,28 +1365,27 @@ const NLS_LS_VALUES: &[Value<NlsLs>] = &[
     ("totalpivot", NlsLs::TotalPivot, Offer::Never),
     ("lapack", NlsLs::Lapack, Offer::Never),
     ("rsparse", NlsLs::Rsparse, Offer::Always),
-    ("klu", NlsLs::Klu, Offer::WithSundials),
+    ("klu", NlsLs::Klu, Offer::WithKlu),
 ];
 
 /// `-ls`. `lapack` is partial-pivot LU falling back to the total-pivot search,
-/// which `totalpivot` goes straight to. `lis` rides the same archive bundle as
-/// klu/umfpack, hence the same capability.
+/// which `totalpivot` goes straight to.
 const LS_VALUES: &[Value<Ls>] = &[
     ("default", Ls::Default, Offer::Never),
     ("lapack", Ls::Lapack, Offer::Always),
-    ("lis", Ls::Lis, Offer::WithSundials),
+    ("lis", Ls::Lis, Offer::WithLis),
     ("totalpivot", Ls::TotalPivot, Offer::Always),
-    ("klu", Ls::Klu, Offer::WithSundials),
-    ("umfpack", Ls::Umfpack, Offer::WithSundials),
+    ("klu", Ls::Klu, Offer::WithKlu),
+    ("umfpack", Ls::Umfpack, Offer::WithUmfpack),
 ];
 
 /// `-lss`
 const LSS_VALUES: &[Value<Lss>] = &[
     ("default", Lss::Default, Offer::Never),
-    ("lis", Lss::Lis, Offer::WithSundials),
+    ("lis", Lss::Lis, Offer::WithLis),
     ("rsparse", Lss::Rsparse, Offer::Always),
-    ("klu", Lss::Klu, Offer::WithSundials),
-    ("umfpack", Lss::Umfpack, Offer::WithSundials),
+    ("klu", Lss::Klu, Offer::WithKlu),
+    ("umfpack", Lss::Umfpack, Offer::WithUmfpack),
 ];
 
 const CVODE_LMM_VALUES: &[Value<CvodeLmm>] = &[
@@ -1495,6 +1514,9 @@ mod tests {
 
     const NOTHING: Capabilities = Capabilities {
         klu: false,
+        kinsol: false,
+        umfpack: false,
+        lis: false,
         ida: false,
         cvode: false,
         alarm: false,
@@ -1504,6 +1526,9 @@ mod tests {
     };
     const EVERYTHING: Capabilities = Capabilities {
         klu: true,
+        kinsol: true,
+        umfpack: true,
+        lis: true,
         ida: true,
         cvode: true,
         alarm: true,
@@ -1532,7 +1557,9 @@ mod tests {
     fn unavailable_solvers_are_rejected_with_the_flag_named() {
         for (arg, needle) in [("-lss=klu", "-lss=klu"), ("-ls=klu", "-ls=klu"),
                               ("-nlsLS=klu", "-nlsLS=klu"), ("-lss=umfpack", "-lss=umfpack"),
-                              ("-ls=umfpack", "-ls=umfpack"),
+                              ("-ls=umfpack", "-ls=umfpack"), ("-ls=lis", "-ls=lis"),
+                              ("-lss=lis", "-lss=lis"), ("-nls=kinsol", "-nls=kinsol"),
+                              ("-nls=experimental-kinsol", "-nls=experimental-kinsol"),
                               ("-s=ida", "dassl"), ("-s=cvode", "dassl")] {
             let f = parse(&argv(&[arg])).expect("parses");
             let e = check(&f, NOTHING).expect_err("must reject");
@@ -1547,11 +1574,44 @@ mod tests {
         assert!(e.contains("`cvode`"), "{e}");
     }
 
+    /// An FMU is linked one solver library at a time, so having one must not imply
+    /// another.
+    #[test]
+    fn each_solver_library_is_gated_on_its_own() {
+        for (arg, cap) in [
+            ("-lss=klu", Capabilities { klu: true, ..NOTHING }),
+            ("-ls=umfpack", Capabilities { umfpack: true, ..NOTHING }),
+            ("-lss=lis", Capabilities { lis: true, ..NOTHING }),
+            ("-nls=kinsol", Capabilities { kinsol: true, ..NOTHING }),
+        ] {
+            let f = parse(&argv(&[arg])).expect("parses");
+            assert!(check(&f, cap).is_ok(), "{arg} with its own library");
+            // Every other library alone is not enough.
+            for other in [
+                Capabilities { klu: true, ..NOTHING },
+                Capabilities { umfpack: true, ..NOTHING },
+                Capabilities { lis: true, ..NOTHING },
+                Capabilities { kinsol: true, ..NOTHING },
+            ] {
+                if check(&f, other).is_ok() {
+                    assert_eq!(
+                        (other.klu, other.umfpack, other.lis, other.kinsol),
+                        (cap.klu, cap.umfpack, cap.lis, cap.kinsol),
+                        "{arg} accepted by the wrong library"
+                    );
+                }
+            }
+        }
+    }
+
+    /// The solvers this runtime carries itself, as opposed to the ones a linked
+    /// library provides. `kinsol` is not among them: `NLS_VALUES` offers it only
+    /// `WithKinsol`.
     #[test]
     fn selectable_solvers_need_no_capability() {
         for arg in
-            ["-nls=kinsol", "-nls=hybrid", "-lss=rsparse", "-s=euler", "-s=dassl", "-s=gbode",
-             "-s=rungekutta"]
+            ["-nls=hybrid", "-nls=newton", "-nls=mixed", "-nls=homotopy", "-lss=rsparse",
+             "-s=euler", "-s=dassl", "-s=gbode", "-s=rungekutta"]
         {
             let f = parse(&argv(&[arg])).expect("parses");
             assert!(check(&f, NOTHING).is_ok(), "{arg}");

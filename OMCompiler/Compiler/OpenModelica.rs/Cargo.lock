@@ -5192,6 +5192,7 @@ dependencies = [
  "openmodelica_scripting_qt",
  "openmodelica_util",
  "openmodelica_wasi",
+ "openmodelica_wasm_jit",
  "tikv-jemallocator",
  "wasm-bindgen",
  "web-sys",

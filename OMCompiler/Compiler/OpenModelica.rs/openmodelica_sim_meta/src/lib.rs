@@ -1021,6 +1021,12 @@ pub struct SimMeta {
     /// `FMI2CS_initializeSolverData`: `-s` from `_flags.json`, else euler).
     /// Empty except for a CS export.
     pub cs_method: String,
+    /// The nonlinear/linear solver selection an FMU export hard-codes, as a simflags
+    /// argv fragment (`-nls=kinsol -lss=klu`). An importer has no channel to pass
+    /// these, so `--fmiFlags` is consumed at export and the FMU applies them when it
+    /// instantiates; the export links exactly the solver libraries they reach.
+    /// Empty except for an FMU export.
+    pub fmi_solver_flags: String,
     /// Relative/absolute tolerance for the adaptive integrators.
     pub tolerance: f64,
     /// Result file format (`"mat"`, `"empty"`).
@@ -1418,7 +1424,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 17;
+const VERSION: u32 = 18;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1532,6 +1538,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     put_u32(&mut o, m.n_intervals);
     put_str(&mut o, &m.method);
     put_str(&mut o, &m.cs_method);
+    put_str(&mut o, &m.fmi_solver_flags);
     put_f64(&mut o, m.tolerance);
     put_str(&mut o, &m.output_format);
     put_str(&mut o, &m.prefix);
@@ -2015,6 +2022,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let n_intervals = r.u32()?;
     let method = r.string()?;
     let cs_method = r.string()?;
+    let fmi_solver_flags = r.string()?;
     let tolerance = r.f64()?;
     let output_format = r.string()?;
     let prefix = r.string()?;
@@ -2333,7 +2341,8 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         }
     };
     Ok(SimMeta {
-        layout, start_time, stop_time, n_intervals, method, cs_method, tolerance, output_format, prefix,
+        layout, start_time, stop_time, n_intervals, method, cs_method, fmi_solver_flags, tolerance,
+        output_format, prefix,
         model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, params, attr_log,
         removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon, prof,
         parmod,
@@ -2358,6 +2367,7 @@ mod tests {
             n_intervals: 500,
             method: "dassl".to_string(),
             cs_method: "euler".to_string(),
+            fmi_solver_flags: "-nls=kinsol -lss=klu".to_string(),
             tolerance: 1e-6,
             output_format: "mat".to_string(),
             prefix: "MyModel".to_string(),

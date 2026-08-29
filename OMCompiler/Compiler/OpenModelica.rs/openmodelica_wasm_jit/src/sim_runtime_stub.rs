@@ -41,3 +41,8 @@ pub fn prepare_native_externals(_model: &SimModel, _sigs: &[crate::sig::ExtCallS
 pub fn run(_model: &SimModel, _meta: &openmodelica_sim_meta::SimMeta) -> std::result::Result<RunResult, String> {
     return Err(NO_ENGINE.to_string())
 }
+
+/// No engine here, so nothing to precompile.
+pub fn precompile_fixed_blobs(_dir: &std::path::Path) -> std::result::Result<Vec<String>, String> {
+    Ok(Vec::new())
+}

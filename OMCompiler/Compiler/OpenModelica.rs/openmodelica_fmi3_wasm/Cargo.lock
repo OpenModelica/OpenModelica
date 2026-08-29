@@ -563,6 +563,7 @@ dependencies = [
  "openmodelica_lapack",
  "openmodelica_mat_writer",
  "openmodelica_sim_meta",
+ "rsparse",
 ]
 
 [[package]]

@@ -3061,12 +3061,21 @@ pub(crate) fn lin_sparse_cached(
     #[cfg(not(sundials))]
     let _ = backend;
 
-    // Native interactive runtime: the host solves natively (cheap crossings).
-    #[cfg(all(target_os = "wasi", feature = "host_lin_solve"))]
+    // Both linked: which one is the host's to say (`rt_set_host_lin_solve`), so
+    // one module serves a host with a native solver and one without.
+    #[cfg(all(target_os = "wasi", feature = "host_lin_solve", feature = "inwasm_solve"))]
+    {
+        if solvers::host_lin_solve() {
+            return unsafe { rt_host_lin_solve(handle, colptr, rowidx, values, b_ptr, n as u32, nnz as u32) };
+        }
+        return solve_lin_sparse_cached_inwasm(handle, colptr, rowidx, values, b_ptr, n, nnz);
+    }
+    // Host only: nothing to fall back to, so the flag does not apply.
+    #[cfg(all(target_os = "wasi", feature = "host_lin_solve", not(feature = "inwasm_solve")))]
     {
         return unsafe { rt_host_lin_solve(handle, colptr, rowidx, values, b_ptr, n as u32, nnz as u32) };
     }
-    // In-wasm rsparse cache: web interactive (boundary too costly) + standalone.
+    // In-wasm only: the web interactive and standalone runtimes.
     #[cfg(all(target_os = "wasi", feature = "inwasm_solve", not(feature = "host_lin_solve")))]
     {
         return solve_lin_sparse_cached_inwasm(handle, colptr, rowidx, values, b_ptr, n, nnz);

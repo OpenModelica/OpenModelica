@@ -17,7 +17,7 @@ pub struct Inputs {
 }
 
 impl Inputs {
-    pub fn new(opts: &Options) -> Inputs {
+    pub fn new(opts: &Options<'_>) -> Inputs {
         let mut groups: Vec<(VarType, Vec<u32>, Vec<usize>)> = Vec::new();
         for (i, input) in opts.inputs.iter().enumerate() {
             let ty = input.ty.wire();
@@ -42,7 +42,7 @@ impl Inputs {
     }
 
     /// Evaluate every input at `time` and set it.
-    pub fn apply(&mut self, inst: &mut dyn Fmi3, opts: &Options, time: f64) -> Result<()> {
+    pub fn apply(&mut self, inst: &mut dyn Fmi3, opts: &Options<'_>, time: f64) -> Result<()> {
         for (i, input) in opts.inputs.iter().enumerate() {
             self.values[i] = input.value.eval(time);
         }
@@ -60,7 +60,7 @@ impl Inputs {
 pub fn initialize(
     inst: &mut dyn Fmi3,
     inputs: &mut Inputs,
-    opts: &Options,
+    opts: &Options<'_>,
 ) -> Result<()> {
     inst.enter_initialization_mode(opts.tolerance, opts.start_time, Some(opts.stop_time))?;
     for p in &opts.parameters {

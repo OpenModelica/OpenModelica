@@ -39,11 +39,22 @@ const PRIMME: &str = "primme";
 
 fn main() {
     println!("cargo::rustc-check-cfg=cfg(sundials)");
+    // `cfg(sundials)` plus: the solvers arrive as imports, one side module per
+    // library, so which of them an FMU actually got is only knowable at run time.
+    println!("cargo::rustc-check-cfg=cfg(sundials_dylink)");
     println!("cargo:rerun-if-env-changed=OMC_SUNDIALS_WASM_DIR");
 
     // wasip1 only: the no_std JIT runtime (wasm32-unknown-unknown) has no libc for
     // SUNDIALS to call, and the host `cargo test` build links nothing.
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("wasi") {
+        // Except the FMI3 adapter's PIC build, which has nothing to link: its calls
+        // stay undefined and become wasm imports the FMU's SUNDIALS side module
+        // resolves. The fused wasip1 adapter asks for the same feature and falls
+        // through to the archives below.
+        if std::env::var_os("CARGO_FEATURE_SUNDIALS_EXTERN").is_some() {
+            println!("cargo:rustc-cfg=sundials");
+            println!("cargo:rustc-cfg=sundials_dylink");
+        }
         return;
     }
     let Ok(dir) = std::env::var("OMC_SUNDIALS_WASM_DIR") else { return };

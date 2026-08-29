@@ -33,6 +33,10 @@ standalone = ["dep:daskr", "dep:openmodelica_plt_writer", "inwasm_solve"]
 inwasm_solve = ["dep:rsparse"]
 # Delegate the sparse solve to the host (`env.rt_host_lin_solve`); native interactive only.
 host_lin_solve = []
+# `cfg(sundials)` without linking anything: the FMI3 adapter's PIC build leaves the
+# CVODE/IDA/KINSOL/KLU/UMFPACK/Lis calls undefined, as imports the FMU's SUNDIALS
+# side module resolves.
+sundials_extern = ["openmodelica_sim_meta/sundials_extern"]
 # PRIMME's partial SVD, which `-lv=LOG_NLS_SVD` with `-svdCount` runs. Its archive
 # rides with the SUNDIALS hand-off, and its BLAS/LAPACK calls bind to
 # openmodelica_lapack's Fortran ABI -- which is why the feature turns that on, and
@@ -54,6 +58,11 @@ libm = "0.2"
 # host boundary. The same crate omc itself calls, so a linear system gets
 # LAPACK's pivot order and `INFO` whichever side factors it.
 openmodelica_lapack = { path = "../openmodelica_lapack" }
+# The `.mat` serializer: the standalone driver's result file, and the state
+# `-saveInitialGuess_system` writes from inside the nonlinear solver — which is
+# `cfg(sundials)` code, so every target that can have SUNDIALS needs it. `no_std`,
+# so it costs the interactive runtimes nothing they do not call.
+openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
 
 # In-wasm session driver (`src/session.rs`) for the no_std JIT runtime
 # (wasm32-unknown-unknown): the shared driver + solver compiled in-wasm so the
@@ -68,10 +77,6 @@ daskr = { path = "../daskr", default-features = false, optional = true }
 # `.mat`. wasip1 has std, so these keep their default (`std`) features.
 [target.'cfg(target_os = "wasi")'.dependencies]
 openmodelica_sim_meta = { path = "../openmodelica_sim_meta", features = ["std"] }
-# The `.mat` serializer: the standalone driver's result file, and the state
-# `-saveInitialGuess_system` writes from inside the nonlinear solver. `no_std`,
-# so it costs the interactive runtimes nothing they do not call.
-openmodelica_mat_writer = { path = "../openmodelica_mat_writer" }
 openmodelica_plt_writer = { path = "../openmodelica_plt_writer", optional = true }
 daskr = { path = "../daskr", optional = true }
 # Sparse direct solver (CSparse port, AMD fill-reducing ordering) for torn linear
