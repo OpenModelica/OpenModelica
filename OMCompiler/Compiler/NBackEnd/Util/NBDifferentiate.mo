@@ -1223,7 +1223,23 @@ public
         dbg("[dCREF:JAC] cref=" + ComponentRef.toString(exp.cref)
             + " | stripped=" + ComponentRef.toString(strippedCref)
             + " | subs=" + Subscript.toStringList(expCrefSubscripts));
-        if UnorderedMap.contains(strippedCref, diff_map) then
+        if UnorderedMap.contains(exp.cref, diff_map) then
+          // exp.cref is itself one of this Jacobian's own registered unknowns:
+          // use it directly rather than falling through to the base-cref template,
+          // which may belong to an unrelated element sharing the same base cref.
+          derCref := UnorderedMap.getOrFail(exp.cref, diff_map);
+          dbg("[dCREF:JAC] exact match -> " + ComponentRef.toString(derCref));
+          res := Expression.fromCref(derCref);
+          if diffArguments.collectAdjoints then
+            // Accumulate into the derivative (pDER/SEED) cref's own adjoint slot, not
+            // the source variable's - matches the base-cref-fallback branch below, whose
+            // adjointKey is likewise derived from derCref, never from exp.cref directly.
+            if not UnorderedMap.contains(derCref, Util.getOption(diffArguments.adjoint_map)) then
+              UnorderedMap.tryAdd(derCref, {}, Util.getOption(diffArguments.adjoint_map));
+            end if;
+            UnorderedMap.tryAddUpdate(derCref, function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
+          end if;
+        elseif UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
           dbg("[dCREF:JAC] mapped -> " + ComponentRef.toString(derCref));
