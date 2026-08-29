@@ -6,12 +6,14 @@
 //! is host-free — the browser omc reads an FMU exactly as the native one does.
 
 pub mod description;
+pub mod figures;
 #[cfg(feature = "component")]
 pub mod lswasm;
 mod parse;
 mod platform;
 
 pub use description::*;
+pub use figures::{Axis, Curve, Figure, Plot, Visualization};
 pub use parse::model_description;
 pub use platform::{Platform, host_platform};
 

@@ -1213,16 +1213,26 @@ fn find_icon_object(root: &J) -> J {
     None
 }
 
-fn icon_from_json(root: &J) -> Icon {
-    let mut icon = Icon::default();
+/// A class's Icon layer is its base classes' unioned with its own, the base
+/// classes' drawn first (behind); most of MSL draws its icon that way.
+fn collect_icon(root: &J, icon: &mut Icon, depth: u32) {
+    if depth > 32 {
+        return; // a malformed instance must not recurse forever
+    }
+    for e in root.get("elements").items() {
+        let e = Some(e);
+        if e.get("$kind").as_str() == "extends" {
+            collect_icon(&e.get("baseClass"), icon, depth + 1);
+        }
+    }
     let Some(icon_obj) = find_icon_object(root) else {
-        return icon;
+        return;
     };
     let icon_obj = Some(icon_obj);
 
     let ext = icon_obj.get("coordinateSystem").get("extent");
     if ext.len() >= 2 {
-        icon.extent = parse_extent(&ext);
+        icon.extent = parse_extent(&ext); // the most derived declaration wins
     }
 
     for g in icon_obj.get("graphics").items() {
@@ -1236,6 +1246,11 @@ fn icon_from_json(root: &J) -> Icon {
             icon.graphics.push(s);
         }
     }
+}
+
+fn icon_from_json(root: &J) -> Icon {
+    let mut icon = Icon::default();
+    collect_icon(root, &mut icon, 0);
     icon
 }
 
@@ -1272,7 +1287,7 @@ struct PlacedConnector {
     y1: f64,
     x2: f64,
     y2: f64,
-    icon: J,
+    ty: J,
 }
 
 /// The type path with non-alphanumerics turned into underscores.
@@ -1317,7 +1332,6 @@ fn collect_placed_connectors(root: &J) -> Vec<PlacedConnector> {
         let Some(b) = placement_box(&ext) else {
             continue; // no placement -> not drawn
         };
-        let icon = t.get("annotation").get("Icon");
         out.push(PlacedConnector {
             name: e.get("name").as_str(),
             icon_base_name: icon_base_name_of(&t.get("name").as_str()),
@@ -1325,7 +1339,7 @@ fn collect_placed_connectors(root: &J) -> Vec<PlacedConnector> {
             y1: b[1],
             x2: b[2],
             y2: b[3],
-            icon: if icon.is_object() { icon } else { None },
+            ty: t,
         });
     }
     out
@@ -1334,7 +1348,7 @@ fn collect_placed_connectors(root: &J) -> Vec<PlacedConnector> {
 fn connector_icon(handle: i32, index: i32) -> Option<Icon> {
     let cs = collect_placed_connectors(&ModelInstanceReference::get(handle));
     let c = cs.get(usize::try_from(index).ok()?)?;
-    let icon = icon_from_json(&c.icon);
+    let icon = icon_from_json(&c.ty);
     if icon.graphics.is_empty() { None } else { Some(icon) }
 }
 

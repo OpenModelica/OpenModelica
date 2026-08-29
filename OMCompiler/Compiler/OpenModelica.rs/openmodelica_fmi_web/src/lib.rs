@@ -10,7 +10,7 @@
 //! Strings cross as JSON in one buffer ([`om_fmi_out_ptr`]/[`om_fmi_out_len`]);
 //! sample values are read straight out of the recorder's buffer.
 
-use openmodelica_fmi::{Causality, Fmu, InterfaceKind, ModelDescription, VarType, Variability};
+use openmodelica_fmi::{Causality, Fmu, Initial, InterfaceKind, ModelDescription, VarType, Variability};
 use openmodelica_fmi_driver::api::{Fmi3CoSimulation, Fmi3ModelExchange};
 use openmodelica_fmi_driver::record::Recorder;
 use openmodelica_fmi_driver::wasm_host::{HostFmu, KIND_CO_SIMULATION, KIND_MODEL_EXCHANGE};
@@ -150,6 +150,41 @@ pub extern "C" fn om_fmi_resource_names() -> i32 {
         let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
         let names: Vec<&str> = fmu.resources().collect();
         set_out(serde_json::to_string(&names).unwrap_or_else(|_| "[]".into()));
+        1
+    })
+}
+
+/// The FMU icon — `terminalsAndIcons/icon.svg` if there is one, else `icon.png`.
+/// Bytes in the binary buffer, name as JSON in the out buffer; `0` for no icon.
+#[unsafe(no_mangle)]
+pub extern "C" fn om_fmi_icon() -> i32 {
+    with(|s| {
+        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
+        for name in ["terminalsAndIcons/icon.svg", "terminalsAndIcons/icon.png"] {
+            if let Some(bytes) = fmu.read(name) {
+                s.binary = bytes.into_owned();
+                set_out(json!({"name": name}).to_string());
+                return 1;
+            }
+        }
+        fail("the FMU carries no terminalsAndIcons icon")
+    })
+}
+
+/// `{"entry":…, "files":[…]}` in the out buffer: the documentation entry point
+/// (`index.html`, or FMI 1.0's `_main.html`) and the names beside it, which the
+/// caller pulls through [`om_fmi_select_file`]. `0` when there is none.
+#[unsafe(no_mangle)]
+pub extern "C" fn om_fmi_documentation() -> i32 {
+    with(|s| {
+        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
+        let entry = ["documentation/index.html", "documentation/_main.html"]
+            .into_iter()
+            .find(|n| fmu.read(n).is_some());
+        let Some(entry) = entry else { return fail("the FMU carries no documentation") };
+        let files: Vec<&str> =
+            fmu.names().iter().map(String::as_str).filter(|n| n.starts_with("documentation/")).collect();
+        set_out(json!({"entry": entry, "files": files}).to_string());
         1
     })
 }
@@ -327,9 +362,25 @@ fn describe(fmu: &Fmu) -> Value {
                 "start": v.start.as_ref().and_then(|s| s.first_f64()),
                 "numeric": v.ty.is_numeric(),
                 "settable": v.is_settable(),
+                // Together these name an editable start value: `derivative` the
+                // state, `initial` whether the start is the model's.
+                "derivative": v.derivative,
+                "initial": v.initial.map(|i| match i {
+                    Initial::Exact => "exact",
+                    Initial::Approx => "approx",
+                    Initial::Calculated => "calculated",
+                }),
             })
         })
         .collect();
+    // Alias name -> the variable carrying the data: an <Alias> shares its
+    // variable's valueReference, so only the variable is ever recorded.
+    let aliases: Value = md
+        .variables
+        .iter()
+        .flat_map(|v| v.aliases.iter().map(move |a| (a.name.clone(), Value::from(v.name.clone()))))
+        .collect::<serde_json::Map<String, Value>>()
+        .into();
     json!({
         "fmiVersion": md.fmi_version_string,
         "modelName": md.model_name,
@@ -345,9 +396,13 @@ fn describe(fmu: &Fmu) -> Value {
             "stepSize": e.step_size,
             "tolerance": e.tolerance,
         },
+        "version": md.version,
         "numberOfContinuousStates": md.number_of_continuous_states(),
         "numberOfEventIndicators": md.number_of_event_indicators,
         "variables": variables,
+        "aliases": aliases,
+        "figures": md.figures().iter().map(figure_json).collect::<Vec<_>>(),
+        "visualization": md.visualization().map(|v| json!({"file": v.file})),
         // Not the FMU's: what a run of it can be given, for the page's chooser.
         "solvers": Solver::all().iter()
             .map(|s| json!({"name": s.as_str(), "description": s.description()}))
@@ -355,6 +410,29 @@ fn describe(fmu: &Fmu) -> Value {
         "toolAnnotations": md.tool_annotations.iter()
             .map(|a| json!({"name": a.name, "xml": a.xml}))
             .collect::<Vec<_>>(),
+    })
+}
+
+fn figure_json(f: &openmodelica_fmi::Figure) -> Value {
+    let axis = |a: &Option<openmodelica_fmi::Axis>| {
+        a.as_ref().map(|a| json!({
+            "label": a.label, "unit": a.unit, "min": a.min, "max": a.max, "log": a.log,
+        }))
+    };
+    json!({
+        "title": f.title,
+        "group": f.group,
+        "preferred": f.preferred,
+        "caption": f.caption,
+        "plots": f.plots.iter().map(|p| json!({
+            "title": p.title,
+            "preferred": p.preferred,
+            "terminal": p.terminal,
+            "curves": p.curves.iter()
+                .map(|c| json!({"x": c.x, "y": c.y, "legend": c.legend}))
+                .collect::<Vec<_>>(),
+            "x": axis(&p.x), "y": axis(&p.y), "y2": axis(&p.y2),
+        })).collect::<Vec<_>>(),
     })
 }
 
