@@ -57,6 +57,10 @@ export class Session {
     return this.send('load', { archive, cancelFlag: flag }, [archive]);
   }
 
+  file(name) {
+    return this.send('file', { name });
+  }
+
   run(options) {
     if (this.cancelFlag) Atomics.store(this.cancelFlag, 0, 0);
     return this.send('run', { options });

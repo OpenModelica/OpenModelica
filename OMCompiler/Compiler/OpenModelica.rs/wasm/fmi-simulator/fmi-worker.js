@@ -38,6 +38,10 @@ async function handle(kind, args) {
       if (!driver) throw new Error('no FMU is loaded');
       return driver.warm(args.kind);
     }
+    case 'file': {
+      if (!driver) throw new Error('no FMU is loaded');
+      return driver.file(args.name);
+    }
     case 'run': {
       if (!driver) throw new Error('no FMU is loaded');
       const result = await driver.run(args.options);

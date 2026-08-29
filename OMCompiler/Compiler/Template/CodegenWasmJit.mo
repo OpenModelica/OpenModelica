@@ -128,7 +128,7 @@ function emitMeFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
-  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: documentation";
+  input String documentationDir "directory shipped as documentation/ (index.html and the images it references); empty for none";
   input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
 algorithm
@@ -144,7 +144,7 @@ function emitCsFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
-  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: documentation";
+  input String documentationDir "directory shipped as documentation/ (index.html and the images it references); empty for none";
   input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
 algorithm
@@ -160,7 +160,7 @@ function emitMeCsFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
-  input list<tuple<String,String>> extraFiles "further (path inside the FMU, content) entries: documentation";
+  input String documentationDir "directory shipped as documentation/ (index.html and the images it references); empty for none";
   input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
 algorithm

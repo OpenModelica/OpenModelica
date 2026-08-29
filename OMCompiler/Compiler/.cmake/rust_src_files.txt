@@ -238,6 +238,7 @@ openmodelica_ext_native_marshal/src/lib.rs
 openmodelica_fmi/Cargo.toml
 openmodelica_fmi/examples/fmuinfo.rs
 openmodelica_fmi/src/description.rs
+openmodelica_fmi/src/figures.rs
 openmodelica_fmi/src/lib.rs
 openmodelica_fmi/src/lswasm.rs
 openmodelica_fmi/src/parse/mod.rs

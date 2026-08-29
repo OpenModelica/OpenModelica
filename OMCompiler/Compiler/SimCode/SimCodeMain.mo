@@ -975,9 +975,8 @@ public function emitWasmFMU
   input String FMUType;
   input Absyn.Program program;
 protected
-  String guid, modelDescriptionStr, simulationFlagsJson, htmlFile, htmlContent;
-  String fmutmp, terminalsDir = "";
-  list<tuple<String,String>> extraFiles = {};
+  String guid, modelDescriptionStr, simulationFlagsJson;
+  String fmutmp = "", terminalsDir = "", documentationDir = "";
   list<SimCode.FmiTerminal> terminals;
   // `--fmuDirectory`: an export for an OpenModelica importer, which reads the
   // model description and the artifact and nothing else.
@@ -987,6 +986,15 @@ algorithm
   // translation has no callTargetTemplatesFMU around it to have set it.
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   guid := System.getUUIDStr();
+  if not bareExport then
+    // The C export's scratch directory, which terminalsAndIcons/ and documentation/
+    // are staged in; old contents would be shipped verbatim.
+    fmutmp := Util.hashFileNamePrefix(simCode.fileNamePrefix) + ".fmutmp";
+    if System.directoryExists(fmutmp) and not System.removeDirectory(fmutmp) then
+      Error.addInternalError("Failed to remove directory: " + fmutmp, sourceInfo());
+      fail();
+    end if;
+  end if;
   // The same templates the C target uses, so the XML is byte-identical to it. No
   // sourceFiles: a wasm FMU carries no C. The XML declaration comes from
   // fmuModelDescriptionFile, which the C target reaches these through.
@@ -1000,12 +1008,6 @@ algorithm
     // terminalsAndIcons/ by the C target's route: SimCode writes the XML, then the
     // OMGraphics renderer adds the <GraphicalRepresentation> and the icons beside it.
     if not bareExport then
-      // The C export's scratch directory; old contents would be shipped verbatim.
-      fmutmp := Util.hashFileNamePrefix(simCode.fileNamePrefix) + ".fmutmp";
-      if System.directoryExists(fmutmp) and not System.removeDirectory(fmutmp) then
-        Error.addInternalError("Failed to remove directory: " + fmutmp, sourceInfo());
-        fail();
-      end if;
       terminalsDir := fmutmp + "/terminalsAndIcons/";
       terminals := SimCodeUtil.getFMI3Terminals(simCode);
       if not listEmpty(terminals) then
@@ -1020,20 +1022,18 @@ algorithm
       ExecStat.execStat("FMU terminalsAndIcons.xml");
     end if;
   end if;
-  if not bareExport then
-    (htmlFile, htmlContent) := htmlDocumentation(program, simCode, FMUVersion);
-    if htmlFile <> "" then
-      extraFiles := ("documentation/" + htmlFile, htmlContent) :: extraFiles;
-    end if;
+  // After the icons, so the page references the one terminalsAndIcons/ holds.
+  if not bareExport and writeFMUDocumentation(program, simCode, FMUVersion, fmutmp) then
+    documentationDir := fmutmp + "/documentation/";
     ExecStat.execStat("FMU documentation");
   end if;
   simulationFlagsJson := wasmFMUSimulationFlagsJson(simCode);
   if FMI.isFMIMEType(FMUType) and FMI.isFMICSType(FMUType) then
-    CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, extraFiles, terminalsDir, simulationFlagsJson);
+    CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, documentationDir, terminalsDir, simulationFlagsJson);
   elseif FMI.isFMICSType(FMUType) then
-    CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, extraFiles, terminalsDir, simulationFlagsJson);
+    CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, documentationDir, terminalsDir, simulationFlagsJson);
   else
-    CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, extraFiles, terminalsDir, simulationFlagsJson);
+    CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, documentationDir, terminalsDir, simulationFlagsJson);
   end if;
   setGlobalRoot(Global.optionSimCode, NONE());
 end emitWasmFMU;
@@ -1055,10 +1055,9 @@ algorithm
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   () := match (simCode,fmuTarget)
     local
-      String str, newdir, newpath, resourcesDir, dirname, htmlFile;
+      String str, newdir, newpath, resourcesDir, dirname;
       String fmutmp;
       String guid;
-      String htmlContent;
       list<SimCode.FmiTerminal> terminals;
       Boolean b;
       Boolean needSundials = false;
@@ -1171,13 +1170,6 @@ algorithm
               Error.addInternalError("Failed to move " + simCode.fileNamePrefix + "_info.json file", sourceInfo());
             end if;
           end if;
-        end if;
-
-        // create optional html documentation directory
-        (htmlFile, htmlContent) := htmlDocumentation(program, simCode, FMUVersion);
-        if htmlFile <> "" then
-          Util.createDirectoryTree(fmutmp + "/documentation/");
-          System.writeFile(fmutmp + "/documentation/" + htmlFile, htmlContent);
         end if;
 
         SimCodeUtil.resetFunctionIndex();
@@ -1316,6 +1308,16 @@ algorithm
         end if;
 
         Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=model_desc_src_files), simCode);
+
+        // FMI 3.0 graphical user annotations (issue #15686 task 9): the template
+        // above wrote terminalsAndIcons.xml, this adds the icons beside it. Before
+        // the documentation, which shows the icon it produced.
+        if FMUVersion == "3.0" then
+          CevalScriptBackend.generateFMI3GraphicalRepresentation(simCode.modelInfo.name, fmutmp, simCode.fileNamePrefix);
+        end if;
+        if writeFMUDocumentation(program, simCode, FMUVersion, fmutmp) then
+          ExecStat.execStat("FMU documentation");
+        end if;
 
         // Add the _part*.c files to the list of source files. We do not know how many of them there are until
         // we have called CodegenFMU.translateModel. Which means the list of source files passed to
@@ -1491,20 +1493,38 @@ algorithm
   setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplatesFMU;
 
-protected function htmlDocumentation
-  "The FMU's documentation/ page, from the model's Documentation annotation
+// `svgiconhead` is sized as the generated library documentation sizes it: a
+// little larger than the class name it sits beside, not a banner.
+protected constant String FMU_DOCUMENTATION_CSS = "
+  :root { color-scheme: light dark; }
+  body { margin: 0 auto; padding: 1.5rem; max-width: 50rem; line-height: 1.5;
+         font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  h1 { font-size: 1.5rem; margin: 0 0 .2rem; }
+  .svgiconhead { height: 32px; width: 32px; object-fit: contain; vertical-align: middle; }
+  .fmu-desc { margin: 0 0 1.5rem; font-style: italic; opacity: .8; }
+  img { max-width: 100%; height: auto; }
+  table { border-collapse: collapse; }
+  td, th { border: 1px solid; border-color: color-mix(in srgb, currentColor 30%, transparent);
+           padding: .2rem .5rem; }
+  pre, code { font-family: ui-monospace, Menlo, Consolas, monospace; }
+";
+
+protected function writeFMUDocumentation
+  "Write the FMU's documentation/ directory under `fmutmp`: a standalone HTML page
+  built from the model's Documentation annotation
   (e.g) annotation(Documentation(info=\"<html> </html>\",
                                  revisions=\"<html> </html>\",
                                  __OpenModelica_infoHeader = \"<html> </html>\"))
-  An empty file name means the model carries no such annotation.
-  "
+  plus the modelica:// images it references, so the page needs nothing outside the
+  FMU. FMI 3.0 pages also show the icon rendered to terminalsAndIcons/.
+  False when the model carries no such annotation and nothing was written."
   input Absyn.Program program;
   input SimCode.SimCode simCode;
   input String FMUVersion;
-  output String fileName = "";
-  output String content = "";
+  input String fmutmp;
+  output Boolean written = false;
 protected
-  String info, revisions, infoHeader;
+  String info, revisions, infoHeader, docDir, name, page, icon;
 algorithm
   (info, revisions, infoHeader) := ProgramUtil.getNamedAnnotationExp(simCode.modelInfo.name, program, Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
 
@@ -1512,13 +1532,96 @@ algorithm
     return;
   end if;
 
-  fileName := if FMUVersion == "1.0" then "_main.html" else "index.html";
-  content := infoHeader + "\n"
-             + "<h1>" + AbsynUtil.pathString(simCode.modelInfo.name) + "</h1>\n"
-             + "<p> <i>" + simCode.modelInfo.description + "</i> </p>\n"
-             + "<h4> <u> Information </u> </h4>" + info + "\n"
-             + "<h4> <u> Revisions </u> </h4>" + revisions + "\n";
-end htmlDocumentation;
+  name := Util.escapeModelicaStringToXmlString(AbsynUtil.pathString(simCode.modelInfo.name));
+  // terminalsAndIcons/ is FMI 3.0 only, and holds an icon only for a model whose
+  // icon layer had something to draw.
+  icon := if FMUVersion == "3.0" and System.regularFileExists(fmutmp + "/terminalsAndIcons/icon.svg")
+          then "<img class=\"svgiconhead\" src=\"../terminalsAndIcons/icon.svg\" alt=\"\"> " else "";
+
+  page := "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"
+          + "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+          + "<title>" + name + "</title>\n"
+          + "<style>" + FMU_DOCUMENTATION_CSS + "</style>\n"
+          + "</head>\n<body>\n"
+          + "<h1>" + icon + name + "</h1>\n"
+          + (if stringEmpty(simCode.modelInfo.description) then ""
+             else "<p class=\"fmu-desc\">" + Util.escapeModelicaStringToXmlString(simCode.modelInfo.description) + "</p>\n")
+          + fmuDocumentationSection("", infoHeader)
+          + fmuDocumentationSection("Information", info)
+          + fmuDocumentationSection("Revisions", revisions)
+          + "</body>\n</html>\n";
+
+  docDir := fmutmp + "/documentation/";
+  Util.createDirectoryTree(docDir);
+  page := copyFMUDocumentationResources(program, page, docDir);
+  System.writeFile(docDir + (if FMUVersion == "1.0" then "_main.html" else "index.html"), page);
+  written := true;
+end writeFMUDocumentation;
+
+protected function fmuDocumentationSection
+  "One section of the documentation page: nothing at all when the annotation
+  string is empty, so a model documenting only `info` gets no dangling Revisions
+  heading. The strings are whole HTML documents in Modelica; the page they go
+  into already has its own <html>, so the wrapper is dropped rather than nested."
+  input String heading "empty for an unheaded section";
+  input String html;
+  output String section = "";
+protected
+  String body;
+  Integer len;
+algorithm
+  body := System.trim(html);
+  // Modelica writes these as \"<html> ... </html>\"; some models leave the tags off,
+  // and \"<html></html>\" documents nothing at all.
+  if StringUtil.startsWith(System.tolower(body), "<html>") then
+    len := stringLength(body);
+    body := if len > 6 then substring(body, 7, len) else "";
+    len := stringLength(body);
+    if StringUtil.endsWith(System.tolower(body), "</html>") then
+      body := if len > 7 then substring(body, 1, len - 7) else "";
+    end if;
+    body := System.trim(body);
+  end if;
+  if stringEmpty(body) then
+    return;
+  end if;
+  section := (if stringEmpty(heading) then "" else "<h2>" + heading + "</h2>\n") + body + "\n";
+end fmuDocumentationSection;
+
+protected function copyFMUDocumentationResources
+  "Copy every modelica:// resource the documentation references into `docDir` and
+  point the page at the copy, so it displays without the library it came from. The
+  URI keeps its own path (modelica://Modelica/Resources/Images/x.png becomes
+  documentation/Modelica/Resources/Images/x.png), which keeps two same-named images
+  in different libraries apart. Only URIs naming a file are touched, so a
+  modelica://Some.Class link is left alone."
+  input Absyn.Program program;
+  input output String page;
+  input String docDir;
+protected
+  list<String> uris;
+  String source, classname, relative, target;
+algorithm
+  // A URI cannot contain any of these unencoded, so tokenizing on them lifts the
+  // URIs out of the markup without needing to parse it.
+  uris := List.uniqueOnTrue(list(u for u guard StringUtil.startsWith(u, "modelica://")
+                                 in System.strtok(page, "\"'<> \t\n\r")), stringEq);
+  for uri in uris loop
+    try
+      (_, classname, relative) := System.uriToClassAndPath(uri);
+      source := ProgramUtil.getFullPathFromUri(program, uri, false);
+      if System.regularFileExists(source) then
+        target := classname + relative;
+        Util.createDirectoryTree(docDir + System.dirname(target));
+        if System.copyFile(source, docDir + target) then
+          page := System.stringReplace(page, uri, target);
+        end if;
+      end if;
+    else
+      // A broken documentation link is not worth failing the export over.
+    end try;
+  end for;
+end copyFMUDocumentationResources;
 
 protected function callTargetTemplatesXML
 "Generate target code by passing the SimCode data structure to templates."

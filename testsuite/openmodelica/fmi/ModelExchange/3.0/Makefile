@@ -15,8 +15,10 @@ fmi3_builddescription.mos \
 fmi3_causalize_protected.mos \
 fmi3_clocks.mos \
 fmi3_directional_derivatives.mos \
+fmi3_documentation.mos \
 fmi3_fmustate.mos \
 fmi3_graphics.mos \
+fmi3_graphics_inherited.mos \
 fmi3_msl_adder4.mos \
 fmi3_msl_engine1a.mos \
 fmi3_terminals_alias_nb.mos \

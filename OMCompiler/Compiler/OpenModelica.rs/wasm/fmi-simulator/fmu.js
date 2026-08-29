@@ -1,15 +1,17 @@
-// Loading of FMI-LS-WASM FMUs: ZIP extraction and modelDescription.xml parsing.
-// Instantiating the component — transpiling it with jco and reaching its core
-// exports — is `fmu-core.js`; what the page shows about an FMU is parsed here.
-
-import { loadComponent } from './fmu-core.js';
+// Writing an FMU back out, and its documentation as DOM.
+//
+// Reading one is the driver's job: `openmodelica_fmi` unpacks the archive and
+// parses `modelDescription.xml` in the worker. What is left here is the half no
+// wasm entry point covers — the native repack writes a new archive — and the
+// half that only means anything in a browser.
 
 async function inflateRaw(bytes) {
   const s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
   return new Uint8Array(await new Response(s).arrayBuffer());
 }
 
-// Minimal ZIP reader over the central directory. Stored and deflated entries only.
+// Minimal ZIP reader over the central directory, for the one path that needs
+// every entry in hand: the native repack. Stored and deflated entries only.
 export async function readZip(buf) {
   const dv = new DataView(buf), u8 = new Uint8Array(buf), dec = new TextDecoder();
   let eocd = -1;
@@ -104,188 +106,67 @@ export async function writeZip(files) {
   return new Blob([...local, ...central, new Uint8Array(end.buffer)]);
 }
 
-// FMI 3.0 variable element name -> the get/set suffix used by the WIT methods.
-// Enumeration is an Int64 in FMI 3.0.
-const TYPES = {
-  Float32: 'Float32', Float64: 'Float64',
-  Int8: 'Int8', Int16: 'Int16', Int32: 'Int32', Int64: 'Int64',
-  UInt8: 'UInt8', UInt16: 'UInt16', UInt32: 'UInt32', UInt64: 'UInt64',
-  Boolean: 'Boolean', String: 'String', Binary: 'Binary',
-  Enumeration: 'Int64', Clock: 'Clock',
+const MIME = {
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+  svg: 'image/svg+xml', bmp: 'image/bmp', webp: 'image/webp', avif: 'image/avif',
 };
-const NUMERIC = new Set(['Float32', 'Float64', 'Int8', 'Int16', 'Int32', 'Int64',
-  'UInt8', 'UInt16', 'UInt32', 'UInt64', 'Boolean', 'Enumeration']);
+const mimeOf = (name) => MIME[(name.split('.').pop() || '').toLowerCase()] || 'application/octet-stream';
 
-const attr = (e, n) => (e && e.hasAttribute(n) ? e.getAttribute(n) : null);
-const numAttr = (e, n) => { const v = attr(e, n); return v == null || v === '' ? null : parseFloat(v); };
-const boolAttr = (e, n) => { const v = attr(e, n); return v == null ? null : v === 'true' || v === '1'; };
-
-function iface(e) {
-  if (!e) return null;
-  return {
-    modelIdentifier: attr(e, 'modelIdentifier') || '',
-    needsExecutionTool: boolAttr(e, 'needsExecutionTool') === true,
-    hasEventMode: boolAttr(e, 'hasEventMode') === true,
-    canHandleVariableCommunicationStepSize: boolAttr(e, 'canHandleVariableCommunicationStepSize') !== false,
-    fixedInternalStepSize: numAttr(e, 'fixedInternalStepSize'),
-    providesDirectionalDerivatives: boolAttr(e, 'providesDirectionalDerivatives') === true,
-  };
+function dataUri(bytes, name) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return `data:${mimeOf(name)};base64,${btoa(s)}`;
 }
 
-// The OpenModelica <Figures> vendor annotation. Absent / unknown-version /
-// malformed degrades to []: such an FMU is plotted the ordinary way, never rejected.
-function parseFigures(root) {
-  const viz = root.querySelector(':scope > Annotations > Tool[name="OpenModelica"] > Figures');
-  if (!viz) return [];
-  const version = attr(viz, 'version');
-  if (version != null && version !== '1') return [];   // unknown schema: ignore, don't guess
-  const axis = (plot, role) => {
-    const a = plot.querySelector(`:scope > Axis[role="${role}"]`);
-    if (!a) return null;
-    return {
-      label: attr(a, 'label') || '', unit: attr(a, 'unit') || '',
-      min: numAttr(a, 'min'), max: numAttr(a, 'max'),
-      log: (attr(a, 'scale') || 'Linear') === 'Log',
-    };
-  };
-  const figures = [];
-  for (const f of viz.querySelectorAll(':scope > Figure')) {
-    const plots = [];
-    for (const p of f.querySelectorAll(':scope > Plot')) {
-      const curves = [];
-      for (const c of p.querySelectorAll(':scope > Curve')) {
-        const y = attr(c, 'y'); if (!y) continue;
-        curves.push({ x: attr(c, 'x') || '', y, legend: attr(c, 'legend') || '' });
-      }
-      const tr = p.querySelector(':scope > TerminalRef');
-      if (!curves.length) continue;   // TerminalRef-only plot: skip, we render explicit curves
-      plots.push({
-        title: attr(p, 'title') || '', preferred: boolAttr(p, 'preferred') === true,
-        terminal: tr ? attr(tr, 'terminal') : null, curves,
-        x: axis(p, 'x'), y: axis(p, 'y'), y2: axis(p, 'y2'),
-      });
-    }
-    if (!plots.length) continue;
-    const cap = f.querySelector(':scope > Caption');
-    figures.push({
-      title: attr(f, 'title') || '', group: attr(f, 'group') || '',
-      preferred: boolAttr(f, 'preferred') === true,
-      caption: cap ? cap.textContent : '', plots,
-    });
+// Resolve `href` against `base` (a directory inside the archive) the way a browser
+// would, so `../terminalsAndIcons/icon.svg` in documentation/index.html reaches the
+// icon. Null for anything that is not a path inside the archive.
+function resolveInZip(base, href) {
+  if (!href || /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('#')) return null;
+  const parts = href.startsWith('/') ? [] : base.split('/').filter(Boolean);
+  for (const seg of href.replace(/^\//, '').split('/')) {
+    if (seg === '' || seg === '.') continue;
+    if (seg === '..') { if (!parts.length) return null; parts.pop(); }
+    else parts.push(seg);
   }
-  return figures;
+  return parts.join('/');
 }
 
-// The OpenModelica <Visualization> annotation naming the _visual.xml resource, or null.
-function parseVisualization(root) {
-  const v = root.querySelector(':scope > Annotations > Tool[name="OpenModelica"] > Visualization');
-  if (!v) return null;
-  const version = attr(v, 'version');
-  if (version != null && version !== '1') return null;
-  const file = attr(v, 'file');
-  return file ? { file } : null;
+// The icon the driver took out of terminalsAndIcons/, as a data URI for an <img>.
+export function iconDataUri(icon) {
+  return icon && icon.bytes ? dataUri(icon.bytes, icon.name) : null;
 }
 
-export function parseModelDescription(xml) {
-  const doc = new DOMParser().parseFromString(xml, 'application/xml');
-  const perr = doc.querySelector('parsererror');
-  if (perr) throw new Error('modelDescription.xml is not well-formed: ' + perr.textContent.trim());
-  const root = doc.documentElement;
-  if (root.tagName !== 'fmiModelDescription') throw new Error('modelDescription.xml: root element is not fmiModelDescription');
-  const fmiVersion = attr(root, 'fmiVersion') || '';
-  if (!fmiVersion.startsWith('3.')) throw new Error(`FMI version ${fmiVersion || '?'} is not supported; this simulator requires FMI 3.0`);
-
-  const variables = [];
-  // FMI 3.0 <Alias> name -> primary name; many visualization crefs are aliases.
-  const aliases = new Map();
-  const mv = root.querySelector('ModelVariables');
-  for (const e of mv ? Array.from(mv.children) : []) {
-    const type = TYPES[e.tagName];
-    if (!type) continue;
-    // String and Binary carry their start in a <Start value="…"/> child.
-    const startEl = e.querySelector(':scope > Start');
-    const startAttr = attr(e, 'start');
-    const start = startEl ? attr(startEl, 'value')
-      : startAttr == null ? null : startAttr.trim().split(/\s+/)[0];
-    const name = attr(e, 'name') || '';
-    variables.push({
-      name,
-      vr: parseInt(attr(e, 'valueReference'), 10),
-      tag: e.tagName,
-      type,
-      numeric: NUMERIC.has(e.tagName),
-      causality: attr(e, 'causality') || 'local',
-      variability: attr(e, 'variability') || (e.tagName.startsWith('Float') ? 'continuous' : 'discrete'),
-      start,
-      initial: attr(e, 'initial'),
-      unit: attr(e, 'unit') || attr(e, 'displayUnit') || '',
-      description: attr(e, 'description') || '',
-      derivative: attr(e, 'derivative'),
-    });
-    for (const al of e.querySelectorAll(':scope > Alias')) {
-      const an = attr(al, 'name');
-      if (an) aliases.set(an, name);
-    }
+// The FMU's documentation as HTML, from what the driver handed over: the entry
+// point and the files beside it. It may be a whole document or a bare fragment;
+// only the body survives, since the FMU's <style> would restyle the page around
+// it and its <script> is not ours to run. Images are inlined — nothing inside an
+// archive the browser never unpacked has a URL.
+export function documentationHtml(doc_) {
+  if (!doc_) return null;
+  const { entry, files } = doc_;
+  if (!entry || !files || !files.get(entry)) return null;
+  const base = entry.slice(0, entry.lastIndexOf('/'));
+  const doc = new DOMParser().parseFromString(new TextDecoder().decode(files.get(entry)), 'text/html');
+  doc.querySelectorAll('script, style, link, meta, base, iframe, object, embed').forEach((e) => e.remove());
+  // Parsing is inert, but the result goes into the page through innerHTML, where an
+  // `onerror=` the FMU wrote would run. The FMU is a file someone was handed.
+  for (const e of doc.querySelectorAll('*')) {
+    for (const a of [...e.attributes]) if (a.name.toLowerCase().startsWith('on')) e.removeAttributeNode(a);
   }
-
-  const de = root.querySelector('DefaultExperiment');
-  const ms = root.querySelector('ModelStructure');
-  return {
-    modelName: attr(root, 'modelName') || '',
-    fmiVersion,
-    instantiationToken: attr(root, 'instantiationToken') || '',
-    description: attr(root, 'description') || '',
-    generationTool: attr(root, 'generationTool') || '',
-    version: attr(root, 'version') || '',
-    me: iface(root.querySelector('ModelExchange')),
-    cs: iface(root.querySelector('CoSimulation')),
-    se: iface(root.querySelector('ScheduledExecution')),
-    defaultExperiment: {
-      startTime: de ? numAttr(de, 'startTime') : null,
-      stopTime: de ? numAttr(de, 'stopTime') : null,
-      stepSize: de ? numAttr(de, 'stepSize') : null,
-      tolerance: de ? numAttr(de, 'tolerance') : null,
-    },
-    variables,
-    aliases,
-    nStates: ms ? ms.querySelectorAll(':scope > ContinuousStateDerivative').length : 0,
-    nEventIndicators: ms ? ms.querySelectorAll(':scope > EventIndicator').length : 0,
-    figures: parseFigures(root),
-    visualization: parseVisualization(root),
-  };
-}
-
-// The text of an FMU resource (path relative to resources/), or null.
-export function readResource(files, name) {
-  const bytes = files.get('resources/' + name);
-  return bytes ? new TextDecoder().decode(bytes) : null;
-}
-
-// The wasm component lives at binaries/wasm32-wasip2/<modelIdentifier>.wasm; fall
-// back to the single .wasm in that directory when the identifier does not match.
-export function findComponent(files, md) {
-  const dir = 'binaries/wasm32-wasip2/';
-  const ids = [md.cs, md.me, md.se].filter(Boolean).map((i) => i.modelIdentifier);
-  for (const id of ids) {
-    const bytes = files.get(`${dir}${id}.wasm`);
-    if (bytes) return bytes;
+  for (const img of doc.querySelectorAll('img[src], source[src]')) {
+    const src = img.getAttribute('src');
+    if (/^(data|https?):/i.test(src)) continue;
+    const name = resolveInZip(base, src);
+    const bytes = name && files.get(name);
+    if (bytes) img.setAttribute('src', dataUri(bytes, name));
+    else img.remove();                       // an image that did not travel with the FMU
   }
-  const candidates = [...files.keys()].filter((n) => n.startsWith(dir) && n.endsWith('.wasm'));
-  if (candidates.length === 1) return files.get(candidates[0]);
-  if (!candidates.length) throw new Error(`no wasm component found in ${dir} (is this an FMI-LS-WASM FMU?)`);
-  throw new Error(`no component matching modelIdentifier ${ids.join('/')} in ${dir}`);
+  for (const a of doc.querySelectorAll('a[href]')) {
+    if (/^https?:/i.test(a.getAttribute('href'))) { a.target = '_blank'; a.rel = 'noopener'; }
+    else a.removeAttribute('href');          // modelica:// class links mean nothing here
+  }
+  const html = doc.body.innerHTML.trim();
+  return html || null;
 }
 
-// Read an FMU. `withComponent` transpiles and instantiates the wasm component
-// here as well, which the page does not need: it shows what the model
-// description says and leaves running the FMU to the worker.
-export async function loadFmu(buf, { onLog, withComponent = false } = {}) {
-  const files = await readZip(buf);
-  const mdFile = files.get('modelDescription.xml');
-  if (!mdFile) throw new Error('modelDescription.xml is missing from the archive');
-  const md = parseModelDescription(new TextDecoder().decode(mdFile));
-  if (!withComponent) return { md, files, component: null, instance: null };
-  const component = await loadComponent(findComponent(files, md), { files, onLog });
-  const instance = async () => ({ md, ...(await component.probe()) });
-  return { md, files, component, instance };
-}

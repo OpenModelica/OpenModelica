@@ -2773,14 +2773,22 @@ fn add_resource(entries: &mut Vec<(String, Vec<u8>)>, path: &str) {
 
 /// Ship `dir` as the FMU's `terminalsAndIcons/`: the XML SimCode wrote and the icons
 /// the OMGraphics renderer put beside it, as the C export's `fmutmp` subtree is.
-fn add_terminals(entries: &mut Vec<(String, Vec<u8>)>, dir: &str) {
+/// Ship everything under `dir` as `prefix/<path below dir>`, recursively: the
+/// staged `documentation/` (whose images keep the modelica:// URI's own directory
+/// structure) and `terminalsAndIcons/`.
+fn add_directory(entries: &mut Vec<(String, Vec<u8>)>, dir: &str, prefix: &str) {
     if dir.is_empty() {
         return;
     }
+    let dir = dir.trim_end_matches('/');
     let Ok(files) = openmodelica_wasi::fs::read_dir(dir) else { return };
     for e in files {
-        if let Ok(bytes) = openmodelica_wasi::fs::read(&format!("{}/{}", dir.trim_end_matches('/'), e.name)) {
-            entries.push((format!("terminalsAndIcons/{}", e.name), bytes));
+        let path = format!("{dir}/{}", e.name);
+        let name = format!("{prefix}/{}", e.name);
+        if e.is_dir {
+            add_directory(entries, &path, &name);
+        } else if let Ok(bytes) = openmodelica_wasi::fs::read(&path) {
+            entries.push((name, bytes));
         }
     }
 }
@@ -2890,11 +2898,11 @@ pub fn emitMeFmu(
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
-    extra_files: Arc<List<(ArcStr, ArcStr)>>,
+    documentation_dir: ArcStr,
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, extra_files, terminals_dir, simulation_flags_json, FMI3_ME_ADAPTER, "ME")
+    emit_fmu(sim_code, fmu_path, model_description, documentation_dir, terminals_dir, simulation_flags_json, FMI3_ME_ADAPTER, "ME")
 }
 
 /// Co-Simulation: the FMU integrates itself, so the adapter embeds the driver.
@@ -2908,11 +2916,11 @@ pub fn emitCsFmu(
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
-    extra_files: Arc<List<(ArcStr, ArcStr)>>,
+    documentation_dir: ArcStr,
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, extra_files, terminals_dir, simulation_flags_json, FMI3_MECS_ADAPTER, "CS")
+    emit_fmu(sim_code, fmu_path, model_description, documentation_dir, terminals_dir, simulation_flags_json, FMI3_MECS_ADAPTER, "CS")
 }
 
 /// me_cs: one component exporting both interfaces (the wasm equivalent of a
@@ -2922,11 +2930,11 @@ pub fn emitMeCsFmu(
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
-    extra_files: Arc<List<(ArcStr, ArcStr)>>,
+    documentation_dir: ArcStr,
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, extra_files, terminals_dir, simulation_flags_json, FMI3_MECS_ADAPTER, "me_cs")
+    emit_fmu(sim_code, fmu_path, model_description, documentation_dir, terminals_dir, simulation_flags_json, FMI3_MECS_ADAPTER, "me_cs")
 }
 
 /// Say that the FMU answers `fmi3GetDirectionalDerivative` when the model was
@@ -3329,7 +3337,7 @@ fn emit_fmu(
     sim_code: SimCode::SimCode,
     fmu_path: ArcStr,
     model_description: ArcStr,
-    extra_files: Arc<List<(ArcStr, ArcStr)>>,
+    documentation_dir: ArcStr,
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
     adapter: &[u8],
@@ -3390,10 +3398,8 @@ fn emit_fmu(
             ("modelDescription.xml".to_string(), announce_directional_derivatives(&model_description, &model).into_bytes()),
         ];
         if !bare {
-            for (name, content) in lst(&extra_files) {
-                entries.push((name.to_string(), content.as_bytes().to_vec()));
-            }
-            add_terminals(&mut entries, &terminals_dir);
+            add_directory(&mut entries, &documentation_dir, "documentation");
+            add_directory(&mut entries, &terminals_dir, "terminalsAndIcons");
         }
         // What the FMU was built with, where C's carries what its runtime reads.
         if !simulation_flags_json.is_empty() {

@@ -4933,15 +4933,6 @@ algorithm
     return;
   end if;
 
-  // FMI 3.0 graphical user annotations (issue #15686 task 9): render the model
-  // Icon to icons/<modelIdentifier>.svg and add a <GraphicalRepresentation> to
-  // terminalsAndIcons.xml. Done here (after translateModel, before the FMU is
-  // packed) for the C target; the OMGraphics renderer consumes the in-memory
-  // model-instance annotation reference (issue #15219).
-  if FMUVersion == "3.0" and Config.simCodeTarget() == "C" then
-    generateFMI3GraphicalRepresentation(className, fmutmp, filenameprefix);
-  end if;
-
   if Config.simCodeTarget() == "Cpp" then
     System.removeDirectory("binaries");
     for platform in platforms loop
