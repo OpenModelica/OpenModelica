@@ -863,11 +863,11 @@ algorithm
   () := matchcontinue inEventInfo
     local
       BackendDAE.ZeroCrossingSet zclst;
-      DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
+      BackendDAE.ZeroCrossingSet relations;
 
     case BackendDAE.EVENT_INFO(zeroCrossings=zclst, relations=relations) algorithm
       inlineZeroCrossings(zclst.zc, fns);
-      inlineZeroCrossings(relations, fns);
+      inlineZeroCrossings(relations.zc, fns);
     then ();
 
     else

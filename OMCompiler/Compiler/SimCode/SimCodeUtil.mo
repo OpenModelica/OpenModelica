@@ -265,7 +265,7 @@ protected
   //list<BackendDAE.Equation> paramAsserts, remEqLst;
   list<BackendDAE.TimeEvent> timeEvents;
   BackendDAE.ZeroCrossingSet zeroCrossingsSet, sampleZCSet;
-  DoubleEnded.MutableList<BackendDAE.ZeroCrossing> de_relations;
+  BackendDAE.ZeroCrossingSet de_relations;
   list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
   list<DAE.ClassAttributes> classAttributes;
   list<DAE.ComponentRef> discreteModelVars, iterationVarsLst1, iterationVarsLst2;
@@ -388,7 +388,7 @@ algorithm
     timeEvents := eventInfo.timeEvents;
     (zeroCrossings,relations,sampleZC) := match eventInfo
       case BackendDAE.EVENT_INFO(zeroCrossings=zeroCrossingsSet, relations=de_relations, samples=sampleZCSet)
-      then (ZeroCrossings.toList(zeroCrossingsSet), DoubleEnded.toListNoCopyNoClear(de_relations), ZeroCrossings.toList(sampleZCSet));
+      then (ZeroCrossings.toList(zeroCrossingsSet), ZeroCrossings.toList(de_relations), ZeroCrossings.toList(sampleZCSet));
     end match;
     if ifcpp then
       zeroCrossings := listAppend(relations, sampleZC);
