@@ -455,9 +455,11 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
         return message_xml(ty, stream, indent_next, msg);
     }
     let mut out = String::new();
+    // C prints a message that ends in `\n` as it is: no empty sub-line after it.
+    let body = msg.strip_suffix('\n').unwrap_or(msg);
     store::with(|s| {
         let i = stream as usize;
-        for (n, line) in msg.split('\n').enumerate() {
+        for (n, line) in body.split('\n').enumerate() {
             let subline = n > 0;
             let collapse = subline || (s.last_stream == stream && s.level[i] > 0);
             let name = if collapse { "|" } else { STREAM_NAME[i] };
@@ -478,8 +480,9 @@ pub fn message_text(ty: LogType, stream: Stream, indent_next: bool, msg: &str) {
             s.last_type[i] = ty;
             s.last_stream = stream;
         }
-        // C's `messageText` recurses for the second line and returns, so a
-        // multi-line message never opens a block however `indentNext` is set.
+        // C's `messageText` returns at the first `\n` -- after recursing for the
+        // rest -- so a message with one never opens a block however `indentNext`
+        // is set.
         if indent_next && !msg.contains('\n') {
             s.level[i] += 1;
         }

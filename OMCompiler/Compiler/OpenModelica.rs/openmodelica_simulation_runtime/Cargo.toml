@@ -33,6 +33,8 @@ openmodelica_nls = { path = "../openmodelica_nls" }
 # The result file.
 openmodelica_mat_writer.workspace = true
 openmodelica_plt_writer.workspace = true
+# `-iif`: the result file the start values are imported from.
+openmodelica_mat_reader.workspace = true
 # `_init.xml`: the variable names, attributes and start values the generated C
 # does not carry (C reads the same file with expat in `simulation_input_xml.c`).
 roxmltree.workspace = true

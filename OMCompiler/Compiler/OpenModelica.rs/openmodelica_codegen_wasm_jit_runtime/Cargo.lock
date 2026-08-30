@@ -531,6 +531,7 @@ dependencies = [
  "libm",
  "openmodelica_lapack",
  "openmodelica_mat_writer",
+ "openmodelica_plt_writer",
  "openmodelica_solvers",
 ]
 

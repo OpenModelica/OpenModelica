@@ -116,12 +116,23 @@ pub fn read_real(s: &str, default: f64) -> f64 {
     }
 }
 
+/// C's `read_value_long`, an `atol`: the leading integer of the text, so an
+/// Integer written as `2.0` reads 2 and anything else 0.
 pub fn read_long(s: &str, default: c_long_t) -> c_long_t {
     match s {
         "" => default,
         "true" => 1,
         "false" => 0,
-        _ => s.parse().unwrap_or(default),
+        _ => {
+            let t = s.trim_start();
+            let end = t
+                .char_indices()
+                .take_while(|&(i, c)| c.is_ascii_digit() || (i == 0 && (c == '-' || c == '+')))
+                .map(|(i, c)| i + c.len_utf8())
+                .last()
+                .unwrap_or(0);
+            t[..end].parse().unwrap_or(0)
+        }
     }
 }
 
@@ -473,6 +484,7 @@ pub fn read_variables(xml: &InitXml, md: &mut MODEL_DATA) -> AliasMaps {
     md.integerAlias = calloc(md.nAliasIntegerArray as usize);
     md.booleanAlias = calloc(md.nAliasBooleanArray as usize);
     md.stringAlias = calloc(md.nAliasStringArray as usize);
+    md.realSensitivityData = calloc(md.nSensitivityVars.max(0) as usize);
 
     let real_attr = |v: &XmlVar, slot: &mut STATIC_REAL_DATA| {
         read_array_real(&mut slot.attribute.start, v.get("start"), 0.0);
@@ -503,6 +515,9 @@ pub fn read_variables(xml: &InitXml, md: &mut MODEL_DATA) -> AliasMaps {
     read_group!(STATIC_REAL_DATA, md.realVarsData, xml.group("rSta"), 0, n_states, maps.vars, real_attr);
     read_group!(STATIC_REAL_DATA, md.realVarsData, xml.group("rDer"), n_states, n_states, maps.vars, real_attr);
     read_group!(STATIC_REAL_DATA, md.realVarsData, xml.group("rAlg"), 2 * n_states, n_real - 2 * n_states, maps.vars, real_attr);
+    // `-idaSensitivity`'s parameters and `$Sensitivities.<par>.<state>` results.
+    let mut sens_names = HashMap::new();
+    read_group!(STATIC_REAL_DATA, md.realSensitivityData, xml.group("rSen"), 0, md.nSensitivityVars.max(0) as usize, sens_names, real_attr);
     read_group!(STATIC_INTEGER_DATA, md.integerVarsData, xml.group("iAlg"), 0, md.nVariablesIntegerArray as usize, maps.vars, int_attr);
     read_group!(STATIC_BOOLEAN_DATA, md.booleanVarsData, xml.group("bAlg"), 0, md.nVariablesBooleanArray as usize, maps.vars, bool_attr);
     read_group!(STATIC_STRING_DATA, md.stringVarsData, xml.group("sAlg"), 0, md.nVariablesStringArray as usize, maps.vars, str_attr);
@@ -546,4 +561,85 @@ fn read_alias(out: *mut DATA_ALIAS, vars: &[Option<XmlVar>], count: usize, maps:
             slot.nameID = 0;
         }
     }
+}
+
+/// C's `initializeOutputFilter` (`simulation_runtime.cpp`): `variableFilter` as a
+/// POSIX extended regex over every result name, on top of the protected/hidden
+/// verdicts `read_variables` left. An alias that matches keeps the variable it
+/// names; a parameter alias only where the format writes parameters cheaply
+/// (`mat`).
+pub fn initialize_output_filter(md: &mut MODEL_DATA, filter: &str, cheap_aliases_and_params: bool) {
+    let pattern = format!("^({filter})$");
+    if pattern == "^(.*)$" {
+        return;
+    }
+    let Ok(c_pattern) = std::ffi::CString::new(pattern.clone()) else { return };
+    let mut re: libc::regex_t = unsafe { core::mem::zeroed() };
+    let rc = unsafe { libc::regcomp(&mut re, c_pattern.as_ptr(), libc::REG_EXTENDED) };
+    if rc != 0 {
+        let mut buf = [0 as c_char; 2048];
+        unsafe { libc::regerror(rc, &re, buf.as_mut_ptr(), buf.len()) };
+        let err = unsafe { core::ffi::CStr::from_ptr(buf.as_ptr()) }.to_string_lossy();
+        eprintln!(
+            "Failed to compile regular expression: {pattern} with error: {err}. Defaulting to outputting all variables."
+        );
+        return;
+    }
+    let dropped = |name: *const c_char| -> modelica_boolean {
+        (unsafe { libc::regexec(&re, name, 0, core::ptr::null_mut(), 0) } != 0) as modelica_boolean
+    };
+    macro_rules! filter_group {
+        ($n:expr, $vars:expr, $n_alias:expr, $aliases:expr, $params:expr) => {{
+            for i in 0..$n as usize {
+                let v = unsafe { &mut *$vars.add(i) };
+                if v.filterOutput == 0 {
+                    v.filterOutput = dropped(v.info.name);
+                }
+            }
+            for i in 0..$n_alias as usize {
+                let al = unsafe { &mut *$aliases.add(i) };
+                if al.filterOutput != 0 {
+                    continue;
+                }
+                match al.aliasType {
+                    0 => {
+                        al.filterOutput = dropped(al.info.name);
+                        if al.filterOutput == 0 {
+                            unsafe { (*$vars.add(al.nameID as usize)).filterOutput = 0 };
+                        }
+                    }
+                    1 => {
+                        al.filterOutput = dropped(al.info.name);
+                        if al.filterOutput == 0 && cheap_aliases_and_params {
+                            unsafe { (*$params.add(al.nameID as usize)).filterOutput = 0 };
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }};
+    }
+    filter_group!(md.nVariablesRealArray, md.realVarsData, md.nAliasRealArray, md.realAlias, md.realParameterData);
+    filter_group!(
+        md.nVariablesIntegerArray,
+        md.integerVarsData,
+        md.nAliasIntegerArray,
+        md.integerAlias,
+        md.integerParameterData
+    );
+    filter_group!(
+        md.nVariablesBooleanArray,
+        md.booleanVarsData,
+        md.nAliasBooleanArray,
+        md.booleanAlias,
+        md.booleanParameterData
+    );
+    filter_group!(
+        md.nVariablesStringArray,
+        md.stringVarsData,
+        md.nAliasStringArray,
+        md.stringAlias,
+        md.stringParameterData
+    );
+    unsafe { libc::regfree(&mut re) };
 }

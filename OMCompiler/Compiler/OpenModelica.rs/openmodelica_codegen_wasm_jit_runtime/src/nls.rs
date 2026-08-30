@@ -476,6 +476,7 @@ fn kinsol_sparse_solve(
     handle: u32,
     eq_index: u32,
     time: f64,
+    has_jacobian: bool,
     old_values: &[f64],
     load_guess: &mut dyn FnMut(&mut [f64]),
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
@@ -493,16 +494,20 @@ fn kinsol_sparse_solve(
             // C's `INITIAL_EXTRAPOLATION`: `discreteCall ? nlsx : nlsxExtrapolation`,
             // which is the start point the caller already picked.
             let start = x.to_vec();
+            let jacobian: Option<&mut dyn FnMut(&[f64], &mut [f64])> =
+                has_jacobian.then_some(&mut assemble);
             return crate::sundials::kinsol_b_solve(
                 handle, n, nnz, Some((&colptr, &rowidx)), nominal, &start, old_values, x, eq_index,
-                time, load_guess, eval, Some(&mut assemble),
+                time, load_guess, eval, jacobian,
             );
         }
         return crate::sundials::kinsol_solve(
-            handle, n, nnz, &colptr, &rowidx, nominal, guess, x, eq_index, time, eval, &mut assemble,
+            handle, n, nnz, &colptr, &rowidx, nominal, guess, x, eq_index, time, has_jacobian, eval,
+            &mut assemble,
         );
     }
-    let _ = (eq_index, time, old_values); // only the KINSOL path names the system it dumps
+    // only the KINSOL path names the system it dumps, or differences its own Jacobian
+    let _ = (eq_index, time, has_jacobian, old_values);
     let _ = load_guess; // only the KINSOL-B rung re-reads the model's own values
     newton_sparse_solve(n, x, guess, warm, nominal, jac, pattern, nnz, jac_csc, handle, eval)
 }
@@ -828,7 +833,8 @@ impl NlsBackend for WasmBackend<'_> {
     ) -> bool {
         kinsol_sparse_solve(
             req.n, req.x, req.guess, req.warm, req.nominal, jac, self.pattern, self.nnz,
-            self.jac_csc, self.handle, req.eq_index, req.time, req.old_values, load_guess, eval,
+            self.jac_csc, self.handle, req.eq_index, req.time, req.has_jacobian, req.old_values,
+            load_guess, eval,
         )
     }
 

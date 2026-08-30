@@ -16,6 +16,7 @@ pub mod abi;
 mod data;
 mod datarecon;
 mod engine;
+mod iif;
 mod info_json;
 mod linearize;
 mod meta;

@@ -477,6 +477,39 @@ pub trait SimEngine {
     fn take_pending_warnings(&mut self) -> Vec<[i32; 10]> {
         Vec::new()
     }
+    /// The String at a string slot (`str_off`/`sparam_off` region). Default: the
+    /// slot holds a handle into the runtime's String heap.
+    fn string_at(&self, addr: u32) -> Result<String> {
+        let mut b = [0u8; 4];
+        self.read_bytes(addr, &mut b)?;
+        let handle = i32::from_le_bytes(b);
+        if handle == 0 {
+            return Ok(String::new());
+        }
+        // An address past 2 GiB is a negative `i32`; wasm pointers are unsigned.
+        let base = handle as u32;
+        self.read_bytes(base + 4, &mut b)?;
+        let mut buf = vec![0u8; i32::from_le_bytes(b).max(0) as usize];
+        self.read_bytes(base + 8, &mut buf)?;
+        Ok(String::from_utf8_lossy(&buf).into_owned())
+    }
+    /// C's `samplesInfo[k].index`, the number the `LOG_EVENTS` time-event line
+    /// shows, where the runtime keeps it beside the model rather than in the
+    /// metadata. Default: not here.
+    fn sample_index(&self, _k: usize) -> Option<i32> {
+        None
+    }
+    /// C's `updateStaticDataOf{Linear,Nonlinear}Systems`: refresh each system's
+    /// `nominal`/`min`/`max` from the attributes once those are final. A wasm model
+    /// reads the attributes live and has nothing to do. Default: nothing.
+    fn update_static_system_data(&mut self, _linear: bool) {}
+    /// Whether the model itself reported a violated `assert()` inside the current
+    /// `noThrowAsserts` window and carried on (C's `needToReThrow`). A model that
+    /// hands its violations back through [`take_pending_warnings`] leaves this
+    /// false. Default: false.
+    fn take_noted_assert(&mut self) -> bool {
+        false
+    }
     /// Take the `reinit`s the model executed since the last call, as `(state
     /// SimData offset, value)`, for the event's `LOG_EVENTS` block. Default: none.
     fn take_pending_reinits(&mut self) -> Vec<(u32, f64)> {
@@ -847,9 +880,7 @@ fn note_throw_past_step() {
 /// source position, so the trap that follows must not go looking for the assertion
 /// block a model `assert()` would have left.
 pub fn note_runtime_error(msg: &str) {
-    // The whole `vsnprintf` buffer is one message, so a format ending in a
-    // newline must not turn into a blank line.
-    omclog::debug(omclog::ASSERT, false, msg.trim_end());
+    omclog::debug(omclog::ASSERT, false, msg);
     note_runtime_error_flag();
 }
 
@@ -1102,14 +1133,36 @@ pub fn signal_init_done() {
 // C's `noThrowAsserts`. The flag lives with the `rt_assert` import — on the host —
 // so the in-wasm driver relays it over `env.rt_host_set_no_throw`.
 static NO_THROW_HOOK: AtomicUsize = AtomicUsize::new(0);
+static NO_THROW: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
 pub fn set_no_throw_hook(f: fn(bool)) {
     NO_THROW_HOOK.store(f as usize, Ordering::Relaxed);
 }
 fn set_no_throw(v: bool) {
+    NO_THROW.store(v, Ordering::Relaxed);
     let p = NO_THROW_HOOK.load(Ordering::Relaxed);
     if p != 0 {
         let f: fn(bool) = unsafe { core::mem::transmute(p) };
         f(v);
+    }
+}
+
+/// C's `noThrowAsserts` covers `simulationUpdate` only: the integrator's own
+/// evaluations run outside it and a violated `assert()` there throws, so the step
+/// is retried. The drivers open the window over a whole row, so the integrator
+/// step suspends it.
+struct AssertWindowSuspended(bool);
+fn suspend_assert_window() -> AssertWindowSuspended {
+    let was_open = NO_THROW.load(Ordering::Relaxed);
+    if was_open {
+        set_no_throw(false);
+    }
+    AssertWindowSuspended(was_open)
+}
+impl Drop for AssertWindowSuspended {
+    fn drop(&mut self) {
+        if self.0 {
+            set_no_throw(true);
+        }
     }
 }
 
@@ -1952,17 +2005,18 @@ fn open_assert_window() {
 fn close_assert_window(e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
     set_no_throw(false);
     drain_asserts(e, sim_data, omclog::INFO)?;
+    let noted = e.take_noted_assert();
     let (info, found_event) = rethrow_store::take();
-    let Some(info) = info else {
+    if info.is_none() && !noted {
         return Ok(());
-    };
+    }
     if found_event {
         omclog::info(omclog::ASSERT, false, "Found event, previous asserts are ignored.");
         return Ok(());
     }
     omclog::error(omclog::ASSERT, false, "No event found, but assert was triggered. Throwing now!");
     let p = ASSERT_REPORTER.load(Ordering::Relaxed);
-    if p != 0 {
+    if let Some(info) = info.filter(|_| p != 0) {
         let f: fn(&AssertInfo) = unsafe { core::mem::transmute(p) };
         f(&info);
     }
@@ -2111,7 +2165,7 @@ fn run_initialization_impl(
     term_report::reset();
     steady_report::reset();
     seed_start_values(e, sim_data, layout, inputs, model)?;
-    log_static_data_update();
+    log_static_data_update(e);
     // C sets `initial()` here: the start values and bound parameters above are
     // evaluated with it still clear.
     write_i32(e, sim_data + layout.initial_off, 1)?;
@@ -2130,10 +2184,12 @@ fn run_initialization_impl(
 
 /// C's `updateStaticDataOf{Linear,Nonlinear}Systems`: after the start values are
 /// final, before the method is picked.
-fn log_static_data_update() {
+fn log_static_data_update(e: &mut dyn SimEngine) {
     omclog::info(omclog::LS_V, true, "update static data of linear system solvers");
+    e.update_static_system_data(true);
     omclog::close(omclog::LS_V);
     omclog::info(omclog::NLS, true, "update static data of non-linear system solvers");
+    e.update_static_system_data(false);
     omclog::close(omclog::NLS);
 }
 
@@ -2487,8 +2543,7 @@ fn print_parameters(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
             .iter()
             .enumerate()
             .map(|(i, (n, start))| {
-                let h = read_i32(e, sim_data + layout.sparam_off + i as u32 * 4).unwrap_or(0);
-                let v = read_rt_string(e, h).unwrap_or_default();
+                let v = e.string_at(sim_data + layout.sparam_off + i as u32 * 4).unwrap_or_default();
                 format!("[{}] parameter String {n}(start=\"{start}\") = \"{v}\"", i + 1)
             })
             .collect(),
@@ -2979,7 +3034,7 @@ fn write_output_vars(
         }
         // Strings own no result column; C reads them from `stringVars`/`stringParameter`.
         let mut string_at = |off: u32| -> Result<()> {
-            let s = read_rt_string(e, read_i32(e, sim_data + off)?)?;
+            let s = e.string_at(sim_data + off)?;
             out.push_str(&format!(",{name}=\"{s}\""));
             Ok(())
         };
@@ -3333,7 +3388,7 @@ fn dump_initial_solution(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
     if !soti.strings.is_empty() {
         omclog::info(omclog::SOTI, true, "string variables");
         for (i, (name, start)) in soti.strings.iter().enumerate() {
-            let cur = read_rt_string(e, i32_at(layout.str_off + i as u32 * 4)).unwrap_or_default();
+            let cur = e.string_at(sim_data + layout.str_off + i as u32 * 4).unwrap_or_default();
             let line = format!("[{}] String {name}(start=\"{start}\") = \"{cur}\" (pre: \"{cur}\")", i + 1);
             omclog::info(omclog::SOTI, false, &line);
         }
@@ -3370,13 +3425,16 @@ fn log_reinits(e: &mut dyn SimEngine) {
 }
 
 /// [`log_state_event`] for a time event: C names the samples that fired.
-fn log_time_event(time: f64, samples: &Samples, model: &SimMeta) {
+fn log_time_event(e: &dyn SimEngine, time: f64, samples: &Samples, model: &SimMeta) {
     if !omclog::active(omclog::EVENTS) {
         return;
     }
     omclog::info(omclog::EVENTS, true, &format!("time event at time={}", format_g(time, 12)));
     for (k, start, interval) in samples.due(time) {
-        let index = model.sample_index.get(k).copied().unwrap_or(k as i32 + 1);
+        let index = e
+            .sample_index(k)
+            .or_else(|| model.sample_index.get(k).copied())
+            .unwrap_or(k as i32 + 1);
         omclog::info(
             omclog::EVENTS,
             false,
@@ -7348,6 +7406,7 @@ impl SolverCore {
             if cancel_requested() {
                 return Ok(Solved::Cancelled);
             }
+            let outside_window = suspend_assert_window();
             let again = match &mut self.solver {
                 Solver::Daskr(d) => d.step(&mut self.t, &mut self.y, &mut self.yp, target),
                 #[cfg(sundials)]
@@ -7385,6 +7444,7 @@ impl SolverCore {
                     }
                 }
             };
+            drop(outside_window);
             self.nfe = ctx.nfe;
             self.nje = ctx.nje;
             *did_step = true;
@@ -7800,7 +7860,7 @@ impl SolverCore {
                     write_time(e, sim_data, te)?;
                     return Ok(Step::Event { time: te });
                 }
-                log_time_event(te, samp, model);
+                log_time_event(e, te, samp, model);
                 if let Some(r) = rows.as_deref_mut()
                     && !no_event_emit()
                 {
@@ -8383,7 +8443,7 @@ impl Driver for EventsDriver {
                     if te <= subtarget + SAMPLE_EPS {
                         supersede(e, &mut evaluated);
                         event_step = true;
-                        log_time_event(te, &self.samp, model);
+                        log_time_event(e, te, &self.samp, model);
                         write_i32(e, sim_data + layout.rel_fresh_off, 0)?; // held pre row
                         if !no_event_emit() {
                             emit_row(e, &mut self.rows, sim_data, layout, te, model.stop_time)?;

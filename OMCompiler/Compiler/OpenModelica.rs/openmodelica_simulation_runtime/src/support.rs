@@ -51,6 +51,10 @@ pub static mut TermMsg: *mut c_char = ptr::null_mut();
 #[unsafe(no_mangle)]
 pub static mut TermInfo: FILE_INFO = FILE_INFO::dummy();
 
+/// `dassl.c`: 0 while the integrator evaluates the residual, 1 for the evaluation
+/// whose results are kept. An external C function may read it.
+#[unsafe(no_mangle)]
+pub static mut RHSFinalFlag: c_int = 0;
 /// `dae_mode.h`: which stage of a step an equation belongs to.
 #[unsafe(no_mangle)]
 pub static EVAL_DYNAMIC: c_int = 1;
@@ -72,15 +76,13 @@ pub static omr_td_off_sim_jumper: usize = core::mem::offset_of!(threadData_t, si
 #[unsafe(no_mangle)]
 pub static omr_td_off_error_stage: usize = core::mem::offset_of!(threadData_t, currentErrorStage);
 
-/// `util/omc_error.h`'s `errorStage`, which decides what an assertion does.
+/// `gc/omc_gc.h`'s `errorStage`, which decides what an assertion does.
 pub mod error_stage {
-    pub const NO_ERROR: i32 = 0;
-    pub const SIMULATION: i32 = 1;
-    pub const NONLINEARSOLVER: i32 = 2;
-    pub const INTEGRATOR: i32 = 3;
-    pub const EVENTSEARCH: i32 = 4;
-    pub const EVENTHANDLING: i32 = 5;
-    pub const OPTIMIZE: i32 = 6;
+    pub use crate::abi::{
+        ERROR_EVENTHANDLING as EVENTHANDLING, ERROR_EVENTSEARCH as EVENTSEARCH,
+        ERROR_INTEGRATOR as INTEGRATOR, ERROR_NONLINEARSOLVER as NONLINEARSOLVER,
+        ERROR_OPTIMIZE as OPTIMIZE, ERROR_SIMULATION as SIMULATION,
+    };
 }
 
 /// What `src/shim.c` should longjmp to after an assertion was reported.
@@ -477,6 +479,45 @@ unsafe extern "C" {
 /// mirror the `-lv` selection onto the C side, so a `debugString(OMC_LOG_DT_CONS,
 /// ...)` in generated code prints exactly when `-lv=LOG_DT_CONS` was given. The two
 /// tables are the same list in the same order.
+unsafe extern "C" {
+    static mut messageFunction: unsafe extern "C" fn(c_int, c_int, FILE_INFO, c_int, *mut c_char, c_int, *const c_int);
+    static mut messageClose: unsafe extern "C" fn(c_int);
+    static mut messageCloseWarning: unsafe extern "C" fn(c_int);
+}
+
+/// Point `omc_error.c`'s `messageFunction`/`messageClose`/`messageCloseWarning` at
+/// `omclog`, so the lines the generated code and libOpenModelicaRuntimeC print
+/// share one formatter state (block level, last stream) with the driver's.
+pub fn install_message_hooks() {
+    unsafe {
+        messageFunction = omr_message_text;
+        messageClose = omr_message_close;
+        messageCloseWarning = omr_message_close_warning;
+    }
+}
+
+/// C's `messageText`; its callers have already applied the stream gate.
+unsafe extern "C" fn omr_message_text(
+    ty: c_int,
+    stream: c_int,
+    info: FILE_INFO,
+    indent_next: c_int,
+    msg: *mut c_char,
+    _subline: c_int,
+    _indexes: *const c_int,
+) {
+    let text = with_position(&info, &cstr(msg));
+    omclog::message_text(ty as omclog::LogType, stream as omclog::Stream, indent_next != 0, &text);
+}
+
+unsafe extern "C" fn omr_message_close(stream: c_int) {
+    omclog::close(stream as omclog::Stream);
+}
+
+unsafe extern "C" fn omr_message_close_warning(stream: c_int) {
+    omclog::close_warning(stream as omclog::Stream);
+}
+
 pub fn publish_log_streams() {
     use openmodelica_sim_meta::omclog;
     for i in 0..omclog::N_STREAMS {

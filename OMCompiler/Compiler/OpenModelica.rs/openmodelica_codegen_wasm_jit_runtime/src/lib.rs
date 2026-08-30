@@ -341,13 +341,13 @@ mod ext_report {
     /// C's `infoStreamPrint(OMC_LOG_STDOUT, 0, …)`.
     #[unsafe(no_mangle)]
     pub extern "C" fn rt_ext_message(msg: u32) {
-        omclog::info(omclog::STDOUT, false, cstr(msg).trim_end());
+        omclog::info(omclog::STDOUT, false, cstr(msg));
     }
 
     /// C's `warningStreamPrint(OMC_LOG_STDOUT, 0, …)`.
     #[unsafe(no_mangle)]
     pub extern "C" fn rt_ext_warning(msg: u32) {
-        omclog::warning(omclog::STDOUT, false, cstr(msg).trim_end());
+        omclog::warning(omclog::STDOUT, false, cstr(msg));
     }
 }
 
