@@ -413,6 +413,14 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     if(nonlinsys->initialAnalyticalJacobian(data, threadData, jacobian))
     {
       nonlinsys->jacobianIndex = -1;
+      /* simulation_data.h documents analyticalJacobianColumn==NULL as THE signal
+       * that no analytic Jacobian is available; clear it here too, not just
+       * jacobianIndex, so every consumer agrees (e.g. kinsolSolver.c's
+       * initKinsolMemory only checks analyticalJacobianColumn, not jacobianIndex,
+       * to decide whether to wire up the symbolic-Jacobian KINSOL callback -- left
+       * dangling non-NULL here, it would still select that callback, which then
+       * fails an assertion pulling a JACOBIAN* through the now -1 jacobianIndex). */
+      nonlinsys->analyticalJacobianColumn = NULL;
       jacobian = NULL;
     }
     /* evalJacobian() fills sizeRows*sizeCols entries, the solvers hand it a
@@ -425,6 +433,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
                                             "Using a numeric Jacobian instead.",
                          sysNum, jacobian->sizeRows, jacobian->sizeCols, size);
       nonlinsys->jacobianIndex = -1;
+      nonlinsys->analyticalJacobianColumn = NULL;
       jacobian = NULL;
     }
   } else {
