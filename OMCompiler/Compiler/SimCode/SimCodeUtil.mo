@@ -14998,6 +14998,103 @@ algorithm
   outValueReference := String(numReal + numInteger + numBoolean + numString + numExtObj + numClock);
 end getFMI3TimeValueReference;
 
+public function exportDaeAlgebraicStates
+  "fmi-ls-dae: the algebraic states are unknowns the importer sets, so they are in
+   the model description whatever --fmiFilter hides, as the states are."
+  input output SimCode.ModelInfo modelInfo;
+  input list<SimCodeVar.SimVar> algebraicStateVars;
+protected
+  HashSet.HashSet crefs = HashSet.emptyHashSet();
+  SimCodeVar.SimVars vars;
+algorithm
+  for v in algebraicStateVars loop
+    crefs := BaseHashSet.add(v.name, crefs);
+  end for;
+  vars := modelInfo.vars;
+  vars.algVars := list(exportIfAlgebraicState(v, crefs) for v in vars.algVars);
+  modelInfo.vars := vars;
+end exportDaeAlgebraicStates;
+
+protected function exportIfAlgebraicState
+  input output SimCodeVar.SimVar v;
+  input HashSet.HashSet crefs;
+algorithm
+  if isNone(v.exportVar) and BaseHashSet.has(v.name, crefs) then
+    v.exportVar := SOME(if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX
+                        then ComponentReference.getConcealedCref() else v.name);
+  end if;
+end exportIfAlgebraicState;
+
+public function getFMI3DaeModeValueReference
+  "fmi-ls-dae: the value reference of the structural parameter that switches a
+   --daeMode FMU into DAE mode, the first one past the event indicators. The
+   residuals follow it (getFMI3DaeResidualValueReference); the wasm emitter
+   (CodegenWasmJit.build_fmi_vrs) assigns the same numbers."
+  input SimCode.SimCode simCode;
+  output String vr;
+algorithm
+  vr := String(stringInt(getFMI3TimeValueReference(simCode)) + simCode.modelInfo.varInfo.numZeroCrossings + 1);
+end getFMI3DaeModeValueReference;
+
+public function getFMI3DaeResidualValueReference
+  input SimCodeVar.SimVar residualVar "one of daeModeData.residualVars";
+  input SimCode.SimCode simCode;
+  output String vr;
+algorithm
+  vr := String(stringInt(getFMI3DaeModeValueReference(simCode)) + 1 + residualVar.index);
+end getFMI3DaeResidualValueReference;
+
+public function getFMI3DaeResidualDependencyAttributes
+  "fmi-ls-dae: the dependencies and dependenciesKind attributes of the residual at
+   0-based row `index` of the DAE-mode Jacobian, read off its transposed sparsity.
+   A state column stands for the state and its derivative both, since DAE-mode
+   differentiation folds der(x) into x ($cj * x.Seed); the other columns are the
+   algebraic variables. Empty without a pattern, which the standard reads as a
+   dependency on every known."
+  input SimCode.SimCode simCode;
+  input Integer index;
+  output String attributes = "";
+protected
+  SimCode.DaeModeData dmd;
+  SimCode.JacobianMatrix jm;
+  list<Integer> cols = {};
+  Integer numStates, row = 0;
+  list<Integer> colsOfRow;
+  SimCodeVar.SimVar sv;
+  String stateVR;
+  list<String> acc = {};
+algorithm
+  if isNone(simCode.daeModeData) then
+    return;
+  end if;
+  SOME(dmd) := simCode.daeModeData;
+  if isNone(dmd.sparsityPattern) then
+    return;
+  end if;
+  SOME(jm) := dmd.sparsityPattern;
+  for entry in jm.sparsityT loop
+    (_, colsOfRow) := entry;
+    if row == index then
+      cols := colsOfRow;
+    end if;
+    row := row + 1;
+  end for;
+  numStates := numScalarElems(simCode.modelInfo.vars.stateVars);
+  for c in cols loop
+    if c < numStates then
+      sv := listGet(simCode.modelInfo.vars.stateVars, c + 1);
+      stateVR := getFMI3ValueReference(sv, simCode);
+      acc := String(stringInt(stateVR) + numStates) :: stateVR :: acc;
+    else
+      sv := listGet(dmd.algebraicVars, c - numStates + 1);
+      acc := getFMI3ValueReference(sv, simCode) :: acc;
+    end if;
+  end for;
+  acc := listReverse(acc);
+  attributes := " dependencies=\"" + stringDelimitList(acc, " ") + "\" dependenciesKind=\""
+    + stringDelimitList(list("dependent" for s in acc), " ") + "\"";
+end getFMI3DaeResidualDependencyAttributes;
+
 public function getLocalValueReference
  "returns the local value reference of current OMSIFuncton of a variable for
   direct memory access considering aliases and array storage order."

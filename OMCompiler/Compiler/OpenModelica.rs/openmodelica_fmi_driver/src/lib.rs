@@ -183,6 +183,10 @@ pub struct Options<'a> {
     /// Ask an FMU that offers them for the Jacobian's columns instead of
     /// differencing them (Model Exchange). Off compares the two.
     pub directional_derivatives: bool,
+    /// Run a Model Exchange FMU in fmi-ls-dae's DAE mode: the master solves the
+    /// residuals it declares, over the states and the algebraic variables, with
+    /// IDA. The manifest names them; `None` is the ordinary ODE mode.
+    pub dae: Option<openmodelica_fmi::lsdae::Manifest>,
     pub parameters: Vec<Parameter>,
     pub inputs: Vec<Input>,
     /// Called at each output point with the samples so far, for a host that
@@ -221,6 +225,7 @@ impl Options<'_> {
             logging_on: false,
             event_mode: true,
             directional_derivatives: true,
+            dae: None,
             parameters: Vec::new(),
             inputs: Vec::new(),
             progress: None,

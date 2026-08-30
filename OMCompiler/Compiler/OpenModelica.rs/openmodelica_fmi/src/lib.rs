@@ -7,6 +7,7 @@
 
 pub mod description;
 pub mod figures;
+pub mod lsdae;
 #[cfg(feature = "component")]
 pub mod lswasm;
 mod parse;
@@ -243,6 +244,14 @@ impl Fmu {
     pub fn ls_wasm_manifest(&self) -> Option<lswasm::Manifest> {
         let xml = self.read(lswasm::MANIFEST_PATH)?;
         lswasm::Manifest::parse(&String::from_utf8_lossy(&xml)).ok()
+    }
+
+    /// The fmi-ls-dae manifest, when the FMU has a DAE formulation. A manifest
+    /// that is there but unreadable is an error: the importer was asked for DAE
+    /// mode and must not fall back to ODE mode quietly.
+    pub fn ls_dae_manifest(&self) -> Option<Result<lsdae::Manifest>> {
+        let xml = self.read(lsdae::MANIFEST_PATH)?;
+        Some(lsdae::Manifest::parse(&String::from_utf8_lossy(&xml)))
     }
 }
 

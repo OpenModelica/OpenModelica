@@ -214,7 +214,7 @@ fn clock_info(n: Node) -> ClockInfo {
     }
 }
 
-fn unknowns(ms: Node, tag: &'static str) -> Vec<Unknown> {
+pub(crate) fn unknowns(ms: Node, tag: &'static str) -> Vec<Unknown> {
     children(ms, tag)
         .filter_map(|u| {
             Some(Unknown {

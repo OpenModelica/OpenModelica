@@ -14,7 +14,7 @@ use core::ffi::{c_int, c_void};
 use crate::sundials::{
     self, Counters, Cvode, Ida, IdaLs, IdaOptions, NVector, Stop, nv_data,
 };
-use crate::{Ode, Result};
+use crate::{Dae, Ode, Result};
 
 /// How far one step got.
 pub enum SunStep {
@@ -393,5 +393,209 @@ fn ida_failure(flag: c_int) -> &'static str {
         -10 => "ida: the residual function failed repeatedly",
         sundials::IDA_RTFUNC_FAIL => "ida: the zero-crossing functions failed",
         _ => "ida: the integrator failed",
+    }
+}
+
+// ── IDA over a residual form ─────────────────────────────────────────────────
+
+struct DaeCtx<'a> {
+    dae: &'a mut dyn Dae,
+    n: usize,
+    n_zc: usize,
+    failed: Option<&'static str>,
+}
+
+unsafe extern "C" fn dae_res(t: f64, yy: NVector, yp: NVector, rr: NVector, user: *mut c_void) -> c_int {
+    let c = unsafe { &mut *(user as *mut DaeCtx) };
+    let n = c.n;
+    let (y, yp, r) = unsafe {
+        (
+            core::slice::from_raw_parts(nv_data(yy), n),
+            core::slice::from_raw_parts(nv_data(yp), n),
+            core::slice::from_raw_parts_mut(nv_data(rr), n),
+        )
+    };
+    c.dae.note_call();
+    match c.dae.residual(t, y, yp, r) {
+        Ok(()) => 0,
+        Err(e) => {
+            c.failed = Some(e);
+            -1
+        }
+    }
+}
+
+unsafe extern "C" fn dae_roots(t: f64, yy: NVector, yp: NVector, gout: *mut f64, user: *mut c_void) -> c_int {
+    let c = unsafe { &mut *(user as *mut DaeCtx) };
+    let (n, n_zc) = (c.n, c.n_zc);
+    let (y, yp, g) = unsafe {
+        (
+            core::slice::from_raw_parts(nv_data(yy), n),
+            core::slice::from_raw_parts(nv_data(yp), n),
+            core::slice::from_raw_parts_mut(gout, n_zc),
+        )
+    };
+    match c.dae.eval_zc(t, y, yp, g) {
+        Ok(()) => 0,
+        Err(e) => {
+            c.failed = Some(e);
+            -1
+        }
+    }
+}
+
+/// IDA over a [`Dae`]: `y = [states | algebraic unknowns]`, `IDASetId` telling the
+/// two apart, and `IDACalcIC` making `(y, y')` consistent wherever the integration
+/// (re)starts — at the first step and after every event, as `ida_event_update`
+/// does for a `--daeMode` model.
+pub struct IdaDae {
+    ida: Option<Ida>,
+    n_states: usize,
+    n: usize,
+    n_zc: usize,
+    tolerance: f64,
+    nominals: Vec<f64>,
+    pending: Pending,
+    past: Counters,
+}
+
+impl IdaDae {
+    pub fn new(n_states: usize, n_alg: usize, n_zc: usize, tolerance: f64, nominals: &[f64]) -> IdaDae {
+        IdaDae {
+            ida: None,
+            n_states,
+            n: n_states + n_alg,
+            n_zc,
+            tolerance,
+            nominals: nominals.to_vec(),
+            pending: Pending::Rebuild,
+            past: Counters::default(),
+        }
+    }
+
+    pub fn restart(&mut self) {
+        if self.pending == Pending::None {
+            self.pending = Pending::Reinit;
+        }
+    }
+
+    pub fn set_nominals(&mut self, nominals: &[f64]) {
+        if self.nominals != nominals {
+            self.nominals = nominals.to_vec();
+            self.pending = Pending::Rebuild;
+        }
+    }
+
+    pub fn counters(&self) -> Counters {
+        match self.ida.as_ref() {
+            Some(ida) => add(self.past, ida.counters()),
+            None => self.past,
+        }
+    }
+
+    /// Integrate toward `target`; `y` and `yp` hold the point reached, a root
+    /// included.
+    pub fn step(
+        &mut self,
+        dae: &mut dyn Dae,
+        target: f64,
+        t: &mut f64,
+        y: &mut [f64],
+        yp: &mut [f64],
+    ) -> Result<SunStep> {
+        if y.is_empty() {
+            *t = target;
+            return Ok(SunStep::Reached);
+        }
+        self.prepare(dae, *t, y, yp)?;
+        let (n, n_zc) = (self.n, self.n_zc);
+        let ida = self.ida.as_mut().expect("prepare built it");
+        let mut ctx = DaeCtx { dae, n, n_zc, failed: None };
+        if !ida.set_user_data(&mut ctx as *mut DaeCtx as *mut c_void) {
+            return Err("ida: the context could not be bound");
+        }
+        let mut retries = 0;
+        let stop = loop {
+            match ida.step(t, target, false) {
+                Stop::Failed(sundials::IDA_TOO_MUCH_WORK) if retries < WORK_RETRIES => retries += 1,
+                other => break other,
+            }
+        };
+        if let Some(e) = ctx.failed {
+            return Err(e);
+        }
+        y.copy_from_slice(ida.y());
+        yp.copy_from_slice(ida.yp());
+        match stop {
+            Stop::Reached | Stop::Stepped => Ok(SunStep::Reached),
+            Stop::Root => Ok(SunStep::Root(*t)),
+            Stop::Failed(flag) => Err(ida_failure(flag)),
+        }
+    }
+
+    /// Make `(y, y')` consistent at `t` now — `IDACalcIC` over the algebraic
+    /// unknowns and the derivatives — rather than at the next step, so the caller
+    /// can report the consistent point.
+    pub fn make_consistent(&mut self, dae: &mut dyn Dae, t: f64, y: &mut [f64], yp: &mut [f64]) -> Result<()> {
+        if y.is_empty() {
+            return Ok(());
+        }
+        if self.pending == Pending::None {
+            self.pending = Pending::Reinit;
+        }
+        self.prepare(dae, t, y, yp)?;
+        let ida = self.ida.as_ref().expect("prepare built it");
+        y.copy_from_slice(ida.y());
+        yp.copy_from_slice(ida.yp());
+        Ok(())
+    }
+
+    fn prepare(&mut self, dae: &mut dyn Dae, t: f64, y: &[f64], yp: &[f64]) -> Result<()> {
+        let pending = core::mem::replace(&mut self.pending, Pending::None);
+        if pending == Pending::None {
+            return Ok(());
+        }
+        if pending == Pending::Rebuild {
+            if let Some(ida) = self.ida.take() {
+                self.past = add(self.past, ida.counters());
+            }
+            let atol = abs_tolerances(self.tolerance, self.n, &self.nominals);
+            let root = (self.n_zc > 0).then_some(dae_roots as sundials::IdaRootFn);
+            let opts = IdaOptions {
+                max_order: crate::simflags::with_flags(|f| f.max_order),
+                ..IdaOptions::default()
+            };
+            let mut ida = Ida::new(
+                t, y, yp, self.tolerance, &atol, self.n_zc, dae_res, root, IdaLs::Dense, 0, None, &opts,
+            )
+            .ok_or("ida: the integrator could not be created")?;
+            let mut id = vec![1.0; self.n_states];
+            id.resize(self.n, 0.0);
+            if !ida.set_id(&id, crate::simflags::with_flags(|f| f.ida_no_suppress_alg)) {
+                return Err("ida: IDASetId failed");
+            }
+            self.ida = Some(ida);
+        }
+        let ida = self.ida.as_mut().expect("built above");
+        if pending == Pending::Reinit {
+            ida.y_mut().copy_from_slice(y);
+            ida.yp_mut().copy_from_slice(yp);
+            if !ida.reinit(t) {
+                return Err("ida: the integrator could not be restarted");
+            }
+        }
+        let (n, n_zc) = (self.n, self.n_zc);
+        let mut ctx = DaeCtx { dae, n, n_zc, failed: None };
+        if !ida.set_user_data(&mut ctx as *mut DaeCtx as *mut c_void) {
+            return Err("ida: the context could not be bound");
+        }
+        let ok = ida.calc_ic_at(t);
+        if let Some(e) = ctx.failed {
+            return Err(e);
+        }
+        if !ok {
+            return Err("ida: no consistent initial conditions were found (IDACalcIC)");
+        }
+        Ok(())
     }
 }

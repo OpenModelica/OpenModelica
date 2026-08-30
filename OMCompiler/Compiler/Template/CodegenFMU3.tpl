@@ -494,9 +494,81 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
     <%vars.extObjVars |> var => Variable3(var, simCode, numScalarStates) ;separator="\n"%>
     <%SimCodeUtil.getFMI3Clocks(simCode) |> clk => Clock3(clk, FMUType) ;separator="\n"%>
     <%EventIndicatorVariables3(simCode)%>
+    <%if isFMIMEType(FMUType) then DaeModeVariables3(simCode)%>
   </ModelVariables>
   >>
 end fmiModelVariables3;
+
+template DaeModeVariables3(SimCode simCode)
+ "fmi-ls-dae, for a Model Exchange FMU of a --daeMode model: the structural
+  parameter that switches it into DAE mode (false: an ordinary ODE FMU), and one
+  Float64 per residual of the DAE formulation. Their value references follow the
+  event indicators; the manifest (fmiLsDaeManifest) names them."
+::=
+match simCode
+case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__))) then
+  <<
+  <Boolean name="_D_daeMode" valueReference="<%SimCodeUtil.getFMI3DaeModeValueReference(simCode)%>" causality="structuralParameter" variability="fixed" start="false" description="Set to true to enable DAE mode as defined by FMI-LS-DAE."/>
+  <%dmd.residualVars |> var => DaeResidualVariable3(var, simCode) ;separator="\n"%>
+  >>
+end DaeModeVariables3;
+
+template DaeResidualVariable3(SimVar simVar, SimCode simCode)
+::=
+match simVar
+case SIMVAR(__) then
+  let nm = Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(name),"$", "_D_"))
+  '<Float64 name="<%nm%>" valueReference="<%SimCodeUtil.getFMI3DaeResidualValueReference(simVar, simCode)%>" causality="local" variability="continuous" initial="calculated" description="DAE-mode residual <%index%>"/>'
+end DaeResidualVariable3;
+
+template fmiLsDaeManifest(SimCode simCode)
+ "fmi-ls-dae's manifest (extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml)
+  for a --daeMode Model Exchange FMU: the switch, the algebraic variables the
+  importer solves for beside the states, and a ModelStructure that restates the
+  model description's and adds the residuals — the fully implicit form
+  F(der(x), x, z, t) = 0, so no ContinuousStateDerivative entries."
+::=
+match simCode
+case SIMCODE(daeModeData=SOME(dmd as DAEMODEDATA(__)), modelStructure=modelStructure) then
+  let _ = SimCodeUtil.cacheFMI3ValueReferences(simCode)
+  let structure = match modelStructure
+    case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
+      <<
+      <%ModelStructureOutputs3(simCode, fmistruct.fmiOutputs)%>
+      <%ModelStructureInitialUnknowns3(simCode, fmistruct.fmiInitialUnknowns)%>
+      >>
+    else ''
+  let indicators = EventIndicators3(simCode)
+  let residuals = (dmd.residualVars |> var hasindex i0 => DaeResidual3(simCode, var, i0) ;separator="\n")
+  let _ = SimCodeUtil.clearFMI3ValueReferences()
+  <<
+  <fmi-ls-dae
+    xmlns="http://fmi-standard.org/fmi-ls-manifest"
+    xmlns:fmi-ls="http://fmi-standard.org/fmi-ls-manifest"
+    fmi-ls:fmi-ls-name="org.fmi-standard.fmi-ls-dae"
+    fmi-ls:fmi-ls-version="0.1.0"
+    fmi-ls:fmi-ls-description="Layered standard for DAE support in FMI.">
+    <EnableDAE valueReference="<%SimCodeUtil.getFMI3DaeModeValueReference(simCode)%>"/>
+    <AlgebraicVariables>
+      <%dmd.algebraicVars |> var => '<AlgebraicVariable valueReference="<%SimCodeUtil.getFMI3ValueReference(var, simCode)%>"/>' ;separator="\n"%>
+    </AlgebraicVariables>
+    <ModelStructure>
+      <%structure%>
+      <%indicators%>
+      <%residuals%>
+    </ModelStructure>
+  </fmi-ls-dae>
+  >>
+end fmiLsDaeManifest;
+
+template DaeResidual3(SimCode simCode, SimVar residualVar, Integer row)
+::=
+  <<
+  <Residual>
+    <Formulation valueReference="<%SimCodeUtil.getFMI3DaeResidualValueReference(residualVar, simCode)%>"<%SimCodeUtil.getFMI3DaeResidualDependencyAttributes(simCode, row)%>/>
+  </Residual>
+  >>
+end DaeResidual3;
 
 template EventIndicatorVariables3(SimCode simCode)
  "FMI 3.0 requires event indicators to be exposed as Float64 variables that are

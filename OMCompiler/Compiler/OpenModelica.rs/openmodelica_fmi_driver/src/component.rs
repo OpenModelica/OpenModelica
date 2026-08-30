@@ -480,6 +480,20 @@ impl Fmi3 for WasmInstance {
         ))
     }
 
+    fn enter_configuration_mode(&mut self) -> Result<()> {
+        common!(self, |store, g, h| check(
+            "fmi3EnterConfigurationMode",
+            g.call_enter_configuration_mode(store, h).map_err(|e| trap("fmi3EnterConfigurationMode", e))?
+        ))
+    }
+
+    fn exit_configuration_mode(&mut self) -> Result<()> {
+        common!(self, |store, g, h| check(
+            "fmi3ExitConfigurationMode",
+            g.call_exit_configuration_mode(store, h).map_err(|e| trap("fmi3ExitConfigurationMode", e))?
+        ))
+    }
+
     fn get_numeric(&mut self, ty: VarType, vrs: &[u32], values: &mut [f64]) -> Result<()> {
         match ty.wire() {
             VarType::Float64 => {

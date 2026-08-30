@@ -8,19 +8,26 @@
 //! the solver locating a sign change in the event indicators, the FMU asking
 //! for Event Mode after a completed step, and the time events
 //! `fmi3UpdateDiscreteStates` announces.
+//!
+//! An FMU with an fmi-ls-dae manifest can instead be run in DAE mode
+//! ([`Options::dae`]): the master sets the states, their derivatives and the
+//! algebraic variables, reads the residuals back, and IDA drives them to zero over
+//! `y = [states | algebraic variables]` — with `IDACalcIC` making the point
+//! consistent at the start and after every event, as a `--daeMode` model's own
+//! runtime does.
 
 use crate::api::{Fmi3, Fmi3ModelExchange};
 use crate::common::{Inputs, event_iteration, initialize};
 use crate::record::Recorder;
 use crate::{Deadline, Error, Options, Result, Solver};
-use openmodelica_fmi::ModelDescription;
+use openmodelica_fmi::{ModelDescription, VarType};
 use openmodelica_solvers::dassl::{Dassl, DasslStep};
 use openmodelica_solvers::events::StepEnd;
 use openmodelica_solvers::fixedstep::{FixedKind, FixedStep};
 use openmodelica_solvers::gbode::{GbStep, Gbode};
 #[cfg(sundials)]
-use openmodelica_solvers::sundials_ode::{CvodeOde, IdaOde, SunStep};
-use openmodelica_solvers::Ode;
+use openmodelica_solvers::sundials_ode::{CvodeOde, IdaDae, IdaOde, SunStep};
+use openmodelica_solvers::{Dae, Ode};
 
 pub struct Run {
     pub recorder: Recorder,
@@ -39,8 +46,20 @@ pub struct Run {
     pub event_times: Vec<f64>,
 }
 
+/// The value references DAE mode works through, out of the fmi-ls-dae manifest.
+struct DaeVrs {
+    nx: usize,
+    /// The algebraic variables, which follow the states in `y`.
+    alg_vrs: Vec<u32>,
+    /// The state derivatives, set as knowns of the residuals.
+    der_vrs: Vec<u32>,
+    /// The residuals, one per row of `F`.
+    res_vrs: Vec<u32>,
+}
+
 /// The FMU as an ODE: set the time and the states, then read the derivatives or
-/// the event indicators back.
+/// the event indicators back. In DAE mode the derivatives and the algebraic
+/// variables are set too, and the residuals are what is read.
 struct FmuOde<'a> {
     inst: &'a mut dyn Fmi3ModelExchange,
     inputs: &'a mut Inputs,
@@ -60,8 +79,10 @@ struct FmuOde<'a> {
     /// The point the FMU is standing at, so the same one is not set twice: an
     /// FMU treats every `fmi3SetContinuousStates` as a move and throws away what
     /// it cached for the old point — including its Jacobian, which a colour-by-
-    /// colour assembly would then pay for again per colour.
-    committed: Option<(f64, Vec<f64>)>,
+    /// colour assembly would then pay for again per colour. The derivatives are
+    /// part of the point in DAE mode only.
+    committed: Option<(f64, Vec<f64>, Vec<f64>)>,
+    dae: Option<DaeVrs>,
     /// What the FMU actually said, behind the static message the solvers carry.
     failure: Option<Error>,
     /// `-alarm`, polled here rather than only at the output points: a solver that
@@ -76,16 +97,61 @@ impl FmuOde<'_> {
     /// Put `(t, y)` into the FMU, with the inputs of that time. Setting the
     /// point it already holds is skipped.
     fn commit(&mut self, t: f64, y: &[f64]) -> Result<()> {
-        if self.committed.as_ref().is_some_and(|(ct, cy)| *ct == t && cy == y) {
+        self.commit_point(t, y, &[])
+    }
+
+    /// [`commit`](Self::commit), with the derivatives too in DAE mode: the
+    /// residuals are a function of `(t, y, y')`.
+    fn commit_point(&mut self, t: f64, y: &[f64], yp: &[f64]) -> Result<()> {
+        let Some(dae) = self.dae.as_ref() else {
+            if self.committed.as_ref().is_some_and(|(ct, cy, _)| *ct == t && cy == y) {
+                return Ok(());
+            }
+            self.inst.set_time(t)?;
+            self.inst.set_continuous_states(y)?;
+            if self.inputs.is_time_varying() {
+                let inst: &mut dyn Fmi3 = self.inst;
+                self.inputs.apply(inst, self.opts, t)?;
+            }
+            self.committed = Some((t, y.to_vec(), Vec::new()));
+            return Ok(());
+        };
+        let nx = dae.nx;
+        let ders = &yp[..nx.min(yp.len())];
+        if self.committed.as_ref().is_some_and(|(ct, cy, cp)| *ct == t && cy == y && cp == ders) {
             return Ok(());
         }
         self.inst.set_time(t)?;
-        self.inst.set_continuous_states(y)?;
+        self.inst.set_continuous_states(&y[..nx])?;
+        if !dae.alg_vrs.is_empty() {
+            let inst: &mut dyn Fmi3 = self.inst;
+            inst.set_numeric(VarType::Float64, &dae.alg_vrs, &y[nx..])?;
+        }
+        if ders.len() == nx && nx > 0 {
+            let inst: &mut dyn Fmi3 = self.inst;
+            inst.set_numeric(VarType::Float64, &dae.der_vrs, ders)?;
+        }
         if self.inputs.is_time_varying() {
             let inst: &mut dyn Fmi3 = self.inst;
             self.inputs.apply(inst, self.opts, t)?;
         }
-        self.committed = Some((t, y.to_vec()));
+        self.committed = Some((t, y.to_vec(), ders.to_vec()));
+        Ok(())
+    }
+
+    /// DAE mode: the point the FMU holds — states, algebraic variables, state
+    /// derivatives — after the FMU moved it (initialization, an event).
+    fn read_dae_point(&mut self, y: &mut [f64], yp: &mut [f64]) -> Result<()> {
+        let Some(dae) = self.dae.as_ref() else { return Ok(()) };
+        let nx = dae.nx;
+        if nx > 0 {
+            self.inst.get_continuous_states(&mut y[..nx])?;
+            self.inst.get_continuous_state_derivatives(&mut yp[..nx])?;
+        }
+        if !dae.alg_vrs.is_empty() {
+            let inst: &mut dyn Fmi3 = self.inst;
+            inst.get_numeric(VarType::Float64, &dae.alg_vrs, &mut y[nx..])?;
+        }
         Ok(())
     }
 
@@ -173,6 +239,75 @@ impl Ode for FmuOde<'_> {
     }
 }
 
+impl Dae for FmuOde<'_> {
+    fn residual(&mut self, t: f64, y: &[f64], yp: &[f64], res: &mut [f64]) -> openmodelica_solvers::Result<()> {
+        if self.past_deadline() {
+            return Err(self.note(Error::Alarm));
+        }
+        self.commit_point(t, y, yp).map_err(|e| self.note(e))?;
+        let Some(d) = self.dae.as_ref() else { return Ok(()) };
+        let inst: &mut dyn Fmi3 = self.inst;
+        let r = inst.get_numeric(VarType::Float64, &d.res_vrs, res);
+        r.map_err(|e| self.note(e))
+    }
+
+    fn eval_zc(&mut self, t: f64, y: &[f64], yp: &[f64], zc: &mut [f64]) -> openmodelica_solvers::Result<()> {
+        if zc.is_empty() {
+            return Ok(());
+        }
+        if self.past_deadline() {
+            return Err(self.note(Error::Alarm));
+        }
+        self.commit_point(t, y, yp).map_err(|e| self.note(e))?;
+        self.inst.get_event_indicators(zc).map_err(|e| self.note(e))
+    }
+
+    fn nominals(&self) -> &[f64] {
+        &self.nominals
+    }
+
+    fn note_call(&mut self) {
+        self.calls += 1;
+    }
+}
+
+/// The value references DAE mode needs, checked against the model description:
+/// a manifest naming a variable the FMU does not have is a broken FMU, not a
+/// broken run.
+fn dae_vrs(md: &ModelDescription, m: &openmodelica_fmi::lsdae::Manifest, nx: usize) -> Result<DaeVrs> {
+    let float64 = |vr: u32, what: &str| -> Result<u32> {
+        match md.variable_by_vr(vr) {
+            Some(v) if v.ty == VarType::Float64 => Ok(vr),
+            _ => Err(Error::Unsupported(format!(
+                "fmi-ls-dae: {what} value reference {vr} is not a Float64 variable of the FMU"
+            ))),
+        }
+    };
+    let der_vrs: Vec<u32> = md
+        .model_structure
+        .continuous_state_derivatives
+        .iter()
+        .map(|u| u.value_reference)
+        .collect();
+    if der_vrs.len() != nx {
+        return Err(Error::Unsupported(format!(
+            "fmi-ls-dae: the FMU has {nx} continuous states but <ModelStructure> lists {} derivatives",
+            der_vrs.len()
+        )));
+    }
+    let alg_vrs = m.algebraic_variables.iter().map(|&vr| float64(vr, "algebraic variable")).collect::<Result<Vec<_>>>()?;
+    let res_vrs = m.residual_vrs().into_iter().map(|vr| float64(vr, "residual")).collect::<Result<Vec<_>>>()?;
+    if res_vrs.len() != nx + alg_vrs.len() {
+        return Err(Error::Unsupported(format!(
+            "fmi-ls-dae: {} residuals for {} states and {} algebraic variables; only a square system can be integrated",
+            res_vrs.len(),
+            nx,
+            alg_vrs.len()
+        )));
+    }
+    Ok(DaeVrs { nx, alg_vrs, der_vrs, res_vrs })
+}
+
 /// The ODE Jacobian's sparsity as `<ModelStructure>` gives it: for each state
 /// derivative, the `dependencies` that are themselves states. An FMU that lists
 /// no dependencies for an entry is saying "everything", which is a dense column
@@ -233,9 +368,13 @@ enum Integrator {
     Cvode(Box<CvodeOde>),
     #[cfg(sundials)]
     Ida(Box<IdaOde>),
+    /// DAE mode: IDA over the residuals, `y` carrying the algebraic variables too.
+    #[cfg(sundials)]
+    IdaDae(Box<IdaDae>),
 }
 
 impl Integrator {
+    #[allow(clippy::too_many_arguments)]
     fn new(
         solver: Solver,
         nx: usize,
@@ -244,7 +383,20 @@ impl Integrator {
         nominals: &[f64],
         jac_colors: usize,
         directional: bool,
+        n_alg: Option<usize>,
     ) -> Result<Integrator> {
+        if let Some(n_alg) = n_alg {
+            if solver != Solver::Ida {
+                return Err(Error::Unsupported(format!(
+                    "integrating in DAE mode with `{}`: only IDA takes a residual form",
+                    solver.as_str()
+                )));
+            }
+            #[cfg(sundials)]
+            return Ok(Integrator::IdaDae(Box::new(IdaDae::new(nx, n_alg, nz, tolerance, nominals))));
+            #[cfg(not(sundials))]
+            return Err(Error::Unsupported("`ida`: this build has no SUNDIALS".to_string()));
+        }
         // With no continuous states there is nothing to integrate and nothing
         // for gbode's Newton matrix to factor: every solver degenerates to
         // stepping from event to event, which the fixed-step one already does.
@@ -292,8 +444,22 @@ impl Integrator {
             Integrator::Cvode(cv) => cv.set_nominals(nominals),
             #[cfg(sundials)]
             Integrator::Ida(ida) => ida.set_nominals(nominals),
+            #[cfg(sundials)]
+            Integrator::IdaDae(ida) => ida.set_nominals(nominals),
             _ => {}
         }
+    }
+
+    /// DAE mode: make `(y, y')` consistent at `t` (`IDACalcIC`), so the point
+    /// reported next is one the residuals hold at. Nothing for an ODE.
+    fn make_consistent(&mut self, ode: &mut FmuOde, t: f64, y: &mut [f64], yp: &mut [f64]) -> Result<()> {
+        #[cfg(sundials)]
+        if let Integrator::IdaDae(ida) = self {
+            ida.make_consistent(ode, t, y, yp).map_err(|e| ode.failure.take().unwrap_or(Error::Solver(e)))?;
+        }
+        #[cfg(not(sundials))]
+        let _ = (ode, t, y, yp);
+        Ok(())
     }
 
     /// Integrate toward `target`, stopping at `limit` (the next time event) or
@@ -330,6 +496,11 @@ impl Integrator {
                 SunStep::Root(te) => Ok(Some(te)),
                 SunStep::Reached => Ok(None),
             },
+            #[cfg(sundials)]
+            Integrator::IdaDae(ida) => match ida.step(ode, target.min(limit), t, y, yp)? {
+                SunStep::Root(te) => Ok(Some(te)),
+                SunStep::Reached => Ok(None),
+            },
         }
     }
 
@@ -343,6 +514,8 @@ impl Integrator {
             Integrator::Cvode(cv) => cv.restart(),
             #[cfg(sundials)]
             Integrator::Ida(ida) => ida.restart(),
+            #[cfg(sundials)]
+            Integrator::IdaDae(ida) => ida.restart(),
         }
     }
 
@@ -356,6 +529,8 @@ impl Integrator {
             Integrator::Cvode(cv) => cv.counters().jac_evals,
             #[cfg(sundials)]
             Integrator::Ida(ida) => ida.counters().jac_evals,
+            #[cfg(sundials)]
+            Integrator::IdaDae(ida) => ida.counters().jac_evals,
         }
     }
 
@@ -368,6 +543,8 @@ impl Integrator {
             Integrator::Cvode(cv) => cv.counters().steps,
             #[cfg(sundials)]
             Integrator::Ida(ida) => ida.counters().steps,
+            #[cfg(sundials)]
+            Integrator::IdaDae(ida) => ida.counters().steps,
         }
     }
 }
@@ -380,6 +557,12 @@ pub fn simulate(
 ) -> Result<Run> {
     let mut inputs = Inputs::new(opts);
     let mut rec = Recorder::new(md, opts.keep);
+    if let Some(m) = &opts.dae {
+        let common: &mut dyn Fmi3 = inst;
+        common.enter_configuration_mode()?;
+        common.set_numeric(VarType::Boolean, &[m.enable_vr], &[1.0])?;
+        common.exit_configuration_mode()?;
+    }
     {
         let common: &mut dyn Fmi3 = inst;
         initialize(common, &mut inputs, opts)?;
@@ -403,18 +586,22 @@ pub fn simulate(
         .get_number_of_event_indicators()
         .unwrap_or(md.number_of_event_indicators as usize);
 
-    let mut x = vec![0.0; nx];
-    // Where the fixed-step solvers leave the derivatives of the step they took.
-    let mut xp = vec![0.0; nx];
-    inst.get_continuous_states(&mut x)?;
+    let dae = opts.dae.as_ref().map(|m| dae_vrs(md, m, nx)).transpose()?;
+    let n_alg = dae.as_ref().map(|d| d.alg_vrs.len());
+    let ny = nx + n_alg.unwrap_or(0);
+    let mut x = vec![0.0; ny];
+    // Where the fixed-step solvers and IDA in DAE mode leave the derivatives.
+    let mut xp = vec![0.0; ny];
+    inst.get_continuous_states(&mut x[..nx])?;
     let mut nominals = vec![1.0; nx];
     if inst.get_nominals_of_continuous_states(&mut nominals).is_err() {
         nominals.fill(1.0);
     }
-    {
-        let common: &mut dyn Fmi3 = inst;
-        rec.snapshot_parameters(common)?;
-        rec.sample(common, opts.start_time)?;
+    if let Some(d) = &dae {
+        for &vr in &d.alg_vrs {
+            let nom = md.variable_by_vr(vr).and_then(|v| v.nominal).map(f64::abs).filter(|n| *n > 0.0);
+            nominals.push(nom.unwrap_or(1.0));
+        }
     }
 
     let states = md.continuous_states();
@@ -428,6 +615,7 @@ pub fn simulate(
         .map(|u| u.value_reference)
         .collect();
     let directional = opts.directional_derivatives
+        && dae.is_none()
         && md
             .interface(openmodelica_fmi::InterfaceKind::ModelExchange)
             .is_some_and(|i| i.provides_directional_derivatives)
@@ -436,7 +624,7 @@ pub fn simulate(
 
     let tolerance = opts.tolerance.unwrap_or(1e-6);
     let mut integrator =
-        Integrator::new(opts.solver, nx, nz, tolerance, &nominals, colors.len(), directional)?;
+        Integrator::new(opts.solver, nx, nz, tolerance, &nominals, colors.len(), directional, n_alg)?;
     integrator.set_experiment(opts);
     integrator.set_nominals(&nominals);
 
@@ -455,11 +643,22 @@ pub fn simulate(
         directional,
         calls: 0,
         committed: None,
+        dae,
         failure: None,
         deadline: Deadline::arm(opts),
         polls: 0,
     };
     let mut t = opts.start_time;
+    if ode.dae.is_some() {
+        ode.read_dae_point(&mut x, &mut xp)?;
+        integrator.make_consistent(&mut ode, t, &mut x, &mut xp)?;
+        ode.commit_point(t, &x, &xp)?;
+    }
+    {
+        let common: &mut dyn Fmi3 = ode.inst;
+        rec.snapshot_parameters(common)?;
+        rec.sample(common, t)?;
+    }
     let mut next_event = info.next_event_time.unwrap_or(f64::INFINITY);
     let (mut state_events, mut time_events) = (0u64, 0u64);
     let mut event_times = Vec::new();
@@ -479,7 +678,7 @@ pub fn simulate(
             // C's `completedIntegratorStep`: the FMU may want Event Mode for a
             // reason the indicators do not show.
             if needs_completed_step {
-                ode.commit(t, &x)?;
+                ode.commit_point(t, &x, &xp)?;
                 let done = ode.inst.completed_integrator_step(true)?;
                 if done.terminate {
                     terminated_at = Some(t);
@@ -499,17 +698,19 @@ pub fn simulate(
             let Some(te) = event_at else { continue };
             t = te;
             event_times.push(te);
-            ode.commit(t, &x)?;
+            ode.commit_point(t, &x, &xp)?;
             ode.forget_point();
             {
                 let common: &mut dyn Fmi3 = ode.inst;
                 rec.sample(common, t)?;
                 common.enter_event_mode()?;
                 info = event_iteration(common)?;
-                rec.sample(common, t)?;
+                if ode.dae.is_none() {
+                    rec.sample(common, t)?;
+                }
             }
             if info.states_changed && nx > 0 {
-                ode.inst.get_continuous_states(&mut x)?;
+                ode.inst.get_continuous_states(&mut x[..nx])?;
             }
             if info.nominals_changed && nx > 0 {
                 let mut n = vec![1.0; nx];
@@ -522,13 +723,21 @@ pub fn simulate(
             ode.inst.enter_continuous_time_mode()?;
             ode.forget_point();
             integrator.restart();
+            if ode.dae.is_some() {
+                // C's `ida_event_update`, before the row after the event.
+                ode.read_dae_point(&mut x, &mut xp)?;
+                integrator.make_consistent(&mut ode, t, &mut x, &mut xp)?;
+                ode.commit_point(t, &x, &xp)?;
+                let common: &mut dyn Fmi3 = ode.inst;
+                rec.sample(common, t)?;
+            }
             if info.terminate {
                 terminated_at = Some(t);
                 break 'grid;
             }
         }
         // The grid point itself: the solver interpolated the states onto it.
-        ode.commit(target, &x)?;
+        ode.commit_point(target, &x, &xp)?;
         t = target;
         let common: &mut dyn Fmi3 = ode.inst;
         rec.sample(common, t)?;

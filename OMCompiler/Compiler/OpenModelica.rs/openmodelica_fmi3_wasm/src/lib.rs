@@ -27,8 +27,8 @@ use alloc::vec::Vec;
 use core::cell::RefCell;
 
 use openmodelica_sim_meta::driver::{
-    self, event_update, run_initialization, set_param_overrides, set_zc_tolerance, Samples,
-    SimEngine,
+    self, dae_solve_explicit, eval_stage, event_update, run_initialization, set_param_overrides,
+    set_zc_tolerance, Samples, SimEngine,
 };
 #[cfg(feature = "cs")]
 use openmodelica_sim_meta::driver::{CsDefer, CsDriver, CsStep};
@@ -526,6 +526,12 @@ struct MeState {
     defer: openmodelica_sim_meta::driver::CsDefer,
     vrs: Vrs,
     mode: Mode,
+    /// fmi-ls-dae: the `EnableDAE` structural parameter's value reference (0 when
+    /// the model has no DAE formulation), whether it is set, and whether the
+    /// importer is in Configuration Mode, the only place it may be set.
+    dae_enable_vr: u32,
+    dae_mode: bool,
+    configuring: bool,
     /// C's `_need_update`, consumed by `update_if_needed`.
     need_update: bool,
     /// Every set made before Initialization Mode is left, applied by
@@ -589,10 +595,34 @@ impl MeState {
     }
 
     /// `functionOutputs`, not `functionAlgebraics`: a getter runs no discrete update.
+    ///
+    /// A `--daeMode` model has neither: its continuous equations are the residual
+    /// `F(t, x, x', z) = 0`. In DAE mode the importer has set `x'` and `z` and reads
+    /// `F` back; in ODE mode the model owes it `x'` and `z`, solved for here.
     fn eval(&self) -> driver::Result<()> {
         let mut e = Engine;
+        if self.layout.dae_mode() {
+            if !self.dae_mode {
+                let dae = self.meta.dae.as_ref().ok_or("fmi3: DAE-mode model without DAE metadata")?;
+                dae_solve_explicit(&mut e, self.sim_data, &self.layout, dae)?;
+            }
+            return e.call2(
+                driver::MODEL_FN_DAE,
+                self.sim_data,
+                eval_stage::DYNAMIC | eval_stage::ALGEBRAIC,
+            );
+        }
         e.call1("functionODE", self.sim_data)?;
         e.call1("functionOutputs", self.sim_data)
+    }
+
+    /// `functionODE` for the derivatives and the event indicators: a `--daeMode`
+    /// model has no such partial evaluation, so it evaluates whole.
+    fn eval_ode(&mut self) -> driver::Result<()> {
+        if self.layout.dae_mode() {
+            return self.update_if_needed();
+        }
+        Engine.call1("functionODE", self.sim_data)
     }
 
     /// The state a value reference reads, when it is one of the continuous
@@ -778,6 +808,7 @@ fn new_state() -> Option<MeState> {
     unsafe {
         core::ptr::write_bytes(sim_data as *mut u8, 0, layout.total as usize);
     }
+    let dae_enable_vr = meta.fmi_dae_enable_vr;
     let st = MeState {
         sim_data,
         layout,
@@ -788,6 +819,9 @@ fn new_state() -> Option<MeState> {
         #[cfg(feature = "cs")]
         defer: CsDefer::None,
         mode: Mode::Instantiated,
+        dae_enable_vr,
+        dae_mode: false,
+        configuring: false,
         need_update: true,
         init_overrides: Vec::new(),
         init_start_overrides: Vec::new(),
@@ -977,6 +1011,8 @@ macro_rules! shared_instance_methods {
             core::ptr::write_bytes(st.sim_data as *mut u8, 0, st.layout.total as usize);
         }
         st.mode = Mode::Instantiated;
+        st.dae_mode = false;
+        st.configuring = false;
         st.need_update = true;
         st.init_overrides.clear();
         st.init_start_overrides.clear();
@@ -991,11 +1027,23 @@ macro_rules! shared_instance_methods {
         Status::Ok
     }
 
+    /// The one structural parameter is `fixed`: Configuration Mode is open from
+    /// Instantiated only, not the Reconfiguration Mode a `tunable` one would allow.
     fn enter_configuration_mode(&self) -> Status {
-        Status::Error
+        let mut st = self.st.borrow_mut();
+        if st.mode != Mode::Instantiated || st.configuring {
+            return err_status("fmi3EnterConfigurationMode: only allowed in the Instantiated state");
+        }
+        st.configuring = true;
+        Status::Ok
     }
     fn exit_configuration_mode(&self) -> Status {
-        Status::Error
+        let mut st = self.st.borrow_mut();
+        if !st.configuring {
+            return err_status("fmi3ExitConfigurationMode: not in Configuration Mode");
+        }
+        st.configuring = false;
+        Status::Ok
     }
 
     // ── Getters ───────────────────────────────────────────────────────────────
@@ -1086,6 +1134,10 @@ macro_rules! shared_instance_methods {
         }
         let mut out = Vec::with_capacity(vrs.len());
         for vr in vrs {
+            if vr == st.dae_enable_vr && vr != 0 {
+                out.push(st.dae_mode);
+                continue;
+            }
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && !e.is_string => {
                     out.push(e.negate.apply_i32(st.read_i32(e.off)) != 0)
@@ -1218,6 +1270,16 @@ macro_rules! shared_instance_methods {
         }
         let mut st = self.st.borrow_mut();
         for (vr, v) in vrs.into_iter().zip(values) {
+            if vr == st.dae_enable_vr && vr != 0 {
+                if !st.configuring {
+                    return err_status("fmi-ls-dae: the DAE-mode parameter can only be set in Configuration Mode");
+                }
+                if v && !st.layout.dae_mode() {
+                    return err_status("fmi-ls-dae: this FMU has no DAE formulation");
+                }
+                st.dae_mode = v;
+                continue;
+            }
             match st.vrs.resolve(vr) {
                 Some(e) if e.wty == WTy::I32 && e.negate == Neg::None && !e.is_string => {
                     let iv = if v { 1 } else { 0 };
@@ -1424,12 +1486,14 @@ impl GuestModelExchangeInstance for Instance {
     }
 
     /// C's `internalGetDerivatives`, which leaves `_need_update` set for the next
-    /// getter.
+    /// getter. In DAE mode the derivatives are the importer's own, set as knowns
+    /// of the residuals; in ODE mode a `--daeMode` model solves for them.
     fn get_continuous_state_derivatives(&self) -> Result<Vec<f64>, Status> {
-        let st = self.st.borrow();
-        let mut e = Engine;
-        if st.need_update && e.call1("functionODE", st.sim_data).is_err() {
-            return Err(Status::Error);
+        let mut st = self.st.borrow_mut();
+        if st.need_update && (!st.dae_mode || st.mode == Mode::Init) {
+            if let Err(err) = st.eval_ode() {
+                return Err(err_status(err));
+            }
         }
         let n = st.layout.n_states;
         let base = REAL_OFF + n * 8;
@@ -1439,7 +1503,9 @@ impl GuestModelExchangeInstance for Instance {
         let mut st = self.st.borrow_mut();
         let mut e = Engine;
         if st.need_update {
-            e.call1("functionODE", st.sim_data).map_err(|_| Status::Error)?;
+            if let Err(err) = st.eval_ode() {
+                return Err(err_status(err));
+            }
             st.need_update = false;
         }
         if st.layout.n_zc == 0 {

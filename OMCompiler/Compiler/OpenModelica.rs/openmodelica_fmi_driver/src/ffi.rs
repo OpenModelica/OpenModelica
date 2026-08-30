@@ -102,6 +102,8 @@ struct Vtable {
     set_boolean: SetT<bool>,
     get_string: GetT<*const c_char>,
     set_string: SetT<*const c_char>,
+    enter_configuration_mode: Option<unsafe extern "C" fn(Instance) -> i32>,
+    exit_configuration_mode: Option<unsafe extern "C" fn(Instance) -> i32>,
 
     // Model Exchange
     enter_continuous_time_mode: Option<unsafe extern "C" fn(Instance) -> i32>,
@@ -199,6 +201,8 @@ impl Library {
             set_boolean: required!(lib, "fmi3SetBoolean"),
             get_string: required!(lib, "fmi3GetString"),
             set_string: required!(lib, "fmi3SetString"),
+            enter_configuration_mode: optional!(lib, "fmi3EnterConfigurationMode"),
+            exit_configuration_mode: optional!(lib, "fmi3ExitConfigurationMode"),
             enter_continuous_time_mode: optional!(lib, "fmi3EnterContinuousTimeMode"),
             set_time: optional!(lib, "fmi3SetTime"),
             set_continuous_states: optional!(lib, "fmi3SetContinuousStates"),
@@ -469,6 +473,20 @@ impl Fmi3 for FmuInstance<'_> {
     fn terminate(&mut self) -> Result<()> {
         let f = self.v().terminate;
         check("fmi3Terminate", unsafe { f(self.handle) })
+    }
+
+    fn enter_configuration_mode(&mut self) -> Result<()> {
+        let Some(f) = self.v().enter_configuration_mode else {
+            return missing("fmi3EnterConfigurationMode");
+        };
+        check("fmi3EnterConfigurationMode", unsafe { f(self.handle) })
+    }
+
+    fn exit_configuration_mode(&mut self) -> Result<()> {
+        let Some(f) = self.v().exit_configuration_mode else {
+            return missing("fmi3ExitConfigurationMode");
+        };
+        check("fmi3ExitConfigurationMode", unsafe { f(self.handle) })
     }
 
     fn get_numeric(&mut self, ty: VarType, vrs: &[u32], values: &mut [f64]) -> Result<()> {

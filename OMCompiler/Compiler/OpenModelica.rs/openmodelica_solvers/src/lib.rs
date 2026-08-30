@@ -120,6 +120,24 @@ pub trait Ode {
     fn note_call(&mut self) {}
 }
 
+/// A model in residual form, `F(t, y, y') = 0` over `y = [states | algebraic
+/// unknowns]`, which only IDA integrates. `y'` carries a derivative per component,
+/// the algebraic ones being whatever IDA holds there.
+pub trait Dae {
+    /// `res := F(t, y, y')`.
+    fn residual(&mut self, t: f64, y: &[f64], yp: &[f64], res: &mut [f64]) -> Result<()>;
+
+    /// The zero-crossing functions at `(t, y, y')`.
+    fn eval_zc(&mut self, t: f64, y: &[f64], yp: &[f64], zc: &mut [f64]) -> Result<()>;
+
+    /// One nominal per component of `y`; empty means "one".
+    fn nominals(&self) -> &[f64] {
+        &[]
+    }
+
+    fn note_call(&mut self) {}
+}
+
 /// C's `bisection` iteration bound (`events.c`, `gbode_events.c`): `-mbi` when it
 /// is set to a positive value, else what halving the bracket down to `ttol` takes.
 pub fn bisection_iterations(width: f64, ttol: f64) -> i64 {

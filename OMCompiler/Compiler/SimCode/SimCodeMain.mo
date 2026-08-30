@@ -976,6 +976,7 @@ public function emitWasmFMU
   input Absyn.Program program;
 protected
   String guid, modelDescriptionStr, simulationFlagsJson;
+  String lsDaeManifestStr = "";
   String fmutmp = "", terminalsDir = "", documentationDir = "";
   list<SimCode.FmiTerminal> terminals;
   // `--fmuDirectory`: an export for an OpenModelica importer, which reads the
@@ -1005,6 +1006,11 @@ algorithm
     modelDescriptionStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
       CodegenFMU3.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
     ExecStat.execStat("FMU modelDescription.xml");
+    if isSome(simCode.daeModeData) and FMI.isFMIMEType(FMUType) then
+      lsDaeManifestStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
+        CodegenFMU3.fmiLsDaeManifest(Tpl.emptyTxt, simCode));
+      ExecStat.execStat("FMU fmi-ls-manifest.xml");
+    end if;
     // terminalsAndIcons/ by the C target's route: SimCode writes the XML, then the
     // OMGraphics renderer adds the <GraphicalRepresentation> and the icons beside it.
     if not bareExport then
@@ -1029,11 +1035,11 @@ algorithm
   end if;
   simulationFlagsJson := wasmFMUSimulationFlagsJson(simCode);
   if FMI.isFMIMEType(FMUType) and FMI.isFMICSType(FMUType) then
-    CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, documentationDir, terminalsDir, simulationFlagsJson);
+    CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, simulationFlagsJson);
   elseif FMI.isFMICSType(FMUType) then
-    CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, documentationDir, terminalsDir, simulationFlagsJson);
+    CodegenWasmJit.emitCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, simulationFlagsJson);
   else
-    CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, documentationDir, terminalsDir, simulationFlagsJson);
+    CodegenWasmJit.emitMeFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, simulationFlagsJson);
   end if;
   setGlobalRoot(Global.optionSimCode, NONE());
 end emitWasmFMU;
@@ -2372,6 +2378,9 @@ algorithm
     (algebraicStateVars, _) :=  BackendVariable.traverseBackendDAEVars(algStateVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
 
     algebraicStateVars := SimCodeUtil.sortSimVarsAndWriteIndex(algebraicStateVars, crefToSimVarHT);
+    if isFMU then
+      modelInfo := SimCodeUtil.exportDaeAlgebraicStates(modelInfo, algebraicStateVars);
+    end if;
 
     // only create sparsity pattern for dae mode data even if it is created with --generateDynamicJacobian=symbolic
     // the A matrix will be used symbolically

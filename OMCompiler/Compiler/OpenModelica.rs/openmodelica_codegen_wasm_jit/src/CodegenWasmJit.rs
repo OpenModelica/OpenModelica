@@ -2637,7 +2637,10 @@ fn link_err(e: impl core::fmt::Debug) -> &'static str {
 /// The value references are `getFMI3ValueReference`'s, the ones `CodegenFMU3`
 /// writes into `modelDescription.xml`. Variables with no slot are skipped; the
 /// adapter reports an unresolvable vr as an error.
-fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayout) -> Result<Vec<FmiVr>> {
+/// Also the fmi-ls-dae `EnableDAE` value reference, 0 for a model without a DAE
+/// formulation. The synthetic variables follow `CodegenFMU3`: time, then the event
+/// indicators, then (`--daeMode`) the DAE-mode switch and the residuals.
+fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayout) -> Result<(Vec<FmiVr>, u32)> {
     use openmodelica_backend::SimCodeUtil;
     let vars = &sim_code.modelInfo.vars;
     let all = lst(&vars.stateVars)
@@ -2726,9 +2729,25 @@ fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayou
             der_off: 0,
         });
     }
+    let mut dae_enable_vr = 0;
+    if let Some(d) = &sim_code.daeModeData {
+        dae_enable_vr = time_vr + 1 + layout.n_zc;
+        for sv in lst(&d.residualVars) {
+            let i = u32::try_from(sv.index).map_err(|_| "CodegenWasmJit: DAE mode residual has no index")?;
+            out.push(FmiVr {
+                vr: dae_enable_vr + 1 + i,
+                off: layout.dae_res_off + i * 8,
+                wty: WTy::F64,
+                negate: Neg::None,
+                start_off: 0,
+                is_string: false,
+                der_off: 0,
+            });
+        }
+    }
     out.sort_by_key(|e| e.vr);
     out.dedup_by_key(|e| e.vr);
-    Ok(out)
+    Ok((out, dae_enable_vr))
 }
 
 /// CRC-32 (IEEE) for the ZIP entries.
@@ -2899,11 +2918,12 @@ pub fn emitMeFmu(
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
+    ls_dae_manifest: ArcStr,
     documentation_dir: ArcStr,
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, documentation_dir, terminals_dir, simulation_flags_json, FMI3_ME_ADAPTER, "ME")
+    emit_fmu(sim_code, fmu_path, model_description, ls_dae_manifest, documentation_dir, terminals_dir, simulation_flags_json, FMI3_ME_ADAPTER, "ME")
 }
 
 /// Co-Simulation: the FMU integrates itself, so the adapter embeds the driver.
@@ -2917,11 +2937,12 @@ pub fn emitCsFmu(
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
+    ls_dae_manifest: ArcStr,
     documentation_dir: ArcStr,
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, documentation_dir, terminals_dir, simulation_flags_json, FMI3_MECS_ADAPTER, "CS")
+    emit_fmu(sim_code, fmu_path, model_description, ls_dae_manifest, documentation_dir, terminals_dir, simulation_flags_json, FMI3_MECS_ADAPTER, "CS")
 }
 
 /// me_cs: one component exporting both interfaces (the wasm equivalent of a
@@ -2931,11 +2952,12 @@ pub fn emitMeCsFmu(
     fmu_path: ArcStr,
     _guid: ArcStr,
     model_description: ArcStr,
+    ls_dae_manifest: ArcStr,
     documentation_dir: ArcStr,
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, documentation_dir, terminals_dir, simulation_flags_json, FMI3_MECS_ADAPTER, "me_cs")
+    emit_fmu(sim_code, fmu_path, model_description, ls_dae_manifest, documentation_dir, terminals_dir, simulation_flags_json, FMI3_MECS_ADAPTER, "me_cs")
 }
 
 /// Say that the FMU answers `fmi3GetDirectionalDerivative` when the model was
@@ -3340,10 +3362,15 @@ fn fmu_kind(fmu_type: &str) -> &'static str {
 
 /// `adapter` is `(plain, with-SUNDIALS)`; the second is picked for a method that needs
 /// CVODE/IDA and is empty for Model Exchange.
+/// `openmodelica_fmi::lsdae::MANIFEST_PATH`, which the web build does not link.
+const LS_DAE_MANIFEST: &str = "extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml";
+
+#[allow(clippy::too_many_arguments)]
 fn emit_fmu(
     sim_code: SimCode::SimCode,
     fmu_path: ArcStr,
     model_description: ArcStr,
+    ls_dae_manifest: ArcStr,
     documentation_dir: ArcStr,
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
@@ -3404,6 +3431,9 @@ fn emit_fmu(
         let mut entries = vec![
             ("modelDescription.xml".to_string(), announce_directional_derivatives(&model_description, &model).into_bytes()),
         ];
+        if !ls_dae_manifest.is_empty() {
+            entries.push((LS_DAE_MANIFEST.to_string(), ls_dae_manifest.as_bytes().to_vec()));
+        }
         if !bare {
             add_directory(&mut entries, &documentation_dir, "documentation");
             add_directory(&mut entries, &terminals_dir, "terminalsAndIcons");
@@ -5559,7 +5589,8 @@ fn build_sim_model(
     // driver / standalone) and kept on the `SimModel` (for the host driver).
     // Only the FMU export needs the vr table; a plain simulation would just carry
     // it around unused.
-    let fmi_vrs = if fmi_vrs { build_fmi_vrs(sim_code, &var_map, &layout)? } else { Vec::new() };
+    let (fmi_vrs, fmi_dae_enable_vr) =
+        if fmi_vrs { build_fmi_vrs(sim_code, &var_map, &layout)? } else { (Vec::new(), 0) };
     // C labels its `-lv=LOG_NLS` unknowns from the `_info.json` `defines` array,
     // which `SerializeModelInfo` writes from these same `crefs`.
     // C diagnoses (`newtonDiagnostics`) the systems of `initialEquations_lambda0`,
@@ -5716,7 +5747,7 @@ fn build_sim_model(
     let meta = build_sim_meta(
         &layout, &result_vars, settings, cs_method, fmi_solver_flags, &model_name,
         &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
-        fmi_vrs, zc_descriptions(&zero_crossings), rel_descriptions(&sim_code.relations),
+        fmi_vrs, fmi_dae_enable_vr, zc_descriptions(&zero_crossings), rel_descriptions(&sim_code.relations),
         param_vars(vars)?, attr_log_entries(sim_code)?,
         removed_init_residuals(sim_code).iter().map(|e| dump_exp(e)).collect(),
         nls_warnings.clone(),
@@ -7126,6 +7157,7 @@ fn build_sim_meta(
     jac_a: Option<JacAInfo>,
     state_sets: &[StateSetInfo],
     fmi_vrs: Vec<FmiVr>,
+    fmi_dae_enable_vr: u32,
     zc_desc: Vec<String>,
     rel_desc: Vec<String>,
     params: openmodelica_sim_meta::ParamVars,
@@ -7162,6 +7194,7 @@ fn build_sim_meta(
         jac_a,
         state_sets: state_sets.to_vec(),
         fmi_vrs,
+        fmi_dae_enable_vr,
         zc_desc,
         rel_desc,
         params,

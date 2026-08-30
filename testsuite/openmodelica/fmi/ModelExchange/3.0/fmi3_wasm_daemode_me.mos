@@ -1,0 +1,134 @@
+// name: fmi3_wasm_daemode_me.mos
+// keywords: FMI 3.0 export wasm Model Exchange daeMode fmi-ls-dae
+// status: correct
+// suite: wasm
+// teardown_command: rm -rf DaeModeMe* plain_res.mat me_*.mat diff_me_* om-wasm-include-*
+//
+// A `--daeMode` model as a Model Exchange FMU, through fmi-ls-dae: the FMU is an
+// ordinary ODE FMU until the importer sets the structural parameter the manifest
+// names, and a DAE FMU after — the importer sets the states, their derivatives
+// and the algebraic variables, and reads the residuals back.
+//
+// Three runs of the same export against the model's own simulation: the
+// zipped component in DAE mode (omc integrating the residuals with IDA), and
+// the linked artifact in both modes — in ODE mode the FMU has to solve for the
+// derivatives and the algebraic variables itself, which a DAE-mode model does
+// not have equations for.
+
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadFile("fmi3_wasm_daemode_me.mo"); getErrorString();
+
+simulate(DaeModeMe, fileNamePrefix="plain"); getErrorString();
+
+buildModelFMU(DaeModeMe, fileNamePrefix="DaeModeMe", fmuType="me_cs", version="3.0", platforms={"wasm"}); getErrorString();
+simulate(DaeModeMe, simflags="-s fmi3:me -daeMode -r=me_dae_zip.mat", resimulateExecutable="DaeModeMe.fmu"); getErrorString();
+diffSimulationResults("me_dae_zip.mat", "plain_res.mat", "diff_me_dae_zip", 1e-4, 1e-4);
+
+setCommandLineOptions("--fmuDirectory=true"); getErrorString();
+buildModelFMU(DaeModeMe, fileNamePrefix="DaeModeMeDir", fmuType="me_cs", version="3.0", platforms={"wasm"}); getErrorString();
+readFile("DaeModeMeDir.fmu/extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml"); getErrorString();
+regexBool(readFile("DaeModeMeDir.fmu/modelDescription.xml"), "<Boolean name=\"_D_daeMode\" valueReference=\"[0-9]+\" causality=\"structuralParameter\" variability=\"fixed\" start=\"false\"");
+
+simulate(DaeModeMe, simflags="-s fmi3:me -r=me_ode.mat", resimulateExecutable="DaeModeMeDir.fmu"); getErrorString();
+simulate(DaeModeMe, simflags="-s fmi3:me -daeMode -r=me_dae.mat", resimulateExecutable="DaeModeMeDir.fmu"); getErrorString();
+diffSimulationResults("me_ode.mat", "plain_res.mat", "diff_me_ode", 1e-4, 1e-4);
+diffSimulationResults("me_dae.mat", "plain_res.mat", "diff_me_dae", 1e-4, 1e-4);
+
+// DAE mode is IDA's alone.
+simulate(DaeModeMe, simflags="-s fmi3:me:dassl -daeMode", resimulateExecutable="DaeModeMeDir.fmu"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "plain_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'plain', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "DaeModeMe.fmu"
+// "Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// record SimulationResult
+//     resultFile = "me_dae_zip.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me -daeMode -r=me_dae_zip.mat'",
+//     messages = "LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
+// LOG_STDOUT        | info    | ModelExchange instantiated
+// LOG_STDOUT        | info    | ModelExchange run: 67 steps, 190 evaluations, 34 Jacobians, 1 state events, 0 time events, 503 samples
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// true
+// ""
+// "DaeModeMeDir.fmu"
+// "Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmi-ls-dae
+//   xmlns=\"http://fmi-standard.org/fmi-ls-manifest\"
+//   xmlns:fmi-ls=\"http://fmi-standard.org/fmi-ls-manifest\"
+//   fmi-ls:fmi-ls-name=\"org.fmi-standard.fmi-ls-dae\"
+//   fmi-ls:fmi-ls-version=\"0.1.0\"
+//   fmi-ls:fmi-ls-description=\"Layered standard for DAE support in FMI.\">
+//   <EnableDAE valueReference=\"9\"/>
+//   <AlgebraicVariables>
+//     <AlgebraicVariable valueReference=\"3\"/>
+//     <AlgebraicVariable valueReference=\"4\"/>
+//   </AlgebraicVariables>
+//   <ModelStructure>
+//     <InitialUnknown valueReference=\"1\"/>
+//     <EventIndicator valueReference=\"8\"/>
+//     <Residual>
+//       <Formulation valueReference=\"10\" dependencies=\"0 1 3 4\" dependenciesKind=\"dependent dependent dependent dependent\"/>
+//     </Residual>
+//     <Residual>
+//       <Formulation valueReference=\"11\" dependencies=\"0 1 3 4\" dependenciesKind=\"dependent dependent dependent dependent\"/>
+//     </Residual>
+//     <Residual>
+//       <Formulation valueReference=\"12\" dependencies=\"0 1 3\" dependenciesKind=\"dependent dependent dependent\"/>
+//     </Residual>
+//   </ModelStructure>
+// </fmi-ls-dae>"
+// ""
+// true
+// record SimulationResult
+//     resultFile = "me_ode.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me -r=me_ode.mat'",
+//     messages = "LOG_STDOUT        | info    | wasm artifact loaded (model kernel linked against the cached adapter)
+// LOG_STDOUT        | info    | ModelExchange instantiated
+// LOG_STDOUT        | info    | ModelExchange run: 43 steps, 145 evaluations, 33 Jacobians, 1 state events, 0 time events, 503 samples
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "me_dae.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me -daeMode -r=me_dae.mat'",
+//     messages = "LOG_STDOUT        | info    | wasm artifact loaded (model kernel linked against the cached adapter)
+// LOG_STDOUT        | info    | ModelExchange instantiated
+// LOG_STDOUT        | info    | ModelExchange run: 67 steps, 190 evaluations, 34 Jacobians, 1 state events, 0 time events, 503 samples
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// (true, {})
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:me:dassl -daeMode'",
+//     messages = "Simulation execution failed for model: DaeModeMe
+// LOG_STDOUT        | info    | wasm artifact loaded (model kernel linked against the cached adapter)
+// LOG_ERROR         | error   | wasm artifact: -daeMode integrates with IDA; `-s fmi3:me:dassl` cannot serve a residual form
+// "
+// end SimulationResult;
+// ""
+// endResult

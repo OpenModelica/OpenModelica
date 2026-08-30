@@ -4,25 +4,22 @@
 // suite: wasm
 // teardown_command: rm -rf DaeModeWhenLoop* daemode_*.mat diff_daemode* om-wasm-include-*
 //
-// A `--daeMode` model answers with residuals, not with state derivatives, so FMI
-// Model Exchange is refused and `me_cs` is downgraded to Co-Simulation, which
-// integrates the model itself. Doing that means running the DAE-mode backend:
-// the ODE backend cannot translate this model at all (the tearing pulls a
-// when-equation into the nonlinear loop), so an export that dropped --daeMode
-// would fail here the way Dynawo's models did. Co-Simulation then has to
-// integrate with IDA, the one method that serves a residual form, and the model
-// crosses its threshold once so the event the master drives is covered too:
-// resuming from it needs an IDACalcIC, without which IDA does not converge on
-// the step after the event.
+// A `--daeMode` model answers with residuals, not with state derivatives, so its
+// Co-Simulation FMU integrates the model itself. Doing that means running the
+// DAE-mode backend: the ODE backend cannot translate this model at all (the
+// tearing pulls a when-equation into the nonlinear loop), so an export that
+// dropped --daeMode would fail here the way Dynawo's models did. Co-Simulation
+// then has to integrate with IDA, the one method that serves a residual form, and
+// the model crosses its threshold once so the event the master drives is covered
+// too: resuming from it needs an IDACalcIC, without which IDA does not converge
+// on the step after the event. (Model Exchange serves the same model through
+// fmi-ls-dae; see ModelExchange/3.0/fmi3_wasm_daemode_me.mos.)
 
 setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
 loadFile("fmi3_wasm_daemode.mo"); getErrorString();
 
 // The reference: the same model simulated the ordinary way.
 simulate(DaeModeWhenLoop, fileNamePrefix="daemode_plain"); getErrorString();
-
-// Model Exchange has to answer fmi3GetContinuousStateDerivatives.
-buildModelFMU(DaeModeWhenLoop, fileNamePrefix="DaeModeWhenLoop", fmuType="me", version="3.0", platforms={"wasm"}); getErrorString();
 
 setCommandLineOptions("--fmuDirectory=true"); getErrorString();
 buildModelFMU(DaeModeWhenLoop, fileNamePrefix="DaeModeWhenLoop", fmuType="me_cs", version="3.0", platforms={"wasm"}); getErrorString();
@@ -48,14 +45,10 @@ diffSimulationResults("daemode_cs.mat", "daemode_plain_res.mat", "diff_daemode_c
 // "
 // end SimulationResult;
 // ""
-// ""
-// "Error: DAE mode (--daeMode) is not supported for FMI Model Exchange export (fmuType=\"me\"), which requires the state derivatives a DAE-mode model does not have. Export a Co-Simulation FMU instead, or remove the --daeMode flag.
-// "
 // true
 // ""
 // "DaeModeWhenLoop.fmu"
-// "Warning: DAE mode (--daeMode) has no Model Exchange interface, which would require the state derivatives a DAE-mode model does not have. Exporting Co-Simulation only.
-// Notification: Building FMU for platform 'wasm' (1/1).
+// "Notification: Building FMU for platform 'wasm' (1/1).
 // Notification: Finished FMU for platform 'wasm' (1/1).
 // "
 // record SimulationResult

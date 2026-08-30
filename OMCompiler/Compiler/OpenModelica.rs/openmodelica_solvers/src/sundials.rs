@@ -736,6 +736,22 @@ impl Ida {
         unsafe { IDAGetConsistentIC(self.mem, self.y, self.yp) == IDA_SUCCESS }
     }
 
+    /// C's `ida_event_update`: `IDACalcIC` over the algebraic unknowns and every
+    /// derivative at `t`, directed by the step IDA would take next (floored, so a
+    /// zero step still gives a direction), retried with the line search off, and
+    /// the result read back into `y`/`yp`. The initial step goes back to automatic
+    /// afterwards, as C leaves it.
+    pub fn calc_ic_at(&mut self, t: f64) -> bool {
+        let mut h = self.actual_init_step();
+        if h < f64::EPSILON {
+            h = f64::EPSILON;
+            self.set_init_step(h);
+        }
+        let ok = (self.calc_ic(t + h, true) || self.calc_ic(t + h, false)) && self.consistent_ic();
+        self.set_init_step(0.0);
+        ok
+    }
+
     /// Start forward sensitivity analysis over `p0`, the differentiated
     /// parameters' current values, in `ida_solver_initial`'s configuration:
     /// sensitivities from zero, IDAS's own forward difference quotients.

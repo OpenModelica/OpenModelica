@@ -179,6 +179,16 @@ pub extern "C" fn om_fmi3EnterContinuousTimeMode() -> i32 {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn om_fmi3EnterConfigurationMode() -> i32 {
+    with(|i| status(GuestModelExchangeInstance::enter_configuration_mode(i)), ERROR)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn om_fmi3ExitConfigurationMode() -> i32 {
+    with(|i| status(GuestModelExchangeInstance::exit_configuration_mode(i)), ERROR)
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn om_fmi3EnterStepMode() -> i32 {
     with(|i| status(GuestCoSimulationInstance::enter_step_mode(i)), ERROR)
 }

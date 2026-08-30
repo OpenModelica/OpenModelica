@@ -91,6 +91,16 @@ pub trait Fmi3 {
     fn update_discrete_states(&mut self) -> Result<DiscreteStates>;
     fn terminate(&mut self) -> Result<()>;
 
+    /// `fmi3EnterConfigurationMode`/`fmi3ExitConfigurationMode`, the only place a
+    /// structural parameter may be set. An FMU without structural parameters
+    /// need not offer them.
+    fn enter_configuration_mode(&mut self) -> Result<()> {
+        Err(Error::Unsupported("fmi3EnterConfigurationMode".into()))
+    }
+    fn exit_configuration_mode(&mut self) -> Result<()> {
+        Err(Error::Unsupported("fmi3ExitConfigurationMode".into()))
+    }
+
     /// Read numeric variables as `f64`, whatever their declared type: the
     /// masters plot and record in `f64`, and the `.mat` holds nothing else.
     /// `ty` selects the `fmi3Get*` to call.
