@@ -269,6 +269,8 @@ fn start_non_interactive_simulation(
     simflags::with_flags(|f| meta.apply_flags(f));
 
     let mut engine = CEngine::new(rt);
+    // What `-saveInitialGuess_system` writes out from inside a solve.
+    crate::nls::set_state_source(&raw const meta, &raw const engine.rt);
     // The attribute mirrors start from what the XML gave; the generated
     // `updateBoundVariableAttributes` refreshes them during initialization.
     engine.sync_attributes();

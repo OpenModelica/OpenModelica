@@ -20,9 +20,9 @@ std = ["openmodelica_solvers/std"]
 # `cfg(sundials)` without linking anything: the FMI3 adapter's PIC build leaves the
 # KINSOL/KLU calls undefined, as imports the FMU's SUNDIALS side module resolves.
 sundials_extern = ["openmodelica_solvers/sundials_extern"]
-# PRIMME's partial SVD, which `-lv=LOG_NLS_SVD` with `-svdCount` runs. Its archive
-# rides with the SUNDIALS hand-off; the C shim that calls it lives in the runtime
-# that links it, so this only selects the call.
+# PRIMME's partial SVD, which `-lv=LOG_NLS_SVD` with `-svdCount` runs. The wasm
+# archive already carries `src/primme_svds.c`; a native host names
+# `OMC_PRIMME_NATIVE_DIR` and build.rs compiles the shim there.
 primme = []
 
 [dependencies]
@@ -40,3 +40,6 @@ minpack = { path = "../minpack", default-features = false }
 openmodelica_lapack = { path = "../openmodelica_lapack" }
 # no_std `fabs`/`sqrt`/`pow` for the solver math.
 libm = "0.2"
+
+[build-dependencies]
+cc.workspace = true

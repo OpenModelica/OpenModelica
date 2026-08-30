@@ -22,6 +22,11 @@ name = "SimulationRuntimeRust"
 # `src/abi.rs` changes.
 crate-type = ["cdylib", "rlib"]
 
+[features]
+# The sparse SVD behind `-lv=LOG_NLS_SVD`, over the same `libprimme.a` the C
+# runtime links (see SimulationRuntime/rust/CMakeLists.txt).
+primme = ["openmodelica_nls/primme"]
+
 [dependencies]
 # The driver (`driver::drive`) and the model description it runs on.
 openmodelica_sim_meta.workspace = true

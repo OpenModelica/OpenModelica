@@ -490,20 +490,9 @@ fn kinsol_sparse_solve(
             pattern[n + 1..n + 1 + nnz].iter().map(|v| *v as i32).collect();
         let gather = (!jac_csc).then(|| pattern.to_vec());
         let mut assemble = make_assemble(n, jac, gather);
-        if solverflags::nls() == solverflags::Nls::KinsolB {
-            // C's `INITIAL_EXTRAPOLATION`: `discreteCall ? nlsx : nlsxExtrapolation`,
-            // which is the start point the caller already picked.
-            let start = x.to_vec();
-            let jacobian: Option<&mut dyn FnMut(&[f64], &mut [f64])> =
-                has_jacobian.then_some(&mut assemble);
-            return crate::sundials::kinsol_b_solve(
-                handle, n, nnz, Some((&colptr, &rowidx)), nominal, &start, old_values, x, eq_index,
-                time, load_guess, eval, jacobian,
-            );
-        }
-        return crate::sundials::kinsol_solve(
-            handle, n, nnz, &colptr, &rowidx, nominal, guess, x, eq_index, time, has_jacobian, eval,
-            &mut assemble,
+        return crate::sundials::kinsol_solve_selected(
+            handle, n, nnz, &colptr, &rowidx, nominal, guess, old_values, x, eq_index, time,
+            has_jacobian, load_guess, eval, &mut assemble,
         );
     }
     // only the KINSOL path names the system it dumps, or differences its own Jacobian
