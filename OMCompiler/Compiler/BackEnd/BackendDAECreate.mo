@@ -158,7 +158,7 @@ algorithm
     eqnarr := BackendEquation.listEquation(eqns);
     reqnarr := BackendEquation.listEquation(reqns);
     ieqnarr := BackendEquation.listEquation(ieqns);
-    einfo := BackendDAE.EVENT_INFO(timeEvents, ZeroCrossings.new(), DoubleEnded.fromList({}), ZeroCrossings.new(), 0);
+    einfo := BackendDAE.EVENT_INFO(timeEvents, ZeroCrossings.new(), ZeroCrossings.new(), ZeroCrossings.new(), 0);
     symjacs := {(NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
                 (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
                 (NONE(), ({}, {}, ({}, {}), -1), {}, ({}, {}, ({}, {}), -1)),
