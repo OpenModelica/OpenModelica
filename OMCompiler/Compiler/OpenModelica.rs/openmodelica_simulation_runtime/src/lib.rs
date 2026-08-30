@@ -14,16 +14,20 @@
 
 pub mod abi;
 mod data;
+mod datarecon;
 mod engine;
 mod info_json;
+mod linearize;
 mod meta;
 mod mixed;
 mod model_data;
 mod operators;
+mod optimization;
 mod run;
 mod nls;
 mod spatial;
 mod stateset;
+mod sync;
 mod support;
 mod systems;
 

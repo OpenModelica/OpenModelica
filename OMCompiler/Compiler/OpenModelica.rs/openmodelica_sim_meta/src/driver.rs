@@ -34,7 +34,8 @@ pub type Result<T> = core::result::Result<T, &'static str>;
 // Moved to `openmodelica_solvers`, which the solvers themselves use; re-exported
 // so `driver::format_g` and the rest keep naming them.
 pub use openmodelica_solvers::{
-    LogSink, MINIMAL_STEP_SIZE, format_e, format_g, log_line, set_log_sink,
+    LogSink, MINIMAL_STEP_SIZE, format_e, format_g, log_line, log_sink_is_stdout, set_log_sink,
+    set_log_sink_is_stdout,
 };
 pub(crate) use openmodelica_solvers::bisection_iterations;
 
@@ -358,6 +359,11 @@ pub const MODEL_FNS: &[&str] = &[
     "symbolicInlineSystem",
     "functionLocalKnownVars",
     "parmodTask",
+    "functionInputVars",
+    "functionOutputVars",
+    "functionReconInputs",
+    "functionReconSetC",
+    "functionReconSetB",
 ];
 
 /// The clock a model entry point runs under, where `CodegenC.tpl` ticks one inside
@@ -500,6 +506,12 @@ pub trait SimEngine {
     /// [`log_bound_attr_updates`]; the C code generator emits it.
     fn model_logs_bound_attrs(&self) -> bool {
         false
+    }
+    /// The `printf` frame `-l` fills, where the model owns it rather than the
+    /// metadata: C's `linear_model_frame()`, which prints its own diagnostic when
+    /// linearization is disabled. `None` means [`crate::LinInfo::frame`] holds it.
+    fn lin_frame(&mut self, _datarec: bool) -> Option<String> {
+        None
     }
     /// The per-system solver statistics the runtime recorded for `LOG_STATS_V`
     /// (`rt_sys_stats_ptr`). Default: none — a backend with no runtime to ask.

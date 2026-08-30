@@ -40,6 +40,12 @@ impl Capture {
     /// Redirect `stdout`. `None` if the platform refuses, in which case Ipopt's
     /// output goes where it always did.
     pub(crate) fn begin() -> Option<Capture> {
+        // A host whose sink is `stdout` needs no redirect: Ipopt's bytes already
+        // land where the log does, and draining through the sink would write them
+        // straight back into the pipe.
+        if crate::driver::log_sink_is_stdout() {
+            return None;
+        }
         let mut fds = [0i32; 2];
         unsafe {
             if pipe(fds.as_mut_ptr()) != 0 {

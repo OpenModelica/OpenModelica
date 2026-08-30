@@ -142,6 +142,21 @@ pub fn set_log_sink(f: LogSink) {
     LOG_SINK.store(f as usize, Ordering::Relaxed);
 }
 
+/// Whether the installed sink writes to the process's own `stdout`.
+static SINK_IS_STDOUT: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+/// Tell the log machinery that [`set_log_sink`]'s sink writes to `stdout`. The
+/// optimizer redirects `stdout` into a pipe to bring Ipopt's own output into the
+/// log; a sink that *is* `stdout` must not be, or draining the pipe writes it
+/// straight back in. True for a simulation executable, false for the wasm-jit host.
+pub fn set_log_sink_is_stdout(v: bool) {
+    SINK_IS_STDOUT.store(v, Ordering::Relaxed);
+}
+
+pub fn log_sink_is_stdout() -> bool {
+    SINK_IS_STDOUT.load(Ordering::Relaxed)
+}
+
 pub fn log_line(stream: omclog::Stream, ty: omclog::LogType, s: &str) {
     if omclog::capture_line(s) {
         return;

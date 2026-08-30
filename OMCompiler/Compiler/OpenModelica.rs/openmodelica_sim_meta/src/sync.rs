@@ -244,8 +244,13 @@ impl Sync {
         }
         write_f64(e, off + clock_field::LAST_ACTIVATION, time)?;
 
-        let sub0 = &clock.sub[0];
-        let first_is_base = sub0.shift_num == 0 && sub0.factor_num == 1 && sub0.factor_den == 1;
+        // A base clock can have no sub-clocks at all. C indexes `subClocks[0]`
+        // regardless -- past a `calloc(0)` -- and the zeros it reads make this test
+        // false, which is what an absent sub-clock means.
+        let first_is_base = clock
+            .sub
+            .first()
+            .is_some_and(|s| s.shift_num == 0 && s.factor_num == 1 && s.factor_den == 1);
         if first_is_base {
             if let Some(r) = rows.as_deref_mut() {
                 driver::capture_row(e, r, self.sim_data, &self.layout)?;

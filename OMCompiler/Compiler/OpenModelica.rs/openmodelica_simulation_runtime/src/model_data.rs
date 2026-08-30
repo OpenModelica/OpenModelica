@@ -252,6 +252,24 @@ unsafe extern "C" {
 /// C's `mmc_mk_scon_persist` (`util/modelica_string.h`), a `static inline` with no
 /// symbol to call: an `mmc_string` -- header word then the bytes and their NUL --
 /// whose tagged pointer is a `modelica_string`. Never freed, as "persist" says.
+/// A `const char*` the generated code owns, as a `String`.
+pub fn cstr(p: *const c_char) -> String {
+    if p.is_null() {
+        return String::new();
+    }
+    unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned()
+}
+
+/// `MMC_STRINGDATA`, the inverse of [`mk_scon_persist`]: the bytes behind an
+/// `mmc_string`'s header word.
+pub fn string_value(p: *mut c_void) -> String {
+    if p.is_null() {
+        return String::new();
+    }
+    let data = unsafe { (p as *mut u8).sub(3).add(core::mem::size_of::<usize>()) };
+    unsafe { core::ffi::CStr::from_ptr(data as *const c_char) }.to_string_lossy().into_owned()
+}
+
 pub fn mk_scon_persist(s: &str) -> *mut c_void {
     let n = s.len();
     if n == 0 {
@@ -463,8 +481,8 @@ pub fn read_variables(xml: &InitXml, md: &mut MODEL_DATA) -> AliasMaps {
         read_array_real(&mut slot.attribute.nominal, v.get("nominal"), 1.0);
         read_array_real(&mut slot.attribute.min, v.get("min"), REAL_MIN);
         read_array_real(&mut slot.attribute.max, v.get("max"), REAL_MAX);
-        slot.attribute.unit = core::ptr::null_mut();
-        slot.attribute.displayUnit = core::ptr::null_mut();
+        slot.attribute.unit = mk_scon_persist(v.get("unit"));
+        slot.attribute.displayUnit = mk_scon_persist(v.get("displayUnit"));
     };
     let int_attr = |v: &XmlVar, slot: &mut STATIC_INTEGER_DATA| {
         slot.attribute.start = read_long(v.get("start"), 0);

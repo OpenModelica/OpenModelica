@@ -61,6 +61,12 @@ if(_simrt_sundials AND _simrt_sundials_ix)
        "OMC_SUNDIALS_NATIVE_DIR=${_simrt_sundials}"
        "OMC_SUNDIALS_NATIVE_INDEX_SIZE=${_simrt_sundials_ix}")
 endif()
+# The same hand-off for Ipopt, which `method="optimization"` needs; without it
+# `openmodelica_sim_meta` builds without `cfg(ipopt)` and the driver reports the
+# solver as unavailable, exactly as a C runtime without OMC_HAVE_IPOPT does.
+if(RUST_IPOPT_NATIVE_DIR)
+  list(APPEND _simrt_env "OMC_IPOPT_NATIVE_DIR=${RUST_IPOPT_NATIVE_DIR}")
+endif()
 
 add_custom_target(SimulationRuntimeRust ALL
   WORKING_DIRECTORY ${_simrt_workspace}
@@ -75,6 +81,9 @@ if(TARGET rust_src_sync)
 endif()
 if(TARGET rust_sundials_native_collect)
   add_dependencies(SimulationRuntimeRust rust_sundials_native_collect)
+endif()
+if(TARGET rust_ipopt_native_collect)
+  add_dependencies(SimulationRuntimeRust rust_ipopt_native_collect)
 endif()
 
 install(PROGRAMS ${_simrt_so} DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT omc)

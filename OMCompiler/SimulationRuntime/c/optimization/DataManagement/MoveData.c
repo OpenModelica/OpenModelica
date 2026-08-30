@@ -154,7 +154,19 @@ static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time){
 
   cflags = (char*)omc_flagValue[FLAG_OPTIMIZER_TGRID];
   dim->nsi = -1; /* Initialize the data just in case */
-  data->callback->getTimeGrid(data, &dim->nsi, &time->tt); /* TODO: dim->nsi is long*, expected is int* */
+  {
+    /* The model names its time grid by parameter index; the values are read here. */
+    modelica_integer *tgrid = NULL;
+    modelica_integer i;
+    data->callback->getTimeGrid(data, &dim->nsi, &tgrid); /* TODO: dim->nsi is long*, expected is int* */
+    if (dim->nsi > 0) {
+      time->tt = (modelica_real*) malloc((dim->nsi+1)*sizeof(modelica_real));
+      for (i = 0; i < dim->nsi+1; ++i) {
+        time->tt[i] = data->simulationInfo->realParameter[tgrid[i]];
+      }
+    }
+    free(tgrid);
+  }
   time->model_grid = (modelica_boolean)(dim->nsi > 0);
 
   if (!time->model_grid) {

@@ -214,6 +214,10 @@ impl SimEngine for CEngine {
         })
     }
 
+    fn lin_frame(&mut self, datarec: bool) -> Option<String> {
+        Some(crate::linearize::frame(self.rt.data, datarec))
+    }
+
     /// C's generated `updateBoundVariableAttributes` prints the block itself.
     fn model_logs_bound_attrs(&self) -> bool {
         true
@@ -281,6 +285,18 @@ impl SimEngine for CEngine {
                 }
                 Ok(())
             }
+            // C's `initSynchronous` calls this at every solver setup; the layout
+            // already ran it once. A real call moves `baseClocks`, so the region
+            // map is re-pointed after it.
+            "functionInitSynchronous" => {
+                if crate::sync::take_fresh() {
+                    return Ok(());
+                }
+                self.publish();
+                crate::sync::init_clocks(self.rt.data, self.rt.thread_data);
+                crate::data::build_regions(&mut self.rt);
+                Ok(())
+            }
             "initSample" => {
                 if let Some(f) = cb.function_initSample {
                     self.publish();
@@ -336,7 +352,53 @@ impl SimEngine for CEngine {
                 self.publish();
                 crate::stateset::eval_jacobians(self.rt.data, self.rt.thread_data)
             }
-            _ => Err("the C model has no such entry point"),
+            // The copies between `simulationInfo`'s arrays and the model's own
+            // variables; a wasm model writes the variables directly and has none.
+            "functionInputVars" => self.call_cb(cb.input_function),
+            "functionOutputVars" => self.call_cb(cb.output_function),
+            "functionReconInputs" => self.call_cb(cb.data_function),
+            "functionReconSetC" => self.call_cb(cb.setc_function),
+            "functionReconSetB" => self.call_cb(cb.setb_function),
+            // C's `functionJac<X>` (`linearize.cpp`) and `getJacobianMatrix<X>`
+            // (`dataReconciliation.cpp`), into the flat window the shared
+            // implementation reads the matrix back from.
+            "linearJacA" | "linearJacB" | "linearJacC" | "linearJacD" | "reconJacF"
+            | "reconJacH" => {
+                let (k, recon) = match crate::datarecon::index_of(name) {
+                    Some(k) => (k, true),
+                    None => (crate::linearize::index_of(name).unwrap_or(0), false),
+                };
+                self.publish();
+                let mut out: Vec<f64> = Vec::new();
+                let (data, thread_data) = (self.rt.data, self.rt.thread_data);
+                let ok = crate::support::protected(thread_data, self.stage, || match recon {
+                    true => crate::datarecon::eval(data, thread_data, k, &mut out),
+                    false => crate::linearize::eval(data, thread_data, k, &mut out),
+                });
+                self.absorb(if ok { 0 } else { -1 })?;
+                let base = match recon {
+                    true => crate::datarecon::window(&self.rt.layout, data, k),
+                    false => crate::linearize::window(&self.rt.layout, data, k),
+                };
+                for (i, v) in out.iter().enumerate() {
+                    self.write_bytes(base + (i as u32) * 8, &v.to_le_bytes())?;
+                }
+                Ok(())
+            }
+            // `optJac<X>_column` / `optJac<X>_constantEqns`: one column set of
+            // `INDEX_JAC_{B,C,D}`. The optimizer seeded `seedVars` itself, through
+            // the window the region map points at C's own array.
+            _ => match crate::optimization::index_of(name) {
+                Some((k, constant)) => {
+                    self.publish();
+                    let (data, thread_data) = (self.rt.data, self.rt.thread_data);
+                    let ok = crate::support::protected(thread_data, self.stage, || {
+                        crate::optimization::eval(data, thread_data, k, constant);
+                    });
+                    self.absorb(if ok { 0 } else { -1 })
+                }
+                None => Err("the C model has no such entry point"),
+            },
         }
     }
 
@@ -383,8 +445,28 @@ impl SimEngine for CEngine {
                 };
                 self.absorb(rc)
             }
-            driver::MODEL_FN_UPDATE_SYNC | driver::MODEL_FN_EQS_SYNC => {
-                Err("clocked partitions are not served by this runtime yet")
+            // The driver names a sub-clock by its flat index, which is what a wasm
+            // module's dispatcher takes; C's takes the `(base, sub)` pair.
+            driver::MODEL_FN_UPDATE_SYNC => {
+                let Some(f) = self.rt.callbacks().function_updateSynchronous else { return Ok(()) };
+                self.publish();
+                let (data, thread_data, base) = (self.rt.data, self.rt.thread_data, b as c_long);
+                let ok = crate::support::protected(thread_data, self.stage, || {
+                    unsafe { f(data, thread_data, base) };
+                });
+                self.absorb(if ok { 0 } else { -1 })
+            }
+            driver::MODEL_FN_EQS_SYNC => {
+                let Some(f) = self.rt.callbacks().function_equationsSynchronous else {
+                    return Ok(());
+                };
+                self.publish();
+                let (data, thread_data) = (self.rt.data, self.rt.thread_data);
+                let (base, sub) = crate::sync::split(data, b);
+                let ok = crate::support::protected(thread_data, self.stage, || {
+                    unsafe { f(data, thread_data, base, sub) };
+                });
+                self.absorb(if ok { 0 } else { -1 })
             }
             _ => Err("the C model has no such two-argument entry point"),
         }
@@ -517,6 +599,34 @@ impl CEngine {
         }
         let bytes: Vec<u8> = maxs.iter().flat_map(|v| v.to_ne_bytes()).collect();
         let _ = self.rt.write(l.state_max_off, &bytes);
+        // The optimizer reads `min`/`max`/`nominal`/`useNominal` of every real
+        // variable, not just the states'; C reaches them through
+        // `getMinFromScalarIdx` and friends, which is this scalarization.
+        if l.n_opt_attr > 0 {
+            let n = l.n_opt_attr as usize;
+            let (mut min, mut max) = (vec![-f64::MAX; n], vec![f64::MAX; n]);
+            let mut use_nom = vec![0i32; n];
+            unsafe {
+                for a in 0..md.nVariablesRealArray as usize {
+                    let v = &*md.realVarsData.add(a);
+                    let base = *si.realVarsIndex.add(a);
+                    for k in 0..v.dimension.scalar_length {
+                        if base + k >= n {
+                            break;
+                        }
+                        min[base + k] = v.attribute.min.real_at(k, -f64::MAX);
+                        max[base + k] = v.attribute.max.real_at(k, f64::MAX);
+                        use_nom[base + k] = (v.attribute.useNominal != 0) as i32;
+                    }
+                }
+            }
+            let f64s = |v: &[f64]| -> Vec<u8> { v.iter().flat_map(|x| x.to_ne_bytes()).collect() };
+            let _ = self.rt.write(l.opt_min_off, &f64s(&min));
+            let _ = self.rt.write(l.opt_max_off, &f64s(&max));
+            let _ = self.rt.write(l.opt_nom_off, &f64s(&nominal[..n.min(nominal.len())]));
+            let bytes: Vec<u8> = use_nom.iter().flat_map(|v| v.to_ne_bytes()).collect();
+            let _ = self.rt.write(l.opt_use_nom_off, &bytes);
+        }
         // C's `getAlgebraicDAEVarNominals`: the algebraic unknowns IDA carries after
         // the states, clamped like the states' own.
         if l.n_dae_alg > 0 {

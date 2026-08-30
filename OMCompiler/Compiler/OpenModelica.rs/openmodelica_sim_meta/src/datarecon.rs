@@ -988,15 +988,24 @@ fn write_var(e: &mut dyn SimEngine, sim_data: u32, v: &ReconVar, value: f64) -> 
     write_f64(e, sim_data + v.off, v.negate.apply_f64(value))
 }
 
-/// C's `data_function` + `functionDAE`: publish the measured values and re-solve.
+/// C's `data_function` + `functionDAE` + `setc_function`/`setb_function`.
+///
+/// A wasm model's slots *are* its variables, so the writes here are the whole of
+/// it; a C model keeps `simulationInfo`'s three arrays beside them, and the host
+/// that has them runs the copies. C leaves `setb_function` out of the D.1 loop,
+/// which reads only the `setc` set -- both are plain copies, so running the pair
+/// together costs nothing.
 fn set_inputs_and_solve(e: &mut dyn SimEngine, ctx: &Ctx, x: &[f64]) -> Result<()> {
     for (v, value) in ctx.recon.input_vars.iter().zip(x) {
         write_var(e, ctx.sim_data, v, *value)?;
     }
-    e.call1("functionDAE", ctx.sim_data)
+    e.call1_if_present("functionReconInputs", ctx.sim_data)?;
+    e.call1("functionDAE", ctx.sim_data)?;
+    e.call1_if_present("functionReconSetC", ctx.sim_data)?;
+    e.call1_if_present("functionReconSetB", ctx.sim_data)
 }
 
-/// C's `setc_function` / `setb_function`, read straight out of `SimData`.
+/// The `setc` / `setb` set, read straight out of `SimData`.
 fn read_set(e: &dyn SimEngine, sim_data: u32, vars: &[ReconVar]) -> Result<Vec<f64>> {
     vars.iter().map(|v| read_var(e, sim_data, v)).collect()
 }
