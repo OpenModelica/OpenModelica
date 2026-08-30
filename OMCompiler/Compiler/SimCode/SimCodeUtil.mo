@@ -75,6 +75,7 @@ protected
 import AbsynUtil;
 import Array;
 import Autoconf;
+import AvlSetInt;
 import AvlSetString;
 import AvlTreeCRToInt;
 import BackendDAEOptimize;
@@ -1536,7 +1537,7 @@ tuple<Integer /*uniqueEqIndex*/,
       list<tuple<Integer,Integer>> /*eqBackendSimCodeMapping*/,
       SimCode.BackendMapping  /*backendSimCodeMapping*/,
       Integer  /*sccOffset*/>;
-protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, list<BackendDAE.ZeroCrossing>, Boolean>;
+protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, Boolean>;
 
 protected function createEquationsForSystems "Some kind of comments would be very helpful!"
   input BackendDAE.EqSystems inSysts;
@@ -1561,11 +1562,17 @@ protected function createEquationsForSystems "Some kind of comments would be ver
 protected
   CreateEquationsForSystemsFold foldArg;
   CreateEquationsForSystemsArg arg;
+  array<AvlSetInt.Tree> zcVars;
+  Integer sysIdx = 0;
 algorithm
   try
-    arg := (shared, inAllZeroCrossings, createAlgebraicEquations);
+    arg := (shared, createAlgebraicEquations);
+    zcVars := BackendDAEUtil.zeroCrossingVarIndices(inSysts, inAllZeroCrossings);
     foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
-    foldArg := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
+    for syst in inSysts loop
+      sysIdx := sysIdx + 1;
+      foldArg := createEquationsForSystems1(syst, arrayGet(zcVars, sysIdx), arg, foldArg);
+    end for;
     (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otempvars,
     oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := foldArg;
     oequationsForZeroCrossings := Dangerous.listReverseInPlace(oequationsForZeroCrossings);
@@ -1578,6 +1585,7 @@ end createEquationsForSystems;
 
 protected function createEquationsForSystems1
   input BackendDAE.EqSystem inSyst;
+  input AvlSetInt.Tree zcVars "this system's variables occurring in a zero crossing";
   input CreateEquationsForSystemsArg inArg;
   input CreateEquationsForSystemsFold inFold;
   output CreateEquationsForSystemsFold outFold;
@@ -1596,7 +1604,6 @@ algorithm
       AvlTreePathFunction.Tree funcs;
       list<tuple<Integer,Integer>> eqSccMapping, eqBackendSimCodeMapping;
       SimCode.BackendMapping backendMapping;
-      list<BackendDAE.ZeroCrossing> zeroCrossings;
       BackendDAE.Shared shared;
       Boolean createAlgebraicEquations;
     case BackendDAE.MATCHING(ass1=ass1, comps=comps)
@@ -1605,7 +1612,7 @@ algorithm
           BackendDump.dumpEqSystemBLTmatrixHTML(inSyst);
         end if;
 
-        (shared, zeroCrossings, createAlgebraicEquations) := inArg;
+        (shared, createAlgebraicEquations) := inArg;
         (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars,
          eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) := inFold;
 
@@ -1615,7 +1622,7 @@ algorithm
         stateeqnsmark := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         zceqnsmarks := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         stateeqnsmark := BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
-        zceqnsmarks := BackendDAEUtil.markZeroCrossingEquations(syst, zeroCrossings, zceqnsmarks, ass1);
+        zceqnsmarks := BackendDAEUtil.markZeroCrossingEquations(syst, zcVars, zceqnsmarks, ass1);
 
         (odeEquations1, algebraicEquations1, allEquations1, equationsForZeroCrossings1, uniqueEqIndex,
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping) :=
