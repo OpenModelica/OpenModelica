@@ -908,36 +908,20 @@ end match;
 end hashComponentRef;
 
 protected function hashSubscripts "help function, hashing subscripts making sure [1,2] and [2,1] doesn't match to the same number"
+  // TODO: Currently, the types of component references are wrong, they consider the subscripts but they should not.
+  // For example, given Real a[10,10];  the component reference 'a[1,2]' should have type Real[10,10] but it has type Real,
+  // so the dimensions of tp cannot be used as the per-subscript factor yet.
   input DAE.Type tp;
   input list<DAE.Subscript> subs;
-  output Integer hash;
+  output Integer hash = 0;
+protected
+  Integer factor = 1;
 algorithm
-  hash := match subs
-  case {} then 0;
-  // TODO: Currently, the types of component references are wrong, they consider the subscripts but they should not.
-  // For example, given Real a[10,10];  the component reference 'a[1,2]' should have type Real[10,10] but it has type Real.
-  else hashSubscripts2(List.fill(1,listLength(subs)),/*DAEUtil.expTypeArrayDimensions(tp),*/subs,1);
-  end match;
+  for s in subs loop
+    hash := hash + hashSubscript(s)*factor;
+    factor := factor*1000/* *dim */;
+  end for;
 end hashSubscripts;
-
-protected function hashSubscripts2 "help function"
-  input list<Integer> dims;
-  input list<DAE.Subscript> subs;
-  input Integer factor;
-  output Integer hash;
-algorithm
-  hash := match(dims, subs)
-  local
-    DAE.Subscript s;
-    list<Integer> rest_dims;
-    list<DAE.Subscript> rest_subs;
-
-    case({}, {}) then 0;
-    case(_::rest_dims, s::rest_subs)
-    // TODO: change to using dimensions once cref types has been fixed.
-    then hashSubscript(s)*factor + hashSubscripts2(rest_dims,rest_subs,factor*1000/* *i1 */);
-  end match;
-end hashSubscripts2;
 
 protected function hashSubscript "help function"
   input DAE.Subscript sub;
