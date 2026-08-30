@@ -15475,7 +15475,8 @@ protected
 algorithm
   ocode := getGlobalRoot(Global.optionSimCode);
   code := match ocode
-    case SOME(code) then code;
+    local SimCode.SimCode c;
+    case SOME(c) then c;
     else algorithm Error.addInternalError("Tried to generate code that requires the SimCode structure, but this is not set (function context?)", sourceInfo()); then fail();
   end match;
 end getSimCode;
@@ -15614,17 +15615,17 @@ public function codegenExpSanityCheck "Handle some things that Susan cannot hand
 "
   input output DAE.Exp e;
   input SimCodeFunction.Context context;
-protected
-  list<SimCodeVar.SimVar> vars;
-  SimCode.SimCode simCode;
-  Integer index;
-  list<DAE.ComponentRef> crf_lst;
 algorithm
   if SimCodeFunctionUtil.inFunctionContext(context) then
     return;
   end if;
 
   e := match e
+    local
+      list<SimCodeVar.SimVar> vars;
+      SimCode.SimCode simCode;
+      Integer index;
+      list<DAE.ComponentRef> crf_lst;
     case DAE.CREF(ty=DAE.T_ARRAY())
       algorithm
         simCode := getSimCode();
