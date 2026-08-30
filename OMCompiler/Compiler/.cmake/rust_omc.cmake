@@ -1108,6 +1108,18 @@ function(omc_rust_setup_codegen)
   if(RUST_OMC_ENABLE_SUNDIALS)
     list(APPEND _rust_omc_features openmodelica_codegen_wasm_jit/sundials)
   endif()
+  # Cross builds keep the system allocator: mimalloc compiles C sources.
+  if(RUST_OMC_TARGET STREQUAL "")
+    set(_rust_omc_allocator_default "mimalloc")
+  else()
+    set(_rust_omc_allocator_default "system")
+  endif()
+  set(RUST_OMC_ALLOCATOR "${_rust_omc_allocator_default}"
+      CACHE STRING "Global allocator for the Rust omc: system, mimalloc or jemalloc.")
+  set_property(CACHE RUST_OMC_ALLOCATOR PROPERTY STRINGS system mimalloc jemalloc)
+  if(NOT RUST_OMC_ALLOCATOR STREQUAL "system")
+    list(APPEND _rust_omc_features ${RUST_OMC_ALLOCATOR})
+  endif()
   list(JOIN _rust_omc_features "," _rust_omc_features_csv)
   set(RUST_OMC_CDYLIB_FEATURES --no-default-features --features ${_rust_omc_features_csv})
 

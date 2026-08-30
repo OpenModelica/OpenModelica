@@ -10,10 +10,11 @@
 //
 //   * `pub struct File` is a clonable handle whose contents are shared via
 //     `Arc<Mutex<FileInner>>`. Cloning the `Arc` *is* the reference count.
-//   * `FileInner` owns an optional `std::fs::File` plus the on-disk file name
-//     and current write escape mode. When the last `Arc` is dropped the
-//     `std::fs::File` is dropped too — the C destructor's `fclose` happens
-//     for free.
+//   * `FileInner` owns an optional `BufWriter<std::fs::File>` plus the on-disk
+//     file name and current write escape mode. When the last `Arc` is dropped
+//     the writer is dropped too, flushing — the C destructor's `fclose`
+//     happens for free. The buffer stands in for the stdio buffering the C
+//     runtime's `fputs` gets for free.
 //
 // Note on the constructor's `fromID: Option<Integer>` parameter: in the C
 // runtime this is a void* pretending to be `Option<Integer>` — either NULL
@@ -43,7 +44,7 @@ use std::collections::HashMap;
 #[cfg(not(target_arch = "wasm32"))]
 use std::fs::OpenOptions;
 #[cfg(not(target_arch = "wasm32"))]
-use std::io::{Seek, SeekFrom, Write};
+use std::io::{BufWriter, Seek, SeekFrom, Write};
 use std::sync::{Arc, Mutex};
 
 use metamodelica::Result;
@@ -75,7 +76,7 @@ pub enum Escape {
 
 struct FileInner {
     #[cfg(not(target_arch = "wasm32"))]
-    file: Option<std::fs::File>,
+    file: Option<BufWriter<std::fs::File>>,
     // wasm has no OS filesystem: buffer the content in memory and flush it to the
     // VFS. `mode` (None = not open) gates writes/seek like the native `Option<File>`;
     // `pos` is the read/write cursor for seek/tell, so seek-then-write backpatching
@@ -227,7 +228,7 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
                 .open(filename.as_str()),
         }
         .map_err(|e| "File.open: Failed to open file {filename} with mode {mode:?}: {e}")?;
-        guard.file = Some(handle);
+        guard.file = Some(BufWriter::with_capacity(64 * 1024, handle));
         guard.name = filename;
         Ok(())
     }
@@ -483,8 +484,29 @@ pub fn releaseReference(file: File) -> Result<()> {
 }
 
 pub fn writeSpace(file: File, n: i32) -> Result<()> {
-    for _ in 0..n {
-        write(file.clone(), literal!(" "))?;
+    const BLANKS: [u8; 64] = [b' '; 64];
+    let mut guard = file.inner.lock().unwrap();
+    let mut left = n.max(0) as usize;
+    while left > 0 {
+        let k = left.min(BLANKS.len());
+        guard.write_bytes(&BLANKS[..k], "writeSpace")?;
+        left -= k;
     }
     Ok(())
+}
+
+/// Flush every file the reference registry still holds, for callers leaving
+/// through `process::exit`, which runs no thread-local destructor.
+pub fn flush_all_registered() {
+    FILE_REGISTRY.with(|r| {
+        for f in r.borrow().values() {
+            let Ok(mut guard) = f.inner.lock() else { continue };
+            #[cfg(not(target_arch = "wasm32"))]
+            if let Some(w) = guard.file.as_mut() {
+                let _ = w.flush();
+            }
+            #[cfg(target_arch = "wasm32")]
+            guard.flush_to_vfs();
+        }
+    });
 }
