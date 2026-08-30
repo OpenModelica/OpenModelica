@@ -703,19 +703,20 @@ fn fmu_solver_flags(flags_json: &str) -> String {
         .join(" ")
 }
 
-/// Which solver libraries an FMU exported with these `--fmiFlags` can reach; the rest
-/// are linked as stubs. The flags are fixed at export, so this is the whole set the
-/// FMU will ever select from. `klu` comes along with any of the others: the shared
-/// SUNDIALS core they call into, and IDA's default linear solver.
+/// Which solver libraries an FMU exported with these `--fmiFlags` and this
+/// Co-Simulation method can reach; the rest are linked as stubs. Both are fixed
+/// at export, so this is the whole set the FMU will ever select from. `klu` comes
+/// along with any of the others: the shared SUNDIALS core they call into, and
+/// IDA's default linear solver.
 ///
 /// `cs` gates only the integrator: Model Exchange never integrates, but its
 /// initialisation and residuals run the same nonlinear and linear solvers.
-fn fmu_solver_libraries(flags_json: &str, cs: bool) -> Vec<&'static str> {
+fn fmu_solver_libraries(flags_json: &str, cs_method: &str, cs: bool) -> Vec<&'static str> {
     let flag = |name: &str| fmi_flag(flags_json, name).unwrap_or_default();
     let (nls, ls, lss) = (flag("nls"), flag("ls"), flag("lss"));
     let named = |v: &str| ls == v || lss == v;
     let mut wanted = Vec::new();
-    if cs && fmu_needs_sundials(&flag("s")) {
+    if cs && fmu_needs_sundials(cs_method) {
         wanted.push("sundials_driver");
     }
     if matches!(nls.as_str(), "kinsol" | "experimental-kinsol") {
@@ -3180,7 +3181,13 @@ fn cad_basename(uri: &str) -> &str {
 
 /// C's `FMI2CS_initializeSolverData`: `-s` from `_flags.json`, euler otherwise.
 /// The model's own method stays for the artifact's plain-simulation face.
-fn fmu_cs_method(simulation_flags_json: &str, kind: &str) -> String {
+///
+/// A DAE-mode model overrides to IDA (`resolve_solver_method`), so the export has
+/// to agree or the FMU steps with the one solver it did not link.
+fn fmu_cs_method(simulation_flags_json: &str, kind: &str, dae_mode: bool) -> String {
+    if kind != "ME" && dae_mode {
+        return "ida".to_string();
+    }
     match fmi_flag(simulation_flags_json, "s") {
         Some(s) => s,
         None if kind != "ME" => "euler".to_string(),
@@ -3272,7 +3279,7 @@ pub fn translateFmu(sim_code: SimCode::SimCode, fmu_type: ArcStr, simulation_fla
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
     let kind = fmu_kind(&fmu_type);
-    let cs_method = fmu_cs_method(&simulation_flags_json, kind);
+    let cs_method = fmu_cs_method(&simulation_flags_json, kind, sim_code.daeModeData.is_some());
     let fmi_solver_flags = fmu_solver_flags(&simulation_flags_json);
     let prefix = sim_code.fileNamePrefix.to_string();
     let _ = openmodelica_wasi::fs::remove_file(&format!("{prefix}.wasm"));
@@ -3345,7 +3352,7 @@ fn emit_fmu(
 ) -> Result<()> {
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
-    let cs_method = fmu_cs_method(&simulation_flags_json, kind);
+    let cs_method = fmu_cs_method(&simulation_flags_json, kind, sim_code.daeModeData.is_some());
     let fmi_solver_flags = fmu_solver_flags(&simulation_flags_json);
     // Emitting the model takes seconds; a host that compiles the native platforms
     // out of process can spend them loading its compiler.
@@ -3366,7 +3373,7 @@ fn emit_fmu(
         // Both adapters import every solver, real or stubbed; only the integrator is
         // Co-Simulation's alone.
         let solvers =
-            sundials_available().then(|| fmu_solver_libraries(&simulation_flags_json, cs));
+            sundials_available().then(|| fmu_solver_libraries(&simulation_flags_json, &cs_method, cs));
         // An unzipped export is for an OpenModelica importer: it holds the model
         // description and the model kernel and nothing else, and the host links
         // that kernel against an adapter it compiled once into
@@ -11264,12 +11271,13 @@ mod link_tests {
             (r#"{"lss":"lis"}"#, false, vec!["lis", "klu"]),
             (r#"{"s":"cvode"}"#, false, vec![]),
         ] {
-            assert_eq!(fmu_solver_libraries(json, cs), want, "{json} cs={cs}");
+            let method = fmu_cs_method(json, if cs { "CS" } else { "ME" }, false);
+            assert_eq!(fmu_solver_libraries(json, &method, cs), want, "{json} cs={cs}");
         }
         // Every name the mapping can produce must be a library that exists.
         let known: Vec<&str> = SOLVER_LIBRARIES.iter().map(|l| l.name).collect();
         let all = r#"{"s":"ida","nls":"kinsol","ls":"lis","lss":"umfpack"}"#;
-        for name in fmu_solver_libraries(all, true) {
+        for name in fmu_solver_libraries(all, "ida", true) {
             assert!(known.contains(&name), "{name} is not a solver library");
         }
     }
@@ -11294,7 +11302,7 @@ mod link_tests {
                 .chain(baked.split_whitespace().map(str::to_string))
                 .collect();
             let f = simflags::parse(&argv).expect(&baked);
-            let libs = fmu_solver_libraries(json, true);
+            let libs = fmu_solver_libraries(json, &fmu_cs_method(json, "CS", false), true);
             let cap = simflags::Capabilities {
                 klu: libs.contains(&"klu"),
                 kinsol: libs.contains(&"kinsol"),

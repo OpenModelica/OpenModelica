@@ -6559,7 +6559,15 @@ impl IdaState {
                 Progress::WorkQuota
             }
             crate::sundials::Stop::Failed(crate::sundials::IDA_RTFUNC_FAIL) => Progress::RootThrew,
-            crate::sundials::Stop::Failed(_) => Progress::Failed("CodegenWasmJit: IDA failed"),
+            crate::sundials::Stop::Failed(flag) => {
+                // C's last word before it gives up (`ida_solver.c`).
+                omclog::info(
+                    omclog::STDOUT,
+                    false,
+                    &format!("##IDA## {flag} error occurred at time = {}", format_g(*t, 15)),
+                );
+                Progress::Failed("CodegenWasmJit: IDA failed")
+            }
             other => {
                 self.work_retries = 0;
                 self.restarted = false;
@@ -7995,7 +8003,9 @@ impl CsDriver {
         let layout = &model.layout;
         let sim_data = self.core.sim_data;
         // A reinit or discrete change in the master's update needs a DASKR restart.
-        if self.resume_reinit {
+        // DAE mode needs the `IDACalcIC` with it, so it restarts in
+        // `integrate_chunked`, where the residual's callback context is live.
+        if self.resume_reinit && !layout.dae_mode() {
             if self.core.n_states > 0 {
                 e.call1("functionODE", sim_data)?;
                 self.core.read_states(e)?;
@@ -8108,6 +8118,14 @@ impl CsDriver {
         let mut ctx = self.core.res_ctx(e, layout);
         let _guard = ResCtxGuard;
         RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
+        // `step_to`'s restart for DAE mode, the pair `handle_zc_flips` runs for an
+        // event the driver resolves itself.
+        if self.resume_reinit {
+            self.core.read_states(e)?;
+            self.core.restart()?;
+            self.core.dae_restart(e, &mut ctx as *mut ResCtx)?;
+            self.resume_reinit = false;
+        }
         let mut did_step = false;
         loop {
             let target = match self.fixed_h {

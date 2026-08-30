@@ -10380,21 +10380,21 @@ algorithm
 end startValueIsConstOrDefault;
 
 protected function updateStartValue
-  "function which updates Start value of an expression
-   depending on the initial = EXACT or APPROX and causality = INPUT "
+  "FMI requires a literal start value for a variable that is initial=exact or
+   approx, or an input; those get the type default when the model's start is
+   missing or is an expression. Every other variable keeps its start expression:
+   it is the same field the code generators read `$START.x` from, and the FMI
+   templates render only a literal anyway."
   input BackendDAE.Var var;
   input output Option<DAE.Exp> startValue;
   input SimCodeVar.Initial initial_;
   input SimCodeVar.Causality causality;
 algorithm
-  // update start value for FMI 2.0 and 3.0
-  if Flags.getConfigBool(Flags.BUILDING_FMU) and (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
+  if Flags.getConfigBool(Flags.BUILDING_FMU) and (FMI.isFMIVersion20() or FMI.isFMIVersion30())
+     and (isInitialExactOrApprox(initial_) or isCausalityInput(causality)) then
     startValue := match startValue
-      case SOME(_) guard isInitialExactOrApprox(initial_) then startValue;
-      case NONE() guard isInitialExactOrApprox(initial_) then setDefaultStartValue(var.varType);
-      case SOME(_) guard isCausalityInput(causality) then startValueIsConstOrDefault(startValue, var.varType);
-      case NONE() guard isCausalityInput(causality) then setDefaultStartValue(var.varType);
-      else startValueIsConstOrDefault(startValue, var.varType);
+      case SOME(_) then startValueIsConstOrDefault(startValue, var.varType);
+      else setDefaultStartValue(var.varType);
     end match;
   end if;
 end updateStartValue;
