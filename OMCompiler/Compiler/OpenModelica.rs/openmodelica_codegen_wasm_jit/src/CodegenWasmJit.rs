@@ -691,16 +691,37 @@ fn fmu_needs_sundials(method: &str) -> bool {
     matches!(method, "cvode" | "ida")
 }
 
-/// The nonlinear/linear solver selection to hard-code into an FMU's metadata. An
-/// importer has no channel to pass simulation flags, so `--fmiFlags` is consumed here
-/// and the FMU applies these when it instantiates. `-s` is not among them: it is the
-/// Co-Simulation integrator, and [`SimMeta::cs_method`] already carries it.
+/// The simulation flags to hard-code into an FMU's metadata: the export's
+/// `_flags.json` but `-s`, which [`SimMeta::cs_method`] carries. An importer has no
+/// channel to pass simulation flags, so the FMU applies these when it instantiates.
+/// `--fmiFlags` takes any name; like C's `parseFlags`, ignore what is not a flag.
 fn fmu_solver_flags(flags_json: &str) -> String {
-    ["nls", "nlsLS", "ls", "lss"]
-        .iter()
-        .filter_map(|f| fmi_flag(flags_json, f).map(|v| format!("-{f}={v}")))
+    fmi_flags(flags_json)
+        .into_iter()
+        .filter(|(name, _)| name != "s")
+        .map(|(name, value)| if value.is_empty() { format!("-{name}") } else { format!("-{name}={value}") })
+        .filter(|arg| simflags::parse(&["model".to_string(), arg.clone()]).is_ok())
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+/// Every `"name" : "value"` pair of a `_flags.json`, in file order.
+fn fmi_flags(json: &str) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    let mut rest = json;
+    while let Some(start) = rest.find('"') {
+        let Some(len) = rest[start + 1..].find('"') else { break };
+        let name = &rest[start + 1..start + 1 + len];
+        let after = rest[start + 1 + len + 1..].trim_start();
+        let Some(value_part) = after.strip_prefix(':').map(str::trim_start).and_then(|a| a.strip_prefix('"')) else {
+            rest = &rest[start + 1 + len + 1..];
+            continue;
+        };
+        let Some(vlen) = value_part.find('"') else { break };
+        out.push((name.to_string(), value_part[..vlen].to_string()));
+        rest = &value_part[vlen + 1..];
+    }
+    out
 }
 
 /// Which solver libraries an FMU exported with these `--fmiFlags` and this
@@ -2977,6 +2998,18 @@ fn announce_directional_derivatives(model_description: &str, model: &SimModel) -
     )
 }
 
+/// The runtime's `-lv` streams as log categories of an FMI 3.0 export, so an
+/// importer can ask the FMU for the trace `simulate()` would print.
+fn declare_log_streams(model_description: &str) -> String {
+    let end = model_description.find("</LogCategories>").filter(|_| fmi_version() == "3.0");
+    let Some(end) = end else { return model_description.to_string() };
+    let categories: String = omclog::STREAM_NAME[1..]
+        .iter()
+        .map(|s| format!("      <Category name=\"{s}\" />\n"))
+        .collect();
+    format!("{}{categories}    {}", &model_description[..end], &model_description[end..])
+}
+
 /// The FMI version being exported, `"3.0"` unless `buildModelFMU` asked otherwise.
 fn fmi_version() -> String {
     let v = openmodelica_util::Flags::getConfigString(openmodelica_util::Flags::FMI_VERSION.clone())
@@ -3201,20 +3234,34 @@ fn cad_basename(uri: &str) -> &str {
     uri.rsplit(['/', '\\']).next().unwrap_or(uri)
 }
 
-/// C's `FMI2CS_initializeSolverData`: `-s` from `_flags.json`, euler otherwise.
-/// The model's own method stays for the artifact's plain-simulation face.
-///
-/// A DAE-mode model overrides to IDA (`resolve_solver_method`), so the export has
-/// to agree or the FMU steps with the one solver it did not link.
-fn fmu_cs_method(simulation_flags_json: &str, kind: &str, dae_mode: bool) -> String {
-    if kind != "ME" && dae_mode {
+/// The integrator a Co-Simulation FMU embeds: `-s` from the export's `_flags.json`,
+/// else the model's own method, with DASKR for one this build cannot step with. A
+/// `--daeMode` model integrates with IDA. Empty for Model Exchange.
+fn fmu_cs_method(simulation_flags_json: &str, kind: &str, sim_code: &SimCode::SimCode) -> String {
+    let own = sim_code.simulationSettingsOpt.as_ref().map(|s| s.method.to_string()).unwrap_or_default();
+    cs_method_from(simulation_flags_json, kind, sim_code.daeModeData.is_some(), &own)
+}
+
+fn cs_method_from(simulation_flags_json: &str, kind: &str, dae_mode: bool, own: &str) -> String {
+    if kind == "ME" {
+        return String::new();
+    }
+    if dae_mode {
         return "ida".to_string();
     }
-    match fmi_flag(simulation_flags_json, "s") {
-        Some(s) => s,
-        None if kind != "ME" => "euler".to_string(),
-        None => String::new(),
+    if let Some(s) = fmi_flag(simulation_flags_json, "s") {
+        return s;
     }
+    let own = if own.is_empty() { "dassl".to_string() } else { own.to_string() };
+    if fmu_cs_solvers().contains(&own.as_str()) {
+        return own;
+    }
+    let _ = openmodelica_util::Error::addCompilerNotification(ArcStr::from(format!(
+        "A Co-Simulation wasm FMU cannot integrate with method=\"{own}\"; it integrates with dassl. \
+         Available: {}.",
+        fmu_cs_solvers().join(", ")
+    )));
+    "dassl".to_string()
 }
 
 /// Lower the model kernel a wasm FMU is built around, and check that this omc and
@@ -3301,7 +3348,7 @@ pub fn translateFmu(sim_code: SimCode::SimCode, fmu_type: ArcStr, simulation_fla
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
     let kind = fmu_kind(&fmu_type);
-    let cs_method = fmu_cs_method(&simulation_flags_json, kind, sim_code.daeModeData.is_some());
+    let cs_method = fmu_cs_method(&simulation_flags_json, kind, &sim_code);
     let fmi_solver_flags = fmu_solver_flags(&simulation_flags_json);
     let prefix = sim_code.fileNamePrefix.to_string();
     let _ = openmodelica_wasi::fs::remove_file(&format!("{prefix}.wasm"));
@@ -3379,7 +3426,7 @@ fn emit_fmu(
 ) -> Result<()> {
     sync_engine_threading()?;
     sim_runtime::start_runtime_compile();
-    let cs_method = fmu_cs_method(&simulation_flags_json, kind, sim_code.daeModeData.is_some());
+    let cs_method = fmu_cs_method(&simulation_flags_json, kind, &sim_code);
     let fmi_solver_flags = fmu_solver_flags(&simulation_flags_json);
     // Emitting the model takes seconds; a host that compiles the native platforms
     // out of process can spend them loading its compiler.
@@ -3429,7 +3476,10 @@ fn emit_fmu(
         // an importer resolves `binaries/<platform>/<modelIdentifier>`.
         let model_id = model_name_prefix(&sim_code);
         let mut entries = vec![
-            ("modelDescription.xml".to_string(), announce_directional_derivatives(&model_description, &model).into_bytes()),
+            (
+                "modelDescription.xml".to_string(),
+                declare_log_streams(&announce_directional_derivatives(&model_description, &model)).into_bytes(),
+            ),
         ];
         if !ls_dae_manifest.is_empty() {
             entries.push((LS_DAE_MANIFEST.to_string(), ls_dae_manifest.as_bytes().to_vec()));
@@ -11173,7 +11223,7 @@ mod link_tests {
             (r#"{"lss":"lis"}"#, false, vec!["lis", "klu"]),
             (r#"{"s":"cvode"}"#, false, vec![]),
         ] {
-            let method = fmu_cs_method(json, if cs { "CS" } else { "ME" }, false);
+            let method = cs_method_from(json, if cs { "CS" } else { "ME" }, false, "dassl");
             assert_eq!(fmu_solver_libraries(json, &method, cs), want, "{json} cs={cs}");
         }
         // Every name the mapping can produce must be a library that exists.
@@ -11204,7 +11254,7 @@ mod link_tests {
                 .chain(baked.split_whitespace().map(str::to_string))
                 .collect();
             let f = simflags::parse(&argv).expect(&baked);
-            let libs = fmu_solver_libraries(json, &fmu_cs_method(json, "CS", false), true);
+            let libs = fmu_solver_libraries(json, &cs_method_from(json, "CS", false, "dassl"), true);
             let cap = simflags::Capabilities {
                 klu: libs.contains(&"klu"),
                 kinsol: libs.contains(&"kinsol"),

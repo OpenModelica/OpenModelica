@@ -7768,6 +7768,7 @@ impl SolverCore {
                         event_step = true;
                         self.note_chatter(model, flips[0])?;
                         if defers(self.t) {
+                            log_state_event(self.t, &flips, model);
                             return Ok(Step::Event { time: self.t });
                         }
                         if self.handle_zc_flips(e, model, ctx, sync, rows.as_deref_mut(), &flips)? {
@@ -7781,15 +7782,13 @@ impl SolverCore {
                 // crossing, so the root itself is the event.
                 if rooted {
                     let troot = self.t;
-                    if defers(troot) {
-                        write_time(e, sim_data, troot)?;
-                        return Ok(Step::Event { time: troot });
-                    }
-                    self.state_events += 1;
                     event_step = true;
                     let roots = self.roots_nonzero();
                     log_state_event(troot, &roots, model);
-                    self.note_chatter(model, roots.first().copied().unwrap_or(0))?;
+                    if !defers(troot) {
+                        self.state_events += 1;
+                        self.note_chatter(model, roots.first().copied().unwrap_or(0))?;
+                    }
                     if let Some((t_l, y_l)) = self.event_left() {
                         store_operators_left(e, sim_data, layout, self.states_base, t_l, &y_l)?;
                         // C restores `time_right`/`states_right`.
@@ -7807,6 +7806,10 @@ impl SolverCore {
                         capture_pre(e, r, sim_data, layout, troot)?;
                     }
                     let _ = save_zero_crossings(e, sim_data, layout)?;
+                    if defers(troot) {
+                        write_time(e, sim_data, troot)?;
+                        return Ok(Step::Event { time: troot });
+                    }
                     event_update(e, sim_data, layout, None, troot)?;
                     save_zero_crossings_after_event(e, sim_data, layout)?;
                     if let Some(r) = rows.as_deref_mut() {
@@ -7855,11 +7858,6 @@ impl SolverCore {
             if te <= target + SAMPLE_EPS {
                 *did_step = true;
                 event_step = true;
-                if defers(te) {
-                    self.t = te;
-                    write_time(e, sim_data, te)?;
-                    return Ok(Step::Event { time: te });
-                }
                 log_time_event(e, te, samp, model);
                 if let Some(r) = rows.as_deref_mut()
                     && !no_event_emit()
@@ -7868,6 +7866,11 @@ impl SolverCore {
                 }
                 store_operators_at(e, sim_data, layout, te)?;
                 let _ = save_zero_crossings(e, sim_data, layout)?;
+                if defers(te) {
+                    self.t = te;
+                    write_time(e, sim_data, te)?;
+                    return Ok(Step::Event { time: te });
+                }
                 fire_time_event(e, samp, sim_data, layout, te)?;
                 e.clean_nls_history(te);
                 self.time_events += 1;
@@ -7959,9 +7962,19 @@ pub struct CsDriver {
     /// The step `euler`/`rungekutta` take (the model's own output step); `None` for a
     /// variable-step method, which is handed the whole interval.
     fixed_h: Option<f64>,
-    /// A `do_event_update` ran since the last step, so `step_to` must re-read
-    /// states and restart DASKR.
-    resume_reinit: bool,
+    /// The event the master's `update-discrete-states` resolved since the last
+    /// step; the next step restarts the integrator for it.
+    resume: Option<MasterEvent>,
+    /// The zero-crossing values at the last accepted point, for the no-states walk.
+    zc0: Vec<f64>,
+}
+
+/// What the master's Event Mode resolved; the integrator resumes as
+/// [`SolverCore::integrate_to`] does after the same event.
+#[derive(Clone, Copy)]
+enum MasterEvent {
+    State,
+    Time,
 }
 
 /// Which events the FMU reports to the master instead of resolving itself: C's
@@ -8054,7 +8067,11 @@ impl CsDriver {
         }
         let h = model.step_size();
         let fixed_h = fixed_kind(method).map(|_| if h > 0.0 { h } else { f64::INFINITY });
-        Ok(CsDriver { core, samp, sync, pivots, fixed_h, resume_reinit: false })
+        let mut zc0 = vec![0.0f64; layout.n_zc as usize];
+        if core.n_states == 0 && layout.n_zc > 0 {
+            read_zero_crossings(e, sim_data, layout, &mut zc0)?;
+        }
+        Ok(CsDriver { core, samp, sync, pivots, fixed_h, resume: None, zc0 })
     }
 
     /// The time reached so far (FMI's `last-successful-time`).
@@ -8074,43 +8091,77 @@ impl CsDriver {
     ) -> Result<CsStep> {
         let layout = &model.layout;
         let sim_data = self.core.sim_data;
-        // A reinit or discrete change in the master's update needs a DASKR restart.
-        // DAE mode needs the `IDACalcIC` with it, so it restarts in
-        // `integrate_chunked`, where the residual's callback context is live.
-        if self.resume_reinit && !layout.dae_mode() {
-            if self.core.n_states > 0 {
-                e.call1("functionODE", sim_data)?;
-                self.core.read_states(e)?;
-                self.core.restart()?;
-            }
-            self.resume_reinit = false;
-        }
-        // No continuous states: only the samples move the model along.
+        // No continuous states: samples, and zero crossings on `time` bracketed and
+        // bisected between the communication points as `EventsDriver` does.
         if self.core.n_states == 0 {
-            let eps = t_target.abs().max(1.0) * 1e-10;
+            self.resume = None;
+            let eps = reached_eps(t_target, model.stop_time - model.start_time);
             let defers = |t: f64| match defer {
                 CsDefer::None => false,
                 CsDefer::AtTarget => t >= t_target - eps,
                 CsDefer::Any => true,
             };
-            while self.samp.next_time() <= t_target + eps {
+            let mut scratch = vec![0.0f64; layout.n_zc as usize];
+            loop {
+                rotate_old_real(e, sim_data, layout)?;
                 let te = self.samp.next_time();
-                if defers(te) {
-                    self.core.t = te;
-                    write_time(e, sim_data, te)?;
-                    return Ok(CsStep::Event { time: te });
+                let subtarget = if te >= self.core.t && te <= t_target + SAMPLE_EPS { te } else { t_target };
+                let mut troot = None;
+                if layout.n_zc > 0 && subtarget - self.core.t > eps {
+                    update_zero_crossings(e, sim_data, layout, subtarget, &mut scratch, false)?;
+                    if zc_crossed(&self.zc0, &scratch) {
+                        troot = Some(locate_zc_root(e, sim_data, layout, self.core.t, subtarget, &self.zc0, &scratch)?);
+                    }
                 }
-                write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
-                event_update(e, sim_data, layout, Some(&mut self.samp), te)?;
-                self.core.time_events += 1;
-                if terminated(e, sim_data, layout)? {
-                    self.core.t = te;
-                    return Ok(CsStep::Terminated);
+                if let Some((tleft, tr)) = troot {
+                    store_operators_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[])?;
+                    // The bisection left `SimData` at its last trial point.
+                    update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
+                    self.core.t = tr;
+                    log_state_event(tr, &zc_crossed_idx(&self.zc0, &scratch), model);
+                    if defers(tr) {
+                        write_time(e, sim_data, tr)?;
+                        return Ok(CsStep::Event { time: tr });
+                    }
+                    event_update(e, sim_data, layout, None, tr)?;
+                    self.core.state_events += 1;
+                    if terminated(e, sim_data, layout)? {
+                        return Ok(CsStep::Terminated);
+                    }
+                    self.after_walk_event(e, layout)?;
+                    continue;
                 }
+                if te <= subtarget + SAMPLE_EPS {
+                    self.core.t = te;
+                    log_time_event(e, te, &self.samp, model);
+                    if defers(te) {
+                        write_time(e, sim_data, te)?;
+                        return Ok(CsStep::Event { time: te });
+                    }
+                    store_operators_at(e, sim_data, layout, te)?;
+                    fire_time_event(e, &mut self.samp, sim_data, layout, te)?;
+                    e.clean_nls_history(te);
+                    self.core.time_events += 1;
+                    if terminated(e, sim_data, layout)? {
+                        return Ok(CsStep::Terminated);
+                    }
+                    self.after_walk_event(e, layout)?;
+                    continue;
+                }
+                break;
             }
             self.core.t = t_target;
+            write_i32(e, sim_data + layout.rel_fresh_off, 0)?;
             write_time(e, sim_data, t_target)?;
             e.call1_if_present("functionAlgebraics", sim_data)?;
+            if terminated(e, sim_data, layout)? {
+                return Ok(CsStep::Terminated);
+            }
+            store_operators(e, sim_data, layout)?;
+            if layout.n_zc > 0 {
+                read_zero_crossings(e, sim_data, layout, &mut self.zc0)?;
+                save_zc_pre(e, sim_data, layout)?;
+            }
             return Ok(CsStep::Reached);
         }
 
@@ -8140,9 +8191,21 @@ impl CsDriver {
         Ok(CsStep::Reached)
     }
 
-    /// The master's `update-discrete-states` at the event `step_to` stopped on.
-    /// Fires any sample through the driver's own schedule so it stays in step with
-    /// the integrator, and flags a DASKR restart for the next step.
+    /// After an event the no-states walk resolved itself.
+    fn after_walk_event(&mut self, e: &mut (dyn SimEngine + 'static), layout: &SimLayout) -> Result<()> {
+        let sim_data = self.core.sim_data;
+        store_operators(e, sim_data, layout)?;
+        if layout.n_zc > 0 {
+            read_zero_crossings(e, sim_data, layout, &mut self.zc0)?;
+            save_zc_pre(e, sim_data, layout)?;
+        }
+        omclog::close(omclog::EVENTS);
+        Ok(())
+    }
+
+    /// The master's `update-discrete-states` at the event `step_to` stopped on: the
+    /// discrete update and bookkeeping [`integrate_to`](SolverCore::integrate_to)
+    /// runs for an event it resolves itself, the restart left to the next step.
     pub fn do_event_update(
         &mut self,
         e: &mut (dyn SimEngine + 'static),
@@ -8150,14 +8213,21 @@ impl CsDriver {
         time: f64,
     ) -> Result<EventUpdate> {
         let layout = &model.layout;
-        let eps = time.abs().max(1.0) * 1e-10;
-        if self.samp.next_time() <= time + eps {
+        let sim_data = self.core.sim_data;
+        let time_event = self.samp.next_time() <= time + SAMPLE_EPS;
+        if time_event {
             self.core.time_events += 1;
         } else {
             self.core.state_events += 1;
         }
-        let up = event_update(e, self.core.sim_data, layout, Some(&mut self.samp), time)?;
-        self.resume_reinit = true;
+        let up = event_update(e, sim_data, layout, Some(&mut self.samp), time)?;
+        save_zero_crossings_after_event(e, sim_data, layout)?;
+        store_operators(e, sim_data, layout)?;
+        if self.core.n_states == 0 && layout.n_zc > 0 {
+            read_zero_crossings(e, sim_data, layout, &mut self.zc0)?;
+        }
+        omclog::close(omclog::EVENTS);
+        self.resume = Some(if time_event { MasterEvent::Time } else { MasterEvent::State });
         Ok(up)
     }
 
@@ -8190,13 +8260,17 @@ impl CsDriver {
         let mut ctx = self.core.res_ctx(e, layout);
         let _guard = ResCtxGuard;
         RES_CTX.store(&mut ctx as *mut ResCtx, Ordering::Relaxed);
-        // `step_to`'s restart for DAE mode, the pair `handle_zc_flips` runs for an
-        // event the driver resolves itself.
-        if self.resume_reinit {
-            self.core.read_states(e)?;
+        // Here, where the residual context the `IDACalcIC` needs is live.
+        if let Some(event) = self.resume.take() {
+            match event {
+                MasterEvent::State => self.core.read_states(e)?,
+                MasterEvent::Time => {
+                    self.core.read_y(e)?;
+                    self.core.refresh_yp(e)?;
+                }
+            }
             self.core.restart()?;
             self.core.dae_restart(e, &mut ctx as *mut ResCtx)?;
-            self.resume_reinit = false;
         }
         let mut did_step = false;
         loop {

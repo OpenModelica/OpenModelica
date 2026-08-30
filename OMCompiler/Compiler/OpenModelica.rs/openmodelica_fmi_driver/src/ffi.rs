@@ -67,6 +67,7 @@ struct Vtable {
     enter_initialization_mode: unsafe extern "C" fn(Instance, bool, f64, f64, bool, f64) -> i32,
     exit_initialization_mode: unsafe extern "C" fn(Instance) -> i32,
     enter_event_mode: unsafe extern "C" fn(Instance) -> i32,
+    set_debug_logging: Option<unsafe extern "C" fn(Instance, bool, usize, *const *const c_char) -> i32>,
     update_discrete_states: unsafe extern "C" fn(
         Instance,
         *mut bool,
@@ -175,6 +176,7 @@ impl Library {
             enter_initialization_mode: required!(lib, "fmi3EnterInitializationMode"),
             exit_initialization_mode: required!(lib, "fmi3ExitInitializationMode"),
             enter_event_mode: required!(lib, "fmi3EnterEventMode"),
+            set_debug_logging: optional!(lib, "fmi3SetDebugLogging"),
             update_discrete_states: required!(lib, "fmi3UpdateDiscreteStates"),
             terminate: required!(lib, "fmi3Terminate"),
             get_float32: required!(lib, "fmi3GetFloat32"),
@@ -447,6 +449,13 @@ impl Fmi3 for FmuInstance<'_> {
     fn exit_initialization_mode(&mut self) -> Result<()> {
         let f = self.v().exit_initialization_mode;
         check("fmi3ExitInitializationMode", unsafe { f(self.handle) })
+    }
+
+    fn set_debug_logging(&mut self, logging_on: bool, categories: &[&str]) -> Result<()> {
+        let Some(f) = self.v().set_debug_logging else { return Ok(()) };
+        let owned: Vec<CString> = categories.iter().map(|c| CString::new(*c).unwrap_or_default()).collect();
+        let ptrs: Vec<*const c_char> = owned.iter().map(|c| c.as_ptr()).collect();
+        check("fmi3SetDebugLogging", unsafe { f(self.handle, logging_on, ptrs.len(), ptrs.as_ptr()) })
     }
 
     fn enter_event_mode(&mut self) -> Result<()> {

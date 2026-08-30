@@ -4693,6 +4693,72 @@ algorithm
   FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, {"s:" + method});
 end fmuMethodToSimulationFlag;
 
+protected function fmuAnnotationSimulationFlags
+  "A wasm FMU runs the model with the flags simulate() would: the class's
+   __OpenModelica_simulationFlags go into --fmiFlags, whose `_flags.json` the FMU
+   applies when it instantiates. A flag already named wins. A C FMU reads only a
+   few flags and warns about the rest, so it keeps to what --fmiFlags said."
+  input Absyn.Path className;
+  input Boolean isWasmFMU;
+protected
+  list<String> fmiFlags, names = {}, folded = {};
+  list<Absyn.ElementArg> args;
+  Option<Absyn.Modification> mod;
+  String name;
+algorithm
+  if not isWasmFMU or Flags.getConfigBool(Flags.IGNORE_SIMULATION_FLAGS_ANNOTATION) then
+    return;
+  end if;
+  fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
+  if listLength(fmiFlags) == 1 and stringEq(listHead(fmiFlags), "default") then
+    fmiFlags := {};
+  end if;
+  // `none` and a `*.json` path are whole-value settings, not a list to extend.
+  for f in fmiFlags loop
+    if not stringEq(f, "default") and not (listLength(Util.stringSplitAtChar(f, ":")) == 2) then
+      return;
+    end if;
+    names := listHead(Util.stringSplitAtChar(f, ":")) :: names;
+  end for;
+  loadProgram(className);
+  mod := ProgramUtil.getNamedAnnotationExp(className, SymbolTable.getAbsyn(),
+    Absyn.IDENT("__OpenModelica_simulationFlags"), SOME(NONE()), Util.id);
+  args := match mod
+    case SOME(Absyn.CLASSMOD(elementArgLst = args)) then args;
+    else {};
+  end match;
+  for arg in args loop
+    name := AbsynUtil.pathString(AbsynUtil.elementArgName(arg));
+    if not listMember(name, names) then
+      folded := (name + ":" + fmuSimulationFlagValue(arg)) :: folded;
+    end if;
+  end for;
+  if not listEmpty(folded) then
+    FlagsUtil.setConfigStringList(Flags.FMI_FLAGS, listAppend(fmiFlags, listReverse(folded)));
+  end if;
+end fmuAnnotationSimulationFlags;
+
+protected function fmuSimulationFlagValue
+  "One __OpenModelica_simulationFlags entry as a `_flags.json` value; empty for a
+   flag that takes none."
+  input Absyn.ElementArg arg;
+  output String value;
+algorithm
+  value := match arg
+    local
+      Absyn.Exp exp;
+    case Absyn.ElementArg.MODIFICATION(modification =
+        SOME(Absyn.Modification.CLASSMOD(eqMod = Absyn.EqMod.EQMOD(exp = exp))))
+      then
+        match exp
+          case Absyn.STRING("()") then "";
+          case Absyn.STRING() then exp.value;
+          else Dump.printExpStr(exp);
+        end match;
+    else "";
+  end match;
+end fmuSimulationFlagValue;
+
 protected function reportFMUPlatformsBuilt
   "The platform progress the C export reports around each platform's compile.
    A wasm FMU is already linked by the time `translateModel` returns, so the pair
@@ -4762,6 +4828,7 @@ algorithm
     // not — without __OpenModelica_commandLineOptions `flags` aliases the store.
     fmiFlags := Flags.getConfigStringList(Flags.FMI_FLAGS);
     fmuMethodToSimulationFlag(method, isWasmFMUExport(FMUVersion, platforms));
+    fmuAnnotationSimulationFlags(className, isWasmFMUExport(FMUVersion, platforms));
 
     try
       (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);

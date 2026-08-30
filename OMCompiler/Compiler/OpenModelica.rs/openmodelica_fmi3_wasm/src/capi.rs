@@ -168,6 +168,14 @@ pub extern "C" fn om_fmi3ExitInitializationMode() -> i32 {
     with(|i| status(GuestModelExchangeInstance::exit_initialization_mode(i, )), ERROR)
 }
 
+/// `categories` is one buffer of newline-separated names.
+#[unsafe(no_mangle)]
+pub extern "C" fn om_fmi3SetDebugLogging(logging_on: i32, categories: u32, categories_len: u32) -> i32 {
+    let categories: Vec<String> =
+        read_str(categories, categories_len).lines().filter(|c| !c.is_empty()).map(String::from).collect();
+    with(|i| status(GuestModelExchangeInstance::set_debug_logging(i, logging_on != 0, categories)), ERROR)
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi3EnterEventMode() -> i32 {
     with(|i| status(GuestModelExchangeInstance::enter_event_mode(i, )), ERROR)

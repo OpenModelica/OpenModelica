@@ -178,6 +178,8 @@ pub struct Options<'a> {
     pub solver: Solver,
     /// Ask the FMU to log; its messages reach [`api::Fmi3::take_log`].
     pub logging_on: bool,
+    /// The run's `-lv` streams, asked of an FMU that declares them as log categories.
+    pub log_streams: Vec<String>,
     /// Drive the FMU's Event Mode (Co-Simulation), when it has one.
     pub event_mode: bool,
     /// Ask an FMU that offers them for the Jacobian's columns instead of
@@ -223,6 +225,7 @@ impl Options<'_> {
             tolerance: e.tolerance,
             solver: Solver::default(),
             logging_on: false,
+            log_streams: Vec::new(),
             event_mode: true,
             directional_derivatives: true,
             dae: None,

@@ -627,6 +627,7 @@ fn run_fmi(
     // `-lv=LOG_STATS` asks the *runtime* for a block, not the FMU for a trace of
     // every event, so it alone leaves the FMI logger off.
     opts.logging_on = flags.has_log("LOG_EVENTS") || flags.has_log("LOG_NLS") || flags.has_log("LOG_DSS");
+    opts.log_streams = flags.log.clone();
     opts.alarm = flags.alarm;
     // A run wedged inside one call into wasm never reaches the master's deadline;
     // the epoch alarm interrupts that (`OMC_WASM_HARD_ALARM`).

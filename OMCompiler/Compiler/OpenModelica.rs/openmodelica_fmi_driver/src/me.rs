@@ -565,7 +565,7 @@ pub fn simulate(
     }
     {
         let common: &mut dyn Fmi3 = inst;
-        initialize(common, &mut inputs, opts)?;
+        initialize(common, md, &mut inputs, opts)?;
     }
     // Exiting Initialization Mode leaves a Model Exchange FMU in Event Mode.
     let mut info = {

@@ -65,7 +65,7 @@ diffSimulationResults("daemode_cs.mat", "daemode_plain_res.mat", "diff_daemode_c
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DaeModeWhenLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s fmi3:cs -r=daemode_cs.mat'",
 //     messages = "LOG_STDOUT        | info    | wasm artifact loaded (model kernel linked against the cached adapter)
 // LOG_STDOUT        | info    | CoSimulation instantiated
-// LOG_STDOUT        | info    | CoSimulation run: 501 communication steps, 2 events, 1 early returns, 504 samples
+// LOG_STDOUT        | info    | CoSimulation run: 501 communication steps, 1 events, 1 early returns, 503 samples
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

@@ -4,8 +4,8 @@
 
 loadFile("DualMassOscillator.mo"); getErrorString();
 
-buildModelFMU(DualMassOscillator.System1, version="2.0", fmuType="cs", fileNamePrefix="DualMassOscillator.System1", platforms={"static"}); getErrorString();
-buildModelFMU(DualMassOscillator.System2, version="2.0", fmuType="cs", fileNamePrefix="DualMassOscillator.System2", platforms={"static"}); getErrorString();
+buildModelFMU(DualMassOscillator.System1, version="2.0", fmuType="cs", fileNamePrefix="DualMassOscillator.System1", platforms={"static"}, method="euler"); getErrorString();
+buildModelFMU(DualMassOscillator.System2, version="2.0", fmuType="cs", fileNamePrefix="DualMassOscillator.System2", platforms={"static"}, method="euler"); getErrorString();
 
 writeFile("DualMassOscillator_cs.py", "
 from OMSimulator import SSP, Settings, CRef

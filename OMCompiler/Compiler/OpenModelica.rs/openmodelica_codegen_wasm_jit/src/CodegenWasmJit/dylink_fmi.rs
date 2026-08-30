@@ -325,6 +325,15 @@ impl Fmi3 for DylinkInstance {
         status("fmi3ExitInitializationMode", raw)
     }
 
+    fn set_debug_logging(&mut self, logging_on: bool, categories: &[&str]) -> Result<()> {
+        let (p, n) = self.write_str(&categories.join("\n"))?;
+        let raw = self
+            .fmu
+            .call("om_fmi3SetDebugLogging", &[Val::I32(logging_on as i32), Val::I32(p as i32), Val::I32(n as i32)])
+            .map_err(|e| err("fmi3SetDebugLogging", e))?;
+        status("fmi3SetDebugLogging", raw)
+    }
+
     fn enter_event_mode(&mut self) -> Result<()> {
         let raw = self.fmu.call("om_fmi3EnterEventMode", &[]).map_err(|e| err("fmi3EnterEventMode", e))?;
         status("fmi3EnterEventMode", raw)
