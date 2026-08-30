@@ -128,6 +128,7 @@ function emitMeFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
+  input String lsDaeManifest "fmi-ls-dae's manifest for a --daeMode model, empty for none";
   input String documentationDir "directory shipped as documentation/ (index.html and the images it references); empty for none";
   input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
@@ -144,6 +145,7 @@ function emitCsFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
+  input String lsDaeManifest "fmi-ls-dae's manifest for a --daeMode model, empty for none";
   input String documentationDir "directory shipped as documentation/ (index.html and the images it references); empty for none";
   input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";
@@ -160,6 +162,7 @@ function emitMeCsFmu
   input String fmuPath;
   input String guid;
   input String modelDescription;
+  input String lsDaeManifest "fmi-ls-dae's manifest for a --daeMode model, empty for none";
   input String documentationDir "directory shipped as documentation/ (index.html and the images it references); empty for none";
   input String terminalsDir "directory shipped as terminalsAndIcons/ (the XML and the rendered icons); empty for none";
   input String simulationFlagsJson "--fmiFlags as CodegenFMU renders it, empty when there are none";

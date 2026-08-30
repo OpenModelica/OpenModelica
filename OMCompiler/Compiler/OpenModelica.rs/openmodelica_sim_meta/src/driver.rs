@@ -22,7 +22,7 @@ use crate::simflags::JacobianMethod;
 use crate::simflags::{CvodeIter, CvodeLmm};
 use crate::sync::SYNC_EPS;
 use crate::{
-    JacAInfo, Layout as SimLayout, MetaKind as ResultKind, REAL_OFF, SimMeta, SolveStats, StateSetInfo,
+    DaeInfo, JacAInfo, Layout as SimLayout, MetaKind as ResultKind, REAL_OFF, SimMeta, SolveStats, StateSetInfo,
     TIME_OFF,
     WTy,
 };
@@ -9090,25 +9090,12 @@ struct DaeSolve {
     id: Vec<f64>,
 }
 
-/// `IDACalcIC` over the algebraic unknowns and every derivative, directed by the
-/// step IDA would take next (floored, so a zero step still gives a direction). A
-/// failed first attempt is retried with the line search off, as C does.
 #[cfg(sundials)]
 fn dae_calc_ic(ida: &mut crate::sundials::Ida, t: f64) -> Result<()> {
-    let mut h = ida.actual_init_step();
-    if h < f64::EPSILON {
-        h = f64::EPSILON;
-        ida.set_init_step(h);
+    match ida.calc_ic_at(t) {
+        true => Ok(()),
+        false => Err("CodegenWasmJit: IDA could not find consistent initial conditions (IDACalcIC)"),
     }
-    if !ida.calc_ic(t + h, true) && !ida.calc_ic(t + h, false) {
-        return Err("CodegenWasmJit: IDA could not find consistent initial conditions (IDACalcIC)");
-    }
-    if !ida.consistent_ic() {
-        return Err("CodegenWasmJit: IDAGetConsistentIC failed");
-    }
-    // C resets the initial step to automatic afterwards.
-    ida.set_init_step(0.0);
-    Ok(())
 }
 
 /// `-idaLS`, defaulting to KLU as `ida_solver.c` does. Without states there is
@@ -10036,4 +10023,188 @@ impl GuessStepper {
         write_time(e, self.core.sim_data, self.core.t)?;
         eval_continuous(e, self.core.sim_data, layout)
     }
+}
+
+// ── A `--daeMode` model evaluated as an explicit ODE ─────────────────────────
+
+/// Solve `F(t, x, x', z) = 0` for the derivatives and the algebraic unknowns at
+/// the time and states `SimData` holds — what an FMU exported from a `--daeMode`
+/// model owes an importer that runs it as an ordinary ODE FMU. A damped Newton
+/// iteration over `evaluateDAEResiduals`, started from the values the slots hold
+/// (the previous point, or the initial system's), with a differenced Jacobian: a
+/// colour at a time where the residual sparsity is known, a `der(x)` column taking
+/// its state's pattern since DAE-mode differentiation folds `der(x)` into `x`.
+pub fn dae_solve_explicit(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    dae: &DaeInfo,
+) -> Result<()> {
+    const MAX_ITER: usize = 100;
+    const RTOL: f64 = 1e-10;
+    let n = layout.n_dae_res as usize;
+    let ns = layout.n_states as usize;
+    if n == 0 {
+        return Ok(());
+    }
+    if dae.alg_offs.len() + ns != n {
+        return Err("CodegenWasmJit: DAE-mode metadata disagrees with the layout");
+    }
+    let offs: Vec<u32> = (0..ns)
+        .map(|i| REAL_OFF + ((ns + i) as u32) * 8)
+        .chain(dae.alg_offs.iter().copied())
+        .collect();
+    let mut scale = vec![1.0; n];
+    for k in 0..dae.alg_offs.len() {
+        let nom = read_f64(e, sim_data + layout.dae_alg_nom_off + (k as u32) * 8)?.abs();
+        if nom > 0.0 && nom.is_finite() {
+            scale[ns + k] = nom;
+        }
+    }
+    let mut u: Vec<f64> = offs.iter().map(|&o| read_f64(e, sim_data + o)).collect::<Result<_>>()?;
+    let res_base = sim_data + layout.dae_res_off;
+    let mut residual = |e: &mut dyn SimEngine, u: &[f64], out: &mut [f64]| -> Result<()> {
+        for (&o, &v) in offs.iter().zip(u) {
+            write_f64(e, sim_data + o, v)?;
+        }
+        e.call2(MODEL_FN_DAE, sim_data, eval_stage::DYNAMIC)?;
+        read_f64s(e, res_base, out)
+    };
+    let pattern = dae.sparsity.as_ref().filter(|p| p.n as usize == n && p.rows_by_col.len() == n);
+    let mut f0 = vec![0.0; n];
+    let mut f1 = vec![0.0; n];
+    let mut jac = vec![0.0; n * n];
+    let mut delta = vec![0.0; n];
+    let mut trial = vec![0.0; n];
+    residual(e, &u, &mut f0)?;
+    let norm = |f: &[f64]| f.iter().fold(0.0f64, |m, v| m.max(v.abs()));
+    let mut fnorm = norm(&f0);
+    for _ in 0..MAX_ITER {
+        if !fnorm.is_finite() {
+            return Err(DAE_EXPLICIT_FAILED);
+        }
+        if fnorm == 0.0 {
+            break;
+        }
+        jac.iter_mut().for_each(|v| *v = 0.0);
+        let step = |j: usize, u: &[f64]| libm::sqrt(f64::EPSILON) * u[j].abs().max(scale[j]);
+        let mut column = |e: &mut dyn SimEngine, cols: &[usize], jac: &mut [f64], u: &mut [f64]| -> Result<()> {
+            let saved: Vec<f64> = cols.iter().map(|&j| u[j]).collect();
+            for &j in cols {
+                u[j] += step(j, u);
+            }
+            residual(e, u, &mut f1)?;
+            for (&j, &old) in cols.iter().zip(&saved) {
+                let h = u[j] - old;
+                u[j] = old;
+                let rows: Vec<usize> = match pattern {
+                    Some(p) => p.rows_by_col[j].iter().map(|&r| r as usize).collect(),
+                    None => (0..n).collect(),
+                };
+                for r in rows {
+                    jac[r * n + j] = (f1[r] - f0[r]) / h;
+                }
+            }
+            Ok(())
+        };
+        match pattern {
+            Some(p) => {
+                for color in &p.colors {
+                    let cols: Vec<usize> = color.iter().map(|&c| c as usize).collect();
+                    column(e, &cols, &mut jac, &mut u)?;
+                }
+            }
+            None => {
+                for j in 0..n {
+                    column(e, &[j], &mut jac, &mut u)?;
+                }
+            }
+        }
+        for i in 0..n {
+            delta[i] = -f0[i];
+        }
+        if !lu_solve(&mut jac, &mut delta, n) {
+            return Err(DAE_EXPLICIT_FAILED);
+        }
+        let mut lambda = 1.0;
+        let mut accepted = false;
+        for _ in 0..8 {
+            for i in 0..n {
+                trial[i] = u[i] + lambda * delta[i];
+            }
+            residual(e, &trial, &mut f1)?;
+            let fn1 = norm(&f1);
+            if fn1.is_finite() && fn1 < fnorm * (1.0 - 1e-4 * lambda) {
+                accepted = true;
+                break;
+            }
+            lambda *= 0.5;
+        }
+        if !accepted {
+            lambda = 1.0;
+            for i in 0..n {
+                trial[i] = u[i] + delta[i];
+            }
+            residual(e, &trial, &mut f1)?;
+        }
+        let converged =
+            (0..n).all(|i| (lambda * delta[i]).abs() <= RTOL * u[i].abs().max(scale[i]));
+        u.copy_from_slice(&trial);
+        core::mem::swap(&mut f0, &mut f1);
+        fnorm = norm(&f0);
+        if converged && fnorm.is_finite() {
+            return Ok(());
+        }
+    }
+    if fnorm == 0.0 {
+        return Ok(());
+    }
+    Err(DAE_EXPLICIT_FAILED)
+}
+
+const DAE_EXPLICIT_FAILED: &str =
+    "CodegenWasmJit: the derivatives of the DAE-mode model could not be solved for (the Newton iteration over the residual did not converge)";
+
+/// Gaussian elimination with partial pivoting on the row-major `a`, `b` becoming
+/// the solution. `false` on a singular matrix.
+fn lu_solve(a: &mut [f64], b: &mut [f64], n: usize) -> bool {
+    for k in 0..n {
+        let mut p = k;
+        let mut best = a[k * n + k].abs();
+        for i in k + 1..n {
+            let v = a[i * n + k].abs();
+            if v > best {
+                best = v;
+                p = i;
+            }
+        }
+        if !(best > 0.0) || !best.is_finite() {
+            return false;
+        }
+        if p != k {
+            for j in 0..n {
+                a.swap(k * n + j, p * n + j);
+            }
+            b.swap(k, p);
+        }
+        let pivot = a[k * n + k];
+        for i in k + 1..n {
+            let f = a[i * n + k] / pivot;
+            if f == 0.0 {
+                continue;
+            }
+            for j in k..n {
+                a[i * n + j] -= f * a[k * n + j];
+            }
+            b[i] -= f * b[k];
+        }
+    }
+    for k in (0..n).rev() {
+        let mut s = b[k];
+        for j in k + 1..n {
+            s -= a[k * n + j] * b[j];
+        }
+        b[k] = s / a[k * n + k];
+    }
+    true
 }

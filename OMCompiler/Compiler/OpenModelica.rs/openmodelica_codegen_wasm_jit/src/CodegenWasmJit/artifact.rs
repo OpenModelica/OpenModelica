@@ -9,7 +9,7 @@
 //! | `-s` | what runs |
 //! | --- | --- |
 //! | absent, or an ordinary solver | the artifact's own simulation runtime, in wasm |
-//! | `fmi3:me[:solver]` | Model Exchange, this process integrating (DASKR by default) |
+//! | `fmi3:me[:solver]` | Model Exchange, this process integrating (DASKR by default; with `-daeMode`, IDA over the FMU's fmi-ls-dae residuals) |
 //! | `fmi3:cs` | Co-Simulation, the artifact integrating itself |
 //!
 //! The export takes one of two forms. `--fmuDirectory` writes the model kernel
@@ -65,7 +65,8 @@ fn recall(path: &Path) -> Option<Arc<WasmArtifact>> {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Face {
     Simulation,
-    ModelExchange(Solver),
+    /// The integrator named after `fmi3:me:`; `None` leaves the choice to the mode.
+    ModelExchange(Option<Solver>),
     CoSimulation,
 }
 
@@ -116,9 +117,10 @@ fn parse_face(v: &str) -> std::result::Result<Face, String> {
     match kind {
         "me" => {
             let s = match solver {
+                "" => None,
                 // DASKR is the BDF integrator behind `-s=dassl`; both names reach it.
-                "" | "daskr" | "dassl" => Solver::Dassl,
-                name => Solver::parse(name).ok_or_else(|| unknown("solver", name))?,
+                "daskr" | "dassl" => Some(Solver::Dassl),
+                name => Some(Solver::parse(name).ok_or_else(|| unknown("solver", name))?),
             };
             Ok(Face::ModelExchange(s))
         }
@@ -440,7 +442,23 @@ pub fn run(
     let out = result_path(&flags, result_file);
     let res = match face {
         Face::Simulation => run_simulation(&loaded, &flags, &out, simflags, &mut log),
-        Face::ModelExchange(solver) => run_fmi(&loaded, &flags, &out, Some(solver), &mut log),
+        Face::ModelExchange(solver) => {
+            let solver = match (solver, flags.dae_mode) {
+                (None, false) => Solver::Dassl,
+                (None, true) | (Some(Solver::Ida), true) => Solver::Ida,
+                (Some(s), false) => s,
+                (Some(s), true) => {
+                    return (
+                        Err(format!(
+                            "wasm artifact: -daeMode integrates with IDA; `-s fmi3:me:{}` cannot serve a residual form",
+                            s.as_str()
+                        )),
+                        log,
+                    )
+                }
+            };
+            run_fmi(&loaded, &flags, &out, Some(solver), &mut log)
+        }
         Face::CoSimulation => run_fmi(&loaded, &flags, &out, None, &mut log),
     };
     (res, log)
@@ -615,6 +633,19 @@ fn run_fmi(
     openmodelica_wasm_jit::sim_runtime::set_alarm(flags.alarm);
     if let Some(s) = me_solver {
         opts.solver = s;
+        if flags.dae_mode {
+            opts.dae = Some(match fmu.ls_dae_manifest() {
+                Some(Ok(m)) => m,
+                Some(Err(e)) => return Err(format!("wasm artifact: fmi-ls-dae manifest: {e}")),
+                None => {
+                    return Err(
+                        "wasm artifact: -daeMode asks for fmi-ls-dae, which this FMU does not declare \
+                         (export the model with --daeMode)"
+                            .to_string(),
+                    )
+                }
+            });
+        }
     }
     // C's `doOverride`, as far as FMI reaches: a parameter is settable in
     // Initialization Mode and nothing else is.

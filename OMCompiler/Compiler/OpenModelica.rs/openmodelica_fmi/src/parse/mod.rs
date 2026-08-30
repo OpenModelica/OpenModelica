@@ -9,6 +9,7 @@ mod v2;
 mod v3;
 
 use crate::description::*;
+pub(crate) use v3::unknowns as unknowns3;
 use crate::{Error, Result};
 use roxmltree::{Document, Node};
 

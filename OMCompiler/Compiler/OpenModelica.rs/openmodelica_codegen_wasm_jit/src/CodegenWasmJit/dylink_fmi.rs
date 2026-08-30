@@ -358,6 +358,16 @@ impl Fmi3 for DylinkInstance {
         status("fmi3Terminate", raw)
     }
 
+    fn enter_configuration_mode(&mut self) -> Result<()> {
+        let raw = self.fmu.call("om_fmi3EnterConfigurationMode", &[]).map_err(|e| err("fmi3EnterConfigurationMode", e))?;
+        status("fmi3EnterConfigurationMode", raw)
+    }
+
+    fn exit_configuration_mode(&mut self) -> Result<()> {
+        let raw = self.fmu.call("om_fmi3ExitConfigurationMode", &[]).map_err(|e| err("fmi3ExitConfigurationMode", e))?;
+        status("fmi3ExitConfigurationMode", raw)
+    }
+
     fn get_numeric(&mut self, ty: VarType, vrs: &[u32], values: &mut [f64]) -> Result<()> {
         let (call, width) = numeric_call(ty.wire(), true)
             .ok_or_else(|| Error::Unsupported(format!("reading a {} as a number", ty.as_str())))?;

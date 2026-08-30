@@ -302,6 +302,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         jac_a: jac_a_info(data, layout),
         state_sets: crate::stateset::describe(data, layout),
         fmi_vrs: Vec::new(),
+        fmi_dae_enable_vr: 0,
         zc_desc,
         rel_desc,
         sample_index: (0..md.nSamples).map(|i| unsafe { (*md.samplesInfo.add(i as usize)).index as i32 }).collect(),

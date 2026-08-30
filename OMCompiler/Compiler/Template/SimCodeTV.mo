@@ -1535,6 +1535,23 @@ package SimCodeUtil
     output String outValueReference;
   end getFMI3TimeValueReference;
 
+  function getFMI3DaeModeValueReference
+    input SimCode.SimCode simCode;
+    output String vr;
+  end getFMI3DaeModeValueReference;
+
+  function getFMI3DaeResidualValueReference
+    input SimCodeVar.SimVar residualVar;
+    input SimCode.SimCode simCode;
+    output String vr;
+  end getFMI3DaeResidualValueReference;
+
+  function getFMI3DaeResidualDependencyAttributes
+    input SimCode.SimCode simCode;
+    input Integer index;
+    output String attributes;
+  end getFMI3DaeResidualDependencyAttributes;
+
   function getLocalValueReference
     input SimCodeVar.SimVar inSimVar;
     input SimCode.SimCode inSimCode;

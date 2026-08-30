@@ -240,6 +240,7 @@ openmodelica_fmi/examples/fmuinfo.rs
 openmodelica_fmi/src/description.rs
 openmodelica_fmi/src/figures.rs
 openmodelica_fmi/src/lib.rs
+openmodelica_fmi/src/lsdae.rs
 openmodelica_fmi/src/lswasm.rs
 openmodelica_fmi/src/parse/mod.rs
 openmodelica_fmi/src/parse/v1.rs

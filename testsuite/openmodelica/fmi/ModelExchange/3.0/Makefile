@@ -25,6 +25,7 @@ fmi3_terminals_alias_nb.mos \
 fmi3_terminals_alias.mos \
 fmi3_terminals.mos \
 fmi3_types.mos \
+fmi3_wasm_daemode_me.mos \
 fmi3_wasm_native_record.mos \
 fmi3_wasm_output_record.mos
 

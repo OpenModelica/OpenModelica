@@ -4433,24 +4433,15 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) then
-    // Model Exchange has to answer with state derivatives, which a DAE-mode model
-    // has none of. Co-Simulation integrates the model itself, and of the two
-    // runtimes that do so only the wasm one handles the residual form.
-    if isWasmFMU and FMUType == "me_cs" then
-      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME_DROPPED, {});
-      FMUType := "cs";
-    elseif FMI.isFMIMEType(FMUType) then
-      success := false;
-      outValue := Values.STRING("");
+  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
+    success := false;
+    outValue := Values.STRING("");
+    if FMI.isFMIMEType(FMUType) then
       Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
-      return;
-    elseif not isWasmFMU then
-      success := false;
-      outValue := Values.STRING("");
+    else
       Error.addMessage(Error.FMU_EXPORT_DAE_MODE_C_CS, {});
-      return;
     end if;
+    return;
   end if;
 
   // NOTE: The FMUs use fileNamePrefix for the internal name when it would be expected to be fileNamePrefix that decides the .fmu filename
@@ -4845,21 +4836,14 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) then
-    // As in callTranslateModelFMU, which has to make the same choice: the
-    // `fmuTranslationFor` lookup below is keyed on the interface.
-    if isWasmFMU and FMUType == "me_cs" then
-      Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME_DROPPED, {});
-      FMUType := "cs";
-    elseif FMI.isFMIMEType(FMUType) then
-      outValue := Values.STRING("");
+  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
+    outValue := Values.STRING("");
+    if FMI.isFMIMEType(FMUType) then
       Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
-      return;
-    elseif not isWasmFMU then
-      outValue := Values.STRING("");
+    else
       Error.addMessage(Error.FMU_EXPORT_DAE_MODE_C_CS, {});
-      return;
     end if;
+    return;
   end if;
 
   // NOTE: The FMUs use fileNamePrefix for the internal name when it would be expected to be fileNamePrefix that decides the .fmu filename

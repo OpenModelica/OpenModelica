@@ -1044,6 +1044,9 @@ pub struct SimMeta {
     /// FMI value reference -> `SimData` slot, sorted by `vr`. Only filled for the
     /// FMU export; empty for a plain simulation.
     pub fmi_vrs: Vec<FmiVr>,
+    /// fmi-ls-dae's `EnableDAE` structural parameter, the value reference that
+    /// switches a `--daeMode` FMU into DAE mode; 0 for an FMU without one.
+    pub fmi_dae_enable_vr: u32,
     /// Per-zero-crossing description (Modelica source of the relation, e.g.
     /// `x > 0.0`), 1:1 with the layout's zero-crossings — the driver names the
     /// culprit crossing in the chattering message. Empty ⇒ descriptions absent.
@@ -1577,6 +1580,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
         o.push(v.is_string as u8);
         put_u32(&mut o, v.der_off);
     }
+    put_u32(&mut o, m.fmi_dae_enable_vr);
     put_u32(&mut o, m.zc_desc.len() as u32);
     for d in &m.zc_desc {
         put_str(&mut o, d);
@@ -2064,6 +2068,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         let der_off = r.u32()?;
         fmi_vrs.push(FmiVr { vr, off, wty, negate, start_off, is_string, der_off });
     }
+    let fmi_dae_enable_vr = r.u32()?;
     let ndesc = r.u32()? as usize;
     let mut zc_desc = Vec::with_capacity(ndesc);
     for _ in 0..ndesc {
@@ -2344,7 +2349,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     Ok(SimMeta {
         layout, start_time, stop_time, n_intervals, method, cs_method, fmi_solver_flags, tolerance,
         output_format, prefix,
-        model_name, vars, jac_a, state_sets, fmi_vrs, zc_desc, rel_desc, params, attr_log,
+        model_name, vars, jac_a, state_sets, fmi_vrs, fmi_dae_enable_vr, zc_desc, rel_desc, params, attr_log,
         removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon, prof,
         parmod,
     })
@@ -2407,6 +2412,7 @@ mod tests {
                 FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: Neg::None, start_off: 96, is_string: false, der_off: 0 },
                 FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: Neg::Arith, start_off: 0, is_string: true, der_off: 0 },
             ],
+            fmi_dae_enable_vr: 9,
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
             rel_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
             params: ParamVars {
