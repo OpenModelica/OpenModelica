@@ -2310,7 +2310,15 @@ function isJacobianResultVar
     algorithm
       var := Pointer.access(varPointer);
       () := match UnorderedMap.get(var.name, variables.map)
-        case SOME(index) guard(index > 0) algorithm
+        case SOME(index) guard(index > 0 and (variables.scalarized or ComponentRef.isEqual(var.name, BVariable.getVarName(ExpandableArray.get(index, variables.varArr))))) algorithm
+          // In non-scalarized (stripped) mode the map key ignores subscripts, so a lookup
+          // hit here can be a DIFFERENT literal-indexed sibling of the same base array
+          // (e.g. x[1] found while adding x[2]) rather than a genuine re-add of the same
+          // variable. Overwriting that slot would silently drop x[1] from the collection
+          // (VariablePointers.toList/mapPtr only see the array, not the map, so a lost
+          // slot is a lost variable). Only take the "update in place" path when the
+          // stored variable's FULL cref actually matches -- otherwise fall through and
+          // add this as a new, separate entry, same as any other unseen variable.
           ExpandableArray.update(index, varPointer, variables.varArr);
         then ();
         else algorithm
