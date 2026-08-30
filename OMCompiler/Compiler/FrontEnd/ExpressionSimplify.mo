@@ -5036,16 +5036,16 @@ algorithm
 
     // a >= b
     case(DAE.GREATEREQ(), _, _)
-      then simplifyRelation2(origExp,inOperator2, inExp3,inExp4, index,optionExpisASUB,Expression.isPositiveOrZero);
+      then simplifyRelation2(origExp,inOperator2, inExp3,inExp4);
      // a > b
     case(DAE.GREATER(), _, _)
-      then simplifyRelation2(origExp,inOperator2, inExp3,inExp4, index,optionExpisASUB,Expression.isPositiveOrZero);
+      then simplifyRelation2(origExp,inOperator2, inExp3,inExp4);
     // a <= b
     case(DAE.LESSEQ(), _, _)
-      then simplifyRelation2(origExp,inOperator2, inExp4,inExp3, index,optionExpisASUB,Expression.isPositiveOrZero);
+      then simplifyRelation2(origExp,inOperator2, inExp4,inExp3);
     // a < b
     case(DAE.LESS(), _, _)
-      then simplifyRelation2(origExp,inOperator2, inExp4,inExp3, index,optionExpisASUB,Expression.isPositiveOrZero);
+      then simplifyRelation2(origExp,inOperator2, inExp4,inExp3);
 
     else origExp;
 
@@ -5058,38 +5058,17 @@ protected function simplifyRelation2
   input Operator inOp;
   input DAE.Exp lhs "Note: already simplified";
   input DAE.Exp rhs "Note: aldready simplified";
-  input Integer index;
-  input Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB;
-  input Fun isPositive;
   output DAE.Exp oExp;
-
-  partial function Fun
-    input DAE.Exp x;
-    output Boolean positive;
-  end Fun;
-
-protected
-  Boolean b;
 algorithm
-  oExp := Expression.expSub(lhs, rhs);
-  (oExp,b) := simplify(oExp);
-  if Expression.isGreatereqOrLesseq(inOp) and isPositive(oExp) then
-    oExp := DAE.BCONST(true);
-/*
-  elseif b and not (Expression.isConstValue(rhs) or Expression.isConstValue(lhs)) then
-    tp := Expression.typeof(oExp);
-    oExp := if Expression.isLesseqOrLess(inOp) then
-                 DAE.RELATION(Expression.makeConstZero(tp), inOp, oExp, index,optionExpisASUB)
-            else DAE.RELATION(oExp, inOp,Expression.makeConstZero(tp),index,optionExpisASUB);
-*/
+  (oExp, _) := simplify(Expression.expSub(lhs, rhs));
+  if Expression.isGreatereqOrLesseq(inOp) then
+    // lhs >= rhs holds when lhs - rhs is known to be >= 0.
+    oExp := if Expression.isPositiveOrZero(oExp) then DAE.BCONST(true) else origExp;
   else
-    if Expression.isGreatereqOrLesseq(inOp) then
-      oExp := origExp;
-    else
-      oExp := Expression.negate(oExp);
-      (oExp,_) := simplify(oExp);
-      oExp := if isPositive(oExp) then DAE.BCONST(false) else origExp;
-    end if;
+    // lhs > rhs is false when lhs - rhs is known to be <= 0. isNegativeOrZero
+    // is the structural dual of isPositiveOrZero, so it answers here what
+    // negating the difference and simplifying it a second time used to.
+    oExp := if Expression.isNegativeOrZero(oExp) then DAE.BCONST(false) else origExp;
   end if;
 end simplifyRelation2;
 
