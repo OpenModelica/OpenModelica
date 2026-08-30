@@ -765,10 +765,9 @@ pub struct Instance {
 
 /// Allocate and zero the model's `SimData` and build the instance state. Shared by
 /// both worlds' instantiate.
-/// The nonlinear/linear solver selection the export hard-coded into the metadata.
-/// An importer has no channel to pass simulation flags, so this is the only one there
-/// is; the export linked exactly the libraries these reach, so a rejection here means
-/// the two disagree and the instance must not come up quietly using another solver.
+/// The simulation flags the export hard-coded into the metadata. The export linked
+/// exactly the libraries these reach, so a rejection here means the two disagree and
+/// the instance must not come up quietly using another solver.
 fn apply_baked_solver_flags(flags: &str) -> Option<()> {
     if flags.is_empty() {
         return Some(());
@@ -790,6 +789,10 @@ fn apply_baked_solver_flags(flags: &str) -> Option<()> {
         })
         .ok()?;
     openmodelica_codegen_wasm_jit_runtime::apply_sim_flags(&parsed);
+    simflags::print_notices(&parsed);
+    let streams = parsed.log_mask & !omclog::ALWAYS_ON;
+    simflags::set_flags(parsed);
+    omclog::set_mask(omclog::FMU_STREAMS | streams);
     Some(())
 }
 
@@ -851,19 +854,34 @@ macro_rules! shared_instance_methods {
     () => {
 
     /// C's `omcSetDebugLogging`: every category off, then the named ones follow
-    /// `logging_on`. An unknown name is reported unfiltered, as in C.
+    /// `logging_on`; an unknown name is reported unfiltered, as in C. A category
+    /// named like a runtime stream (`LOG_EVENTS`; the export declares them all)
+    /// switches that stream instead.
     fn set_debug_logging(&self, logging_on: bool, categories: Vec<String>) -> Status {
         let mut cats = 0u32;
         let mut unknown: Vec<String> = Vec::new();
+        let mut streams: Vec<String> = Vec::new();
+        let mut fmi_categories = false;
         for c in categories {
             match CATEGORIES.iter().position(|n| *n == c) {
-                Some(i) if logging_on => cats |= 1 << i,
-                Some(_) => {}
+                Some(i) => {
+                    fmi_categories = true;
+                    if logging_on {
+                        cats |= 1 << i;
+                    }
+                }
+                None if omclog::STREAM_NAME.contains(&c.as_str()) => streams.push(c),
                 None => unknown.push(c),
             }
         }
-        // The `FILTERED_LOG` filter only: C leaves the `-lv` streams alone here.
-        logger().cats = cats;
+        if fmi_categories || streams.is_empty() {
+            logger().cats = cats;
+        }
+        if let Ok(m) = omclog::mask_from_streams(&streams) {
+            let m = m & !omclog::ALWAYS_ON;
+            let cur = omclog::mask();
+            omclog::set_mask(if logging_on { cur | m } else { cur & !m });
+        }
         for c in unknown {
             log_raw(
                 Status::Warning,

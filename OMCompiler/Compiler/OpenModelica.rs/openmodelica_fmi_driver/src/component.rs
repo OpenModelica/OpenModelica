@@ -451,6 +451,15 @@ impl Fmi3 for WasmInstance {
         ))
     }
 
+    fn set_debug_logging(&mut self, logging_on: bool, categories: &[&str]) -> Result<()> {
+        let categories: Vec<String> = categories.iter().map(|c| c.to_string()).collect();
+        common!(self, |store, g, h| check(
+            "fmi3SetDebugLogging",
+            g.call_set_debug_logging(store, h, logging_on, &categories)
+                .map_err(|e| trap("fmi3SetDebugLogging", e))?
+        ))
+    }
+
     fn enter_event_mode(&mut self) -> Result<()> {
         common!(self, |store, g, h| check(
             "fmi3EnterEventMode",

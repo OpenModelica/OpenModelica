@@ -54,7 +54,7 @@ pub fn simulate(
 
     let mut inputs = Inputs::new(opts);
     let mut rec = Recorder::new(md, opts.keep);
-    initialize(as_common(inst), &mut inputs, opts)?;
+    initialize(as_common(inst), md, &mut inputs, opts)?;
 
     let mut terminated_at = None;
     let (mut steps, mut events, mut early_returns) = (0, 0, 0);

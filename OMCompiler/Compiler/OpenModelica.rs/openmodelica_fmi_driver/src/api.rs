@@ -86,6 +86,10 @@ pub trait Fmi3 {
         start_time: f64,
         stop_time: Option<f64>,
     ) -> Result<()>;
+    /// `fmi3SetDebugLogging`. A backend without it logs what it was instantiated with.
+    fn set_debug_logging(&mut self, _logging_on: bool, _categories: &[&str]) -> Result<()> {
+        Ok(())
+    }
     fn exit_initialization_mode(&mut self) -> Result<()>;
     fn enter_event_mode(&mut self) -> Result<()>;
     fn update_discrete_states(&mut self) -> Result<DiscreteStates>;

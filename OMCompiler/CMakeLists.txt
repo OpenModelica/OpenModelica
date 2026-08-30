@@ -103,10 +103,10 @@ endif()
 if(NOT OM_OMC_WASM)
   omc_add_subdirectory(SimulationRuntime)
 endif()
-# The ANTLR Modelica parser (omparse) and the Examples are part of the C omc
-# toolchain only — the Rust omc port has its own parser and links neither. They
-# also pull in the C compiler runtime (omc::compiler::runtime), which the Rust
-# build deliberately does not build. Skip them in Rust mode.
+# The ANTLR Modelica parser (omparse) is part of the C omc toolchain only — the
+# Rust omc port has its own parser and does not link it. It also pulls in the C
+# compiler runtime (omc::compiler::runtime), which the Rust build deliberately
+# does not build. Skip it in Rust mode.
 if(NOT OM_OMC_ENABLE_RUST)
   omc_add_subdirectory(Parser)
 endif()
@@ -119,6 +119,7 @@ omc_add_subdirectory(Compiler)
 if(NOT OM_OMC_WASM AND NOT RUST_OMC_PREBUILT_CDYLIB)
   omc_add_subdirectory(SimulationRuntime/rust)
 endif()
-if(NOT OM_OMC_ENABLE_RUST)
+# share/doc/omc/testmodels: files only, installed by every native omc.
+if(NOT OM_OMC_WASM)
   omc_add_subdirectory(Examples)
 endif()

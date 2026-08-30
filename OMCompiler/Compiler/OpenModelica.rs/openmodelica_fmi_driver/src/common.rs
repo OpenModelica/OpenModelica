@@ -2,7 +2,7 @@
 
 use crate::api::{DiscreteStates, Fmi3};
 use crate::{Error, Options, Result};
-use openmodelica_fmi::VarType;
+use openmodelica_fmi::{ModelDescription, VarType};
 
 /// C's `MAX_EVENT_ITER`: an event iteration that does not settle is a model
 /// error, not something to spin on.
@@ -59,9 +59,23 @@ impl Inputs {
 /// lets a parameter be set.
 pub fn initialize(
     inst: &mut dyn Fmi3,
+    md: &ModelDescription,
     inputs: &mut Inputs,
     opts: &Options<'_>,
 ) -> Result<()> {
+    // Without the full trace, still ask for the status categories: the message
+    // behind an error status is the only account of what failed.
+    let declared = |name: &str| md.log_categories.iter().any(|c| c.name == name);
+    let mut categories: Vec<&str> = Vec::new();
+    if !opts.logging_on {
+        categories.extend(
+            md.log_categories.iter().map(|c| c.name.as_str()).filter(|c| c.starts_with("logStatus")),
+        );
+    }
+    categories.extend(opts.log_streams.iter().map(String::as_str).filter(|s| declared(s)));
+    if !categories.is_empty() {
+        inst.set_debug_logging(true, &categories)?;
+    }
     inst.enter_initialization_mode(opts.tolerance, opts.start_time, Some(opts.stop_time))?;
     for p in &opts.parameters {
         inst.set_numeric(p.ty.wire(), &[p.value_reference], &[p.value])?;
