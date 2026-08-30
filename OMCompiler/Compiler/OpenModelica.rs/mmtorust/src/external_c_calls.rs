@@ -118,17 +118,6 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         // MMC_THROW / c_add_message / status return to MetaModelica.
         m.insert("ColPackBicoloring_starBicolor", Infallible);
 
-        // ── Corba_omc.cpp / corbaimpl_stub_omc.c ──────────────────────────
-        // In the stub build every Corba_* throws; in the corba build only
-        // initialize can throw. We choose the safe upper bound: Fallible.
-        m.insert("Corba_haveCorba", Infallible); // pure flag query
-        m.insert("Corba_setObjectReferenceFilePath", Fallible);
-        m.insert("Corba_setSessionName", Fallible);
-        m.insert("Corba_waitForCommand", Fallible);
-        m.insert("Corba_initialize", Fallible);
-        m.insert("Corba_close", Fallible);
-        m.insert("Corba_sendreply", Fallible);
-
         // ── Dynload_omc.cpp ────────────────────────────────────────────────
         m.insert("DynLoad_executeFunction", Fallible); // throws on lookup/call failure
 

@@ -1176,7 +1176,7 @@ void OMCProxy::openOMCDiffWidget()
 }
 
 /*!
-  Removes the CORBA IOR file. We only call this method when we are unable to connect to OMC.\n
+  Removes the OMC object reference file. We only call this method when we are unable to connect to OMC.\n
   In normal case OMCProxy::stopServer will delete that file.
   */
 void OMCProxy::removeObjectRefFile()
@@ -1185,7 +1185,7 @@ void OMCProxy::removeObjectRefFile()
 }
 
 /*!
-  Removes the CORBA IOR file.\n
+  Removes the OMC object reference file.\n
   Shows an error message that OMEdit connection with OMC is lost and exit the application.
   \see OMCProxy::removeObjectRefFile()
   */

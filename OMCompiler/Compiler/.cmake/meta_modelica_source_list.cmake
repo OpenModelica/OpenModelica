@@ -153,7 +153,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/BaseHashSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ClockIndexes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Config.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/Corba.mo
     #${CMAKE_CURRENT_SOURCE_DIR}/Util/Database.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Debug.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DoubleEnded.mo

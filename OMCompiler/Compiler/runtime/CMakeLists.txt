@@ -101,42 +101,6 @@ if(UNIX AND NOT APPLE)
   target_link_libraries(omcruntime PUBLIC ${UUID_LIB})
 endif()
 
-# Corba support
-if(OM_OMC_USE_CORBA)
-  if(MINGW)
-    if(DEFINED ENV{MSYSTEM_PREFIX})
-      string(FIND $ENV{MSYSTEM_PREFIX} "ucrt64" IS_UCRT64)
-      if(IS_UCRT64)
-        message(FATAL_ERROR "No corba support on UCRT64")
-      endif()
-    endif()
-    # setup omniORB for MinGW OMDev
-    include(.cmake/omdev_omniorb_setup.cmake)
-    # Include the macro for compiling corba targets.
-    include(.cmake/omc_omniorb_corba_target.cmake)
-
-    # Make a directory specifically for generated files
-    set(GENERATED_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
-    file(MAKE_DIRECTORY ${GENERATED_DIRECTORY})
-
-    # add a corba target for omc_communication.idl. The outputs will be put in the generated files directory.
-    omc_add_omniorb_corba_target(${OMNIIDL_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/omc_communication.idl
-                                 ${GENERATED_DIRECTORY})
-    # Add the generated files to the sources of the library
-    target_sources(omcruntime PRIVATE ${GENERATED_DIRECTORY}/omc_communication.cc omc_communication_impl.cpp
-                                      Corba_omc.cpp)
-
-    target_link_libraries(omcruntime PUBLIC omdev::omniORB::omniORB420_rt)
-    target_link_libraries(omcruntime PUBLIC omdev::omniORB::omnithread40_rt)
-    target_compile_definitions(omcruntime PRIVATE USE_CORBA)
-    target_include_directories(omcruntime PRIVATE ${GENERATED_DIRECTORY})
-  else() # Not MinGW
-    message(FATAL "Corba support for non-MinGW omc builds is not yet implemented.")
-  endif()
-else() # No corba support requested. Use the stub file.
-  target_sources(omcruntime PRIVATE corbaimpl_stub_omc.c)
-endif(OM_OMC_USE_CORBA)
-
 # Install omcruntime. It is needed by bootstrapping tests.
 install(TARGETS omcruntime)
 

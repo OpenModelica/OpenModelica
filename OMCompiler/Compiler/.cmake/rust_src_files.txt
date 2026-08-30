@@ -447,7 +447,6 @@ openmodelica_tpl/Cargo.toml
 openmodelica_util/Cargo.toml
 openmodelica_util/build.rs
 openmodelica_util/src/Autoconf.rs
-openmodelica_util/src/Corba.rs
 openmodelica_util/src/FMIExt.rs
 openmodelica_util/src/File.rs
 openmodelica_util/src/Global.rs

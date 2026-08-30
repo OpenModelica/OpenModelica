@@ -228,7 +228,6 @@ if true then /* Suppress output */
     prefixPath + "Util/BaseHashTable.mo",
     prefixPath + "Util/ClockIndexes.mo",
     prefixPath + "Util/Config.mo",
-    prefixPath + "Util/Corba.mo",
   //  prefixPath + "Util/Database.mo",
     prefixPath + "Util/Debug.mo",
     prefixPath + "Util/DoubleEnded.mo",

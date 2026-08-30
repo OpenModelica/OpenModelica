@@ -118,12 +118,7 @@ antlr-copy:
 
 sim-dependencies: fmi $(BOOTSTRAP_FMIL_DEP) opencl_rt lis metis opc parmodauto
 
-$(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.idl
-	mkdir -p $(builddir_share)/omc
-	cp -a "$<" "$@"
-idl: $(builddir_share)/omc/omc_communication.idl
-
-interactive-common: .testvariables boehm-gc libryu idl antlr-copy libffi $(MINGW_EXTRA_LIBS)
+interactive-common: .testvariables boehm-gc libryu antlr-copy libffi $(MINGW_EXTRA_LIBS)
 
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)

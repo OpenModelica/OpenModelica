@@ -1044,7 +1044,7 @@ record CheckSettingsResult
   String MODELICAUSERCFLAGS, WORKING_DIRECTORY;
   Boolean CREATE_FILE_WORKS, REMOVE_FILE_WORKS;
   String OS, SYSTEM_INFO, SENDDATALIBS, C_COMPILER, C_COMPILER_VERSION;
-  Boolean C_COMPILER_RESPONDING, HAVE_CORBA;
+  Boolean C_COMPILER_RESPONDING;
   String CONFIGURE_CMDLINE;
 annotation(preferredView="text");
 end CheckSettingsResult;
@@ -2172,24 +2172,6 @@ function getLanguageStandard "Returns the current Modelica Language Standard in 
 external "builtin";
 annotation(preferredView="text");
 end getLanguageStandard;
-
-function getAstAsCorbaString
-  "Returns the AST in CORBA format."
-  input String fileName = "<interactive>";
-  output String result "returns the string if fileName is interactive; else it returns ok or error depending on if writing the file succeeded";
-external "builtin";
-annotation(Documentation(info="<html>
-<p>Prints the whole AST on the CORBA format for records, e.g.:
-<pre>
-  record Absyn.PROGRAM
-    classes = ...,
-    within_ = ...,
-  end Absyn.PROGRAM;
-</pre>
-</p>
-</html>"),
-  preferredView="text");
-end getAstAsCorbaString;
 
 function cd
   "Changes the working directory."
@@ -5615,7 +5597,10 @@ function getDefinitions
   output String result;
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
-<p>Used by org.openmodelica.corba.parser.DefinitionsCreator.</p>
+<p>Used by org.openmodelica.corba.parser.DefinitionsCreator in the Java
+interface, which parses the string returned here. The corba in that package
+name is historical and does not imply a CORBA connection; OpenModelica no
+longer has a CORBA interface.</p>
 </html>"));
 end getDefinitions;
 

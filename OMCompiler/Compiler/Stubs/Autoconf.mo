@@ -57,7 +57,6 @@ encapsulated package Autoconf
   constant String pathDelimiter = "/";
   constant String groupDelimiter = ";";
 
-  constant String corbaLibs = "";
   constant list<String> systemLibs = {};
 
   constant String triple = "";

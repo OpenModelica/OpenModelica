@@ -31,13 +31,18 @@ OMC_OBJ_SHARED = Error_omc$(OBJEXT) \
   ColPackBicoloring_omc.o \
   OMGraphics.o OMGraphics_omc.o \
 
+# CORBA is gone from the compiler, but Compiler/boot/bootstrap-sources still
+# holds an old snapshot that has Corba.c in it and calls the Corba_* externals.
+# The stub keeps bootstrap-from-tarball linking; drop it, and the stub file,
+# once that snapshot is refreshed. The CMake build does not need it: its bomc
+# comes from the boot/bomc submodule, which was regenerated without CORBA.
 OMC_OBJ_STUBS = corbaimpl_stub_omc.o
 
 OMC_OBJ_BOOT = $(OMC_OBJ_SHARED) $(OMC_OBJ_STUBS)
 
 OMC_OBJ = $(OMC_OBJ_SHARED) \
   ptolemyio_omc.o SimulationResults_omc.o \
-  $(OMCCORBASRC)
+  $(OMC_OBJ_STUBS)
 
 # serializer.o # Disabled 2018-02-19; doesn't work to read back data
 # Database_omc.o
@@ -103,15 +108,7 @@ libomcruntime-boot.dll : $(OMC_OBJ)
 	rm -f $@
 	$(CXX) -shared $(RPATH) -o $@ $(OMC_OBJ) $(LDFLAGS)
 
-omc_communication.cc : omc_communication.idl
-ifdef USE_CORBA
-	$(IDL) omc_communication.idl
-endif
-omc_communication.h: omc_communication.cc
-
 Print_omc.o : printimpl.c printimpl.h
-omc_communication_impl.o: omc_communication.h
-Corba_omc.o: omc_communication.h corbaimpl.cpp
 Database_omc.o: Database.c Database_omc.c
 Lapack_omc.o : lapackimpl.c $(configUnix) $(RML_COMPAT) $(OMC_CONFIG_INC)/omc_config.h
 IOStreamExt_omc.o : IOStreamExt.c

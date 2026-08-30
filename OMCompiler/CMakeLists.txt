@@ -37,8 +37,6 @@ omc_option(OM_OMC_ENABLE_COLPACK "Should we enable graph coloring with ColPack."
 
 omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
 
-omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
-
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 
 # Build the Rust (mmtorust) omc port instead of the bootstrapped C omc. When ON,

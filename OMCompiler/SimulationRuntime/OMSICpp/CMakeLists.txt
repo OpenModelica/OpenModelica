@@ -73,7 +73,6 @@ option(USE_CPP_03 "USE_CPP_03" OFF)
 option(USE_FMILIB "use fmi library" ON)
 option(REDUCE_DAE "Use reduce dae method" OFF)
 
-set(USE_MICO OFF)
 set(USE_KLU CACHE BOOL OFF)
 
 if(NOT FMU_TARGET OR FMU_SUNDIALS)
@@ -204,7 +203,6 @@ set(FMUName ${LIBPREFIX}FMU${LIBSUFFIX})
 set(DgesvName ${LIBPREFIX}Dgesv_static) # only static version
 set(ReduceDAEName ${LIBPREFIX}ReduceDAE) # only static version
 
-set(USE_MICO OFF)
 set(USE_KLU CACHE BOOL OFF)
 
 if(NOT FMU_TARGET OR FMU_SUNDIALS)
@@ -375,10 +373,6 @@ if(WIN32)
     string(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
     string(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
   endif(MSVC)
-
-  #set mico paths
-  set(MICO_LIB_HOME ${OMDEV_ESCAPED}/lib/mico-msys-mingw/)
-  set(MICO_INCLUDE_HOME  ${OMDEV_ESCAPED}/include/mico-msys-mingw/)
 
   set(INSTALL_OMDEV_LIBS OFF)
 endif(WIN32)
@@ -796,15 +790,6 @@ else(SUITESPARSE_UMFPACK_FOUND)
 endif(SUITESPARSE_UMFPACK_FOUND)
 
 
-#Handle Mico corba
-if(USE_MICO)
-  find_library(MICO_LIBRARY  mico2313
-    PATHS ${MICO_LIB_HOME}) #you can add additional search paths for mico library
-  find_path(MICO_INCLUDE_DIR CORBA.h
-     ${MICO_INCLUDE_HOME}) #you can add additional search paths for mico include
-  message(STATUS ${MICO_LIBRARY})
-  message(STATUS ${MICO_INCLUDE_DIR})
-endif(USE_MICO)
 #Handle ZeroMQ
 
 
@@ -1018,10 +1003,6 @@ add_subdirectory(omsi)
 
 #install 3rdparty libraries
 if(INSTALL_OMDEV_LIBS)
-  if(USE_MICO)
-    install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
-  endif()
-
   install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION bin)
   install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION bin)
 endif()

@@ -52,7 +52,6 @@ deleteClass(ClockIndexes);getErrorString();
 
 
 //Corba
-loadFile("Compiler/Util/Corba.mo");getErrorString();
 writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/Corba.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
 deleteClass(Corba);getErrorString();
 

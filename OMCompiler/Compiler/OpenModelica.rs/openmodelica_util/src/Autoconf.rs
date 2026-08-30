@@ -219,8 +219,6 @@ pub const ldflags_runtime_fmu_static: &str = match option_env!("OMC_RT_LDFLAGS_G
 /// with the OpenModelica build on every supported platform.
 pub const parModelicaAutoLibs: &str = " -lParModelicaAuto -ltbb ";
 
-pub const corbaLibs: &str = "";
-
 /// `@WITH_HWLOC@` defaults to 0 on every platform unless explicitly
 /// requested at configure time; mirror the default.
 pub const hwloc: &str = "";
@@ -235,7 +233,6 @@ pub static systemLibs: std::sync::LazyLock<Arc<metamodelica::List<ArcStr>>> =
                 literal!("-lomcruntime"),
                 literal!("-lexpat"),
                 literal!("-lsqlite3"),
-                arcstr::literal!(corbaLibs),
                 literal!("-lomcgc"),
                 arcstr::literal!(hwloc)
             ]

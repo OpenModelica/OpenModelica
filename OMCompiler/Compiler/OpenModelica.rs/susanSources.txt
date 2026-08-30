@@ -33,7 +33,6 @@
 ../Util/BaseHashTable.mo
 ../Util/ClockIndexes.mo
 ../Util/Config.mo
-../Util/Corba.mo
 ../Util/Debug.mo
 ../Util/DiffAlgorithm.mo
 ../Util/DisjointSets.mo

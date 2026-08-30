@@ -239,341 +239,339 @@ constant DebugFlag DAE_DUMP_GRAPHV = DEBUG_FLAG(33, "daedumpgraphv", false,
   "Dumps the DAE in graphviz format.");
 constant DebugFlag INTERACTIVE_TCP = DEBUG_FLAG(34, "interactive", false,
   "Starts omc as a server listening on the socket interface.");
-constant DebugFlag INTERACTIVE_CORBA = DEBUG_FLAG(35, "interactiveCorba", false,
-  "Starts omc as a server listening on the Corba interface.");
-constant DebugFlag INTERACTIVE_DUMP = DEBUG_FLAG(36, "interactivedump", false,
+constant DebugFlag INTERACTIVE_DUMP = DEBUG_FLAG(35, "interactivedump", false,
   "Prints out debug information for the interactive server.");
-constant DebugFlag RELIDX = DEBUG_FLAG(37, "relidx", false,
+constant DebugFlag RELIDX = DEBUG_FLAG(36, "relidx", false,
   "Prints out debug information about relations, that are used as zero crossings.");
-constant DebugFlag DUMP_REPL = DEBUG_FLAG(38, "dumprepl", false,
+constant DebugFlag DUMP_REPL = DEBUG_FLAG(37, "dumprepl", false,
   "Dump the found replacements for simple equation removal.");
-constant DebugFlag DUMP_FP_REPL = DEBUG_FLAG(39, "dumpFPrepl", false,
+constant DebugFlag DUMP_FP_REPL = DEBUG_FLAG(38, "dumpFPrepl", false,
   "Dump the found replacements for final parameters.");
-constant DebugFlag DUMP_PARAM_REPL = DEBUG_FLAG(40, "dumpParamrepl", false,
+constant DebugFlag DUMP_PARAM_REPL = DEBUG_FLAG(39, "dumpParamrepl", false,
   "Dump the found replacements for remove parameters.");
-constant DebugFlag DUMP_PP_REPL = DEBUG_FLAG(41, "dumpPPrepl", false,
+constant DebugFlag DUMP_PP_REPL = DEBUG_FLAG(40, "dumpPPrepl", false,
   "Dump the found replacements for protected parameters.");
-constant DebugFlag DUMP_EA_REPL = DEBUG_FLAG(42, "dumpEArepl", false,
+constant DebugFlag DUMP_EA_REPL = DEBUG_FLAG(41, "dumpEArepl", false,
   "Dump the found replacements for evaluate annotations (evaluate=true) parameters.");
-constant DebugFlag DEBUG_ALIAS = DEBUG_FLAG(43, "debugAlias", false,
+constant DebugFlag DEBUG_ALIAS = DEBUG_FLAG(42, "debugAlias", false,
   "Dumps some information about the process of removeSimpleEquations.");
-constant DebugFlag TEARING_DUMP = DEBUG_FLAG(44, "tearingdump", false,
+constant DebugFlag TEARING_DUMP = DEBUG_FLAG(43, "tearingdump", false,
   "Dumps tearing information.");
-constant DebugFlag JAC_DUMP = DEBUG_FLAG(45, "symjacdump", false,
+constant DebugFlag JAC_DUMP = DEBUG_FLAG(44, "symjacdump", false,
   "Dumps information about symbolic Jacobians.");
-constant DebugFlag JAC_DUMP2 = DEBUG_FLAG(46, "symjacdumpverbose", false,
+constant DebugFlag JAC_DUMP2 = DEBUG_FLAG(45, "symjacdumpverbose", false,
   "Dumps information in verbose mode about symbolic Jacobians.");
-constant DebugFlag DUMP_BINDINGS = DEBUG_FLAG(47, "dumpBindings", false,
+constant DebugFlag DUMP_BINDINGS = DEBUG_FLAG(46, "dumpBindings", false,
   "Dumps information about the equations created from bindings.");
-constant DebugFlag DUMP_SORTING = DEBUG_FLAG(48, "dumpSorting", false,
+constant DebugFlag DUMP_SORTING = DEBUG_FLAG(47, "dumpSorting", false,
   "Dumps information about the process of sorting.");
-constant DebugFlag DUMP_SPARSE = DEBUG_FLAG(49, "dumpSparsePattern", false,
+constant DebugFlag DUMP_SPARSE = DEBUG_FLAG(48, "dumpSparsePattern", false,
   "Dumps sparse pattern with coloring used for simulation.");
-constant DebugFlag DUMP_SPARSE_VERBOSE = DEBUG_FLAG(50, "dumpSparsePatternVerbose", false,
+constant DebugFlag DUMP_SPARSE_VERBOSE = DEBUG_FLAG(49, "dumpSparsePatternVerbose", false,
   "Dumps in verbose mode sparse pattern with coloring used for simulation.");
-constant DebugFlag BLT_DUMP = DEBUG_FLAG(51, "bltdump", false,
+constant DebugFlag BLT_DUMP = DEBUG_FLAG(50, "bltdump", false,
   "Dumps information from index reduction.");
-constant DebugFlag DUMMY_SELECT = DEBUG_FLAG(52, "dummyselect", false,
+constant DebugFlag DUMMY_SELECT = DEBUG_FLAG(51, "dummyselect", false,
   "Dumps information from dummy state selection heuristic.");
-constant DebugFlag DUMP_DAE_LOW = DEBUG_FLAG(53, "dumpdaelow", false,
+constant DebugFlag DUMP_DAE_LOW = DEBUG_FLAG(52, "dumpdaelow", false,
   "Dumps the equation system at the beginning of the back end.");
-constant DebugFlag DUMP_INDX_DAE = DEBUG_FLAG(54, "dumpindxdae", false,
+constant DebugFlag DUMP_INDX_DAE = DEBUG_FLAG(53, "dumpindxdae", false,
   "Dumps the equation system after index reduction and optimization.");
-constant DebugFlag OPT_DAE_DUMP = DEBUG_FLAG(55, "optdaedump", false,
+constant DebugFlag OPT_DAE_DUMP = DEBUG_FLAG(54, "optdaedump", false,
   "Dumps information from the optimization modules.");
-constant DebugFlag EXEC_HASH = DEBUG_FLAG(56, "execHash", false,
+constant DebugFlag EXEC_HASH = DEBUG_FLAG(55, "execHash", false,
   "Measures the time it takes to hash all simcode variables before code generation.");
-constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(57, "paramdlowdump", false,
+constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(56, "paramdlowdump", false,
   "Enables dumping of the parameters in the order they are calculated.");
-constant DebugFlag DUMP_ENCAPSULATECONDITIONS = DEBUG_FLAG(58, "dumpEncapsulateConditions", false,
+constant DebugFlag DUMP_ENCAPSULATECONDITIONS = DEBUG_FLAG(57, "dumpEncapsulateConditions", false,
   "Dumps the results of the preOptModule encapsulateWhenConditions.");
-constant DebugFlag SHORT_OUTPUT = DEBUG_FLAG(59, "shortOutput", false,
+constant DebugFlag SHORT_OUTPUT = DEBUG_FLAG(58, "shortOutput", false,
   "Enables short output of the simulate() command. Useful for tools like OMNotebook.");
-constant DebugFlag COUNT_OPERATIONS = DEBUG_FLAG(60, "countOperations", false,
+constant DebugFlag COUNT_OPERATIONS = DEBUG_FLAG(59, "countOperations", false,
   "Count operations.");
-constant DebugFlag CGRAPH = DEBUG_FLAG(61, "cgraph", false,
+constant DebugFlag CGRAPH = DEBUG_FLAG(60, "cgraph", false,
   "Prints out connection graph information.");
-constant DebugFlag UPDMOD = DEBUG_FLAG(62, "updmod", false,
+constant DebugFlag UPDMOD = DEBUG_FLAG(61, "updmod", false,
   "Prints information about modification updates.");
-constant DebugFlag STATIC = DEBUG_FLAG(63, "static", false,
+constant DebugFlag STATIC = DEBUG_FLAG(62, "static", false,
   "Enables extra debug output from the static elaboration.");
-constant DebugFlag TPL_PERF_TIMES = DEBUG_FLAG(64, "tplPerfTimes", false,
+constant DebugFlag TPL_PERF_TIMES = DEBUG_FLAG(63, "tplPerfTimes", false,
   "Enables output of template performance data for rendering text to file.");
-constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(65, "checkSimplify", false,
+constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(64, "checkSimplify", false,
   "Enables checks for expression simplification and prints a notification whenever an undesirable transformation has been performed.");
-constant DebugFlag SCODE_INST = DEBUG_FLAG(66, "newInst", true,
+constant DebugFlag SCODE_INST = DEBUG_FLAG(65, "newInst", true,
   "Enables new instantiation phase.");
-constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(67, "writeToBuffer", false,
+constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(66, "writeToBuffer", false,
   "Enables writing simulation results to buffer.");
-constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(68, "backenddaeinfo", false,
+constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(67, "backenddaeinfo", false,
   "Enables dumping of back-end information about system (Number of equations before back-end,...).");
-constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(69, "gendebugsymbols", false,
+constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(68, "gendebugsymbols", false,
   "Generate code with debugging symbols.");
-constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(70, "stateselection", false,
+constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(69, "stateselection", false,
   "Enables dumping of selected states. Extends -d=backenddaeinfo.");
-constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(71, "dumpeqninorder", false,
+constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(70, "dumpeqninorder", false,
   "Enables dumping of the equations in the order they are calculated.");
-constant DebugFlag SEMILINEAR = DEBUG_FLAG(72, "semiLinear", false,
+constant DebugFlag SEMILINEAR = DEBUG_FLAG(71, "semiLinear", false,
   "Enables dumping of the optimization information when optimizing calls to semiLinear.");
-constant DebugFlag UNCERTAINTIES = DEBUG_FLAG(73, "uncertainties", false,
+constant DebugFlag UNCERTAINTIES = DEBUG_FLAG(72, "uncertainties", false,
   "Enables dumping of status when calling modelEquationsUC.");
-constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(74, "showStartOrigin", false,
+constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(73, "showStartOrigin", false,
   "Enables dumping of the DAE startOrigin attribute of the variables.");
-constant DebugFlag DUMP_SIMCODE = DEBUG_FLAG(75, "dumpSimCode", false,
+constant DebugFlag DUMP_SIMCODE = DEBUG_FLAG(74, "dumpSimCode", false,
   "Dumps the simCode model used for code generation.");
-constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(76, "dumpinitialsystem", false,
+constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(75, "dumpinitialsystem", false,
   "Dumps the initial equation system.");
-constant DebugFlag GRAPH_INST = DEBUG_FLAG(77, "graphInst", false,
+constant DebugFlag GRAPH_INST = DEBUG_FLAG(76, "graphInst", false,
   "Do graph based instantiation.");
-constant DebugFlag GRAPH_INST_RUN_DEP = DEBUG_FLAG(78, "graphInstRunDep", false,
+constant DebugFlag GRAPH_INST_RUN_DEP = DEBUG_FLAG(77, "graphInstRunDep", false,
   "Run scode dependency analysis. Use with -d=graphInst");
-constant DebugFlag GRAPH_INST_GEN_GRAPH = DEBUG_FLAG(79, "graphInstGenGraph", false,
+constant DebugFlag GRAPH_INST_GEN_GRAPH = DEBUG_FLAG(78, "graphInstGenGraph", false,
   "Dumps a graph of the program. Use with -d=graphInst");
-constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(80, "dumpConstrepl", false,
+constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(79, "dumpConstrepl", false,
   "Dump the found replacements for constants.");
-constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(81, "showEquationSource", false,
+constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(80, "showEquationSource", false,
   "Display the element source information in the dumped DAE for easier debugging.");
-constant DebugFlag LS_ANALYTIC_JACOBIAN = DEBUG_FLAG(82, "LSanalyticJacobian", false,
+constant DebugFlag LS_ANALYTIC_JACOBIAN = DEBUG_FLAG(81, "LSanalyticJacobian", false,
   "Enables analytical jacobian for linear strong components. Defaults to false");
-constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(83, "NLSanalyticJacobian", true,
+constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(82, "NLSanalyticJacobian", true,
   "Enables analytical jacobian for non-linear strong components without user-defined function calls, for that see forceNLSanalyticJacobian");
-constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(84, "inlineSolver", false,
+constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(83, "inlineSolver", false,
   "Generates code for inline solver.");
-constant DebugFlag HPCOM = DEBUG_FLAG(85, "hpcom", false,
+constant DebugFlag HPCOM = DEBUG_FLAG(84, "hpcom", false,
   "Enables parallel calculation based on task-graphs.");
-constant DebugFlag INITIALIZATION = DEBUG_FLAG(86, "initialization", false,
+constant DebugFlag INITIALIZATION = DEBUG_FLAG(85, "initialization", false,
   "Shows additional information from the initialization process.");
-constant DebugFlag INLINE_FUNCTIONS = DEBUG_FLAG(87, "inlineFunctions", true,
+constant DebugFlag INLINE_FUNCTIONS = DEBUG_FLAG(86, "inlineFunctions", true,
   "Controls if function inlining should be performed.");
-constant DebugFlag DUMP_SCC_GRAPHML = DEBUG_FLAG(88, "dumpSCCGraphML", false,
+constant DebugFlag DUMP_SCC_GRAPHML = DEBUG_FLAG(87, "dumpSCCGraphML", false,
   "Dumps graphml files with the strongly connected components.");
-constant DebugFlag TEARING_DUMPVERBOSE = DEBUG_FLAG(89, "tearingdumpV", false,
+constant DebugFlag TEARING_DUMPVERBOSE = DEBUG_FLAG(88, "tearingdumpV", false,
   "Dumps verbose tearing information.");
-constant DebugFlag DISABLE_SINGLE_FLOW_EQ = DEBUG_FLAG(90, "disableSingleFlowEq", false,
+constant DebugFlag DISABLE_SINGLE_FLOW_EQ = DEBUG_FLAG(89, "disableSingleFlowEq", false,
   "Disables the generation of single flow equations.");
-constant DebugFlag DUMP_DISCRETEVARS_INFO = DEBUG_FLAG(91, "discreteinfo", false,
+constant DebugFlag DUMP_DISCRETEVARS_INFO = DEBUG_FLAG(90, "discreteinfo", false,
   "Enables dumping of discrete variables. Extends -d=backenddaeinfo.");
-constant DebugFlag ADDITIONAL_GRAPHVIZ_DUMP = DEBUG_FLAG(92, "graphvizDump", false,
+constant DebugFlag ADDITIONAL_GRAPHVIZ_DUMP = DEBUG_FLAG(91, "graphvizDump", false,
   "Activates additional graphviz dumps (as .dot files). It can be used in addition to one of the following flags: {dumpdaelow|dumpinitialsystems|dumpindxdae}.");
-constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(93, "infoXmlOperations", false,
+constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(92, "infoXmlOperations", false,
   "Enables output of the operations in the _info.xml file when translating models.");
-constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(94, "hpcomDump", false,
+constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(93, "hpcomDump", false,
   "Dumps additional information on the parallel execution with hpcom.");
-constant DebugFlag RESOLVE_LOOPS_DUMP = DEBUG_FLAG(95, "resolveLoopsDump", false,
+constant DebugFlag RESOLVE_LOOPS_DUMP = DEBUG_FLAG(94, "resolveLoopsDump", false,
   "Debug Output for ResolveLoops Module.");
-constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(96, "disableWindowsPathCheckWarning", false,
+constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(95, "disableWindowsPathCheckWarning", false,
   "Disables warnings on Windows if OPENMODELICAHOME/MinGW is missing.");
-constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(97, "disableRecordConstructorOutput", false,
+constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(96, "disableRecordConstructorOutput", false,
   "Disables output of record constructors in the flat code.");
-constant DebugFlag IMPL_ODE = DEBUG_FLAG(98, "implOde", false,
+constant DebugFlag IMPL_ODE = DEBUG_FLAG(97, "implOde", false,
   "activates implicit codegen");
-constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(99, "evalFuncDump", false,
+constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(98, "evalFuncDump", false,
   "dumps debug information about the function evaluation");
-constant DebugFlag PRINT_STRUCTURAL = DEBUG_FLAG(100, "printStructuralParameters", false,
+constant DebugFlag PRINT_STRUCTURAL = DEBUG_FLAG(99, "printStructuralParameters", false,
   "Prints the structural parameters identified by the front-end");
-constant DebugFlag ITERATION_VARS = DEBUG_FLAG(101, "iterationVars", false,
+constant DebugFlag ITERATION_VARS = DEBUG_FLAG(100, "iterationVars", false,
   "Shows a list of all iteration variables.");
-constant DebugFlag ALLOW_RECORD_TOO_MANY_FIELDS = DEBUG_FLAG(102, "acceptTooManyFields", false,
+constant DebugFlag ALLOW_RECORD_TOO_MANY_FIELDS = DEBUG_FLAG(101, "acceptTooManyFields", false,
   "Accepts passing records with more fields than expected to a function. This is not allowed, but is used in Fluid.Dissipation. See https://trac.modelica.org/Modelica/ticket/1245 for details.");
-constant DebugFlag HPCOM_MEMORY_OPT = DEBUG_FLAG(103, "hpcomMemoryOpt", false,
+constant DebugFlag HPCOM_MEMORY_OPT = DEBUG_FLAG(102, "hpcomMemoryOpt", false,
   "Optimize the memory structure regarding the selected scheduler");
-constant DebugFlag DUMP_SYNCHRONOUS = DEBUG_FLAG(104, "dumpSynchronous", false,
+constant DebugFlag DUMP_SYNCHRONOUS = DEBUG_FLAG(103, "dumpSynchronous", false,
   "Dumps information of the clock partitioning.");
-constant DebugFlag STRIP_PREFIX = DEBUG_FLAG(105, "stripPrefix", true,
+constant DebugFlag STRIP_PREFIX = DEBUG_FLAG(104, "stripPrefix", true,
   "Strips the environment prefix from path/crefs. Defaults to true.");
-constant DebugFlag DO_SCODE_DEP = DEBUG_FLAG(106, "scodeDep", true,
+constant DebugFlag DO_SCODE_DEP = DEBUG_FLAG(105, "scodeDep", true,
   "Does scode dependency analysis prior to instantiation. Defaults to true.");
-constant DebugFlag SHOW_INST_CACHE_INFO = DEBUG_FLAG(107, "showInstCacheInfo", false,
+constant DebugFlag SHOW_INST_CACHE_INFO = DEBUG_FLAG(106, "showInstCacheInfo", false,
   "Prints information about instantiation cache hits and additions. Defaults to false.");
-constant DebugFlag DUMP_UNIT = DEBUG_FLAG(108, "dumpUnits", false,
+constant DebugFlag DUMP_UNIT = DEBUG_FLAG(107, "dumpUnits", false,
   "Dumps all the calculated units.");
-constant DebugFlag DUMP_EQ_UNIT = DEBUG_FLAG(109, "dumpEqInUC", false,
+constant DebugFlag DUMP_EQ_UNIT = DEBUG_FLAG(108, "dumpEqInUC", false,
   "Dumps all equations handled by the unit checker.");
-constant DebugFlag DUMP_EQ_UNIT_STRUCT = DEBUG_FLAG(110, "dumpEqUCStruct", false,
+constant DebugFlag DUMP_EQ_UNIT_STRUCT = DEBUG_FLAG(109, "dumpEqUCStruct", false,
   "Dumps all the equations handled by the unit checker as tree-structure.");
-constant DebugFlag SHOW_DAE_GENERATION = DEBUG_FLAG(111, "showDaeGeneration", false,
+constant DebugFlag SHOW_DAE_GENERATION = DEBUG_FLAG(110, "showDaeGeneration", false,
   "Show the dae variable declarations as they happen.");
-constant DebugFlag RESHUFFLE_POST = DEBUG_FLAG(112, "reshufflePost", false,
+constant DebugFlag RESHUFFLE_POST = DEBUG_FLAG(111, "reshufflePost", false,
   "Reshuffles the systems of equations.");
-constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(113, "showExpandableInfo", false,
+constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(112, "showExpandableInfo", false,
   "Show information about expandable connector handling.");
-constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(114, "dumpHomotopy", false,
+constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(113, "dumpHomotopy", false,
   "Dumps the results of the postOptModule optimizeHomotopyCalls.");
-constant DebugFlag OMC_RELOCATABLE_FUNCTIONS = DEBUG_FLAG(115, "relocatableFunctions", false,
+constant DebugFlag OMC_RELOCATABLE_FUNCTIONS = DEBUG_FLAG(114, "relocatableFunctions", false,
   "Generates relocatable code: all functions become function pointers and can be replaced at run-time.");
-constant DebugFlag GRAPHML = DEBUG_FLAG(116, "graphml", false,
+constant DebugFlag GRAPHML = DEBUG_FLAG(115, "graphml", false,
   "Dumps .graphml files for the bipartite graph after Index Reduction and a task graph for the SCCs. Can be displayed with yEd. ");
-constant DebugFlag USEMPI = DEBUG_FLAG(117, "useMPI", false,
+constant DebugFlag USEMPI = DEBUG_FLAG(116, "useMPI", false,
   "Add MPI init and finalize to main method (CPPruntime). ");
-constant DebugFlag DUMP_CSE = DEBUG_FLAG(118, "dumpCSE", false,
+constant DebugFlag DUMP_CSE = DEBUG_FLAG(117, "dumpCSE", false,
   "Additional output for CSE module.");
-constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(119, "dumpCSE_verbose", false,
+constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(118, "dumpCSE_verbose", false,
   "Additional output for CSE module.");
-constant DebugFlag NO_START_CALC = DEBUG_FLAG(120, "disableStartCalc", false,
+constant DebugFlag NO_START_CALC = DEBUG_FLAG(119, "disableStartCalc", false,
   "Deactivates the pre-calculation of start values during compile-time.");
-constant DebugFlag CONSTJAC = DEBUG_FLAG(121, "constjac", false,
+constant DebugFlag CONSTJAC = DEBUG_FLAG(120, "constjac", false,
   "solves linear systems with constant Jacobian and variable b-Vector symbolically");
-constant DebugFlag VISUAL_XML = DEBUG_FLAG(122, "visxml", false,
+constant DebugFlag VISUAL_XML = DEBUG_FLAG(121, "visxml", false,
   "Outputs a xml-file that contains information for visualization.");
-constant DebugFlag VECTORIZE = DEBUG_FLAG(123, "vectorize", false,
+constant DebugFlag VECTORIZE = DEBUG_FLAG(122, "vectorize", false,
   "Activates vectorization in the backend.");
-constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(124, "buildExternalLibs", true,
+constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(123, "buildExternalLibs", true,
   "Use the autotools project in the Resources folder of the library to build missing external libraries.");
-constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(125, "runtimeStaticLinking", false,
+constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(124, "runtimeStaticLinking", false,
   "Use the static simulation runtime libraries (C++ simulation runtime).");
-constant DebugFlag SORT_EQNS_AND_VARS = DEBUG_FLAG(126, "dumpSortEqnsAndVars", false,
+constant DebugFlag SORT_EQNS_AND_VARS = DEBUG_FLAG(125, "dumpSortEqnsAndVars", false,
   "Dumps debug output for the modules sortEqnsVars.");
-constant DebugFlag DUMP_SIMPLIFY_LOOPS = DEBUG_FLAG(127, "dumpSimplifyLoops", false,
+constant DebugFlag DUMP_SIMPLIFY_LOOPS = DEBUG_FLAG(126, "dumpSimplifyLoops", false,
   "Dump between steps of simplifyLoops");
-constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(128, "dumpRecursiveTearing", false,
+constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(127, "dumpRecursiveTearing", false,
   "Dump between steps of recursiveTearing");
-constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(129, "disableDirectionalDerivatives", true,
+constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(128, "disableDirectionalDerivatives", true,
   "For FMI 2.0 only dependecy analysis will be perform.");
-constant DebugFlag EVAL_OUTPUT_ONLY = DEBUG_FLAG(130, "evalOutputOnly", false,
+constant DebugFlag EVAL_OUTPUT_ONLY = DEBUG_FLAG(129, "evalOutputOnly", false,
   "Generates equations to calculate top level outputs only.");
-constant DebugFlag HARDCODED_START_VALUES = DEBUG_FLAG(131, "hardcodedStartValues", false,
+constant DebugFlag HARDCODED_START_VALUES = DEBUG_FLAG(130, "hardcodedStartValues", false,
   "Embed the start values of variables and parameters into the c++ code and do not read it from xml file.");
-constant DebugFlag DUMP_FUNCTIONS = DEBUG_FLAG(132, "dumpFunctions", false,
+constant DebugFlag DUMP_FUNCTIONS = DEBUG_FLAG(131, "dumpFunctions", false,
   "Add functions to backend dumps.");
-constant DebugFlag DEBUG_DIFFERENTIATION = DEBUG_FLAG(133, "debugDifferentiation", false,
+constant DebugFlag DEBUG_DIFFERENTIATION = DEBUG_FLAG(132, "debugDifferentiation", false,
   "Dumps debug output for the differentiation process.");
-constant DebugFlag DEBUG_DIFFERENTIATION_VERBOSE = DEBUG_FLAG(134, "debugDifferentiationVerbose", false,
+constant DebugFlag DEBUG_DIFFERENTIATION_VERBOSE = DEBUG_FLAG(133, "debugDifferentiationVerbose", false,
   "Dumps verbose debug output for the differentiation process.");
-constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(135, "fmuExperimental", false,
+constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(134, "fmuExperimental", false,
   "Adds features to the FMI export that are considered experimental as of now: fmi2GetSpecificDerivatives, canGetSetFMUState, canSerializeFMUstate");
-constant DebugFlag DUMP_DGESV = DEBUG_FLAG(136, "dumpdgesv", false,
+constant DebugFlag DUMP_DGESV = DEBUG_FLAG(135, "dumpdgesv", false,
   "Enables dumping of the information whether DGESV is used to solve linear systems.");
-constant DebugFlag MULTIRATE_PARTITION = DEBUG_FLAG(137, "multirate", false,
+constant DebugFlag MULTIRATE_PARTITION = DEBUG_FLAG(136, "multirate", false,
   "The solver can switch partitions in the system.");
-constant DebugFlag DUMP_EXCLUDED_EXP = DEBUG_FLAG(138, "dumpExcludedSymJacExps", false,
+constant DebugFlag DUMP_EXCLUDED_EXP = DEBUG_FLAG(137, "dumpExcludedSymJacExps", false,
   "This flags dumps all expression that are excluded from differentiation of a symbolic Jacobian.");
-constant DebugFlag DEBUG_ALGLOOP_JACOBIAN = DEBUG_FLAG(139, "debugAlgebraicLoopsJacobian", false,
+constant DebugFlag DEBUG_ALGLOOP_JACOBIAN = DEBUG_FLAG(138, "debugAlgebraicLoopsJacobian", false,
   "Dumps debug output while creating symbolic jacobians for non-linear systems.");
-constant DebugFlag DISABLE_JACSCC = DEBUG_FLAG(140, "disableJacsforSCC", false,
+constant DebugFlag DISABLE_JACSCC = DEBUG_FLAG(139, "disableJacsforSCC", false,
   "Disables calculation of jacobians to detect if a SCC is linear or non-linear. By disabling all SCC will handled like non-linear.");
-constant DebugFlag FORCE_NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(141, "forceNLSanalyticJacobian", false,
+constant DebugFlag FORCE_NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(140, "forceNLSanalyticJacobian", false,
   "Forces calculation analytical jacobian also for non-linear strong components with user-defined functions.");
-constant DebugFlag DUMP_LOOPS = DEBUG_FLAG(142, "dumpLoops", false,
+constant DebugFlag DUMP_LOOPS = DEBUG_FLAG(141, "dumpLoops", false,
   "Dumps loop equation.");
-constant DebugFlag DUMP_LOOPS_VERBOSE = DEBUG_FLAG(143, "dumpLoopsVerbose", false,
+constant DebugFlag DUMP_LOOPS_VERBOSE = DEBUG_FLAG(142, "dumpLoopsVerbose", false,
   "Dumps loop equation and enhanced adjacency matrix.");
-constant DebugFlag SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR = DEBUG_FLAG(144, "skipInputOutputSyntacticSugar", false,
+constant DebugFlag SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR = DEBUG_FLAG(143, "skipInputOutputSyntacticSugar", false,
   "Used when bootstrapping to preserve the input output parsing of the code output by the list command.");
-constant DebugFlag OMC_RECORD_ALLOC_WORDS = DEBUG_FLAG(145, "metaModelicaRecordAllocWords", false,
+constant DebugFlag OMC_RECORD_ALLOC_WORDS = DEBUG_FLAG(144, "metaModelicaRecordAllocWords", false,
   "Instrument the source code to record memory allocations (requires run-time and generated files compiled with -DOMC_RECORD_ALLOC_WORDS).");
-constant DebugFlag TOTAL_TEARING_DUMP = DEBUG_FLAG(146, "totaltearingdump", false,
+constant DebugFlag TOTAL_TEARING_DUMP = DEBUG_FLAG(145, "totaltearingdump", false,
   "Dumps total tearing information.");
-constant DebugFlag TOTAL_TEARING_DUMPVERBOSE = DEBUG_FLAG(147, "totaltearingdumpV", false,
+constant DebugFlag TOTAL_TEARING_DUMPVERBOSE = DEBUG_FLAG(146, "totaltearingdumpV", false,
   "Dumps verbose total tearing information.");
-constant DebugFlag PARALLEL_CODEGEN = DEBUG_FLAG(148, "parallelCodegen", true,
+constant DebugFlag PARALLEL_CODEGEN = DEBUG_FLAG(147, "parallelCodegen", true,
   "Enables code generation in parallel (disable this if compiling a model causes you to run out of RAM).");
-constant DebugFlag SERIALIZED_SIZE = DEBUG_FLAG(149, "reportSerializedSize", false,
+constant DebugFlag SERIALIZED_SIZE = DEBUG_FLAG(148, "reportSerializedSize", false,
   "Reports serialized sizes of various data structures used in the compiler.");
-constant DebugFlag BACKEND_KEEP_ENV_GRAPH = DEBUG_FLAG(150, "backendKeepEnv", true,
+constant DebugFlag BACKEND_KEEP_ENV_GRAPH = DEBUG_FLAG(149, "backendKeepEnv", true,
   "When enabled, the environment is kept when entering the backend, which enables CevalFunction (function interpretation) to work. This module not essential for the backend to function in most cases, but can improve simulation performance by evaluating functions. The drawback to keeping the environment graph in memory is that it is huge (~80% of the total memory in use when returning the frontend DAE).");
-constant DebugFlag DUMPBACKENDINLINE = DEBUG_FLAG(151, "dumpBackendInline", false,
+constant DebugFlag DUMPBACKENDINLINE = DEBUG_FLAG(150, "dumpBackendInline", false,
   "Dumps debug output while inline function.");
-constant DebugFlag DUMPBACKENDINLINE_VERBOSE = DEBUG_FLAG(152, "dumpBackendInlineVerbose", false,
+constant DebugFlag DUMPBACKENDINLINE_VERBOSE = DEBUG_FLAG(151, "dumpBackendInlineVerbose", false,
   "Dumps debug output while inline function.");
-constant DebugFlag BLT_MATRIX_DUMP = DEBUG_FLAG(153, "bltmatrixdump", false,
+constant DebugFlag BLT_MATRIX_DUMP = DEBUG_FLAG(152, "bltmatrixdump", false,
   "Dumps the blt matrix in html file. IE seems to be very good in displaying large matrices.");
-constant DebugFlag LIST_REVERSE_WRONG_ORDER = DEBUG_FLAG(154, "listAppendWrongOrder", true,
+constant DebugFlag LIST_REVERSE_WRONG_ORDER = DEBUG_FLAG(153, "listAppendWrongOrder", true,
   "Print notifications about bad usage of listAppend.");
-constant DebugFlag PARTITION_INITIALIZATION = DEBUG_FLAG(155, "partitionInitialization", true,
+constant DebugFlag PARTITION_INITIALIZATION = DEBUG_FLAG(154, "partitionInitialization", true,
   "This flag controls if partitioning is applied to the initialization system.");
-constant DebugFlag EVAL_PARAM_DUMP = DEBUG_FLAG(156, "evalParameterDump", false,
+constant DebugFlag EVAL_PARAM_DUMP = DEBUG_FLAG(155, "evalParameterDump", false,
   "Dumps information for evaluating parameters.");
-constant DebugFlag NF_UNITCHECK = DEBUG_FLAG(157, "frontEndUnitCheck", false,
+constant DebugFlag NF_UNITCHECK = DEBUG_FLAG(156, "frontEndUnitCheck", false,
   "Checks the consistency of units in equation.");
-constant DebugFlag DISABLE_COLORING = DEBUG_FLAG(158, "disableColoring", false,
+constant DebugFlag DISABLE_COLORING = DEBUG_FLAG(157, "disableColoring", false,
   "Disables coloring algorithm while spasity detection.");
-constant DebugFlag MERGE_ALGORITHM_SECTIONS = DEBUG_FLAG(159, "mergeAlgSections", false,
+constant DebugFlag MERGE_ALGORITHM_SECTIONS = DEBUG_FLAG(158, "mergeAlgSections", false,
   "Disables coloring algorithm while sparsity detection.");
-constant DebugFlag WARN_NO_NOMINAL = DEBUG_FLAG(160, "warnNoNominal", false,
+constant DebugFlag WARN_NO_NOMINAL = DEBUG_FLAG(159, "warnNoNominal", false,
   "Prints the iteration variables in the initialization and simulation DAE, which do not have a nominal value.");
-constant DebugFlag REDUCE_DAE = DEBUG_FLAG(161, "backendReduceDAE", false,
+constant DebugFlag REDUCE_DAE = DEBUG_FLAG(160, "backendReduceDAE", false,
   "Prints all Reduce DAE debug information.");
-constant DebugFlag IGNORE_CYCLES = DEBUG_FLAG(162, "ignoreCycles", false,
+constant DebugFlag IGNORE_CYCLES = DEBUG_FLAG(161, "ignoreCycles", false,
   "Ignores cycles between constant/parameter components.");
-constant DebugFlag ALIAS_CONFLICTS = DEBUG_FLAG(163, "aliasConflicts", false,
+constant DebugFlag ALIAS_CONFLICTS = DEBUG_FLAG(162, "aliasConflicts", false,
   "Dumps alias sets with different start or nominal values.");
-constant DebugFlag SUSAN_MATCHCONTINUE_DEBUG = DEBUG_FLAG(164, "susanDebug", false,
+constant DebugFlag SUSAN_MATCHCONTINUE_DEBUG = DEBUG_FLAG(163, "susanDebug", false,
   "Makes Susan generate code using try/else to better debug which function broke the expected match semantics.");
-constant DebugFlag OLD_FE_UNITCHECK = DEBUG_FLAG(165, "oldFrontEndUnitCheck", false,
+constant DebugFlag OLD_FE_UNITCHECK = DEBUG_FLAG(164, "oldFrontEndUnitCheck", false,
   "Checks the consistency of units in equation (for the old front-end).");
-constant DebugFlag EXEC_STAT_EXTRA_GC = DEBUG_FLAG(166, "execstatGCcollect", false,
+constant DebugFlag EXEC_STAT_EXTRA_GC = DEBUG_FLAG(165, "execstatGCcollect", false,
   "When running execstat, also perform an extra full garbage collection.");
-constant DebugFlag DEBUG_DAEMODE = DEBUG_FLAG(167, "debugDAEmode", false,
+constant DebugFlag DEBUG_DAEMODE = DEBUG_FLAG(166, "debugDAEmode", false,
   "Dump debug output for the DAEmode.");
-constant DebugFlag NF_SCALARIZE = DEBUG_FLAG(168, "nfScalarize", true,
+constant DebugFlag NF_SCALARIZE = DEBUG_FLAG(167, "nfScalarize", true,
   "Run scalarization in NF, default true.");
-constant DebugFlag NF_EVAL_CONST_ARG_FUNCS = DEBUG_FLAG(169, "nfEvalConstArgFuncs", true,
+constant DebugFlag NF_EVAL_CONST_ARG_FUNCS = DEBUG_FLAG(168, "nfEvalConstArgFuncs", true,
   "Evaluate all functions with constant arguments in the new frontend.");
-constant DebugFlag NF_EXPAND_OPERATIONS = DEBUG_FLAG(170, "nfExpandOperations", true,
+constant DebugFlag NF_EXPAND_OPERATIONS = DEBUG_FLAG(169, "nfExpandOperations", true,
   "Expand all unary/binary operations to scalar expressions in the new frontend.");
-constant DebugFlag NF_API = DEBUG_FLAG(171, "nfAPI", true,
+constant DebugFlag NF_API = DEBUG_FLAG(170, "nfAPI", true,
   "Enables experimental new instantiation use in the OMC API.");
-constant DebugFlag NF_API_DYNAMIC_SELECT = DEBUG_FLAG(172, "nfAPIDynamicSelect", false,
+constant DebugFlag NF_API_DYNAMIC_SELECT = DEBUG_FLAG(171, "nfAPIDynamicSelect", false,
   "Show DynamicSelect(static, dynamic) in annotations. Default to false and will select the first (static) expression");
-constant DebugFlag NF_API_NOISE = DEBUG_FLAG(173, "nfAPINoise", false,
+constant DebugFlag NF_API_NOISE = DEBUG_FLAG(172, "nfAPINoise", false,
   "Enables error display for the experimental new instantiation use in the OMC API.");
-constant DebugFlag FMI20_DEPENDENCIES = DEBUG_FLAG(174, "disableFMIDependency", false,
+constant DebugFlag FMI20_DEPENDENCIES = DEBUG_FLAG(173, "disableFMIDependency", false,
   "Disables the dependency analysis and generation for FMI 2.0.");
-constant DebugFlag WARNING_MINMAX_ATTRIBUTES = DEBUG_FLAG(175, "warnMinMax", true,
+constant DebugFlag WARNING_MINMAX_ATTRIBUTES = DEBUG_FLAG(174, "warnMinMax", true,
   "Makes a warning assert from min/max variable attributes instead of error.");
-constant DebugFlag NF_EXPAND_FUNC_ARGS = DEBUG_FLAG(176, "nfExpandFuncArgs", false,
+constant DebugFlag NF_EXPAND_FUNC_ARGS = DEBUG_FLAG(175, "nfExpandFuncArgs", false,
   "Expand all function arguments in the new frontend.");
-constant DebugFlag DUMP_JL = DEBUG_FLAG(177, "dumpJL", false,
+constant DebugFlag DUMP_JL = DEBUG_FLAG(176, "dumpJL", false,
   "Dumps the absyn representation of a program as a Julia representation");
-constant DebugFlag DUMP_ASSC = DEBUG_FLAG(178, "dumpASSC", false,
+constant DebugFlag DUMP_ASSC = DEBUG_FLAG(177, "dumpASSC", false,
   "Dumps the conversion process of analytical to structural singularities.");
-constant DebugFlag SPLIT_CONSTANT_PARTS_SYMJAC = DEBUG_FLAG(179, "symJacConstantSplit", false,
+constant DebugFlag SPLIT_CONSTANT_PARTS_SYMJAC = DEBUG_FLAG(178, "symJacConstantSplit", false,
   "Generates all symbolic Jacobians with splitted constant parts.");
-constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES = DEBUG_FLAG(180, "force-fmi-attributes", false,
+constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES = DEBUG_FLAG(179, "force-fmi-attributes", false,
   "Force to export all fmi attributes to the modelDescription.xml, including those which have default values");
-constant DebugFlag DUMP_DATARECONCILIATION = DEBUG_FLAG(181, "dataReconciliation", false,
+constant DebugFlag DUMP_DATARECONCILIATION = DEBUG_FLAG(180, "dataReconciliation", false,
   "Dumps all the dataReconciliation extraction algorithm procedure");
-constant DebugFlag ARRAY_CONNECT = DEBUG_FLAG(182, "arrayConnect", false,
+constant DebugFlag ARRAY_CONNECT = DEBUG_FLAG(181, "arrayConnect", false,
   "Use experimental array connection handler.");
-constant DebugFlag COMBINE_SUBSCRIPTS = DEBUG_FLAG(183, "combineSubscripts", false,
+constant DebugFlag COMBINE_SUBSCRIPTS = DEBUG_FLAG(182, "combineSubscripts", false,
   "Move all subscripts to the end of component references.");
-constant DebugFlag ZMQ_LISTEN_TO_ALL = DEBUG_FLAG(184, "zmqDangerousAcceptConnectionsFromAnywhere", false,
+constant DebugFlag ZMQ_LISTEN_TO_ALL = DEBUG_FLAG(183, "zmqDangerousAcceptConnectionsFromAnywhere", false,
   "When opening a zmq connection, listen on all interfaces instead of only connections from 127.0.0.1.");
-constant DebugFlag DUMP_CONVERSION_RULES = DEBUG_FLAG(185, "dumpConversionRules", false,
+constant DebugFlag DUMP_CONVERSION_RULES = DEBUG_FLAG(184, "dumpConversionRules", false,
   "Dumps the rules when converting a package using a conversion script.");
-constant DebugFlag PRINT_RECORD_TYPES = DEBUG_FLAG(186, "printRecordTypes", false,
+constant DebugFlag PRINT_RECORD_TYPES = DEBUG_FLAG(185, "printRecordTypes", false,
   "Prints out record types as part of the flat code.");
-constant DebugFlag DUMP_SIMPLIFY = DEBUG_FLAG(187, "dumpSimplify", false,
+constant DebugFlag DUMP_SIMPLIFY = DEBUG_FLAG(186, "dumpSimplify", false,
   "Dumps expressions before and after simplification.");
-constant DebugFlag DUMP_BACKEND_CLOCKS = DEBUG_FLAG(188, "dumpBackendClocks", false,
+constant DebugFlag DUMP_BACKEND_CLOCKS = DEBUG_FLAG(187, "dumpBackendClocks", false,
   "Dumps times for each backend module (only new backend).");
-constant DebugFlag DUMP_SET_BASED_GRAPHS = DEBUG_FLAG(189, "dumpSetBasedGraphs", false,
+constant DebugFlag DUMP_SET_BASED_GRAPHS = DEBUG_FLAG(188, "dumpSetBasedGraphs", false,
   "Dumps information about set based graphs for efficient array handling (only new frontend and new backend).");
-constant DebugFlag MERGE_COMPONENTS = DEBUG_FLAG(190, "mergeComponents", false,
+constant DebugFlag MERGE_COMPONENTS = DEBUG_FLAG(189, "mergeComponents", false,
   "Enables automatic merging of components into arrays.");
-constant DebugFlag DUMP_SLICE = DEBUG_FLAG(191, "dumpSlice", false,
+constant DebugFlag DUMP_SLICE = DEBUG_FLAG(190, "dumpSlice", false,
   "Dumps information about the slicing process (pseudo-array causalization).");
-constant DebugFlag VECTORIZE_BINDINGS = DEBUG_FLAG(192, "vectorizeBindings", false,
+constant DebugFlag VECTORIZE_BINDINGS = DEBUG_FLAG(191, "vectorizeBindings", false,
   "Turns on vectorization of bindings when scalarization is turned off.");
-constant DebugFlag DUMP_EVENTS = DEBUG_FLAG(193, "dumpEvents", false,
+constant DebugFlag DUMP_EVENTS = DEBUG_FLAG(192, "dumpEvents", false,
   "Dumps information about the detected event functions.");
-constant DebugFlag DUMP_RESIZABLE = DEBUG_FLAG(194, "dumpResizable", false,
+constant DebugFlag DUMP_RESIZABLE = DEBUG_FLAG(193, "dumpResizable", false,
   "Dumps information about resizable paremeter handling.");
-constant DebugFlag DUMP_SOLVE = DEBUG_FLAG(195, "dumpSolve", false,
+constant DebugFlag DUMP_SOLVE = DEBUG_FLAG(194, "dumpSolve", false,
   "Dumps information about equation solving.");
-constant DebugFlag FORCE_SCALARIZE = DEBUG_FLAG(196, "forceScalarize", false,
+constant DebugFlag FORCE_SCALARIZE = DEBUG_FLAG(195, "forceScalarize", false,
   "Forces scalarization to be done when it would normally be automatically disabled.");
-constant DebugFlag DEBUG_ADJOINT = DEBUG_FLAG(197, "debugAdjoint", false,
+constant DebugFlag DEBUG_ADJOINT = DEBUG_FLAG(196, "debugAdjoint", false,
   "Dumps debug output for the adjoint differentiation process in the new backend.");
-constant DebugFlag FLOW_ALIAS_ELIMINATION = DEBUG_FLAG(198, "flowAliasElimination", false,
+constant DebugFlag FLOW_ALIAS_ELIMINATION = DEBUG_FLAG(197, "flowAliasElimination", false,
   "Enables simple alias elimination of flow variables in stream connectors.");
-constant DebugFlag DUMP_CHECK_MODEL = DEBUG_FLAG(199, "dumpCheckModel", false,
+constant DebugFlag DUMP_CHECK_MODEL = DEBUG_FLAG(198, "dumpCheckModel", false,
   "Dumps the variables and equations found by checkModel.");
-constant DebugFlag CHECK_DEF_USE = DEBUG_FLAG(200, "checkDefUse", false,
+constant DebugFlag CHECK_DEF_USE = DEBUG_FLAG(199, "checkDefUse", false,
   "Warns about variables in functions that cannot statically be proven to be defined (given a value) before they are used, e.g. variables only assigned on some control flow paths. Per the Modelica specification using an uninitialized variable is an error.");
-constant DebugFlag TEARING_COST = DEBUG_FLAG(201, "tearingCost", false,
+constant DebugFlag TEARING_COST = DEBUG_FLAG(200, "tearingCost", false,
   "Dumps the estimated cost of every torn system against solving it untorn.");
-constant DebugFlag OMEDIT = DEBUG_FLAG(202, "omedit", false,
+constant DebugFlag OMEDIT = DEBUG_FLAG(201, "omedit", false,
   "Set by OMEdit, so the compiler can emit output only a GUI consumes.");
 
 public
@@ -792,62 +790,59 @@ constant ConfigFlag MODELICA_OUTPUT = CONFIG_FLAG(21, "modelicaOutput",
 constant ConfigFlag SILENT = CONFIG_FLAG(22, "silent",
   SOME("q"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on silent mode.");
-constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(23, "corbaSessionName",
-  SOME("c"), EXTERNAL(), STRING_FLAG(""), NONE(),
-  "Sets the name of the corba session if -d=interactiveCorba or --interactive=corba is used.");
-constant ConfigFlag NUM_PROC = CONFIG_FLAG(24, "numProcs",
+constant ConfigFlag NUM_PROC = CONFIG_FLAG(23, "numProcs",
   SOME("n"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the number of processors to use (0=default=auto).");
-constant ConfigFlag INST_CLASS = CONFIG_FLAG(25, "instClass",
+constant ConfigFlag INST_CLASS = CONFIG_FLAG(24, "instClass",
   SOME("i"), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Instantiate the class given by the fully qualified path.");
-constant ConfigFlag VECTORIZATION_LIMIT = CONFIG_FLAG(26, "vectorizationLimit",
+constant ConfigFlag VECTORIZATION_LIMIT = CONFIG_FLAG(25, "vectorizationLimit",
   SOME("v"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the vectorization limit, arrays and matrices larger than this will not be vectorized.");
-constant ConfigFlag SIMULATION_CG = CONFIG_FLAG(27, "simulationCg",
+constant ConfigFlag SIMULATION_CG = CONFIG_FLAG(26, "simulationCg",
   SOME("s"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on simulation code generation.");
-constant ConfigFlag EVAL_PARAMS_IN_ANNOTATIONS = CONFIG_FLAG(28,
+constant ConfigFlag EVAL_PARAMS_IN_ANNOTATIONS = CONFIG_FLAG(27,
   "evalAnnotationParams", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Sets whether to evaluate parameters in annotations or not.");
-constant ConfigFlag CHECK_MODEL = CONFIG_FLAG(29,
+constant ConfigFlag CHECK_MODEL = CONFIG_FLAG(28,
   "checkModel", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Set when checkModel is used to turn on specific features for checking.");
-constant ConfigFlag CEVAL_EQUATION = CONFIG_FLAG(30,
+constant ConfigFlag CEVAL_EQUATION = CONFIG_FLAG(29,
   "cevalEquation", NONE(), INTERNAL(), BOOL_FLAG(true), NONE(),
   "");
-constant ConfigFlag UNIT_CHECKING = CONFIG_FLAG(31,
+constant ConfigFlag UNIT_CHECKING = CONFIG_FLAG(30,
   "unitChecking", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Enable unit checking.");
-constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(32,
+constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(31,
   "generateLabeledSimCode", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on labeled SimCode generation for reduction algorithms.");
-constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(33,
+constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(32,
   "reduceTerms", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on reducing terms for reduction algorithms.");
-constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(34, "reductionMethod",
+constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(33, "reductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("deletion"),
   SOME(STRING_OPTION({"deletion","substitution","linearization"})),
   "Sets the reduction method to be used.");
-constant ConfigFlag DEMO_MODE = CONFIG_FLAG(35, "demoMode",
+constant ConfigFlag DEMO_MODE = CONFIG_FLAG(34, "demoMode",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Disable Warning/Error Massages.");
-constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(36, "locale",
+constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(35, "locale",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Override the locale from the environment.");
-constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(37, "defaultOCLDevice",
+constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(36, "defaultOCLDevice",
   SOME("o"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the default OpenCL device to be used for parallel execution. 0 (the\n   default) picks a suitable device automatically.");
-constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(38, "maxTraversals",
+constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(37, "maxTraversals",
   NONE(), EXTERNAL(), INT_FLAG(2),NONE(),
   "Maximal traversals to find simple equations in the acausal system.");
-constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(39, "dumpTarget",
+constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(38, "dumpTarget",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Redirect the dump to file. If the file ends with .html HTML code is generated.");
-constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(40, "delayBreakLoop",
+constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(39, "delayBreakLoop",
   NONE(), EXTERNAL(), BOOL_FLAG(true),NONE(),
   "Enables (very) experimental code to break algebraic loops using the delay() operator. Probably messes with initialization.");
-constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(41, "tearingMethod",
+constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(40, "tearingMethod",
   NONE(), EXTERNAL(), STRING_FLAG("cellier"),
   SOME(STRING_DESC_OPTION({
     ("noTearing", "Deprecated, use minimalTearing."),
@@ -856,7 +851,7 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(41, "tearingMethod",
     ("cellier", "Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"),
     ("guruTearing", "Tearing based solely on TearingSelect annotation. Forces prefer/always variables to be iteration variables.")})),
   "Sets the tearing method to use. Select no tearing or choose tearing method.");
-constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(42, "tearingHeuristic",
+constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(41, "tearingHeuristic",
   NONE(), EXTERNAL(), STRING_FLAG("MC3"),
   SOME(STRING_DESC_OPTION({
     ("MC1", "Original cellier with consideration of impossible assignments and discrete Vars."),
@@ -871,28 +866,25 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(42, "tearingHeuristic",
     ("MC3", "Modified cellier, build sum of impossible assignment and causalizable equations for all vars, choose var with biggest sum."),
     ("MC4", "Modified cellier, use all heuristics, choose var that occurs most in potential sets")})),
   "Sets the tearing heuristic to use for Cellier-tearing.");
-constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(43, "scalarizeMinMax",
+constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(42, "scalarizeMinMax",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Scalarizes the builtin min/max reduction operators if true.");
-constant ConfigFlag STRICT = CONFIG_FLAG(44, "strict",
+constant ConfigFlag STRICT = CONFIG_FLAG(43, "strict",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Enables stricter enforcement of Modelica language rules.");
-constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(45, "scalarizeBindings",
+constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(44, "scalarizeBindings",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Always scalarizes bindings if set.");
-constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(46, "corbaObjectReferenceFilePath",
-  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
-  "Sets the path for corba object reference file if -d=interactiveCorba is used.");
-constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(47, "hpcomScheduler",
+constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(45, "hpcomScheduler",
   NONE(), EXTERNAL(), STRING_FLAG("level"), NONE(),
   "Sets the scheduler for task graph scheduling (list | listr | level | levelfix | ext | metis | mcp | taskdep | tds | bls | rand | none). Default: level.");
-constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(48, "hpcomCode",
+constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(46, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
   "Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin | tbb | mpi). Default: openmp.");
-constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(49, "rewriteRulesFile", NONE(), EXTERNAL(),
+constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(47, "rewriteRulesFile", NONE(), EXTERNAL(),
   STRING_FLAG(""), NONE(),
   "Activates user given rewrite rules for Absyn expressions. The rules are read from the given file and are of the form rewrite(fromExp, toExp);");
-constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(50, "replaceHomotopy",
+constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(48, "replaceHomotopy",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", "Default, do not replace homotopy."),
@@ -900,7 +892,7 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(50, "replaceHomotopy",
     ("simplified", "Replace homotopy(actual, simplified) with simplified.")
     })),
   "Replaces homotopy(actual, simplified) with the actual expression or the simplified expression. Good for debugging models which use homotopy. The default is to not replace homotopy.");
-constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN = CONFIG_FLAG(51, "generateDynamicJacobian",
+constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN = CONFIG_FLAG(49, "generateDynamicJacobian",
   NONE(), EXTERNAL(), STRING_FLAG("numeric"),
   SOME(STRING_DESC_OPTION({
     ("none", ("Does not generate Jacobian. For use with explicit solvers.")),
@@ -910,13 +902,13 @@ constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN = CONFIG_FLAG(51, "generateDynamic
     ("bidirectional", ("Generates bidirectional Jacobian using star bicoloring (ColPack). Combines forward and adjoint modes."))
     })),
   "Select how Jacobian matrix is generated, where der(x) is differentiated w.r.t. x.");
-constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(52, "generateSymbolicLinearization",
+constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(50, "generateSymbolicLinearization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t\t:math:`y = Cx + Du`");
-constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(53, "intEnumConversion",
+constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(51, "intEnumConversion",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Allow Integer to enumeration conversion.");
-constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(54, "profiling",
+constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(52, "profiling",
   NONE(), EXTERNAL(), STRING_FLAG("none"), SOME(STRING_DESC_OPTION({
     ("none","Generate code without profiling"),
     ("blocks","Generate code for profiling function calls as well as linear and non-linear systems of equations"),
@@ -926,19 +918,19 @@ constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(54, "profiling",
     ("all_stat","Generate code for profiling of all functions and equations with additional statistics (cpp-runtime)")
     })),
   "Sets the profiling level to use. Profiled equations and functions record execution time and count for each time step taken by the integrator.");
-constant ConfigFlag RESHUFFLE = CONFIG_FLAG(55, "reshuffle",
+constant ConfigFlag RESHUFFLE = CONFIG_FLAG(53, "reshuffle",
   NONE(), EXTERNAL(), INT_FLAG(1), NONE(),
   "sets tolerance of reshuffling algorithm: 1: conservative, 2: more tolerant, 3 resolve all");
-constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(56, "gDynOpt",
+constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(54, "gDynOpt",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Generate dynamic optimization problem based on annotation approach.");
-constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(57, "maxSizeSolveLinearSystem",
+constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(55, "maxSizeSolveLinearSystem",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   "Max size for solveLinearSystem.");
-constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(58, "cppFlags",
+constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(56, "cppFlags",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({""}), NONE(),
   "Sets extra flags for compilation with the C++ compiler (e.g. +cppFlags=-O3,-Wall)");
-constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(59, "removeSimpleEquations",
+constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(57, "removeSimpleEquations",
   NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
     ("none", "Disables module"),
@@ -949,7 +941,7 @@ constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(59, "removeSimpleEquat
     ("new", "New implementation (experimental)")
     })),
   "Specifies method that removes simple equations.");
-constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(60, "dynamicTearing",
+constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(58, "dynamicTearing",
   NONE(), EXTERNAL(), STRING_FLAG("false"),
   SOME(STRING_DESC_OPTION({
     ("false", "No dynamic tearing."),
@@ -958,10 +950,10 @@ constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(60, "dynamicTearing",
     ("nonlinear", "Dynamic tearing only for nonlinear systems.")
   })),
   "Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)");
-constant ConfigFlag SYM_SOLVER = CONFIG_FLAG(61, "symSolver",
+constant ConfigFlag SYM_SOLVER = CONFIG_FLAG(59, "symSolver",
   NONE(), EXTERNAL(), ENUM_FLAG(0, {("none",0), ("impEuler", 1), ("expEuler",2)}), NONE(),
   "Activates symbolic implicit solver (original system is not changed).");
-constant ConfigFlag LOOP2CON = CONFIG_FLAG(62, "loop2con",
+constant ConfigFlag LOOP2CON = CONFIG_FLAG(60, "loop2con",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", "Disables module"),
@@ -969,10 +961,10 @@ constant ConfigFlag LOOP2CON = CONFIG_FLAG(62, "loop2con",
     ("noLin", "no linear loops --> constraints"),
     ("all", "loops --> constraints")})),
   "Specifies method that transform loops in constraints. hint: using initial guess from file!");
-constant ConfigFlag FORCE_TEARING = CONFIG_FLAG(63, "forceTearing",
+constant ConfigFlag FORCE_TEARING = CONFIG_FLAG(61, "forceTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Use tearing set even if it is not smaller than the original component.");
-constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(64, "simplifyLoops",
+constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(62, "simplifyLoops",
   NONE(), EXTERNAL(), INT_FLAG(0),
   SOME(STRING_DESC_OPTION({
     ("0", "do nothing"),
@@ -980,7 +972,7 @@ constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(64, "simplifyLoops",
     ("2", "special modification of residual expressions with helper variables")
     })),
   "Simplify algebraic loops.");
-constant ConfigFlag RTEARING = CONFIG_FLAG(65, "recursiveTearing",
+constant ConfigFlag RTEARING = CONFIG_FLAG(63, "recursiveTearing",
   NONE(), EXTERNAL(), INT_FLAG(0),
   SOME(STRING_DESC_OPTION({
     ("0", "do nothing"),
@@ -988,16 +980,16 @@ constant ConfigFlag RTEARING = CONFIG_FLAG(65, "recursiveTearing",
     ("2", "linear tearing")
     })),
   "Inline and repeat tearing.");
-constant ConfigFlag FLOW_THRESHOLD = CONFIG_FLAG(66, "flowThreshold",
+constant ConfigFlag FLOW_THRESHOLD = CONFIG_FLAG(64, "flowThreshold",
   NONE(), EXTERNAL(), REAL_FLAG(1e-7), NONE(),
   "Sets the minium threshold for stream flow rates");
-constant ConfigFlag MATRIX_FORMAT = CONFIG_FLAG(67, "matrixFormat",
+constant ConfigFlag MATRIX_FORMAT = CONFIG_FLAG(65, "matrixFormat",
   NONE(), EXTERNAL(), STRING_FLAG("dense"), NONE(),
   "Sets the matrix format type in cpp runtime which should be used (dense | sparse ). Default: dense.");
-constant ConfigFlag PARTLINTORN = CONFIG_FLAG(68, "partlintorn",
+constant ConfigFlag PARTLINTORN = CONFIG_FLAG(66, "partlintorn",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the limit for partitionin of linear torn systems.");
-constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(69, "initOptModules",
+constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(67, "initOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "simplifyComplexFunction",
     "tearingSystem",
@@ -1027,118 +1019,118 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(69, "initOptModules",
     ("wrapFunctionCalls", "This module introduces variables for each function call and substitutes all these calls with the newly introduced variables.")
     })),
   "Sets the initialization optimization modules to use in the back end. See --help=optmodules for more info.");
-constant ConfigFlag MAX_MIXED_DETERMINED_INDEX = CONFIG_FLAG(70, "maxMixedDeterminedIndex",
+constant ConfigFlag MAX_MIXED_DETERMINED_INDEX = CONFIG_FLAG(68, "maxMixedDeterminedIndex",
   NONE(), EXTERNAL(), INT_FLAG(10), NONE(),
   "Sets the maximum mixed-determined index that is handled by the initialization.");
-constant ConfigFlag USE_LOCAL_DIRECTION = CONFIG_FLAG(71, "useLocalDirection",
+constant ConfigFlag USE_LOCAL_DIRECTION = CONFIG_FLAG(69, "useLocalDirection",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Keeps the input/output prefix for all variables in the flat model, not only top-level ones.");
-constant ConfigFlag DEFAULT_OPT_MODULES_ORDERING = CONFIG_FLAG(72, "defaultOptModulesOrdering",
+constant ConfigFlag DEFAULT_OPT_MODULES_ORDERING = CONFIG_FLAG(70, "defaultOptModulesOrdering",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   "If this is activated, then the specified pre-/post-/init-optimization modules will be rearranged to the recommended ordering.");
-constant ConfigFlag PRE_OPT_MODULES_ADD = CONFIG_FLAG(73, "preOptModules+",
+constant ConfigFlag PRE_OPT_MODULES_ADD = CONFIG_FLAG(71, "preOptModules+",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   "Enables additional pre-optimization modules, e.g. --preOptModules+=module1,module2 would additionally enable module1 and module2. See --help=optmodules for more info.");
-constant ConfigFlag PRE_OPT_MODULES_SUB = CONFIG_FLAG(74, "preOptModules-",
+constant ConfigFlag PRE_OPT_MODULES_SUB = CONFIG_FLAG(72, "preOptModules-",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   "Disables a list of pre-optimization modules, e.g. --preOptModules-=module1,module2 would disable module1 and module2. See --help=optmodules for more info.");
-constant ConfigFlag POST_OPT_MODULES_ADD = CONFIG_FLAG(75, "postOptModules+",
+constant ConfigFlag POST_OPT_MODULES_ADD = CONFIG_FLAG(73, "postOptModules+",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   "Enables additional post-optimization modules, e.g. --postOptModules+=module1,module2 would additionally enable module1 and module2. See --help=optmodules for more info.");
-constant ConfigFlag POST_OPT_MODULES_SUB = CONFIG_FLAG(76, "postOptModules-",
+constant ConfigFlag POST_OPT_MODULES_SUB = CONFIG_FLAG(74, "postOptModules-",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   "Disables a list of post-optimization modules, e.g. --postOptModules-=module1,module2 would disable module1 and module2. See --help=optmodules for more info.");
-constant ConfigFlag INIT_OPT_MODULES_ADD = CONFIG_FLAG(77, "initOptModules+",
+constant ConfigFlag INIT_OPT_MODULES_ADD = CONFIG_FLAG(75, "initOptModules+",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   "Enables additional init-optimization modules, e.g. --initOptModules+=module1,module2 would additionally enable module1 and module2. See --help=optmodules for more info.");
-constant ConfigFlag INIT_OPT_MODULES_SUB = CONFIG_FLAG(78, "initOptModules-",
+constant ConfigFlag INIT_OPT_MODULES_SUB = CONFIG_FLAG(76, "initOptModules-",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   "Disables a list of init-optimization modules, e.g. --initOptModules-=module1,module2 would disable module1 and module2. See --help=optmodules for more info.");
-constant ConfigFlag PERMISSIVE = CONFIG_FLAG(79, "permissive",
+constant ConfigFlag PERMISSIVE = CONFIG_FLAG(77, "permissive",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Disables some error checks to allow erroneous models to compile.");
-constant ConfigFlag HETS = CONFIG_FLAG(80, "hets",
+constant ConfigFlag HETS = CONFIG_FLAG(78, "hets",
   NONE(), INTERNAL(), STRING_FLAG("none"),SOME(
     STRING_DESC_OPTION({
     ("none", "do nothing"),
     ("derCalls", "sort terms based on der-calls")
     })),
   "Heuristic equation terms sort");
-constant ConfigFlag DEFAULT_CLOCK_PERIOD = CONFIG_FLAG(81, "defaultClockPeriod",
+constant ConfigFlag DEFAULT_CLOCK_PERIOD = CONFIG_FLAG(79, "defaultClockPeriod",
   NONE(), INTERNAL(), REAL_FLAG(1.0), NONE(),
   "Sets the default clock period (in seconds) for state machines (default: 1.0).");
-constant ConfigFlag INST_CACHE_SIZE = CONFIG_FLAG(82, "instCacheSize",
+constant ConfigFlag INST_CACHE_SIZE = CONFIG_FLAG(80, "instCacheSize",
   NONE(), EXTERNAL(), INT_FLAG(25343), NONE(),
   "Sets the size of the internal hash table used for instantiation caching.");
-constant ConfigFlag MAX_SIZE_LINEAR_TEARING = CONFIG_FLAG(83, "maxSizeLinearTearing",
+constant ConfigFlag MAX_SIZE_LINEAR_TEARING = CONFIG_FLAG(81, "maxSizeLinearTearing",
   NONE(), EXTERNAL(), INT_FLAG(200), NONE(),
   "Sets the maximum system size for tearing of linear systems (default 200).");
-constant ConfigFlag MAX_SIZE_NONLINEAR_TEARING = CONFIG_FLAG(84, "maxSizeNonlinearTearing",
+constant ConfigFlag MAX_SIZE_NONLINEAR_TEARING = CONFIG_FLAG(82, "maxSizeNonlinearTearing",
   NONE(), EXTERNAL(), INT_FLAG(10000), NONE(),
   "Sets the maximum system size for tearing of nonlinear systems (default 10000).");
-constant ConfigFlag NO_TEARING_FOR_COMPONENT = CONFIG_FLAG(85, "noTearingForComponent",
+constant ConfigFlag NO_TEARING_FOR_COMPONENT = CONFIG_FLAG(83, "noTearingForComponent",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
   "Deactivates tearing for the specified components.\nUse '-d=tearingdump' to find out the relevant indexes.");
-constant ConfigFlag CT_STATE_MACHINES = CONFIG_FLAG(86, "ctStateMachines",
+constant ConfigFlag CT_STATE_MACHINES = CONFIG_FLAG(84, "ctStateMachines",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Experimental: Enable continuous-time state machine prototype");
-constant ConfigFlag DAE_MODE = CONFIG_FLAG(87, "daeMode",
+constant ConfigFlag DAE_MODE = CONFIG_FLAG(85, "daeMode",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Generates code to simulate models in DAE mode. The whole system is passed directly to the DAE solver SUNDIALS/IDA and no algebraic solver is involved in the simulation process.");
-constant ConfigFlag INLINE_METHOD = CONFIG_FLAG(88, "inlineMethod",
+constant ConfigFlag INLINE_METHOD = CONFIG_FLAG(86, "inlineMethod",
   NONE(), EXTERNAL(), ENUM_FLAG(1, {("replace",1), ("append",2)}), NONE(),
   "Sets the inline method to use.\n"+
                "replace : This method inlines by replacing in place all expressions. Might lead to very long expression.\n"+
                "append  : This method inlines by adding additional variables to the whole system. Might lead to much bigger system.");
-constant ConfigFlag SET_TEARING_VARS = CONFIG_FLAG(89, "setTearingVars",
+constant ConfigFlag SET_TEARING_VARS = CONFIG_FLAG(87, "setTearingVars",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
   "Sets the tearing variables by its strong component indexes. Use '-d=tearingdump' to find out the relevant indexes.\nUse following format: '--setTearingVars=(sci,n,t1,...,tn)*', with sci = strong component index, n = number of tearing variables, t1,...tn = tearing variables.\nE.g.: '--setTearingVars=4,2,3,5' would select variables 3 and 5 in strong component 4.");
-constant ConfigFlag SET_RESIDUAL_EQNS = CONFIG_FLAG(90, "setResidualEqns",
+constant ConfigFlag SET_RESIDUAL_EQNS = CONFIG_FLAG(88, "setResidualEqns",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
   "Sets the residual equations by its strong component indexes. Use '-d=tearingdump' to find out the relevant indexes for the collective equations.\nUse following format: '--setResidualEqns=(sci,n,r1,...,rn)*', with sci = strong component index, n = number of residual equations, r1,...rn = residual equations.\nE.g.: '--setResidualEqns=4,2,3,5' would select equations 3 and 5 in strong component 4.\nOnly works in combination with 'setTearingVars'.");
-constant ConfigFlag IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION = CONFIG_FLAG(91, "ignoreCommandLineOptionsAnnotation",
+constant ConfigFlag IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION = CONFIG_FLAG(89, "ignoreCommandLineOptionsAnnotation",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Ignores the command line options specified as annotation in the class.");
-constant ConfigFlag CALCULATE_SENSITIVITIES = CONFIG_FLAG(92, "calculateSensitivities",
+constant ConfigFlag CALCULATE_SENSITIVITIES = CONFIG_FLAG(90, "calculateSensitivities",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Generates sensitivities variables and matrices.");
-constant ConfigFlag ALARM = CONFIG_FLAG(93, "alarm",
+constant ConfigFlag ALARM = CONFIG_FLAG(91, "alarm",
   SOME("r"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the number seconds until omc timeouts and exits. Used by the testing framework to terminate infinite running processes.");
-constant ConfigFlag TOTAL_TEARING = CONFIG_FLAG(94, "totalTearing",
+constant ConfigFlag TOTAL_TEARING = CONFIG_FLAG(92, "totalTearing",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
   "Activates total tearing (determination of all possible tearing sets) for the specified components.\nUse '-d=tearingdump' to find out the relevant indexes.");
-constant ConfigFlag IGNORE_SIMULATION_FLAGS_ANNOTATION = CONFIG_FLAG(95, "ignoreSimulationFlagsAnnotation",
+constant ConfigFlag IGNORE_SIMULATION_FLAGS_ANNOTATION = CONFIG_FLAG(93, "ignoreSimulationFlagsAnnotation",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Ignores the simulation flags specified as annotation in the class.");
-constant ConfigFlag DYNAMIC_TEARING_FOR_INITIALIZATION = CONFIG_FLAG(96, "dynamicTearingForInitialization",
+constant ConfigFlag DYNAMIC_TEARING_FOR_INITIALIZATION = CONFIG_FLAG(94, "dynamicTearingForInitialization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Enable Dynamic Tearing also for the initialization system.");
-constant ConfigFlag PREFER_TVARS_WITH_START_VALUE = CONFIG_FLAG(97, "preferTVarsWithStartValue",
+constant ConfigFlag PREFER_TVARS_WITH_START_VALUE = CONFIG_FLAG(95, "preferTVarsWithStartValue",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   "Prefer tearing variables with start value for initialization.");
-constant ConfigFlag EQUATIONS_PER_FILE = CONFIG_FLAG(98, "equationsPerFile",
+constant ConfigFlag EQUATIONS_PER_FILE = CONFIG_FLAG(96, "equationsPerFile",
   NONE(), EXTERNAL(), INT_FLAG(500), NONE(),
   "Generate code for at most this many equations per C-file (partially implemented in the compiler).");
-constant ConfigFlag EVALUATE_FINAL_PARAMS = CONFIG_FLAG(99, "evaluateFinalParameters",
+constant ConfigFlag EVALUATE_FINAL_PARAMS = CONFIG_FLAG(97, "evaluateFinalParameters",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Evaluates all the final parameters in addition to parameters with annotation(Evaluate=true).");
-constant ConfigFlag EVALUATE_PROTECTED_PARAMS = CONFIG_FLAG(100, "evaluateProtectedParameters",
+constant ConfigFlag EVALUATE_PROTECTED_PARAMS = CONFIG_FLAG(98, "evaluateProtectedParameters",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Evaluates all the protected parameters in addition to parameters with annotation(Evaluate=true).");
-constant ConfigFlag REPLACE_EVALUATED_PARAMS = CONFIG_FLAG(101, "replaceEvaluatedParameters",
+constant ConfigFlag REPLACE_EVALUATED_PARAMS = CONFIG_FLAG(99, "replaceEvaluatedParameters",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   "Replaces all the evaluated parameters in the DAE.");
-constant ConfigFlag CONDENSE_ARRAYS = CONFIG_FLAG(102, "condenseArrays",
+constant ConfigFlag CONDENSE_ARRAYS = CONFIG_FLAG(100, "condenseArrays",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   "Sets whether array expressions containing function calls are condensed or not.");
-constant ConfigFlag WFC_ADVANCED = CONFIG_FLAG(103, "wfcAdvanced",
+constant ConfigFlag WFC_ADVANCED = CONFIG_FLAG(101, "wfcAdvanced",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "wrapFunctionCalls ignores more then default cases, e.g. exp, sin, cos, log, (experimental flag)");
-constant ConfigFlag GRAPHICS_EXP_MODE = CONFIG_FLAG(104,
+constant ConfigFlag GRAPHICS_EXP_MODE = CONFIG_FLAG(102,
   "graphicsExpMode", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Sets whether we are in graphics exp mode (evaluating icons).");
-constant ConfigFlag TEARING_STRICTNESS = CONFIG_FLAG(105, "tearingStrictness",
+constant ConfigFlag TEARING_STRICTNESS = CONFIG_FLAG(103, "tearingStrictness",
   NONE(), EXTERNAL(), STRING_FLAG("strict"),SOME(
     STRING_DESC_OPTION({
     ("casual", "Loose tearing rules using ExpressionSolve to determine the solvability instead of considering the partial derivative. Allows to solve for everything that is analytically possible. This could lead to singularities during simulation."),
@@ -1146,19 +1138,18 @@ constant ConfigFlag TEARING_STRICTNESS = CONFIG_FLAG(105, "tearingStrictness",
     ("veryStrict", "Very strict tearing rules that do not allow to divide by any parameter. Use this if you aim at overriding parameters after compilation with values equal to or close to zero.")
     })),
   "Sets the strictness of the tearing method regarding the solvability restrictions.");
-constant ConfigFlag INTERACTIVE = CONFIG_FLAG(106, "interactive",
+constant ConfigFlag INTERACTIVE = CONFIG_FLAG(104, "interactive",
   NONE(), EXTERNAL(), STRING_FLAG("none"),SOME(
     STRING_DESC_OPTION({
     ("none", "do nothing"),
-    ("corba", "Starts omc as a server listening on the Corba interface."),
     ("tcp", "Starts omc as a server listening on the socket interface."),
     ("zmq", "Starts omc as a ZeroMQ server listening on the socket interface.")
     })),
   "Sets the interactive mode for omc.");
-constant ConfigFlag ZEROMQ_FILE_SUFFIX = CONFIG_FLAG(107, "zeroMQFileSuffix",
+constant ConfigFlag ZEROMQ_FILE_SUFFIX = CONFIG_FLAG(105, "zeroMQFileSuffix",
   SOME("z"), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Sets the file suffix for zeroMQ port file if --interactive=zmq is used.");
-constant ConfigFlag HOMOTOPY_APPROACH = CONFIG_FLAG(108, "homotopyApproach",
+constant ConfigFlag HOMOTOPY_APPROACH = CONFIG_FLAG(106, "homotopyApproach",
   NONE(), EXTERNAL(), STRING_FLAG("equidistantGlobal"),
   SOME(STRING_DESC_OPTION({
     ("equidistantLocal", "Local homotopy approach with equidistant lambda steps. The homotopy parameter only effects the local strongly connected component."),
@@ -1167,28 +1158,28 @@ constant ConfigFlag HOMOTOPY_APPROACH = CONFIG_FLAG(108, "homotopyApproach",
     ("adaptiveGlobal", "Global homotopy approach with adaptive lambda steps. The homotopy parameter effects the entire initialization system.")
     })),
   "Sets the homotopy approach.");
-constant ConfigFlag IGNORE_REPLACEABLE = CONFIG_FLAG(109, "ignoreReplaceable",
+constant ConfigFlag IGNORE_REPLACEABLE = CONFIG_FLAG(107, "ignoreReplaceable",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Sets whether to ignore replaceability or not when redeclaring.");
-constant ConfigFlag LABELED_REDUCTION = CONFIG_FLAG(110,
+constant ConfigFlag LABELED_REDUCTION = CONFIG_FLAG(108,
   "labeledReduction", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on labeling and reduce terms to do whole process of reduction.");
-constant ConfigFlag DISABLE_EXTRA_LABELING = CONFIG_FLAG(111,
+constant ConfigFlag DISABLE_EXTRA_LABELING = CONFIG_FLAG(109,
   "disableExtraLabeling", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Disable adding extra label into the whole expression with more than one term and +,- operations.");
-constant ConfigFlag LOAD_MSL_MODEL = CONFIG_FLAG(112,
+constant ConfigFlag LOAD_MSL_MODEL = CONFIG_FLAG(110,
   "loadMSLModel", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Used to know loadFile doesn't need to be called in cpp-runtime (for labeled model reduction).");
-constant ConfigFlag LOAD_PACKAGE_FILE = CONFIG_FLAG(113,
+constant ConfigFlag LOAD_PACKAGE_FILE = CONFIG_FLAG(111,
   "loadPackageFile", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Used when the outside name is different with the inside name of the packge, in cpp-runtime (for labeled model reduction).");
-constant ConfigFlag BUILDING_FMU = CONFIG_FLAG(114,
+constant ConfigFlag BUILDING_FMU = CONFIG_FLAG(112,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Is true when building an FMU (so the compiler can look for URIs to package as FMI resources).");
-constant ConfigFlag BUILDING_MODEL = CONFIG_FLAG(115,
+constant ConfigFlag BUILDING_MODEL = CONFIG_FLAG(113,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Is true when building a model (as opposed to running a Modelica script).");
-constant ConfigFlag POST_OPT_MODULES_DAE = CONFIG_FLAG(116, "postOptModulesDAE",
+constant ConfigFlag POST_OPT_MODULES_DAE = CONFIG_FLAG(114, "postOptModulesDAE",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "lateInlineFunction",
     "wrapFunctionCalls",
@@ -1204,22 +1195,22 @@ constant ConfigFlag POST_OPT_MODULES_DAE = CONFIG_FLAG(116, "postOptModulesDAE",
     "setEvaluationStage"
     }),NONE(),
   "Sets the optimization modules for the DAEmode in the back end. See --help=optmodules for more info.");
-constant ConfigFlag EVAL_LOOP_LIMIT = CONFIG_FLAG(117,
+constant ConfigFlag EVAL_LOOP_LIMIT = CONFIG_FLAG(115,
   "evalLoopLimit", NONE(), EXTERNAL(), INT_FLAG(100000), NONE(),
   "The loop iteration limit used when evaluating constant function calls.");
-constant ConfigFlag EVAL_RECURSION_LIMIT = CONFIG_FLAG(118,
+constant ConfigFlag EVAL_RECURSION_LIMIT = CONFIG_FLAG(116,
   "evalRecursionLimit", NONE(), EXTERNAL(), INT_FLAG(256), NONE(),
   "The recursion limit used when evaluating constant function calls.");
-constant ConfigFlag SINGLE_INSTANCE_AGLSOLVER = CONFIG_FLAG(119, "singleInstanceAglSolver",
+constant ConfigFlag SINGLE_INSTANCE_AGLSOLVER = CONFIG_FLAG(117, "singleInstanceAglSolver",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Sets to instantiate only  one algebraic loop solver all algebraic loops");
-constant ConfigFlag SHOW_STRUCTURAL_ANNOTATIONS = CONFIG_FLAG(120, "showStructuralAnnotations",
+constant ConfigFlag SHOW_STRUCTURAL_ANNOTATIONS = CONFIG_FLAG(118, "showStructuralAnnotations",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Show annotations affecting the solution process in the flattened code.");
-constant ConfigFlag INITIAL_STATE_SELECTION = CONFIG_FLAG(121, "initialStateSelection",
+constant ConfigFlag INITIAL_STATE_SELECTION = CONFIG_FLAG(119, "initialStateSelection",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Activates the state selection inside initialization to avoid singularities.");
-constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(122, "linearizationDumpLanguage",
+constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(120, "linearizationDumpLanguage",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", "Don't generate code for linearization."),
@@ -1228,46 +1219,46 @@ constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(122, "linearizatio
     ("julia", "Generate julia function that returns linearization matrices A,B,C,D."),
     ("python", "Generate python function that returns linearization matrices A,B,C,D.")})),
   "Sets the target language for the produced code of linearization.");
-constant ConfigFlag NO_ASSC = CONFIG_FLAG(123, "noASSC",
+constant ConfigFlag NO_ASSC = CONFIG_FLAG(121, "noASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
   "Disables analytical to structural singularity conversion.");
-constant ConfigFlag FULL_ASSC = CONFIG_FLAG(124, "fullASSC",
+constant ConfigFlag FULL_ASSC = CONFIG_FLAG(122, "fullASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
   "Enables full equation replacement for BLT transformation from the ASSC algorithm.");
-constant ConfigFlag REAL_ASSC = CONFIG_FLAG(125, "realASSC",
+constant ConfigFlag REAL_ASSC = CONFIG_FLAG(123, "realASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
   "Enables the ASSC algorithm to evaluate real valued coefficients (usually only integers).");
-constant ConfigFlag INIT_ASSC = CONFIG_FLAG(126, "initASSC",
+constant ConfigFlag INIT_ASSC = CONFIG_FLAG(124, "initASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
   "Enables the ASSC algorithm for initialization.");
-constant ConfigFlag MAX_SIZE_ASSC = CONFIG_FLAG(127, "maxSizeASSC",
+constant ConfigFlag MAX_SIZE_ASSC = CONFIG_FLAG(125, "maxSizeASSC",
   NONE(), EXTERNAL(), INT_FLAG(200), NONE(),
   "Sets the maximum system size for the analytical to structural conversion algorithm (default 200).");
-constant ConfigFlag USE_ZEROMQ_IN_SIM = CONFIG_FLAG(128, "useZeroMQInSim",
+constant ConfigFlag USE_ZEROMQ_IN_SIM = CONFIG_FLAG(126, "useZeroMQInSim",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Configures to use zeroMQ in simulation runtime to exchange information via ZeroMQ with other applications");
-constant ConfigFlag ZEROMQ_PUB_PORT = CONFIG_FLAG(129, "zeroMQPubPort",
+constant ConfigFlag ZEROMQ_PUB_PORT = CONFIG_FLAG(127, "zeroMQPubPort",
   NONE(), INTERNAL(), INT_FLAG(3203), NONE(),
   "Configures port number for simulation runtime to send information via ZeroMQ");
-constant ConfigFlag ZEROMQ_SUB_PORT = CONFIG_FLAG(130, "zeroMQSubPort",
+constant ConfigFlag ZEROMQ_SUB_PORT = CONFIG_FLAG(128, "zeroMQSubPort",
   NONE(), INTERNAL(), INT_FLAG(3204), NONE(),
   "Configures port number for simulation runtime to receive information via ZeroMQ");
-constant ConfigFlag ZEROMQ_JOB_ID = CONFIG_FLAG(131, "zeroMQJOBID",
+constant ConfigFlag ZEROMQ_JOB_ID = CONFIG_FLAG(129, "zeroMQJOBID",
   NONE(), INTERNAL(), STRING_FLAG("empty"), NONE(),
   "Configures the ID with which the omc api call is labelled for zeroMQ communication.");
-constant ConfigFlag ZEROMQ_SERVER_ID = CONFIG_FLAG(132, "zeroMQServerID",
+constant ConfigFlag ZEROMQ_SERVER_ID = CONFIG_FLAG(130, "zeroMQServerID",
   NONE(), INTERNAL(), STRING_FLAG("empty"), NONE(),
   "Configures the ID with which server application is labelled for zeroMQ communication.");
-constant ConfigFlag ZEROMQ_CLIENT_ID = CONFIG_FLAG(133, "zeroMQClientID",
+constant ConfigFlag ZEROMQ_CLIENT_ID = CONFIG_FLAG(131, "zeroMQClientID",
   NONE(), INTERNAL(), STRING_FLAG("empty"), NONE(),
   "Configures the ID with which the client application is labelled for zeroMQ communication.");
-constant ConfigFlag FMI_VERSION = CONFIG_FLAG(134,
+constant ConfigFlag FMI_VERSION = CONFIG_FLAG(132,
   "", NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   "returns the FMI Version either 1.0 or 2.0.");
-constant ConfigFlag BASE_MODELICA = CONFIG_FLAG(135, "baseModelica",
+constant ConfigFlag BASE_MODELICA = CONFIG_FLAG(133, "baseModelica",
   SOME("f"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Outputs experimental Base Modelica.");
-constant ConfigFlag FMI_FILTER = CONFIG_FLAG(136, "fmiFilter", NONE(), EXTERNAL(),
+constant ConfigFlag FMI_FILTER = CONFIG_FLAG(134, "fmiFilter", NONE(), EXTERNAL(),
   ENUM_FLAG(FMI_PROTECTED, {("none", FMI_NONE), ("internal", FMI_INTERNAL), ("protected", FMI_PROTECTED), ("blackBox", FMI_BLACKBOX)}),
   SOME(STRING_DESC_OPTION({
     ("none", "All variables are exposed, even variables introduced by the symbolic transformations. This is mainly for debugging purposes."),
@@ -1276,25 +1267,25 @@ constant ConfigFlag FMI_FILTER = CONFIG_FLAG(136, "fmiFilter", NONE(), EXTERNAL(
     ("blackBox", "Only the interface is exposed. All other variables are hidden or exposed with concealed names.")
     })),
   "Specifies which model variables are exposed by the modelDescription.xml");
-constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(137, "fmiSources", NONE(), EXTERNAL(),
+constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(135, "fmiSources", NONE(), EXTERNAL(),
   BOOL_FLAG(true), NONE(),
   "Defines if FMUs will be exported with sources or not. --fmiFilter=blackBox might override this, because black box FMUs do never contain their source code.");
-constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(138, "fmiFlags", NONE(), EXTERNAL(),
+constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(136, "fmiFlags", NONE(), EXTERNAL(),
   STRING_LIST_FLAG({}), NONE(),
   "Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:cvode,nls:homotopy or --fmiFlags=path/to/yourFlags.json.");
-constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(139, "fmuCMakeBuild",
+constant ConfigFlag FMU_CMAKE_BUILD = CONFIG_FLAG(137, "fmuCMakeBuild",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   "Configured and build FMU with CMake if true.");
-constant ConfigFlag NEW_BACKEND = CONFIG_FLAG(140, "newBackend",
+constant ConfigFlag NEW_BACKEND = CONFIG_FLAG(138, "newBackend",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Activates experimental new backend for better array handling. This also activates the new frontend. [WIP]");
-constant ConfigFlag PARMODAUTO = CONFIG_FLAG(141, "parmodauto",
+constant ConfigFlag PARMODAUTO = CONFIG_FLAG(139, "parmodauto",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Experimental: Enable parallelization of independent systems of equations in the translated model. Only works on Linux systems.");
-constant ConfigFlag INTERACTIVE_PORT = CONFIG_FLAG(142, "interactivePort",
+constant ConfigFlag INTERACTIVE_PORT = CONFIG_FLAG(140, "interactivePort",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the port used by the interactive server.");
-constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(143, "allowNonStandardModelica",
+constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(141, "allowNonStandardModelica",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     }),
   SOME(STRING_DESC_OPTION({
@@ -1311,18 +1302,18 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(143, "allowNonStan
     ("illegalConditionalContext", "Allow use of components with false conditions in illegal contexts")
     })),
   "Flags to allow non-standard Modelica.");
-constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(144, "exportClocksInModelDescription",
+constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(142, "exportClocksInModelDescription",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "exports clocks in modeldescription.xml for fmus, The default is false.");
-constant ConfigFlag LINK_TYPE = CONFIG_FLAG(145, "linkType",
+constant ConfigFlag LINK_TYPE = CONFIG_FLAG(143, "linkType",
   NONE(), EXTERNAL(), ENUM_FLAG(1, {("dynamic",1), ("static",2)}), NONE(),
   "Sets the link type for the simulation executable.\n"+
                "dynamic: libraries are dynamically linked; the executable is built very fast but is not portable because of DLL dependencies.\n"+
                "static: libraries are statically linked; the executable is built more slowly but it is portable and dependency-free.\n");
-constant ConfigFlag TEARING_ALWAYS_DERIVATIVES = CONFIG_FLAG(146, "tearingAlwaysDer",
+constant ConfigFlag TEARING_ALWAYS_DERIVATIVES = CONFIG_FLAG(144, "tearingAlwaysDer",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Always choose state derivatives as iteration variables in strong components.");
-constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(147, "dumpFlatModel",
+constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(145, "dumpFlatModel",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({"all"}),
   SOME(STRING_DESC_OPTION({
     ("flatten", "After flattening but before connection handling."),
@@ -1333,10 +1324,10 @@ constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(147, "dumpFlatModel",
     ("translateResidualsDAE", "Show the result of the translateResidualsDAE API.")
   })),
   "Dumps the flat model at the given stages of the frontend.");
-constant ConfigFlag SIMULATION = CONFIG_FLAG(148, "simulation",
+constant ConfigFlag SIMULATION = CONFIG_FLAG(146, "simulation",
   SOME("u"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Simulates the last model in the given Modelica file.");
-constant ConfigFlag OBFUSCATE = CONFIG_FLAG(149, "obfuscate",
+constant ConfigFlag OBFUSCATE = CONFIG_FLAG(147, "obfuscate",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", "No obfuscation."),
@@ -1345,7 +1336,7 @@ constant ConfigFlag OBFUSCATE = CONFIG_FLAG(149, "obfuscate",
     ("full", "Obfuscates everything.")
   })),
   "Obfuscates identifiers in the simulation model");
-constant ConfigFlag FMU_RUNTIME_DEPENDS = CONFIG_FLAG(150, "fmuRuntimeDepends",
+constant ConfigFlag FMU_RUNTIME_DEPENDS = CONFIG_FLAG(148, "fmuRuntimeDepends",
   NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
     ("default",  "Depending on CMake version. If CMake version >= 3.21 use  \"modelica\", otherwise use \"none\""),
@@ -1358,15 +1349,15 @@ constant ConfigFlag FMU_RUNTIME_DEPENDS = CONFIG_FLAG(150, "fmuRuntimeDepends",
                                  "Needs --fmuCMakeBuild=true and CMake version >= 3.21.")
     })),
   "Defines if runtime library dependencies are included in the FMU. Only used when compiler flag fmuCMakeBuild=true.");
-constant ConfigFlag FRONTEND_INLINE = CONFIG_FLAG(151, "frontendInline",
+constant ConfigFlag FRONTEND_INLINE = CONFIG_FLAG(149, "frontendInline",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Enables inlining of functions in the frontend.");
-constant ConfigFlag EXPOSE_LOCAL_IOS = CONFIG_FLAG(152, "exposeLocalIOs",
+constant ConfigFlag EXPOSE_LOCAL_IOS = CONFIG_FLAG(150, "exposeLocalIOs",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   "Introduces top-level inputs/outputs for unconnected input/output connectors at requested levels, provided they are public, " +
                   "0 meaning top-level (standard Modelica), 1 inputs/outputs of top-level components, >1 going deeper. " +
                   "This flag is particularly useful for FMI export.");
-constant ConfigFlag BASE_MODELICA_FORMAT = CONFIG_FLAG(153, "baseModelicaFormat",
+constant ConfigFlag BASE_MODELICA_FORMAT = CONFIG_FLAG(151, "baseModelicaFormat",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), SOME(STRING_DESC_OPTION({
     ("scalarized", "Include subscripts in the quoted identifiers ('a[1].x[3]')."),
     ("partiallyScalarized", "Include subscripts in the quoted identifiers, except for the last name ('a[1].x'[3])."),
@@ -1376,79 +1367,79 @@ constant ConfigFlag BASE_MODELICA_FORMAT = CONFIG_FLAG(153, "baseModelicaFormat"
     ("showConfidence", "Add comments that show confidence numbers for binding equations.")
   })),
   "Formatting options for Base Modelica");
-constant ConfigFlag BASE_MODELICA_OPTIONS = CONFIG_FLAG(154, "baseModelicaOptions",
+constant ConfigFlag BASE_MODELICA_OPTIONS = CONFIG_FLAG(152, "baseModelicaOptions",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), SOME(STRING_DESC_OPTION({
     ("moveBindings", "Moves movable binding equations to normal equations."),
     ("scalarize", "Fully scalarize the Base Modelica model."),
     ("inlineFunctions", "Inline all functions.")
     })),
   "Enables optional Base Modelica options.");
-constant ConfigFlag DEBUG_FOLLOW_EQUATIONS = CONFIG_FLAG(155, "debugFollowEquations",
+constant ConfigFlag DEBUG_FOLLOW_EQUATIONS = CONFIG_FLAG(153, "debugFollowEquations",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   "Takes a list of equation names and prints the corresponding equations after each stage of the backend process.");
-constant ConfigFlag MAX_SIZE_LINEARIZATION = CONFIG_FLAG(156, "maxSizeLinearization",
+constant ConfigFlag MAX_SIZE_LINEARIZATION = CONFIG_FLAG(154, "maxSizeLinearization",
   NONE(), EXTERNAL(), INT_FLAG(1000), NONE(),
   "Sets the maximum system size for which linearization code is generated.");
-constant ConfigFlag RESIZABLE_ARRAYS = CONFIG_FLAG(157, "resizableArrays",
+constant ConfigFlag RESIZABLE_ARRAYS = CONFIG_FLAG(155, "resizableArrays",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Assumes all arrays are resizable. Only works with the new backend --newBackend.");
-constant ConfigFlag EVALUATE_STRUCTURAL_PARAMETERS = CONFIG_FLAG(158, "evaluateStructuralParameters",
+constant ConfigFlag EVALUATE_STRUCTURAL_PARAMETERS = CONFIG_FLAG(156, "evaluateStructuralParameters",
   NONE(), EXTERNAL(), STRING_FLAG("all"),
   SOME(STRING_DESC_OPTION({
     ("all", "Evaluates all structural parameters"),
     ("strictlyNecessary", "Evaluates only structural parameters strictly required by the frontend")
   })),
   "Sets which structural parameters are evaluated by the frontend.");
-constant ConfigFlag LOAD_MISSING_LIBRARIES = CONFIG_FLAG(159, "loadMissingLibraries",
+constant ConfigFlag LOAD_MISSING_LIBRARIES = CONFIG_FLAG(157, "loadMissingLibraries",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   "Automatically try to load a matching library if a name can't be found during name lookup.");
-constant ConfigFlag CAUSALIZE_DAE_MODE = CONFIG_FLAG(160, "causalizeDaeMode",
+constant ConfigFlag CAUSALIZE_DAE_MODE = CONFIG_FLAG(158, "causalizeDaeMode",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   "The system is partially causalized and simple assignments are generated for equations that can be solved explicitly. Only works with --daeMode.");
 /* please remove me once this is supported */
-constant ConfigFlag SIM_CODE_SCALARIZE = CONFIG_FLAG(161, "simCodeScalarize",
+constant ConfigFlag SIM_CODE_SCALARIZE = CONFIG_FLAG(159, "simCodeScalarize",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   "Scalarizes variables during simcode phase.");
-constant ConfigFlag EXECUTE_COMMAND = CONFIG_FLAG(162, "cmd",
+constant ConfigFlag EXECUTE_COMMAND = CONFIG_FLAG(160, "cmd",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Executes the string argument as a script before any other operation.");
-constant ConfigFlag MOO_DYNAMIC_OPTIMIZATION = CONFIG_FLAG(163, "moo",
+constant ConfigFlag MOO_DYNAMIC_OPTIMIZATION = CONFIG_FLAG(161, "moo",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Generate code for dynamic optimization library MOO.");
-constant ConfigFlag FMI_EXTRA_ANNOTATIONS = CONFIG_FLAG(164, "fmiExtraAnnotations",
+constant ConfigFlag FMI_EXTRA_ANNOTATIONS = CONFIG_FLAG(162, "fmiExtraAnnotations",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Export annotations matching the given regex to extra/org.openmodelica/modelAnnotations.json.");
 constant Integer IDUMP_DEFAULT = 0;
 constant Integer IDUMP_JSON = 1;
-constant ConfigFlag INTERACTIVE_DUMP_FORMAT = CONFIG_FLAG(165, "interactiveDumpFormat",
+constant ConfigFlag INTERACTIVE_DUMP_FORMAT = CONFIG_FLAG(163, "interactiveDumpFormat",
   NONE(), EXTERNAL(), ENUM_FLAG(IDUMP_DEFAULT, {("default", IDUMP_DEFAULT), ("json", IDUMP_JSON)}), NONE(),
   "Selects the format interactive API calls use to print result values.\n"+
   "default : The OpenModelica textual value format.\n"+
   "json    : JSON, for programmatic consumers such as the web clients.");
-constant ConfigFlag EXPORT_FMU = CONFIG_FLAG(166, "export-fmu",
+constant ConfigFlag EXPORT_FMU = CONFIG_FLAG(164, "export-fmu",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Export the model as an FMU after loading. Combine with --fmuType and --fmuPlatforms to configure the export.");
-constant ConfigFlag FMU_TYPE = CONFIG_FLAG(167, "fmuType",
+constant ConfigFlag FMU_TYPE = CONFIG_FLAG(165, "fmuType",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({"me"}), NONE(),
   "FMI type for FMU export: me, cs, me_cs, se.");
-constant ConfigFlag FMU_PLATFORMS = CONFIG_FLAG(168, "fmuPlatforms",
+constant ConfigFlag FMU_PLATFORMS = CONFIG_FLAG(166, "fmuPlatforms",
   NONE(), EXTERNAL(), STRING_FLAG("static"), NONE(),
   "Platforms for FMU export, comma-separated (e.g. static,dynamic).");
-constant ConfigFlag FMU_VERSION = CONFIG_FLAG(169, "fmiVersion",
+constant ConfigFlag FMU_VERSION = CONFIG_FLAG(167, "fmiVersion",
   NONE(), EXTERNAL(), ENUM_FLAG(FMI_VERSION_20, {("1.0", FMI_VERSION_10), ("2.0", FMI_VERSION_20), ("3.0", FMI_VERSION_30)}),
   SOME(STRING_OPTION({"1.0", "2.0", "3.0"})),
   "FMI version for FMU export: 1.0, 2.0, 3.0.");
-constant ConfigFlag TEARING_COST_MARGIN = CONFIG_FLAG(170, "tearingCostMargin",
+constant ConfigFlag TEARING_COST_MARGIN = CONFIG_FLAG(168, "tearingCostMargin",
   NONE(), EXTERNAL(), REAL_FLAG(2.0), NONE(),
   "How much cheaper solving a linear system untorn has to be estimated before its\ntearing set is dropped. Raise it to keep tearing systems the estimate would give\nup on, lower it towards 0 to tear less (default 2).");
-constant ConfigFlag FMU_NATIVE_PLATFORMS = CONFIG_FLAG(171,
+constant ConfigFlag FMU_NATIVE_PLATFORMS = CONFIG_FLAG(169,
   "", NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   "buildModelFMU's non-wasm platforms, comma separated: the wasm FMU also carries
    a precompiled artifact and a loader library for each of them.");
-constant ConfigFlag TPL_OUTPUT_DIR = CONFIG_FLAG(172, "tplOutputDir",
+constant ConfigFlag TPL_OUTPUT_DIR = CONFIG_FLAG(170, "tplOutputDir",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Directory the .mo generated from a Susan .tpl is written to. Empty (the\ndefault) writes it next to the .tpl, which is how the templates used to be\ngenerated into the source tree.");
-constant ConfigFlag FMU_DIRECTORY = CONFIG_FLAG(173, "fmuDirectory",
+constant ConfigFlag FMU_DIRECTORY = CONFIG_FLAG(171, "fmuDirectory",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Write an exported FMU as an unzipped directory named <prefix>.fmu rather than\na zip file. An importer that reads a directory (OpenModelica's own does) then\npays neither the compression nor the extraction, which for a wasm FMU carrying a\nprecompiled artifact is most of what packing it costs. wasm FMUs only.");
 

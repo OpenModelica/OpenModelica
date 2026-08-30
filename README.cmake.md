@@ -345,7 +345,6 @@ There are also some additional options that are kept as a migration step to main
 similarity with the `autotools` build system.
 
 ```cmake
-OM_OMC_USE_CORBA=OFF
 OM_OMC_USE_LAPACK=ON
 ```
 
