@@ -28,6 +28,7 @@ pub mod gbode;
 pub mod omclog;
 pub mod simflags;
 pub mod solverflags;
+pub mod spatial;
 pub mod symsolver;
 pub mod sysstat;
 #[cfg(sundials)]

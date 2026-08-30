@@ -299,7 +299,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         prefix: prefix.to_string(),
         model_name: cstr(md.modelName),
         vars,
-        jac_a: None,
+        jac_a: jac_a_info(data, layout),
         state_sets: crate::stateset::describe(data, layout),
         fmi_vrs: Vec::new(),
         zc_desc,
@@ -313,7 +313,7 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         sens_params: Vec::new(),
         nls_vars: Vec::new(),
         n_lin_systems: md.nLinearSystems as u32,
-        dae: None,
+        dae: dae_info(data, layout),
         clocks: Vec::new(),
         lin: None,
         parmod: None,
@@ -322,6 +322,80 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         recon: None,
         prof: None,
     }
+}
+
+/// `SimMeta::dae` from `simulationInfo->daeModeData`, which the generated
+/// `initializeDAEmodeData` filled: the algebraic unknowns IDA carries after the
+/// states, and the residual Jacobian's sparsity with its coloring.
+fn dae_info(data: *mut DATA, layout: &Layout) -> Option<openmodelica_sim_meta::DaeInfo> {
+    if layout.n_dae_res == 0 {
+        return None;
+    }
+    let d = unsafe { &*(*data).simulationInfo.as_ref()?.daeModeData };
+    let alg_offs = (0..layout.n_dae_alg as usize)
+        .map(|i| {
+            let ix = unsafe { *d.algIndexes.add(i) } as u32;
+            openmodelica_sim_meta::REAL_OFF + ix * 8
+        })
+        .collect();
+    Some(openmodelica_sim_meta::DaeInfo {
+        alg_offs,
+        sparsity: sparsity_info(d.sparsePattern, layout.n_dae_res),
+    })
+}
+
+/// C's `SPARSE_PATTERN` as the driver's `JacAInfo`, without the column evaluator
+/// (C's `JACOBIAN_ONLY_SPARSITY`); [`jac_a_info`] adds one where the model has it.
+fn sparsity_info(sp: *const SPARSE_PATTERN, n: u32) -> Option<openmodelica_sim_meta::JacAInfo> {
+    let sp = unsafe { sp.as_ref()? };
+    let n = n as usize;
+    if sp.sizeCols as usize != n || sp.maxColors == 0 {
+        return None;
+    }
+    let rows_by_col: Vec<Vec<u32>> = (0..n)
+        .map(|c| {
+            let from = unsafe { *sp.leadindex.add(c) } as usize;
+            let to = unsafe { *sp.leadindex.add(c + 1) } as usize;
+            (from..to).map(|k| unsafe { *sp.index.add(k) }).collect()
+        })
+        .collect();
+    // `colorCols[col]` is the column's 1-based colour, as `genSPColors` writes it.
+    let mut colors = vec![Vec::new(); sp.maxColors as usize];
+    for c in 0..n {
+        let col = unsafe { *sp.colorCols.add(c) } as usize;
+        if col == 0 || col > colors.len() {
+            return None;
+        }
+        colors[col - 1].push(c as u32);
+    }
+    if rows_by_col.iter().flatten().any(|&r| r as usize >= n) {
+        return None;
+    }
+    Some(openmodelica_sim_meta::JacAInfo { n: n as u32, colors, rows_by_col, sym: None })
+}
+
+/// `SimMeta::jac_a` from `analyticJacobians[INDEX_JAC_A]`, which `data::initialize`
+/// has already had the model fill. The seeds and results are C's own arrays, which
+/// `build_regions` maps onto the layout's Jacobian window.
+fn jac_a_info(data: *mut DATA, layout: &Layout) -> Option<openmodelica_sim_meta::JacAInfo> {
+    let j = crate::data::jac_a(data)?;
+    let n = layout.n_states;
+    let mut info = sparsity_info(j.sparsePattern, n)?;
+    if j.availability != JACOBIAN_AVAILABLE
+        || j.evalColumn.is_none()
+        || j.sizeCols != n as usize
+        || j.sizeRows != n as usize
+    {
+        return Some(info);
+    }
+    let cols = j.sizeCols as u32;
+    info.sym = Some(openmodelica_sim_meta::JacSym {
+        seed_offs: (0..cols).map(|k| layout.nls_jac_off + k * 8).collect(),
+        result_offs: (0..n).map(|k| layout.nls_jac_off + (cols + k) * 8).collect(),
+        has_constant: j.constantEqns.is_some(),
+        adj: None,
+    });
+    Some(info)
 }
 
 /// The dimension of the variable an alias reads, which gives its element names.

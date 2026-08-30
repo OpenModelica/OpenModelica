@@ -279,11 +279,8 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
 
     si.baseClocks = if md.nBaseClocks > 0 { calloc(md.nBaseClocks as usize) } else { core::ptr::null_mut() };
     si.intvlTimers = core::ptr::null_mut();
-    si.spatialDistributionData = if md.nSpatialDistributions > 0 {
-        calloc(md.nSpatialDistributions as usize)
-    } else {
-        core::ptr::null_mut()
-    };
+    // The operators live in `crate::spatial`; nothing reads C's own struct.
+    si.spatialDistributionData = core::ptr::null_mut();
 
     // The defaults `initializeDataStruc` installs; the command line may replace
     // them (`-nls`, `-ls`, ...).
@@ -423,6 +420,7 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     crate::nls::initialize_nonlinear_systems(data, thread_data);
     crate::stateset::initialize_state_sets(data, thread_data);
     crate::mixed::initialize_mixed_systems(data, thread_data);
+    init_jac_a(data, thread_data);
 
     let layout = layout_for(data, md, si, cb);
     let mut rt = RtData {
@@ -435,6 +433,51 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     };
     build_regions(&mut rt);
     rt
+}
+
+/// `analyticJacobians[INDEX_JAC_A]`, the ODE Jacobian the solvers ask for, once the
+/// model's `initialAnalyticJacobianA` has filled it. Null where the model has none.
+pub fn jac_a_ptr(data: *mut DATA) -> *mut JACOBIAN {
+    let cb = unsafe { &*(*data).callback };
+    let si = unsafe { &*(*data).simulationInfo };
+    if cb.INDEX_JAC_A < 0 || si.analyticJacobians.is_null() {
+        return core::ptr::null_mut();
+    }
+    unsafe { si.analyticJacobians.add(cb.INDEX_JAC_A as usize) }
+}
+
+/// [`jac_a_ptr`] for the readers.
+pub fn jac_a(data: *mut DATA) -> Option<&'static JACOBIAN> {
+    unsafe { jac_a_ptr(data).as_ref() }
+}
+
+/// C's solvers each run `initialAnalyticJacobianA` at setup; the layout needs the
+/// shape before the driver starts, so it runs once here instead.
+fn init_jac_a(data: *mut DATA, thread_data: *mut threadData_t) {
+    let j = jac_a_ptr(data);
+    if j.is_null() {
+        return;
+    }
+    let ok = match unsafe { (*(*data).callback).initialAnalyticJacobianA } {
+        Some(f) => (unsafe { f(data, thread_data, j) }) == 0,
+        None => false,
+    };
+    if !ok {
+        unsafe { (*j).availability = JACOBIAN_NOT_AVAILABLE };
+    }
+}
+
+/// The flat words the Jacobian window holds: its seeds then its results.
+fn jac_a_words(data: *mut DATA) -> u32 {
+    match jac_a(data) {
+        Some(j) if j.availability == JACOBIAN_AVAILABLE
+            && !j.seedVars.is_null()
+            && !j.resultVars.is_null() =>
+        {
+            (j.sizeCols + j.sizeRows) as u32
+        }
+        _ => 0,
+    }
 }
 
 /// The layout the driver addresses this model through. Regions C stores itself
@@ -477,7 +520,7 @@ fn layout_for(
         // addresses as memory. They are C's `JACOBIAN`'s own arrays; the region map
         // below points at them rather than copying.
         crate::stateset::scratch_words(data),
-        0, // nonlinear-system Jacobian scratch: likewise, JACOBIAN
+        jac_a_words(data),
         md.nMathEvents as u32,
         0, // sensitivities
         n_dae_res,
@@ -488,7 +531,9 @@ fn layout_for(
         0, // linearization scratch: the C model's analyticJacobians
         0, // optimization attributes
         0, // bound-attribute log
-        0, // removed initial equations
+        // Always generated (a stub when there are none) and reporting the offending
+        // equation itself, so this is a flag rather than a count.
+        cb.functionRemovedInitialEquations.is_some() as u32,
         unsafe { crate::support::compiledWithSymSolver } as u8,
         // `has_when` asks whether `functionAlgebraics` doubles as the discrete
         // update, which is a property of the wasm-jit codegen's split. A C model
@@ -552,6 +597,18 @@ fn build_regions(rt: &mut RtData) {
     if l.sym_solver > 0 {
         direct(l.inline_dt_off, 8, unsafe { &mut (*si.inlineData).dt } as *mut f64 as *mut c_void);
         direct(l.alg_old_off, l.n_states * 8, unsafe { (*si.inlineData).algOldVars } as *mut c_void);
+    }
+    if let Some(j) = jac_a(rt.data)
+        && j.availability == JACOBIAN_AVAILABLE
+        && !j.seedVars.is_null()
+        && !j.resultVars.is_null()
+    {
+        direct(l.nls_jac_off, (j.sizeCols * 8) as u32, j.seedVars.cast());
+        direct(
+            l.nls_jac_off + (j.sizeCols * 8) as u32,
+            (j.sizeRows * 8) as u32,
+            j.resultVars.cast(),
+        );
     }
     if l.n_dae_res > 0 {
         direct(l.dae_res_off, l.n_dae_res * 8, unsafe { (*si.daeModeData).residualVars } as *mut c_void);

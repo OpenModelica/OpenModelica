@@ -16,6 +16,9 @@ use crate::model_data::calloc;
 
 /// `enum LINEAR_SOLVER` (util/simulation_options.h): what `-ls` selects.
 pub const LS_LAPACK: c_int = 1;
+pub const LS_LIS: c_int = 2;
+pub const LS_KLU: c_int = 3;
+pub const LS_UMFPACK: c_int = 4;
 pub const LS_TOTALPIVOT: c_int = 5;
 pub const LS_DEFAULT: c_int = 6;
 /// `enum EVAL_CONTEXT` (util/context.h), as `openmodelica_nls` numbers them.
@@ -46,9 +49,7 @@ fn solver_data(ls: &LINEAR_SYSTEM_DATA) -> *mut LapackData {
 pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t) {
     let md = unsafe { &*(*data).modelData };
     let si = unsafe { &mut *(*data).simulationInfo };
-    if md.nLinearSystems == 0 {
-        return;
-    }
+    // C prints the header whatever the count is; only the loop is conditional.
     omclog::info(omclog::LS, true, "initialize linear system solvers");
     omclog::info(omclog::LS, false, &format!("{} linear systems", md.nLinearSystems));
     for i in 0..md.nLinearSystems as usize {
@@ -214,10 +215,9 @@ pub fn eval_jacobian(
     Ok(())
 }
 
-/// C's `solve_linear_system`. Only the dense LAPACK path exists here: another
-/// `-ls` is warned about once and factored densely anyway, and the total-pivot
-/// fallback C runs when LAPACK reports a singular matrix is not ported, so such
-/// a system fails the step.
+/// C's `solve_linear_system`: the `-ls` ladder over the dense solvers. A sparse
+/// `-lss` and `-ls=klu`/`umfpack`/`lis` are not served; they are warned about once
+/// and factored densely.
 #[unsafe(no_mangle)]
 pub extern "C" fn solve_linear_system(
     data: *mut DATA,
@@ -227,23 +227,65 @@ pub extern "C" fn solve_linear_system(
 ) -> c_int {
     let si = unsafe { &mut *(*data).simulationInfo };
     let ls = unsafe { &mut *si.linearSystemData.add(sys_number as usize) };
-    if si.lsMethod != LS_DEFAULT && si.lsMethod != LS_LAPACK {
-        warn_once_unsupported_ls(si.lsMethod);
-    }
     // C's `rt_ext_tp_tick(&linsys->totalTimeClock)`; `A` and `b` are assembled
     // inside, so the assembly mark is taken there.
     sysstat::begin(ls.equationIndex as i32, false, ls.size.max(0) as u32, ls.nnz.max(0) as u32);
     si.noThrowDivZero = 1;
-    let success = solve_lapack(data, thread_data, ls, sys_number, aux_x);
+    let method = si.lsMethod;
+    let success = match method {
+        LS_TOTALPIVOT => solve_total_pivot(data, thread_data, ls, sys_number, aux_x) as c_int,
+        LS_LAPACK => solve_lapack(data, thread_data, ls, sys_number, aux_x) as c_int,
+        LS_DEFAULT => solve_default(data, thread_data, ls, sys_number, aux_x),
+        _ => {
+            warn_once_unsupported_ls(method);
+            solve_default(data, thread_data, ls, sys_number, aux_x)
+        }
+    };
     sysstat::end([0; 3]);
-    ls.solved = success as c_int;
+    ls.solved = success;
     ls.numberOfCall += 1;
-    if !success {
-        ls.failed = 1;
-    } else {
-        ls.failed = 0;
-    }
     check_linear_solution(data, 1, sys_number)
+}
+
+/// C's `LS_DEFAULT` branch: LAPACK, then dynamic tearing's strict set if the
+/// system has one, else the total-pivot fallback. `2` is C's "solved by the
+/// strict tearing set".
+fn solve_default(
+    data: *mut DATA,
+    thread_data: *mut threadData_t,
+    ls: &mut LINEAR_SYSTEM_DATA,
+    sys_number: c_int,
+    aux_x: *mut f64,
+) -> c_int {
+    if solve_lapack(data, thread_data, ls, sys_number, aux_x) {
+        ls.failed = 0;
+        return 1;
+    }
+    if let Some(strict) = ls.strictTearingFunctionCall {
+        omclog::info(
+            omclog::DT,
+            false,
+            "Solving the casual tearing set failed! Now the strict tearing set is used.",
+        );
+        let ok = unsafe { strict(data, thread_data) } != 0;
+        ls.failed = !ok as modelica_boolean;
+        return if ok { 2 } else { 0 };
+    }
+    // C reports the fallback on stdout the first time a system needs it and on
+    // LOG_LS from then on, so a system that fails at every step says so once.
+    let stream = if ls.failed != 0 { omclog::LS } else { omclog::STDOUT };
+    let time = unsafe { (**(*data).localData).timeValue };
+    omclog::warning_with_limit(
+        stream,
+        ls.numberOfFailures,
+        unsafe { (*(*data).simulationInfo).maxWarnDisplays },
+        &format!(
+            "The default linear solver fails, the fallback solver with total pivoting is started at time {time:.6}. That might raise performance issues, for more information use -lv LOG_LS."
+        ),
+    );
+    let ok = solve_total_pivot(data, thread_data, ls, sys_number, aux_x);
+    ls.failed = 1;
+    ok as c_int
 }
 
 /// `-ls=<other>` reaches a solver this runtime does not have; say so once rather
@@ -254,12 +296,113 @@ fn warn_once_unsupported_ls(method: c_int) {
     if WARNED.swap(true, Ordering::Relaxed) {
         return;
     }
-    let name = if method == LS_TOTALPIVOT { "totalpivot" } else { "the requested" };
+    let name = match method {
+        LS_LIS => "lis",
+        LS_KLU => "klu",
+        LS_UMFPACK => "umfpack",
+        _ => "the requested",
+    };
     omclog::warning(
         omclog::STDOUT,
         false,
-        &format!("-ls: {name} linear solver is not served by this runtime; using lapack."),
+        &format!("-ls: {name} linear solver is not served by this runtime; using the default."),
     );
+}
+
+/// C's `solveTotalPivot` (`linearSolverTotalPivot.c`): the same `A`/`b`
+/// assembly as the LAPACK solver, factored by
+/// [`openmodelica_nls::total_pivot_solve`], which is C's
+/// `solveSystemWithTotalPivotSearchLS`.
+fn solve_total_pivot(
+    data: *mut DATA,
+    thread_data: *mut threadData_t,
+    ls: &mut LINEAR_SYSTEM_DATA,
+    _sys_number: c_int,
+    aux_x: *mut f64,
+) -> bool {
+    let size = ls.size.max(0) as usize;
+    let time = unsafe { (**(*data).localData).timeValue };
+    let eq = ls.equationIndex;
+    omclog::info(
+        omclog::LS,
+        false,
+        &format!(
+            "Start solving Linear System {eq} (size {size}) at time {} with Total Pivot Solver",
+            openmodelica_sim_meta::driver::format_g(time, 6)
+        ),
+    );
+    let mut a = vec![0.0f64; (size * size).max(1)];
+    let mut b = vec![0.0f64; size.max(1)];
+    if ls.method == 0 {
+        unsafe { core::ptr::write_bytes(ls.A, 0, size * size) };
+        if let Some(f) = ls.setA {
+            unsafe { f(data, thread_data, ls) };
+        }
+        a[..size * size].copy_from_slice(unsafe { core::slice::from_raw_parts(ls.A, size * size) });
+        if let Some(f) = ls.setb {
+            unsafe { f(data, thread_data, ls) };
+        }
+        // C's last column of `Ab` is `-b`, which is what `total_pivot_solve` makes
+        // of the right-hand side it is handed.
+        b[..size].copy_from_slice(unsafe { core::slice::from_raw_parts(ls.b, size) });
+    } else {
+        if ls.jacobianIndex == -1 {
+            crate::throw(thread_data, "jacobian function pointer is invalid");
+        }
+        if let Err(e) =
+            eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut a, true)
+        {
+            omclog::warning(omclog::STDOUT, false, e);
+            return false;
+        }
+        // C writes the residual itself into `Ab`'s last column, i.e. the negated
+        // right-hand side, where the LAPACK path negates the Jacobian instead.
+        residual(data, thread_data, ls, aux_x, &mut b);
+        for v in b.iter_mut() {
+            *v = -*v;
+        }
+    }
+    sysstat::mark_assembly_done();
+
+    if !openmodelica_nls::total_pivot_solve(&a, &mut b, size) {
+        omclog::warning(
+            omclog::STDOUT,
+            false,
+            &format!("Error solving linear system of equations (no. {eq}) at time {time:.6}."),
+        );
+        return false;
+    }
+    if ls.method == 1 {
+        // The step is added to the old solution, then the inner equations run at
+        // the new point.
+        for i in 0..size {
+            unsafe { *aux_x.add(i) += b[i] };
+        }
+        let mut res = vec![0.0f64; size.max(1)];
+        residual(data, thread_data, ls, aux_x, &mut res);
+    } else {
+        for i in 0..size {
+            unsafe { *aux_x.add(i) = b[i] };
+        }
+    }
+    true
+}
+
+/// One call of the torn system's residual function at `x`.
+fn residual(
+    data: *mut DATA,
+    thread_data: *mut threadData_t,
+    ls: &LINEAR_SYSTEM_DATA,
+    x: *const f64,
+    out: &mut [f64],
+) {
+    let Some(f) = ls.residualFunc else {
+        crate::throw(thread_data, "the torn linear system has no residual function");
+    };
+    let flag: c_int = 0;
+    let mut user =
+        RESIDUAL_USERDATA { data, threadData: thread_data, solverData: core::ptr::null_mut() };
+    unsafe { f(&mut user, x, out.as_mut_ptr(), &flag) };
 }
 
 fn solve_lapack(

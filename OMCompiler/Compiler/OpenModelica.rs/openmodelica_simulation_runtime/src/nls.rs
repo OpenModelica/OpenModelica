@@ -328,9 +328,6 @@ impl nls::NlsBackend for CBackend<'_> {
 pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadData_t) {
     let md = unsafe { &*(*data).modelData };
     let si = unsafe { &mut *(*data).simulationInfo };
-    if md.nNonLinearSystems == 0 {
-        return;
-    }
     omclog::info(omclog::NLS, true, "initialize non-linear system solvers");
     omclog::info(omclog::NLS, false, &format!("{} non-linear systems", md.nNonLinearSystems));
     for i in 0..md.nNonLinearSystems as usize {
@@ -381,6 +378,23 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         sys.max = crate::model_data::calloc(size.max(1));
         if let Some(f) = sys.initializeStaticNLSData {
             unsafe { f(data, thread_data, sys, 1, 1) };
+        }
+
+        // C's `sparsitySanityCheck`, run for every pattern the model built,
+        // whatever the matrix format says: an irregular one is dropped and NLS
+        // scaling with it.
+        if !sys.sparsePattern.is_null() && !sparsity_is_regular(unsafe { &*sys.sparsePattern }, size)
+        {
+            omclog::warning(
+                omclog::STDOUT,
+                false,
+                &format!(
+                    "Sparsity pattern for non-linear system {i} is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling."
+                ),
+            );
+            crate::support::freeSparsePattern(sys.sparsePattern);
+            sys.sparsePattern = core::ptr::null_mut();
+            unsafe { crate::support::omc_flag[crate::abi::FLAG_NO_SCALING] = 1 };
         }
 
         register_names(data, sys);
@@ -439,20 +453,6 @@ fn register_names(data: *mut DATA, sys: &NONLINEAR_SYSTEM_DATA) {
 fn csc_pattern(sys: &mut NONLINEAR_SYSTEM_DATA, size: usize) -> (Vec<i32>, Vec<i32>) {
     if sys.matrixFormat != OMC_MATRIX_SPARSE || sys.sparsePattern.is_null() || sys.jacobianIndex < 0
     {
-        return (Vec::new(), Vec::new());
-    }
-    // C also raises `omc_flag[FLAG_NO_SCALING]` here, which neither Rust runtime
-    // reads: the shared ladder has no unscaled mode.
-    if !sparsity_is_regular(unsafe { &*sys.sparsePattern }, size) {
-        omclog::warning(
-            omclog::STDOUT,
-            false,
-            &format!(
-                "Sparsity pattern for non-linear system {} is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.",
-                sys.equationIndex
-            ),
-        );
-        sys.sparsePattern = core::ptr::null_mut();
         return (Vec::new(), Vec::new());
     }
     let sp = unsafe { &*sys.sparsePattern };

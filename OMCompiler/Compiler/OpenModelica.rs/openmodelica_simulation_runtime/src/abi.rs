@@ -961,6 +961,7 @@ pub const NEWTON_DAMPED2: c_int = 2;
 /// Only the entries the generated code or this runtime reads are named;
 /// `tests/abi_layout.rs` checks every one against the header.
 pub const FLAG_MAX: usize = 156;
+pub const FLAG_NO_SCALING: usize = 99;
 pub const FLAG_EMIT_PROTECTED: usize = 15;
 pub const FLAG_F: usize = 17;
 pub const FLAG_IDAS: usize = 41;

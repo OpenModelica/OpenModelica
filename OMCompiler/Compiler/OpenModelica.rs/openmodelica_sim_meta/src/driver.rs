@@ -485,6 +485,22 @@ pub trait SimEngine {
     fn rt_stats(&mut self) -> [u64; RT_STATS] {
         [0; RT_STATS]
     }
+    /// Whether the host runs C's `initializeLinearSystems` /
+    /// `initializeNonlinearSystems` itself, and so has already announced them.
+    fn host_logs_system_init(&self) -> bool {
+        false
+    }
+    /// The `terminate()` message and its `printInfo` position, for a backend that
+    /// keeps them outside `SimData` (the C runtime's `TermMsg` / `TermInfo`).
+    fn terminate_info(&self) -> Option<TerminateInfo> {
+        None
+    }
+    /// Whether the model's own `functionUpdateBoundVariableAttributes` prints C's
+    /// `updating <attribute>-values` block. The wasm codegen leaves it to
+    /// [`log_bound_attr_updates`]; the C code generator emits it.
+    fn model_logs_bound_attrs(&self) -> bool {
+        false
+    }
     /// The per-system solver statistics the runtime recorded for `LOG_STATS_V`
     /// (`rt_sys_stats_ptr`). Default: none — a backend with no runtime to ask.
     fn sys_stats(&mut self) -> Vec<crate::sysstat::SysStat> {
@@ -2213,6 +2229,10 @@ fn call_initial_equations_lambda0(e: &mut dyn SimEngine, sim_data: u32, layout: 
     e.call1("functionInitialEquations", sim_data)
 }
 
+/// What a host returns from `functionRemovedInitialEquations` when the model's own
+/// code already printed which equation is inconsistent.
+pub const REMOVED_INIT_INCONSISTENT: &str = "the removed initial equations are inconsistent";
+
 /// C's over-determined check: the removed initial equations are residuals of the
 /// solution just found, and one off zero means the problem has none.
 fn check_removed_initial_equations(
@@ -2224,7 +2244,12 @@ fn check_removed_initial_equations(
     if layout.n_removed_init == 0 {
         return Ok(());
     }
-    e.call1("functionRemovedInitialEquations", sim_data)?;
+    // A host whose model reports the inconsistency itself says so with this error
+    // rather than filling the two slots below.
+    match e.call1("functionRemovedInitialEquations", sim_data) {
+        Err(REMOVED_INIT_INCONSISTENT) => return Err(report_init_failure()),
+        other => other?,
+    }
     let idx = read_i32(e, sim_data + layout.removed_init_idx_off)?;
     if idx == 0 {
         return Ok(());
@@ -2330,7 +2355,9 @@ fn update_bound_values(
 ) -> Result<()> {
     e.call1("functionUpdateBoundParameters", sim_data)?;
     e.call1("functionUpdateBoundVariableAttributes", sim_data)?;
-    log_bound_attr_updates(e, sim_data, layout, model);
+    if !e.model_logs_bound_attrs() {
+        log_bound_attr_updates(e, sim_data, layout, model);
+    }
     Ok(())
 }
 
@@ -2638,6 +2665,15 @@ pub fn set_terminate_reporter(f: fn(&str, &str)) {
     TERMINATE_REPORTER.store(f as usize, Ordering::Relaxed);
 }
 
+/// Where a `terminate()` fired and what it said, as C's `TermMsg` / `TermInfo`
+/// hold it. `span` is `printInfo`'s `[lineStart, colStart, lineEnd, colEnd]`.
+pub struct TerminateInfo {
+    pub msg: String,
+    pub file: String,
+    pub span: [i32; 4],
+    pub readonly: bool,
+}
+
 /// C's `checkSimulationTerminated` notice: the source position raw (`printInfo`,
 /// outside the message system) then the message, once per run. `at_init` picks
 /// the wording C uses before the main loop.
@@ -2645,11 +2681,22 @@ fn report_terminate(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, at_ini
     if !term_report::mark() {
         return Ok(());
     }
-    let w = |i: u32| read_i32(e, sim_data + layout.term_info_off + i * 4);
-    let msg = read_rt_string(e, w(0)?)?;
-    let file = read_rt_string(e, w(1)?)?;
-    let ro = if w(6)? != 0 { "readonly" } else { "writable" };
-    let pos = format!("[{file}:{}:{}-{}:{}:{ro}]", w(2)?, w(3)?, w(4)?, w(5)?);
+    let t = match e.terminate_info() {
+        Some(v) => v,
+        None => {
+            let w = |i: u32| read_i32(e, sim_data + layout.term_info_off + i * 4);
+            TerminateInfo {
+                msg: read_rt_string(e, w(0)?)?,
+                file: read_rt_string(e, w(1)?)?,
+                span: [w(2)?, w(3)?, w(4)?, w(5)?],
+                readonly: w(6)? != 0,
+            }
+        }
+    };
+    let (msg, file) = (t.msg, t.file);
+    let ro = if t.readonly { "readonly" } else { "writable" };
+    let [ls, cs, le, ce] = t.span;
+    let pos = format!("[{file}:{ls}:{cs}-{le}:{ce}:{ro}]");
     let p = TERMINATE_REPORTER.load(Ordering::Relaxed);
     if p != 0 {
         let f: fn(&str, &str) = unsafe { core::mem::transmute(p) };
@@ -3618,6 +3665,27 @@ fn discrete_snapshot(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
 /// consistent set and chatter on the integrator instead. Assumes the event time is
 /// already written.
 pub(crate) fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    iterate_discrete_from(e, sim_data, layout, false)
+}
+
+/// [`iterate_discrete`] entered after the first `functionDAE` has already run, as
+/// C's loop is: its body opens with `storePreValues`, so the values that pass
+/// assigned are what the next one reads as `pre()`. Without it a `when` body's
+/// assignment is undone by the `x := pre(x)` its own equation block opens with.
+pub(crate) fn iterate_discrete_after_eval(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+) -> Result<()> {
+    iterate_discrete_from(e, sim_data, layout, true)
+}
+
+fn iterate_discrete_from(
+    e: &mut dyn SimEngine,
+    sim_data: u32,
+    layout: &SimLayout,
+    evaluated: bool,
+) -> Result<()> {
     rtclock::tick(rtclock::DISCRETE); // C's `callStatistics.updateDiscreteSystem`
     // Each pass freezes `relationsPre = relations` so the NLS in `functionODE` holds
     // this pass's relations, then re-evaluates the continuous system; the discrete
@@ -3629,7 +3697,7 @@ pub(crate) fn iterate_discrete(e: &mut dyn SimEngine, sim_data: u32, layout: &Si
         let prev = discrete_snapshot(e, sim_data, layout)?;
         // C's `updateDiscreteSystem` `storePreValues`: make this pass's discrete
         // values visible as `pre()` to the next (e.g. a clutch's `pre(mode)`).
-        if iter > 0 {
+        if iter > 0 || evaluated {
             seed_pre_from_live(e, sim_data, layout)?;
         }
         update_relations_pre(e, sim_data, layout)?;
@@ -3805,7 +3873,7 @@ fn fire_time_event_inner(
     write_i32(e, sim_data + layout.rel_fresh_off, 1)?;
     refresh_relations(e, sim_data, layout)?;
     samples.fire(e, sim_data, layout, te)?;
-    iterate_discrete(e, sim_data, layout)?;
+    iterate_discrete_after_eval(e, sim_data, layout)?;
     store_relations(e, sim_data, layout)
 }
 
@@ -4134,18 +4202,20 @@ fn solver_setup(e: &mut dyn SimEngine, model: &SimModel, sim_data: u32) -> Resul
              are in opposition to each other. The flag \"noEquidistantOutputFrequency\" superiors.",
         );
     }
-    // C's `initializeLinearSystems`.
-    omclog::info(omclog::LS, true, "initialize linear system solvers");
-    omclog::info(omclog::LS, false, &format!("{} linear systems", model.n_lin_systems));
-    omclog::close(omclog::LS);
-    // C's `initializeNonlinearSystems`.
-    omclog::info(omclog::NLS, true, "initialize non-linear system solvers");
-    omclog::info(
-        omclog::NLS,
-        false,
-        &format!("{} non-linear systems", model.nls_vars.len()),
-    );
-    omclog::close(omclog::NLS);
+    // C's `initializeLinearSystems` / `initializeNonlinearSystems` announcements,
+    // which a host that runs those functions itself has already made.
+    if !e.host_logs_system_init() {
+        omclog::info(omclog::LS, true, "initialize linear system solvers");
+        omclog::info(omclog::LS, false, &format!("{} linear systems", model.n_lin_systems));
+        omclog::close(omclog::LS);
+        omclog::info(omclog::NLS, true, "initialize non-linear system solvers");
+        omclog::info(
+            omclog::NLS,
+            false,
+            &format!("{} non-linear systems", model.nls_vars.len()),
+        );
+        omclog::close(omclog::NLS);
+    }
     set_zc_tolerance(e, sim_data, layout, model.tolerance.min(model.step_size()))?;
     crate::parmod::init(model);
     for k in 0..layout.n_sens {

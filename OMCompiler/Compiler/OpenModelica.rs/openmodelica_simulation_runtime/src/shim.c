@@ -245,3 +245,22 @@ int omr_protected(void (*thunk)(void *), void *ctx, void *threadData, int stage)
   TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
   return rc;
 }
+
+/* C's `MMC_TRY_INTERNAL(globalJumpBuffer)` around `_main_SimulationRuntime`: a
+ * model error nothing absorbed ends the run here, as it does in C, rather than
+ * unwinding to the generated `main`'s top-level catch -- which prints
+ * "Execution failed!", a line C never reaches.
+ */
+int omr_protected_global(void (*thunk)(void *), void *ctx, void *threadData) {
+  jmp_buf buf;
+  void *saved_jb = TD_PTR(threadData, omr_td_off_global_jumper);
+  int rc = 0;
+  if (setjmp(buf) == 0) {
+    TD_PTR(threadData, omr_td_off_global_jumper) = &buf;
+    thunk(ctx);
+  } else {
+    rc = -1;
+  }
+  TD_PTR(threadData, omr_td_off_global_jumper) = saved_jb;
+  return rc;
+}
