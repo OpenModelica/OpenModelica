@@ -1301,61 +1301,69 @@ algorithm
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markStateEquations;
 
-public function markZeroCrossingEquations "function: markStateEquations
-  This function goes through all equations and marks the ones that
-  calculates a state, or is needed in order to calculate a state,
-  with a non-zero value in the array passed as argument.
-  This is done by traversing the directed graph of nodes where
-  a node is an equation/solved variable and following the edges in the
-  backward direction.
-  inputs: (daeLow: BackendDAE,
-             marks: int array,
-    adjacencyMatrix: AdjacencyMatrix,
-    adjacencyMatrixT: AdjacencyMatrixT,
-    assignments1: int vector,
-    assignments2: int vector)
-  outputs: marks: int array"
+public function zeroCrossingVarIndices
+  "For every equation system, the indices of its variables that occur in a zero
+   crossing relation. All systems are resolved against one combined variable set
+   in a single pass; looking each zero crossing up in every system is quadratic."
+  input BackendDAE.EqSystems systs;
+  input list<BackendDAE.ZeroCrossing> zeroCross;
+  output array<AvlSetInt.Tree> trees;
+protected
+  Integer nsys = listLength(systs), total = 0, gidx = 0, s = 0, n;
+  BackendDAE.Variables allVars;
+  array<Integer> sysOf, locOf "combined index -> system / index within that system";
+  AvlSetInt.Tree tree;
+algorithm
+  trees := arrayCreate(intMax(nsys, 1), AvlSetInt.new());
+  for syst in systs loop
+    total := total + BackendVariable.varsSize(syst.orderedVars);
+  end for;
+  if total == 0 then
+    return;
+  end if;
+
+  allVars := BackendVariable.emptyVarsSized(total);
+  sysOf := arrayCreate(total, 0);
+  locOf := arrayCreate(total, 0);
+  for syst in systs loop
+    s := s + 1;
+    n := BackendVariable.varsSize(syst.orderedVars);
+    for i in 1:n loop
+      allVars := BackendVariable.addNewVar(BackendVariable.getVarAt(syst.orderedVars, i), allVars);
+      gidx := gidx + 1;
+      arrayUpdate(sysOf, gidx, s);
+      arrayUpdate(locOf, gidx, i);
+    end for;
+  end for;
+
+  tree := AvlSetInt.new();
+  for zc in zeroCross loop
+    tree := BackendEquation.expressionVarsIndexes(zc.relation_, tree,
+              function BackendEquation.checkEquationsVarsExpTopDown(vars=allVars));
+  end for;
+
+  for gi in AvlSetInt.listKeys(tree) loop
+    s := arrayGet(sysOf, gi);
+    arrayUpdate(trees, s, AvlSetInt.add(arrayGet(trees, s), arrayGet(locOf, gi)));
+  end for;
+end zeroCrossingVarIndices;
+
+public function markZeroCrossingEquations
+  "Marks the equations needed to evaluate this system's zero crossings by
+  following the adjacency graph backwards from the variables they use."
   input BackendDAE.EqSystem syst;
-  input list<BackendDAE.ZeroCrossing> inZeroCross;
+  input AvlSetInt.Tree zcVars "this system's variables occurring in a zero crossing, see zeroCrossingVarIndices";
   input array<Integer> arr;
   input array<Integer> ass1;
   output array<Integer> outIntegerArray;
 protected
-  list<Integer> varindx_lst,eqns;
+  list<Integer> eqns;
   BackendDAE.AdjacencyMatrix m;
-  BackendDAE.Variables v;
-  AvlSetInt.Tree tree;
-  CheckEquationsVarsExpTopDownFunc func;
-  partial function CheckEquationsVarsExpTopDownFunc
-    input output DAE.Exp exp;
-    output Boolean cont;
-    input output AvlSetInt.Tree tree;
-  end CheckEquationsVarsExpTopDownFunc;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
-  tree := AvlSetInt.new();
-  func := function BackendEquation.checkEquationsVarsExpTopDown(vars=v);
-  for zc in inZeroCross loop
-    tree := varsCollector(zc.relation_, tree, func);
-  end for;
-  varindx_lst := AvlSetInt.listKeys(tree);
-  eqns := list(arrayGet(ass1,i) for i guard arrayGet(ass1,i)>0 in varindx_lst);
+  BackendDAE.EQSYSTEM(m=SOME(m)) := syst;
+  eqns := list(arrayGet(ass1,i) for i guard arrayGet(ass1,i)>0 in AvlSetInt.listKeys(zcVars));
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markZeroCrossingEquations;
-
-protected function varsCollector
-  input DAE.Exp exp;
-  input output AvlSetInt.Tree tree;
-  input CheckEquationsVarsExpTopDownFunc func;
-
-  partial function CheckEquationsVarsExpTopDownFunc
-    input output DAE.Exp exp;
-    output Boolean cont;
-    input output AvlSetInt.Tree tree;
-  end CheckEquationsVarsExpTopDownFunc;
-algorithm
-  tree := BackendEquation.expressionVarsIndexes(exp, tree, func);
-end varsCollector;
 
 protected function markStateEquationsWork
   "Helper function to mark_state_equation
@@ -1485,15 +1493,19 @@ protected
   BackendDAE.AdjacencyMatrix adjMatrix, adjMatrixT;
 
   list<BackendDAE.ZeroCrossing> zeroCrossings;
+  array<AvlSetInt.Tree> zcVars;
+  Integer sysIdx = 0;
 
   constant Boolean debug = false;
 algorithm
 
   // get zeroCrossings
   zeroCrossings := ZeroCrossings.toList(inBackendDAE.shared.eventInfo.zeroCrossings);
+  zcVars := zeroCrossingVarIndices(inBackendDAE.eqs, zeroCrossings);
 
   // walk once through all comps and get of dependends of dynamic, algebraic, zeroCrossings,
   for eqSystem in inBackendDAE.eqs loop
+    sysIdx := sysIdx + 1;
     if debug then
       BackendDump.printEqSystem(eqSystem);
     end if;
@@ -1521,7 +1533,7 @@ algorithm
       eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageDynamic);
 
       markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
-      markedEqns := markZeroCrossingEquations(eqSystem, zeroCrossings, markedEqns, assigndVar);
+      markedEqns := markZeroCrossingEquations(eqSystem, arrayGet(zcVars, sysIdx), markedEqns, assigndVar);
       eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageZeroCross);
 
       markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
