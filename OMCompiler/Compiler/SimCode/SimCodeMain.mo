@@ -2378,6 +2378,9 @@ algorithm
     (algebraicStateVars, _) :=  BackendVariable.traverseBackendDAEVars(algStateVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
 
     algebraicStateVars := SimCodeUtil.sortSimVarsAndWriteIndex(algebraicStateVars, crefToSimVarHT);
+    if isFMU then
+      modelInfo := SimCodeUtil.exportDaeAlgebraicStates(modelInfo, algebraicStateVars);
+    end if;
 
     // only create sparsity pattern for dae mode data even if it is created with --generateDynamicJacobian=symbolic
     // the A matrix will be used symbolically

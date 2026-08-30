@@ -14998,6 +14998,33 @@ algorithm
   outValueReference := String(numReal + numInteger + numBoolean + numString + numExtObj + numClock);
 end getFMI3TimeValueReference;
 
+public function exportDaeAlgebraicStates
+  "fmi-ls-dae: the algebraic states are unknowns the importer sets, so they are in
+   the model description whatever --fmiFilter hides, as the states are."
+  input output SimCode.ModelInfo modelInfo;
+  input list<SimCodeVar.SimVar> algebraicStateVars;
+protected
+  HashSet.HashSet crefs = HashSet.emptyHashSet();
+  SimCodeVar.SimVars vars;
+algorithm
+  for v in algebraicStateVars loop
+    crefs := BaseHashSet.add(v.name, crefs);
+  end for;
+  vars := modelInfo.vars;
+  vars.algVars := list(exportIfAlgebraicState(v, crefs) for v in vars.algVars);
+  modelInfo.vars := vars;
+end exportDaeAlgebraicStates;
+
+protected function exportIfAlgebraicState
+  input output SimCodeVar.SimVar v;
+  input HashSet.HashSet crefs;
+algorithm
+  if isNone(v.exportVar) and BaseHashSet.has(v.name, crefs) then
+    v.exportVar := SOME(if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX
+                        then ComponentReference.getConcealedCref() else v.name);
+  end if;
+end exportIfAlgebraicState;
+
 public function getFMI3DaeModeValueReference
   "fmi-ls-dae: the value reference of the structural parameter that switches a
    --daeMode FMU into DAE mode, the first one past the event indicators. The
