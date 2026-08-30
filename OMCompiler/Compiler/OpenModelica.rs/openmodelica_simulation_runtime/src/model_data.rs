@@ -241,6 +241,165 @@ pub struct AliasMaps {
     pub params: HashMap<String, i64>,
 }
 
+unsafe extern "C" {
+    // The interned MMC strings `libOpenModelicaRuntimeC` keeps for the empty string
+    // and every one-byte string, which C's own constructors return instead of
+    // allocating (`util/modelica_string_lit.h`).
+    static mmc_emptystring: *mut c_void;
+    static mmc_strings_len1: [*mut c_void; 256];
+}
+
+/// C's `mmc_mk_scon_persist` (`util/modelica_string.h`), a `static inline` with no
+/// symbol to call: an `mmc_string` -- header word then the bytes and their NUL --
+/// whose tagged pointer is a `modelica_string`. Never freed, as "persist" says.
+pub fn mk_scon_persist(s: &str) -> *mut c_void {
+    let n = s.len();
+    if n == 0 {
+        return unsafe { mmc_emptystring };
+    }
+    if n == 1 {
+        return unsafe { mmc_strings_len1[s.as_bytes()[0] as usize] };
+    }
+    const W: usize = core::mem::size_of::<usize>();
+    let log2_w = W.trailing_zeros() as usize;
+    let header = (n << 3) + ((1 << (3 + log2_w)) + 5);
+    let words = (header >> (3 + log2_w)) + 1;
+    let p = unsafe { libc::malloc(words * W) } as *mut u8;
+    assert!(!p.is_null(), "out of memory building a String start value");
+    unsafe {
+        *(p as *mut usize) = header;
+        core::ptr::copy_nonoverlapping(s.as_ptr(), p.add(W), n);
+        *p.add(W + n) = 0;
+        // `MMC_TAGPTR`: RML-style tagged pointers offset a heap object by 3.
+        p.add(3) as *mut c_void
+    }
+}
+
+/// C's `doOverride`: `-override` / `-overrideFile` rewrite the `start` attribute
+/// of every quantity the XML marks `isValueChangeable`, before anything reads it.
+/// The walk is in C's order, so the log lines and warnings come out in it too.
+pub fn do_override(xml: &mut InitXml, flags: &openmodelica_sim_meta::simflags::SimFlags) {
+    use openmodelica_sim_meta::omclog;
+    let raw = flags.override_raw.as_deref();
+    let file = flags.override_file.as_ref();
+    if let (Some(raw), Some((path, _))) = (raw, file) {
+        omclog::info(omclog::SOLVER, false, &format!("using -override={raw} and -overrideFile={path}"));
+    }
+    if let Some((path, _)) = file {
+        omclog::info(omclog::SOLVER, false, &format!("read override values from file: {path}"));
+    }
+    if raw.is_none() && file.is_none() {
+        omclog::info(omclog::SOLVER, false, "NO override given on the command line.");
+        return;
+    }
+    fn given(v: Option<&str>) -> &str {
+        v.unwrap_or("[not given]")
+    }
+    omclog::info(omclog::SOLVER, false, &format!("-override={}", given(raw)));
+    omclog::info(
+        omclog::SOLVER,
+        false,
+        &format!("-overrideFile={}", given(file.map(|(_, j)| j.as_str()))),
+    );
+
+    // C fills a hash map, so a repeated name keeps the last value and warns; the
+    // insertion order is the one the unused-override warnings come out in.
+    let mut map: Vec<(String, String)> = Vec::new();
+    let mut index: HashMap<String, usize> = HashMap::new();
+    for (name, val) in &flags.overrides {
+        match index.get(name) {
+            Some(&k) => {
+                let old = &map[k].1;
+                omclog::warning(
+                    omclog::STDOUT,
+                    false,
+                    &format!("You are overriding variable: {name}={old} again with {name}={val}."),
+                );
+                map[k].1 = val.clone();
+            }
+            None => {
+                index.insert(name.clone(), map.len());
+                map.push((name.clone(), val.clone()));
+            }
+        }
+    }
+    let mut used: Vec<bool> = vec![false; map.len()];
+
+    // C walks `rSta`/`rDer` together by index, then the rest group by group; only
+    // the two real-parameter groups warn about a value near zero.
+    let n_states = read_long(xml.md("numberOfContinuousStates"), 0) as usize;
+    let n_real_alg = read_long(xml.md("numberOfRealAlgebraicVariables"), 0) as usize;
+    let plan: &[(&str, usize, bool)] = &[
+        ("rSta", n_states, false),
+        ("rDer", n_states, false),
+        ("rAlg", n_real_alg, false),
+        ("iAlg", read_long(xml.md("numberOfIntegerAlgebraicVariables"), 0) as usize, false),
+        ("bAlg", read_long(xml.md("numberOfBooleanAlgebraicVariables"), 0) as usize, false),
+        ("sAlg", read_long(xml.md("numberOfStringAlgebraicVariables"), 0) as usize, false),
+        ("rPar", read_long(xml.md("numberOfRealParameters"), 0) as usize, true),
+        ("iPar", read_long(xml.md("numberOfIntegerParameters"), 0) as usize, true),
+        ("bPar", read_long(xml.md("numberOfBooleanParameters"), 0) as usize, false),
+        ("sPar", read_long(xml.md("numberOfStringParameters"), 0) as usize, false),
+        ("rAli", read_long(xml.md("numberOfRealAlgebraicAliasVariables"), 0) as usize, false),
+        ("iAli", read_long(xml.md("numberOfIntegerAliasVariables"), 0) as usize, false),
+        ("bAli", read_long(xml.md("numberOfBooleanAliasVariables"), 0) as usize, false),
+        ("sAli", read_long(xml.md("numberOfStringAliasVariables"), 0) as usize, false),
+    ];
+    // C interleaves the two state groups; the rest follow in order.
+    let order: Vec<(&str, usize, bool)> = {
+        let mut v = Vec::new();
+        for i in 0..n_states {
+            v.push(("rSta", i, false));
+            v.push(("rDer", i, false));
+        }
+        for &(g, n, warn) in &plan[2..] {
+            for i in 0..n {
+                v.push((g, i, warn));
+            }
+        }
+        v
+    };
+    for (group, i, warn_small) in order {
+        let Some(slot) = xml.groups.get_mut(group).and_then(|g| g.get_mut(i)) else { continue };
+        let Some(v) = slot.as_mut() else { continue };
+        let name = v.get("name").to_string();
+        let Some(&k) = index.get(&name) else { continue };
+        used[k] = true;
+        let value = map[k].1.clone();
+        if v.get("isValueChangeable") != "true" {
+            omclog::warning(
+                omclog::STDOUT,
+                false,
+                &format!(
+                    "It is not possible to override the following quantity: {name}\nIt seems to be structural, final, protected or evaluated or has a non-constant binding."
+                ),
+            );
+            continue;
+        }
+        omclog::info(omclog::SOLVER, false, &format!("override {name} = {value}"));
+        if warn_small && value.parse::<f64>().map(|x| x.abs() < 1e-6).unwrap_or(false) {
+            omclog::warning(
+                omclog::STDOUT,
+                false,
+                &format!(
+                    "You are overriding {name} with a small value or zero.\nThis could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict."
+                ),
+            );
+        }
+        v.attrs.insert("start".to_string(), value);
+    }
+    for (k, (name, _)) in map.iter().enumerate() {
+        if !used[k] {
+            omclog::warning(
+                omclog::STDOUT,
+                false,
+                &format!("simulation_input_xml.c: override variable name not found in model: {name}\n"),
+            );
+        }
+    }
+    omclog::info(omclog::SOLVER, false, "override done!");
+}
+
 /// `read_model_description_sizes`: the array-variable counts.
 pub fn read_sizes(xml: &InitXml, md: &mut MODEL_DATA) {
     md.nStatesArray = read_long(xml.md("numberOfContinuousStates"), 0);
@@ -317,8 +476,8 @@ pub fn read_variables(xml: &InitXml, md: &mut MODEL_DATA) -> AliasMaps {
         slot.attribute.start = read_bool(v.get("start"));
         slot.attribute.fixed = read_bool(v.get("fixed"));
     };
-    let str_attr = |_v: &XmlVar, slot: &mut STATIC_STRING_DATA| {
-        slot.attribute.start = core::ptr::null_mut();
+    let str_attr = |v: &XmlVar, slot: &mut STATIC_STRING_DATA| {
+        slot.attribute.start = mk_scon_persist(v.get("start"));
     };
 
     let n_states = md.nStatesArray as usize;

@@ -22,6 +22,7 @@ mod model_data;
 mod operators;
 mod run;
 mod nls;
+mod spatial;
 mod stateset;
 mod support;
 mod systems;

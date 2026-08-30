@@ -4,7 +4,7 @@
 //! `data->callback`, through `src/shim.c` so a failed `assert` in the model comes
 //! back as an error instead of unwinding past us.
 
-use core::ffi::{c_int, c_long};
+use core::ffi::{c_char, c_int, c_long};
 
 use openmodelica_sim_meta::driver::{self, Result, SimEngine};
 
@@ -144,14 +144,11 @@ impl CEngine {
             self.mark_hit();
             return Ok(());
         }
-        Err(MODEL_ERROR)
+        // The reason is already on the log, from `omr_assert_report`; naming it C's
+        // own `longjmp` is what makes the driver print the initialization notice.
+        Err(driver::ASSERT_ERR)
     }
 }
-
-/// What a call that left through its jump buffer reports back when no region was
-/// open to absorb it; the reason itself is already on the log, from
-/// `omr_assert_report`.
-const MODEL_ERROR: &str = "a model assertion was violated and could not be absorbed";
 
 impl SimEngine for CEngine {
     fn read_bytes(&self, addr: u32, buf: &mut [u8]) -> Result<()> {
@@ -178,9 +175,48 @@ impl SimEngine for CEngine {
         openmodelica_solvers::sysstat::systems().to_vec()
     }
 
+    /// The shared solvers' counters (`openmodelica_solvers::counters`), which the
+    /// wasm runtime hands over as `rt_stat` slots. The driver reads
+    /// `RT_STAT_HOMOTOPY_STEPS` out of these for C's "with N local homotopy steps".
+    fn rt_stats(&mut self) -> [u64; driver::RT_STATS] {
+        let mut out = [0u64; driver::RT_STATS];
+        for (k, slot) in out.iter_mut().enumerate() {
+            *slot = openmodelica_solvers::counters::stat(k as u32);
+        }
+        out
+    }
+
     /// C's `cleanUpOldValueListAfterEvent`.
     fn clean_nls_history(&mut self, time: f64) {
         crate::nls::clean_history_after_event(self.rt.data, time);
+    }
+
+    /// `crate::systems` / `crate::nls` are C's own `initialize*Systems`.
+    fn host_logs_system_init(&self) -> bool {
+        true
+    }
+
+    /// C's `TermMsg` / `TermInfo`, which `omc_terminate_simulation` fills; the
+    /// driver's own `term_info` region has no C counterpart.
+    fn terminate_info(&self) -> Option<driver::TerminateInfo> {
+        fn cstr(p: *const c_char) -> String {
+            if p.is_null() {
+                return String::new();
+            }
+            unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned()
+        }
+        let info = unsafe { crate::support::TermInfo };
+        Some(driver::TerminateInfo {
+            msg: cstr(unsafe { crate::support::TermMsg }),
+            file: cstr(info.filename),
+            span: [info.lineStart, info.colStart, info.lineEnd, info.colEnd],
+            readonly: info.readonly != 0,
+        })
+    }
+
+    /// C's generated `updateBoundVariableAttributes` prints the block itself.
+    fn model_logs_bound_attrs(&self) -> bool {
+        true
     }
 
     fn has_discrete_entry(&self) -> bool {
@@ -207,7 +243,15 @@ impl SimEngine for CEngine {
             "functionInitialEquations_lambda0" => {
                 self.call_cb(cb.functionInitialEquations_lambda0)
             }
-            "functionRemovedInitialEquations" => self.call_cb(cb.functionRemovedInitialEquations),
+            // The generated body prints the inconsistent equation and returns 1.
+            "functionRemovedInitialEquations" => {
+                let Some(f) = cb.functionRemovedInitialEquations else { return Ok(()) };
+                self.publish();
+                let rc =
+                    unsafe { omr_protected_call(f, self.rt.data, self.rt.thread_data, self.stage) };
+                self.absorb(rc)?;
+                if rc > 0 { Err(driver::REMOVED_INIT_INCONSISTENT) } else { Ok(()) }
+            }
             "functionUpdateBoundParameters" => self.call_cb(cb.updateBoundParameters),
             "functionUpdateBoundVariableAttributes" => {
                 let r = self.call_cb(cb.updateBoundVariableAttributes);
@@ -219,7 +263,13 @@ impl SimEngine for CEngine {
             "functionStoreSpatialDistribution" => {
                 self.call_cb(cb.function_storeSpatialDistribution)
             }
-            "functionInitSpatialDistribution" => self.call_cb(cb.function_initSpatialDistribution),
+            // C allocates in `initializeDataStruc` and the model's function only
+            // fills; the driver calls this on every initialization attempt, so the
+            // allocation belongs with it.
+            "functionInitSpatialDistribution" => {
+                crate::spatial::init(self.rt.model().nSpatialDistributions as usize);
+                self.call_cb(cb.function_initSpatialDistribution)
+            }
             "functionZeroCrossingsEquations" => {
                 self.rt.info().callStatistics.functionZeroCrossingsEquations += 1;
                 self.call_cb(cb.function_ZeroCrossingsEquations)
@@ -269,6 +319,19 @@ impl SimEngine for CEngine {
                 crate::operators::init(md.nDelayExpressions as usize, start);
                 Ok(())
             }
+            // C's `analyticJacobians[INDEX_JAC_A]` column evaluation; the driver
+            // seeds and reads it through the flat window `build_regions` maps.
+            "functionJacA_column" | "functionJacA_constantEqns" => {
+                let jac = crate::data::jac_a_ptr(self.rt.data);
+                let Some(j) = (unsafe { jac.as_ref() }) else { return Ok(()) };
+                let f = if name == "functionJacA_column" { j.evalColumn } else { j.constantEqns };
+                let Some(f) = f else { return Ok(()) };
+                self.publish();
+                let ok = crate::support::protected(self.rt.thread_data, self.stage, || {
+                    unsafe { f(self.rt.data, self.rt.thread_data, jac, core::ptr::null_mut()) };
+                });
+                self.absorb(if ok { 0 } else { -1 })
+            }
             "functionStateSetJacobians" => {
                 self.publish();
                 crate::stateset::eval_jacobians(self.rt.data, self.rt.thread_data)
@@ -298,7 +361,28 @@ impl SimEngine for CEngine {
                 };
                 self.absorb(rc)
             }
-            driver::MODEL_FN_DAE => Err("--daeMode is not served by this runtime yet"),
+            // C's `evaluateDAEResiduals`, the one entry point `--daeMode` adds; `b`
+            // is the evaluation stage.
+            driver::MODEL_FN_DAE => {
+                let dae = self.rt.info().daeModeData;
+                let f = unsafe { dae.as_ref() }
+                    .and_then(|d| d.evaluateDAEResiduals)
+                    .ok_or("the C model has no DAE residual function")?;
+                self.publish();
+                let rc = unsafe {
+                    omr_protected_call1(
+                        core::mem::transmute::<
+                            unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_int) -> c_int,
+                            unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_long) -> c_int,
+                        >(f),
+                        self.rt.data,
+                        self.rt.thread_data,
+                        b as c_long,
+                        self.stage,
+                    )
+                };
+                self.absorb(rc)
+            }
             driver::MODEL_FN_UPDATE_SYNC | driver::MODEL_FN_EQS_SYNC => {
                 Err("clocked partitions are not served by this runtime yet")
             }
@@ -359,6 +443,31 @@ impl CEngine {
                     *si.booleanParameter.add(base + k) = p.attribute.start;
                 }
             }
+            for a in 0..md.nParametersStringArray as usize {
+                let p = &*md.stringParameterData.add(a);
+                let base = *si.stringParamsIndex.add(a);
+                for k in 0..p.dimension.scalar_length {
+                    *si.stringParameter.add(base + k) = p.attribute.start;
+                }
+            }
+        }
+    }
+
+    /// C's `copyStartValuestoInitValues` for the String variables, which the driver
+    /// cannot do: their region in the flat layout is opaque, so `set_all_vars_to_start`
+    /// leaves `stringVars` at the null every generated `stringEqual` would follow.
+    pub fn seed_string_vars(&mut self) {
+        let md = self.rt.model();
+        let si = self.rt.info();
+        let sd = self.rt.local(0);
+        unsafe {
+            for a in 0..md.nVariablesStringArray as usize {
+                let v = &*md.stringVarsData.add(a);
+                let base = *si.stringVarsIndex.add(a);
+                for k in 0..v.dimension.scalar_length {
+                    *sd.stringVars.add(base + k) = v.attribute.start;
+                }
+            }
         }
     }
 
@@ -408,5 +517,17 @@ impl CEngine {
         }
         let bytes: Vec<u8> = maxs.iter().flat_map(|v| v.to_ne_bytes()).collect();
         let _ = self.rt.write(l.state_max_off, &bytes);
+        // C's `getAlgebraicDAEVarNominals`: the algebraic unknowns IDA carries after
+        // the states, clamped like the states' own.
+        if l.n_dae_alg > 0 {
+            let ix = unsafe { (*si.daeModeData).algIndexes };
+            let alg: Vec<u8> = (0..l.n_dae_alg as usize)
+                .flat_map(|i| {
+                    let k = unsafe { *ix.add(i) } as usize;
+                    nominal.get(k).copied().unwrap_or(1.0).abs().max(1e-32).to_ne_bytes()
+                })
+                .collect();
+            let _ = self.rt.write(l.dae_alg_nom_off, &alg);
+        }
     }
 }

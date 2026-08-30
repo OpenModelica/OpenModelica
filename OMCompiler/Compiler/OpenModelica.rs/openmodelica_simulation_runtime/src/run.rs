@@ -146,7 +146,10 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
             return 1;
         }
     };
+    // `-abortSlowSimulation`: without this a chattering model runs to the stop time.
+    driver::set_abort_slow(flags.abort_slow);
     simflags::set_flags(flags);
+    crate::support::publish_log_streams();
     simflags::with_flags(simflags::print_notices);
 
     let md: &mut MODEL_DATA = unsafe { &mut *(*data).modelData };
@@ -161,13 +164,15 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     } else {
         model_data::parse(&xml_path)
     };
-    let xml = match xml {
+    let mut xml = match xml {
         Ok(x) => x,
         Err(e) => {
             omclog::error(omclog::STDOUT, false, &e);
             return 1;
         }
     };
+    // Before any of the reads below look at a `start`.
+    simflags::with_flags(|f| model_data::do_override(&mut xml, f));
 
     model_data::read_sizes(&xml, md);
     model_data::read_experiment(&xml, si);
@@ -207,8 +212,29 @@ fn cstr(p: *const c_char) -> String {
     }
 }
 
+/// C's `_main_SimulationRuntime`: `startNonInteractiveSimulation` under
+/// `MMC_TRY_INTERNAL(globalJumpBuffer)`, so a model error nothing absorbed leaves
+/// through this frame and not through the generated `main`'s top-level catch.
 #[unsafe(no_mangle)]
 pub extern "C" fn _main_SimulationRuntime(
+    argc: c_int,
+    argv: *mut *mut c_char,
+    data: *mut DATA,
+    thread_data: *mut threadData_t,
+) -> c_int {
+    let mut ret = -1;
+    let ok = crate::support::protected_global(thread_data, || {
+        ret = start_non_interactive_simulation(argc, argv, data, thread_data);
+    });
+    // C's `MMC_CATCH_INTERNAL` leaves the run here without the frees below it.
+    if !ok {
+        unsafe { (*(*data).simulationInfo).simulationSuccess = 1 };
+        return -1;
+    }
+    ret
+}
+
+fn start_non_interactive_simulation(
     _argc: c_int,
     _argv: *mut *mut c_char,
     data: *mut DATA,
@@ -230,12 +256,24 @@ pub extern "C" fn _main_SimulationRuntime(
     // The attribute mirrors start from what the XML gave; the generated
     // `updateBoundVariableAttributes` refreshes them during initialization.
     engine.sync_attributes();
+    engine.seed_string_vars();
 
     let method = meta.method.clone();
     let (result, _label) = match driver::drive(&mut engine, &meta, 0, &method, false, false) {
         Ok(v) => v,
         Err(e) => {
-            omclog::error(omclog::STDOUT, false, e);
+            free_systems();
+            // The driver already reported these; a second line here is one C never
+            // prints.
+            if !matches!(
+                e,
+                driver::ASSERT_ERR
+                    | driver::INIT_FAILED_ERR
+                    | driver::SOLVER_FAILED_ERR
+                    | driver::CHATTER_ABORT_ERR
+            ) {
+                omclog::error(omclog::STDOUT, false, e);
+            }
             unsafe { (*(*data).simulationInfo).simulationSuccess = 1 };
             // C's `_main_SimulationRuntime` leaves `retVal` at -1 when the run
             // left through the global jump buffer, which is what a model error
@@ -252,7 +290,22 @@ pub extern "C" fn _main_SimulationRuntime(
         return -1;
     }
     unsafe { (*(*data).simulationInfo).simulationSuccess = 0 };
+    free_systems();
     0
+}
+
+/// C's `freeMixedSystems` / `freeLinearSystems` / `freeNonlinearSystems`, of which
+/// only the headers are observable: the solver data is Rust-owned and dropped with
+/// the process, as C's is.
+fn free_systems() {
+    for (stream, what) in [
+        (omclog::MIXED, "free mixed system solvers"),
+        (omclog::LS_V, "free linear system solvers"),
+        (omclog::NLS, "free non-linear system solvers"),
+    ] {
+        omclog::info(stream, true, what);
+        omclog::close(stream);
+    }
 }
 
 /// `method="optimization"` and `-moo` are not served yet; C's entry point exists

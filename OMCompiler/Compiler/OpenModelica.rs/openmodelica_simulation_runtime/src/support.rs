@@ -140,6 +140,18 @@ pub(crate) fn protected<F: FnMut()>(
     rc != -1
 }
 
+/// C's `MMC_TRY_INTERNAL(globalJumpBuffer)`: run `f` with `threadData`'s global
+/// jump buffer pointed here. `false` when it was taken.
+pub(crate) fn protected_global<F: FnMut()>(thread_data: *mut threadData_t, mut f: F) -> bool {
+    unsafe extern "C" fn trampoline<F: FnMut()>(p: *mut c_void) {
+        unsafe { (*(p as *mut F))() }
+    }
+    let rc = unsafe {
+        omr_protected_global(trampoline::<F>, &mut f as *mut F as *mut c_void, thread_data)
+    };
+    rc != -1
+}
+
 /// src/shim.c, which owns the two things Rust cannot express.
 unsafe extern "C" {
     fn omr_protected(
@@ -147,6 +159,11 @@ unsafe extern "C" {
         ctx: *mut c_void,
         thread_data: *mut threadData_t,
         stage: c_int,
+    ) -> c_int;
+    fn omr_protected_global(
+        thunk: unsafe extern "C" fn(*mut c_void),
+        ctx: *mut c_void,
+        thread_data: *mut threadData_t,
     ) -> c_int;
     fn omr_vformat(msg: *const c_char, ap: VaList) -> *mut c_char;
     fn omr_free(p: *mut c_void);
@@ -434,6 +451,7 @@ pub extern "C" fn allocSparsePattern(
     p
 }
 
+/// C frees the pattern itself as well; every caller nulls its pointer after.
 #[unsafe(no_mangle)]
 pub extern "C" fn freeSparsePattern(pattern: *mut SPARSE_PATTERN) {
     if pattern.is_null() {
@@ -444,9 +462,163 @@ pub extern "C" fn freeSparsePattern(pattern: *mut SPARSE_PATTERN) {
         libc::free(s.leadindex as *mut c_void);
         libc::free(s.index as *mut c_void);
         libc::free(s.colorCols as *mut c_void);
-        s.leadindex = ptr::null_mut();
-        s.index = ptr::null_mut();
-        s.colorCols = ptr::null_mut();
+        libc::free(pattern as *mut c_void);
+    }
+}
+
+unsafe extern "C" {
+    // `libOpenModelicaRuntimeC`'s stream table (`util/omc_error.c`), which gates
+    // every `infoStreamPrint` the generated model and the remaining C runtime make.
+    static mut omc_useStream: [c_int; openmodelica_sim_meta::omclog::N_STREAMS];
+    static mut omc_showAllWarnings: c_int;
+}
+
+/// C's `setGlobalVerboseLevel`, which was in the replaced `libSimulationRuntimeC`:
+/// mirror the `-lv` selection onto the C side, so a `debugString(OMC_LOG_DT_CONS,
+/// ...)` in generated code prints exactly when `-lv=LOG_DT_CONS` was given. The two
+/// tables are the same list in the same order.
+pub fn publish_log_streams() {
+    use openmodelica_sim_meta::omclog;
+    for i in 0..omclog::N_STREAMS {
+        unsafe { omc_useStream[i] = omclog::active(i as omclog::Stream) as c_int };
+    }
+    unsafe {
+        omc_showAllWarnings =
+            (omclog::mask() & omclog::SHOW_ALL_WARNINGS != 0) as c_int;
+    }
+}
+
+/// C's `cscToCsr`: the same pattern by row. `colorCols` is left at the
+/// allocation's zeros -- the caller only reads `leadindex`/`index`.
+#[unsafe(no_mangle)]
+pub extern "C" fn cscToCsr(
+    csc: *const SPARSE_PATTERN,
+    nRows: c_uint,
+    nCols: c_uint,
+) -> *mut SPARSE_PATTERN {
+    let Some(csc) = (unsafe { csc.as_ref() }) else { return ptr::null_mut() };
+    let (rows, cols, nnz) = (nRows as usize, nCols as usize, csc.nnz as usize);
+    let ap = unsafe { core::slice::from_raw_parts(csc.leadindex, cols + 1) };
+    let ai = unsafe { core::slice::from_raw_parts(csc.index, nnz) };
+    if ap[0] != 0 || ap[cols] as usize != nnz || ai.iter().any(|&r| r as usize >= rows) {
+        return ptr::null_mut();
+    }
+    let mut bp = vec![0u32; rows + 1];
+    for &r in ai {
+        bp[r as usize] += 1;
+    }
+    let mut cumsum = 0u32;
+    for r in 0..rows {
+        let n = bp[r];
+        bp[r] = cumsum;
+        cumsum += n;
+    }
+    let mut bj = vec![0u32; nnz];
+    for col in 0..cols {
+        for jj in ap[col] as usize..ap[col + 1] as usize {
+            let row = ai[jj] as usize;
+            bj[bp[row] as usize] = col as u32;
+            bp[row] += 1;
+        }
+    }
+    // Shift the running heads back into row pointers.
+    let mut last = 0;
+    for slot in bp.iter_mut() {
+        core::mem::swap(slot, &mut last);
+    }
+    let csr = allocSparsePattern(nRows, csc.nnz, 0);
+    unsafe {
+        let d = &mut *csr;
+        core::ptr::copy_nonoverlapping(bp.as_ptr(), d.leadindex, rows + 1);
+        core::ptr::copy_nonoverlapping(bj.as_ptr(), d.index, nnz);
+    }
+    csr
+}
+
+/// C's `computeColumnColoring`: a greedy distance-2 column coloring of the CSC
+/// pattern, which the NBackend's resizable Jacobian needs because its runtime
+/// pattern over-approximates the symbolic one. Colors are 1-based.
+#[unsafe(no_mangle)]
+pub extern "C" fn computeColumnColoring(sp: *mut SPARSE_PATTERN, nRows: c_uint, nCols: c_uint) {
+    let Some(sp) = (unsafe { sp.as_mut() }) else { return };
+    if sp.colorCols.is_null() {
+        return;
+    }
+    let cols = nCols as usize;
+    if cols == 0 {
+        sp.maxColors = 0;
+        return;
+    }
+    let color_cols = unsafe { core::slice::from_raw_parts_mut(sp.colorCols, cols) };
+    let csr = cscToCsr(sp, nRows, nCols);
+    if csr.is_null() {
+        // C's fallback: one column per color.
+        for (c, slot) in color_cols.iter_mut().enumerate() {
+            *slot = c as c_uint + 1;
+        }
+        sp.maxColors = nCols;
+        return;
+    }
+    let rows = nRows as usize;
+    let ap = unsafe { core::slice::from_raw_parts(sp.leadindex, cols + 1) };
+    let ai = unsafe { core::slice::from_raw_parts(sp.index, sp.nnz as usize) };
+    let (bp, bj) = unsafe {
+        let d = &*csr;
+        (
+            core::slice::from_raw_parts(d.leadindex, rows + 1),
+            core::slice::from_raw_parts(d.index, d.nnz as usize),
+        )
+    };
+    // `forbidden[k]`: color `k` is taken by a column sharing a row with this one.
+    let mut forbidden = vec![false; cols + 2];
+    let mut set_colors: Vec<usize> = Vec::with_capacity(cols);
+    let mut max_color = 0;
+    for c in 0..cols {
+        set_colors.clear();
+        for nz in ap[c] as usize..ap[c + 1] as usize {
+            let row = ai[nz] as usize;
+            if row >= rows {
+                continue;
+            }
+            for nz2 in bp[row] as usize..bp[row + 1] as usize {
+                let c2 = bj[nz2] as usize;
+                if c2 >= c {
+                    continue;
+                }
+                let used = color_cols[c2] as usize;
+                if used > 0 && used <= cols && !forbidden[used] {
+                    forbidden[used] = true;
+                    set_colors.push(used);
+                }
+            }
+        }
+        let mut color = 1;
+        while color <= cols && forbidden[color] {
+            color += 1;
+        }
+        color_cols[c] = color as c_uint;
+        max_color = max_color.max(color as c_uint);
+        for &k in &set_colors {
+            forbidden[k] = false;
+        }
+    }
+    sp.maxColors = max_color;
+    freeSparsePattern(csr);
+}
+
+/// C's `sortSparseColumns`: KLU and the pattern printers need each column's row
+/// indices ascending, which the NBackend fills in equation order.
+#[unsafe(no_mangle)]
+pub extern "C" fn sortSparseColumns(sp: *mut SPARSE_PATTERN, nCols: c_uint) {
+    let Some(sp) = (unsafe { sp.as_mut() }) else { return };
+    let cols = nCols as usize;
+    let ap = unsafe { core::slice::from_raw_parts(sp.leadindex, cols + 1) };
+    let index = unsafe { core::slice::from_raw_parts_mut(sp.index, sp.nnz as usize) };
+    for c in 0..cols {
+        let (start, end) = (ap[c] as usize, ap[c + 1] as usize);
+        if end > start + 1 {
+            index[start..end].sort_unstable();
+        }
     }
 }
 

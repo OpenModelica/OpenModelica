@@ -30,7 +30,7 @@ pub mod linearize;
 // The solvers and the flags/logging they read live in `openmodelica_solvers`,
 // which knows nothing about `SimData`; re-exported here so `sim_meta::gbode`
 // (and the paths the codegen already uses) still name them.
-pub use openmodelica_solvers::{delay, fixedstep, gbode, omclog, simflags, sysstat};
+pub use openmodelica_solvers::{delay, fixedstep, gbode, omclog, simflags, spatial, sysstat};
 /// `-csvInput`, which needs a filesystem: host builds only.
 #[cfg(feature = "std")]
 pub(crate) mod extinput;
