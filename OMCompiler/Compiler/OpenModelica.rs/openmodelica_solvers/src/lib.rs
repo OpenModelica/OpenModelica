@@ -158,6 +158,9 @@ static LOG_SINK: AtomicUsize = AtomicUsize::new(0);
 
 pub fn set_log_sink(f: LogSink) {
     LOG_SINK.store(f as usize, Ordering::Relaxed);
+    // DASKR's own messages (`xerrwd`) belong in the same log, in call order.
+    #[cfg(feature = "std")]
+    daskr::auxiliary::set_print_hook(|s| log_line(omclog::STDOUT, omclog::INFO, s));
 }
 
 /// Whether the installed sink writes to the process's own `stdout`.

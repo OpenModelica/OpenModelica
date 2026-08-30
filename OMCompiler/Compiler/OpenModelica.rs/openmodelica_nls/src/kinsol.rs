@@ -313,7 +313,13 @@ pub mod sun {
             let vals = &mut self.vals;
             if !self.solved {
                 let x = data(self.u, self.n);
-                (ud.assemble)(x, vals);
+                if ud.numeric {
+                    let mut fx = vec![0.0f64; ud.n];
+                    (ud.eval)(x, &mut fx);
+                    numeric_csc(ud, x, &fx, vals);
+                } else {
+                    (ud.assemble)(x, vals);
+                }
                 derivative_test(ud, x, vals);
             }
             let xscale = data(self.xscale, self.n);
@@ -407,9 +413,15 @@ pub mod sun {
             x: &mut [f64],
             eq_index: u32,
             time: f64,
+            has_jacobian: bool,
             eval: &mut dyn FnMut(&[f64], &mut [f64]),
             assemble: &mut dyn FnMut(&[f64], &mut [f64]),
         ) -> bool {
+            // C's `KINSetJacFn(.., nlsSparseJac)` for a system without an
+            // analytical Jacobian: differenced from the start.
+            if !has_jacobian {
+                self.numeric_jac = true;
+            }
             let mut ud = Ud {
                 n: self.n,
                 nnz: self.nnz,
@@ -1191,11 +1203,12 @@ pub fn solve(
     x: &mut [f64],
     eq_index: u32,
     time: f64,
+    has_jacobian: bool,
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     assemble: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     KIN_CACHE.with(handle, || sun::Solver::new(n, nnz), |solver| {
-        solver.solve(guess, nominal, colptr, rowidx, x, eq_index, time, eval, assemble)
+        solver.solve(guess, nominal, colptr, rowidx, x, eq_index, time, has_jacobian, eval, assemble)
     })
 }
 
@@ -1240,6 +1253,7 @@ mod stub {
         _x: &mut [f64],
         _eq_index: u32,
         _time: f64,
+        _has_jacobian: bool,
         _eval: &mut dyn FnMut(&[f64], &mut [f64]),
         _assemble: &mut dyn FnMut(&[f64], &mut [f64]),
     ) -> bool {

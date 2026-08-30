@@ -6,15 +6,17 @@
 //! driver and write the result file.
 
 use core::ffi::{c_char, c_int};
-use std::io::Write;
 
-use openmodelica_mat_writer::{MatVar, Precision};
-use openmodelica_sim_meta::{MetaKind, SimMeta, driver, omclog, simflags};
+use openmodelica_mat_writer::Precision;
+use openmodelica_sim_meta::{SimMeta, driver, omclog, simflags};
 
 use crate::abi::*;
 use crate::data::RtData;
 use crate::engine::CEngine;
 use crate::model_data::{self, InitXml};
+
+/// `simulationInfo->OPENMODELICAHOME`, for the profiling report's stylesheet.
+static HOME: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
 /// What `_main_initRuntimeAndSimulation` prepares and `_main_SimulationRuntime`
 /// consumes.
@@ -43,10 +45,14 @@ fn log_sink(_stream: omclog::Stream, _ty: omclog::LogType, s: &str) {
     print_line(s);
 }
 
+/// Through C's `stdout` buffer: the generated code, libOpenModelicaRuntimeC and
+/// any external function `printf` into it, and a line written through Rust's own
+/// handle would overtake everything they have buffered.
 fn print_line(s: &str) {
-    let mut out = std::io::stdout();
-    let _ = out.write_all(s.as_bytes());
-    let _ = out.flush();
+    unsafe extern "C" {
+        static mut stdout: *mut libc::FILE;
+    }
+    unsafe { libc::fwrite(s.as_ptr().cast(), 1, s.len(), stdout) };
 }
 
 /// C's line at the end of `initializeModel`, naming the homotopy steps it took.
@@ -100,6 +106,7 @@ const C_FLAGS: &[(usize, &str)] = &[
     (FLAG_OVERRIDE_FILE, "overrideFile"),
     (FLAG_R, "r"),
     (FLAG_S, "s"),
+    (FLAG_VARIABLE_FILTER, "variableFilter"),
 ];
 
 /// C's `checkCommandLineArguments`, for the entries the generated code reads.
@@ -134,7 +141,10 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     thread_data: *mut threadData_t,
 ) -> c_int {
     let args = argv_strings(argc, argv);
+    crate::support::install_message_hooks();
     driver::set_log_sink(log_sink);
+    driver::set_no_throw_hook(crate::engine::set_no_throw);
+    driver::set_result_file_reader(crate::iif::read_result_values);
     driver::set_log_sink_is_stdout(true);
     driver::set_init_done_hook(init_done);
     driver::set_teardown_hook(teardown);
@@ -149,6 +159,8 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     };
     // `-abortSlowSimulation`: without this a chattering model runs to the stop time.
     driver::set_abort_slow(flags.abort_slow);
+    // `-nls`, `-ls`, `-newton*`, `-hom*`, ... for the shared solvers.
+    openmodelica_solvers::solverflags::apply_flags(&flags);
     simflags::set_flags(flags);
     crate::support::publish_log_streams();
     simflags::with_flags(simflags::print_notices);
@@ -178,21 +190,24 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     model_data::read_sizes(&xml, md);
     model_data::read_experiment(&xml, si);
     si.OPENMODELICAHOME = model_data::strdup(xml.md("OPENMODELICAHOME"));
+    let _ = HOME.set(xml.md("OPENMODELICAHOME").to_string());
+    openmodelica_sim_meta::profiling::set_home(|| HOME.get().cloned().filter(|h| !h.is_empty()));
     model_data::read_variables(&xml, md);
+    // C's `initializeOutputFilter`: `-variableFilter` else the model's own.
+    let filter = flag_value(FLAG_VARIABLE_FILTER).unwrap_or_else(|| cstr(si.variableFilter));
+    let output_format = flag_value(FLAG_OUTPUT_FORMAT).unwrap_or_else(|| cstr(si.outputFormat));
+    model_data::initialize_output_filter(md, &filter, output_format == "mat");
 
     crate::nls::install_hooks(data, thread_data, &prefix);
     // The per-system clocks cost two clock reads per solve, so they are only armed
     // where `LOG_STATS_V` will print them (C's `measure_time_flag` equivalent).
     openmodelica_solvers::sysstat::enable(omclog::active(omclog::STATS_V));
     crate::nls::warn_once_unsupported_nls();
+    // C's `modelInfoInit` under `+profiling`: the generated code indexes its block
+    // clocks past `nProfileBlocks`, which only the `_info.json` knows.
+    crate::info_json::init_profiling(md);
     let rt = crate::data::initialize(data, thread_data);
-    // `samplesInfo[i].index` names the sample in the `LOG_EVENTS` time-event line,
-    // and the metadata is built before the driver's own `initSample` call. The
-    // indices are compile-time constants, so filling the array now is enough; the
-    // start/interval it also writes are recomputed once the parameters are known.
-    if let Some(f) = unsafe { (*(*data).callback).function_initSample } {
-        unsafe { f(data, thread_data) };
-    }
+    simflags::with_flags(|f| crate::systems::apply_solver_flags(si, f));
     si.minStepSize = 4.0 * f64::EPSILON * si.startTime.abs().max(si.stopTime.abs());
     RUN.set(Box::new(Run { rt, xml, prefix }));
     0
@@ -258,6 +273,10 @@ fn start_non_interactive_simulation(
     // `updateBoundVariableAttributes` refreshes them during initialization.
     engine.sync_attributes();
     engine.seed_string_vars();
+    if !crate::iif::resolve(&meta, &result_path(&meta, data)) {
+        unsafe { (*(*data).simulationInfo).simulationSuccess = 1 };
+        return -1;
+    }
 
     let method = meta.method.clone();
     let (result, _label) = match driver::drive(&mut engine, &meta, 0, &method, false, false) {
@@ -320,6 +339,10 @@ fn start_non_interactive_simulation(
         omclog::error(omclog::STDOUT, false, &e);
         return -1;
     }
+    // C's `printModelInfo`, after the result file is closed: its size is reported.
+    let path = result_path(&meta, data);
+    let size = std::fs::metadata(&path).map(|m| m.len() as i64).unwrap_or(-1);
+    openmodelica_sim_meta::profiling::finish(&meta, &path, size);
     unsafe { (*(*data).simulationInfo).simulationSuccess = 0 };
     free_systems();
     0
@@ -358,47 +381,33 @@ pub extern "C" fn _main_OptimizationRuntime(
 
 /// C's `sim_result.writeParameterData` + `emit`, deferred to the end: the driver
 /// hands back every row at once. `-r` names the file, else `modelData`'s
-/// `resultFileName`, else `<prefix>_res.mat`.
+/// `resultFileName`, else `<prefix>_res.<format>`.
 fn write_result(meta: &SimMeta, result: &driver::RunResult, data: *mut DATA) -> Result<(), String> {
-    if meta.output_format != "mat" {
-        if meta.output_format == "empty" {
-            return Ok(());
-        }
-        return Err(format!("the Rust simulation runtime cannot write '{}' yet", meta.output_format));
-    }
+    let precision =
+        simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
+    let Some(bytes) = openmodelica_sim_meta::result::write(
+        meta,
+        &meta.output_format,
+        &result.rows,
+        result.n_reals,
+        &result.params,
+        &meta.output_keep(None),
+        precision,
+    ) else {
+        return Ok(());
+    };
+    let path = result_path(meta, data);
+    std::fs::write(&path, bytes).map_err(|e| format!("cannot write {path}: {e}"))
+}
+
+/// `-r` names the result file, else `modelData`'s `resultFileName`, else
+/// `<prefix>_res.<format>`.
+fn result_path(meta: &SimMeta, data: *mut DATA) -> String {
     let md: &MODEL_DATA = unsafe { &*(*data).modelData };
     let name = if md.resultFileName.is_null() {
-        format!("{}_res.mat", meta.prefix)
+        format!("{}_res.{}", meta.prefix, meta.output_format)
     } else {
         cstr(md.resultFileName)
     };
-    let path = simflags::with_flags(|f| f.result_file.clone()).unwrap_or(name);
-
-    let keep = meta.output_keep(None);
-    let mut matvars: Vec<MatVar> = Vec::new();
-    let mut kept_params: Vec<f64> = Vec::new();
-    let mut param_ix = 0usize;
-    for (v, &keep) in meta.vars.iter().zip(&keep) {
-        let is_param = matches!(v.kind, MetaKind::Param { .. });
-        if is_param && keep {
-            kept_params.push(result.params.get(param_ix).copied().unwrap_or(0.0));
-        }
-        param_ix += is_param as usize;
-        if !keep {
-            continue;
-        }
-        matvars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
-    }
-    let precision =
-        simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
-    let bytes = openmodelica_mat_writer::write_mat4(
-        &matvars,
-        meta.start_time,
-        meta.stop_time,
-        &result.rows,
-        result.n_reals,
-        &kept_params,
-        precision,
-    );
-    std::fs::write(&path, bytes).map_err(|e| format!("cannot write {path}: {e}"))
+    simflags::with_flags(|f| f.result_file.clone()).unwrap_or(name)
 }

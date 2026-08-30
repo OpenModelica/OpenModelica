@@ -40,6 +40,7 @@ pub mod datarecon;
 /// `+profiling`, whose files go out through [`files`] like every other side file,
 /// so an artifact's in-wasm driver reports as the host does.
 pub mod profiling;
+pub mod result;
 /// The writer every file a run leaves beside its result goes through.
 pub mod files;
 pub mod optimization;
@@ -581,6 +582,22 @@ impl MetaKind {
             MetaKind::Column { col, negate } => MatKind::Column { col: *col, negate: neg(negate) },
             MetaKind::Param { negate, .. } => MatKind::Param { negate: neg(negate) },
             MetaKind::Const { value } => MatKind::Const { value: *value },
+        }
+    }
+
+    /// Project onto the `.plt` writer's kind.
+    pub fn plt(&self) -> openmodelica_plt_writer::PltKind {
+        use openmodelica_plt_writer::{Neg as PltNeg, PltKind};
+        let neg = |n: &Neg| match n {
+            Neg::None => PltNeg::None,
+            Neg::Arith => PltNeg::Arith,
+            Neg::Not => PltNeg::Not,
+        };
+        match self {
+            MetaKind::Time => PltKind::Time,
+            MetaKind::Column { col, negate } => PltKind::Column { col: *col, negate: neg(negate) },
+            MetaKind::Param { negate, .. } => PltKind::Param { negate: neg(negate) },
+            MetaKind::Const { value } => PltKind::Const { value: *value },
         }
     }
 }

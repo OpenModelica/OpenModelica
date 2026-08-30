@@ -1,0 +1,13 @@
+# Reader for OpenModelica's MATLAB v4 result files: the compiler's
+# `SimulationResults` package (`val`, `readSimulationResult`, ...) and the
+# simulation runtimes' `-iif` share it. Only `std` and the fs facade, so a
+# simulation executable can depend on it without the compiler stack.
+[package]
+name = "openmodelica_mat_reader"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+
+[dependencies]
+openmodelica_wasi.workspace = true

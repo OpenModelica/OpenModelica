@@ -829,11 +829,6 @@ fn shared_cstr(caller: &mut wasmtime::Caller<'_, WasiCtx>, ptr: i32) -> String {
     String::from_utf8_lossy(&rest[..len]).into_owned()
 }
 
-/// A message without its trailing newline; the log adds its own, as C does.
-fn trim_eol(msg: &str) -> &str {
-    msg.strip_suffix('\n').unwrap_or(msg)
-}
-
 /// The ModelicaUtilities a library may call: host imports, because the messages
 /// belong in the run's log (or, outside a run, in omc's error buffer). A formatted
 /// variant gets `(format, va_list)` and is not interpolated, as on the web target.
@@ -864,7 +859,7 @@ pub fn modelica_utilities_imports(
     let warning = move |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
         let msg = shared_cstr(&mut caller, ptr);
         if in_run {
-            omclog::warning(omclog::STDOUT, false, trim_eol(&msg));
+            omclog::warning(omclog::STDOUT, false, &msg);
         } else {
             openmodelica_error::ErrorExt::runtime_warning(&msg);
         }
@@ -872,7 +867,7 @@ pub fn modelica_utilities_imports(
     let warning_fmt = move |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| {
         let msg = shared_cstr(&mut caller, fmt);
         if in_run {
-            omclog::warning(omclog::STDOUT, false, trim_eol(&msg));
+            omclog::warning(omclog::STDOUT, false, &msg);
         } else {
             openmodelica_error::ErrorExt::runtime_warning(&msg);
         }
@@ -881,13 +876,13 @@ pub fn modelica_utilities_imports(
     let message = move |mut caller: Caller<'_, WasiCtx>, ptr: i32| {
         if in_run {
             let msg = shared_cstr(&mut caller, ptr);
-            omclog::info(omclog::STDOUT, false, trim_eol(&msg));
+            omclog::info(omclog::STDOUT, false, &msg);
         }
     };
     let message_fmt = move |mut caller: Caller<'_, WasiCtx>, fmt: i32, _va: i32| {
         if in_run {
             let msg = shared_cstr(&mut caller, fmt);
-            omclog::info(omclog::STDOUT, false, trim_eol(&msg));
+            omclog::info(omclog::STDOUT, false, &msg);
         }
     };
 

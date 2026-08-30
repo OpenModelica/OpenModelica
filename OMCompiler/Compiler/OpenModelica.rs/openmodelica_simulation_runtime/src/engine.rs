@@ -5,6 +5,7 @@
 //! back as an error instead of unwinding past us.
 
 use core::ffi::{c_char, c_int, c_long};
+use core::sync::atomic::{AtomicBool, Ordering};
 
 use openmodelica_sim_meta::driver::{self, Result, SimEngine};
 
@@ -34,6 +35,30 @@ unsafe extern "C" {
         stage: c_int,
     ) -> c_int;
 }
+
+/// C's `noThrowAsserts`, as the driver opens and closes its window.
+static NO_THROW: AtomicBool = AtomicBool::new(false);
+/// A violated `assert()` the model only noted inside it (C's `needToReThrow`).
+static NOTED_ASSERT: AtomicBool = AtomicBool::new(false);
+
+pub fn set_no_throw(v: bool) {
+    NO_THROW.store(v, Ordering::Relaxed);
+}
+
+unsafe extern "C" {
+    fn rt_init(numTimer: c_int);
+    fn rt_clear(ix: c_int);
+    fn rt_ncall(ix: c_int) -> u32;
+    fn rt_ncall_total(ix: c_int) -> u32;
+    fn rt_ncall_min(ix: c_int) -> u32;
+    fn rt_ncall_max(ix: c_int) -> u32;
+    fn rt_accumulated(ix: c_int) -> f64;
+    fn rt_max_accumulated(ix: c_int) -> f64;
+    fn rt_total(ix: c_int) -> f64;
+}
+
+/// `rtclock.h`: the first clock the generated code's `SIM_PROF_*` macros index from.
+const SIM_TIMER_FIRST_FUNCTION: c_int = 16;
 
 pub struct CEngine {
     pub rt: RtData,
@@ -83,18 +108,14 @@ impl CEngine {
     /// Publish what the generated code reads but the layout keeps elsewhere, before
     /// every model call: the driver's relation mode as C's
     /// `discreteCall`/`solveContinuous` pair (what `relationhysteresis` branches
-    /// on), and its open region as `threadData->currentErrorStage` plus
-    /// `noThrowAsserts`.
+    /// on), its open region as `threadData->currentErrorStage`, and its assert
+    /// window as `noThrowAsserts`.
     fn publish(&mut self) {
         let mode = {
             let mut b = [0u8; 4];
             let _ = self.rt.read(self.rt.layout.rel_fresh_off, &mut b);
             i32::from_ne_bytes(b)
         };
-        // The driver's region, as the two things C keeps it in: the stage decides
-        // which jump buffer an assertion takes and how loudly it reports, and
-        // `noThrowAsserts` is C's `simulationUpdate` region, where the generated
-        // assert only notes itself in `needToReThrow` and carries on.
         let ds = self.driver_stage() as u32;
         self.stage = match ds {
             openmodelica_nls::ERROR_INTEGRATOR => error_stage::INTEGRATOR,
@@ -103,7 +124,7 @@ impl CEngine {
             _ => error_stage::SIMULATION,
         };
         let si = self.rt.info();
-        si.noThrowAsserts = (ds == openmodelica_nls::ERROR_EVENTHANDLING) as modelica_boolean;
+        si.noThrowAsserts = NO_THROW.load(Ordering::Relaxed) as modelica_boolean;
         // 0 held, 1 event, 2 initialization -- C reaches the held branch through
         // `discreteCall == 0 || solveContinuous`, and the fresh one through neither.
         si.discreteCall = if mode == 0 { 0 } else { 1 };
@@ -126,16 +147,15 @@ impl CEngine {
         self.absorb(rc)
     }
 
-    /// What a model call's return means for the region the driver has open: a
-    /// violated assertion the model only noted (`needToReThrow`), or a jump it
-    /// took, both raise the pair's `hit` word rather than ending the run -- as long
-    /// as a region is open to absorb it.
+    /// What a model call's return means: a violated assertion the model only
+    /// noted (`needToReThrow`) is kept for the driver to settle when it closes the
+    /// assert window; a jump it took raises the open region's `hit` word rather
+    /// than ending the run -- as long as a region is open to absorb it.
     fn absorb(&mut self, rc: c_int) -> Result<()> {
         let si = self.rt.info();
-        let noted = si.needToReThrow != 0;
-        si.needToReThrow = 0;
-        if noted {
-            self.mark_hit();
+        if si.needToReThrow != 0 {
+            si.needToReThrow = 0;
+            NOTED_ASSERT.store(true, Ordering::Relaxed);
         }
         if rc != -1 {
             return Ok(());
@@ -307,7 +327,8 @@ impl SimEngine for CEngine {
             "functionUpdateRelations" => {
                 let Some(f) = cb.function_updateRelations else { return Ok(()) };
                 self.publish();
-                // C's `evalZeroCross`: fresh, hysteretic relation values.
+                // `evalZeroCross = 0`, the plain relations C's `updateDiscreteSystem`
+                // opens with; the wasm codegen's function computes the same.
                 let rc = unsafe {
                     omr_protected_call1(
                         core::mem::transmute::<
@@ -316,7 +337,7 @@ impl SimEngine for CEngine {
                         >(f),
                         self.rt.data,
                         self.rt.thread_data,
-                        1,
+                        0,
                         self.stage,
                     )
                 };
@@ -476,6 +497,109 @@ impl SimEngine for CEngine {
         Err("the C model has no in-model simulate entry point")
     }
 
+    /// The string slots are opaque to the region map (a `modelica_string` is a
+    /// pointer here); the value is read from the array C keeps it in.
+    fn string_at(&self, addr: u32) -> Result<String> {
+        let l = &self.rt.layout;
+        let md = unsafe { &*(*self.rt.data).modelData };
+        let (base, count, arr) = if addr >= l.sparam_off {
+            (l.sparam_off, md.nParametersString, unsafe { (*(*self.rt.data).simulationInfo).stringParameter })
+        } else {
+            (l.str_off, md.nVariablesString, unsafe { (*(*(*self.rt.data).localData)).stringVars })
+        };
+        let i = ((addr - base) / 4) as i64;
+        if i >= count || arr.is_null() {
+            return Err("string slot out of range");
+        }
+        Ok(crate::model_data::string_value(unsafe { *arr.add(i as usize) }))
+    }
+
+    /// C's `rt_init` in `initRuntimeAndSimulation`: the function, equation and
+    /// block clocks the generated code ticks, plus C's sentinel.
+    fn prof_init(&mut self, n: u32) {
+        let xml = &self.rt.model().modelDataXml;
+        unsafe { rt_init(SIM_TIMER_FIRST_FUNCTION + n as c_int + xml.nEquations as c_int + 4) };
+    }
+
+    /// C's `clear_rt_step` over the function and block clocks.
+    fn prof_clear(&mut self) {
+        for i in 0..crate::data::prof_clocks(self.rt.model()) as c_int {
+            unsafe { rt_clear(SIM_TIMER_FIRST_FUNCTION + i) };
+        }
+    }
+
+    /// The step record the profiler reads: every clock's call count, then its seconds.
+    fn prof_row(&mut self) -> u32 {
+        let n = crate::data::prof_clocks(self.rt.model()) as usize;
+        let mut b = vec![0u8; n * 12];
+        for i in 0..n {
+            let ix = SIM_TIMER_FIRST_FUNCTION + i as c_int;
+            b[4 * i..4 * i + 4].copy_from_slice(&unsafe { rt_ncall(ix) }.to_le_bytes());
+            let o = 4 * n + 8 * i;
+            b[o..o + 8].copy_from_slice(&unsafe { rt_accumulated(ix) }.to_le_bytes());
+        }
+        let off = self.rt.prof_off;
+        let _ = self.rt.write(off, &b);
+        off
+    }
+
+    /// The run totals, 40 bytes per clock in the profiler's record order.
+    fn prof_dump(&mut self) -> u32 {
+        let n = crate::data::prof_clocks(self.rt.model()) as usize;
+        let mut b = vec![0u8; n * 40];
+        for i in 0..n {
+            let ix = SIM_TIMER_FIRST_FUNCTION + i as c_int;
+            let o = 40 * i;
+            unsafe {
+                b[o..o + 8].copy_from_slice(&rt_total(ix).to_le_bytes());
+                b[o + 8..o + 16].copy_from_slice(&rt_max_accumulated(ix).to_le_bytes());
+                b[o + 16..o + 24].copy_from_slice(&rt_accumulated(ix).to_le_bytes());
+                b[o + 24..o + 28].copy_from_slice(&rt_ncall_total(ix).to_le_bytes());
+                b[o + 28..o + 32].copy_from_slice(&rt_ncall_min(ix).to_le_bytes());
+                b[o + 32..o + 36].copy_from_slice(&rt_ncall_max(ix).to_le_bytes());
+                b[o + 36..o + 40].copy_from_slice(&rt_ncall(ix).to_le_bytes());
+            }
+        }
+        let off = self.rt.prof_off;
+        let _ = self.rt.write(off, &b);
+        off
+    }
+
+    fn sample_index(&self, k: usize) -> Option<i32> {
+        let md = self.rt.model();
+        (k < md.nSamples.max(0) as usize).then(|| unsafe { (*md.samplesInfo.add(k)).index as i32 })
+    }
+
+    fn update_static_system_data(&mut self, linear: bool) {
+        let (data, td) = (self.rt.data, self.rt.thread_data);
+        let md = self.rt.model();
+        let si = self.rt.info();
+        self.publish();
+        if linear {
+            for i in 0..md.nLinearSystems.max(0) as usize {
+                let ls = unsafe { &mut *si.linearSystemData.add(i) };
+                if let Some(f) = ls.initializeStaticLSData {
+                    unsafe { f(data, td, ls, 0) };
+                }
+            }
+        } else {
+            for i in 0..md.nNonLinearSystems.max(0) as usize {
+                let sys = unsafe { &mut *si.nonlinearSystemData.add(i) };
+                if let Some(f) = sys.initializeStaticNLSData {
+                    unsafe { f(data, td, sys, 0, 0) };
+                }
+            }
+        }
+    }
+
+    fn set_rhs_final(&mut self, final_eval: bool) {
+        unsafe { crate::support::RHSFinalFlag = final_eval as c_int };
+    }
+
+    fn take_noted_assert(&mut self) -> bool {
+        NOTED_ASSERT.swap(false, Ordering::Relaxed)
+    }
+
     fn take_pending_assert(&mut self) -> Option<[i32; 9]> {
         None
     }
@@ -561,23 +685,19 @@ impl CEngine {
         let md = self.rt.model();
         let si = self.rt.info();
         let n_states = l.n_states as usize;
-        let mut start = vec![0.0f64; (2 * l.n_states + l.n_real_alg) as usize];
-        let mut nominal = vec![1.0f64; start.len()];
+        let mut nominal = vec![1.0f64; (2 * l.n_states + l.n_real_alg) as usize];
         unsafe {
             for a in 0..md.nVariablesRealArray as usize {
                 let v = &*md.realVarsData.add(a);
                 let base = *si.realVarsIndex.add(a);
                 for k in 0..v.dimension.scalar_length {
-                    if base + k >= start.len() {
+                    if base + k >= nominal.len() {
                         break;
                     }
-                    start[base + k] = v.attribute.start.real_at(k, 0.0);
                     nominal[base + k] = v.attribute.nominal.real_at(k, 1.0);
                 }
             }
         }
-        let bytes: Vec<u8> = start.iter().flat_map(|v| v.to_ne_bytes()).collect();
-        let _ = self.rt.write(l.start_off, &bytes);
         let bytes: Vec<u8> = nominal.iter().flat_map(|v| v.to_ne_bytes()).collect();
         let _ = self.rt.write(l.real_nom_off, &bytes);
         // The integrator's copies: C clamps the nominal away from zero and takes

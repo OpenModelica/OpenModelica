@@ -10,7 +10,7 @@
 //! is 4 bytes in wasm and 8 here) the map converts, and the regions C has no
 //! home for (the driver's own scratch) fall through to a buffer this module owns.
 
-use core::ffi::{c_int, c_long, c_void};
+use core::ffi::{c_int, c_long, c_ulong, c_void};
 
 use openmodelica_sim_meta::{Layout, REAL_OFF};
 
@@ -37,6 +37,11 @@ pub const CONTEXT_OFF: u32 = 0;
 /// `threadData->currentErrorStage` and `simulationInfo->noThrowAsserts`, and a model
 /// error absorbed under it raises `hit`. Driver-owned memory, so no region maps it.
 pub const ERR_STAGE_OFF: u32 = 8;
+
+/// C's function and profile-block clocks, the ones the driver's profiler reads.
+pub fn prof_clocks(md: &MODEL_DATA) -> u32 {
+    (md.modelDataXml.nFunctions + md.modelDataXml.nProfileBlocks).max(0) as u32
+}
 
 /// Absolute flat addresses for the arrays a C model keeps *beside* its variables,
 /// where a wasm model writes the variables themselves. [`build_regions`] maps C's
@@ -96,6 +101,10 @@ enum Backing {
     /// the same fields in a different order, with C's `stats` nested.
     BaseClocks(*mut BASECLOCK_DATA),
     SubClocks(*mut SUBCLOCK_DATA),
+    /// One `f64` per 8-byte slot, each at its own address: the real `start`
+    /// attributes, which C keeps per variable in `attribute.start.data`. A null
+    /// entry reads zero and drops writes.
+    Scattered(*const *mut f64),
     /// No C counterpart (a `modelica_string` / external-object handle, which the
     /// numeric driver never interprets): reads zero, writes are dropped.
     Opaque,
@@ -116,6 +125,9 @@ pub struct RtData {
     /// The driver's own regions (scratch, attribute mirrors, flags C has no field
     /// for), at their layout offsets so a lookup miss can index straight in.
     owned: Vec<u8>,
+    /// Flat address of the `+profiling` clock records (`CEngine::prof_row` /
+    /// `prof_dump`), past [`Extra`], sized for the model's function and block clocks.
+    pub prof_off: u32,
     regions: Vec<Region>,
     /// `[start, end)` of the real-variable region and its native base -- checked
     /// before the region table, as almost every access lands here.
@@ -262,6 +274,17 @@ impl RtData {
                 Backing::SubClocks(base) => {
                     clock_io(buf.as_mut_ptr(), buf.len(), off, true, |o| sub_clock_field(base, o))
                 }
+                Backing::Scattered(table) => {
+                    if buf.len() % 8 != 0 || off % 8 != 0 {
+                        return Err("SimData scattered read is not a whole number of 8-byte slots");
+                    }
+                    for (k, out) in buf.chunks_exact_mut(8).enumerate() {
+                        let p = unsafe { *table.add(off as usize / 8 + k) };
+                        let v = if p.is_null() { 0.0 } else { unsafe { *p } };
+                        out.copy_from_slice(&v.to_ne_bytes());
+                    }
+                    Ok(())
+                }
                 Backing::Opaque => {
                     buf.fill(0);
                     Ok(())
@@ -332,6 +355,18 @@ impl RtData {
                     clock_io(buf.as_ptr() as *mut u8, buf.len(), off, false, |o| {
                         sub_clock_field(base, o)
                     })
+                }
+                Backing::Scattered(table) => {
+                    if buf.len() % 8 != 0 || off % 8 != 0 {
+                        return Err("SimData scattered write is not a whole number of 8-byte slots");
+                    }
+                    for (k, src) in buf.chunks_exact(8).enumerate() {
+                        let p = unsafe { *table.add(off as usize / 8 + k) };
+                        if !p.is_null() {
+                            unsafe { *p = f64::from_ne_bytes(src.try_into().unwrap()) };
+                        }
+                    }
+                    Ok(())
                 }
                 Backing::Opaque => Ok(()),
             },
@@ -419,7 +454,7 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     // them (`-nls`, `-ls`, ...).
     si.nlsMethod = NLS_MIXED;
     si.nlsLinearSolver = NLS_LS_DEFAULT;
-    si.lsMethod = crate::systems::LS_DEFAULT;
+    si.lsMethod = LS_DEFAULT;
     si.lssMethod = LSS_DEFAULT;
     si.mixedMethod = MIXED_SEARCH;
     si.newtonStrategy = NEWTON_DAMPED2;
@@ -531,6 +566,8 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     si.discreteCall = 0;
     si.needToIterate = 0;
     si.simulationSuccess = 0;
+    si.maxWarnDisplays =
+        openmodelica_sim_meta::simflags::with_flags(|f| f.max_warn.unwrap_or(3)) as c_ulong;
     si.solverSteps = 0.0;
     si.homotopySteps = 0;
     si.currentJacobianEval = 0;
@@ -563,11 +600,13 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     crate::optimization::initialize(data, thread_data);
 
     let layout = layout_for(data, md, si, cb);
+    let prof_off = extra(&layout, md).end.next_multiple_of(8);
     let mut rt = RtData {
         data,
         thread_data,
         layout,
-        owned: vec![0u8; extra(&layout, md).end as usize],
+        owned: vec![0u8; (prof_off + prof_clocks(md) * 40) as usize],
+        prof_off,
         regions: Vec::new(),
         reals: (0, 0, core::ptr::null_mut()),
     };
@@ -662,7 +701,7 @@ fn layout_for(
         crate::stateset::scratch_words(data),
         jac_a_words(data),
         md.nMathEvents as u32,
-        0, // sensitivities
+        (md.nSensitivityVars - md.nSensitivityParamVars).max(0) as u32,
         n_dae_res,
         n_dae_aux,
         n_dae_alg,
@@ -735,6 +774,7 @@ pub fn build_regions(rt: &mut RtData) {
     direct(l.relations_pre_off, l.n_rel * 4, si.relationsPre as *mut c_void);
     direct(l.mathevents_off, l.n_math * 8, si.mathEventsValuePre as *mut c_void);
     direct(l.zctol_off, 8, &raw mut crate::support::tolZC as *mut c_void);
+    direct(l.nls_fail_off, 4, &raw mut crate::nls::nls_fail_slot as *mut c_void);
     // Past the layout: C's `currentContext`, which the driver's `setContext`
     // writes and both `solve_linear_system` (`reuseMatrixJac`) and the nonlinear
     // solver's `updateInitialGuessDB` read.
@@ -804,6 +844,28 @@ pub fn build_regions(rt: &mut RtData) {
             start: l.sample_off,
             end: l.sample_off + l.n_samples * 16,
             backing: Backing::Samples(md.samplesInfo),
+        });
+    }
+    // The real `start` attributes: C's `input_function_updateStartValues` and the
+    // driver's `-csvInput`/`-iif` imports both write them, so there is one copy.
+    if n_real > 0 {
+        let mut table: Vec<*mut f64> = vec![core::ptr::null_mut(); n_real as usize];
+        for a in 0..md.nVariablesRealArray as usize {
+            let v = unsafe { &*md.realVarsData.add(a) };
+            let base = unsafe { *si.realVarsIndex.add(a) };
+            let data = v.attribute.start.data as *mut f64;
+            for k in 0..v.dimension.scalar_length {
+                if let Some(slot) = table.get_mut(base + k)
+                    && !data.is_null()
+                {
+                    *slot = unsafe { data.add(k) };
+                }
+            }
+        }
+        regions.push(Region {
+            start: l.start_off,
+            end: l.start_off + n_real * 8,
+            backing: Backing::Scattered(Box::leak(table.into_boxed_slice()).as_ptr()),
         });
     }
     // String and external-object handles: a `modelica_string` is a pointer here

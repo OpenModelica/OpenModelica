@@ -17,9 +17,22 @@ use openmodelica_solvers::{omclog, solverflags};
 use crate::abi::*;
 use crate::systems::eval_jacobian;
 
-/// The error stage every model call from inside the solver runs at, which is what
-/// makes a violated assertion in one a note rather than the end of the run.
-const STAGE: c_int = crate::support::error_stage::NONLINEARSOLVER;
+/// The error stage a model call from the solver runs at: C's
+/// `ERROR_NONLINEARSOLVER` inside `solve_nonlinear_system`'s own region -- which
+/// makes a violated assertion a note rather than the end of the run -- and the
+/// caller's stage before it, where C's `updateInnerEquation` still reports.
+fn stage(outer: c_int) -> c_int {
+    if nls::error_stage() == nls::ERROR_NONLINEARSOLVER {
+        crate::support::error_stage::NONLINEARSOLVER
+    } else {
+        outer
+    }
+}
+
+/// The driver's failed-system slot (`Layout::nls_fail_off`): the equation index
+/// plus one of the first system a pass could not solve, 0 for none. Mapped into the
+/// layout by `data::build_regions`.
+pub static mut nls_fail_slot: i32 = 0;
 
 /// `NLS_SOLVER_STATUS` (simulation_data.h).
 const NLS_FAILED: c_int = 0;
@@ -123,6 +136,8 @@ struct CModel {
     /// The shape `jacobian` fills: the pattern's CSC values where the backend chose
     /// a sparse factorization, else a dense column-major matrix.
     csc: bool,
+    /// `threadData->currentErrorStage` at entry, C's `saveJumpState`.
+    outer_stage: c_int,
 }
 
 impl CModel {
@@ -134,12 +149,30 @@ impl CModel {
 impl nls::NlsModel for CModel {
     fn load_guess(&mut self, x: &mut [f64]) {
         let Some(f) = self.sys().getIterationVars else { return };
+        // The generated function writes `size` values -- `__HOM_LAMBDA` included on
+        // a homotopy system whose solver asks for the residual-count many.
+        let size = self.sys().size.max(0) as usize;
+        if x.len() < size {
+            let mut full = vec![0.0f64; size];
+            self.load_guess(&mut full);
+            x.copy_from_slice(&full[..x.len()]);
+            return;
+        }
         let (data, p) = (self.data, x.as_mut_ptr());
-        crate::support::protected(self.thread_data, STAGE, || unsafe { f(data, p) });
+        crate::support::protected(self.thread_data, stage(self.outer_stage), || unsafe { f(data, p) });
     }
 
     fn residual(&mut self, x: &[f64], r: &mut [f64]) {
         let sys = self.sys();
+        // The generated residual writes `size` values (its inf/nan guard fills them
+        // all), one more than a homotopy system has residuals.
+        let size = sys.size.max(0) as usize;
+        if r.len() < size {
+            let mut full = vec![0.0f64; size];
+            self.residual(x, &mut full);
+            r.copy_from_slice(&full[..r.len()]);
+            return;
+        }
         let mut user = RESIDUAL_USERDATA {
             data: self.data,
             threadData: self.thread_data,
@@ -151,7 +184,7 @@ impl nls::NlsModel for CModel {
         // A casual tearing set's residual is the constraint-checking one, whose
         // return value is C's `f_con`: 1 means this trial violated a local
         // constraint and the solver should fall back to the strict set.
-        let stage = crate::support::error_stage::NONLINEARSOLVER;
+        let stage = stage(self.outer_stage);
         let con = sys.residualFuncConstraints.filter(|_| sys.strictTearingFunctionCall.is_some());
         let rc = match (con, sys.residualFunc) {
             (Some(f), _) => unsafe {
@@ -179,7 +212,7 @@ impl nls::NlsModel for CModel {
     fn jacobian(&mut self, x: &[f64], out: &mut [f64]) {
         // C's `getAnalyticalJacobian` evaluates the residual at `x` first, so the
         // Jacobian columns are taken at the point they belong to.
-        let mut discard = vec![0.0f64; self.jac_rows];
+        let mut discard = vec![0.0f64; self.sys().size.max(0) as usize];
         self.residual(x, &mut discard);
         let si = unsafe { &*(*self.data).simulationInfo };
         let sys = self.sys();
@@ -204,7 +237,7 @@ impl nls::NlsModel for CModel {
         let Some(f) = self.sys().strictTearingFunctionCall else { return false };
         let (data, td) = (self.data, self.thread_data);
         let mut ok = false;
-        if !crate::support::protected(td, STAGE, || ok = unsafe { f(data, td) != 0 }) {
+        if !crate::support::protected(td, stage(self.outer_stage), || ok = unsafe { f(data, td) != 0 }) {
             nls::note_assert();
             return false;
         }
@@ -264,8 +297,15 @@ impl nls::NlsState for CState {
         self.info().lambda = v;
     }
 
-    fn note_failure(&mut self, _eq_index: u32) {
-        unsafe { (*self.sys).solved = NLS_FAILED };
+    fn note_failure(&mut self, eq_index: u32) {
+        unsafe {
+            (*self.sys).solved = NLS_FAILED;
+            // First-writer-wins, as C throws out of the equation list at the first
+            // failure and never reports a later one.
+            if nls_fail_slot == 0 {
+                nls_fail_slot = eq_index as i32 + 1;
+            }
+        }
     }
 }
 
@@ -290,6 +330,10 @@ impl nls::NlsBackend for CBackend<'_> {
         nls::kinsol::AVAILABLE
     }
 
+    fn has_kinsol_dense(&self) -> bool {
+        nls::kinsol::AVAILABLE
+    }
+
     fn solve_sparse(
         &mut self,
         req: nls::NlsRequest,
@@ -299,7 +343,7 @@ impl nls::NlsBackend for CBackend<'_> {
     ) -> bool {
         nls::kinsol::solve(
             self.handle, req.n, self.nnz, self.colptr, self.rowidx, req.nominal, req.guess, req.x,
-            req.eq_index, req.time, eval, jac,
+            req.eq_index, req.time, req.has_jacobian, eval, jac,
         )
     }
 
@@ -542,7 +586,19 @@ pub extern "C" fn solve_nonlinear_system(
     // The homotopy solvers drive an `n x (n+1)` Jacobian, which no sparse pattern
     // describes; such a system fills the dense shape whatever its format says.
     let csc = !sd.colptr.is_empty() && !lambda_unknown && has_jacobian;
-    let mut model = CModel { data, thread_data, sys, jac_rows, csc };
+    // C's `initKinsolMemory` on a system without a pattern: `nnz = size*size`, a
+    // full CSC whose value order is the dense column-major one the model fills.
+    if sd.colptr.is_empty()
+        && !lambda_unknown
+        && matches!(solverflags::nls(), solverflags::Nls::Kinsol | solverflags::Nls::KinsolB)
+    {
+        sd.colptr = (0..=size).map(|c| (c * size) as i32).collect();
+        sd.rowidx = (0..size * size).map(|k| (k % size) as i32).collect();
+        sd.pattern = sd.colptr.iter().chain(&sd.rowidx).map(|&v| v as u32).collect();
+    }
+    let full_pattern = !csc && !sd.colptr.is_empty();
+    let outer_stage = unsafe { (*thread_data).currentErrorStage };
+    let mut model = CModel { data, thread_data, sys, jac_rows, csc, outer_stage };
     let mut state = CState { data, sys };
     let mut backend = CBackend {
         handle: sys_number as u32,
@@ -569,7 +625,7 @@ pub extern "C" fn solve_nonlinear_system(
         // Only where the backend chose a sparse factorization, which is the same
         // decision `nls_use_sparse` re-derives: a dense-format system then takes the
         // dense ladder, as C's `nlsMethod` sends it to hybrd.
-        nnz: if csc { sd.rowidx.len() as u32 } else { 0 },
+        nnz: if csc || full_pattern { sd.rowidx.len() as u32 } else { 0 },
         jac_csc: csc,
         sys_num: sys_number as u32,
         nominal: &nominal,

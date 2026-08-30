@@ -7167,6 +7167,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "openmodelica_mat_reader"
+version = "0.1.0"
+dependencies = [
+ "openmodelica_wasi",
+]
+
+[[package]]
 name = "openmodelica_mat_writer"
 version = "0.1.0"
 
@@ -7283,6 +7290,7 @@ dependencies = [
  "openmodelica_error",
  "openmodelica_frontend_dump",
  "openmodelica_frontend_types",
+ "openmodelica_mat_reader",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
  "openmodelica_wasi",
@@ -7316,6 +7324,7 @@ dependencies = [
  "libm",
  "openmodelica_lapack",
  "openmodelica_mat_writer",
+ "openmodelica_plt_writer",
  "openmodelica_solvers",
 ]
 
@@ -7364,6 +7373,7 @@ dependencies = [
  "cc",
  "libc",
  "openmodelica_lapack",
+ "openmodelica_mat_reader",
  "openmodelica_mat_writer",
  "openmodelica_nls",
  "openmodelica_plt_writer",

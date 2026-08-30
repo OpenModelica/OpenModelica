@@ -304,6 +304,12 @@ pub trait NlsBackend {
     fn has_kinsol(&self) -> bool {
         false
     }
+    /// Whether [`NlsBackend::solve_sparse`] also serves a system with no sparsity
+    /// pattern -- C's `-nls=kinsol` there, where `initKinsolMemory` takes the dense
+    /// linear solver.
+    fn has_kinsol_dense(&self) -> bool {
+        false
+    }
 
     fn solve_sparse(
         &mut self,
@@ -3840,7 +3846,7 @@ pub fn solve_nls(
                     &mut eval,
                     &mut jaceval,
                 )
-            } else if sparse {
+            } else if sparse || (pick == Nls::Kinsol && !lambda_unknown && backend.has_kinsol_dense()) {
                 backend.solve_sparse(
                     NlsRequest {
                         n, x: &mut x, guess: &start_point, warm: &warm, nominal, old_values: &nlsx_old,

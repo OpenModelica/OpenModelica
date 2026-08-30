@@ -54,7 +54,7 @@ use openmodelica_error::ErrorTypes;
 // `pub` so the embedding cdylib (libopenmodelica_compiler) can wrap these in the
 // C `ModelicaMatReader` / csv ABI OMEdit links against.
 #[path = "read_matlab4.rs"]
-pub mod read_matlab4;
+pub use openmodelica_mat_reader as read_matlab4;
 use read_matlab4::MatReader;
 #[path = "result_readers.rs"]
 pub mod result_readers;

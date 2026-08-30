@@ -22,6 +22,14 @@ pub type _index_t = c_long;
 
 /// `util/rtclock.h`: `union { struct timespec; unsigned long long; }` on unix,
 /// `LARGE_INTEGER`/`uint64_t` elsewhere -- 16 bytes either way on the unix build.
+/// `gc/omc_gc.h`'s `errorStage`: `threadData->currentErrorStage`.
+pub const ERROR_SIMULATION: i32 = 1;
+pub const ERROR_INTEGRATOR: i32 = 2;
+pub const ERROR_NONLINEARSOLVER: i32 = 3;
+pub const ERROR_EVENTSEARCH: i32 = 4;
+pub const ERROR_EVENTHANDLING: i32 = 5;
+pub const ERROR_OPTIMIZE: i32 = 6;
+
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct rtclock_t {
@@ -952,8 +960,23 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
 
 /// The solver defaults `initializeDataStruc` installs (util/simulation_options.h,
 /// mixedSystem.h).
+/// `simulation_options.h`'s solver enumerations, as `simulationInfo` holds them.
+pub const LS_LAPACK: c_int = 1;
+pub const LS_LIS: c_int = 2;
+pub const LS_KLU: c_int = 3;
+pub const LS_UMFPACK: c_int = 4;
+pub const LS_TOTALPIVOT: c_int = 5;
+pub const LS_DEFAULT: c_int = 6;
+pub const NLS_HYBRID: c_int = 1;
+pub const NLS_KINSOL: c_int = 2;
+pub const NLS_KINSOL_B: c_int = 3;
+pub const NLS_NEWTON: c_int = 4;
 pub const NLS_MIXED: c_int = 5;
+pub const NLS_HOMOTOPY: c_int = 6;
 pub const NLS_LS_DEFAULT: c_int = 1;
+pub const NLS_LS_TOTALPIVOT: c_int = 2;
+pub const NLS_LS_LAPACK: c_int = 3;
+pub const NLS_LS_KLU: c_int = 4;
 pub const LSS_DEFAULT: c_int = 1;
 pub const MIXED_SEARCH: c_int = 1;
 pub const NEWTON_DAMPED2: c_int = 2;
@@ -979,3 +1002,5 @@ pub const FLAG_OVERRIDE: usize = 107;
 pub const FLAG_OVERRIDE_FILE: usize = 108;
 pub const FLAG_R: usize = 110;
 pub const FLAG_S: usize = 131;
+pub const FLAG_VARIABLE_FILTER: usize = 147;
+

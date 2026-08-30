@@ -24,10 +24,10 @@
 //! - `wasm-merge runtime.wasm rt model.wasm model` connects both directions,
 //!   leaving only the WASI imports (satisfied by `wasmtime`/the worker shim).
 
-use openmodelica_mat_writer::{MatVar, Precision};
+use openmodelica_mat_writer::Precision;
 use openmodelica_sim_meta::driver::{self, SimEngine};
 use openmodelica_sim_meta::simflags;
-use openmodelica_sim_meta::{self as meta, MetaKind, SimMeta};
+use openmodelica_sim_meta::{self as meta, SimMeta};
 
 // Model exports, resolved by wasm-merge (module "model"). Calls are unsafe; a
 // trap inside one aborts the command (surfaced as a failed run by the caller).
@@ -248,65 +248,19 @@ fn run() {
     // A run-time `-variableFilter` was refused at the flag check (no regex engine);
     // the model's own filter is the codegen's verdict.
     let keep = m.output_keep(None);
-    // `params` is positional over the unfiltered `Param` signals; only the kept
-    // ones are collected, in signal order, for the writer.
-    let mut kept_params: Vec<f64> = Vec::new();
-    let mut param_idx = 0usize;
-    let bytes = if m.output_format == "mat" {
-        let mut matvars: Vec<MatVar> = Vec::new();
-        for (v, &keep) in m.vars.iter().zip(&keep) {
-            let is_param = matches!(v.kind, MetaKind::Param { .. });
-            if is_param && keep {
-                kept_params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
-            }
-            param_idx += is_param as usize;
-            if !keep {
-                continue;
-            }
-            matvars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
-        }
-        // `-single` narrows the real data to 4-byte float (C's `FLAG_SINGLE_PRECISION`).
-        let precision =
-            simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
-        openmodelica_mat_writer::write_mat4(
-            &matvars,
-            m.start_time,
-            m.stop_time,
-            &result.rows,
-            result.n_reals,
-            &kept_params,
-            precision,
-        )
-    } else {
-        use openmodelica_plt_writer::{Neg as PltNeg, PltKind, PltVar};
-        let neg = |n: &meta::Neg| match n {
-            meta::Neg::None => PltNeg::None,
-            meta::Neg::Arith => PltNeg::Arith,
-            meta::Neg::Not => PltNeg::Not,
-        };
-        let to_plt = |k: &MetaKind| match k {
-            MetaKind::Time => PltKind::Time,
-            MetaKind::Column { col, negate } => PltKind::Column { col: *col, negate: neg(negate) },
-            MetaKind::Param { negate, .. } => PltKind::Param { negate: neg(negate) },
-            MetaKind::Const { value } => PltKind::Const { value: *value },
-        };
-        let mut signals: Vec<PltVar> = Vec::new();
-        for (v, &keep) in m.vars.iter().zip(&keep) {
-            let is_param = matches!(v.kind, MetaKind::Param { .. });
-            // C's plt writer omits integer/boolean parameters (`nParameters*`);
-            // real parameters ride in `nVariablesReal` and are kept.
-            let is_int_bool_param = matches!(v.kind, MetaKind::Param { wty: meta::WTy::I32, .. });
-            let emit = keep && !is_int_bool_param;
-            if is_param && emit {
-                kept_params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
-            }
-            param_idx += is_param as usize;
-            if !emit {
-                continue;
-            }
-            signals.push(PltVar { name: &v.name, kind: to_plt(&v.kind) });
-        }
-        openmodelica_plt_writer::write_plt(&signals, &result.rows, result.n_reals, &kept_params)
+    // `-single` narrows the real data to 4-byte float (C's `FLAG_SINGLE_PRECISION`).
+    let precision =
+        simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
+    let Some(bytes) = openmodelica_sim_meta::result::write(
+        &m,
+        &m.output_format,
+        &result.rows,
+        result.n_reals,
+        &result.params,
+        &keep,
+        precision,
+    ) else {
+        return;
     };
     let path = m.result_file();
     let size = bytes.len() as i64;

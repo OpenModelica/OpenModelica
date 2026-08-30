@@ -371,14 +371,14 @@ fn define_external_imports(
         &mut *store, &err_env,
         move |env: FunctionEnvMut<SideErrEnv>, ptr: i32| {
             let msg = side_msg(&env, ptr);
-            omclog::warning(omclog::STDOUT, false, msg.strip_suffix('\n').unwrap_or(&msg));
+            omclog::warning(omclog::STDOUT, false, &msg);
         },
     );
     let rt_ext_message = Function::new_typed_with_env(
         &mut *store, &err_env,
         move |env: FunctionEnvMut<SideErrEnv>, ptr: i32| {
             let msg = side_msg(&env, ptr);
-            omclog::info(omclog::STDOUT, false, msg.strip_suffix('\n').unwrap_or(&msg));
+            omclog::info(omclog::STDOUT, false, &msg);
         },
     );
     // This host cannot build the model's `Include`, so only the C dummy is left.

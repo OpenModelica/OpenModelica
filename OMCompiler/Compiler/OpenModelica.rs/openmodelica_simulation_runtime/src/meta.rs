@@ -9,7 +9,7 @@
 use core::ffi::c_char;
 
 use openmodelica_sim_meta::{
-    Layout, MetaKind, MetaVar, Neg, ParamVars, SimMeta, SotiVars, WTy, var_filter,
+    InputVar, Layout, MetaKind, MetaVar, Neg, ParamVars, SimMeta, SotiVars, WTy, var_filter,
 };
 
 use crate::abi::*;
@@ -134,6 +134,31 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         }
     }
 
+    // C writes the `$Sensitivities.<par>.<state>` results after the reals, only
+    // under `-idaSensitivity`; the first `nSensitivityParamVars` entries of the
+    // array are the parameters differentiated against.
+    let n_sens_par = md.nSensitivityParamVars.max(0) as usize;
+    let mut sens_params = Vec::new();
+    if unsafe { crate::support::omc_flag[FLAG_IDAS] } != 0 {
+        for i in 0..n_sens_par {
+            let v = unsafe { &*md.realSensitivityData.add(i) };
+            let name = cstr(v.info.name);
+            let off = (0..md.nParametersRealArray as usize)
+                .find(|&a| cstr(unsafe { (*md.realParameterData.add(a)).info.name }) == name)
+                .map(|a| layout.rparam_off + unsafe { *si.realParamsIndex.add(a) } as u32 * 8);
+            sens_params.extend(off);
+        }
+        for i in n_sens_par..md.nSensitivityVars.max(0) as usize {
+            let v = unsafe { &*md.realSensitivityData.add(i) };
+            vars.push(MetaVar {
+                name: cstr(v.info.name),
+                comment: cstr(v.info.comment),
+                kind: MetaKind::Column { col: layout.sens_col0() + (i - n_sens_par) as u32, negate: Neg::None },
+                filter: filter_bits(v.filterOutput, false),
+            });
+        }
+    }
+
     let int_col0 = layout.n_reals_row();
     for a in 0..md.nVariablesIntegerArray as usize {
         let v = unsafe { &*md.integerVarsData.add(a) };
@@ -212,17 +237,18 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         }
     }
 
-    // Aliases read the slot of the variable or parameter they name.
-    let real_alias_kind = |al: &DATA_ALIAS| -> MetaKind {
+    // Aliases read the slot of the variable or parameter they name, element `k`
+    // of an array alias the same element of it.
+    let real_alias_kind = |al: &DATA_ALIAS, k: usize| -> MetaKind {
         let neg = if al.negate != 0 { Neg::Arith } else { Neg::None };
         match al.aliasType {
             2 => MetaKind::Time,
             1 => {
-                let base = unsafe { *si.realParamsIndex.add(al.nameID as usize) };
+                let base = unsafe { *si.realParamsIndex.add(al.nameID as usize) } + k;
                 MetaKind::Param { off: layout.rparam_off + base as u32 * 8, wty: WTy::F64, negate: neg }
             }
             _ => {
-                let base = unsafe { *si.realVarsIndex.add(al.nameID as usize) };
+                let base = unsafe { *si.realVarsIndex.add(al.nameID as usize) } + k;
                 MetaKind::Column { col: base as u32 + 1, negate: neg }
             }
         }
@@ -232,11 +258,11 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         let is_der = al.aliasType == 0
             && (md.nStatesArray..2 * md.nStatesArray).contains(&(al.nameID as i64));
         let dim = alias_dimension(md, al, 0);
-        for name in scalar_names(&cstr(al.info.name), dim, is_der) {
+        for (k, name) in scalar_names(&cstr(al.info.name), dim, is_der).into_iter().enumerate() {
             vars.push(MetaVar {
                 name,
                 comment: cstr(al.info.comment),
-                kind: real_alias_kind(al),
+                kind: real_alias_kind(al, k),
                 filter: filter_bits(al.filterOutput, true),
             });
         }
@@ -255,27 +281,29 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
             } else {
                 Neg::None
             };
-            let kind = if al.aliasType == 1 {
-                let (base, off, wty) = if kind_ix == 0 {
-                    (unsafe { *si.integerParamsIndex.add(al.nameID as usize) }, layout.iparam_off, WTy::I32)
+            let kind = |k: usize| {
+                if al.aliasType == 1 {
+                    let (base, off, wty) = if kind_ix == 0 {
+                        (unsafe { *si.integerParamsIndex.add(al.nameID as usize) }, layout.iparam_off, WTy::I32)
+                    } else {
+                        (unsafe { *si.booleanParamsIndex.add(al.nameID as usize) }, layout.bparam_off, WTy::I32)
+                    };
+                    MetaKind::Param { off: off + (base + k) as u32 * 4, wty, negate: neg }
                 } else {
-                    (unsafe { *si.booleanParamsIndex.add(al.nameID as usize) }, layout.bparam_off, WTy::I32)
-                };
-                MetaKind::Param { off: off + base as u32 * 4, wty, negate: neg }
-            } else {
-                let (base, col0) = if kind_ix == 0 {
-                    (unsafe { *si.integerVarsIndex.add(al.nameID as usize) }, int_col0)
-                } else {
-                    (unsafe { *si.booleanVarsIndex.add(al.nameID as usize) }, bool_col0)
-                };
-                MetaKind::Column { col: col0 + base as u32, negate: neg }
+                    let (base, col0) = if kind_ix == 0 {
+                        (unsafe { *si.integerVarsIndex.add(al.nameID as usize) }, int_col0)
+                    } else {
+                        (unsafe { *si.booleanVarsIndex.add(al.nameID as usize) }, bool_col0)
+                    };
+                    MetaKind::Column { col: col0 + (base + k) as u32, negate: neg }
+                }
             };
             let dim = alias_dimension(md, al, kind_ix + 1);
-            for name in scalar_names(&cstr(al.info.name), dim, false) {
+            for (k, name) in scalar_names(&cstr(al.info.name), dim, false).into_iter().enumerate() {
                 vars.push(MetaVar {
                     name,
                     comment: cstr(al.info.comment),
-                    kind: kind.clone(),
+                    kind: kind(k),
                     filter: filter_bits(al.filterOutput, true),
                 });
             }
@@ -319,17 +347,17 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         attr_log: Vec::new(),
         removed_init_desc: Vec::new(),
         nls_warnings: Vec::new(),
-        sens_params: Vec::new(),
+        sens_params,
         nls_vars: Vec::new(),
         n_lin_systems: md.nLinearSystems as u32,
         dae: dae_info(data, layout),
         clocks: crate::sync::describe(data),
         lin: crate::linearize::describe(data, layout),
         parmod: None,
+        inputs: input_vars(data, md, si, layout, &real_names),
         opt: crate::optimization::describe(data, layout, real_names),
-        inputs: Vec::new(),
         recon: crate::datarecon::describe(data, layout, &version),
-        prof: None,
+        prof: crate::info_json::prof_info(data),
     }
 }
 
@@ -455,7 +483,7 @@ fn soti_vars(md: &MODEL_DATA, si: &SIMULATION_INFO) -> SotiVars {
         }
         for a in 0..md.nVariablesStringArray as usize {
             let d = &*md.stringVarsData.add(a);
-            v.strings.push((cstr(d.info.name), String::new()));
+            v.strings.push((cstr(d.info.name), crate::model_data::string_value(d.attribute.start)));
         }
     }
     v.n_discrete_real = md.nDiscreteRealArray as u32;
@@ -482,8 +510,34 @@ fn param_vars(md: &MODEL_DATA, _si: &SIMULATION_INFO) -> ParamVars {
         }
         for a in 0..md.nParametersStringArray as usize {
             let d = &*md.stringParameterData.add(a);
-            p.strings.push((cstr(d.info.name), String::new()));
+            p.strings.push((cstr(d.info.name), crate::model_data::string_value(d.attribute.start)));
         }
     }
     p
+}
+
+/// C's `inputNames` / `nInputVars`: each `input` variable and the real slot it
+/// occupies, which `-csvInput` drives directly (C copies through `inputVars`).
+fn input_vars(data: *mut DATA, md: &MODEL_DATA, si: &SIMULATION_INFO, layout: &Layout, real_names: &[String]) -> Vec<InputVar> {
+    let n = md.nInputVars.max(0) as usize;
+    let Some(f) = (unsafe { (*(*data).callback).inputNames }) else { return Vec::new() };
+    if n == 0 {
+        return Vec::new();
+    }
+    let mut names: Vec<*mut c_char> = vec![core::ptr::null_mut(); n];
+    unsafe { f(data, names.as_mut_ptr()) };
+    let _ = si;
+    names
+        .iter()
+        .filter_map(|&p| {
+            let name = cstr(p);
+            let i = real_names.iter().position(|r| *r == name)? as u32;
+            Some(InputVar {
+                off: openmodelica_sim_meta::REAL_OFF + i * 8,
+                start_off: layout.real_start_off(i),
+                wty: WTy::F64,
+                name,
+            })
+        })
+        .collect()
 }

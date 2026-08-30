@@ -331,6 +331,8 @@ openmodelica_lapack/tests/reference.rs
 openmodelica_lapack/tests/small_gevd.rs
 openmodelica_lapack/tests/vs_reference.rs
 openmodelica_lapack/vendor-faer-real-schur.sh
+openmodelica_mat_reader/Cargo.toml
+openmodelica_mat_reader/src/lib.rs
 openmodelica_mat_writer/Cargo.toml
 openmodelica_mat_writer/src/lib.rs
 openmodelica_modelica_utilities/Cargo.toml
@@ -364,7 +366,6 @@ openmodelica_script_util/src/DynLoadExt.rs
 openmodelica_script_util/src/SimulationResults.rs
 openmodelica_script_util/src/UnitParserExt.rs
 openmodelica_script_util/src/Unzip.rs
-openmodelica_script_util/src/read_matlab4.rs
 openmodelica_script_util/src/result_readers.rs
 openmodelica_scripting_api_gen/Cargo.toml
 openmodelica_scripting_api_gen/src/main.rs
@@ -388,6 +389,7 @@ openmodelica_sim_meta/src/optimization/model.rs
 openmodelica_sim_meta/src/optimization/setup.rs
 openmodelica_sim_meta/src/parmod.rs
 openmodelica_sim_meta/src/profiling.rs
+openmodelica_sim_meta/src/result.rs
 openmodelica_sim_meta/src/qss.rs
 openmodelica_sim_meta/src/rtclock.rs
 openmodelica_sim_meta/src/stats.rs
@@ -400,6 +402,7 @@ openmodelica_simulation_runtime/src/abi.rs
 openmodelica_simulation_runtime/src/data.rs
 openmodelica_simulation_runtime/src/datarecon.rs
 openmodelica_simulation_runtime/src/engine.rs
+openmodelica_simulation_runtime/src/iif.rs
 openmodelica_simulation_runtime/src/info_json.rs
 openmodelica_simulation_runtime/src/linearize.rs
 openmodelica_simulation_runtime/src/lib.rs

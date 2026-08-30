@@ -69,13 +69,23 @@ fn main() {
             );
         }
     }
-    // The `enum _FLAG` indices `omc_flag`/`omc_flagValue` are addressed with.
+    // The `enum _FLAG` indices `omc_flag`/`omc_flagValue` are addressed with, the
+    // `errorStage` values `threadData->currentErrorStage` takes, and the solver
+    // enumerations `simulationInfo` holds.
     for line in src.lines() {
         let t = line.trim();
-        let Some(rest) = t.strip_prefix("pub const FLAG_") else { continue };
-        let Some((name, value)) = rest.split_once(": usize = ") else { continue };
-        let value = value.trim_end_matches(';');
-        let _ = writeln!(out, "  v.push((\"FLAG_{name}\".into(), {value}u64));");
+        for (prefix, ty) in [
+            ("pub const FLAG_", ": usize = "),
+            ("pub const ERROR_", ": i32 = "),
+            ("pub const LS_", ": c_int = "),
+            ("pub const NLS_", ": c_int = "),
+        ] {
+            let Some(rest) = t.strip_prefix(prefix) else { continue };
+            let Some((name, value)) = rest.split_once(ty) else { continue };
+            let value = value.trim_end_matches(';');
+            let c_name = &prefix["pub const ".len()..];
+            let _ = writeln!(out, "  v.push((\"{c_name}{name}\".into(), {value}u64));");
+        }
     }
     out.push_str("  v\n}\n");
     let path = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR")).join("abi_layout_checks.rs");

@@ -84,6 +84,27 @@ pub fn xsetun(lun: i32) {
 /// the same layout as the C/Fortran original. `level == 2` aborts the run.
 ///
 /// `ni`/`nr` select how many of `i1,i2`/`r1,r2` are appended.
+/// Where `xerrwd`'s text goes: `stdout`, unless the host set a sink, so the
+/// message lands in the simulation log in call order with everything else.
+#[cfg(feature = "std")]
+static PRINT_HOOK: core::sync::atomic::AtomicUsize = core::sync::atomic::AtomicUsize::new(0);
+
+#[cfg(feature = "std")]
+pub fn set_print_hook(f: fn(&str)) {
+    PRINT_HOOK.store(f as usize, Ordering::Relaxed);
+}
+
+#[cfg(feature = "std")]
+fn emit(s: &str) {
+    let p = PRINT_HOOK.load(Ordering::Relaxed);
+    if p == 0 {
+        print!("{s}");
+    } else {
+        let f: fn(&str) = unsafe { core::mem::transmute(p) };
+        f(s);
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn xerrwd(msg: &str, _nerr: i32, level: i32, ni: i32, i1: i32, i2: i32, nr: i32, r1: f64, r2: f64) {
     // The no_std runtime has no stdout; message formatting/printing (and its
@@ -112,7 +133,7 @@ pub fn xerrwd(msg: &str, _nerr: i32, level: i32, ni: i32, i1: i32, i2: i32, nr: 
                     fmt_e21_13(r2)
                 ));
             }
-            print!("{}", out);
+            emit(&out);
         }
     }
     #[cfg(not(feature = "std"))]

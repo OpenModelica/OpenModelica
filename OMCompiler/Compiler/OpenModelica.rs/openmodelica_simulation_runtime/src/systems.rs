@@ -14,13 +14,6 @@ use openmodelica_solvers::{omclog, sysstat};
 use crate::abi::*;
 use crate::model_data::calloc;
 
-/// `enum LINEAR_SOLVER` (util/simulation_options.h): what `-ls` selects.
-pub const LS_LAPACK: c_int = 1;
-pub const LS_LIS: c_int = 2;
-pub const LS_KLU: c_int = 3;
-pub const LS_UMFPACK: c_int = 4;
-pub const LS_TOTALPIVOT: c_int = 5;
-pub const LS_DEFAULT: c_int = 6;
 /// `enum EVAL_CONTEXT` (util/context.h), as `openmodelica_nls` numbers them.
 pub const CONTEXT_ALGEBRAIC: c_int = openmodelica_nls::CONTEXT_ALGEBRAIC as c_int;
 pub const CONTEXT_SYM_JACOBIAN: c_int = openmodelica_nls::CONTEXT_SYM_JACOBIAN as c_int;
@@ -218,6 +211,42 @@ pub fn eval_jacobian(
 /// C's `solve_linear_system`: the `-ls` ladder over the dense solvers. A sparse
 /// `-lss` and `-ls=klu`/`umfpack`/`lis` are not served; they are warned about once
 /// and factored densely.
+/// C's `readFlag`s in `initRuntimeAndSimulation`: `-ls`, `-nls` and `-nlsLS` onto
+/// `simulationInfo`, in `simulation_options.h`'s enumerations. The generated code
+/// and the C-side solver dispatch read these; the shared solvers read
+/// `solverflags`.
+pub fn apply_solver_flags(si: &mut SIMULATION_INFO, f: &openmodelica_sim_meta::simflags::SimFlags) {
+    use openmodelica_sim_meta::simflags::{Ls, Nls, NlsLs};
+    if let Some(ls) = f.ls {
+        si.lsMethod = match ls {
+            Ls::Default => LS_DEFAULT,
+            Ls::Lapack => LS_LAPACK,
+            Ls::Lis => LS_LIS,
+            Ls::Klu => LS_KLU,
+            Ls::Umfpack => LS_UMFPACK,
+            Ls::TotalPivot => LS_TOTALPIVOT,
+        };
+    }
+    if let Some(nls) = f.nls {
+        si.nlsMethod = match nls {
+            Nls::Hybrid => NLS_HYBRID,
+            Nls::Kinsol => NLS_KINSOL,
+            Nls::KinsolB => NLS_KINSOL_B,
+            Nls::Newton => NLS_NEWTON,
+            Nls::Mixed => NLS_MIXED,
+            Nls::Homotopy => NLS_HOMOTOPY,
+        };
+    }
+    if let Some(ls) = f.nls_ls {
+        si.nlsLinearSolver = match ls {
+            NlsLs::Default => NLS_LS_DEFAULT,
+            NlsLs::TotalPivot => NLS_LS_TOTALPIVOT,
+            NlsLs::Lapack => NLS_LS_LAPACK,
+            NlsLs::Klu | NlsLs::Rsparse => NLS_LS_KLU,
+        };
+    }
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn solve_linear_system(
     data: *mut DATA,
@@ -302,8 +331,8 @@ fn warn_once_unsupported_ls(method: c_int) {
         LS_UMFPACK => "umfpack",
         _ => "the requested",
     };
-    omclog::warning(
-        omclog::STDOUT,
+    omclog::info(
+        omclog::LS,
         false,
         &format!("-ls: {name} linear solver is not served by this runtime; using the default."),
     );
