@@ -816,13 +816,17 @@ public
             jacobian := NONE();
           end if;
 
-          if comp.linear and isSome(jacobian) and not comp.homotopy
+          if comp.linear and isSome(jacobian) and not comp.homotopy and not comp.mixed
              and not List.any(eqns, isForOrGenericResidual)
              and not jacobianHasGenericLoopCalls(Util.getOption(jacobian))
              and allLinVarsFound then
             // Linear torn systems with an analytic Jacobian get solved directly (A*x=b)
-            // instead of via Newton (#16458). Homotopy, for-loop/generic residuals, and
-            // generic_loop_calls Jacobians fall back below -- unsupported by this codegen path.
+            // instead of via Newton (#16458). Homotopy, for-loop/generic residuals,
+            // generic_loop_calls Jacobians, and mixed (discrete-coupled, e.g. ideal-diode
+            // switching networks) systems fall back below -- a one-shot direct solve has
+            // no damping across the discrete state, and coarser NBackend tearing than OB's
+            // for these networks makes that chatter across event iterations instead of
+            // settling (see newInst-newBackend library-testing regressions after #16463).
             linSystem := LINEAR_SYSTEM(
               index         = simCodeIndices.equationIndex,
               mixed         = comp.mixed,
