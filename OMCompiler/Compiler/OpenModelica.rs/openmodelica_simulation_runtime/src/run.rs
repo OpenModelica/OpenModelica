@@ -135,6 +135,7 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
 ) -> c_int {
     let args = argv_strings(argc, argv);
     driver::set_log_sink(log_sink);
+    driver::set_log_sink_is_stdout(true);
     driver::set_init_done_hook(init_done);
     driver::set_teardown_hook(teardown);
     fill_omc_flags(&args);
@@ -284,6 +285,36 @@ fn start_non_interactive_simulation(
 
     if omclog::active(omclog::STATS) {
         print_line(&openmodelica_sim_meta::stats::log_stats_block(&result.stats));
+    }
+    if let Some(file) = &result.lin {
+        let path = simflags::with_flags(|f| match &f.output_path {
+            Some(dir) => format!("{dir}/{}", file.name),
+            None => file.name.clone(),
+        });
+        if let Err(e) = std::fs::write(&path, &file.content) {
+            omclog::error(omclog::STDOUT, false, &format!("Cannot open File {path}: {e}"));
+            return -1;
+        }
+        if let Some(lin) = &meta.lin {
+            // C names `-outputPath`'s path as given, and otherwise prefixes the
+            // working directory.
+            let shown = match simflags::with_flags(|f| f.output_path.is_some()) {
+                true => path.clone(),
+                false => match std::env::current_dir() {
+                    Ok(cwd) => format!("{}/{path}", cwd.display()),
+                    Err(_) => path.clone(),
+                },
+            };
+            let (msgs, is_error) =
+                openmodelica_sim_meta::linearize::write_notice(lin, file, &shown);
+            for msg in &msgs {
+                if is_error {
+                    omclog::error(omclog::STDOUT, false, msg)
+                } else {
+                    omclog::info(omclog::STDOUT, false, msg)
+                }
+            }
+        }
     }
     if let Err(e) = write_result(&meta, &result, data) {
         omclog::error(omclog::STDOUT, false, &e);

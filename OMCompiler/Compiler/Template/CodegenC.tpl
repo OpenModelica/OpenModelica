@@ -224,10 +224,10 @@ end translateModel;
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
     extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short *, short *);
-    extern int <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>(DATA* data, int* input_var_indices);
+    extern int <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>(DATA* data, int* input_var_indices, int* loop_input_indices);
     extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
-    extern int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file);
-    extern int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t);
+    extern int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data);
+    extern int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_integer**idx);
     extern void <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>(DATA * data, threadData_t *threadData);
     extern void <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>(DATA * data, threadData_t *threadData, long base_idx);
     extern int <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * data, threadData_t *threadData, long base_idx, long sub_idx);
@@ -1031,10 +1031,10 @@ template simulationFile_opt_header(SimCode simCode)
     #endif
       int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short*);
       int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short *, short *);
-      int <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>(DATA* data, int* input_var_indices);
+      int <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>(DATA* data, int* input_var_indices, int* loop_input_indices);
       int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
-      int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file);
-      int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t);
+      int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data);
+      int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_integer**idx);
     #if defined(__cplusplus)
     }
     #endif<%\n%>
@@ -8391,16 +8391,16 @@ template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimC
       int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short * i1, short*i2) {
         <%fail%>
       }
-      int <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>(DATA* data, int* input_var_indices) {
+      int <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>(DATA* data, int* input_var_indices, int* loop_input_indices) {
         <%fail%>
       }
       int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt) {
         <%fail%>
       }
-      int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file) {
+      int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data) {
         <%fail%>
       }
-      int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t) {
+      int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_integer**idx) {
         <%fail%>
       }
       >>
@@ -8457,12 +8457,6 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
           match modelInfo
             case MODELINFO(vars=SIMVARS(__)) then
               <<
-              if(file){
-              <%vars.inputVars |> SIMVAR(varKind = OPT_LOOP_INPUT(replaceExp=cr)) =>
-              '<%cref(name, &sub)%> = <%cref(cr, &sub)%> ;'
-              ;separator="\n"
-              %>
-              }
               <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
               'data->simulationInfo->inputVars[<%i0%>] = <%cref(name, &sub)%>;'
               ;separator="\n"
@@ -8476,9 +8470,9 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
               <<
               *nsi=(-1 <%vars.paramVars |> SIMVAR(varKind=OPT_TGRID(__)) => '+1'
                 ;separator=" "%>);
-              *t = (modelica_real*) malloc((*nsi+1)*sizeof(modelica_real));
+              *idx = (modelica_integer*) malloc((*nsi+1)*sizeof(modelica_integer));
               <%vars.paramVars |> SIMVAR(varKind=OPT_TGRID(__)) hasindex i0 =>
-              '(*t)[<%i0%>] = <%cref(name, &sub)%>;'
+              '(*idx)[<%i0%>] = data->simulationInfo->realParamsIndex[<%index%>];'
               ;separator="\n"
               %>
               >>
@@ -8513,6 +8507,11 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
               <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
               'input_var_indices[<%i0%>] = <%crefIndexWithComment(name)%>;'
               ;separator="\n"%>
+              <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
+              'loop_input_indices[<%i0%>] = <%match varKind
+                 case OPT_LOOP_INPUT(replaceExp=cr) then crefIndexWithComment(cr)
+                 else "-1"%>;'
+              ;separator="\n"%>
               >>
       <<
       <%auxFunction%>
@@ -8534,7 +8533,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
       }
 
       /* fill buffer with optimization input indices */
-      int <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>(DATA* data, int* input_var_indices)
+      int <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>(DATA* data, int* input_var_indices, int* loop_input_indices)
       {
         <%inputIndices%>
         return 0;
@@ -8549,12 +8548,12 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         return 0;
       }
 
-      int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file)
+      int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data)
       {
         <%setInput%>
         return 0;
       }
-      int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t){
+      int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_integer**idx){
         <%getTG%>
         return 0;
       }

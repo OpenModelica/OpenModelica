@@ -906,7 +906,7 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
         unsafe extern "C" fn(*mut DATA, *mut *mut modelica_real, *mut i16, *mut i16) -> c_int,
     >,
     pub getInputVarIndicesInOptimization:
-        Option<unsafe extern "C" fn(*mut DATA, *mut c_int) -> c_int>,
+        Option<unsafe extern "C" fn(*mut DATA, *mut c_int, *mut c_int) -> c_int>,
     pub pickUpBoundsForInputsInOptimization: Option<
         unsafe extern "C" fn(
             *mut DATA,
@@ -919,9 +919,10 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
             *mut modelica_real,
         ) -> c_int,
     >,
-    pub setInputData: Option<unsafe extern "C" fn(*mut DATA, modelica_boolean) -> c_int>,
-    pub getTimeGrid:
-        Option<unsafe extern "C" fn(*mut DATA, *mut modelica_integer, *mut *mut modelica_real) -> c_int>,
+    pub setInputData: Option<unsafe extern "C" fn(*mut DATA) -> c_int>,
+    pub getTimeGrid: Option<
+        unsafe extern "C" fn(*mut DATA, *mut modelica_integer, *mut *mut modelica_integer) -> c_int,
+    >,
 
     pub symbolicInlineSystems: sim_fn,
 

@@ -65,8 +65,12 @@ fn ode_residual(
     for (i, v) in lin.input_vars.iter().enumerate() {
         write_lin_var(e, sim_data, v, u[i])?;
     }
+    // A wasm model's slots are its variables, so the write above is the whole
+    // assignment; C copies `simulationInfo->inputVars` across with these two.
+    e.call1_if_present("functionInputVars", sim_data)?;
     e.call1("functionODE", sim_data)?;
     e.call1("functionAlgebraics", sim_data)?;
+    e.call1_if_present("functionOutputVars", sim_data)?;
     for (i, slot) in dx.iter_mut().enumerate() {
         *slot = read_f64(e, sim_data + REAL_OFF + (layout.n_states + i as u32) * 8)?;
     }
@@ -374,7 +378,11 @@ pub fn linearize(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32) -> Resul
     }
 
     // C writes the (empty) file either way and reports it afterwards.
-    let frame = if datarec { &lin.frame_datarec } else { &lin.frame };
+    let from_model = e.lin_frame(datarec);
+    let frame = match &from_model {
+        Some(f) => f,
+        None => if datarec { &lin.frame_datarec } else { &lin.frame },
+    };
     let lang = lin.language;
     if frame.is_empty() {
         return Ok(Some(LinFile { name: format!("linearized_model{}", lang.ext()), content: String::new() }));

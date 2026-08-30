@@ -92,6 +92,9 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
     let md: &MODEL_DATA = unsafe { &*(*data).modelData };
     let si: &SIMULATION_INFO = unsafe { &*(*data).simulationInfo };
     let units = Units { xml };
+    // C's `CONFIG_VERSION`, which only the `-reconcile*` reports sign themselves
+    // with; the compiler that wrote the XML put its own version there.
+    let version = xml.md("generationTool").trim_start_matches("OpenModelica Compiler ").to_string();
 
     let mut vars: Vec<MetaVar> = Vec::new();
     vars.push(MetaVar {
@@ -102,7 +105,9 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
     });
 
     // Real variables: states, derivatives, then the algebraic ones. Their result
-    // column is the scalar index plus one (column 0 is time).
+    // column is the scalar index plus one (column 0 is time). `real_names` is the
+    // same names in scalar-index order, which `-s optimization` quotes.
+    let mut real_names: Vec<String> = vec![String::new(); md.nVariablesReal.max(0) as usize];
     for a in 0..md.nVariablesRealArray as usize {
         let v = unsafe { &*md.realVarsData.add(a) };
         let base = unsafe { *si.realVarsIndex.add(a) };
@@ -117,6 +122,9 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         let index = if group == "rAlg" { a - 2 * md.nStatesArray as usize } else { a % md.nStatesArray.max(1) as usize };
         let unit = units.get(group, index);
         for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, is_der).into_iter().enumerate() {
+            if let Some(slot) = real_names.get_mut(base + k) {
+                *slot = name.clone();
+            }
             vars.push(MetaVar {
                 name,
                 comment: description(&cstr(v.info.comment), &unit),
@@ -314,12 +322,12 @@ pub fn build(data: *mut DATA, xml: &InitXml, layout: &Layout, prefix: &str) -> S
         nls_vars: Vec::new(),
         n_lin_systems: md.nLinearSystems as u32,
         dae: dae_info(data, layout),
-        clocks: Vec::new(),
-        lin: None,
+        clocks: crate::sync::describe(data),
+        lin: crate::linearize::describe(data, layout),
         parmod: None,
-        opt: None,
+        opt: crate::optimization::describe(data, layout, real_names),
         inputs: Vec::new(),
-        recon: None,
+        recon: crate::datarecon::describe(data, layout, &version),
         prof: None,
     }
 }

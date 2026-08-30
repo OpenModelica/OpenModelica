@@ -10,7 +10,7 @@
 //! is 4 bytes in wasm and 8 here) the map converts, and the regions C has no
 //! home for (the driver's own scratch) fall through to a buffer this module owns.
 
-use core::ffi::{c_int, c_void};
+use core::ffi::{c_int, c_long, c_void};
 
 use openmodelica_sim_meta::{Layout, REAL_OFF};
 
@@ -23,7 +23,8 @@ const RING: usize = 3;
 /// Bytes past `Layout::total` this runtime adds to the flat address space, for the
 /// slots the shared driver addresses as memory but the wasm layout keeps in the
 /// runtime module rather than in `SimData`: the evaluation context
-/// ([`CONTEXT_OFF`]) and the error-stage pair ([`ERR_STAGE_OFF`]).
+/// ([`CONTEXT_OFF`]), the error-stage pair ([`ERR_STAGE_OFF`]), and after them the
+/// per-model windows [`Extra`] describes.
 pub const RT_EXTRA: u32 = 16;
 
 /// Offset of C's `simulationInfo->currentContext` in that space, relative to
@@ -37,6 +38,51 @@ pub const CONTEXT_OFF: u32 = 0;
 /// error absorbed under it raises `hit`. Driver-owned memory, so no region maps it.
 pub const ERR_STAGE_OFF: u32 = 8;
 
+/// Absolute flat addresses for the arrays a C model keeps *beside* its variables,
+/// where a wasm model writes the variables themselves. [`build_regions`] maps C's
+/// arrays onto them.
+#[derive(Clone, Copy)]
+pub struct Extra {
+    /// `simulationInfo->inputVars` / `outputVars` (`-l`).
+    pub input_vars: u32,
+    pub output_vars: u32,
+    /// `datainputVars` / `setcVars` / `setbVars` (`-reconcile*`).
+    pub recon_in: u32,
+    pub recon_setc: u32,
+    pub recon_setb: u32,
+    /// Where `reconJacF` / `reconJacH` leave their finished matrix.
+    pub recon_jac_f: u32,
+    pub recon_jac_h: u32,
+    /// `INDEX_JAC_{B,C,D}`'s seeds then results.
+    pub opt_jac: [u32; 3],
+    /// One past the last of them.
+    pub end: u32,
+}
+
+pub fn extra(layout: &Layout, md: &MODEL_DATA) -> Extra {
+    let mut at = layout.total + RT_EXTRA;
+    let mut take = |bytes: u32| {
+        let off = at;
+        at += bytes;
+        off
+    };
+    let n = |v: c_long| v.max(0) as u32;
+    let (jac_f, jac_h) = crate::datarecon::jac_words();
+    let opt = crate::optimization::opt_jac_words();
+    let e = Extra {
+        input_vars: take(n(md.nInputVars) * 8),
+        output_vars: take(n(md.nOutputVars) * 8),
+        recon_in: take(n(md.ndataReconVars) * 8),
+        recon_setc: take(n(md.nSetcVars) * 8),
+        recon_setb: take(n(md.nSetbVars) * 8),
+        recon_jac_f: take(jac_f * 8),
+        recon_jac_h: take(jac_h * 8),
+        opt_jac: opt.map(|w| take(w * 8)),
+        end: 0,
+    };
+    Extra { end: at, ..e }
+}
+
 /// How a stretch of the flat address space is stored on the C side.
 #[derive(Clone, Copy)]
 enum Backing {
@@ -46,6 +92,10 @@ enum Backing {
     WidenInt(*mut modelica_integer),
     /// `SAMPLE_INFO[i].start` / `.interval` behind flat `(f64, f64)` pairs.
     Samples(*mut SAMPLE_INFO),
+    /// `BASECLOCK_DATA[i]` / `SUBCLOCK_DATA[i]` behind the driver's flat blocks:
+    /// the same fields in a different order, with C's `stats` nested.
+    BaseClocks(*mut BASECLOCK_DATA),
+    SubClocks(*mut SUBCLOCK_DATA),
     /// No C counterpart (a `modelica_string` / external-object handle, which the
     /// numeric driver never interprets): reads zero, writes are dropped.
     Opaque,
@@ -75,6 +125,73 @@ pub struct RtData {
 // The runtime is single-threaded; the pointers are the run's own C structures.
 unsafe impl Send for RtData {}
 unsafe impl Sync for RtData {}
+
+/// Where flat byte `off` of the base-clock region lives inside `BASECLOCK_DATA`,
+/// and how wide it is. `None` is the block's tail padding.
+fn base_clock_field(base: *mut BASECLOCK_DATA, off: usize) -> Option<(*mut u8, usize)> {
+    use openmodelica_sim_meta::clock_field as f;
+    let c = unsafe { &mut *base.add(off / openmodelica_sim_meta::BASECLOCK_BYTES as usize) };
+    match (off % openmodelica_sim_meta::BASECLOCK_BYTES as usize) as u32 {
+        f::INTERVAL => Some((&raw mut c.interval as *mut u8, 8)),
+        f::PREV_INTERVAL => Some((&raw mut c.stats.previousInterval as *mut u8, 8)),
+        f::LAST_ACTIVATION => Some((&raw mut c.stats.lastActivationTime as *mut u8, 8)),
+        f::COUNT => Some((&raw mut c.stats.count as *mut u8, 4)),
+        f::INTERVAL_COUNTER => Some((&raw mut c.intervalCounter as *mut u8, 4)),
+        f::RESOLUTION => Some((&raw mut c.resolution as *mut u8, 4)),
+        _ => None,
+    }
+}
+
+/// [`base_clock_field`] for `SUBCLOCK_DATA`, whose block is only the `CLOCK_STATS`.
+fn sub_clock_field(base: *mut SUBCLOCK_DATA, off: usize) -> Option<(*mut u8, usize)> {
+    use openmodelica_sim_meta::clock_field as f;
+    let c = unsafe { &mut *base.add(off / openmodelica_sim_meta::SUBCLOCK_BYTES as usize) };
+    match (off % openmodelica_sim_meta::SUBCLOCK_BYTES as usize) as u32 {
+        f::SUB_PREV_INTERVAL => Some((&raw mut c.stats.previousInterval as *mut u8, 8)),
+        f::SUB_LAST_ACTIVATION => Some((&raw mut c.stats.lastActivationTime as *mut u8, 8)),
+        f::SUB_COUNT => Some((&raw mut c.stats.count as *mut u8, 4)),
+        _ => None,
+    }
+}
+
+/// Move `len` bytes between `buf` and the clock fields at flat offset `off`, one
+/// named field at a time. Padding reads zero and is not written.
+fn clock_io(
+    buf: *mut u8,
+    len: usize,
+    off: u32,
+    reading: bool,
+    field: impl Fn(usize) -> Option<(*mut u8, usize)>,
+) -> Result<(), &'static str> {
+    let (mut at, mut done) = (off as usize, 0usize);
+    while done < len {
+        let (p, w) = match field(at) {
+            Some(v) => v,
+            None => {
+                if reading && done + 4 <= len {
+                    unsafe { core::ptr::write_bytes(buf.add(done), 0, 4) };
+                }
+                at += 4;
+                done += 4;
+                continue;
+            }
+        };
+        if done + w > len {
+            return Err("SimData clock access is not a whole clock field");
+        }
+        let b = unsafe { buf.add(done) };
+        unsafe {
+            if reading {
+                core::ptr::copy_nonoverlapping(p, b, w);
+            } else {
+                core::ptr::copy_nonoverlapping(b, p, w);
+            }
+        }
+        at += w;
+        done += w;
+    }
+    Ok(())
+}
 
 impl RtData {
     /// The region `addr` falls in and its offset within it; `None` means the
@@ -139,6 +256,12 @@ impl RtData {
                     }
                     Ok(())
                 }
+                Backing::BaseClocks(base) => {
+                    clock_io(buf.as_mut_ptr(), buf.len(), off, true, |o| base_clock_field(base, o))
+                }
+                Backing::SubClocks(base) => {
+                    clock_io(buf.as_mut_ptr(), buf.len(), off, true, |o| sub_clock_field(base, o))
+                }
                 Backing::Opaque => {
                     buf.fill(0);
                     Ok(())
@@ -199,6 +322,16 @@ impl RtData {
                         if slot % 16 == 0 { s.start = v } else { s.interval = v }
                     }
                     Ok(())
+                }
+                Backing::BaseClocks(base) => {
+                    clock_io(buf.as_ptr() as *mut u8, buf.len(), off, false, |o| {
+                        base_clock_field(base, o)
+                    })
+                }
+                Backing::SubClocks(base) => {
+                    clock_io(buf.as_ptr() as *mut u8, buf.len(), off, false, |o| {
+                        sub_clock_field(base, o)
+                    })
                 }
                 Backing::Opaque => Ok(()),
             },
@@ -421,13 +554,20 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     crate::stateset::initialize_state_sets(data, thread_data);
     crate::mixed::initialize_mixed_systems(data, thread_data);
     init_jac_a(data, thread_data);
+    crate::linearize::initialize(data, thread_data);
+    crate::datarecon::initialize(data, thread_data);
+    // Before the layout: only the model knows how many sub-clocks a base clock has,
+    // and the flat sub-clock region is sized from the total.
+    crate::sync::init_clocks(data, thread_data);
+    crate::sync::mark_fresh();
+    crate::optimization::initialize(data, thread_data);
 
     let layout = layout_for(data, md, si, cb);
     let mut rt = RtData {
         data,
         thread_data,
         layout,
-        owned: vec![0u8; (layout.total + RT_EXTRA) as usize],
+        owned: vec![0u8; extra(&layout, md).end as usize],
         regions: Vec::new(),
         reals: (0, 0, core::ptr::null_mut()),
     };
@@ -527,9 +667,9 @@ fn layout_for(
         n_dae_aux,
         n_dae_alg,
         md.nBaseClocks as u32,
-        0, // sub-clocks: filled once function_initSynchronous has run
-        0, // linearization scratch: the C model's analyticJacobians
-        0, // optimization attributes
+        crate::sync::n_sub_clocks(data),
+        crate::linearize::words(md),
+        crate::optimization::n_attrs(md),
         0, // bound-attribute log
         // Always generated (a stub when there are none) and reporting the offending
         // equation itself, so this is a flag rather than a count.
@@ -548,7 +688,15 @@ fn layout_for(
     )
 }
 
-fn build_regions(rt: &mut RtData) {
+/// A region whose backing is not [`Backing::Direct`]; separate from the `direct`
+/// closure below because that one borrows the list for its whole life.
+fn direct_region(regions: &mut Vec<Region>, start: u32, bytes: u32, backing: Backing) {
+    if bytes > 0 {
+        regions.push(Region { start, end: start + bytes, backing });
+    }
+}
+
+pub fn build_regions(rt: &mut RtData) {
     let l = rt.layout;
     let md = rt.model();
     let si = rt.info();
@@ -591,9 +739,16 @@ fn build_regions(rt: &mut RtData) {
     // writes and both `solve_linear_system` (`reuseMatrixJac`) and the nonlinear
     // solver's `updateInitialGuessDB` read.
     direct(l.total + CONTEXT_OFF, 4, &mut si.currentContext as *mut c_int as *mut c_void);
+    let x = extra(&l, md);
+    direct(x.input_vars, md.nInputVars.max(0) as u32 * 8, si.inputVars as *mut c_void);
+    direct(x.output_vars, md.nOutputVars.max(0) as u32 * 8, si.outputVars as *mut c_void);
+    direct(x.recon_in, md.ndataReconVars.max(0) as u32 * 8, si.datainputVars as *mut c_void);
+    direct(x.recon_setc, md.nSetcVars.max(0) as u32 * 8, si.setcVars as *mut c_void);
+    direct(x.recon_setb, md.nSetbVars.max(0) as u32 * 8, si.setbVars as *mut c_void);
     for (off, bytes, base) in crate::stateset::regions(rt.data, &l) {
         direct(off, bytes, base);
     }
+    direct(l.clock_fire_off, l.n_base_clocks * 4, crate::sync::fire_flags(md) as *mut c_void);
     if l.sym_solver > 0 {
         direct(l.inline_dt_off, 8, unsafe { &mut (*si.inlineData).dt } as *mut f64 as *mut c_void);
         direct(l.alg_old_off, l.n_states * 8, unsafe { (*si.inlineData).algOldVars } as *mut c_void);
@@ -615,6 +770,16 @@ fn build_regions(rt: &mut RtData) {
         direct(l.dae_aux_off, l.n_dae_aux * 8, unsafe { (*si.daeModeData).auxiliaryVars } as *mut c_void);
     }
 
+    for (off, bytes, base) in crate::optimization::regions(rt.data, &l) {
+        direct_region(&mut regions, off, bytes, Backing::Direct(base as *mut u8));
+    }
+    for (off, bytes, bc, sc) in crate::sync::regions(rt.data, &l) {
+        let backing = match bc.is_null() {
+            true => Backing::SubClocks(sc),
+            false => Backing::BaseClocks(bc),
+        };
+        direct_region(&mut regions, off, bytes, backing);
+    }
     if n_int > 0 {
         regions.push(Region {
             start: l.int_off,
