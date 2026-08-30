@@ -4474,7 +4474,7 @@ algorithm
 
   try
     (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName, isWasmFMU),
-                                            cache, inEnv, className, filenameprefix, true, false, true, SOME(simSettings));
+                                            cache, inEnv, className, filenameprefix, true, Flags.getConfigBool(Flags.DAE_MODE), true, SOME(simSettings));
     // A wasm translation wrote no FMU: it lowered the model kernel and kept it,
     // so force its JIT compile (and resolve its external "C") here, as
     // buildModel's compile phase does. The model is then ready to simulate and
@@ -4897,7 +4897,7 @@ algorithm
       success := true;
     else
       (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName, false),
-                                              cache, inEnv, className, filenameprefix, true, false, true, SOME(simSettings));
+                                              cache, inEnv, className, filenameprefix, true, Flags.getConfigBool(Flags.DAE_MODE), true, SOME(simSettings));
     end if;
     true := success;
     outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");

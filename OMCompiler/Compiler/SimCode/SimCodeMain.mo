@@ -1743,7 +1743,7 @@ algorithm
 
     if runBackend then
       if useDAEMode then
-        (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOBDAEMode(cache, env, dae, className, inFileNamePrefix, inSimSettingsOpt, args);
+        (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOBDAEMode(cache, env, dae, className, inFileNamePrefix, inSimSettingsOpt, args, kind);
       else
         (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOB(kind, cache, env, dae, className, inFileNamePrefix, inSimSettingsOpt, args);
       end if;
@@ -1966,6 +1966,7 @@ public function translateModelCallBackendOBDAEMode
   input String inFileNamePrefix;
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   input Absyn.FunctionArgs args "labels for remove terms";
+  input TranslateModelKind kind = TranslateModelKind.NORMAL() "FMU() to generate an FMU instead of a simulation";
   output list<String> outLibs;
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
@@ -1983,6 +1984,8 @@ algorithm
       BackendDAE.BackendDAE dlow, initDAE;
       Option<BackendDAE.BackendDAE> initDAE_lambda0_option;
       list<BackendDAE.Equation> removedInitialEquationLst;
+      Option<list<String>> strPreOptModules;
+      Boolean isFMI;
 
     case graph algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
@@ -2012,8 +2015,17 @@ algorithm
         ExecStat.execStat("Serialize dlow");
       end if;
 
+      // The alias variables FMI 2.0/3.0 report top-level outputs off. Not its
+      // counterpart introduceOutputRealDerivatives: that makes every Real output a
+      // state, which in DAE mode changes the residual system.
+      isFMI := match kind
+        case TranslateModelKind.FMU() then FMI.isFMIVersion20() or FMI.isFMIVersion30();
+        else false;
+      end match;
+      strPreOptModules := if isFMI then SOME("introduceOutputAliases"::BackendDAEUtil.getPreOptModulesString()) else NONE();
+
       //BackendDump.printBackendDAE(dlow);
-      (dlow, initDAE, initDAE_lambda0_option, removedInitialEquationLst) := DAEMode.getEqSystemDAEmode(dlow, inFileNamePrefix);
+      (dlow, initDAE, initDAE_lambda0_option, removedInitialEquationLst) := DAEMode.getEqSystemDAEmode(dlow, inFileNamePrefix, strPreOptModules=strPreOptModules);
       ExecStat.execStat("Backend");
 
       timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
@@ -2025,7 +2037,7 @@ algorithm
         ExecStat.execStat("Serialize solved system");
       end if;
 
-      (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeDAE(dlow, initDAE, initDAE_lambda0_option, removedInitialEquationLst, SymbolTable.getAbsyn(), className, inFileNamePrefix, inSimSettingsOpt, args);
+      (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeDAE(dlow, initDAE, initDAE_lambda0_option, removedInitialEquationLst, SymbolTable.getAbsyn(), className, inFileNamePrefix, inSimSettingsOpt, args, kind);
       timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
       timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
 
@@ -2098,6 +2110,7 @@ protected function generateModelCodeDAE
   input String filenamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input Absyn.FunctionArgs args;
+  input TranslateModelKind kind = TranslateModelKind.NORMAL() "FMU() to generate an FMU instead of a simulation";
   output list<String> libs;
   output String fileDir;
   output Real timeSimCode;
@@ -2164,7 +2177,26 @@ protected
   list<SimCode.SimEqSystem> nominalValueEquations = {};      // --> updateBoundNominalValues
   list<SimCode.SimEqSystem> parameterEquations = {};         // --> updateBoundParameters
   list<SimCode.SimEqSystem> jacobianEquations = {};
+
+  Boolean isFMU = false, translateOnly = false;
+  String FMUVersion = "", FMUType = "", fmuTargetName = "", fullPathPrefix = "";
+  Option<SimCode.FmiModelStructure> modelStructure = NONE();
+  Option<SimCode.FmiSimulationFlags> fmiSimulationFlags = NONE();
 algorithm
+  () := match kind
+    case TranslateModelKind.FMU()
+      algorithm
+        isFMU := true;
+        FMUVersion := FMI.getFMIVersionString();
+        FMUType := kind.kind;
+        fmuTargetName := kind.targetName;
+        translateOnly := kind.translateOnly;
+        // Where the C target writes the generated sources.
+        fullPathPrefix := Util.hashFileNamePrefix(filenamePrefix) + ".fmutmp/sources/";
+      then ();
+    else ();
+  end match;
+
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
     StackOverflow.clearStacktraceMessages();
@@ -2359,6 +2391,17 @@ algorithm
     /* This is a *much* better estimate than the guessed number of equations */
     modelInfo := SimCodeUtil.addNumEqns(modelInfo, uniqueEqIndex - listLength(jacobianEquations));
 
+    // No FMIDER jacobian: it is an ODE right-hand-side derivative, which a
+    // DAE-mode model has none of. The specification lets an importer assume a
+    // dependency on every known instead.
+    if isFMU then
+      if FMI.isFMIVersion20(FMUVersion) or FMI.isFMIVersion30(FMUVersion) then
+        (_, modelStructure, modelInfo, _, uniqueEqIndex, _) :=
+          SimCodeUtil.createFMIModelStructure({}, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
+      end if;
+      fmiSimulationFlags := SimCodeUtil.createFMISimulationFlags();
+    end if;
+
     // update hash table
     // mahge: This creates a new crefToSimVarHT discarding everything added upto here
     // The updated variable 'numEquations' (by SimCodeUtil.addNumEqns) is not even used in createCrefToSimVarHT :/
@@ -2410,17 +2453,17 @@ algorithm
       jacobianMatrices            = SymbolicJacs,
       simulationSettingsOpt       = simSettingsOpt,
       fileNamePrefix              = filenamePrefix,
-      fullPathPrefix              = "",
-      fmuTargetName               = "",
+      fullPathPrefix              = fullPathPrefix,
+      fmuTargetName               = fmuTargetName,
       hpcomData                   = HpcOmSimCode.emptyHpcomData,
-      valueReferences             = AvlTreeCRToInt.EMPTY(),
+      valueReferences             = if isFMU then SimCodeUtil.getValueReferenceMapping(modelInfo) else AvlTreeCRToInt.EMPTY(),
       varToArrayIndexMapping      = varToArrayIndexMapping,
       varToIndexMapping           = varToIndexMapping,
       crefToSimVarHT              = crefToSimVarHT,
       crefToClockIndexHT          = crefToClockIndexHT,
       backendMapping              = NONE(),
-      modelStructure              = NONE(),
-      fmiSimulationFlags          = NONE(),
+      modelStructure              = modelStructure,
+      fmiSimulationFlags          = fmiSimulationFlags,
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = daeModeData,
       inlineEquations             = {},
@@ -2444,7 +2487,11 @@ algorithm
     end if;
 
     System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
-    callTargetTemplates(simCode, Config.simCodeTarget());
+    if isFMU then
+      callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType, p, translateOnly);
+    else
+      callTargetTemplates(simCode, Config.simCodeTarget());
+    end if;
     timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
     ExecStat.execStat("Templates");
     return;
