@@ -19990,22 +19990,26 @@ impl<'a> UseBeforeDef<'a> {
             }
             E::Cons { head, tail, .. } => { self.walk_exp(head, assigned); self.walk_exp(tail, assigned); }
             E::Tuple(v) | E::Array { elems: v, .. } => for x in v { self.walk_exp(x, assigned); },
-            E::Match { input, cases, .. } => {
+            E::Match { kind, input, cases, .. } => {
                 self.walk_exp(input, assigned);
                 for c in cases {
                     if let Some(g) = &c.guard { self.walk_exp(g, assigned); }
                     for (_, _, def, _) in &c.locals {
                         if let Some(d) = def { self.walk_exp(d, assigned); }
                     }
-                    // A tracked variable assigned inside an arm is threaded out
-                    // of the arm's closure (see "matchcontinue output writeback"
-                    // / "match binds outer local writeback"): the closure
-                    // prologue seeds `let mut v = v.clone();` from the *outer*
-                    // value, an implicit read of `v` before the arm runs. So any
-                    // outer var the arm writes must already be initialised.
-                    let mut arm_writes = HashSet::new();
-                    stmts_assigned_var_names(&c.stmts, &mut arm_writes);
-                    for v in &arm_writes { self.read(v, assigned); }
+                    // A matchcontinue arm is an IIFE, and a tracked variable it
+                    // assigns is threaded out of that closure: the prologue seeds
+                    // `let mut v = v.clone();` from the *outer* value (see
+                    // `init_from_outer`), an implicit read of `v` before the arm
+                    // runs, so `v` must already hold something. A plain `match`
+                    // lowers to a Rust `match` whose arms assign the outer
+                    // binding directly — no seeding read, so an arm write there
+                    // does not force the implicit default.
+                    if matches!(kind, MatchKind::MatchContinue) {
+                        let mut arm_writes = HashSet::new();
+                        stmts_assigned_var_names(&c.stmts, &mut arm_writes);
+                        for v in &arm_writes { self.read(v, assigned); }
+                    }
                     // Arm bodies run conditionally: collect their reads against a
                     // throwaway copy of `assigned` and discard any assignments
                     // they make (they are never definite for the whole match).
