@@ -589,7 +589,7 @@ impl IdaDae {
         if !ida.set_user_data(&mut ctx as *mut DaeCtx as *mut c_void) {
             return Err("ida: the context could not be bound");
         }
-        let ok = ida.calc_ic_at(t);
+        let ok = ida.calc_ic_at(t, self.tolerance);
         if let Some(e) = ctx.failed {
             return Err(e);
         }

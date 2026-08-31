@@ -119,6 +119,8 @@ unsafe extern "C" {
     fn callExternalObjectDestructors_guard(sim_data: u32) -> u32;
     #[link_name = "symbolicInlineSystem$guard"]
     fn symbolicInlineSystem_guard(sim_data: u32) -> u32;
+    #[link_name = "functionDAE$guard"]
+    fn functionDAE_guard(sim_data: u32) -> u32;
 }
 
 // ── Messages ─────────────────────────────────────────────────────────────────
@@ -403,6 +405,7 @@ impl SimEngine for Engine {
                 "functionInitSynchronous" => functionInitSynchronous_guard(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors_guard(arg),
                 "symbolicInlineSystem" => symbolicInlineSystem_guard(arg),
+                "functionDAE" => functionDAE_guard(arg),
                 #[cfg(all(feature = "me", feature = "cs"))]
                 "linearJacA" => linearJacA_guard(arg),
                 #[cfg(all(feature = "me", feature = "cs"))]

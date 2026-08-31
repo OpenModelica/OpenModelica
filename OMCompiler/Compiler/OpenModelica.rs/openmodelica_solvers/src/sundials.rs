@@ -483,6 +483,7 @@ unsafe extern "C" {
     fn IDAGetCurrentStep(mem: *mut c_void, hcur: *mut f64) -> c_int;
 
     fn IDAGetNumSteps(mem: *mut c_void, n: *mut c_long) -> c_int;
+    fn IDAGetNumNonlinSolvIters(mem: *mut c_void, n: *mut c_long) -> c_int;
     fn IDAGetNumResEvals(mem: *mut c_void, n: *mut c_long) -> c_int;
     fn IDAGetNumJacEvals(mem: *mut c_void, n: *mut c_long) -> c_int;
     fn IDAGetNumErrTestFails(mem: *mut c_void, n: *mut c_long) -> c_int;
@@ -701,6 +702,11 @@ impl Ida {
         }
     }
 
+    /// C's `IDAflagIsSuccess`: a root return counts, a warning does not.
+    fn flag_is_success(flag: c_int) -> bool {
+        matches!(flag, IDA_SUCCESS | IDA_TSTOP_RETURN | IDA_ROOT_RETURN)
+    }
+
     /// The step IDA would take first; `IDACalcIC` needs a nonzero one.
     pub fn actual_init_step(&self) -> f64 {
         let mut h = 0.0;
@@ -718,36 +724,65 @@ impl Ida {
     }
 
     /// `IDACalcIC(IDA_YA_YDP_INIT)`: solve for the algebraic unknowns and every
-    /// derivative, `tout1` giving the direction. Raised iteration limits as in
-    /// `ida_event_update`; `line_search` off is C's retry.
-    pub fn calc_ic(&mut self, tout1: f64, line_search: bool) -> bool {
+    /// derivative, `tout1` giving the direction, with `ida_event_update`'s raised
+    /// iteration limits.
+    fn calc_ic(&mut self, tout1: f64) -> c_int {
         unsafe {
             let lim = (2 * self.n * 10) as c_int;
             IDASetMaxNumStepsIC(self.mem, lim);
             IDASetMaxNumJacsIC(self.mem, lim);
             IDASetMaxNumItersIC(self.mem, lim);
-            IDASetLineSearchOffIC(self.mem, !line_search as c_int);
-            IDACalcIC(self.mem, IDA_YA_YDP_INIT, tout1) == IDA_SUCCESS
+            IDACalcIC(self.mem, IDA_YA_YDP_INIT, tout1)
         }
     }
 
-    /// Read what [`calc_ic`](Ida::calc_ic) settled on back into `y`/`yp`.
+    fn nonlin_iters(&self) -> c_long {
+        let mut n = 0;
+        unsafe { IDAGetNumNonlinSolvIters(self.mem, &mut n) };
+        n
+    }
+
+    fn log_calc_ic(&self, flag: c_int) {
+        crate::omclog::info(
+            crate::omclog::SOLVER,
+            false,
+            &alloc::format!("##IDA## IDACalcIC run status {flag}.\nIterations : {}\n", self.nonlin_iters()),
+        );
+    }
+
+    /// Read what `IDACalcIC` settled on back into `y`/`yp`.
     pub fn consistent_ic(&mut self) -> bool {
         unsafe { IDAGetConsistentIC(self.mem, self.y, self.yp) == IDA_SUCCESS }
     }
 
     /// C's `ida_event_update`: `IDACalcIC` over the algebraic unknowns and every
     /// derivative at `t`, directed by the step IDA would take next (floored, so a
-    /// zero step still gives a direction), retried with the line search off, and
-    /// the result read back into `y`/`yp`. The initial step goes back to automatic
-    /// afterwards, as C leaves it.
-    pub fn calc_ic_at(&mut self, t: f64) -> bool {
+    /// zero step still gives a direction), retried at `t + tol` with the line search
+    /// off — which C leaves off for the rest of the run — and read back into `y`/`yp`.
+    pub fn calc_ic_at(&mut self, t: f64, tol: f64) -> bool {
         let mut h = self.actual_init_step();
         if h < f64::EPSILON {
             h = f64::EPSILON;
             self.set_init_step(h);
+            crate::omclog::info(
+                crate::omclog::SOLVER,
+                false,
+                &alloc::format!("##IDA## corrected step-size at {}", crate::omclog::g(h, 0, 15)),
+            );
         }
-        let ok = (self.calc_ic(t + h, true) || self.calc_ic(t + h, false)) && self.consistent_ic();
+        let mut flag = self.calc_ic(t + h);
+        self.log_calc_ic(flag);
+        if !Self::flag_is_success(flag) {
+            crate::omclog::info(
+                crate::omclog::SOLVER,
+                false,
+                "##IDA## first event iteration failed. Start next try without line search!",
+            );
+            unsafe { IDASetLineSearchOffIC(self.mem, 1) };
+            flag = self.calc_ic(t + tol);
+            self.log_calc_ic(flag);
+        }
+        let ok = Self::flag_is_success(flag) && self.consistent_ic();
         self.set_init_step(0.0);
         ok
     }

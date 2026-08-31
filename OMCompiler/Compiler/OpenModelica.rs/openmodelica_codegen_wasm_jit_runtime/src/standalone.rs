@@ -58,6 +58,7 @@ unsafe extern "C" {
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
     fn symbolicInlineSystem(sim_data: u32);
+    fn functionDAE(sim_data: u32);
     fn linearJacA(sim_data: u32);
     fn linearJacB(sim_data: u32);
     fn linearJacC(sim_data: u32);
@@ -128,6 +129,7 @@ impl SimEngine for StandaloneEngine {
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
                 "symbolicInlineSystem" => symbolicInlineSystem(arg),
+                "functionDAE" => functionDAE(arg),
                 "linearJacA" => linearJacA(arg),
                 "linearJacB" => linearJacB(arg),
                 "linearJacC" => linearJacC(arg),

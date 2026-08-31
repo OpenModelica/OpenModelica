@@ -4737,12 +4737,22 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
     emit_sim_data_or_zero(ctx);
     emit_initial_flag(ctx);
     ctx.emit(I::Call(rt_index("rt_assert_common")?));
+    let taken = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::LocalSet(taken));
+    ctx.emit(I::LocalGet(taken));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Eq);
     ctx.emit(I::If(we::BlockType::Empty));
     release_heap_locals(ctx)?;
     push_outputs(ctx);
     ctx.emit(I::Return);
     ctx.emit(I::End);
+    // 2 is C's `noThrowAsserts`: fall through and use the out-of-domain value.
+    ctx.emit(I::LocalGet(taken));
+    ctx.emit(I::I32Eqz);
+    ctx.emit(I::If(we::BlockType::Empty));
     emit_assert_unwind(ctx);
+    ctx.emit(I::End);
     Ok(())
 }
 

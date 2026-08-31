@@ -537,6 +537,7 @@ pub fn add_host_builtins<T: 'static>(linker: &mut wasmtime::Linker<T>) -> Result
     wt(linker.func_wrap("env", "rt_host_init_done", || openmodelica_sim_meta::driver::signal_init_done()))?;
     wt(linker.func_wrap("env", "rt_host_set_no_throw", |v: i32| set_no_throw_asserts(v != 0)))?;
     wt(linker.func_wrap("env", "rt_host_runtime_error", || openmodelica_sim_meta::driver::note_runtime_error_flag()))?;
+    wt(linker.func_wrap("env", "rt_host_note_no_throw_assert", || -> i32 { openmodelica_sim_meta::driver::note_no_throw_assert() as i32 }))?;
     // The external "C" libraries are the host's, so C's `RHSFinalFlag` is too.
     wt(linker.func_wrap("env", "rt_host_rhs_final", |v: i32| openmodelica_util::dynload::set_rhs_final_flag(v != 0)))?;
     // The model's violations land here even when the driver runs in-wasm; hand
@@ -774,6 +775,7 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
     imports.define("env", "rt_host_init_done", Function::new_typed(store, || openmodelica_sim_meta::driver::signal_init_done()));
     imports.define("env", "rt_host_set_no_throw", Function::new_typed(store, |v: i32| set_no_throw_asserts(v != 0)));
     imports.define("env", "rt_host_runtime_error", Function::new_typed(store, || openmodelica_sim_meta::driver::note_runtime_error_flag()));
+    imports.define("env", "rt_host_note_no_throw_assert", Function::new_typed(store, || -> i32 { openmodelica_sim_meta::driver::note_no_throw_assert() as i32 }));
     // The wasmer host has no external-library loader, so the flag has nowhere to go.
     imports.define("env", "rt_host_rhs_final", Function::new_typed(store, |_v: i32| {}));
     // See the wasmtime counterpart.
